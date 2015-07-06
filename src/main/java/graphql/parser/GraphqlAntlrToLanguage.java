@@ -1,47 +1,113 @@
 package graphql.parser;
 
 
-import graphql.language.Document;
-import graphql.language.Field;
-import graphql.language.OperationDefinition;
-import graphql.language.SelectionSet;
+import graphql.language.*;
 import graphql.parser.antlr.GraphqlBaseListener;
+import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.misc.NotNull;
 
-public class GraphqlAntlrToLanguage extends GraphqlBaseListener {
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     Document result;
-    OperationDefinition operationDefinition;
-    SelectionSet selectionSet;
-    Field field;
 
-    @Override
-    public void enterDocument(@NotNull GraphqlParser.DocumentContext ctx) {
-        result = new Document();
+    private enum ContextProperty {
+        OperationDefinition,
+        FragmentDefinition,
+        Field,
+        InlineFragment,
+        SelectionSet
     }
 
-    @Override
-    public void enterOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx) {
-        if (ctx.operationType() == null) {
-            operationDefinition = new OperationDefinition();
-            operationDefinition.setOperation(OperationDefinition.Operation.QUERY);
-            result.getDefinitions().add(operationDefinition);
+    private Map<ContextProperty, Object> context = new LinkedHashMap<>();
+
+
+    private Object setContextProperty(ContextProperty contextProperty, Object value) {
+        Object oldValue = context.get(contextProperty);
+        context.put(contextProperty, value);
+        switch (contextProperty) {
+            case SelectionSet:
+                newSelectionSet((SelectionSet) value);
+                break;
+            case Field:
+                newField((Field) value);
+                break;
         }
+        return oldValue;
+    }
+
+    private void newSelectionSet(SelectionSet selectionSet) {
+        if (context.get(ContextProperty.Field) != null) {
+            ((Field) context.get(ContextProperty.Field)).setSelectionSet(selectionSet);
+        } else if (context.get(ContextProperty.OperationDefinition) != null) {
+            ((OperationDefinition) context.get(ContextProperty.OperationDefinition)).setSelectionSet(selectionSet);
+        }
+
+    }
+
+    private void newField(Field field) {
+        ((SelectionSet) context.get(ContextProperty.SelectionSet)).getSelections().add(field);
+    }
+
+    private void restoreContext(ContextProperty contextProperty, Object oldValue) {
+        context.put(contextProperty, oldValue);
     }
 
     @Override
-    public void enterSelectionSet(@NotNull GraphqlParser.SelectionSetContext ctx) {
-        selectionSet = new SelectionSet();
-        operationDefinition.setSelectionSet(selectionSet);
-
+    public Void visitDocument(@NotNull GraphqlParser.DocumentContext ctx) {
+        result = new Document();
+        return super.visitDocument(ctx);
     }
 
     @Override
-    public void enterField(@NotNull GraphqlParser.FieldContext ctx) {
-        Field field = new Field();
-        field.setName(ctx.NAME().getText());
-        selectionSet.getSelections().add(field);
+    public Void visitOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx) {
+        OperationDefinition operationDefinition;
+        operationDefinition = new OperationDefinition();
+        if (ctx.operationType() == null) {
+            operationDefinition.setOperation(OperationDefinition.Operation.QUERY);
+        }
+        result.getDefinitions().add(operationDefinition);
+        Object oldValue = setContextProperty(ContextProperty.OperationDefinition, operationDefinition);
+        super.visitOperationDefinition(ctx);
+        restoreContext(ContextProperty.OperationDefinition, oldValue);
+
+        return null;
     }
 
+    @Override
+    public Void visitFragmentDefinition(@NotNull GraphqlParser.FragmentDefinitionContext ctx) {
+        FragmentDefinition fragmentDefinition = new FragmentDefinition();
+        Object oldValue = setContextProperty(ContextProperty.FragmentDefinition, fragmentDefinition);
+        super.visitFragmentDefinition(ctx);
+        restoreContext(ContextProperty.FragmentDefinition, oldValue);
+        return null;
+    }
+
+    @Override
+    public Void visitSelectionSet(@NotNull GraphqlParser.SelectionSetContext ctx) {
+        SelectionSet newSelectionSet = new SelectionSet();
+        Object oldValue = setContextProperty(ContextProperty.SelectionSet, newSelectionSet);
+        super.visitSelectionSet(ctx);
+        restoreContext(ContextProperty.SelectionSet, oldValue);
+        return null;
+    }
+
+    @Override
+    public Void visitSelection(@NotNull GraphqlParser.SelectionContext ctx) {
+        return super.visitSelection(ctx);
+    }
+
+    @Override
+    public Void visitField(@NotNull GraphqlParser.FieldContext ctx) {
+        Field newField = new Field();
+        newField.setName(ctx.NAME().getText());
+        System.out.println("new field " + newField);
+        Object oldValue = setContextProperty(ContextProperty.Field, newField);
+        super.visitField(ctx);
+        restoreContext(ContextProperty.Field, oldValue);
+        return null;
+    }
 }

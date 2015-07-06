@@ -5,6 +5,7 @@ import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 public class Parser {
@@ -18,8 +19,10 @@ public class Parser {
         GraphqlParser.DocumentContext document = parser.document();
 
         ParseTreeWalker walker = new ParseTreeWalker();
-        GraphqlAntlrToLanguage treeListener = new GraphqlAntlrToLanguage();
-        walker.walk(treeListener, document);
-        return treeListener.result;
+//        ParseTreeVisitor<Void> parseTreeVisitor= new P
+        GraphqlAntlrToLanguage antlrToLanguage = new GraphqlAntlrToLanguage();
+//        walker.v(treeListener, document);
+        antlrToLanguage.visitDocument(document);
+        return antlrToLanguage.result;
     }
 }

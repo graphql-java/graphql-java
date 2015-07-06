@@ -11,6 +11,16 @@ import spock.lang.Specification
 class ParserTest extends Specification {
 
 
+    OperationDefinition getOperationDefinition(Document document) {
+        ((OperationDefinition) document.definitions[0])
+    }
+
+    SelectionSet getRootSelectionSet(Document document){
+        getOperationDefinition(document).selectionSet
+    }
+
+
+
     def "parse anonymous simple query"() {
         given:
         def input = "{ me }"
@@ -24,9 +34,6 @@ class ParserTest extends Specification {
         assertField(getOperationDefinition(document), "me")
     }
 
-    OperationDefinition getOperationDefinition(Document document) {
-        ((OperationDefinition) document.definitions[0])
-    }
 
     def assertField(OperationDefinition operationDefinition, String fieldName) {
         Selection selection = operationDefinition.getSelectionSet().getSelections()[0]
@@ -35,5 +42,24 @@ class ParserTest extends Specification {
         assert field.name == fieldName
         true
     }
+
+
+    def "parse selectionSet for field"() {
+        given:
+        def input = "{ me { name } }"
+
+        when:
+        Document document = new Parser().parseDocument(input)
+        def rootSelectionSet = getRootSelectionSet(document)
+
+        then:
+        getInnerField(rootSelectionSet).name == "name"
+    }
+
+    Field getInnerField(SelectionSet selectionSet) {
+        def field = (Field) selectionSet.selections[0]
+        (Field) field.selectionSet.selections[0]
+    }
+
 
 }

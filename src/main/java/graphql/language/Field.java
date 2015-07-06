@@ -51,4 +51,15 @@ public class Field implements Selection {
     public void setSelectionSet(SelectionSet selectionSet) {
         this.selectionSet = selectionSet;
     }
+
+    @Override
+    public String toString() {
+        return "Field{" +
+                "name='" + name + '\'' +
+                ", alias='" + alias + '\'' +
+                ", arguments=" + arguments +
+                ", directives=" + directives +
+                ", selectionSet=" + selectionSet +
+                '}';
+    }
 }
