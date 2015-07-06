@@ -257,6 +257,18 @@ public class GraphqlBaseListener implements GraphqlListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterEnumValue(@NotNull GraphqlParser.EnumValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -281,6 +293,18 @@ public class GraphqlBaseListener implements GraphqlListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterObjectValue(@NotNull GraphqlParser.ObjectValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -293,6 +317,18 @@ public class GraphqlBaseListener implements GraphqlListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterObjectField(@NotNull GraphqlParser.ObjectFieldContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -300,6 +336,18 @@ public class GraphqlBaseListener implements GraphqlListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitObjectField(@NotNull GraphqlParser.ObjectFieldContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

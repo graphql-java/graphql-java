@@ -38,7 +38,7 @@ alias : NAME ':';
 
 arguments : '(' argument+ ')';
 
-argument : NAME ':' value;
+argument : NAME ':' valueWithVariable;
 
 // Fragments
 
@@ -56,7 +56,6 @@ typeCondition : typeName;
 
 
 value :
-variable |
 IntValue |
 FloatValue |
 StringValue |
@@ -65,6 +64,15 @@ enumValue |
 arrayValue |
 objectValue;
 
+valueWithVariable :
+variable |
+IntValue |
+FloatValue |
+StringValue |
+BooleanValue |
+enumValue |
+arrayValueWithVariable |
+objectValueWithVariable;
 
 
 enumValue : NAME ;
@@ -73,10 +81,15 @@ enumValue : NAME ;
 
 arrayValue: '[' value* ']';
 
+arrayValueWithVariable: '[' valueWithVariable* ']';
+
+
 // Object Value
 
 objectValue: '{' objectField* '}';
+objectValueWithVariable: '{' objectFieldWithVariable* '}';
 objectField : NAME ':' value;
+objectFieldWithVariable : NAME ':' valueWithVariable;
 
 // Directives
 

@@ -157,6 +157,32 @@ class ParserTest extends Specification {
         document.definitions[1] == fragmentDefinition
     }
 
+    def "parse inline fragment"(){
+        given:
+        def input = """
+                    query InlineFragmentTyping {
+                      profiles(handles: ["zuck", "cocacola"]) {
+                        handle
+                        ... on User {
+                          friends { count }
+                        }
+                        ... on Page {
+                          likers { count }
+                        }
+                      }
+                    }
+                """
+
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+
+        then:
+        document.definitions.size() == 1
+
+    }
+
 
     Field getInnerField(SelectionSet selectionSet) {
         def field = (Field) selectionSet.selections[0]

@@ -209,6 +209,16 @@ public interface GraphqlListener extends ParseTreeListener {
 	 */
 	void exitValue(@NotNull GraphqlParser.ValueContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link GraphqlParser#valueWithVariable}.
+	 * @param ctx the parse tree
+	 */
+	void enterValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link GraphqlParser#valueWithVariable}.
+	 * @param ctx the parse tree
+	 */
+	void exitValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#enumValue}.
 	 * @param ctx the parse tree
 	 */
@@ -229,6 +239,16 @@ public interface GraphqlListener extends ParseTreeListener {
 	 */
 	void exitArrayValue(@NotNull GraphqlParser.ArrayValueContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link GraphqlParser#arrayValueWithVariable}.
+	 * @param ctx the parse tree
+	 */
+	void enterArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link GraphqlParser#arrayValueWithVariable}.
+	 * @param ctx the parse tree
+	 */
+	void exitArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#objectValue}.
 	 * @param ctx the parse tree
 	 */
@@ -239,6 +259,16 @@ public interface GraphqlListener extends ParseTreeListener {
 	 */
 	void exitObjectValue(@NotNull GraphqlParser.ObjectValueContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link GraphqlParser#objectValueWithVariable}.
+	 * @param ctx the parse tree
+	 */
+	void enterObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link GraphqlParser#objectValueWithVariable}.
+	 * @param ctx the parse tree
+	 */
+	void exitObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#objectField}.
 	 * @param ctx the parse tree
 	 */
@@ -248,6 +278,16 @@ public interface GraphqlListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitObjectField(@NotNull GraphqlParser.ObjectFieldContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link GraphqlParser#objectFieldWithVariable}.
+	 * @param ctx the parse tree
+	 */
+	void enterObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link GraphqlParser#objectFieldWithVariable}.
+	 * @param ctx the parse tree
+	 */
+	void exitObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#directives}.
 	 * @param ctx the parse tree

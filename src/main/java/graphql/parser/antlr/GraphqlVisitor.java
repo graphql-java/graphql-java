@@ -132,6 +132,12 @@ public interface GraphqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitValue(@NotNull GraphqlParser.ValueContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link GraphqlParser#valueWithVariable}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link GraphqlParser#enumValue}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -144,17 +150,35 @@ public interface GraphqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArrayValue(@NotNull GraphqlParser.ArrayValueContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link GraphqlParser#arrayValueWithVariable}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link GraphqlParser#objectValue}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitObjectValue(@NotNull GraphqlParser.ObjectValueContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link GraphqlParser#objectValueWithVariable}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link GraphqlParser#objectField}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitObjectField(@NotNull GraphqlParser.ObjectFieldContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link GraphqlParser#objectFieldWithVariable}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link GraphqlParser#directives}.
 	 * @param ctx the parse tree

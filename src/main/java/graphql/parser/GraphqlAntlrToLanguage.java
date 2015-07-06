@@ -57,9 +57,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     private void restoreContext(ContextProperty contextProperty, Object oldValue) {
-        if(oldValue != null) {
+        if (oldValue != null) {
             context.put(contextProperty, oldValue);
-        }else{
+        } else {
             context.remove(contextProperty);
         }
     }
@@ -103,7 +103,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx) {
         FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
-        ((SelectionSet)context.get(ContextProperty.SelectionSet)).getSelections().add(fragmentSpread);
+        ((SelectionSet) context.get(ContextProperty.SelectionSet)).getSelections().add(fragmentSpread);
         return super.visitFragmentSpread(ctx);
     }
 
@@ -111,8 +111,13 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitVariableDefinition(@NotNull GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition variableDefinition = new VariableDefinition();
         variableDefinition.setName(ctx.variable().NAME().getText());
+        if(ctx.defaultValue() != null){
+            Value value = getValue(ctx.defaultValue().value());
+            variableDefinition.setDefaultValue(value);
+        }
         OperationDefinition operationDefiniton = (OperationDefinition) context.get(ContextProperty.OperationDefinition);
         operationDefiniton.getVariableDefinitions().add(variableDefinition);
+
         Object oldValue = setContextProperty(ContextProperty.VariableDefinition, variableDefinition);
         super.visitVariableDefinition(ctx);
         restoreContext(ContextProperty.VariableDefinition, oldValue);
@@ -166,10 +171,46 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitArgument(@NotNull GraphqlParser.ArgumentContext ctx) {
-        Argument argument = new Argument(ctx.NAME().getText(), getValue(ctx.value()));
+        Argument argument = new Argument(ctx.NAME().getText(), getValue(ctx.valueWithVariable()));
         Field field = (Field) context.get(ContextProperty.Field);
         field.getArguments().add(argument);
         return super.visitArgument(ctx);
+    }
+
+    private Value getValue(GraphqlParser.ValueWithVariableContext ctx) {
+        if (ctx.IntValue() != null) {
+            IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
+            return intValue;
+        } else if (ctx.FloatValue() != null) {
+            FloatValue floatValue = new FloatValue(new BigDecimal(ctx.FloatValue().getText()));
+            return floatValue;
+        } else if (ctx.BooleanValue() != null) {
+            BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
+            return booleanValue;
+        } else if (ctx.StringValue() != null) {
+            StringValue stringValue = new StringValue(trimQuotes(ctx.StringValue().getText()));
+            return stringValue;
+        } else if (ctx.enumValue() != null) {
+            EnumValue enumValue = new EnumValue(ctx.enumValue().getText());
+            return enumValue;
+        } else if (ctx.arrayValueWithVariable() != null) {
+            ArrayValue arrayValue = new ArrayValue();
+            for (GraphqlParser.ValueWithVariableContext valueWithVariableContext : ctx.arrayValueWithVariable().valueWithVariable()) {
+                arrayValue.getValues().add(getValue(valueWithVariableContext));
+            }
+            return arrayValue;
+        } else if (ctx.objectValueWithVariable() != null) {
+            ObjectValue objectValue = new ObjectValue();
+            for (GraphqlParser.ObjectFieldWithVariableContext objectFieldWithVariableContext :
+                    ctx.objectValueWithVariable().objectFieldWithVariable()) {
+                objectValue.getValueMap().put(objectFieldWithVariableContext.NAME().getText(), getValue(objectFieldWithVariableContext.valueWithVariable()));
+            }
+            return objectValue;
+        } else if (ctx.variable() != null) {
+            VariableReference variableReference = new VariableReference(ctx.variable().getText());
+            return variableReference;
+        }
+        throw new RuntimeException();
     }
 
     private Value getValue(GraphqlParser.ValueContext ctx) {
@@ -183,10 +224,26 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
             return booleanValue;
         } else if (ctx.StringValue() != null) {
-            StringValue booleanValue = new StringValue(trimQuotes(ctx.StringValue().getText()));
-            return booleanValue;
+            StringValue stringValue = new StringValue(trimQuotes(ctx.StringValue().getText()));
+            return stringValue;
+        } else if (ctx.enumValue() != null) {
+            EnumValue enumValue = new EnumValue(ctx.enumValue().getText());
+            return enumValue;
+        } else if (ctx.arrayValue() != null) {
+            ArrayValue arrayValue = new ArrayValue();
+            for (GraphqlParser.ValueContext valueWithVariableContext : ctx.arrayValue().value()) {
+                arrayValue.getValues().add(getValue(valueWithVariableContext));
+            }
+            return arrayValue;
+        } else if (ctx.objectValue() != null) {
+            ObjectValue objectValue = new ObjectValue();
+            for (GraphqlParser.ObjectFieldContext objectFieldContext :
+                    ctx.objectValue().objectField()) {
+                objectValue.getValueMap().put(objectFieldContext.NAME().getText(), getValue(objectFieldContext.value()));
+            }
+            return objectValue;
         }
-        return null;
+        throw new RuntimeException();
     }
 
 

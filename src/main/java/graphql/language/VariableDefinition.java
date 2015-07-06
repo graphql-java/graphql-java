@@ -5,6 +5,7 @@ public class VariableDefinition {
 
     private String name;
     private Type type;
+    private Value defaultValue;
 
     public VariableDefinition() {
 
@@ -14,6 +15,14 @@ public class VariableDefinition {
     public VariableDefinition(String name, Type type) {
         this.name = name;
         this.type = type;
+    }
+
+    public Value getDefaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(Value defaultValue) {
+        this.defaultValue = defaultValue;
     }
 
     public String getName() {
@@ -40,7 +49,8 @@ public class VariableDefinition {
         VariableDefinition that = (VariableDefinition) o;
 
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        return !(type != null ? !type.equals(that.type) : that.type != null);
+        if (type != null ? !type.equals(that.type) : that.type != null) return false;
+        return !(defaultValue != null ? !defaultValue.equals(that.defaultValue) : that.defaultValue != null);
 
     }
 
@@ -48,6 +58,7 @@ public class VariableDefinition {
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
         result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (defaultValue != null ? defaultValue.hashCode() : 0);
         return result;
     }
 
@@ -56,6 +67,7 @@ public class VariableDefinition {
         return "VariableDefinition{" +
                 "name='" + name + '\'' +
                 ", type=" + type +
+                ", defaultValue=" + defaultValue +
                 '}';
     }
 }
