@@ -18,5 +18,6 @@ public class Execution {
     }
 
     private GraphQLObjectType getOperationRootType(OperationDefinition operationDefinition, GraphQLSchema graphQLSchema) {
+        return null;
     }
 }

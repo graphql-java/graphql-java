@@ -117,3 +117,5 @@ Digit : '0'..'9';
 StringValue: '\"' StringCharacter+ '\"';
 
 StringCharacter: [a-zA-Z0-9];
+
+WS : [ \t\r\n]+ -> skip ;
