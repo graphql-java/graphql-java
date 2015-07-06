@@ -36,6 +36,12 @@ public class OperationDefinition implements Definition {
         this.selectionSet = selectionSet;
     }
 
+    public OperationDefinition(String name, Operation operation, SelectionSet selectionSet) {
+        this.name = name;
+        this.operation = operation;
+        this.selectionSet = selectionSet;
+    }
+
     public String getName() {
         return name;
     }

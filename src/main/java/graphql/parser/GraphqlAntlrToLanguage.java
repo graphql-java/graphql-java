@@ -2,7 +2,6 @@ package graphql.parser;
 
 
 import graphql.language.*;
-import graphql.parser.antlr.GraphqlBaseListener;
 import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.misc.NotNull;
@@ -43,10 +42,12 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     private void newSelectionSet(SelectionSet selectionSet) {
-        if (context.get(ContextProperty.Field) != null) {
+        if (context.containsKey(ContextProperty.Field)) {
             ((Field) context.get(ContextProperty.Field)).setSelectionSet(selectionSet);
-        } else if (context.get(ContextProperty.OperationDefinition) != null) {
+        } else if (context.containsKey(ContextProperty.OperationDefinition)) {
             ((OperationDefinition) context.get(ContextProperty.OperationDefinition)).setSelectionSet(selectionSet);
+        } else if (context.containsKey(ContextProperty.FragmentDefinition)) {
+            ((FragmentDefinition) context.get(ContextProperty.FragmentDefinition)).setSelectionSet(selectionSet);
         }
 
     }
@@ -56,7 +57,11 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     private void restoreContext(ContextProperty contextProperty, Object oldValue) {
-        context.put(contextProperty, oldValue);
+        if(oldValue != null) {
+            context.put(contextProperty, oldValue);
+        }else{
+            context.remove(contextProperty);
+        }
     }
 
     @Override
@@ -93,9 +98,14 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         } else {
             throw new RuntimeException();
         }
-
     }
 
+    @Override
+    public Void visitFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx) {
+        FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
+        ((SelectionSet)context.get(ContextProperty.SelectionSet)).getSelections().add(fragmentSpread);
+        return super.visitFragmentSpread(ctx);
+    }
 
     @Override
     public Void visitVariableDefinition(@NotNull GraphqlParser.VariableDefinitionContext ctx) {
@@ -112,7 +122,10 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitFragmentDefinition(@NotNull GraphqlParser.FragmentDefinitionContext ctx) {
         FragmentDefinition fragmentDefinition = new FragmentDefinition();
+        fragmentDefinition.setName(ctx.fragmentName().getText());
+        fragmentDefinition.setTypeCondition(ctx.typeCondition().getText());
         Object oldValue = setContextProperty(ContextProperty.FragmentDefinition, fragmentDefinition);
+        result.getDefinitions().add(fragmentDefinition);
         super.visitFragmentDefinition(ctx);
         restoreContext(ContextProperty.FragmentDefinition, oldValue);
         return null;
@@ -175,6 +188,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         }
         return null;
     }
+
 
     private String trimQuotes(String string) {
         return string.substring(1, string.length() - 1);

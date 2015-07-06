@@ -5,6 +5,8 @@ import graphql.language.BooleanValue
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.FloatValue
+import graphql.language.FragmentDefinition
+import graphql.language.FragmentSpread
 import graphql.language.GraphQLType
 import graphql.language.IntValue
 import graphql.language.NamedType
@@ -100,7 +102,7 @@ class ParserTest extends Specification {
         def argument2 = new Argument("name", new StringValue("homer"))
         def argument3 = new Argument("admin", new BooleanValue(true))
         def argument4 = new Argument("floatValue", new FloatValue(3.04))
-        def field = new Field("user", [argument,argument2,argument3,argument4])
+        def field = new Field("user", [argument, argument2, argument3, argument4])
         def selectionSet = new SelectionSet([field])
         def operationDefinition = new OperationDefinition()
         operationDefinition.operation = OperationDefinition.Operation.QUERY
@@ -112,6 +114,47 @@ class ParserTest extends Specification {
 
         then:
         document == expectedResult
+    }
+
+    def "parse fragment and query"() {
+        def input = """query withFragments {
+                    user(id: 4) {
+                        friends(first: 10) { ...friendFields }
+                        mutualFriends(first: 10) { ...friendFields }
+                      }
+                    }
+
+                    fragment friendFields on User {
+                      id
+                      name
+                    profilePic(size: 50)
+                }"""
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        def idField = new Field("id")
+        def nameField = new Field("name")
+        def profilePicField = new Field("profilePic", [new Argument("size", new IntValue(50))])
+        def selectionSet = new SelectionSet([idField, nameField, profilePicField])
+        def fragmentDefinition = new FragmentDefinition("friendFields", "User", selectionSet)
+
+        def fragmentSpreadFriends = new FragmentSpread("friendFields")
+        def selectionSetFriends = new SelectionSet([fragmentSpreadFriends])
+        def friendsField = new Field("friends", [new Argument("first", new IntValue(10))], selectionSetFriends)
+
+        def fragmentSpreadMutalFriends = new FragmentSpread("friendFields")
+        def selectionSetMutalFriends = new SelectionSet([fragmentSpreadMutalFriends])
+        def mutalFriendsField = new Field("mutualFriends", [new Argument("first", new IntValue(10))], selectionSetMutalFriends)
+
+        def userField = new Field("user", [new Argument("id", new IntValue(4))], new SelectionSet([friendsField, mutalFriendsField]))
+
+        def queryDefinition = new OperationDefinition("withFragments", OperationDefinition.Operation.QUERY, new SelectionSet([userField]))
+
+        then:
+        document.definitions.size() == 2
+        document.definitions[0] == queryDefinition
+        document.definitions[1] == fragmentDefinition
     }
 
 

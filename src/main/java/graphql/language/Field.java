@@ -22,6 +22,12 @@ public class Field implements Selection {
         this.arguments = arguments;
     }
 
+    public Field(String name, List<Argument> arguments,SelectionSet selectionSet) {
+        this.name = name;
+        this.arguments = arguments;
+        this.selectionSet = selectionSet;
+    }
+
     public Field(String name) {
         this.name = name;
     }
