@@ -18,10 +18,7 @@ public class Parser {
         GraphqlParser parser = new GraphqlParser(tokens);
         GraphqlParser.DocumentContext document = parser.document();
 
-        ParseTreeWalker walker = new ParseTreeWalker();
-//        ParseTreeVisitor<Void> parseTreeVisitor= new P
         GraphqlAntlrToLanguage antlrToLanguage = new GraphqlAntlrToLanguage();
-//        walker.v(treeListener, document);
         antlrToLanguage.visitDocument(document);
         return antlrToLanguage.result;
     }

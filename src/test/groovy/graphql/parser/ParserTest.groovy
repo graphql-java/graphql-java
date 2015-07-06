@@ -2,9 +2,12 @@ package graphql.parser
 
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.GraphQLType
+import graphql.language.NamedType
 import graphql.language.OperationDefinition
 import graphql.language.Selection
 import graphql.language.SelectionSet
+import graphql.language.VariableDefinition
 import spock.lang.Specification
 
 
@@ -15,10 +18,9 @@ class ParserTest extends Specification {
         ((OperationDefinition) document.definitions[0])
     }
 
-    SelectionSet getRootSelectionSet(Document document){
+    SelectionSet getRootSelectionSet(Document document) {
         getOperationDefinition(document).selectionSet
     }
-
 
 
     def "parse anonymous simple query"() {
@@ -54,6 +56,24 @@ class ParserTest extends Specification {
 
         then:
         getInnerField(rootSelectionSet).name == "name"
+    }
+
+    def "parse query with variable definition"() {
+        given:
+        def input = 'query getProfile($devicePicSize: Int){ me }'
+
+        def expectedResult = new Document()
+        def variableDefinition = new VariableDefinition("devicePicSize", new NamedType("Int"))
+        def selectionSet = new SelectionSet([new Field("me")])
+        def definition = new OperationDefinition("getProfile", OperationDefinition.Operation.QUERY, [variableDefinition], selectionSet)
+        expectedResult.definitions.add(definition)
+
+        when:
+        Document document = new Parser().parseDocument(input)
+        println document
+        then:
+        document == expectedResult
+
     }
 
     Field getInnerField(SelectionSet selectionSet) {

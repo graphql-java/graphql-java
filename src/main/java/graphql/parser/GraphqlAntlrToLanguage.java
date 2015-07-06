@@ -19,7 +19,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         FragmentDefinition,
         Field,
         InlineFragment,
-        SelectionSet
+        SelectionSet,
+        VariableDefinition
     }
 
     private Map<ContextProperty, Object> context = new LinkedHashMap<>();
@@ -66,14 +67,32 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx) {
         OperationDefinition operationDefinition;
         operationDefinition = new OperationDefinition();
-        if (ctx.operationType() == null) {
+//        if (ctx.operationType() == null) {
             operationDefinition.setOperation(OperationDefinition.Operation.QUERY);
+//        }else{
+//            operationDefinition.setOperation(OperationDefinition.Operation.valueOf(ctx.operationType()))
+//        }
+        if(ctx.NAME() != null) {
+            operationDefinition.setName(ctx.NAME().getText());
         }
         result.getDefinitions().add(operationDefinition);
         Object oldValue = setContextProperty(ContextProperty.OperationDefinition, operationDefinition);
         super.visitOperationDefinition(ctx);
         restoreContext(ContextProperty.OperationDefinition, oldValue);
 
+        return null;
+    }
+
+
+    @Override
+    public Void visitVariableDefinition(@NotNull GraphqlParser.VariableDefinitionContext ctx) {
+        VariableDefinition variableDefinition = new VariableDefinition();
+        variableDefinition.setName(ctx.variable().NAME().getText());
+        OperationDefinition operationDefiniton = (OperationDefinition) context.get(ContextProperty.OperationDefinition);
+        operationDefiniton.getVariableDefinitions().add(variableDefinition);
+        Object oldValue = setContextProperty(ContextProperty.VariableDefinition, variableDefinition);
+        super.visitVariableDefinition(ctx);
+        restoreContext(ContextProperty.VariableDefinition, oldValue);
         return null;
     }
 
@@ -109,5 +128,14 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         super.visitField(ctx);
         restoreContext(ContextProperty.Field, oldValue);
         return null;
+    }
+
+    @Override
+    public Void visitTypeName(@NotNull GraphqlParser.TypeNameContext ctx) {
+        NamedType namedType = new NamedType(ctx.NAME().getText());
+        if (context.get(ContextProperty.VariableDefinition) != null) {
+            ((VariableDefinition) context.get(ContextProperty.VariableDefinition)).setType(namedType);
+        }
+        return super.visitTypeName(ctx);
     }
 }

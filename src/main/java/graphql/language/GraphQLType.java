@@ -1,5 +1,6 @@
 package graphql.language;
 
 
-public class GraphQLType {
+public enum GraphQLType implements Type{
+    Int
 }
