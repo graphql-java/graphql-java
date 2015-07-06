@@ -8,6 +8,14 @@ public class Document {
 
     private List<Definition> definitions = new ArrayList<>();
 
+    public Document() {
+
+    }
+
+    public Document(List<Definition> definitions) {
+        this.definitions = definitions;
+    }
+
     public List<Definition> getDefinitions() {
         return definitions;
     }

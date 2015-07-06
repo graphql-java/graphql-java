@@ -1,8 +1,10 @@
 package graphql.parser
 
+import graphql.language.Argument
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.GraphQLType
+import graphql.language.IntValue
 import graphql.language.NamedType
 import graphql.language.OperationDefinition
 import graphql.language.Selection
@@ -75,6 +77,38 @@ class ParserTest extends Specification {
         document == expectedResult
 
     }
+
+    def "parse mutation"(){
+        given:
+        def input = 'mutation setName { setName(name: "Homer") { newName } }'
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        then:
+        getOperationDefinition(document).operation == OperationDefinition.Operation.MUTATION
+    }
+
+    def "parse field argument"(){
+        given:
+        def input = '{ user(id: 10) }'
+
+        def argument = new Argument("id",new IntValue(10))
+        def field = new Field("user",[argument])
+        def selectionSet = new SelectionSet([field])
+        def operationDefinition = new OperationDefinition()
+        operationDefinition.operation = OperationDefinition.Operation.QUERY
+        operationDefinition.selectionSet = selectionSet
+        def expectedResult = new Document([operationDefinition])
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        then:
+        document == expectedResult
+    }
+
+
 
     Field getInnerField(SelectionSet selectionSet) {
         def field = (Field) selectionSet.selections[0]

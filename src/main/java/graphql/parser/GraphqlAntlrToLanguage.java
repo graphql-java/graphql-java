@@ -20,7 +20,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         Field,
         InlineFragment,
         SelectionSet,
-        VariableDefinition
+        VariableDefinition,
+        Argument
     }
 
     private Map<ContextProperty, Object> context = new LinkedHashMap<>();
@@ -67,12 +68,12 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx) {
         OperationDefinition operationDefinition;
         operationDefinition = new OperationDefinition();
-//        if (ctx.operationType() == null) {
+        if (ctx.operationType() == null) {
             operationDefinition.setOperation(OperationDefinition.Operation.QUERY);
-//        }else{
-//            operationDefinition.setOperation(OperationDefinition.Operation.valueOf(ctx.operationType()))
-//        }
-        if(ctx.NAME() != null) {
+        } else {
+            operationDefinition.setOperation(parseOperation(ctx.operationType()));
+        }
+        if (ctx.NAME() != null) {
             operationDefinition.setName(ctx.NAME().getText());
         }
         result.getDefinitions().add(operationDefinition);
@@ -81,6 +82,17 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         restoreContext(ContextProperty.OperationDefinition, oldValue);
 
         return null;
+    }
+
+    private OperationDefinition.Operation parseOperation(GraphqlParser.OperationTypeContext operationTypeContext) {
+        if (operationTypeContext.getText().equals("query")) {
+            return OperationDefinition.Operation.QUERY;
+        } else if (operationTypeContext.getText().equals("mutation")) {
+            return OperationDefinition.Operation.MUTATION;
+        } else {
+            throw new RuntimeException();
+        }
+
     }
 
 
@@ -123,7 +135,6 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitField(@NotNull GraphqlParser.FieldContext ctx) {
         Field newField = new Field();
         newField.setName(ctx.NAME().getText());
-        System.out.println("new field " + newField);
         Object oldValue = setContextProperty(ContextProperty.Field, newField);
         super.visitField(ctx);
         restoreContext(ContextProperty.Field, oldValue);
@@ -138,4 +149,21 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         }
         return super.visitTypeName(ctx);
     }
+
+    @Override
+    public Void visitArgument(@NotNull GraphqlParser.ArgumentContext ctx) {
+        Argument argument = new Argument(ctx.NAME().getText(),getValue(ctx.value()));
+        Field field = (Field) context.get(ContextProperty.Field);
+        field.getArguments().add(argument);
+        return super.visitArgument(ctx);
+    }
+
+    private Value getValue(GraphqlParser.ValueContext ctx){
+        if (ctx.IntValue() != null) {
+            IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
+            return intValue;
+        }
+        return null;
+    }
+
 }

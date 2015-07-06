@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Field implements Selection {
@@ -8,12 +9,17 @@ public class Field implements Selection {
     private String name;
     private String alias;
 
-    private List<Argument> arguments;
+    private List<Argument> arguments = new ArrayList<>();
     private List<Directive> directives;
     private SelectionSet selectionSet;
 
-    public Field(){
+    public Field() {
 
+    }
+
+    public Field(String name, List<Argument> arguments) {
+        this.name = name;
+        this.arguments = arguments;
     }
 
     public Field(String name) {
