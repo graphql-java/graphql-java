@@ -10,7 +10,7 @@ public class Field implements Selection {
     private String alias;
 
     private List<Argument> arguments = new ArrayList<>();
-    private List<Directive> directives;
+    private List<Directive> directives = new ArrayList<>();
     private SelectionSet selectionSet;
 
     public Field() {
@@ -30,6 +30,12 @@ public class Field implements Selection {
     public Field(String name, List<Argument> arguments) {
         this.name = name;
         this.arguments = arguments;
+    }
+
+    public Field(String name, List<Argument> arguments, List<Directive> directives) {
+        this.name = name;
+        this.arguments = arguments;
+        this.directives = directives;
     }
 
     public Field(String name, List<Argument> arguments, SelectionSet selectionSet) {

@@ -95,7 +95,7 @@ objectFieldWithVariable : NAME ':' valueWithVariable;
 
 directives : directive+;
 
-directive :'@' NAME | '@' NAME ':' value;
+directive :'@' NAME | '@' NAME ':' valueWithVariable;
 
 // Types
 
@@ -132,3 +132,4 @@ StringValue: '\"' StringCharacter+ '\"';
 StringCharacter: [a-zA-Z0-9];
 
 WS : [ \t\r\n]+ -> skip ;
+COMMA : ','+ -> skip ;

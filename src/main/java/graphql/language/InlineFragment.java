@@ -1,11 +1,12 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class InlineFragment implements Selection {
     private String typeCondition;
-    private List<Directive> directives;
+    private List<Directive> directives = new ArrayList<>();
     private SelectionSet selectionSet;
 
     public InlineFragment() {

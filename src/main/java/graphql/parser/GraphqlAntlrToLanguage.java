@@ -18,9 +18,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         FragmentDefinition,
         Field,
         InlineFragment,
+        FragmentSpread,
         SelectionSet,
         VariableDefinition,
-        Argument
     }
 
     static class ContextEntry {
@@ -130,7 +130,10 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx) {
         FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(fragmentSpread);
-        return super.visitFragmentSpread(ctx);
+        addContextProperty(ContextProperty.FragmentSpread,fragmentSpread);
+        super.visitFragmentSpread(ctx);
+        popContext();
+        return null;
     }
 
     @Override
@@ -213,6 +216,28 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitDirective(@NotNull GraphqlParser.DirectiveContext ctx) {
+        Directive directive = new Directive(ctx.NAME().getText(),getValue(ctx.valueWithVariable()));
+        for(ContextEntry contextEntry: contextStack){
+            if(contextEntry.contextProperty == ContextProperty.Field){
+                ((Field) contextEntry.value).getDirectives().add(directive);
+                break;
+            }else if(contextEntry.contextProperty == ContextProperty.FragmentDefinition){
+                ((Field) contextEntry.value).getDirectives().add(directive);
+                break;
+            }else if(contextEntry.contextProperty == ContextProperty.FragmentSpread){
+                ((FragmentSpread) contextEntry.value).getDirectives().add(directive);
+                break;
+            }else if(contextEntry.contextProperty == ContextProperty.InlineFragment){
+                ((InlineFragment) contextEntry.value).getDirectives().add(directive);
+                break;
+            }
+        }
+
+        return super.visitDirective(ctx);
+    }
+
     private Value getValue(GraphqlParser.ValueWithVariableContext ctx) {
         if (ctx.IntValue() != null) {
             IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
@@ -243,7 +268,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             }
             return objectValue;
         } else if (ctx.variable() != null) {
-            VariableReference variableReference = new VariableReference(ctx.variable().getText());
+            VariableReference variableReference = new VariableReference(ctx.variable().NAME().getText());
             return variableReference;
         }
         throw new RuntimeException();

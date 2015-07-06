@@ -62,7 +62,6 @@ class ParserTest extends Specification {
 
         when:
         Document document = new Parser().parseDocument(input)
-        println document
         then:
         document == expectedResult
 
@@ -81,7 +80,7 @@ class ParserTest extends Specification {
 
     def "parse field arguments"() {
         given:
-        def input = '{ user(id: 10 name: "homer" admin:true floatValue: 3.04) }'
+        def input = '{ user(id: 10, name: "homer", admin:true, floatValue: 3.04) }'
 
         def argument = new Argument("id", new IntValue(10))
         def argument2 = new Argument("name", new StringValue("homer"))
@@ -185,6 +184,32 @@ class ParserTest extends Specification {
         then:
         document.definitions.size() == 1
         document.definitions[0] == queryDefinition
+
+    }
+
+    def "parse directives"() {
+        given:
+        def input = """
+            query myQuery(\$someTest: Boolean) {
+              experimentalField @if: \$someTest,
+              controlField @unless: \$someTest }
+            """
+
+        and: "expected query"
+
+        def experimentalField = new Field("experimentalField", [], [new Directive("if", new VariableReference("someTest"))])
+        def controlField = new Field("controlField", [], [new Directive("unless", new VariableReference("someTest"))])
+        def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
+                [new VariableDefinition("someTest", new NamedType("Boolean"))],
+                new SelectionSet([experimentalField, controlField]))
+
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions[0] == queryDefinition
+
 
     }
 

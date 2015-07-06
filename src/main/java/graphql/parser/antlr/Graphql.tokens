@@ -26,6 +26,7 @@ Digit=25
 StringValue=26
 StringCharacter=27
 WS=28
+COMMA=29
 'query'=1
 'mutation'=2
 '('=3
