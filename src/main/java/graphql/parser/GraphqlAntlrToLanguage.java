@@ -7,6 +7,7 @@ import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.misc.NotNull;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -152,18 +153,31 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitArgument(@NotNull GraphqlParser.ArgumentContext ctx) {
-        Argument argument = new Argument(ctx.NAME().getText(),getValue(ctx.value()));
+        Argument argument = new Argument(ctx.NAME().getText(), getValue(ctx.value()));
         Field field = (Field) context.get(ContextProperty.Field);
         field.getArguments().add(argument);
         return super.visitArgument(ctx);
     }
 
-    private Value getValue(GraphqlParser.ValueContext ctx){
+    private Value getValue(GraphqlParser.ValueContext ctx) {
         if (ctx.IntValue() != null) {
             IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
             return intValue;
+        } else if (ctx.FloatValue() != null) {
+            FloatValue floatValue = new FloatValue(new BigDecimal(ctx.FloatValue().getText()));
+            return floatValue;
+        } else if (ctx.BooleanValue() != null) {
+            BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
+            return booleanValue;
+        } else if (ctx.StringValue() != null) {
+            StringValue booleanValue = new StringValue(trimQuotes(ctx.StringValue().getText()));
+            return booleanValue;
         }
         return null;
+    }
+
+    private String trimQuotes(String string) {
+        return string.substring(1, string.length() - 1);
     }
 
 }

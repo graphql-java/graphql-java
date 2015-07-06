@@ -1,14 +1,17 @@
 package graphql.parser
 
 import graphql.language.Argument
+import graphql.language.BooleanValue
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.FloatValue
 import graphql.language.GraphQLType
 import graphql.language.IntValue
 import graphql.language.NamedType
 import graphql.language.OperationDefinition
 import graphql.language.Selection
 import graphql.language.SelectionSet
+import graphql.language.StringValue
 import graphql.language.VariableDefinition
 import spock.lang.Specification
 
@@ -78,7 +81,7 @@ class ParserTest extends Specification {
 
     }
 
-    def "parse mutation"(){
+    def "parse mutation"() {
         given:
         def input = 'mutation setName { setName(name: "Homer") { newName } }'
 
@@ -89,12 +92,15 @@ class ParserTest extends Specification {
         getOperationDefinition(document).operation == OperationDefinition.Operation.MUTATION
     }
 
-    def "parse field argument"(){
+    def "parse field arguments"() {
         given:
-        def input = '{ user(id: 10) }'
+        def input = '{ user(id: 10 name: "homer" admin:true floatValue: 3.04) }'
 
-        def argument = new Argument("id",new IntValue(10))
-        def field = new Field("user",[argument])
+        def argument = new Argument("id", new IntValue(10))
+        def argument2 = new Argument("name", new StringValue("homer"))
+        def argument3 = new Argument("admin", new BooleanValue(true))
+        def argument4 = new Argument("floatValue", new FloatValue(3.04))
+        def field = new Field("user", [argument,argument2,argument3,argument4])
         def selectionSet = new SelectionSet([field])
         def operationDefinition = new OperationDefinition()
         operationDefinition.operation = OperationDefinition.Operation.QUERY
@@ -107,7 +113,6 @@ class ParserTest extends Specification {
         then:
         document == expectedResult
     }
-
 
 
     Field getInnerField(SelectionSet selectionSet) {
