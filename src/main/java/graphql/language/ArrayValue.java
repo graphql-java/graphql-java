@@ -4,10 +4,16 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArrayValue  implements Value{
+public class ArrayValue implements Value {
 
     private List<Value> values = new ArrayList<>();
 
+    public ArrayValue() {
+    }
+
+    public ArrayValue(List<Value> values) {
+        this.values = values;
+    }
 
     public List<Value> getValues() {
         return values;

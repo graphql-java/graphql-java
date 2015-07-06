@@ -17,20 +17,27 @@ public class Field implements Selection {
 
     }
 
+    public Field(String name) {
+        this.name = name;
+    }
+
+    public Field(String name, SelectionSet selectionSet) {
+        this.name = name;
+        this.selectionSet = selectionSet;
+    }
+
+
     public Field(String name, List<Argument> arguments) {
         this.name = name;
         this.arguments = arguments;
     }
 
-    public Field(String name, List<Argument> arguments,SelectionSet selectionSet) {
+    public Field(String name, List<Argument> arguments, SelectionSet selectionSet) {
         this.name = name;
         this.arguments = arguments;
         this.selectionSet = selectionSet;
     }
 
-    public Field(String name) {
-        this.name = name;
-    }
 
     public String getName() {
         return name;

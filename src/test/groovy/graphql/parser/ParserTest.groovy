@@ -1,22 +1,7 @@
 package graphql.parser
 
-import graphql.language.Argument
-import graphql.language.BooleanValue
-import graphql.language.Document
-import graphql.language.Field
-import graphql.language.FloatValue
-import graphql.language.FragmentDefinition
-import graphql.language.FragmentSpread
-import graphql.language.GraphQLType
-import graphql.language.IntValue
-import graphql.language.NamedType
-import graphql.language.OperationDefinition
-import graphql.language.Selection
-import graphql.language.SelectionSet
-import graphql.language.StringValue
-import graphql.language.VariableDefinition
+import graphql.language.*
 import spock.lang.Specification
-
 
 class ParserTest extends Specification {
 
@@ -117,6 +102,7 @@ class ParserTest extends Specification {
     }
 
     def "parse fragment and query"() {
+        given:
         def input = """query withFragments {
                     user(id: 4) {
                         friends(first: 10) { ...friendFields }
@@ -130,15 +116,7 @@ class ParserTest extends Specification {
                     profilePic(size: 50)
                 }"""
 
-        when:
-        Document document = new Parser().parseDocument(input)
-
-        def idField = new Field("id")
-        def nameField = new Field("name")
-        def profilePicField = new Field("profilePic", [new Argument("size", new IntValue(50))])
-        def selectionSet = new SelectionSet([idField, nameField, profilePicField])
-        def fragmentDefinition = new FragmentDefinition("friendFields", "User", selectionSet)
-
+        and: "expected query"
         def fragmentSpreadFriends = new FragmentSpread("friendFields")
         def selectionSetFriends = new SelectionSet([fragmentSpreadFriends])
         def friendsField = new Field("friends", [new Argument("first", new IntValue(10))], selectionSetFriends)
@@ -151,13 +129,24 @@ class ParserTest extends Specification {
 
         def queryDefinition = new OperationDefinition("withFragments", OperationDefinition.Operation.QUERY, new SelectionSet([userField]))
 
+        and: "expected fragment definition"
+        def idField = new Field("id")
+        def nameField = new Field("name")
+        def profilePicField = new Field("profilePic", [new Argument("size", new IntValue(50))])
+        def selectionSet = new SelectionSet([idField, nameField, profilePicField])
+        def fragmentDefinition = new FragmentDefinition("friendFields", "User", selectionSet)
+
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
         then:
         document.definitions.size() == 2
         document.definitions[0] == queryDefinition
         document.definitions[1] == fragmentDefinition
     }
 
-    def "parse inline fragment"(){
+    def "parse inline fragment"() {
         given:
         def input = """
                     query InlineFragmentTyping {
@@ -173,13 +162,29 @@ class ParserTest extends Specification {
                     }
                 """
 
+        and: "expected query definition"
+
+        def handleField = new Field("handle")
+
+        def userSelectionSet = new SelectionSet([new Field("friends", new SelectionSet([new Field("count")]))])
+        def userFragment = new InlineFragment("User", userSelectionSet)
+
+        def pageSelectionSet = new SelectionSet([new Field("likers", new SelectionSet([new Field("count")]))])
+        def pageFragment = new InlineFragment("Page", pageSelectionSet)
+
+
+        def handlesArgument = new ArrayValue([new StringValue("zuck"), new StringValue("cocacola")])
+        def profilesField = new Field("profiles", [new Argument("handles", handlesArgument)], new SelectionSet([handleField, userFragment, pageFragment]))
+
+        def queryDefinition = new OperationDefinition("InlineFragmentTyping", OperationDefinition.Operation.QUERY,
+                new SelectionSet([profilesField]))
 
         when:
         def document = new Parser().parseDocument(input)
 
-
         then:
         document.definitions.size() == 1
+        document.definitions[0] == queryDefinition
 
     }
 
