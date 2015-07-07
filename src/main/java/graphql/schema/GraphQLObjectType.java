@@ -2,10 +2,17 @@ package graphql.schema;
 
 
 import java.util.List;
+import java.util.Map;
 
-public class GraphQLObjectType {
+public class GraphQLObjectType implements GraphQLType,GraphQLOutputType{
 
     String name;
+
+    private Map<String,GraphQLFieldDefinition> fieldDefinitions;
+
+    public GraphQLFieldDefinition getFieldDefinition(String name){
+        return fieldDefinitions.get(name);
+    }
 
 
     public List<GraphQLFieldDefinition> getFieldDefinitions() {

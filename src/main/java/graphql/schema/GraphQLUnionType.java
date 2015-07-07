@@ -1,5 +1,5 @@
 package graphql.schema;
 
 
-public class GraphQLUnionType {
+public class GraphQLUnionType implements GraphQLType,GraphQLOutputType{
 }

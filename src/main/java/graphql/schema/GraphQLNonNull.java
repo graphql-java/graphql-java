@@ -1,5 +1,5 @@
 package graphql.schema;
 
 
-public class GraphQLNonNull {
+public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType {
 }

@@ -3,7 +3,7 @@ package graphql.schema;
 
 import java.util.List;
 
-public class GraphQLInterfaceType {
+public class GraphQLInterfaceType implements GraphQLType,GraphQLOutputType{
 
     String name;
 
