@@ -10,6 +10,11 @@ public class GraphQLObjectType implements GraphQLType,GraphQLOutputType{
 
     private Map<String,GraphQLFieldDefinition> fieldDefinitions;
 
+    public GraphQLObjectType(String name, Map<String, GraphQLFieldDefinition> fieldDefinitions) {
+        this.name = name;
+        this.fieldDefinitions = fieldDefinitions;
+    }
+
     public GraphQLFieldDefinition getFieldDefinition(String name){
         return fieldDefinitions.get(name);
     }
