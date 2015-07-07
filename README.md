@@ -7,7 +7,7 @@ It's an early version, but the query parser should be near 100%.
 
 The execution part is WIP, and validation, error handling and more is still missing.  
 
-A very simple (yet complete) use-case how to use graphql-java: [src/test/groovy/graphql/GraphQLTest.groovy](GraphQL Test)
+For a very simple (yet complete) use-case how to use graphql-java: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
 
 ### Details
 
