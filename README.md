@@ -16,8 +16,11 @@ Instead hooks/callbacks are provided to fetch the data.
 
 The implementation is in Java 7, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
 
-The query parsing is done with [ANTLR](www.antlr.org). The grammar is [src/main/grammar/Graphql.g4](here).
+The query parsing is done with [ANTLR](www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
 
  
+### Feedback
+
+I would appreciate any feedback via Twitter [@andimarek](https://twitter.com/andimarek) or Pull request/Issue.
 
 
