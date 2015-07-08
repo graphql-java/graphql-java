@@ -7,10 +7,15 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType {
 
     private final String name;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
-//    private final List<GraphQLInterfaceType>
+    private final List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
     public GraphQLObjectType(String name, List<GraphQLFieldDefinition> fieldDefinitions) {
+        this(name, fieldDefinitions, Collections.<GraphQLInterfaceType>emptyList());
+    }
+
+    public GraphQLObjectType(String name, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
         this.name = name;
+        this.interfaces.addAll(interfaces);
         buildDefinitionMap(fieldDefinitions);
     }
 
