@@ -1,53 +1,54 @@
 package graphql.schema;
 
 
+import java.util.List;
+import java.util.Map;
+
 public class GraphQLFieldDefinition {
 
-    String name;
-    GraphQLOutputType type;
-    Object defaultValue;
-    ResolveValue resolveValue;
+    private final String name;
+    private final GraphQLOutputType type;
+    private final ResolveValue resolveValue;
 
-    public GraphQLFieldDefinition() {
 
-    }
-
-    public GraphQLFieldDefinition(String name, GraphQLOutputType type, Object defaultValue, ResolveValue resolveValue) {
+    public GraphQLFieldDefinition(String name, GraphQLOutputType type) {
         this.name = name;
         this.type = type;
-        this.defaultValue = defaultValue;
+        this.resolveValue = new ResolveValue() {
+            @Override
+            public Object resolve(Object source, List<Object> arguments) {
+                return ((Map<String, Object>) source).get(GraphQLFieldDefinition.this.name);
+            }
+        };
+    }
+
+    public GraphQLFieldDefinition(String name, GraphQLOutputType type, ResolveValue resolveValue) {
+        this.name = name;
+        this.type = type;
         this.resolveValue = resolveValue;
+    }
+
+    public GraphQLFieldDefinition(String name, GraphQLOutputType type, final Object value) {
+        this.name = name;
+        this.type = type;
+        this.resolveValue = new ResolveValue() {
+            @Override
+            public Object resolve(Object source, List<Object> arguments) {
+                return value;
+            }
+        };
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public GraphQLOutputType getType() {
         return type;
     }
 
-    public void setType(GraphQLOutputType type) {
-        this.type = type;
-    }
-
-    public Object getDefaultValue() {
-        return defaultValue;
-    }
-
-    public void setDefaultValue(Object defaultValue) {
-        this.defaultValue = defaultValue;
-    }
-
     public ResolveValue getResolveValue() {
         return resolveValue;
-    }
-
-    public void setResolveValue(ResolveValue resolveValue) {
-        this.resolveValue = resolveValue;
     }
 }

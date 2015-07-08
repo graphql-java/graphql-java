@@ -1,30 +1,39 @@
 package graphql.schema;
 
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-public class GraphQLObjectType implements GraphQLType,GraphQLOutputType{
+public class GraphQLObjectType implements GraphQLType, GraphQLOutputType {
 
-    String name;
+    private final String name;
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
+//    private final List<GraphQLInterfaceType>
 
-    private Map<String,GraphQLFieldDefinition> fieldDefinitions;
-
-    public GraphQLObjectType(String name, Map<String, GraphQLFieldDefinition> fieldDefinitions) {
+    public GraphQLObjectType(String name, List<GraphQLFieldDefinition> fieldDefinitions) {
         this.name = name;
-        this.fieldDefinitions = fieldDefinitions;
+        buildDefinitionMap(fieldDefinitions);
     }
 
-    public GraphQLFieldDefinition getFieldDefinition(String name){
-        return fieldDefinitions.get(name);
+    private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
+        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
+            fieldDefinitionsByName.put(fieldDefinition.getName(), fieldDefinition);
+        }
+    }
+
+    public GraphQLFieldDefinition getFieldDefinition(String name) {
+        return fieldDefinitionsByName.get(name);
     }
 
 
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
+        return new ArrayList<>(fieldDefinitionsByName.values());
+    }
+
+    public List<Class> getInterfaces() {
         return null;
     }
 
-    public List<Class> getInterfaces(){
-        return null;
+    public String getName() {
+        return name;
     }
 }

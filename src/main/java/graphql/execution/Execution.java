@@ -72,11 +72,12 @@ public class Execution {
             Object root,
             OperationDefinition operationDefinition) {
         GraphQLObjectType operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), executionContext.getOperationDefinition());
+
         Map<String, List<Field>> fields = new LinkedHashMap<>();
-        collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<>(), fields);
-//        var fields = collectFields(exeContext, type, operation.selectionSet, {}, {});
+        collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<String>(), fields);
+
+
         if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-//            return executeFieldsSerially(exeContext, type, root, fields);
             throw new RuntimeException("not yet");
         }
         Object result = executeFields(executionContext, operationRootType, root, fields);
@@ -96,7 +97,10 @@ public class Execution {
 
     private Object resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
-        Object resolvedValue = fieldDef.getResolveValue().resolve();
+        if (fieldDef == null) return null;
+        Object resolvedValue;
+        resolvedValue = fieldDef.getResolveValue().resolve(source, null);
+
 
         return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
     }
@@ -109,21 +113,12 @@ public class Execution {
             return completed;
 
         } else if (fieldType instanceof GraphQLList) {
-            GraphQLList graphQLList = (GraphQLList) fieldType;
-            List<Object> items = (List<Object>) result;
-            List<Object> completedResults = new ArrayList<>();
-            for (Object item : items) {
-                completedResults.add(completeValue(executionContext, graphQLList.getWrappedType(), fields, item));
-            }
-            return completedResults;
+            return completeValueForList(executionContext, (GraphQLList) fieldType, fields, (List<Object>) result);
         } else if (fieldType instanceof GraphQLScalarType) {
-            GraphQLScalarType graphQLScalarType = (GraphQLScalarType) fieldType;
-            return graphQLScalarType.getCoercing().coerce(result);
+            return completeValueForScalar((GraphQLScalarType) fieldType, result);
         } else if (fieldType instanceof GraphQLEnumType) {
-            GraphQLEnumType graphQLEnumType = (GraphQLEnumType) fieldType;
-            return graphQLEnumType.getCoercing().coerce(result);
+            return completeValueForEnum((GraphQLEnumType) fieldType, result);
         }
-
 
         Map<String, List<Field>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
@@ -132,6 +127,26 @@ public class Execution {
             collectFields(executionContext, (GraphQLObjectType) fieldType, field.getSelectionSet(), visitedFragments, subFields);
         }
         return executeFields(executionContext, (GraphQLObjectType) fieldType, result, subFields);
+    }
+
+    private Object completeValueForEnum(GraphQLEnumType fieldType, Object result) {
+        GraphQLEnumType graphQLEnumType = fieldType;
+        return graphQLEnumType.getCoercing().coerce(result);
+    }
+
+    private Object completeValueForScalar(GraphQLScalarType fieldType, Object result) {
+        GraphQLScalarType graphQLScalarType = fieldType;
+        return graphQLScalarType.getCoercing().coerce(result);
+    }
+
+    private Object completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
+        GraphQLList graphQLList = fieldType;
+        List<Object> items = result;
+        List<Object> completedResults = new ArrayList<>();
+        for (Object item : items) {
+            completedResults.add(completeValue(executionContext, graphQLList.getWrappedType(), fields, item));
+        }
+        return completedResults;
     }
 
     private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
@@ -148,51 +163,62 @@ public class Execution {
         return parentType.getFieldDefinition(field.getName());
     }
 
+
     private void collectFields(ExecutionContext executionContext, GraphQLObjectType type, SelectionSet selectionSet, List<String> visitedFragments, Map<String, List<Field>> fields) {
 
         for (Selection selection : selectionSet.getSelections()) {
 
             if (selection instanceof Field) {
-                Field field = (Field) selection;
-                if (!shouldIncludeNode(executionContext, field.getDirectives())) {
-                    continue;
-                }
-                String name = getFieldEntryKey(field);
-                if (!fields.containsKey(name)) {
-                    fields.put(name, new ArrayList<>());
-                }
-                fields.get(name).add(field);
+                collectField(executionContext, fields, (Field) selection);
 
-            } else if (selection instanceof FragmentDefinition) {
-                FragmentDefinition fragmentDefinition = (FragmentDefinition) selection;
-                if (!shouldIncludeNode(executionContext, fragmentDefinition.getDirectives()) || !doesFragmentTypeApply(executionContext, selection, type)) {
-                    continue;
-                }
-                collectFields(executionContext, type, fragmentDefinition.getSelectionSet(), visitedFragments, fields);
+            } else if (selection instanceof InlineFragment) {
+                collectInlineFragment(executionContext, type, visitedFragments, fields, (InlineFragment) selection);
 
             } else if (selection instanceof FragmentSpread) {
-                FragmentSpread fragmentSpread = (FragmentSpread) selection;
-
-                if (visitedFragments.contains(fragmentSpread.getName()) ||
-                        !shouldIncludeNode(executionContext, fragmentSpread.getDirectives())) {
-                    continue;
-                }
-                visitedFragments.add(fragmentSpread.getName());
-                FragmentDefinition fragment = executionContext.getFragment(fragmentSpread.getName());
-                if (!shouldIncludeNode(executionContext, fragment.getDirectives()) ||
-                        !doesFragmentTypeApply(executionContext, selection, type)) {
-                    continue;
-                }
-                collectFields(
-                        executionContext,
-                        type,
-                        fragment.getSelectionSet(),
-                        visitedFragments,
-                        fields
-                );
+                collectFragmentSpread(executionContext, type, visitedFragments, fields, (FragmentSpread) selection);
             }
         }
 
+    }
+
+    private void collectFragmentSpread(ExecutionContext executionContext, GraphQLObjectType type, List<String> visitedFragments, Map<String, List<Field>> fields, FragmentSpread fragmentSpread) {
+
+        if (visitedFragments.contains(fragmentSpread.getName()) ||
+                !shouldIncludeNode(executionContext, fragmentSpread.getDirectives())) {
+            return;
+        }
+        visitedFragments.add(fragmentSpread.getName());
+        FragmentDefinition fragment = executionContext.getFragment(fragmentSpread.getName());
+        if (!shouldIncludeNode(executionContext, fragment.getDirectives()) ||
+                !doesFragmentTypeApply(executionContext, fragmentSpread, type)) {
+            return;
+        }
+        collectFields(
+                executionContext,
+                type,
+                fragment.getSelectionSet(),
+                visitedFragments,
+                fields
+        );
+    }
+
+    private void collectInlineFragment(ExecutionContext executionContext, GraphQLObjectType type, List<String> visitedFragments, Map<String, List<Field>> fields, InlineFragment inlineFragment) {
+        if (!shouldIncludeNode(executionContext, inlineFragment.getDirectives()) ||
+                !doesFragmentTypeApply(executionContext, inlineFragment, type)) {
+            return;
+        }
+        collectFields(executionContext, type, inlineFragment.getSelectionSet(), visitedFragments, fields);
+    }
+
+    private void collectField(ExecutionContext executionContext, Map<String, List<Field>> fields, Field field) {
+        if (!shouldIncludeNode(executionContext, field.getDirectives())) {
+            return;
+        }
+        String name = getFieldEntryKey(field);
+        if (!fields.containsKey(name)) {
+            fields.put(name, new ArrayList<Field>());
+        }
+        fields.get(name).add(field);
     }
 
     private String getFieldEntryKey(Field field) {
@@ -202,6 +228,7 @@ public class Execution {
 
 
     private boolean shouldIncludeNode(ExecutionContext executionContext, List<Directive> directives) {
+        // check directive values
         return true;
     }
 
