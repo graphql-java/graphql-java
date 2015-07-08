@@ -19,7 +19,7 @@ class ResolverTest extends Specification {
         VariableDefinition variableDefinition =new VariableDefinition("name", new Type("String"))
 
         when:
-        def resolvedValues = variables.getVariables(Fixtures.simpsonsSchema(),[variableDefinition],[name: 'homer'])
+        def resolvedValues = variables.getVariableValues(Fixtures.simpsonsSchema(),[variableDefinition],[name: 'homer'])
 
         then:
         resolvedValues['name'] == 'homer'
