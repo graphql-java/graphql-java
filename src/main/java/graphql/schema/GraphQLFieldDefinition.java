@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +10,7 @@ public class GraphQLFieldDefinition {
     private final String name;
     private final GraphQLOutputType type;
     private final ResolveValue resolveValue;
+    private final List<GraphQLFieldArgument> arguments = new ArrayList<>();
 
 
     public GraphQLFieldDefinition(String name, GraphQLOutputType type) {
@@ -21,6 +23,7 @@ public class GraphQLFieldDefinition {
             }
         };
     }
+
 
     public GraphQLFieldDefinition(String name, GraphQLOutputType type, ResolveValue resolveValue) {
         this.name = name;

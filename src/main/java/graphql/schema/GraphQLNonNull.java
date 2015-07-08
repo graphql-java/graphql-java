@@ -3,13 +3,14 @@ package graphql.schema;
 
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType {
 
-    private GraphQLType wrappedType;
+    private final GraphQLType wrappedType;
+
+    public GraphQLNonNull(GraphQLType wrappedType) {
+        this.wrappedType = wrappedType;
+    }
 
     public GraphQLType getWrappedType() {
         return wrappedType;
     }
 
-    public void setWrappedType(GraphQLType wrappedType) {
-        this.wrappedType = wrappedType;
-    }
 }
