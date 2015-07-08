@@ -13,6 +13,8 @@ public class GraphQLFieldDefinition {
     private final List<GraphQLFieldArgument> arguments = new ArrayList<>();
 
 
+
+
     public GraphQLFieldDefinition(String name, GraphQLOutputType type) {
         this.name = name;
         this.type = type;
@@ -53,5 +55,9 @@ public class GraphQLFieldDefinition {
 
     public ResolveValue getResolveValue() {
         return resolveValue;
+    }
+
+    public List<GraphQLFieldArgument> getArguments() {
+        return arguments;
     }
 }

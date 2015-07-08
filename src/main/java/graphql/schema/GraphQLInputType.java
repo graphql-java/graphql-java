@@ -1,5 +1,5 @@
 package graphql.schema;
 
 
-public interface GraphQLInputType {
+public interface GraphQLInputType extends GraphQLType{
 }

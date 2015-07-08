@@ -13,9 +13,8 @@ class GraphQLTest extends Specification {
     def "simple query"() {
         given:
         GraphQLFieldDefinition fieldDefinition = new GraphQLFieldDefinition("hello", GraphQLString, "world");
-        GraphQLObjectType graphQLObjectType = new GraphQLObjectType("RootQueryType", [fieldDefinition])
-        GraphQLSchema graphQLSchema = new GraphQLSchema()
-        graphQLSchema.queryType = graphQLObjectType
+        GraphQLObjectType queryType = new GraphQLObjectType("RootQueryType", [fieldDefinition])
+        GraphQLSchema graphQLSchema = new GraphQLSchema(queryType)
 
         when:
         def result = new GraphQL(graphQLSchema, '{ hello }').execute()
@@ -33,8 +32,7 @@ class GraphQLTest extends Specification {
         GraphQLFieldDefinition simpsonField = new GraphQLFieldDefinition('simpson', heroType, [id: '123', name: 'homer'])
         GraphQLObjectType queryType = new GraphQLObjectType("RootQueryType", [simpsonField])
 
-        GraphQLSchema graphQLSchema = new GraphQLSchema()
-        graphQLSchema.queryType = queryType
+        GraphQLSchema graphQLSchema = new GraphQLSchema(queryType)
 
         when:
         def result = new GraphQL(graphQLSchema, '{ simpson { id, name } }').execute()

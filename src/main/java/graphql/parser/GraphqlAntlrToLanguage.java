@@ -191,9 +191,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitTypeName(@NotNull GraphqlParser.TypeNameContext ctx) {
-        NamedType namedType = new NamedType(ctx.NAME().getText());
+        Type type = new Type(ctx.NAME().getText());
         if (getFromContextStack(ContextProperty.VariableDefinition,false) != null) {
-            ((VariableDefinition) getFromContextStack(ContextProperty.VariableDefinition)).setType(namedType);
+            ((VariableDefinition) getFromContextStack(ContextProperty.VariableDefinition)).setType(type);
         }
         return super.visitTypeName(ctx);
     }

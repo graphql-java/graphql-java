@@ -3,22 +3,31 @@ package graphql.schema;
 
 public class GraphQLSchema {
 
-    private GraphQLObjectType queryType;
-    private GraphQLObjectType mutationType;
+    private final GraphQLObjectType queryType;
+    private final GraphQLObjectType mutationType;
+
+    public GraphQLSchema(GraphQLObjectType queryType) {
+        this.queryType = queryType;
+        this.mutationType = null;
+    }
+
+
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType) {
+        this.queryType = queryType;
+        this.mutationType = mutationType;
+    }
 
     public GraphQLObjectType getQueryType() {
         return queryType;
     }
 
-    public void setQueryType(GraphQLObjectType queryType) {
-        this.queryType = queryType;
-    }
 
     public GraphQLObjectType getMutationType() {
         return mutationType;
     }
 
-    public void setMutationType(GraphQLObjectType mutationType) {
-        this.mutationType = mutationType;
+
+    public boolean isSupportingMutations() {
+        return mutationType != null;
     }
 }

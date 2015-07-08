@@ -55,7 +55,7 @@ class ParserTest extends Specification {
         def input = 'query getProfile($devicePicSize: Int){ me }'
 
         def expectedResult = new Document()
-        def variableDefinition = new VariableDefinition("devicePicSize", new NamedType("Int"))
+        def variableDefinition = new VariableDefinition("devicePicSize", new Type("Int"))
         def selectionSet = new SelectionSet([new Field("me")])
         def definition = new OperationDefinition("getProfile", OperationDefinition.Operation.QUERY, [variableDefinition], selectionSet)
         expectedResult.definitions.add(definition)
@@ -200,7 +200,7 @@ class ParserTest extends Specification {
         def experimentalField = new Field("experimentalField", [], [new Directive("if", new VariableReference("someTest"))])
         def controlField = new Field("controlField", [], [new Directive("unless", new VariableReference("someTest"))])
         def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
-                [new VariableDefinition("someTest", new NamedType("Boolean"))],
+                [new VariableDefinition("someTest", new Type("Boolean"))],
                 new SelectionSet([experimentalField, controlField]))
 
 
