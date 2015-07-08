@@ -1,7 +1,7 @@
 package graphql.schema;
 
 
-public class GraphQLEnumType implements NamedType, GraphQLInputType, GraphQLOutputType {
+public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType {
 
     String name;
 
