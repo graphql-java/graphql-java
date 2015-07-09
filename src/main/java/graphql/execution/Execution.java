@@ -233,6 +233,21 @@ public class Execution {
     }
 
     private boolean doesFragmentTypeApply(ExecutionContext executionContext, Selection selection, GraphQLObjectType type) {
+//        String typeCondition
+//        if(selection instanceof  InlineFragment){
+//            typeCondition = ((InlineFragment) selection).getTypeCondition();
+//        }else if( selection instanceof FragmentDefinition){
+//            typeCondition = ((FragmentDefinition) selection).getTypeCondition();
+//        }
+//        var conditionalType = typeFromAST(exeContext.schema, fragment.typeCondition);
+//        if (conditionalType === type) {
+//            return true;
+//        }
+//        if (conditionalType instanceof GraphQLInterfaceType ||
+//                conditionalType instanceof GraphQLUnionType) {
+//            return conditionalType.isPossibleType(type);
+//        }
+//        return false;
         return false;
     }
 }

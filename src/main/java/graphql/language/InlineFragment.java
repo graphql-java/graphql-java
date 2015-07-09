@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class InlineFragment implements Selection {
-    private String typeCondition;
+    private TypeName typeCondition;
     private List<Directive> directives = new ArrayList<>();
     private SelectionSet selectionSet;
 
@@ -13,27 +13,27 @@ public class InlineFragment implements Selection {
 
     }
 
-    public InlineFragment(String typeCondition) {
+    public InlineFragment(TypeName typeCondition) {
         this.typeCondition = typeCondition;
     }
 
-    public InlineFragment(String typeCondition, List<Directive> directives, SelectionSet selectionSet) {
+    public InlineFragment(TypeName typeCondition, List<Directive> directives, SelectionSet selectionSet) {
         this.typeCondition = typeCondition;
         this.directives = directives;
         this.selectionSet = selectionSet;
     }
 
-    public InlineFragment(String typeCondition, SelectionSet selectionSet) {
+    public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
         this.typeCondition = typeCondition;
         this.selectionSet = selectionSet;
     }
 
 
-    public String getTypeCondition() {
+    public TypeName getTypeCondition() {
         return typeCondition;
     }
 
-    public void setTypeCondition(String typeCondition) {
+    public void setTypeCondition(TypeName typeCondition) {
         this.typeCondition = typeCondition;
     }
 

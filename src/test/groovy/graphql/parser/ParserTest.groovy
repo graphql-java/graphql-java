@@ -2,6 +2,7 @@ package graphql.parser
 
 import graphql.language.*
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class ParserTest extends Specification {
 
@@ -55,7 +56,7 @@ class ParserTest extends Specification {
         def input = 'query getProfile($devicePicSize: Int){ me }'
 
         def expectedResult = new Document()
-        def variableDefinition = new VariableDefinition("devicePicSize", new Type("Int"))
+        def variableDefinition = new VariableDefinition("devicePicSize", new TypeName("Int"))
         def selectionSet = new SelectionSet([new Field("me")])
         def definition = new OperationDefinition("getProfile", OperationDefinition.Operation.QUERY, [variableDefinition], selectionSet)
         expectedResult.definitions.add(definition)
@@ -133,7 +134,7 @@ class ParserTest extends Specification {
         def nameField = new Field("name")
         def profilePicField = new Field("profilePic", [new Argument("size", new IntValue(50))])
         def selectionSet = new SelectionSet([idField, nameField, profilePicField])
-        def fragmentDefinition = new FragmentDefinition("friendFields", "User", selectionSet)
+        def fragmentDefinition = new FragmentDefinition("friendFields", new TypeName("User"), selectionSet)
 
 
         when:
@@ -166,10 +167,10 @@ class ParserTest extends Specification {
         def handleField = new Field("handle")
 
         def userSelectionSet = new SelectionSet([new Field("friends", new SelectionSet([new Field("count")]))])
-        def userFragment = new InlineFragment("User", userSelectionSet)
+        def userFragment = new InlineFragment(new TypeName("User"), userSelectionSet)
 
         def pageSelectionSet = new SelectionSet([new Field("likers", new SelectionSet([new Field("count")]))])
-        def pageFragment = new InlineFragment("Page", pageSelectionSet)
+        def pageFragment = new InlineFragment(new TypeName("Page"), pageSelectionSet)
 
 
         def handlesArgument = new ArrayValue([new StringValue("zuck"), new StringValue("cocacola")])
@@ -200,7 +201,7 @@ class ParserTest extends Specification {
         def experimentalField = new Field("experimentalField", [], [new Directive("if", new VariableReference("someTest"))])
         def controlField = new Field("controlField", [], [new Directive("unless", new VariableReference("someTest"))])
         def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
-                [new VariableDefinition("someTest", new Type("Boolean"))],
+                [new VariableDefinition("someTest", new TypeName("Boolean"))],
                 new SelectionSet([experimentalField, controlField]))
 
 
@@ -210,7 +211,38 @@ class ParserTest extends Specification {
         then:
         document.definitions[0] == queryDefinition
 
+    }
 
+    @Unroll
+    def "parse variable definition for type #typeString"() {
+        given:
+        def input = """
+            query myQuery(\$someTest: $typeString) {
+              hello }
+            """
+
+        and: "expected query"
+
+        def helloField = new Field("hello")
+        def variableDefinition = new VariableDefinition("someTest",type)
+        def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
+                [variableDefinition],
+                new SelectionSet([helloField]))
+
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions[0] == queryDefinition
+
+        where:
+        typeString | type
+        "String"                 | new TypeName("String")
+        "[String]"               | new ListType(new TypeName("String"))
+        "Boolean!"               | new NonNullType(new TypeName("Boolean"))
+        "[Int]!"                 | new NonNullType(new ListType(new TypeName("Int")))
+        "[[String!]]"            | new ListType(new ListType(new NonNullType(new TypeName("String"))))
     }
 
 

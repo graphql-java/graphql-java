@@ -56,7 +56,7 @@ public class Resolver {
 
 
     private Object getVariableValue(GraphQLSchema schema, VariableDefinition variableDefinition, Object inputValue) {
-        GraphQLType type = SchemaUtil.findType(schema, variableDefinition.getType().getName());
+        GraphQLType type = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
 
         if (!isValid(type, inputValue)) {
             throw new GraphQLException("Invalid value for type");

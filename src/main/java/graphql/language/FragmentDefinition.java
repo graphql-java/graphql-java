@@ -5,7 +5,7 @@ import java.util.List;
 
 public class FragmentDefinition implements Definition {
     private String name;
-    private String typeCondition;
+    private TypeName typeCondition;
     private List<Directive> directives;
     private SelectionSet selectionSet;
 
@@ -13,11 +13,12 @@ public class FragmentDefinition implements Definition {
 
     }
 
-    public FragmentDefinition(String name, String typeCondition) {
+    public FragmentDefinition(String name, TypeName typeCondition) {
         this.name = name;
         this.typeCondition = typeCondition;
     }
-    public FragmentDefinition(String name, String typeCondition,SelectionSet selectionSet) {
+
+    public FragmentDefinition(String name, TypeName typeCondition, SelectionSet selectionSet) {
         this.name = name;
         this.typeCondition = typeCondition;
         this.selectionSet = selectionSet;
@@ -32,11 +33,11 @@ public class FragmentDefinition implements Definition {
         this.name = name;
     }
 
-    public String getTypeCondition() {
+    public TypeName getTypeCondition() {
         return typeCondition;
     }
 
-    public void setTypeCondition(String typeCondition) {
+    public void setTypeCondition(TypeName typeCondition) {
         this.typeCondition = typeCondition;
     }
 

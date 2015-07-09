@@ -1,6 +1,7 @@
 package graphql.parser;
 
 
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiTypeLoader;
 import graphql.language.*;
 import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
@@ -21,6 +22,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         FragmentSpread,
         SelectionSet,
         VariableDefinition,
+        ListType,
+        NonNullType
     }
 
     static class ContextEntry {
@@ -54,16 +57,16 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     private Object getFromContextStack(ContextProperty contextProperty) {
-        return getFromContextStack(contextProperty,false);
+        return getFromContextStack(contextProperty, false);
     }
 
-    private Object getFromContextStack(ContextProperty contextProperty,boolean required) {
+    private Object getFromContextStack(ContextProperty contextProperty, boolean required) {
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.contextProperty == contextProperty) {
                 return contextEntry.value;
             }
         }
-        if(required) throw new RuntimeException("not found" + contextProperty);
+        if (required) throw new RuntimeException("not found" + contextProperty);
         return null;
     }
 
@@ -130,7 +133,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx) {
         FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(fragmentSpread);
-        addContextProperty(ContextProperty.FragmentSpread,fragmentSpread);
+        addContextProperty(ContextProperty.FragmentSpread, fragmentSpread);
         super.visitFragmentSpread(ctx);
         popContext();
         return null;
@@ -157,13 +160,14 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitFragmentDefinition(@NotNull GraphqlParser.FragmentDefinitionContext ctx) {
         FragmentDefinition fragmentDefinition = new FragmentDefinition();
         fragmentDefinition.setName(ctx.fragmentName().getText());
-        fragmentDefinition.setTypeCondition(ctx.typeCondition().getText());
+        fragmentDefinition.setTypeCondition(new TypeName(ctx.typeCondition().getText()));
         addContextProperty(ContextProperty.FragmentDefinition, fragmentDefinition);
         result.getDefinitions().add(fragmentDefinition);
         super.visitFragmentDefinition(ctx);
         popContext();
         return null;
     }
+
 
     @Override
     public Void visitSelectionSet(@NotNull GraphqlParser.SelectionSetContext ctx) {
@@ -191,11 +195,65 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitTypeName(@NotNull GraphqlParser.TypeNameContext ctx) {
-        Type type = new Type(ctx.NAME().getText());
-        if (getFromContextStack(ContextProperty.VariableDefinition,false) != null) {
-            ((VariableDefinition) getFromContextStack(ContextProperty.VariableDefinition)).setType(type);
+
+        for (ContextEntry contextEntry : contextStack) {
+            TypeName typeName = new TypeName(ctx.NAME().getText());
+            if (contextEntry.value instanceof ListType) {
+                ((ListType) contextEntry.value).setType(typeName);
+                break;
+            }
+            if (contextEntry.value instanceof NonNullType) {
+                ((NonNullType) contextEntry.value).setType(typeName);
+                break;
+            }
+            if (contextEntry.value instanceof VariableDefinition) {
+                ((VariableDefinition) contextEntry.value).setType(typeName);
+                break;
+            }
         }
         return super.visitTypeName(ctx);
+    }
+
+    @Override
+    public Void visitNonNullType(@NotNull GraphqlParser.NonNullTypeContext ctx) {
+        NonNullType nonNullType = new NonNullType();
+        for (ContextEntry contextEntry : contextStack) {
+            if (contextEntry.value instanceof ListType) {
+                ((ListType) contextEntry.value).setType(nonNullType);
+                break;
+            }
+            if (contextEntry.value instanceof VariableDefinition) {
+                ((VariableDefinition) contextEntry.value).setType(nonNullType);
+                break;
+            }
+        }
+        addContextProperty(ContextProperty.NonNullType, nonNullType);
+        super.visitNonNullType(ctx);
+        popContext();
+        return null;
+    }
+
+    @Override
+    public Void visitListType(@NotNull GraphqlParser.ListTypeContext ctx) {
+        ListType listType = new ListType();
+        for (ContextEntry contextEntry : contextStack) {
+            if (contextEntry.value instanceof ListType) {
+                ((ListType) contextEntry.value).setType(listType);
+                break;
+            }
+            if (contextEntry.value instanceof NonNullType) {
+                ((NonNullType) contextEntry.value).setType(listType);
+                break;
+            }
+            if (contextEntry.value instanceof VariableDefinition) {
+                ((VariableDefinition) contextEntry.value).setType(listType);
+                break;
+            }
+        }
+        addContextProperty(ContextProperty.ListType, listType);
+        super.visitListType(ctx);
+        popContext();
+        return null;
     }
 
     @Override
@@ -208,7 +266,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitInlineFragment(@NotNull GraphqlParser.InlineFragmentContext ctx) {
-        InlineFragment inlineFragment = new InlineFragment(ctx.typeCondition().getText());
+        InlineFragment inlineFragment = new InlineFragment(new TypeName(ctx.typeCondition().getText()));
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(inlineFragment);
         addContextProperty(ContextProperty.InlineFragment, inlineFragment);
         super.visitInlineFragment(ctx);
@@ -218,18 +276,18 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitDirective(@NotNull GraphqlParser.DirectiveContext ctx) {
-        Directive directive = new Directive(ctx.NAME().getText(),getValue(ctx.valueWithVariable()));
-        for(ContextEntry contextEntry: contextStack){
-            if(contextEntry.contextProperty == ContextProperty.Field){
+        Directive directive = new Directive(ctx.NAME().getText(), getValue(ctx.valueWithVariable()));
+        for (ContextEntry contextEntry : contextStack) {
+            if (contextEntry.contextProperty == ContextProperty.Field) {
                 ((Field) contextEntry.value).getDirectives().add(directive);
                 break;
-            }else if(contextEntry.contextProperty == ContextProperty.FragmentDefinition){
+            } else if (contextEntry.contextProperty == ContextProperty.FragmentDefinition) {
                 ((Field) contextEntry.value).getDirectives().add(directive);
                 break;
-            }else if(contextEntry.contextProperty == ContextProperty.FragmentSpread){
+            } else if (contextEntry.contextProperty == ContextProperty.FragmentSpread) {
                 ((FragmentSpread) contextEntry.value).getDirectives().add(directive);
                 break;
-            }else if(contextEntry.contextProperty == ContextProperty.InlineFragment){
+            } else if (contextEntry.contextProperty == ContextProperty.InlineFragment) {
                 ((InlineFragment) contextEntry.value).getDirectives().add(directive);
                 break;
             }
