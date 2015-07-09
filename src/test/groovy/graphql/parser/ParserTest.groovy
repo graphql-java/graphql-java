@@ -192,14 +192,16 @@ class ParserTest extends Specification {
         given:
         def input = """
             query myQuery(\$someTest: Boolean) {
-              experimentalField @if: \$someTest,
-              controlField @unless: \$someTest }
+              experimentalField @skip(if: \$someTest),
+              controlField @include(if: \$someTest) }
             """
 
         and: "expected query"
+        def skipDirective = new Directive("skip", [new Argument("if", new VariableReference("someTest"))])
+        def experimentalField = new Field("experimentalField", [], [skipDirective])
+        def includeDirective = new Directive("include", [new Argument("if", new VariableReference("someTest"))]);
+        def controlField = new Field("controlField", [], [includeDirective])
 
-        def experimentalField = new Field("experimentalField", [], [new Directive("if", new VariableReference("someTest"))])
-        def controlField = new Field("controlField", [], [new Directive("unless", new VariableReference("someTest"))])
         def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
                 [new VariableDefinition("someTest", new TypeName("Boolean"))],
                 new SelectionSet([experimentalField, controlField]))
@@ -224,7 +226,7 @@ class ParserTest extends Specification {
         and: "expected query"
 
         def helloField = new Field("hello")
-        def variableDefinition = new VariableDefinition("someTest",type)
+        def variableDefinition = new VariableDefinition("someTest", type)
         def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
                 [variableDefinition],
                 new SelectionSet([helloField]))
@@ -237,12 +239,12 @@ class ParserTest extends Specification {
         document.definitions[0] == queryDefinition
 
         where:
-        typeString | type
-        "String"                 | new TypeName("String")
-        "[String]"               | new ListType(new TypeName("String"))
-        "Boolean!"               | new NonNullType(new TypeName("Boolean"))
-        "[Int]!"                 | new NonNullType(new ListType(new TypeName("Int")))
-        "[[String!]]"            | new ListType(new ListType(new NonNullType(new TypeName("String"))))
+        typeString    | type
+        "String"      | new TypeName("String")
+        "[String]"    | new ListType(new TypeName("String"))
+        "Boolean!"    | new NonNullType(new TypeName("Boolean"))
+        "[Int]!"      | new NonNullType(new ListType(new TypeName("Int")))
+        "[[String!]]" | new ListType(new ListType(new NonNullType(new TypeName("String"))))
     }
 
 

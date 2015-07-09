@@ -1,17 +1,28 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class Directive {
     private String name;
-    private Value value;
+    private final List<Argument> arguments = new ArrayList<>();
 
     public Directive() {
 
     }
 
-    public Directive(String name, Value value) {
+    public Directive(String name) {
         this.name = name;
-        this.value = value;
+    }
+
+    public Directive(String name, List<Argument> arguments) {
+        this.name = name;
+        this.arguments.addAll(arguments);
+    }
+
+    public List<Argument> getArguments() {
+        return arguments;
     }
 
     public String getName() {
@@ -22,14 +33,6 @@ public class Directive {
         this.name = name;
     }
 
-    public Value getValue() {
-        return value;
-    }
-
-    public void setValue(Value value) {
-        this.value = value;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -38,14 +41,14 @@ public class Directive {
         Directive directive = (Directive) o;
 
         if (name != null ? !name.equals(directive.name) : directive.name != null) return false;
-        return !(value != null ? !value.equals(directive.value) : directive.value != null);
+        return !(arguments != null ? !arguments.equals(directive.arguments) : directive.arguments != null);
 
     }
 
     @Override
     public int hashCode() {
         int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (arguments != null ? arguments.hashCode() : 0);
         return result;
     }
 
@@ -53,7 +56,7 @@ public class Directive {
     public String toString() {
         return "Directive{" +
                 "name='" + name + '\'' +
-                ", value=" + value +
+                ", arguments=" + arguments +
                 '}';
     }
 }

@@ -23,7 +23,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         SelectionSet,
         VariableDefinition,
         ListType,
-        NonNullType
+        NonNullType,
+        Directive
     }
 
     static class ContextEntry {
@@ -259,8 +260,12 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitArgument(@NotNull GraphqlParser.ArgumentContext ctx) {
         Argument argument = new Argument(ctx.NAME().getText(), getValue(ctx.valueWithVariable()));
-        Field field = (Field) getFromContextStack(ContextProperty.Field);
-        field.getArguments().add(argument);
+        if (getFromContextStack(ContextProperty.Directive, false) != null) {
+            ((Directive) getFromContextStack(ContextProperty.Directive)).getArguments().add(argument);
+        } else {
+            Field field = (Field) getFromContextStack(ContextProperty.Field);
+            field.getArguments().add(argument);
+        }
         return super.visitArgument(ctx);
     }
 
@@ -276,7 +281,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitDirective(@NotNull GraphqlParser.DirectiveContext ctx) {
-        Directive directive = new Directive(ctx.NAME().getText(), getValue(ctx.valueWithVariable()));
+        Directive directive = new Directive(ctx.NAME().getText());
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.contextProperty == ContextProperty.Field) {
                 ((Field) contextEntry.value).getDirectives().add(directive);
@@ -292,8 +297,10 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
                 break;
             }
         }
-
-        return super.visitDirective(ctx);
+        addContextProperty(ContextProperty.Directive, directive);
+        super.visitDirective(ctx);
+        popContext();
+        return null;
     }
 
     private Value getValue(GraphqlParser.ValueWithVariableContext ctx) {

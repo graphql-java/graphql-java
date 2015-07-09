@@ -95,7 +95,7 @@ objectFieldWithVariable : NAME ':' valueWithVariable;
 
 directives : directive+;
 
-directive :'@' NAME | '@' NAME ':' valueWithVariable;
+directive :'@' NAME arguments?;
 
 // Types
 

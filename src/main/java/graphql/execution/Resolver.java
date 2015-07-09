@@ -30,16 +30,6 @@ public class Resolver {
         return result;
     }
 
-    public Object getDirectiveValue(GraphQLDirective graphQLDirective, List<Directive> directives, Map<String, Object> variables) {
-        // type of diretive?
-        for (Directive directive : directives) {
-            if (directive.getName().equals(graphQLDirective.getName())) {
-                return coerceValueAst(null/*TODO:fix*/, directive.getValue(), variables);
-            }
-        }
-        return null;
-
-    }
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
         Map<String, Argument> result = new LinkedHashMap<>();
@@ -114,8 +104,8 @@ public class Resolver {
     }
 
     private Object coerceValueAst(GraphQLType type, Value inputValue, Map<String, Object> variables) {
-        if(inputValue instanceof VariableReference){
-           return variables.get(((VariableReference) inputValue).getName());
+        if (inputValue instanceof VariableReference) {
+            return variables.get(((VariableReference) inputValue).getName());
         }
         if (type instanceof GraphQLScalarType) {
             return ((GraphQLScalarType) type).getCoercing().coerceLiteral(inputValue);

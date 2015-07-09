@@ -9,7 +9,7 @@ import static graphql.schema.GraphQLFieldArgument.newFieldArgument;
 
 public class Directives {
 
-    public static GraphQLDirective includeDirective = GraphQLDirective.newDirective()
+    public static GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()
             .name("include")
             .description("Directs the executor to include this field or fragment only when the `if` argument is true")
             .argument(
@@ -24,7 +24,7 @@ public class Directives {
             .onField(true)
             .build();
 
-    public static GraphQLDirective skipDirective = GraphQLDirective.newDirective()
+    public static GraphQLDirective SkipDirective = GraphQLDirective.newDirective()
             .name("skip")
             .description(" 'Directs the executor to skip this field or fragment when the `if`'argument is true.")
             .argument(

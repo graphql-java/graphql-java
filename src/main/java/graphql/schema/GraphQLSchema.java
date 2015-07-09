@@ -7,8 +7,7 @@ public class GraphQLSchema {
     private final GraphQLObjectType mutationType;
 
     public GraphQLSchema(GraphQLObjectType queryType) {
-        this.queryType = queryType;
-        this.mutationType = null;
+        this(queryType, null);
     }
 
 
@@ -29,5 +28,24 @@ public class GraphQLSchema {
 
     public boolean isSupportingMutations() {
         return mutationType != null;
+    }
+
+    public static class Builder {
+        private GraphQLObjectType queryType;
+        private GraphQLObjectType mutationType;
+
+        public Builder setQueryType(GraphQLObjectType queryType) {
+            this.queryType = queryType;
+            return this;
+        }
+
+        public Builder setMutationType(GraphQLObjectType mutationType) {
+            this.mutationType = mutationType;
+            return this;
+        }
+
+        public GraphQLSchema build() {
+            return new GraphQLSchema(queryType, mutationType);
+        }
     }
 }

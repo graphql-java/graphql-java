@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.Directives;
 import graphql.language.*;
 import graphql.schema.GraphQLObjectType;
 
@@ -8,7 +9,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Directives.*;
+
 public class FieldCollector {
+
+    private Resolver resolver;
+
+    public FieldCollector() {
+        resolver = new Resolver();
+    }
 
 
     public void collectFields(ExecutionContext executionContext, GraphQLObjectType type, SelectionSet selectionSet, List<String> visitedFragments, Map<String, List<Field>> fields) {
@@ -75,8 +84,28 @@ public class FieldCollector {
 
 
     private boolean shouldIncludeNode(ExecutionContext executionContext, List<Directive> directives) {
-        // check directive values
+
+        Directive skipDirective = findDirective(directives, SkipDirective.getName());
+        if (skipDirective != null) {
+            Map<String, Object> argumentValues = resolver.getArgumentValues(SkipDirective.getArguments(), skipDirective.getArguments(), executionContext.getVariables());
+            return !(Boolean) argumentValues.get("if");
+        }
+
+
+        Directive includeDirective = findDirective(directives, IncludeDirective.getName());
+        if (includeDirective != null) {
+            Map<String, Object> argumentValues = resolver.getArgumentValues(IncludeDirective.getArguments(), includeDirective.getArguments(), executionContext.getVariables());
+            return (Boolean) argumentValues.get("if");
+        }
+
         return true;
+    }
+
+    private Directive findDirective(List<Directive> directives, String name) {
+        for (Directive directive : directives) {
+            if (directive.getName().equals(name)) return directive;
+        }
+        return null;
     }
 
     private boolean doesFragmentTypeApply(ExecutionContext executionContext, Selection selection, GraphQLObjectType type) {
