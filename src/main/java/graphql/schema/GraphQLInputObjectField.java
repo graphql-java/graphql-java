@@ -7,6 +7,10 @@ public class GraphQLInputObjectField {
     private final GraphQLInputType type;
     private final Object defaultValue;
 
+    public GraphQLInputObjectField(String name, GraphQLInputType type) {
+        this(name, type, null);
+    }
+
     public GraphQLInputObjectField(String name, GraphQLInputType type, Object defaultValue) {
         this.name = name;
         this.type = type;

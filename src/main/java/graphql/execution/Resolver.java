@@ -8,9 +8,7 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.schema.*;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Resolver {
 
@@ -76,8 +74,46 @@ public class Resolver {
     private Object coerceValue(GraphQLType graphQLType, Object value) {
         if (graphQLType instanceof GraphQLScalarType) {
             return coerceValueForScalar((GraphQLScalarType) graphQLType, value);
+        } else if (graphQLType instanceof GraphQLEnumType) {
+            return coerceValueForEnum((GraphQLEnumType) graphQLType, value);
+        } else if (graphQLType instanceof GraphQLList) {
+            return coerceValueForList((GraphQLList) graphQLType, value);
+        } else if (graphQLType instanceof GraphQLInputObjectType) {
+            return coerceValueForInputObjectField((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
+        } else if (graphQLType instanceof GraphQLNonNull) {
+            return coerceValue(((GraphQLNonNull) graphQLType).getWrappedType(), value);
         }
         return null;
+    }
+
+    private Object coerceValueForInputObjectField(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
+            Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
+            result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
+
+        }
+        return result;
+    }
+
+    private Object coerceValueForScalar(GraphQLScalarType graphQLScalarType, Object value) {
+        return graphQLScalarType.getCoercing().coerce(value);
+    }
+
+    private Object coerceValueForEnum(GraphQLEnumType graphQLEnumType, Object value) {
+        return graphQLEnumType.getCoercing().coerce(value);
+    }
+
+    private List coerceValueForList(GraphQLList graphQLList, Object value) {
+        if (value instanceof Iterable) {
+            List<Object> result = new ArrayList<>();
+            for (Object val : (Iterable) value) {
+                result.add(coerceValue(graphQLList.getWrappedType(), val));
+            }
+            return result;
+        } else {
+            return Collections.singletonList(coerceValue(graphQLList.getWrappedType(), value));
+        }
     }
 
     private Object coerceValueAst(GraphQLType type, Value inputValue, Map<String, Object> variables) {
@@ -87,7 +123,5 @@ public class Resolver {
         return null;
     }
 
-    private Object coerceValueForScalar(GraphQLScalarType graphQLScalarType, Object value) {
-        return graphQLScalarType.getCoercing().coerce(value);
-    }
+
 }

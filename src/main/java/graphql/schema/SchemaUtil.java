@@ -22,6 +22,10 @@ public class SchemaUtil {
             collectTypesForInterfaces((GraphQLInterfaceType) root, result);
         } else if (root instanceof GraphQLUnionType) {
             collectTypesForUnions((GraphQLUnionType) root, result);
+        } else if (root instanceof GraphQLInputObjectType) {
+            result.put(((GraphQLInputObjectType) root).getName(),root);
+        } else {
+            throw new RuntimeException("Unknown type " + root);
         }
     }
 

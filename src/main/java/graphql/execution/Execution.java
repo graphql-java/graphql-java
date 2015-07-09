@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.GraphQLException;
 import graphql.language.*;
 import graphql.schema.*;
 
@@ -12,48 +13,11 @@ public class Execution {
 
     }
 
-    public ExecutionResult execute(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, String> args) {
-        ExecutionContext executionContext = buildExecutionContext(graphQLSchema, root, document, operationName, args);
+    public ExecutionResult execute(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
+        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new Resolver());
+        ExecutionContext executionContext = executionContextBuilder.build(graphQLSchema, root, document, operationName, args);
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
-
-    private ExecutionContext buildExecutionContext(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, String> args) {
-        Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-        Map<String, OperationDefinition> operationsByName = new LinkedHashMap<>();
-
-        for (Definition definition : document.getDefinitions()) {
-            if (definition instanceof OperationDefinition) {
-                OperationDefinition operationDefinition = (OperationDefinition) definition;
-                operationsByName.put(operationDefinition.getName(), operationDefinition);
-            }
-            if (definition instanceof FragmentDefinition) {
-                FragmentDefinition fragmentDefinition = (FragmentDefinition) definition;
-                fragmentsByName.put(fragmentDefinition.getName(), fragmentDefinition);
-            }
-        }
-        if (operationName != null && operationsByName.size() > 1) {
-            throw new RuntimeException("missing operation name");
-        }
-        OperationDefinition operation;
-        if (operationName == null) {
-            operation = operationsByName.values().iterator().next();
-        } else {
-            operation = operationsByName.get(operationName);
-        }
-
-        if (operation == null) {
-            throw new RuntimeException();
-        }
-
-        ExecutionContext executionContext = new ExecutionContext();
-        executionContext.setGraphQLSchema(graphQLSchema);
-        executionContext.setOperationDefinition(operation);
-        executionContext.setRoot(root);
-        executionContext.setFragmentsByName(fragmentsByName);
-        //TODO: Variables
-        return executionContext;
-    }
-
 
     private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
         if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
@@ -63,7 +27,7 @@ public class Execution {
             return graphQLSchema.getQueryType();
 
         } else {
-            throw new RuntimeException();
+            throw new GraphQLException();
         }
     }
 

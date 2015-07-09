@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.language.Argument;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,9 +14,6 @@ public class GraphQLFieldDefinition {
     private final ResolveValue resolveValue;
     private final List<GraphQLFieldArgument> arguments = new ArrayList<>();
 
-
-
-
     public GraphQLFieldDefinition(String name, GraphQLOutputType type) {
         this.name = name;
         this.type = type;
@@ -24,6 +23,18 @@ public class GraphQLFieldDefinition {
                 return ((Map<String, Object>) source).get(GraphQLFieldDefinition.this.name);
             }
         };
+    }
+
+    public GraphQLFieldDefinition(String name, GraphQLOutputType type, List<GraphQLFieldArgument> arguments) {
+        this.name = name;
+        this.type = type;
+        this.resolveValue = new ResolveValue() {
+            @Override
+            public Object resolve(Object source, List<Object> arguments) {
+                return null;
+            }
+        };
+        this.arguments.addAll(arguments);
     }
 
 
