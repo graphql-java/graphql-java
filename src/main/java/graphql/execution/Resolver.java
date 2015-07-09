@@ -2,10 +2,7 @@ package graphql.execution;
 
 
 import graphql.GraphQLException;
-import graphql.language.Argument;
-import graphql.language.Directive;
-import graphql.language.Value;
-import graphql.language.VariableDefinition;
+import graphql.language.*;
 import graphql.schema.*;
 
 import java.util.*;
@@ -117,6 +114,9 @@ public class Resolver {
     }
 
     private Object coerceValueAst(GraphQLType type, Value inputValue, Map<String, Object> variables) {
+        if(inputValue instanceof VariableReference){
+           return variables.get(((VariableReference) inputValue).getName());
+        }
         if (type instanceof GraphQLScalarType) {
             return ((GraphQLScalarType) type).getCoercing().coerceLiteral(inputValue);
         }

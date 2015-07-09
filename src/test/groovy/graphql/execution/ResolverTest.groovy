@@ -1,22 +1,20 @@
 package graphql.execution
 
-import graphql.Fixtures
-import graphql.GraphQL
 import graphql.Scalars
 import graphql.TestUtil
-import graphql.language.Type
+import graphql.language.Argument
 import graphql.language.TypeName
 import graphql.language.VariableDefinition
+import graphql.language.VariableReference
+import graphql.schema.GraphQLFieldArgument
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 
 class ResolverTest extends Specification {
 
-    Resolver variables = new Resolver()
+    Resolver resolver = new Resolver()
 
 
     def "simple inputs"() {
@@ -24,7 +22,7 @@ class ResolverTest extends Specification {
         def schema = TestUtil.schemaWithInputType(inputType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", variableType)
         when:
-        def resolvedValues = variables.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
         then:
         resolvedValues['variable'] == outputValue
 
@@ -44,8 +42,21 @@ class ResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
 
         when:
-        def resolvedValues = variables.getVariableValues(schema, [variableDefinition], [variable: [name: 'a', id: 123]])
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: [name: 'a', id: 123]])
         then:
         resolvedValues['variable'] == [name: 'a', id: 123]
+    }
+
+    def "resolves argument with variable reference"(){
+        given:
+        def variables = [var:'hello']
+        def fieldArgument = new GraphQLFieldArgument("arg", Scalars.GraphQLString)
+        def argument = new Argument("arg",new VariableReference("var"))
+
+        when:
+        def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
+
+        then:
+        values['arg'] == 'hello'
     }
 }
