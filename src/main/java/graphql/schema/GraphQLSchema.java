@@ -30,16 +30,20 @@ public class GraphQLSchema {
         return mutationType != null;
     }
 
+    public static Builder newSchema() {
+        return new Builder();
+    }
+
     public static class Builder {
         private GraphQLObjectType queryType;
         private GraphQLObjectType mutationType;
 
-        public Builder setQueryType(GraphQLObjectType queryType) {
+        public Builder query(GraphQLObjectType queryType) {
             this.queryType = queryType;
             return this;
         }
 
-        public Builder setMutationType(GraphQLObjectType mutationType) {
+        public Builder mutation(GraphQLObjectType mutationType) {
             this.mutationType = mutationType;
             return this;
         }

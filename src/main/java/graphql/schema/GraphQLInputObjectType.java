@@ -8,6 +8,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType {
 
     private final String name;
 
+
     private final List<GraphQLInputObjectField> fields = new ArrayList<>();
 
     public GraphQLInputObjectType(String name, List<GraphQLInputObjectField> fields) {

@@ -6,15 +6,13 @@ import java.util.*;
 public class GraphQLObjectType implements GraphQLType, GraphQLOutputType {
 
     private final String name;
+    private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private final List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
-    public GraphQLObjectType(String name, List<GraphQLFieldDefinition> fieldDefinitions) {
-        this(name, fieldDefinitions, Collections.<GraphQLInterfaceType>emptyList());
-    }
-
-    public GraphQLObjectType(String name, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
+    public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
         this.name = name;
+        this.description = description;
         this.interfaces.addAll(interfaces);
         buildDefinitionMap(fieldDefinitions);
     }
@@ -34,11 +32,55 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType {
         return new ArrayList<>(fieldDefinitionsByName.values());
     }
 
-    public List<Class> getInterfaces() {
-        return null;
+
+    public List<GraphQLInterfaceType> getInterfaces() {
+        return interfaces;
     }
+
+    public String getDescription() {
+        return description;
+    }
+
 
     public String getName() {
         return name;
+    }
+
+    public static Builder newObject() {
+        return new Builder();
+    }
+
+
+    public static class Builder {
+        private String name;
+        private String description;
+        private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
+        private List<GraphQLInterfaceType> interfaces = new ArrayList<>();
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder field(GraphQLFieldDefinition fieldDefinition) {
+            this.fieldDefinitions.add(fieldDefinition);
+            return this;
+        }
+
+        public Builder withInterface(GraphQLInterfaceType interfaceType) {
+            this.interfaces.add(interfaceType);
+            return this;
+        }
+
+        public GraphQLObjectType build() {
+            return new GraphQLObjectType(name, description, fieldDefinitions, interfaces);
+        }
+
+
     }
 }

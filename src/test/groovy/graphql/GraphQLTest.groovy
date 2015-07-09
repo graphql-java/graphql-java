@@ -6,18 +6,29 @@ import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLFieldDefinition.*
+import static graphql.schema.GraphQLObjectType.*
+import static graphql.schema.GraphQLSchema.*
 
 class GraphQLTest extends Specification {
 
 
     def "simple query"() {
         given:
-        GraphQLFieldDefinition fieldDefinition = new GraphQLFieldDefinition("hello", GraphQLString, "world");
-        GraphQLObjectType queryType = new GraphQLObjectType("RootQueryType", [fieldDefinition])
-        GraphQLSchema graphQLSchema = new GraphQLSchema(queryType)
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .staticValue("world")
+                .build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(fieldDefinition)
+                        .build()
+        ).build()
 
         when:
-        def result = new GraphQL(graphQLSchema, '{ hello }').execute()
+        def result = new GraphQL(schema, '{ hello }').execute()
 
         then:
         result == [hello: 'world']
@@ -26,13 +37,31 @@ class GraphQLTest extends Specification {
 
     def "query with sub-fields"() {
         given:
-        GraphQLFieldDefinition idFieldDefinition = new GraphQLFieldDefinition("id", GraphQLString);
-        GraphQLFieldDefinition nameFieldDefinition = new GraphQLFieldDefinition("name", GraphQLString);
-        GraphQLObjectType heroType = new GraphQLObjectType("heroType", [idFieldDefinition, nameFieldDefinition])
-        GraphQLFieldDefinition simpsonField = new GraphQLFieldDefinition('simpson', heroType, [id: '123', name: 'homer'])
-        GraphQLObjectType queryType = new GraphQLObjectType("RootQueryType", [simpsonField])
+        GraphQLObjectType heroType = newObject()
+                .name("heroType")
+                .field(
+                newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString)
+                        .build())
+                .field(
+                newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString)
+                        .build())
+                .build()
 
-        GraphQLSchema graphQLSchema = new GraphQLSchema(queryType)
+        GraphQLFieldDefinition simpsonField = newFieldDefinition()
+                .name("simpson")
+                .type(heroType)
+                .staticValue([id: '123', name: 'homer']).build()
+
+        GraphQLSchema graphQLSchema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(simpsonField)
+                        .build()
+        ).build();
 
         when:
         def result = new GraphQL(graphQLSchema, '{ simpson { id, name } }').execute()
