@@ -5,9 +5,18 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
    
 It's an early version, but the query parser should be near 100%.
 
-The execution part is WIP, and validation, error handling and more is still missing.  
+The execution part is WIP, and validation, error handling and more is still missing.
+  
+### How to use it
+  
+#### Schema definition
 
-For how to define a schema and execute queries: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
+A complex schema (stolen from the js reference implementation): [StarWarsSchema](src/test/java/graphql/StarWarsSchema.java)
+
+#### Query
+
+For how to define a simple schema and execute queries: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
+
 
 ### Details
 
