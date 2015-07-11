@@ -53,8 +53,8 @@ public class GraphQLFieldDefinition {
     public static class Builder {
         private DataFetcher defaultResolver = new DataFetcher() {
             @Override
-            public Object get(Object source, Map<String,Object> arguments) {
-                return ((Map<String, Object>) source).get(Builder.this.name);
+            public Object get(DataFetchingEnvironment environment) {
+                return ((Map<String, Object>) environment.getSource()).get(Builder.this.name);
             }
         };
 
@@ -88,7 +88,7 @@ public class GraphQLFieldDefinition {
         public Builder staticValue(final Object value) {
             this.dataFetcher = new DataFetcher() {
                 @Override
-                public Object get(Object source, Map<String,Object> arguments) {
+                public Object get(DataFetchingEnvironment environment) {
                     return value;
                 }
             };

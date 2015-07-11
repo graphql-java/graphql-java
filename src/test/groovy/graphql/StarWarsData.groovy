@@ -1,6 +1,7 @@
 package graphql
 
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
 import graphql.schema.TypeResolver
@@ -84,8 +85,8 @@ class StarWarsData {
 
     static DataFetcher humanDataFetcher = new DataFetcher() {
         @Override
-        Object get(Object source, Map<String,Object> arguments) {
-            def id = arguments.id
+        Object get(DataFetchingEnvironment environment) {
+            def id = environment.arguments.id
             humanData[id]
         }
     }
@@ -93,8 +94,8 @@ class StarWarsData {
 
     static DataFetcher droidDataFetcher = new DataFetcher() {
         @Override
-        Object get(Object source, Map<String,Object> arguments) {
-            def id = arguments.id
+        Object get(DataFetchingEnvironment environment) {
+            def id = environment.arguments.id
             droidData[id]
         }
     }
@@ -113,9 +114,9 @@ class StarWarsData {
 
     static DataFetcher friendsDataFetcher = new DataFetcher() {
         @Override
-        Object get(Object source, Map<String,Object> arguments) {
+        Object get(DataFetchingEnvironment environment) {
             List<Object> result = []
-            for (String id : source.friends) {
+            for (String id : environment.source.friends) {
                 result.add(getCharacter(id))
             }
             result

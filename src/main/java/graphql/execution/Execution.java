@@ -68,7 +68,17 @@ public class Execution {
         if (fieldDef == null) return null;
         Object resolvedValue;
         Map<String, Object> argumentValues = resolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
-        resolvedValue = fieldDef.getDataFetcher().get(source, argumentValues);
+        DataFetchingEnvironment environment = new DataFetchingEnvironment(
+                source,
+                argumentValues,
+                executionContext.getRoot(),
+                fields,
+                fieldDef.getType(),
+                parentType,
+                executionContext.getGraphQLSchema()
+        );
+        resolvedValue = fieldDef.getDataFetcher().get(environment);
+
         if (resolvedValue == null) throw new RuntimeException("resolvedValue is null");
 
 
@@ -153,8 +163,6 @@ public class Execution {
         if (fieldDefinition == null) throw new GraphQLException("unknown field " + field.getName());
         return fieldDefinition;
     }
-
-
 
 
 }

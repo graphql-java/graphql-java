@@ -1,9 +1,6 @@
 package graphql.schema;
 
 
-import java.util.List;
-import java.util.Map;
-
 public class StaticDataFetcher implements DataFetcher {
 
 
@@ -14,7 +11,7 @@ public class StaticDataFetcher implements DataFetcher {
     }
 
     @Override
-    public Object get(Object source, Map<String,Object> arguments) {
+    public Object get(DataFetchingEnvironment environment) {
         return value;
     }
 }
