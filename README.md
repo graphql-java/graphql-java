@@ -11,7 +11,7 @@ The execution part is WIP, and validation, error handling and more is still miss
   
 #### Schema definition
 
-A complex schema (stolen from the js reference implementation): [StarWarsSchema](src/test/java/graphql/StarWarsSchema.java)
+A complex schema (stolen from the js reference implementation): [StarWarsSchema](src/test/java/grapqhl/StarWarsSchema.java)
 
 #### Query
 
