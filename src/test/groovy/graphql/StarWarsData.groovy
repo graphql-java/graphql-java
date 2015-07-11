@@ -84,7 +84,7 @@ class StarWarsData {
 
     static DataFetcher humanDataFetcher = new DataFetcher() {
         @Override
-        Object get(Object source, List<Object> arguments) {
+        Object get(Object source, Map<String,Object> arguments) {
             def id = arguments[0]
             humanData[id]
         }
@@ -93,7 +93,7 @@ class StarWarsData {
 
     static DataFetcher droidDataFetcher = new DataFetcher() {
         @Override
-        Object get(Object source, List<Object> arguments) {
+        Object get(Object source, Map<String,Object> arguments) {
             def id = arguments[0]
             droidData[id]
         }
@@ -113,10 +113,10 @@ class StarWarsData {
 
     static DataFetcher friendsDataFetcher = new DataFetcher() {
         @Override
-        Object get(Object source, List<Object> arguments) {
+        Object get(Object source, Map<String,Object> arguments) {
             List<Object> result = []
             for (String id : source.friends) {
-                return result.add(getCharacter(id))
+                result.add(getCharacter(id))
             }
             result
         }

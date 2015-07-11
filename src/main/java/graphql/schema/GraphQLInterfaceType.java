@@ -49,6 +49,16 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType {
         return typeResolver;
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLInterfaceType{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", fieldDefinitionsByName=" + fieldDefinitionsByName +
+                ", typeResolver=" + typeResolver +
+                '}';
+    }
+
     public static Builder newInterface() {
         return new Builder();
     }

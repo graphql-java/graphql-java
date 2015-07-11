@@ -46,6 +46,16 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType {
         return name;
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLObjectType{" +
+                "name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", fieldDefinitionsByName=" + fieldDefinitionsByName +
+                ", interfaces=" + interfaces +
+                '}';
+    }
+
     public static Builder newObject() {
         return new Builder();
     }

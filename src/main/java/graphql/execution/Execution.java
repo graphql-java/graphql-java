@@ -10,9 +10,11 @@ import java.util.*;
 public class Execution {
 
     private FieldCollector fieldCollector;
+    private Resolver resolver;
 
     public Execution() {
         fieldCollector = new FieldCollector();
+        resolver = new Resolver();
     }
 
     public ExecutionResult execute(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
@@ -65,7 +67,8 @@ public class Execution {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
         if (fieldDef == null) return null;
         Object resolvedValue;
-        resolvedValue = fieldDef.getDataFetcher().get(source, null);
+        Map<String, Object> argumentValues = resolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+        resolvedValue = fieldDef.getDataFetcher().get(source, argumentValues);
 
 
         return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
