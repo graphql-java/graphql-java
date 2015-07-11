@@ -285,4 +285,37 @@ class StarWarsQueryTest extends Specification {
         result == expected
 
     }
+
+    def 'Allows us to use a fragment to avoid duplicating content'() {
+        given:
+        def query = """
+        query UseFragment {
+            luke: human(id: "1000") {
+                ...HumanFragment
+            }
+            leia: human(id: "1003") {
+                ...HumanFragment
+            }
+        }
+        fragment HumanFragment on Human {
+            name
+            homePlanet
+        }
+        """
+        def expected = [
+                luke: [
+                        name      : 'Luke Skywalker',
+                        homePlanet: 'Tatooine'
+                ],
+                leia: [
+                        name      : 'Leia Organa',
+                        homePlanet: 'Alderaan'
+                ]
+        ];
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema, query).execute()
+
+        then:
+        result == expected
+    }
 }

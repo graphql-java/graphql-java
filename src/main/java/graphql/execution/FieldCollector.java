@@ -1,15 +1,18 @@
 package graphql.execution;
 
 
-import graphql.Directives;
+import graphql.GraphQLException;
+import graphql.ShouldNotHappenException;
 import graphql.language.*;
-import graphql.schema.GraphQLObjectType;
+import graphql.schema.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.Directives.*;
+import static graphql.execution.TypeFromAST.*;
+import static graphql.schema.SchemaUtil.*;
 
 public class FieldCollector {
 
@@ -44,15 +47,15 @@ public class FieldCollector {
             return;
         }
         visitedFragments.add(fragmentSpread.getName());
-        FragmentDefinition fragment = executionContext.getFragment(fragmentSpread.getName());
-        if (!shouldIncludeNode(executionContext, fragment.getDirectives()) ||
-                !doesFragmentTypeApply(executionContext, fragmentSpread, type)) {
+        FragmentDefinition fragmentDefinition = executionContext.getFragment(fragmentSpread.getName());
+        if (!shouldIncludeNode(executionContext, fragmentDefinition.getDirectives()) ||
+                !doesFragmentConditionMatch(executionContext, fragmentDefinition, type)) {
             return;
         }
         collectFields(
                 executionContext,
                 type,
-                fragment.getSelectionSet(),
+                fragmentDefinition.getSelectionSet(),
                 visitedFragments,
                 fields
         );
@@ -60,7 +63,7 @@ public class FieldCollector {
 
     private void collectInlineFragment(ExecutionContext executionContext, GraphQLObjectType type, List<String> visitedFragments, Map<String, List<Field>> fields, InlineFragment inlineFragment) {
         if (!shouldIncludeNode(executionContext, inlineFragment.getDirectives()) ||
-                !doesFragmentTypeApply(executionContext, inlineFragment, type)) {
+                !doesFragmentConditionMatch(executionContext, inlineFragment, type)) {
             return;
         }
         collectFields(executionContext, type, inlineFragment.getSelectionSet(), visitedFragments, fields);
@@ -108,22 +111,29 @@ public class FieldCollector {
         return null;
     }
 
-    private boolean doesFragmentTypeApply(ExecutionContext executionContext, Selection selection, GraphQLObjectType type) {
-//        String typeCondition
-//        if(selection instanceof  InlineFragment){
-//            typeCondition = ((InlineFragment) selection).getTypeCondition();
-//        }else if( selection instanceof FragmentDefinition){
-//            typeCondition = ((FragmentDefinition) selection).getTypeCondition();
-//        }
-//        var conditionalType = typeFromAST(exeContext.schema, fragment.typeCondition);
-//        if (conditionalType === type) {
-//            return true;
-//        }
-//        if (conditionalType instanceof GraphQLInterfaceType ||
-//                conditionalType instanceof GraphQLUnionType) {
-//            return conditionalType.isPossibleType(type);
-//        }
-//        return false;
+    private boolean doesFragmentConditionMatch(ExecutionContext executionContext, InlineFragment inlineFragment, GraphQLObjectType type) {
+        GraphQLType conditionType;
+        conditionType = getTypeFromAST(executionContext.getGraphQLSchema(), inlineFragment.getTypeCondition());
+        return checkTypeCondition(executionContext, type, conditionType);
+    }
+
+    private boolean doesFragmentConditionMatch(ExecutionContext executionContext, FragmentDefinition fragmentDefinition, GraphQLObjectType type) {
+        GraphQLType conditionType;
+        conditionType = getTypeFromAST(executionContext.getGraphQLSchema(), fragmentDefinition.getTypeCondition());
+        return checkTypeCondition(executionContext, type, conditionType);
+    }
+
+    private boolean checkTypeCondition(ExecutionContext executionContext, GraphQLObjectType type, GraphQLType conditionType) {
+        if (conditionType.equals(type)) {
+            return true;
+        }
+
+        if (conditionType instanceof GraphQLInterfaceType) {
+            List<GraphQLObjectType> implementations = findImplementations(executionContext.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
+            return implementations.contains(type);
+        } else if (conditionType instanceof GraphQLUnionType) {
+            return ((GraphQLUnionType) conditionType).getTypes().contains(type);
+        }
         return false;
     }
 
