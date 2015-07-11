@@ -1,6 +1,7 @@
 package graphql;
 
 
+import graphql.language.BooleanValue;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
 import graphql.language.StringValue;
@@ -50,7 +51,7 @@ public class Scalars {
     public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing() {
         @Override
         public Object coerce(Object input) {
-            return input;
+            return input.toString();
         }
 
         @Override
@@ -63,12 +64,20 @@ public class Scalars {
     public static GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing() {
         @Override
         public Object coerce(Object input) {
-            return input;
+            if (input instanceof Boolean) {
+                return input;
+            } else if (input instanceof Integer) {
+                return (Integer) input > 0;
+            } else if (input instanceof String) {
+                return Boolean.parseBoolean((String) input);
+            } else {
+                throw new GraphQLException();
+            }
         }
 
         @Override
         public Object coerceLiteral(Object input) {
-            return input;
+            return ((BooleanValue) input).isValue();
         }
     });
 

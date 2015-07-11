@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.language.BooleanValue
 import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
@@ -22,8 +23,9 @@ class ScalarsTest extends Specification {
         Scalars.GraphQLString.getCoercing().coerce(value) == result
 
         where:
-        value  | result
-        "test" | "test"
+        value         | result
+        Boolean.FALSE | "false"
+        "test"        | "test"
     }
 
     def "Int coerce literal"() {
@@ -50,7 +52,7 @@ class ScalarsTest extends Specification {
         Scalars.GraphQLFloat.getCoercing().coerceLiteral(literal) == result
 
         where:
-        literal          | result
+        literal              | result
         new FloatValue(42.3) | 42.3f
     }
 
@@ -60,9 +62,33 @@ class ScalarsTest extends Specification {
 
         where:
         value           | result
-        "42.3"            | 42.3f
-        "42.0"            | 42.0f
+        "42.3"          | 42.3f
+        "42.0"          | 42.0f
         new Float(42.3) | 42.3f
     }
+
+    def "Boolean coerce literal"() {
+        expect:
+        Scalars.GraphQLBoolean.getCoercing().coerceLiteral(literal) == result
+
+        where:
+        literal                | result
+        new BooleanValue(true) | true
+    }
+
+    def "Boolean coerce object"() {
+        expect:
+        Scalars.GraphQLBoolean.getCoercing().coerce(value) == result
+
+        where:
+        value   | result
+        true    | true
+        "false" | false
+        "true"  | true
+        0       | false
+        1       | true
+    }
+
+
 
 }
