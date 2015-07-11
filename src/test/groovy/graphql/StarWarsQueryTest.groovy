@@ -219,4 +219,37 @@ class StarWarsQueryTest extends Specification {
         result == expected
     }
 
+    def 'Allows us to query for both Luke and Leia, using two root fields and an alias'() {
+        given:
+
+        def query = """
+        query FetchLukeAndLeiaAliased {
+            luke:
+            human(id: "1000") {
+                name
+            }
+            leia:
+            human(id: "1003") {
+                name
+            }
+        }
+        """
+        def expected = [
+                luke:
+                        [
+                                name: 'Luke Skywalker'
+                        ],
+                leia:
+                        [
+                                name: 'Leia Organa'
+                        ]
+        ]
+
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema, query).execute()
+
+        then:
+        result == expected
+
+    }
 }
