@@ -86,14 +86,37 @@ public class Execution {
             return completeValueForEnum((GraphQLEnumType) fieldType, result);
         }
 
+
+        GraphQLObjectType resolvedType;
+        if (fieldType instanceof GraphQLInterfaceType) {
+            resolvedType = resolveType((GraphQLInterfaceType) fieldType, result);
+        } else if (fieldType instanceof GraphQLUnionType) {
+            resolvedType = resolveType((GraphQLUnionType) fieldType, result);
+        } else {
+            resolvedType = (GraphQLObjectType) fieldType;
+        }
+
         Map<String, List<Field>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         for (Field field : fields) {
             if (field.getSelectionSet() == null) continue;
-            fieldCollector.collectFields(executionContext, (GraphQLObjectType) fieldType, field.getSelectionSet(), visitedFragments, subFields);
+            fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
         }
-        return executeFields(executionContext, (GraphQLObjectType) fieldType, result, subFields);
+        return executeFields(executionContext, resolvedType, result, subFields);
     }
+
+    private GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
+        GraphQLObjectType result =  graphQLInterfaceType.getTypeResolver().getType(value);
+        if(result == null) throw new GraphQLException("could not determine type");
+        return result;
+    }
+
+    private GraphQLObjectType resolveType(GraphQLUnionType graphQLUnionType, Object value) {
+        GraphQLObjectType result= graphQLUnionType.getTypeResolver().getType(value);
+        if(result == null) throw new GraphQLException("could not determine type");
+        return result;
+    }
+
 
     private Object completeValueForEnum(GraphQLEnumType fieldType, Object result) {
         GraphQLEnumType graphQLEnumType = fieldType;
@@ -126,7 +149,9 @@ public class Execution {
 //        } else if (name == = TypeNameMetaFieldDef.name) {
 //            return TypeNameMetaFieldDef;
 //        }
-        return parentType.getFieldDefinition(field.getName());
+        GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());
+        if(fieldDefinition == null) throw new GraphQLException("unknown field " + field.getName());
+        return fieldDefinition;
     }
 
 

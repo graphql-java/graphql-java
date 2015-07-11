@@ -45,6 +45,7 @@ public class StarWarsSchema {
                     .description("Which movies they appear in.")
                     .type(new GraphQLList(episodeEnum))
                     .build())
+            .typeResolver(StarWarsData.getCharacterTypeResolver())
             .build();
 
     static GraphQLObjectType humanType = newObject()

@@ -1,6 +1,9 @@
 package graphql
 
 import graphql.schema.DataFetcher
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLType
+import graphql.schema.TypeResolver
 
 
 class StarWarsData {
@@ -45,11 +48,11 @@ class StarWarsData {
     ];
 
     static def humanData = [
-            1000: luke,
-            1001: vader,
-            1002: han,
-            1003: leia,
-            1004: tarkin,
+            '1000': luke,
+            '1001': vader,
+            '1002': han,
+            '1003': leia,
+            '1004': tarkin,
     ];
 
     static def threepio = [
@@ -69,8 +72,8 @@ class StarWarsData {
     ];
 
     static def droidData = [
-            2000: threepio,
-            2001: artoo,
+            "2000": threepio,
+            "2001": artoo,
     ]
 
     static def getCharacter(String id) {
@@ -96,7 +99,19 @@ class StarWarsData {
         }
     }
 
-     static DataFetcher friendsDataFetcher = new DataFetcher() {
+    static TypeResolver characterTypeResolver = new TypeResolver() {
+        @Override
+        GraphQLObjectType getType(Object object) {
+            def id = object.id
+            if (humanData[id] != null)
+                return StarWarsSchema.humanType
+            if (droidData[id] != null)
+                return StarWarsSchema.droidType
+            return null;
+        }
+    }
+
+    static DataFetcher friendsDataFetcher = new DataFetcher() {
         @Override
         Object get(Object source, List<Object> arguments) {
             List<Object> result = []

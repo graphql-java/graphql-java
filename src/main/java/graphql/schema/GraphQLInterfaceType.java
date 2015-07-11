@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.language.Type;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,11 +13,13 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType {
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
+    private final TypeResolver typeResolver;
 
-    public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
+    public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
         this.name = name;
         this.description = description;
         buildDefinitionMap(fieldDefinitions);
+        this.typeResolver = typeResolver;
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
@@ -41,6 +45,10 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType {
         return description;
     }
 
+    public TypeResolver getTypeResolver() {
+        return typeResolver;
+    }
+
     public static Builder newInterface() {
         return new Builder();
     }
@@ -50,6 +58,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType {
         private String name;
         private String description;
         private List<GraphQLFieldDefinition> fields = new ArrayList<>();
+        private TypeResolver typeResolver;
 
 
         public Builder name(String name) {
@@ -67,8 +76,13 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType {
             return this;
         }
 
+        public Builder typeResolver(TypeResolver typeResolver) {
+            this.typeResolver = typeResolver;
+            return this;
+        }
+
         public GraphQLInterfaceType build() {
-            return new GraphQLInterfaceType(name,description,fields);
+            return new GraphQLInterfaceType(name, description, fields, typeResolver);
         }
 
     }
