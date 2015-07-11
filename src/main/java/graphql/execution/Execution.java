@@ -122,22 +122,18 @@ public class Execution {
     }
 
 
-    private Object completeValueForEnum(GraphQLEnumType fieldType, Object result) {
-        GraphQLEnumType graphQLEnumType = fieldType;
-        return graphQLEnumType.getCoercing().coerce(result);
+    private Object completeValueForEnum(GraphQLEnumType enumType, Object result) {
+        return enumType.getCoercing().coerce(result);
     }
 
-    private Object completeValueForScalar(GraphQLScalarType fieldType, Object result) {
-        GraphQLScalarType graphQLScalarType = fieldType;
-        return graphQLScalarType.getCoercing().coerce(result);
+    private Object completeValueForScalar(GraphQLScalarType scalarType, Object result) {
+        return scalarType.getCoercing().coerce(result);
     }
 
     private Object completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
-        GraphQLList graphQLList = fieldType;
-        List<Object> items = result;
         List<Object> completedResults = new ArrayList<>();
-        for (Object item : items) {
-            completedResults.add(completeValue(executionContext, graphQLList.getWrappedType(), fields, item));
+        for (Object item : result) {
+            completedResults.add(completeValue(executionContext, fieldType.getWrappedType(), fields, item));
         }
         return completedResults;
     }
@@ -157,6 +153,8 @@ public class Execution {
         if (fieldDefinition == null) throw new GraphQLException("unknown field " + field.getName());
         return fieldDefinition;
     }
+
+
 
 
 }
