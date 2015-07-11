@@ -69,6 +69,7 @@ public class Execution {
         Object resolvedValue;
         Map<String, Object> argumentValues = resolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
         resolvedValue = fieldDef.getDataFetcher().get(source, argumentValues);
+        if(resolvedValue == null) throw new RuntimeException("resolvedValue is null");
 
 
         return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);

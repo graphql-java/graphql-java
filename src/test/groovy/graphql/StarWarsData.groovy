@@ -85,7 +85,7 @@ class StarWarsData {
     static DataFetcher humanDataFetcher = new DataFetcher() {
         @Override
         Object get(Object source, Map<String,Object> arguments) {
-            def id = arguments[0]
+            def id = arguments.id
             humanData[id]
         }
     }
@@ -94,7 +94,7 @@ class StarWarsData {
     static DataFetcher droidDataFetcher = new DataFetcher() {
         @Override
         Object get(Object source, Map<String,Object> arguments) {
-            def id = arguments[0]
+            def id = arguments.id
             droidData[id]
         }
     }

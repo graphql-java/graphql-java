@@ -110,6 +110,9 @@ public class Resolver {
         if (type instanceof GraphQLScalarType) {
             return ((GraphQLScalarType) type).getCoercing().coerceLiteral(inputValue);
         }
+        if(type instanceof GraphQLNonNull){
+            return coerceValueAst(((GraphQLNonNull) type).getWrappedType(),inputValue,variables);
+        }
         return null;
     }
 

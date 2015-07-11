@@ -1,6 +1,7 @@
 package graphql;
 
 
+import graphql.language.StringValue;
 import graphql.schema.Coercing;
 import graphql.schema.GraphQLScalarType;
 
@@ -39,7 +40,7 @@ public class Scalars {
 
         @Override
         public Object coerceLiteral(Object input) {
-            return input;
+            return ((StringValue)input).getValue();
         }
     });
 

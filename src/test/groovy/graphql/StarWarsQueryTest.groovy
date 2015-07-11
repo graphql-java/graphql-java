@@ -150,4 +150,26 @@ class StarWarsQueryTest extends Specification {
 
     }
 
+    def 'Allows us to query for Luke Skywalker directly, using his ID'() {
+        given:
+        def query = """
+        query FetchLukeQuery {
+            human(id: "1000") {
+                name
+            }
+        }
+        """
+        def expected = [
+                human: [
+                        name: 'Luke Skywalker'
+                ]
+        ]
+
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema, query).execute()
+
+        then:
+        result == expected
+    }
+
 }
