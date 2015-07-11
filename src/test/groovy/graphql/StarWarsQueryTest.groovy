@@ -252,4 +252,37 @@ class StarWarsQueryTest extends Specification {
         result == expected
 
     }
+
+    def 'Allows us to query using duplicated content'() {
+        given:
+        def query = """
+        query DuplicateFields {
+            luke: human(id: "1000") {
+                name
+                homePlanet
+            }
+            leia: human(id: "1003") {
+                name
+                homePlanet
+            }
+        }
+        """
+        def expected = [
+                luke: [name      : 'Luke Skywalker',
+                       homePlanet:
+                               'Tatooine'
+                ],
+                leia: [name      : 'Leia Organa',
+                       homePlanet:
+                               'Alderaan'
+                ]
+        ];
+
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema, query).execute()
+
+        then:
+        result == expected
+
+    }
 }
