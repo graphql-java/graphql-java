@@ -1,11 +1,11 @@
 package graphql.schema;
 
 
-public class GraphQLSelfReference implements GraphQLType {
+public class GraphQLTypeReference implements GraphQLType {
 
     private final String name;
 
-    public GraphQLSelfReference(String name) {
+    public GraphQLTypeReference(String name) {
         this.name = name;
     }
 
