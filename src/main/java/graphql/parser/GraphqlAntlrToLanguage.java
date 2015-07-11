@@ -188,6 +188,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitField(@NotNull GraphqlParser.FieldContext ctx) {
         Field newField = new Field();
         newField.setName(ctx.NAME().getText());
+        if (ctx.alias() != null) {
+            newField.setAlias(ctx.alias().NAME().getText());
+        }
         addContextProperty(ContextProperty.Field, newField);
         super.visitField(ctx);
         popContext();

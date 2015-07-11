@@ -196,4 +196,27 @@ class StarWarsQueryTest extends Specification {
         result == expected
     }
 
+
+    def 'Allows us to query for Luke, changing his key with an alias'() {
+        given:
+        def query = """
+            query FetchLukeAliased {
+                luke: human(id: "1000") {
+                    name
+                }
+            }
+        """
+        def expected = [
+                luke: [
+                        name: 'Luke Skywalker'
+                ],
+        ]
+
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema, query).execute()
+
+        then:
+        result == expected
+    }
+
 }

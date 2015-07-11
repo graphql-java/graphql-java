@@ -69,7 +69,7 @@ public class Execution {
         Object resolvedValue;
         Map<String, Object> argumentValues = resolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
         resolvedValue = fieldDef.getDataFetcher().get(source, argumentValues);
-        if(resolvedValue == null) throw new RuntimeException("resolvedValue is null");
+        if (resolvedValue == null) throw new RuntimeException("resolvedValue is null");
 
 
         return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
@@ -110,14 +110,14 @@ public class Execution {
     }
 
     private GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
-        GraphQLObjectType result =  graphQLInterfaceType.getTypeResolver().getType(value);
-        if(result == null) throw new GraphQLException("could not determine type");
+        GraphQLObjectType result = graphQLInterfaceType.getTypeResolver().getType(value);
+        if (result == null) throw new GraphQLException("could not determine type");
         return result;
     }
 
     private GraphQLObjectType resolveType(GraphQLUnionType graphQLUnionType, Object value) {
-        GraphQLObjectType result= graphQLUnionType.getTypeResolver().getType(value);
-        if(result == null) throw new GraphQLException("could not determine type");
+        GraphQLObjectType result = graphQLUnionType.getTypeResolver().getType(value);
+        if (result == null) throw new GraphQLException("could not determine type");
         return result;
     }
 
@@ -154,7 +154,7 @@ public class Execution {
 //            return TypeNameMetaFieldDef;
 //        }
         GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());
-        if(fieldDefinition == null) throw new GraphQLException("unknown field " + field.getName());
+        if (fieldDefinition == null) throw new GraphQLException("unknown field " + field.getName());
         return fieldDefinition;
     }
 
