@@ -1,8 +1,6 @@
 package graphql.schema;
 
 
-import graphql.language.Argument;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,15 +10,15 @@ public class GraphQLFieldDefinition {
     private final String name;
     private final String description;
     private final GraphQLOutputType type;
-    private final ResolveValue resolveValue;
+    private final DataFetcher dataFetcher;
     private final List<GraphQLFieldArgument> arguments = new ArrayList<>();
 
 
-    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, ResolveValue resolveValue, List<GraphQLFieldArgument> arguments) {
+    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLFieldArgument> arguments) {
         this.name = name;
         this.description = description;
         this.type = type;
-        this.resolveValue = resolveValue;
+        this.dataFetcher = dataFetcher;
         if (arguments != null) {
             this.arguments.addAll(arguments);
         }
@@ -36,8 +34,8 @@ public class GraphQLFieldDefinition {
         return type;
     }
 
-    public ResolveValue getResolveValue() {
-        return resolveValue;
+    public DataFetcher getDataFetcher() {
+        return dataFetcher;
     }
 
     public List<GraphQLFieldArgument> getArguments() {
@@ -53,9 +51,9 @@ public class GraphQLFieldDefinition {
     }
 
     public static class Builder {
-        private ResolveValue defaultResolver = new ResolveValue() {
+        private DataFetcher defaultResolver = new DataFetcher() {
             @Override
-            public Object resolve(Object source, List<Object> arguments) {
+            public Object get(Object source, List<Object> arguments) {
                 return ((Map<String, Object>) source).get(Builder.this.name);
             }
         };
@@ -63,7 +61,7 @@ public class GraphQLFieldDefinition {
         private String name;
         private String description;
         private GraphQLOutputType type;
-        private ResolveValue resolveValue = defaultResolver;
+        private DataFetcher dataFetcher = defaultResolver;
         private List<GraphQLFieldArgument> arguments = new ArrayList<>();
 
 
@@ -82,15 +80,15 @@ public class GraphQLFieldDefinition {
             return this;
         }
 
-        public Builder resolveValue(ResolveValue resolveValue) {
-            this.resolveValue = resolveValue;
+        public Builder dataFetcher(DataFetcher dataFetcher) {
+            this.dataFetcher = dataFetcher;
             return this;
         }
 
         public Builder staticValue(final Object value) {
-            this.resolveValue = new ResolveValue() {
+            this.dataFetcher = new DataFetcher() {
                 @Override
-                public Object resolve(Object source, List<Object> arguments) {
+                public Object get(Object source, List<Object> arguments) {
                     return value;
                 }
             };
@@ -108,7 +106,7 @@ public class GraphQLFieldDefinition {
         }
 
         public GraphQLFieldDefinition build() {
-            return new GraphQLFieldDefinition(name, description, type, resolveValue, arguments);
+            return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments);
         }
 
 

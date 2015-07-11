@@ -1,4 +1,4 @@
-package grapqhl;
+package graphql;
 
 
 import graphql.schema.*;
@@ -13,7 +13,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
 public class StarWarsSchema {
 
 
-    GraphQLEnumType episodeEnum = newEnum()
+    static GraphQLEnumType episodeEnum = newEnum()
             .name("Episode")
             .description("One of the films in the Star Wars Trilogy")
             .value("NEWHOPE", 4, "Released in 1977.")
@@ -22,7 +22,7 @@ public class StarWarsSchema {
             .build();
 
 
-    GraphQLInterfaceType characterInterface = newInterface()
+    static GraphQLInterfaceType characterInterface = newInterface()
             .name("Character")
             .description("A character in the Star Wars Trilogy")
             .field(newFieldDefinition()
@@ -47,7 +47,7 @@ public class StarWarsSchema {
                     .build())
             .build();
 
-    GraphQLObjectType humanType = newObject()
+    static GraphQLObjectType humanType = newObject()
             .name("Human")
             .description("A humanoid creature in the Star Wars universe.")
             .withInterface(characterInterface)
@@ -65,6 +65,7 @@ public class StarWarsSchema {
                     .name("friends")
                     .description("The friends of the human, or an empty list if they have none.")
                     .type(new GraphQLList(characterInterface))
+                    .dataFetcher(StarWarsData.getFriendsDataFetcher())
                     .build())
             .field(newFieldDefinition()
                     .name("appearsIn")
@@ -78,7 +79,7 @@ public class StarWarsSchema {
                     .build())
             .build();
 
-    GraphQLObjectType droidType = newObject()
+    static GraphQLObjectType droidType = newObject()
             .name("Droid")
             .description("A mechanical creature in the Star Wars universe.")
             .withInterface(characterInterface)
@@ -96,6 +97,7 @@ public class StarWarsSchema {
                     .name("friends")
                     .description("The friends of the droid, or an empty list if they have none.")
                     .type(new GraphQLList(characterInterface))
+                    .dataFetcher(StarWarsData.getFriendsDataFetcher())
                     .build())
             .field(newFieldDefinition()
                     .name("appearsIn")
@@ -109,11 +111,13 @@ public class StarWarsSchema {
                     .build())
             .build();
 
-    GraphQLObjectType queryType = newObject()
+
+    static GraphQLObjectType queryType = newObject()
             .name("QueryType")
             .field(newFieldDefinition()
                     .name("hero")
                     .type(characterInterface)
+                    .dataFetcher(new StaticDataFetcher(StarWarsData.getArtoo()))
                     .build())
             .field(newFieldDefinition()
                     .name("human")
@@ -122,6 +126,7 @@ public class StarWarsSchema {
                             .name("id")
                             .type(new GraphQLNonNull(GraphQLString))
                             .build())
+                    .dataFetcher(StarWarsData.getHumanDataFetcher())
                     .build())
             .field(newFieldDefinition()
                     .name("droid")
@@ -130,7 +135,12 @@ public class StarWarsSchema {
                             .name("id")
                             .type(new GraphQLNonNull(GraphQLString))
                             .build())
+                    .dataFetcher(StarWarsData.getDroidDataFetcher())
                     .build())
             .build();
 
+
+    static GraphQLSchema starWarsSchema = GraphQLSchema.newSchema()
+            .query(queryType)
+            .build();
 }

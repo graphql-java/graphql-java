@@ -1,6 +1,9 @@
 package graphql.schema;
 
 
+import graphql.GraphQLException;
+import graphql.language.EnumValue;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,7 +15,26 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     private final String description;
     private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
 
-    private Coercing coercing;
+    private final Coercing coercing = new Coercing() {
+        @Override
+        public Object coerce(Object input) {
+            return getNameByValue(input);
+        }
+
+        @Override
+        public Object coerceLiteral(Object input) {
+            EnumValue enumValue = (EnumValue) input;
+            return valueDefinitionMap.get(enumValue.getName());
+        }
+    };
+
+    private Object getNameByValue(Object value) {
+        for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
+            if (value.equals(valueDefinition.getValue())) return valueDefinition.getName();
+        }
+        throw new GraphQLException("");
+    }
+
 
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
         this.name = name;
@@ -30,6 +52,9 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         return name;
     }
 
+    public String getDescription() {
+        return description;
+    }
 
     public Coercing getCoercing() {
         return coercing;

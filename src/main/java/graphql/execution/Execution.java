@@ -65,7 +65,7 @@ public class Execution {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
         if (fieldDef == null) return null;
         Object resolvedValue;
-        resolvedValue = fieldDef.getResolveValue().resolve(source, null);
+        resolvedValue = fieldDef.getDataFetcher().get(source, null);
 
 
         return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
