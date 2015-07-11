@@ -172,4 +172,28 @@ class StarWarsQueryTest extends Specification {
         result == expected
     }
 
+    def 'Allows us to create a generic query, then use it to fetch Luke Skywalker using his ID'() {
+        given:
+        def query = """
+        query FetchSomeIDQuery(\$someId: String!) {
+            human(id: \$someId) {
+                name
+            }
+        }
+        """
+        def params = [
+                someId: '1000'
+        ]
+        def expected = [
+                human: [
+                        name: 'Luke Skywalker'
+                ]
+        ]
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema, query, params).execute()
+
+        then:
+        result == expected
+    }
+
 }
