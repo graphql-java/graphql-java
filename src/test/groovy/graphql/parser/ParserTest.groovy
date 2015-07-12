@@ -247,6 +247,31 @@ class ParserTest extends Specification {
         "[[String!]]" | new ListType(new ListType(new NonNullType(new TypeName("String"))))
     }
 
+    def "parse object values"() {
+        given:
+        def input = """
+            query myQuery() {
+              hello(arg: {intKey:1, stringKey: \"world\"}) }
+            """
+
+        and: "expected query"
+
+        def objectValue = new ObjectValue()
+        objectValue.getValueMap().put("intKey", new IntValue(1))
+        objectValue.getValueMap().put("stringKey", new StringValue("world"))
+        def argument = new Argument("arg", objectValue)
+        def helloField = new Field("hello", [argument])
+        def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
+                new SelectionSet([helloField]))
+
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions[0] == queryDefinition
+    }
+
 
     Field getInnerField(SelectionSet selectionSet) {
         def field = (Field) selectionSet.selections[0]
