@@ -18,8 +18,6 @@ public class Execution {
     private Resolver resolver;
     private ExecutorService executorService;
 
-    private static final int TIMEOUT_MINUTES = 10;
-
     public Execution(ExecutorService executorService) {
         fieldCollector = new FieldCollector();
         resolver = new Resolver();
