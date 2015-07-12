@@ -61,17 +61,11 @@ public class GraphQLFieldDefinition {
     }
 
     public static class Builder {
-        private DataFetcher defaultResolver = new DataFetcher() {
-            @Override
-            public Object get(DataFetchingEnvironment environment) {
-                return ((Map<String, Object>) environment.getSource()).get(Builder.this.name);
-            }
-        };
 
         private String name;
         private String description;
         private GraphQLOutputType type;
-        private DataFetcher dataFetcher = defaultResolver;
+        private DataFetcher dataFetcher;
         private List<GraphQLFieldArgument> arguments = new ArrayList<>();
         private String deprecationReason;
 
@@ -122,6 +116,9 @@ public class GraphQLFieldDefinition {
         }
 
         public GraphQLFieldDefinition build() {
+            if (dataFetcher == null) {
+                dataFetcher = new PropertyDataFetcher(name);
+            }
             return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments, deprecationReason);
         }
 

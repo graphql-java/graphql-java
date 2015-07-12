@@ -1,7 +1,9 @@
 package graphql.introspection;
 
 
+import graphql.Directives;
 import graphql.Scalars;
+import graphql.language.Directive;
 import graphql.schema.*;
 
 import java.util.ArrayList;
@@ -65,17 +67,102 @@ public class Schema {
         }
     };
 
-    GraphQLObjectType __Field = newObject()
-            .name("__Field")
-            .build();
-
-
     GraphQLObjectType __InputValue = newObject()
             .name("__Field")
+            .field(newFieldDefinition()
+                    .name("name")
+                    .type(new GraphQLNonNull(GraphQLString))
+                    .build())
+            .field(newFieldDefinition()
+                    .name("description")
+                    .type(GraphQLString)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("type")
+                    .type(new GraphQLNonNull(new GraphQLTypeReference("__TYPE")))
+                    .build())
+            .field(newFieldDefinition()
+                    .name("defaultValue")
+                    .type(GraphQLString)
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLInputObjectField inputField = (GraphQLInputObjectField) environment.getSource();
+                            return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
+                        }
+                    })
+                    .build())
             .build();
 
-    GraphQLObjectType __EnumValue = newObject()
+
+    GraphQLObjectType __Field = newObject()
             .name("__Field")
+            .field(newFieldDefinition()
+                    .name("name")
+                    .type(new GraphQLNonNull(GraphQLString))
+                    .build())
+            .field(newFieldDefinition()
+                    .name("description")
+                    .type(GraphQLString)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("args")
+                    .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__InputValue))))
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            Object type = environment.getSource();
+                            return ((GraphQLFieldDefinition) type).getArguments();
+                        }
+                    })
+                    .build())
+            .field(newFieldDefinition()
+                    .name("type")
+                    .type(new GraphQLNonNull(new GraphQLTypeReference("__TYPE")))
+                    .build())
+            .field(newFieldDefinition()
+                    .name("isDeprecated")
+                    .type(new GraphQLNonNull(GraphQLBoolean))
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            Object type = environment.getSource();
+                            return ((GraphQLFieldDefinition) type).isDeprecated();
+                        }
+                    })
+                    .build())
+            .field(newFieldDefinition()
+                    .name("deprecationReason")
+                    .type(GraphQLString)
+                    .build())
+            .build();
+
+
+    GraphQLObjectType __EnumValue = newObject()
+            .name("__EnumValue")
+            .field(newFieldDefinition()
+                    .name("name")
+                    .type(new GraphQLNonNull(GraphQLString))
+                    .build())
+            .field(newFieldDefinition()
+                    .name("description")
+                    .type(GraphQLString)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("isDeprecated")
+                    .type(new GraphQLNonNull(GraphQLBoolean))
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLEnumValueDefinition enumValue = (GraphQLEnumValueDefinition) environment.getSource();
+                            return enumValue.isDeprecated();
+                        }
+                    })
+                    .build())
+            .field(newFieldDefinition()
+                    .name("deprecationReason")
+                    .type(GraphQLString)
+                    .build())
             .build();
 
     DataFetcher fieldsFetcher = new DataFetcher() {
@@ -204,18 +291,93 @@ public class Schema {
                     .build())
             .build();
 
+    GraphQLObjectType __Directive = newObject()
+            .field(newFieldDefinition()
+                    .name("name")
+                    .type(GraphQLString)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("description")
+                    .type(GraphQLString)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("args")
+                    .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__InputValue))))
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            return directive.getArguments();
+                        }
+                    })
+                    .build())
+            .field(newFieldDefinition()
+                    .name("onOperation")
+                    .type(GraphQLBoolean)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("onFragment")
+                    .type(GraphQLBoolean)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("onField")
+                    .type(GraphQLBoolean)
+                    .build())
+            .build();
 
-    GraphQLObjectType __Schema =
-            newObject()
-                    .name("__Schema")
-                    .description("A GraphQL Schema defines the capabilities" +
-                            " of a GraphQL server. It exposes all available types and directives on " +
-                            "'the server, as well as the entry points for query and  'mutation operations.")
-                    .field(newFieldDefinition()
-                            .name("types")
-                            .description("A list of all types supported by this server.")
-//                    .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__Type)))
-//                            .dataFetcher()
-                            .build())
-                    .build();
+    GraphQLObjectType __Schema = newObject()
+            .name("__Schema")
+            .description("A GraphQL Schema defines the capabilities" +
+                    " of a GraphQL server. It exposes all available types and directives on " +
+                    "'the server, as well as the entry points for query and  'mutation operations.")
+            .field(newFieldDefinition()
+                    .name("types")
+                    .description("A list of all types supported by this server.")
+                    .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__Type))))
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLSchema schema = (GraphQLSchema) environment.getSource();
+                            return SchemaUtil.allTypesAsList(schema);
+                        }
+                    })
+                    .build())
+            .field(newFieldDefinition()
+                    .name("queryType")
+                    .description("The type that query operations will be rooted at.")
+                    .type(new GraphQLNonNull(__Type))
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLSchema schema = (GraphQLSchema) environment.getSource();
+                            return schema.getQueryType();
+                        }
+                    })
+                    .build())
+            .field(newFieldDefinition()
+                    .name("mutationType")
+                    .description("If this server supports mutation, the type that mutation operations will be rooted at.")
+                    .type(new GraphQLNonNull(__Type))
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLSchema schema = (GraphQLSchema) environment.getSource();
+                            return schema.getMutationType();
+                        }
+                    })
+                    .build())
+            .field(newFieldDefinition()
+                    .name("directives")
+                    .description("'A list of all directives supported by this server.")
+                    .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__Directive))))
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            return Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective);
+                        }
+                    })
+                    .build())
+            .build();
+
+
 }

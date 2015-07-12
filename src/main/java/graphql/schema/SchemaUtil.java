@@ -72,13 +72,17 @@ public class SchemaUtil {
         return typesByName.get(name);
     }
 
-    private static Map<String, GraphQLType> allTypes(GraphQLSchema schema) {
+    public static Map<String, GraphQLType> allTypes(GraphQLSchema schema) {
         Map<String, GraphQLType> typesByName = new LinkedHashMap<>();
         collectTypes(schema.getQueryType(), typesByName);
         if (schema.isSupportingMutations()) {
             collectTypes(schema.getMutationType(), typesByName);
         }
         return typesByName;
+    }
+
+    public static List<GraphQLType> allTypesAsList(GraphQLSchema graphQLSchema) {
+        return new ArrayList<>(allTypes(graphQLSchema).values());
     }
 
     public static List<GraphQLObjectType> findImplementations(GraphQLSchema schema, GraphQLInterfaceType interfaceType) {
