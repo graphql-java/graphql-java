@@ -3,7 +3,7 @@ package graphql.schema;
 
 import java.util.*;
 
-public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType {
+public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType,GraphQLNullableType {
 
     private final String name;
     private final String description;

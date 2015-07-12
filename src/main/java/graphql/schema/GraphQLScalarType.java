@@ -1,7 +1,7 @@
 package graphql.schema;
 
 
-public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
+public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType,GraphQLNullableType {
 
     private final String name;
     private final String description;

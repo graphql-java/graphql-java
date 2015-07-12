@@ -4,7 +4,7 @@ package graphql.schema;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType,GraphQLUnmodifiedType {
+public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType,GraphQLUnmodifiedType,GraphQLNullableType {
 
     private final String name;
     private final String description;

@@ -1,7 +1,7 @@
 package graphql.schema;
 
 
-public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
+public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
 
     private final GraphQLType wrappedType;
 
