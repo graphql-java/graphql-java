@@ -4,7 +4,7 @@ package graphql.schema;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType {
+public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType {
 
     private final String name;
 

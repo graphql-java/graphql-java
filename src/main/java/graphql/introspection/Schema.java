@@ -373,7 +373,7 @@ public class Schema {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            return Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective);
+                            return environment.getGraphQLSchema().getDirectives();
                         }
                     })
                     .build())

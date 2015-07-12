@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType {
+public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType,GraphQLUnmodifiedType {
 
     private final String name;
     private final String description;

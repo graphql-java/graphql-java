@@ -1,6 +1,12 @@
 package graphql.schema;
 
 
+import graphql.Directives;
+import graphql.language.Directive;
+
+import java.util.Arrays;
+import java.util.List;
+
 public class GraphQLSchema {
 
     private final GraphQLObjectType queryType;
@@ -23,6 +29,17 @@ public class GraphQLSchema {
 
     public GraphQLObjectType getMutationType() {
         return mutationType;
+    }
+
+    public List<GraphQLDirective> getDirectives() {
+        return Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective);
+    }
+
+    public GraphQLDirective getDirective(String name) {
+        for (GraphQLDirective directive : getDirectives()) {
+            if (directive.getName().equals(name)) return directive;
+        }
+        return null;
     }
 
 
