@@ -2,11 +2,13 @@ package graphql.execution;
 
 
 import graphql.GraphQLException;
+import graphql.ShouldNotHappenException;
 import graphql.introspection.Schema;
 import graphql.language.*;
 import graphql.schema.*;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 import static graphql.introspection.Schema.*;
 
@@ -14,10 +16,14 @@ public class Execution {
 
     private FieldCollector fieldCollector;
     private Resolver resolver;
+    private ExecutorService executorService;
 
-    public Execution() {
+    private static final int TIMEOUT_MINUTES = 10;
+
+    public Execution(ExecutorService executorService) {
         fieldCollector = new FieldCollector();
         resolver = new Resolver();
+        this.executorService = executorService;
     }
 
     public ExecutionResult execute(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
@@ -49,13 +55,13 @@ public class Execution {
 
 
         if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-            throw new RuntimeException("not yet");
+            executeFieldsSerially(executionContext, operationRootType, root, fields);
         }
         Object result = executeFields(executionContext, operationRootType, root, fields);
         return new ExecutionResult(result);
     }
 
-    private Map<String, Object> executeFields(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
+    private Map<String, Object> executeFieldsSerially(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
             List<Field> fieldList = fields.get(fieldName);
@@ -63,6 +69,32 @@ public class Execution {
             results.put(fieldName, resolvedResult);
         }
         return results;
+    }
+
+
+    private Map<String, Object> executeFields(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, Map<String, List<Field>> fields) {
+        Map<String, Future<Object>> futures = new LinkedHashMap<>();
+        for (String fieldName : fields.keySet()) {
+            final List<Field> fieldList = fields.get(fieldName);
+            Callable<Object> resolveField = new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    return resolveField(executionContext, parentType, source, fieldList);
+
+                }
+            };
+            futures.put(fieldName, executorService.submit(resolveField));
+        }
+        try {
+            Map<String, Object> results = new LinkedHashMap<>();
+            for (String fieldName : futures.keySet()) {
+                results.put(fieldName, futures.get(fieldName).get());
+            }
+            return results;
+        } catch (InterruptedException | ExecutionException e) {
+            throw new GraphQLException(e);
+        }
+
     }
 
     private Object resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {

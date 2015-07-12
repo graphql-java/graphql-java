@@ -9,6 +9,8 @@ import graphql.schema.GraphQLSchema;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class GraphQL {
 
@@ -16,21 +18,27 @@ public class GraphQL {
     private final GraphQLSchema graphQLSchema;
     private final String requestString;
     private final Map<String, Object> arguments = new LinkedHashMap<>();
+    private final ExecutorService executorService;
 
     public GraphQL(GraphQLSchema graphQLSchema, String requestString) {
         this(graphQLSchema, requestString, Collections.<String, Object>emptyMap());
     }
 
     public GraphQL(GraphQLSchema graphQLSchema, String requestString, Map<String, Object> arguments) {
+        this(graphQLSchema, requestString, arguments, Executors.newCachedThreadPool());
+    }
+
+    public GraphQL(GraphQLSchema graphQLSchema, String requestString, Map<String, Object> arguments, ExecutorService executorService) {
         this.graphQLSchema = graphQLSchema;
         this.requestString = requestString;
         this.arguments.putAll(arguments);
+        this.executorService = executorService;
     }
 
     public Object execute() {
         Parser parser = new Parser();
         Document document = parser.parseDocument(requestString);
-        Execution execution = new Execution();
+        Execution execution = new Execution(executorService);
         return execution.execute(graphQLSchema, null, document, null, arguments).getResut();
     }
 
