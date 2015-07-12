@@ -82,16 +82,16 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing() {
-        @Override
-        public Object coerce(Object input) {
-            return input;
-        }
-
-        @Override
-        public Object coerceLiteral(Object input) {
-            return input;
-        }
-    });
+//    public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing() {
+//        @Override
+//        public Object coerce(Object input) {
+//            return input;
+//        }
+//
+//        @Override
+//        public Object coerceLiteral(Object input) {
+//            return input;
+//        }
+//    });
 
 }

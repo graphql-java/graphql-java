@@ -13,11 +13,11 @@ import static graphql.schema.SchemaUtil.*;
 
 public class FieldCollector {
 
-    private Resolver resolver;
+    private ValuesResolver valuesResolver;
     private ConditionalNodes conditionalNodes;
 
     public FieldCollector() {
-        resolver = new Resolver();
+        valuesResolver = new ValuesResolver();
         conditionalNodes = new ConditionalNodes();
     }
 

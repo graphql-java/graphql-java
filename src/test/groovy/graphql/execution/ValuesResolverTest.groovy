@@ -10,14 +10,16 @@ import graphql.schema.GraphQLFieldArgument
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import spock.lang.Specification
+import spock.lang.Unroll
 
 
-class ResolverTest extends Specification {
+class ValuesResolverTest extends Specification {
 
-    Resolver resolver = new Resolver()
+    ValuesResolver resolver = new ValuesResolver()
 
 
-    def "simple inputs"() {
+    @Unroll
+    def "simple variable input #inputValue"() {
         given:
         def schema = TestUtil.schemaWithInputType(inputType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", variableType)
@@ -27,9 +29,11 @@ class ResolverTest extends Specification {
         resolvedValues['variable'] == outputValue
 
         where:
-        inputType             | variableType           | inputValue   || outputValue
-        Scalars.GraphQLInt    | new TypeName("Int")    | 100          || 100
-        Scalars.GraphQLString | new TypeName("String") | 'someString' || 'someString'
+        inputType              | variableType            | inputValue   || outputValue
+        Scalars.GraphQLInt     | new TypeName("Int")     | 100          || 100
+        Scalars.GraphQLString  | new TypeName("String")  | 'someString' || 'someString'
+        Scalars.GraphQLBoolean | new TypeName("Boolean") | 'true'       || true
+        Scalars.GraphQLFloat   | new TypeName("Float")   | '42.43'      || 42.43f
 
     }
 
@@ -47,11 +51,12 @@ class ResolverTest extends Specification {
         resolvedValues['variable'] == [name: 'a', id: 123]
     }
 
-    def "resolves argument with variable reference"(){
+
+    def "resolves argument with variable reference"() {
         given:
-        def variables = [var:'hello']
+        def variables = [var: 'hello']
         def fieldArgument = new GraphQLFieldArgument("arg", Scalars.GraphQLString)
-        def argument = new Argument("arg",new VariableReference("var"))
+        def argument = new Argument("arg", new VariableReference("var"))
 
         when:
         def values = resolver.getArgumentValues([fieldArgument], [argument], variables)

@@ -12,10 +12,10 @@ import java.util.Map;
 
 public class ExecutionContextBuilder {
 
-    private Resolver resolver;
+    private ValuesResolver valuesResolver;
 
-    public ExecutionContextBuilder(Resolver resolver) {
-        this.resolver = resolver;
+    public ExecutionContextBuilder(ValuesResolver valuesResolver) {
+        this.valuesResolver = valuesResolver;
     }
 
     public ExecutionContext build(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
@@ -51,7 +51,7 @@ public class ExecutionContextBuilder {
         executionContext.setOperationDefinition(operation);
         executionContext.setRoot(root);
         executionContext.setFragmentsByName(fragmentsByName);
-        Map<String, Object> variableValues = resolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), args);
+        Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), args);
         executionContext.setVariables(variableValues);
         return executionContext;
     }

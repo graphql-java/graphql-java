@@ -2,8 +2,6 @@ package graphql.execution;
 
 
 import graphql.GraphQLException;
-import graphql.ShouldNotHappenException;
-import graphql.introspection.Schema;
 import graphql.language.*;
 import graphql.schema.*;
 
@@ -15,17 +13,17 @@ import static graphql.introspection.Schema.*;
 public class Execution {
 
     private FieldCollector fieldCollector;
-    private Resolver resolver;
+    private ValuesResolver valuesResolver;
     private ExecutorService executorService;
 
     public Execution(ExecutorService executorService) {
         fieldCollector = new FieldCollector();
-        resolver = new Resolver();
+        valuesResolver = new ValuesResolver();
         this.executorService = executorService;
     }
 
     public ExecutionResult execute(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
-        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new Resolver());
+        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver());
         ExecutionContext executionContext = executionContextBuilder.build(graphQLSchema, root, document, operationName, args);
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
@@ -99,7 +97,7 @@ public class Execution {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
         if (fieldDef == null) return null;
         Object resolvedValue;
-        Map<String, Object> argumentValues = resolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
         DataFetchingEnvironment environment = new DataFetchingEnvironment(
                 source,
                 argumentValues,

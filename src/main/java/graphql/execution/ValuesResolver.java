@@ -7,7 +7,7 @@ import graphql.schema.*;
 
 import java.util.*;
 
-public class Resolver {
+public class ValuesResolver {
 
 
     public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> inputs) {

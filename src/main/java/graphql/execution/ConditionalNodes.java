@@ -11,24 +11,24 @@ import static graphql.Directives.SkipDirective;
 
 public class ConditionalNodes {
 
-    Resolver resolver;
+    ValuesResolver valuesResolver;
 
     public ConditionalNodes() {
-        resolver = new Resolver();
+        valuesResolver = new ValuesResolver();
     }
 
     public boolean shouldInclude(ExecutionContext executionContext, List<Directive> directives) {
 
         Directive skipDirective = findDirective(directives, SkipDirective.getName());
         if (skipDirective != null) {
-            Map<String, Object> argumentValues = resolver.getArgumentValues(SkipDirective.getArguments(), skipDirective.getArguments(), executionContext.getVariables());
+            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), skipDirective.getArguments(), executionContext.getVariables());
             return !(Boolean) argumentValues.get("if");
         }
 
 
         Directive includeDirective = findDirective(directives, IncludeDirective.getName());
         if (includeDirective != null) {
-            Map<String, Object> argumentValues = resolver.getArgumentValues(IncludeDirective.getArguments(), includeDirective.getArguments(), executionContext.getVariables());
+            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(IncludeDirective.getArguments(), includeDirective.getArguments(), executionContext.getVariables());
             return (Boolean) argumentValues.get("if");
         }
 
