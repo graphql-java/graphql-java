@@ -28,7 +28,7 @@ public class Schema {
         NON_NULL
     }
 
-    GraphQLEnumType __TypeKind = GraphQLEnumType.newEnum()
+    public static GraphQLEnumType __TypeKind = GraphQLEnumType.newEnum()
             .name("__TypeKind")
             .description("An enum describing what kind of type a given __Type is")
             .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar.")
@@ -41,7 +41,7 @@ public class Schema {
             .value("NON_NULL", TypeKind.NON_NULL, "Indicates this type is a non-null. `ofType` is a valid field.")
             .build();
 
-    DataFetcher kindDataFetcher = new DataFetcher() {
+    public static DataFetcher kindDataFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
@@ -67,7 +67,7 @@ public class Schema {
         }
     };
 
-    GraphQLObjectType __InputValue = newObject()
+    public static GraphQLObjectType __InputValue = newObject()
             .name("__Field")
             .field(newFieldDefinition()
                     .name("name")
@@ -95,7 +95,7 @@ public class Schema {
             .build();
 
 
-    GraphQLObjectType __Field = newObject()
+    public static GraphQLObjectType __Field = newObject()
             .name("__Field")
             .field(newFieldDefinition()
                     .name("name")
@@ -138,7 +138,7 @@ public class Schema {
             .build();
 
 
-    GraphQLObjectType __EnumValue = newObject()
+    public static GraphQLObjectType __EnumValue = newObject()
             .name("__EnumValue")
             .field(newFieldDefinition()
                     .name("name")
@@ -165,7 +165,7 @@ public class Schema {
                     .build())
             .build();
 
-    DataFetcher fieldsFetcher = new DataFetcher() {
+    public static DataFetcher fieldsFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
@@ -184,7 +184,7 @@ public class Schema {
         }
     };
 
-    DataFetcher interfacesFetcher = new DataFetcher() {
+    public static DataFetcher interfacesFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
@@ -195,7 +195,7 @@ public class Schema {
         }
     };
 
-    DataFetcher possibleTypesFetcher = new DataFetcher() {
+    public static DataFetcher possibleTypesFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
@@ -209,7 +209,7 @@ public class Schema {
         }
     };
 
-    DataFetcher enumValuesTypesFetcher = new DataFetcher() {
+    public static DataFetcher enumValuesTypesFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
@@ -227,7 +227,7 @@ public class Schema {
         }
     };
 
-    DataFetcher inputFieldsFetcher = new DataFetcher() {
+    public static DataFetcher inputFieldsFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
@@ -239,7 +239,7 @@ public class Schema {
     };
 
 
-    GraphQLObjectType __Type = newObject()
+    public static GraphQLObjectType __Type = newObject()
             .name("__Type")
             .field(newFieldDefinition()
                     .name("kind")
@@ -291,7 +291,7 @@ public class Schema {
                     .build())
             .build();
 
-    GraphQLObjectType __Directive = newObject()
+    public static GraphQLObjectType __Directive = newObject()
             .field(newFieldDefinition()
                     .name("name")
                     .type(GraphQLString)
@@ -325,7 +325,7 @@ public class Schema {
                     .build())
             .build();
 
-    GraphQLObjectType __Schema = newObject()
+    public static GraphQLObjectType __Schema = newObject()
             .name("__Schema")
             .description("A GraphQL Schema defines the capabilities" +
                     " of a GraphQL server. It exposes all available types and directives on " +
@@ -377,6 +377,44 @@ public class Schema {
                         }
                     })
                     .build())
+            .build();
+
+
+    public static GraphQLFieldDefinition SchemaMetaFieldDef = newFieldDefinition()
+            .name("__schema")
+            .type(new GraphQLNonNull(__Schema))
+            .description("Access the current type schema of this server.")
+            .dataFetcher(new DataFetcher() {
+                @Override
+                public Object get(DataFetchingEnvironment environment) {
+                    return environment.getGraphQLSchema();
+                }
+            })
+            .build();
+
+    public static GraphQLFieldDefinition TypeMetaFieldDef = newFieldDefinition()
+            .name("__type")
+            .type(new GraphQLNonNull(__Type))
+            .description("Access the current type schema of this server.")
+            .dataFetcher(new DataFetcher() {
+                @Override
+                public Object get(DataFetchingEnvironment environment) {
+                    String name = environment.getArgument("name");
+                    return SchemaUtil.findType(environment.getGraphQLSchema(), name);
+                }
+            })
+            .build();
+
+    public static GraphQLFieldDefinition TypeNameMetaFieldDef = newFieldDefinition()
+            .name("__typename")
+            .type(new GraphQLNonNull(GraphQLString))
+            .description("Access the current type schema of this server.")
+            .dataFetcher(new DataFetcher() {
+                @Override
+                public Object get(DataFetchingEnvironment environment) {
+                    return environment.getParentType().getName();
+                }
+            })
             .build();
 
 

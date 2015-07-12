@@ -318,4 +318,27 @@ class StarWarsQueryTest extends Specification {
         then:
         result == expected
     }
+
+    def 'Allows us to verify that R2-D2 is a droid'() {
+        given:
+        def query = """
+        query CheckTypeOfR2 {
+            hero {
+                __typename
+                name
+            }
+        }
+        """
+        def expected = [
+                hero: [
+                        __typename: 'Droid',
+                        name      : 'R2-D2'
+                ],
+        ]
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema, query).execute()
+
+        then:
+        result == expected
+    }
 }

@@ -13,10 +13,16 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         return wrappedType;
     }
 
+
     @Override
     public String toString() {
         return "GraphQLNonNull{" +
                 "wrappedType=" + wrappedType +
                 '}';
+    }
+
+    @Override
+    public String getName() {
+        return "GraphQLNonNull";
     }
 }

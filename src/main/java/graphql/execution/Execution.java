@@ -2,10 +2,13 @@ package graphql.execution;
 
 
 import graphql.GraphQLException;
+import graphql.introspection.Schema;
 import graphql.language.*;
 import graphql.schema.*;
 
 import java.util.*;
+
+import static graphql.introspection.Schema.*;
 
 public class Execution {
 
@@ -149,16 +152,18 @@ public class Execution {
     }
 
     private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
-//
-//        if (name == = SchemaMetaFieldDef.name &&
-//                schema.getQueryType() == = parentType) {
-//            return SchemaMetaFieldDef;
-//        } else if (name == = TypeMetaFieldDef.name &&
-//                schema.getQueryType() == = parentType) {
-//            return TypeMetaFieldDef;
-//        } else if (name == = TypeNameMetaFieldDef.name) {
-//            return TypeNameMetaFieldDef;
-//        }
+        if (schema.getQueryType() == parentType) {
+            if (field.getName().equals(SchemaMetaFieldDef.getName())) {
+                return SchemaMetaFieldDef;
+            }
+            if (field.getName().equals(TypeMetaFieldDef.getName())) {
+                return TypeMetaFieldDef;
+            }
+        }
+        if (field.getName().equals(TypeNameMetaFieldDef.getName())) {
+            return TypeNameMetaFieldDef;
+        }
+
         GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());
         if (fieldDefinition == null) throw new GraphQLException("unknown field " + field.getName());
         return fieldDefinition;
