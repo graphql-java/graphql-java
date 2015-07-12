@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType {
+public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer {
 
     private final String name;
     private final String description;

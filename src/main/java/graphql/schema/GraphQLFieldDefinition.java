@@ -11,10 +11,11 @@ public class GraphQLFieldDefinition {
     private final String description;
     private final GraphQLOutputType type;
     private final DataFetcher dataFetcher;
+    private final String deprecationReason;
     private final List<GraphQLFieldArgument> arguments = new ArrayList<>();
 
 
-    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLFieldArgument> arguments) {
+    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLFieldArgument> arguments, String deprecationReason) {
         this.name = name;
         this.description = description;
         this.type = type;
@@ -22,6 +23,7 @@ public class GraphQLFieldDefinition {
         if (arguments != null) {
             this.arguments.addAll(arguments);
         }
+        this.deprecationReason = deprecationReason;
     }
 
 
@@ -39,11 +41,19 @@ public class GraphQLFieldDefinition {
     }
 
     public List<GraphQLFieldArgument> getArguments() {
-        return arguments;
+        return new ArrayList<>(arguments);
     }
 
     public String getDescription() {
         return description;
+    }
+
+    public String getDeprecationReason() {
+        return deprecationReason;
+    }
+
+    public boolean isDeprecated() {
+        return deprecationReason != null;
     }
 
     public static Builder newFieldDefinition() {
@@ -63,6 +73,7 @@ public class GraphQLFieldDefinition {
         private GraphQLOutputType type;
         private DataFetcher dataFetcher = defaultResolver;
         private List<GraphQLFieldArgument> arguments = new ArrayList<>();
+        private String deprecationReason;
 
 
         public Builder name(String name) {
@@ -105,8 +116,13 @@ public class GraphQLFieldDefinition {
             return this;
         }
 
+        public Builder deprecate(String deprecationReason) {
+            this.deprecationReason = deprecationReason;
+            return this;
+        }
+
         public GraphQLFieldDefinition build() {
-            return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments);
+            return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments, deprecationReason);
         }
 
 

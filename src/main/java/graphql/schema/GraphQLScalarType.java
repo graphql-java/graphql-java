@@ -2,9 +2,9 @@ package graphql.schema;
 
 
 public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType {
+
     private final String name;
     private final String description;
-
     private final Coercing coercing;
 
 

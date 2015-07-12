@@ -33,6 +33,10 @@ public class DataFetchingEnvironment {
         return arguments;
     }
 
+    public <T> T getArgument(String name) {
+        return (T) arguments.get(name);
+    }
+
     public Object getContext() {
         return context;
     }

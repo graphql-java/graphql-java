@@ -3,7 +3,7 @@ package graphql.schema;
 
 import java.util.*;
 
-public class GraphQLObjectType implements GraphQLType, GraphQLOutputType {
+public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer {
 
     private final String name;
     private final String description;
@@ -34,7 +34,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType {
 
 
     public List<GraphQLInterfaceType> getInterfaces() {
-        return interfaces;
+        return new ArrayList<>(interfaces);
     }
 
     public String getDescription() {

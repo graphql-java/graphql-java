@@ -21,6 +21,6 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType {
     }
 
     public List<GraphQLInputObjectField> getFields() {
-        return fields;
+        return new ArrayList<>(fields);
     }
 }

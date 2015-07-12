@@ -32,6 +32,10 @@ public class GraphQLFieldArgument {
     }
 
 
+    public String getDescription() {
+        return description;
+    }
+
     public static Builder newFieldArgument() {
         return new Builder();
     }

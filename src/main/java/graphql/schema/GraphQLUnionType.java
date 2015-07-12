@@ -15,7 +15,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType {
     }
 
     public List<GraphQLType> getTypes() {
-        return types;
+        return new ArrayList<>(types);
     }
 
     public TypeResolver getTypeResolver() {

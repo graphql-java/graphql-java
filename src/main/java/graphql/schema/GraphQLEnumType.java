@@ -35,6 +35,10 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         throw new GraphQLException("");
     }
 
+    public List<GraphQLEnumValueDefinition> getValues() {
+        return new ArrayList<>(valueDefinitionMap.values());
+    }
+
 
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
         this.name = name;

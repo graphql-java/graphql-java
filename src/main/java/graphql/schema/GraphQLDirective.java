@@ -27,7 +27,7 @@ public class GraphQLDirective {
     }
 
     public List<GraphQLFieldArgument> getArguments() {
-        return arguments;
+        return new ArrayList<>(arguments);
     }
 
     public boolean isOnOperation() {
@@ -40,6 +40,10 @@ public class GraphQLDirective {
 
     public boolean isOnField() {
         return onField;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public static Builder newDirective() {
