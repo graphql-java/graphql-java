@@ -3,6 +3,11 @@ package graphql.execution
 import graphql.Scalars
 import graphql.TestUtil
 import graphql.language.Argument
+import graphql.language.BooleanValue
+import graphql.language.IntValue
+import graphql.language.ObjectField
+import graphql.language.ObjectValue
+import graphql.language.StringValue
 import graphql.language.TypeName
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
@@ -11,6 +16,9 @@ import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import static graphql.schema.GraphQLInputObjectField.*
+import static graphql.schema.GraphQLInputObjectType.*
 
 
 class ValuesResolverTest extends Specification {
@@ -37,11 +45,21 @@ class ValuesResolverTest extends Specification {
 
     }
 
-    def "object as input"() {
+    def "object as variable input"() {
         given:
-        def nameField = new GraphQLInputObjectField("name", Scalars.GraphQLString)
-        def idField = new GraphQLInputObjectField("id", Scalars.GraphQLInt)
-        def inputType = new GraphQLInputObjectType("Person", [nameField, idField])
+        def nameField = newInputObjectField()
+                .name("name")
+                .type(Scalars.GraphQLString)
+                .build()
+        def idField = newInputObjectField()
+                .name("id")
+                .type(Scalars.GraphQLInt)
+                .build()
+        def inputType = newInputObject()
+                .name("Person")
+                .field(nameField)
+                .field(idField)
+                .build()
         def schema = TestUtil.schemaWithInputType(inputType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
 
@@ -63,5 +81,47 @@ class ValuesResolverTest extends Specification {
 
         then:
         values['arg'] == 'hello'
+    }
+
+    def "resolves object literal"() {
+        given: "complex object value"
+        def complexObjectValue = new ObjectValue()
+        complexObjectValue.getObjectFields().add(new ObjectField("intKey", new IntValue(1)))
+        complexObjectValue.getObjectFields().add(new ObjectField("stringKey", new StringValue("world")))
+        def subObject = new ObjectValue()
+        subObject.getObjectFields().add(new ObjectField("subKey", new BooleanValue(true)))
+        complexObjectValue.getObjectFields().add(new ObjectField("subObject", subObject))
+        def argument = new Argument("arg", complexObjectValue)
+
+        and: "schema defining input object"
+        def subObjectType = newInputObject()
+                .name("SubType")
+                .field(newInputObjectField()
+                .name("subKey")
+                .type(Scalars.GraphQLBoolean)
+                .build())
+                .build()
+        def inputObjectType = newInputObject()
+                .name("inputObject")
+                .field(newInputObjectField()
+                .name("intKey")
+                .type(Scalars.GraphQLInt)
+                .build())
+                .field(newInputObjectField()
+                .name("stringKey")
+                .type(Scalars.GraphQLString)
+                .build())
+                .field(newInputObjectField()
+                .name("subObject")
+                .type(subObjectType)
+                .build())
+                .build()
+        def fieldArgument = new GraphQLFieldArgument("arg", inputObjectType)
+
+        when:
+        def values = resolver.getArgumentValues([fieldArgument], [argument], [:])
+
+        then:
+        values['arg'] == [intKey: 1, stringKey: 'world', subObject: [subKey: true]]
     }
 }

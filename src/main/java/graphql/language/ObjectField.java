@@ -11,6 +11,14 @@ public class ObjectField implements Node {
         this.value = value;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public Value getValue() {
+        return value;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

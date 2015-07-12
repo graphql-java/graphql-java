@@ -5,6 +5,7 @@ import graphql.GraphQLException;
 import graphql.language.*;
 import graphql.schema.*;
 
+import java.io.ObjectInput;
 import java.util.*;
 
 public class ValuesResolver {
@@ -110,10 +111,27 @@ public class ValuesResolver {
         if (type instanceof GraphQLScalarType) {
             return ((GraphQLScalarType) type).getCoercing().coerceLiteral(inputValue);
         }
-        if(type instanceof GraphQLNonNull){
-            return coerceValueAst(((GraphQLNonNull) type).getWrappedType(),inputValue,variables);
+        if (type instanceof GraphQLNonNull) {
+            return coerceValueAst(((GraphQLNonNull) type).getWrappedType(), inputValue, variables);
+        }
+        if (type instanceof GraphQLInputObjectType) {
+            return coerceValueAstForInputObject((GraphQLInputObjectType) type, (ObjectValue) inputValue, variables);
         }
         return null;
+    }
+
+    private Object coerceValueAstForInputObject(GraphQLInputObjectType type, ObjectValue inputValue, Map<String, Object> variables) {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        for (ObjectField objectField : inputValue.getObjectFields()) {
+            GraphQLInputObjectField inputObjectField = type.getField(objectField.getName());
+            Object fieldValue = coerceValueAst(inputObjectField.getType(), objectField.getValue(), variables);
+            if (fieldValue == null) {
+                fieldValue = inputObjectField.getDefaultValue();
+            }
+            result.put(objectField.getName(), fieldValue);
+        }
+        return result;
     }
 
 
