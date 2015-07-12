@@ -60,7 +60,6 @@ public class Execution {
         for (String fieldName : fields.keySet()) {
             List<Field> fieldList = fields.get(fieldName);
             Object resolvedResult = resolveField(executionContext, parentType, source, fieldList);
-            if (resolvedResult == null) continue;
             results.put(fieldName, resolvedResult);
         }
         return results;
@@ -82,8 +81,6 @@ public class Execution {
         );
         resolvedValue = fieldDef.getDataFetcher().get(environment);
 
-        if (resolvedValue == null) throw new RuntimeException("resolvedValue is null");
-
 
         return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
     }
@@ -92,9 +89,11 @@ public class Execution {
         if (fieldType instanceof GraphQLNonNull) {
             GraphQLNonNull graphQLNonNull = (GraphQLNonNull) fieldType;
             Object completed = completeValue(executionContext, graphQLNonNull.getWrappedType(), fields, result);
-            //TODO: Check not null
+            if (completed == null) throw new GraphQLException("Cannot return null for non-nullable type: " + fields);
             return completed;
 
+        } else if (result == null) {
+            return null;
         } else if (fieldType instanceof GraphQLList) {
             return completeValueForList(executionContext, (GraphQLList) fieldType, fields, (List<Object>) result);
         } else if (fieldType instanceof GraphQLScalarType) {

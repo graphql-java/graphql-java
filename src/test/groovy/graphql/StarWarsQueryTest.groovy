@@ -196,6 +196,28 @@ class StarWarsQueryTest extends Specification {
         result == expected
     }
 
+    def 'Allows us to create a generic query, then pass an invalid ID to get null back'() {
+        given:
+        def query = """
+        query humanQuery(\$id: String!) {
+            human(id: \$id) {
+                name
+            }
+        }
+        """
+        def params = [
+                id: 'not a valid id'
+        ]
+        def expected = [
+                human: null
+        ]
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema, query, params).execute()
+
+        then:
+        result == expected
+    }
+
 
     def 'Allows us to query for Luke, changing his key with an alias'() {
         given:
