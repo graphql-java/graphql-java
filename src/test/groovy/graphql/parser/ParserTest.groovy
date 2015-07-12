@@ -247,18 +247,21 @@ class ParserTest extends Specification {
         "[[String!]]" | new ListType(new ListType(new NonNullType(new TypeName("String"))))
     }
 
-    def "parse object values"() {
+    def "parse complex object values"() {
         given:
         def input = """
-            query myQuery() {
-              hello(arg: {intKey:1, stringKey: \"world\"}) }
+            query myQuery {
+              hello(arg: {intKey:1, stringKey: \"world\", subObject: {subKey:true} } ) }
             """
 
         and: "expected query"
 
         def objectValue = new ObjectValue()
-        objectValue.getValueMap().put("intKey", new IntValue(1))
-        objectValue.getValueMap().put("stringKey", new StringValue("world"))
+        objectValue.getObjectFields().add(new ObjectField("intKey", new IntValue(1)))
+        objectValue.getObjectFields().add(new ObjectField("stringKey", new StringValue("world")))
+        def subObject = new ObjectValue()
+        subObject.getObjectFields().add(new ObjectField("subKey",new BooleanValue(true)))
+        objectValue.getObjectFields().add(new ObjectField("subObject",subObject))
         def argument = new Argument("arg", objectValue)
         def helloField = new Field("hello", [argument])
         def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,

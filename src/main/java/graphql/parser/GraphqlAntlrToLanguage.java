@@ -332,7 +332,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             ObjectValue objectValue = new ObjectValue();
             for (GraphqlParser.ObjectFieldWithVariableContext objectFieldWithVariableContext :
                     ctx.objectValueWithVariable().objectFieldWithVariable()) {
-                objectValue.getValueMap().put(objectFieldWithVariableContext.NAME().getText(), getValue(objectFieldWithVariableContext.valueWithVariable()));
+                ObjectField objectField = new ObjectField(objectFieldWithVariableContext.NAME().getText(), getValue(objectFieldWithVariableContext.valueWithVariable()));
+                objectValue.getObjectFields().add(objectField);
             }
             return objectValue;
         } else if (ctx.variable() != null) {
@@ -368,7 +369,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             ObjectValue objectValue = new ObjectValue();
             for (GraphqlParser.ObjectFieldContext objectFieldContext :
                     ctx.objectValue().objectField()) {
-                objectValue.getValueMap().put(objectFieldContext.NAME().getText(), getValue(objectFieldContext.value()));
+                ObjectField objectField = new ObjectField(objectFieldContext.NAME().getText(), getValue(objectFieldContext.value()));
+                objectValue.getObjectFields().add(objectField);
             }
             return objectValue;
         }

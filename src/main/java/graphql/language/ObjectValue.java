@@ -1,19 +1,24 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-public class ObjectValue implements Value{
+public class ObjectValue implements Value {
 
-    private Map<String,Value> valueMap = new LinkedHashMap<>();
+    private List<ObjectField> objectFields = new ArrayList<>();
 
-    public Map<String, Value> getValueMap() {
-        return valueMap;
+    public ObjectValue() {
     }
 
-    public void setValueMap(Map<String, Value> valueMap) {
-        this.valueMap = valueMap;
+    public ObjectValue(List<ObjectField> objectFields) {
+        this.objectFields.addAll(objectFields);
+    }
+
+    public List<ObjectField> getObjectFields() {
+        return objectFields;
     }
 
     @Override
@@ -23,19 +28,19 @@ public class ObjectValue implements Value{
 
         ObjectValue that = (ObjectValue) o;
 
-        return !(valueMap != null ? !valueMap.equals(that.valueMap) : that.valueMap != null);
+        return !(objectFields != null ? !objectFields.equals(that.objectFields) : that.objectFields != null);
 
     }
 
     @Override
     public int hashCode() {
-        return valueMap != null ? valueMap.hashCode() : 0;
+        return objectFields != null ? objectFields.hashCode() : 0;
     }
 
     @Override
     public String toString() {
         return "ObjectValue{" +
-                "valueMap=" + valueMap +
+                "objectFields=" + objectFields +
                 '}';
     }
 }
