@@ -3,7 +3,7 @@
 ## Note: This library is currently under development and not yet stable. GraphQL itself is just a working draft currently. So there will be changes!  
 
 
-*It's an early version, but nearly everything should be working, except validation.* 
+## It's an early version, but nearly everything should be working, except validation. 
 
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js). 
