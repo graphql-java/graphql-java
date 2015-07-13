@@ -3,17 +3,17 @@ package graphql.execution;
 
 public class ExecutionResult {
 
-    private Object resut;
+    private Object result;
 
-    public ExecutionResult(Object resut) {
-        this.resut = resut;
+    public ExecutionResult(Object result) {
+        this.result = result;
     }
 
-    public Object getResut() {
-        return resut;
+    public Object getResult() {
+        return result;
     }
 
-    public void setResut(Object resut) {
-        this.resut = resut;
+    public void setResult(Object result) {
+        this.result = result;
     }
 }
