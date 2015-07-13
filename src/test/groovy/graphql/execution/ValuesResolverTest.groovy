@@ -7,6 +7,7 @@ import graphql.language.ArrayValue
 import graphql.language.BooleanValue
 import graphql.language.EnumValue
 import graphql.language.IntValue
+import graphql.language.ListType
 import graphql.language.ObjectField
 import graphql.language.ObjectValue
 import graphql.language.StringValue
@@ -74,6 +75,18 @@ class ValuesResolverTest extends Specification {
         def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: [name: 'a', id: 123]])
         then:
         resolvedValues['variable'] == [name: 'a', id: 123]
+    }
+
+    def "simple value gets resolved to a list when the type is a List"() {
+        given:
+        def schema = TestUtil.schemaWithInputType(new GraphQLList(GraphQLString))
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
+        String value = "world"
+        when:
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: value])
+        then:
+        resolvedValues['variable'] == ['world']
+
     }
 
 
