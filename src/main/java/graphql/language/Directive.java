@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Directive {
+public class Directive implements Node{
     private String name;
     private final List<Argument> arguments = new ArrayList<>();
 

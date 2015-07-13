@@ -1,5 +1,5 @@
 package graphql.language;
 
 
-public interface Definition {
+public interface Definition extends Node{
 }

@@ -1,7 +1,7 @@
 package graphql.language;
 
 
-public class VariableDefinition {
+public class VariableDefinition implements Node{
 
     private String name;
     private Type type;

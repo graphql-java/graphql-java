@@ -1,5 +1,5 @@
 package graphql.language;
 
 
-public interface Selection {
+public interface Selection extends Node{
 }

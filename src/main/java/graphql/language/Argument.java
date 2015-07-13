@@ -1,7 +1,7 @@
 package graphql.language;
 
 
-public class Argument {
+public class Argument implements Node{
 
     private String name;
     private Value value;
