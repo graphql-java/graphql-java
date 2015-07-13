@@ -7,6 +7,8 @@ repositories {
     mavenCentral()
 }
 
+apply plugin: 'groovy'
+
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
     compile 'org.antlr:antlr4:4.5'
