@@ -4,6 +4,7 @@ import graphql.Scalars
 import graphql.TestUtil
 import graphql.language.Argument
 import graphql.language.BooleanValue
+import graphql.language.EnumValue
 import graphql.language.IntValue
 import graphql.language.ObjectField
 import graphql.language.ObjectValue
@@ -11,6 +12,7 @@ import graphql.language.StringValue
 import graphql.language.TypeName
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
+import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldArgument
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
@@ -123,5 +125,29 @@ class ValuesResolverTest extends Specification {
 
         then:
         values['arg'] == [intKey: 1, stringKey: 'world', subObject: [subKey: true]]
+    }
+
+    def "resolves enum literals"() {
+        given: "the ast"
+        EnumValue enumValue1 = new EnumValue("PLUTO");
+        EnumValue enumValue2 = new EnumValue("MARS");
+        def argument1 = new Argument("arg1", enumValue1)
+        def argument2 = new Argument("arg2", enumValue2)
+
+        and: "the schema"
+        def enumType = GraphQLEnumType.newEnum()
+                .name("EnumType")
+                .value("PLUTO")
+                .value("MARS", "mars")
+                .build()
+        def fieldArgument1 = new GraphQLFieldArgument("arg1", enumType)
+        def fieldArgumen2 = new GraphQLFieldArgument("arg2", enumType)
+        when:
+        def values = resolver.getArgumentValues([fieldArgument1, fieldArgumen2], [argument1, argument2], [:])
+
+        then:
+        values['arg1'] == 'PLUTO'
+        values['arg2'] == 'mars'
+
     }
 }

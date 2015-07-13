@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType,GraphQLUnmodifiedType {
+public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
 
     private final String name;
     private final String description;
@@ -24,7 +24,9 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         @Override
         public Object coerceLiteral(Object input) {
             EnumValue enumValue = (EnumValue) input;
-            return valueDefinitionMap.get(enumValue.getName());
+            GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(enumValue.getName());
+            if (enumValueDefinition.getValue() != null) return enumValueDefinition.getValue();
+            return enumValueDefinition.getName();
         }
     };
 
@@ -87,6 +89,11 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
         public Builder value(String name, Object value, String description) {
             values.add(new GraphQLEnumValueDefinition(name, description, value));
+            return this;
+        }
+
+        public Builder value(String name, Object value) {
+            values.add(new GraphQLEnumValueDefinition(name, null, value));
             return this;
         }
 

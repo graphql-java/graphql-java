@@ -117,6 +117,9 @@ public class ValuesResolver {
         if (type instanceof GraphQLInputObjectType) {
             return coerceValueAstForInputObject((GraphQLInputObjectType) type, (ObjectValue) inputValue, variables);
         }
+        if(type instanceof GraphQLEnumType){
+            return ((GraphQLEnumType) type).getCoercing().coerceLiteral(inputValue);
+        }
         return null;
     }
 
@@ -125,6 +128,8 @@ public class ValuesResolver {
 
         for (ObjectField objectField : inputValue.getObjectFields()) {
             GraphQLInputObjectField inputObjectField = type.getField(objectField.getName());
+            // illegal field ... no corresponding key in the schema
+            if (inputObjectField == null) continue;
             Object fieldValue = coerceValueAst(inputObjectField.getType(), objectField.getValue(), variables);
             if (fieldValue == null) {
                 fieldValue = inputObjectField.getDefaultValue();
