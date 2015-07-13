@@ -1,12 +1,8 @@
 package graphql
 
-import graphql.schema.GraphQLFieldArgument
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLInputType
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
+import graphql.schema.*
 
-import static graphql.Scalars.*
+import static graphql.Scalars.GraphQLString
 
 
 class TestUtil {

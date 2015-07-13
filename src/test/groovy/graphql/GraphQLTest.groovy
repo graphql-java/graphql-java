@@ -6,9 +6,9 @@ import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
-import static graphql.schema.GraphQLFieldDefinition.*
-import static graphql.schema.GraphQLObjectType.*
-import static graphql.schema.GraphQLSchema.*
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLSchema.newSchema
 
 class GraphQLTest extends Specification {
 

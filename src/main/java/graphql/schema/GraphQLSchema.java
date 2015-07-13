@@ -2,7 +2,6 @@ package graphql.schema;
 
 
 import graphql.Directives;
-import graphql.language.Directive;
 
 import java.util.Arrays;
 import java.util.List;

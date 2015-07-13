@@ -5,7 +5,6 @@ import graphql.GraphQLException;
 import graphql.language.*;
 import graphql.schema.*;
 
-import java.io.ObjectInput;
 import java.util.*;
 
 public class ValuesResolver {

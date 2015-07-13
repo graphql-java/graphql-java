@@ -1,14 +1,14 @@
 package graphql.parser;
 
 
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiTypeLoader;
 import graphql.language.*;
 import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.misc.NotNull;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 

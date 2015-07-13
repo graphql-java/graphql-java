@@ -1,32 +1,16 @@
 package graphql.execution
 
-import graphql.Scalars
 import graphql.TestUtil
-import graphql.language.Argument
-import graphql.language.ArrayValue
-import graphql.language.BooleanValue
-import graphql.language.EnumValue
-import graphql.language.IntValue
-import graphql.language.ListType
-import graphql.language.ObjectField
-import graphql.language.ObjectValue
-import graphql.language.StringValue
-import graphql.language.TypeName
-import graphql.language.Value
-import graphql.language.VariableDefinition
-import graphql.language.VariableReference
+import graphql.language.*
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldArgument
-import graphql.schema.GraphQLInputObjectField
-import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLList
-import groovy.json.internal.ValueList
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import static graphql.Scalars.*
-import static graphql.schema.GraphQLInputObjectField.*
-import static graphql.schema.GraphQLInputObjectType.*
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.schema.GraphQLInputObjectType.newInputObject
 
 
 class ValuesResolverTest extends Specification {

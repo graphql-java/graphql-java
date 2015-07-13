@@ -2,14 +2,17 @@ package graphql.execution;
 
 
 import graphql.language.*;
-import graphql.schema.*;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.execution.TypeFromAST.*;
-import static graphql.schema.SchemaUtil.*;
+import static graphql.execution.TypeFromAST.getTypeFromAST;
+import static graphql.schema.SchemaUtil.findImplementations;
 
 public class FieldCollector {
 

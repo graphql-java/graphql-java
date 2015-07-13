@@ -1,19 +1,15 @@
 package graphql.introspection;
 
 
-import graphql.Directives;
-import graphql.Scalars;
-import graphql.language.Directive;
 import graphql.schema.*;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import static graphql.Scalars.*;
+import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
-import static graphql.schema.GraphQLObjectType.*;
+import static graphql.schema.GraphQLObjectType.newObject;
 
 public class Schema {
 

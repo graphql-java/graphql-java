@@ -4,7 +4,7 @@ package graphql;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNonNull;
 
-import static graphql.Scalars.*;
+import static graphql.Scalars.GraphQLBoolean;
 import static graphql.schema.GraphQLFieldArgument.newFieldArgument;
 
 public class Directives {

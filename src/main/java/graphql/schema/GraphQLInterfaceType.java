@@ -1,8 +1,6 @@
 package graphql.schema;
 
 
-import graphql.language.Type;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;

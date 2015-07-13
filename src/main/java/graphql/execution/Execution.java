@@ -2,11 +2,19 @@ package graphql.execution;
 
 
 import graphql.GraphQLException;
-import graphql.language.*;
+import graphql.language.Document;
+import graphql.language.Field;
+import graphql.language.OperationDefinition;
 import graphql.schema.*;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
 import static graphql.introspection.Schema.*;
 
