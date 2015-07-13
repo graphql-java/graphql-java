@@ -1,5 +1,8 @@
 # graphql-java
 
+## Note: This library is currently under development and not yet stable. GraphQL itself is just a working draft currently. So there will be changes!  
+
+
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js). 
    
@@ -16,6 +19,25 @@ A complex schema (stolen from the js reference implementation): [StarWarsSchema]
 #### Query
 
 For how to define a simple schema and execute queries: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
+
+
+### How to build it 
+
+Just clone the repo and type 
+
+```sh
+./gradlew build
+```
+
+In build/libs you will find the jar file.
+
+### Run the tests
+
+
+```sh
+./gradlew test
+```
+
 
 
 ### Details
