@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class StringValue implements Value{
 
     private String value;
@@ -15,6 +18,11 @@ public class StringValue implements Value{
 
     public void setValue(String value) {
         this.value = value;
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
     }
 
     @Override

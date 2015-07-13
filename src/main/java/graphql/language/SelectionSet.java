@@ -20,6 +20,11 @@ public class SelectionSet implements  Node{
     }
 
     @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

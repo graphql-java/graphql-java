@@ -23,6 +23,12 @@ public class ArrayValue implements Value {
         this.values = values;
     }
 
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<Node>(values);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

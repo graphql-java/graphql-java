@@ -1,7 +1,10 @@
 package graphql.language;
 
 
-public class Argument implements Node{
+import java.util.ArrayList;
+import java.util.List;
+
+public class Argument implements Node {
 
     private String name;
     private Value value;
@@ -25,6 +28,14 @@ public class Argument implements Node{
 
     public void setValue(Value value) {
         this.value = value;
+    }
+
+
+    @Override
+    public List<Node> getChildren() {
+        List<Node> result = new ArrayList<>();
+        result.add(value);
+        return result;
     }
 
     @Override
@@ -53,4 +64,5 @@ public class Argument implements Node{
                 ", value=" + value +
                 '}';
     }
+
 }

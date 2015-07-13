@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ListType implements Type{
 
     private Type type;
@@ -18,6 +21,11 @@ public class ListType implements Type{
 
     public void setType(Type type) {
         this.type = type;
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
     }
 
     @Override

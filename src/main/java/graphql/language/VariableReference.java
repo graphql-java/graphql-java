@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class VariableReference implements Value{
 
     private String name;
@@ -18,6 +21,11 @@ public class VariableReference implements Value{
     }
 
     @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -27,6 +35,8 @@ public class VariableReference implements Value{
         return !(name != null ? !name.equals(that.name) : that.name != null);
 
     }
+
+
 
     @Override
     public int hashCode() {

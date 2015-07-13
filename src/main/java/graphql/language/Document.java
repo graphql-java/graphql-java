@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Document implements Node{
+public class Document implements Node {
 
     private List<Definition> definitions = new ArrayList<>();
 
@@ -22,6 +22,12 @@ public class Document implements Node{
 
     public void setDefinitions(List<Definition> definitions) {
         this.definitions = definitions;
+    }
+
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<Node>(definitions);
     }
 
 

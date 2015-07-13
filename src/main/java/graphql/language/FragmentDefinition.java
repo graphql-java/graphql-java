@@ -59,6 +59,15 @@ public class FragmentDefinition implements Definition {
     }
 
     @Override
+    public List<Node> getChildren() {
+        List<Node> result = new ArrayList<>();
+        result.add(typeCondition);
+        result.add(selectionSet);
+        result.addAll(directives);
+        return result;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

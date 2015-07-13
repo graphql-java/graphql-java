@@ -2,8 +2,10 @@ package graphql.language;
 
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
-public class FloatValue implements Value{
+public class FloatValue implements Value {
 
     private BigDecimal value;
 
@@ -17,6 +19,12 @@ public class FloatValue implements Value{
 
     public void setValue(BigDecimal value) {
         this.value = value;
+    }
+
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
     }
 
     @Override

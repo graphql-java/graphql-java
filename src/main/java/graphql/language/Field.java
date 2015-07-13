@@ -45,6 +45,16 @@ public class Field implements Selection {
     }
 
 
+    @Override
+    public List<Node> getChildren() {
+        List<Node> result = new ArrayList<Node>();
+        result.add(selectionSet);
+        result.addAll(arguments);
+        result.addAll(directives);
+        return result;
+    }
+
+
     public String getName() {
         return name;
     }

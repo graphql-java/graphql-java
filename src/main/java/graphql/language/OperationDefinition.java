@@ -42,6 +42,11 @@ public class OperationDefinition implements Definition {
         this.selectionSet = selectionSet;
     }
 
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
+    }
+
     public String getName() {
         return name;
     }

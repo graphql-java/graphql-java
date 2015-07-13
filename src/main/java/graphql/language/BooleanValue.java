@@ -1,7 +1,10 @@
 package graphql.language;
 
 
-public class BooleanValue implements Value{
+import java.util.ArrayList;
+import java.util.List;
+
+public class BooleanValue implements Value {
 
     private boolean value;
 
@@ -15,6 +18,12 @@ public class BooleanValue implements Value{
 
     public void setValue(boolean value) {
         this.value = value;
+    }
+
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
     }
 
     @Override

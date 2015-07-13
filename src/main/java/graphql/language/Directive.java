@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Directive implements Node{
+public class Directive implements Node {
     private String name;
     private final List<Argument> arguments = new ArrayList<>();
 
@@ -31,6 +31,12 @@ public class Directive implements Node{
 
     public void setName(String name) {
         this.name = name;
+    }
+
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<Node>(arguments);
     }
 
     @Override

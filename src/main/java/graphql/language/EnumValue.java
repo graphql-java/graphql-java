@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class EnumValue implements Value {
 
     private String name;
@@ -15,6 +18,12 @@ public class EnumValue implements Value {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
     }
 
     @Override

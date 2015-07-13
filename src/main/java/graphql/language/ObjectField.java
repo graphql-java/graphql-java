@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ObjectField implements Node {
 
     private String name;
@@ -17,6 +20,11 @@ public class ObjectField implements Node {
 
     public Value getValue() {
         return value;
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
     }
 
     @Override

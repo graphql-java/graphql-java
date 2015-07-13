@@ -1,7 +1,10 @@
 package graphql.language;
 
 
-public class TypeName implements Type{
+import java.util.ArrayList;
+import java.util.List;
+
+public class TypeName implements Type {
 
     private String name;
 
@@ -15,6 +18,11 @@ public class TypeName implements Type{
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
     }
 
     @Override

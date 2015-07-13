@@ -20,6 +20,11 @@ public class ObjectValue implements Value {
     }
 
     @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

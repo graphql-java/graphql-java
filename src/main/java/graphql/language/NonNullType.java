@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class NonNullType implements Type {
 
     private Type type;
@@ -22,6 +25,11 @@ public class NonNullType implements Type {
 
     public void setType(TypeName type) {
         this.type = type;
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        return new ArrayList<>();
     }
 
     @Override
