@@ -117,10 +117,26 @@ public class ValuesResolver {
         if (type instanceof GraphQLInputObjectType) {
             return coerceValueAstForInputObject((GraphQLInputObjectType) type, (ObjectValue) inputValue, variables);
         }
-        if(type instanceof GraphQLEnumType){
+        if (type instanceof GraphQLEnumType) {
             return ((GraphQLEnumType) type).getCoercing().coerceLiteral(inputValue);
         }
+        if (type instanceof GraphQLList) {
+            return coerceValueAstForList((GraphQLList) type,inputValue,variables);
+        }
         return null;
+    }
+
+    private Object coerceValueAstForList(GraphQLList graphQLList, Value value, Map<String, Object> variables) {
+        if (value instanceof ArrayValue) {
+            ArrayValue arrayValue = (ArrayValue) value;
+            List<Object> result = new ArrayList<>();
+            for (Value singleValue : arrayValue.getValues()) {
+                result.add(coerceValueAst(graphQLList.getWrappedType(), singleValue, variables));
+            }
+            return result;
+        } else {
+            return Collections.singletonList(coerceValueAst(graphQLList.getWrappedType(), value, variables));
+        }
     }
 
     private Object coerceValueAstForInputObject(GraphQLInputObjectType type, ObjectValue inputValue, Map<String, Object> variables) {

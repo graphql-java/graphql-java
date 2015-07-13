@@ -3,6 +3,7 @@ package graphql.execution
 import graphql.Scalars
 import graphql.TestUtil
 import graphql.language.Argument
+import graphql.language.ArrayValue
 import graphql.language.BooleanValue
 import graphql.language.EnumValue
 import graphql.language.IntValue
@@ -10,15 +11,19 @@ import graphql.language.ObjectField
 import graphql.language.ObjectValue
 import graphql.language.StringValue
 import graphql.language.TypeName
+import graphql.language.Value
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldArgument
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLList
+import groovy.json.internal.ValueList
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static graphql.Scalars.*
 import static graphql.schema.GraphQLInputObjectField.*
 import static graphql.schema.GraphQLInputObjectType.*
 
@@ -39,11 +44,11 @@ class ValuesResolverTest extends Specification {
         resolvedValues['variable'] == outputValue
 
         where:
-        inputType              | variableType            | inputValue   || outputValue
-        Scalars.GraphQLInt     | new TypeName("Int")     | 100          || 100
-        Scalars.GraphQLString  | new TypeName("String")  | 'someString' || 'someString'
-        Scalars.GraphQLBoolean | new TypeName("Boolean") | 'true'       || true
-        Scalars.GraphQLFloat   | new TypeName("Float")   | '42.43'      || 42.43f
+        inputType      | variableType            | inputValue   || outputValue
+        GraphQLInt     | new TypeName("Int")     | 100          || 100
+        GraphQLString  | new TypeName("String")  | 'someString' || 'someString'
+        GraphQLBoolean | new TypeName("Boolean") | 'true'       || true
+        GraphQLFloat   | new TypeName("Float")   | '42.43'      || 42.43f
 
     }
 
@@ -51,11 +56,11 @@ class ValuesResolverTest extends Specification {
         given:
         def nameField = newInputObjectField()
                 .name("name")
-                .type(Scalars.GraphQLString)
+                .type(GraphQLString)
                 .build()
         def idField = newInputObjectField()
                 .name("id")
-                .type(Scalars.GraphQLInt)
+                .type(GraphQLInt)
                 .build()
         def inputType = newInputObject()
                 .name("Person")
@@ -75,7 +80,7 @@ class ValuesResolverTest extends Specification {
     def "resolves argument with variable reference"() {
         given:
         def variables = [var: 'hello']
-        def fieldArgument = new GraphQLFieldArgument("arg", Scalars.GraphQLString)
+        def fieldArgument = new GraphQLFieldArgument("arg", GraphQLString)
         def argument = new Argument("arg", new VariableReference("var"))
 
         when:
@@ -100,18 +105,18 @@ class ValuesResolverTest extends Specification {
                 .name("SubType")
                 .field(newInputObjectField()
                 .name("subKey")
-                .type(Scalars.GraphQLBoolean)
+                .type(GraphQLBoolean)
                 .build())
                 .build()
         def inputObjectType = newInputObject()
                 .name("inputObject")
                 .field(newInputObjectField()
                 .name("intKey")
-                .type(Scalars.GraphQLInt)
+                .type(GraphQLInt)
                 .build())
                 .field(newInputObjectField()
                 .name("stringKey")
-                .type(Scalars.GraphQLString)
+                .type(GraphQLString)
                 .build())
                 .field(newInputObjectField()
                 .name("subObject")
@@ -141,13 +146,44 @@ class ValuesResolverTest extends Specification {
                 .value("MARS", "mars")
                 .build()
         def fieldArgument1 = new GraphQLFieldArgument("arg1", enumType)
-        def fieldArgumen2 = new GraphQLFieldArgument("arg2", enumType)
+        def fieldArgument2 = new GraphQLFieldArgument("arg2", enumType)
         when:
-        def values = resolver.getArgumentValues([fieldArgument1, fieldArgumen2], [argument1, argument2], [:])
+        def values = resolver.getArgumentValues([fieldArgument1, fieldArgument2], [argument1, argument2], [:])
 
         then:
         values['arg1'] == 'PLUTO'
         values['arg2'] == 'mars'
+    }
+
+    def "resolves array literals"() {
+        given:
+        ArrayValue arrayValue = new ArrayValue()
+        arrayValue.getValues().add(new BooleanValue(true))
+        arrayValue.getValues().add(new BooleanValue(false))
+        def argument = new Argument("arg", arrayValue)
+
+        def fieldArgument = new GraphQLFieldArgument("arg", new GraphQLList(GraphQLBoolean))
+
+        when:
+        def values = resolver.getArgumentValues([fieldArgument], [argument], [:])
+
+        then:
+        values['arg'] == [true, false]
+
+    }
+
+    def "resolves single value literal to a list when type is a list "() {
+        given:
+        StringValue stringValue = new StringValue("world")
+        def argument = new Argument("arg", stringValue)
+
+        def fieldArgument = new GraphQLFieldArgument("arg", new GraphQLList(GraphQLString))
+
+        when:
+        def values = resolver.getArgumentValues([fieldArgument], [argument], [:])
+
+        then:
+        values['arg'] == ['world']
 
     }
 }
