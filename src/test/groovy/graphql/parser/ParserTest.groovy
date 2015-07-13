@@ -247,6 +247,29 @@ class ParserTest extends Specification {
         "[[String!]]" | new ListType(new ListType(new NonNullType(new TypeName("String"))))
     }
 
+    def "parse variable with default value"() {
+        given:
+        def input = """
+            query myQuery(\$variable: String = \"world\") {
+              hello }
+            """
+
+        and: "expected query"
+
+        def helloField = new Field("hello")
+        def variableDefinition = new VariableDefinition("variable", new TypeName("String"), new StringValue("world"))
+        def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
+                [variableDefinition],
+                new SelectionSet([helloField]))
+
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions[0] == queryDefinition
+    }
+
     def "parse complex object values"() {
         given:
         def input = """

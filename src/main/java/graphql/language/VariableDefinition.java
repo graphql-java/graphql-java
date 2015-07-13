@@ -17,6 +17,12 @@ public class VariableDefinition {
         this.type = type;
     }
 
+    public VariableDefinition(String name, Type type,Value defaultValue) {
+        this.name = name;
+        this.type = type;
+        this.defaultValue = defaultValue;
+    }
+
     public Value getDefaultValue() {
         return defaultValue;
     }
