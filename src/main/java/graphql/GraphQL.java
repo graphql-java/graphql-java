@@ -39,7 +39,7 @@ public class GraphQL {
         Parser parser = new Parser();
         Document document = parser.parseDocument(requestString);
         Execution execution = new Execution(executorService);
-        return execution.execute(graphQLSchema, null, document, null, arguments).getResut();
+        return execution.execute(graphQLSchema, null, document, null, arguments).getResult();
     }
 
 
