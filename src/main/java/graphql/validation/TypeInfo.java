@@ -6,18 +6,17 @@ import graphql.execution.TypeFromAST;
 import graphql.language.*;
 import graphql.schema.*;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.ArrayList;
 import java.util.List;
 
 import static graphql.introspection.Schema.*;
 
 public class TypeInfo implements QueryLanguageVisitor {
     GraphQLSchema schema;
-    Deque<GraphQLOutputType> typeStack = new ArrayDeque<>();
-    Deque<GraphQLCompositeType> parentTypeStack = new ArrayDeque<>();
-    Deque<GraphQLInputType> inputTypeStack = new ArrayDeque<>();
-    Deque<GraphQLFieldDefinition> fieldDefStack = new ArrayDeque<>();
+    List<GraphQLOutputType> typeStack = new ArrayList<>();
+    List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
+    List<GraphQLInputType> inputTypeStack = new ArrayList<>();
+    List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
     GraphQLDirective directive;
     GraphQLFieldArgument argument;
 
@@ -44,8 +43,10 @@ public class TypeInfo implements QueryLanguageVisitor {
             enterImpl((VariableDefinition) node);
         } else if (node instanceof Argument) {
             enterImpl((Argument) node);
-        } else if (node instanceof ListType) {
-            enterImpl((ListType) node);
+        } else if (node instanceof ArrayValue) {
+            enterImpl((ArrayValue) node);
+        } else if (node instanceof ObjectField) {
+            enterImpl((ObjectField) node);
         } else {
             throw new ShouldNotHappenException();
         }
@@ -58,7 +59,8 @@ public class TypeInfo implements QueryLanguageVisitor {
         if (rawType instanceof GraphQLCompositeType) {
             compositeType = (GraphQLCompositeType) rawType;
         }
-        parentTypeStack.addFirst(compositeType);
+        addParentType(compositeType);
+        ;
     }
 
     private void enterImpl(Field field) {
@@ -67,8 +69,8 @@ public class TypeInfo implements QueryLanguageVisitor {
         if (parentType != null) {
             fieldDefinition = getFieldDef(schema, parentType, field);
         }
-        fieldDefStack.addFirst(fieldDefinition);
-        typeStack.addFirst(fieldDefinition != null ? fieldDefinition.getType() : null);
+        addFieldDef(fieldDefinition);
+        addType(fieldDefinition != null ? fieldDefinition.getType() : null);
     }
 
     private void enterImpl(Directive directive) {
@@ -77,9 +79,9 @@ public class TypeInfo implements QueryLanguageVisitor {
 
     private void enterImpl(OperationDefinition operationDefinition) {
         if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-            typeStack.addFirst(schema.getMutationType());
+            addType(schema.getMutationType());
         } else if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
-            typeStack.addFirst(schema.getQueryType());
+            addType(schema.getQueryType());
         } else {
             throw new ShouldNotHappenException();
         }
@@ -87,17 +89,17 @@ public class TypeInfo implements QueryLanguageVisitor {
 
     private void enterImpl(InlineFragment inlineFragment) {
         GraphQLType type = SchemaUtil.findType(schema, inlineFragment.getTypeCondition().getName());
-        typeStack.addFirst((GraphQLOutputType) type);
+        addType((GraphQLOutputType) type);
     }
 
     private void enterImpl(FragmentDefinition fragmentDefinition) {
         GraphQLType type = SchemaUtil.findType(schema, fragmentDefinition.getTypeCondition().getName());
-        typeStack.addFirst((GraphQLOutputType) type);
+        addType((GraphQLOutputType) type);
     }
 
     private void enterImpl(VariableDefinition variableDefinition) {
         GraphQLType type = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
-        inputTypeStack.addFirst((GraphQLInputType) type);
+        addInputType((GraphQLInputType) type);
     }
 
     private void enterImpl(Argument argument) {
@@ -105,36 +107,36 @@ public class TypeInfo implements QueryLanguageVisitor {
             GraphQLFieldArgument fieldArgument = find(getDirective().getArguments(), argument.getName());
             if (fieldArgument != null) {
                 this.argument = fieldArgument;
-                inputTypeStack.addFirst(fieldArgument.getType());
+                addInputType(fieldArgument.getType());
             }
         }
         if (getFieldDef() != null) {
             GraphQLFieldArgument fieldArgument = find(getFieldDef().getArguments(), argument.getName());
             if (fieldArgument != null) {
                 this.argument = fieldArgument;
-                inputTypeStack.addFirst(fieldArgument.getType());
+                addInputType(fieldArgument.getType());
             }
         }
     }
 
-    private void enterImpl(ListType listType) {
+    private void enterImpl(ArrayValue arrayValue) {
         GraphQLNullableType nullableType = getNullableType(getInputType());
+        GraphQLInputType inputType = null;
         if (nullableType instanceof GraphQLList) {
-            inputTypeStack.addFirst((GraphQLInputType) ((GraphQLList) nullableType).getWrappedType());
-        } else {
-            inputTypeStack.addFirst(null);
+            inputType = (GraphQLInputType) ((GraphQLList) nullableType).getWrappedType();
         }
+        addInputType(inputType);
     }
 
-// TODO: OBJECT_FIELD??
-//    private void enter(ObjectFie){
-//        GraphQLUnmodifiedType objectType = getUnmodifiedType(getInputType());
-//        if (objectType instanceof GraphQLInputObjectType) {
-//            var inputField = ((GraphQLInputObjectType) objectType).getField()
-//            fieldType = inputField ? inputField.type : undefined;
-//        }
-//        this._inputTypeStack.push(fieldType);
-//    }
+    private void enterImpl(ObjectField objectField) {
+        GraphQLUnmodifiedType objectType = getUnmodifiedType(getInputType());
+        GraphQLInputType inputType = null;
+        if (objectType instanceof GraphQLInputObjectType) {
+            GraphQLInputObjectField inputField = ((GraphQLInputObjectType) objectType).getField(objectField.getName());
+            inputType = inputField.getType();
+        }
+        addInputType(inputType);
+    }
 
     private GraphQLFieldArgument find(List<GraphQLFieldArgument> arguments, String name) {
         for (GraphQLFieldArgument argument : arguments) {
@@ -147,30 +149,29 @@ public class TypeInfo implements QueryLanguageVisitor {
     @Override
     public void leave(Node node) {
         if (node instanceof SelectionSet) {
-            parentTypeStack.pop();
+            parentTypeStack.remove(parentTypeStack.size() - 1);
         } else if (node instanceof Field) {
-            fieldDefStack.pop();
-            typeStack.pop();
+            fieldDefStack.remove(fieldDefStack.size() - 1);
+            typeStack.remove(typeStack.size() - 1);
         } else if (node instanceof Directive) {
             directive = null;
         } else if (node instanceof OperationDefinition) {
-            typeStack.pop();
+            typeStack.remove(typeStack.size() - 1);
         } else if (node instanceof InlineFragment) {
-            typeStack.pop();
+            typeStack.remove(typeStack.size() - 1);
         } else if (node instanceof FragmentDefinition) {
-            typeStack.pop();
+            typeStack.remove(typeStack.size() - 1);
         } else if (node instanceof VariableDefinition) {
             argument = null;
         } else if (node instanceof Argument) {
             argument = null;
-        } else if (node instanceof ListType) {
-            inputTypeStack.pop();
+        } else if (node instanceof ArrayValue) {
+            inputTypeStack.remove(inputTypeStack.size() - 1);
+        } else if (node instanceof ObjectField) {
+            inputTypeStack.remove(inputTypeStack.size() - 1);
+        } else {
+            throw new ShouldNotHappenException();
         }
-        // TODO: OBJECT_FIELD??
-//        else if(node instanceof  ListType){
-//
-//        }
-
 
     }
 
@@ -186,19 +187,40 @@ public class TypeInfo implements QueryLanguageVisitor {
     }
 
     public GraphQLOutputType getType() {
-        return typeStack.getFirst();
+        return lastElement(typeStack);
+    }
+
+    private void addType(GraphQLOutputType type) {
+        typeStack.add(type);
+    }
+
+    private <T> T lastElement(List<T> list) {
+        if (list.size() == 0) return null;
+        return list.get(list.size() - 1);
     }
 
     public GraphQLCompositeType getParentType() {
-        return parentTypeStack.getFirst();
+        return lastElement(parentTypeStack);
+    }
+
+    private void addParentType(GraphQLCompositeType compositeType) {
+        parentTypeStack.add(compositeType);
     }
 
     public GraphQLInputType getInputType() {
-        return inputTypeStack.getFirst();
+        return lastElement(inputTypeStack);
+    }
+
+    private void addInputType(GraphQLInputType graphQLInputType) {
+        inputTypeStack.add(graphQLInputType);
     }
 
     public GraphQLFieldDefinition getFieldDef() {
-        return fieldDefStack.getFirst();
+        return lastElement(fieldDefStack);
+    }
+
+    private void addFieldDef(GraphQLFieldDefinition fieldDefinition) {
+        fieldDefStack.add(fieldDefinition);
     }
 
     public GraphQLDirective getDirective() {
