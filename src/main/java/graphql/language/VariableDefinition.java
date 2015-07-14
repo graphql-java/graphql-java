@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VariableDefinition implements Node{
+public class VariableDefinition implements Node {
 
     private String name;
     private Type type;
@@ -20,7 +20,7 @@ public class VariableDefinition implements Node{
         this.type = type;
     }
 
-    public VariableDefinition(String name, Type type,Value defaultValue) {
+    public VariableDefinition(String name, Type type, Value defaultValue) {
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
@@ -52,7 +52,10 @@ public class VariableDefinition implements Node{
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        List<Node> result = new ArrayList<>();
+        result.add(type);
+        result.add(defaultValue);
+        return result;
     }
 
     @Override

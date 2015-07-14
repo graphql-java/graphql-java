@@ -17,7 +17,7 @@ public class OperationDefinition implements Definition {
     private List<Directive> directives;
     private SelectionSet selectionSet;
 
-    public OperationDefinition(){
+    public OperationDefinition() {
 
     }
 
@@ -44,7 +44,11 @@ public class OperationDefinition implements Definition {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        List<Node> result = new ArrayList<>();
+        result.addAll(variableDefinitions);
+        result.addAll(directives);
+        result.add(selectionSet);
+        return result;
     }
 
     public String getName() {

@@ -46,7 +46,9 @@ public class FragmentSpread implements Selection {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        List<Node> result = new ArrayList<>();
+        result.addAll(directives);
+        return result;
     }
 
     @Override

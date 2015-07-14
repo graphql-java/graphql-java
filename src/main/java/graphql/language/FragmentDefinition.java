@@ -62,8 +62,8 @@ public class FragmentDefinition implements Definition {
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.add(typeCondition);
-        result.add(selectionSet);
         result.addAll(directives);
+        result.add(selectionSet);
         return result;
     }
 

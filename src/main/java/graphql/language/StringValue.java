@@ -22,7 +22,8 @@ public class StringValue implements Value{
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        List<Node> result = new ArrayList<>();
+        return result;
     }
 
     @Override
