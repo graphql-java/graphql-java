@@ -50,7 +50,7 @@ public class Field implements Selection {
         List<Node> result = new ArrayList<Node>();
         result.addAll(arguments);
         result.addAll(directives);
-        result.add(selectionSet);
+        if (selectionSet != null) result.add(selectionSet);
         return result;
     }
 

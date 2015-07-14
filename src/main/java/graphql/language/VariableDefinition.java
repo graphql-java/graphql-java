@@ -54,7 +54,7 @@ public class VariableDefinition implements Node {
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.add(type);
-        result.add(defaultValue);
+        if (defaultValue != null) result.add(defaultValue);
         return result;
     }
 

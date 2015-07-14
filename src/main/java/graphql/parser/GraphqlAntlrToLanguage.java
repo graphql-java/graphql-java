@@ -298,6 +298,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             } else if (contextEntry.contextProperty == ContextProperty.InlineFragment) {
                 ((InlineFragment) contextEntry.value).getDirectives().add(directive);
                 break;
+            } else if (contextEntry.contextProperty == ContextProperty.OperationDefinition) {
+                ((OperationDefinition) contextEntry.value).getDirectives().add(directive);
+                break;
             }
         }
         addContextProperty(ContextProperty.Directive, directive);

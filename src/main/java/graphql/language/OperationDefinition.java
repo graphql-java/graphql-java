@@ -14,7 +14,7 @@ public class OperationDefinition implements Definition {
 
     private Operation operation;
     private List<VariableDefinition> variableDefinitions = new ArrayList<>();
-    private List<Directive> directives;
+    private List<Directive> directives = new ArrayList<>();
     private SelectionSet selectionSet;
 
     public OperationDefinition() {
