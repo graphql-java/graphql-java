@@ -11,10 +11,10 @@ public class GraphQLFieldDefinition {
     private final GraphQLOutputType type;
     private final DataFetcher dataFetcher;
     private final String deprecationReason;
-    private final List<GraphQLFieldArgument> arguments = new ArrayList<>();
+    private final List<GraphQLArgument> arguments = new ArrayList<>();
 
 
-    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLFieldArgument> arguments, String deprecationReason) {
+    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
         this.name = name;
         this.description = description;
         this.type = type;
@@ -39,7 +39,7 @@ public class GraphQLFieldDefinition {
         return dataFetcher;
     }
 
-    public List<GraphQLFieldArgument> getArguments() {
+    public List<GraphQLArgument> getArguments() {
         return new ArrayList<>(arguments);
     }
 
@@ -65,7 +65,7 @@ public class GraphQLFieldDefinition {
         private String description;
         private GraphQLOutputType type;
         private DataFetcher dataFetcher;
-        private List<GraphQLFieldArgument> arguments = new ArrayList<>();
+        private List<GraphQLArgument> arguments = new ArrayList<>();
         private String deprecationReason;
 
 
@@ -99,12 +99,12 @@ public class GraphQLFieldDefinition {
             return this;
         }
 
-        public Builder argument(GraphQLFieldArgument argument) {
+        public Builder argument(GraphQLArgument argument) {
             this.arguments.add(argument);
             return this;
         }
 
-        public Builder argument(List<GraphQLFieldArgument> arguments) {
+        public Builder argument(List<GraphQLArgument> arguments) {
             this.arguments.addAll(arguments);
             return this;
         }

@@ -2,8 +2,8 @@ package graphql.execution
 
 import graphql.TestUtil
 import graphql.language.*
+import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
-import graphql.schema.GraphQLFieldArgument
 import graphql.schema.GraphQLList
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -11,7 +11,6 @@ import spock.lang.Unroll
 import static graphql.Scalars.*
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
-
 
 class ValuesResolverTest extends Specification {
 
@@ -77,7 +76,7 @@ class ValuesResolverTest extends Specification {
     def "resolves argument with variable reference"() {
         given:
         def variables = [var: 'hello']
-        def fieldArgument = new GraphQLFieldArgument("arg", GraphQLString)
+        def fieldArgument = new GraphQLArgument("arg", GraphQLString)
         def argument = new Argument("arg", new VariableReference("var"))
 
         when:
@@ -120,7 +119,7 @@ class ValuesResolverTest extends Specification {
                 .type(subObjectType)
                 .build())
                 .build()
-        def fieldArgument = new GraphQLFieldArgument("arg", inputObjectType)
+        def fieldArgument = new GraphQLArgument("arg", inputObjectType)
 
         when:
         def values = resolver.getArgumentValues([fieldArgument], [argument], [:])
@@ -142,8 +141,8 @@ class ValuesResolverTest extends Specification {
                 .value("PLUTO")
                 .value("MARS", "mars")
                 .build()
-        def fieldArgument1 = new GraphQLFieldArgument("arg1", enumType)
-        def fieldArgument2 = new GraphQLFieldArgument("arg2", enumType)
+        def fieldArgument1 = new GraphQLArgument("arg1", enumType)
+        def fieldArgument2 = new GraphQLArgument("arg2", enumType)
         when:
         def values = resolver.getArgumentValues([fieldArgument1, fieldArgument2], [argument1, argument2], [:])
 
@@ -159,7 +158,7 @@ class ValuesResolverTest extends Specification {
         arrayValue.getValues().add(new BooleanValue(false))
         def argument = new Argument("arg", arrayValue)
 
-        def fieldArgument = new GraphQLFieldArgument("arg", new GraphQLList(GraphQLBoolean))
+        def fieldArgument = new GraphQLArgument("arg", new GraphQLList(GraphQLBoolean))
 
         when:
         def values = resolver.getArgumentValues([fieldArgument], [argument], [:])
@@ -174,7 +173,7 @@ class ValuesResolverTest extends Specification {
         StringValue stringValue = new StringValue("world")
         def argument = new Argument("arg", stringValue)
 
-        def fieldArgument = new GraphQLFieldArgument("arg", new GraphQLList(GraphQLString))
+        def fieldArgument = new GraphQLArgument("arg", new GraphQLList(GraphQLString))
 
         when:
         def values = resolver.getArgumentValues([fieldArgument], [argument], [:])

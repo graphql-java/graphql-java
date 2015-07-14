@@ -4,8 +4,8 @@ package graphql;
 import graphql.schema.*;
 
 import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLEnumType.newEnum;
-import static graphql.schema.GraphQLFieldArgument.newFieldArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static graphql.schema.GraphQLObjectType.newObject;
@@ -123,7 +123,7 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("human")
                     .type(humanType)
-                    .argument(newFieldArgument()
+                    .argument(newArgument()
                             .name("id")
                             .type(new GraphQLNonNull(GraphQLString))
                             .build())
@@ -132,7 +132,7 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("droid")
                     .type(droidType)
-                    .argument(newFieldArgument()
+                    .argument(newArgument()
                             .name("id")
                             .type(new GraphQLNonNull(GraphQLString))
                             .build())

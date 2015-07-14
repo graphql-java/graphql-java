@@ -19,10 +19,10 @@ public class ValuesResolver {
     }
 
 
-    public Map<String, Object> getArgumentValues(List<GraphQLFieldArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
+    public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
         Map<String, Object> result = new LinkedHashMap<>();
         Map<String, Argument> argumentMap = argumentMap(arguments);
-        for (GraphQLFieldArgument fieldArgument : argumentTypes) {
+        for (GraphQLArgument fieldArgument : argumentTypes) {
             Argument argument = argumentMap.get(fieldArgument.getName());
             Object value = coerceValueAst(fieldArgument.getType(), argument.getValue(), variables);
             result.put(argument.getName(), value);

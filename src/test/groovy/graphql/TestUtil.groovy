@@ -9,7 +9,7 @@ class TestUtil {
 
 
     static GraphQLSchema schemaWithInputType(GraphQLInputType inputType) {
-        GraphQLFieldArgument fieldArgument = new GraphQLFieldArgument("arg", inputType)
+        GraphQLArgument fieldArgument = new GraphQLArgument("arg", inputType)
         GraphQLFieldDefinition name = GraphQLFieldDefinition.newFieldDefinition()
                 .name("name").type(GraphQLString).argument(fieldArgument).build()
         GraphQLObjectType queryType = GraphQLObjectType.newObject().name("query").field(name).build()

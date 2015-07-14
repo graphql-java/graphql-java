@@ -5,7 +5,7 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNonNull;
 
 import static graphql.Scalars.GraphQLBoolean;
-import static graphql.schema.GraphQLFieldArgument.newFieldArgument;
+import static graphql.schema.GraphQLArgument.newArgument;
 
 public class Directives {
 
@@ -13,7 +13,7 @@ public class Directives {
             .name("include")
             .description("Directs the executor to include this field or fragment only when the `if` argument is true")
             .argument(
-                    newFieldArgument()
+                    newArgument()
                             .name("if")
                             .type(new GraphQLNonNull(GraphQLBoolean))
                             .description("Included when true.")
@@ -28,7 +28,7 @@ public class Directives {
             .name("skip")
             .description(" 'Directs the executor to skip this field or fragment when the `if`'argument is true.")
             .argument(
-                    newFieldArgument()
+                    newArgument()
                             .name("skip")
                             .type(new GraphQLNonNull(GraphQLBoolean))
                             .description("Skipped when true")

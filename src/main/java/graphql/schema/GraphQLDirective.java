@@ -8,12 +8,12 @@ public class GraphQLDirective {
 
     private final String name;
     private final String description;
-    private final List<GraphQLFieldArgument> arguments = new ArrayList<>();
+    private final List<GraphQLArgument> arguments = new ArrayList<>();
     private final boolean onOperation;
     private final boolean onFragment;
     private final boolean onField;
 
-    public GraphQLDirective(String name, String description, List<GraphQLFieldArgument> arguments, boolean onOperation, boolean onFragment, boolean onField) {
+    public GraphQLDirective(String name, String description, List<GraphQLArgument> arguments, boolean onOperation, boolean onFragment, boolean onField) {
         this.name = name;
         this.description = description;
         this.arguments.addAll(arguments);
@@ -26,7 +26,7 @@ public class GraphQLDirective {
         return name;
     }
 
-    public List<GraphQLFieldArgument> getArguments() {
+    public List<GraphQLArgument> getArguments() {
         return new ArrayList<>(arguments);
     }
 
@@ -53,7 +53,7 @@ public class GraphQLDirective {
     public static class Builder {
 
         private String name;
-        private final List<GraphQLFieldArgument> arguments = new ArrayList<>();
+        private final List<GraphQLArgument> arguments = new ArrayList<>();
         private String description;
         private boolean onOperation;
         private boolean onFragment;
@@ -69,7 +69,7 @@ public class GraphQLDirective {
             return this;
         }
 
-        public Builder argument(GraphQLFieldArgument fieldArgument) {
+        public Builder argument(GraphQLArgument fieldArgument) {
             arguments.add(fieldArgument);
             return this;
         }
