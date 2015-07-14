@@ -9,6 +9,10 @@ public class ValidationError {
         this.description = String.format(description, args);
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     @Override
     public String toString() {
         return "ValidationError{" +
