@@ -8,6 +8,20 @@ import java.util.Map;
 
 public class SchemaUtil {
 
+    public static boolean isLeafType(GraphQLType type) {
+        GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(type);
+        return
+                unmodifiedType instanceof GraphQLScalarType ||
+                        unmodifiedType instanceof GraphQLEnumType;
+    }
+
+    public static GraphQLUnmodifiedType getUnmodifiedType(GraphQLType graphQLType) {
+        if (graphQLType instanceof GraphQLModifiedType) {
+            return getUnmodifiedType(((GraphQLModifiedType) graphQLType).getWrappedType());
+        }
+        return (GraphQLUnmodifiedType) graphQLType;
+    }
+
 
     private static void collectTypes(GraphQLType root, Map<String, GraphQLType> result) {
         if (root instanceof GraphQLNonNull) {

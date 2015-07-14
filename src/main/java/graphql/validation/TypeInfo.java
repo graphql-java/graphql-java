@@ -56,7 +56,7 @@ public class TypeInfo implements QueryLanguageVisitor {
 
 
     private void enterImpl(SelectionSet selectionSet) {
-        GraphQLUnmodifiedType rawType = getUnmodifiedType(getType());
+        GraphQLUnmodifiedType rawType = SchemaUtil.getUnmodifiedType(getType());
         GraphQLCompositeType compositeType = null;
         if (rawType instanceof GraphQLCompositeType) {
             compositeType = (GraphQLCompositeType) rawType;
@@ -131,7 +131,7 @@ public class TypeInfo implements QueryLanguageVisitor {
     }
 
     private void enterImpl(ObjectField objectField) {
-        GraphQLUnmodifiedType objectType = getUnmodifiedType(getInputType());
+        GraphQLUnmodifiedType objectType = SchemaUtil.getUnmodifiedType(getInputType());
         GraphQLInputType inputType = null;
         if (objectType instanceof GraphQLInputObjectType) {
             GraphQLInputObjectField inputField = ((GraphQLInputObjectType) objectType).getField(objectField.getName());
@@ -177,12 +177,6 @@ public class TypeInfo implements QueryLanguageVisitor {
 
     }
 
-    private GraphQLUnmodifiedType getUnmodifiedType(GraphQLType graphQLType) {
-        if (graphQLType instanceof GraphQLModifiedType) {
-            return getUnmodifiedType(((GraphQLModifiedType) graphQLType).getWrappedType());
-        }
-        return (GraphQLUnmodifiedType) graphQLType;
-    }
 
     private GraphQLNullableType getNullableType(GraphQLType type) {
         return (GraphQLNullableType) (type instanceof GraphQLNonNull ? ((GraphQLNonNull) type).getWrappedType() : type);
@@ -195,6 +189,7 @@ public class TypeInfo implements QueryLanguageVisitor {
     private void addType(GraphQLOutputType type) {
         typeStack.add(type);
     }
+
 
     private <T> T lastElement(List<T> list) {
         if (list.size() == 0) return null;
