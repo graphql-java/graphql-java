@@ -6,9 +6,12 @@ import graphql.execution.ExecutionResult;
 import graphql.language.Document;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
+import graphql.validation.ValidationError;
+import graphql.validation.Validator;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,6 +43,12 @@ public class GraphQL {
         Parser parser = new Parser();
         Document document = parser.parseDocument(requestString);
         Execution execution = new Execution(executorService);
+        Validator validator = new Validator();
+        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
+        if (validationErrors.size() > 0) {
+            ExecutionResult result = new ExecutionResult(validationErrors);
+            return result;
+        }
         return execution.execute(graphQLSchema, null, document, null, arguments);
     }
 

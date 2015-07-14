@@ -89,7 +89,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def result = new GraphQL(schema, '{ hello }').execute()
+        def errors = new GraphQL(schema, '{ hello(arg:11) }').execute().validationErrors
 
         then:
         result == [hello: 'world']

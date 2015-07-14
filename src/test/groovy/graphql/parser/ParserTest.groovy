@@ -299,6 +299,7 @@ class ParserTest extends Specification {
     }
 
 
+
     Field getInnerField(SelectionSet selectionSet) {
         def field = (Field) selectionSet.selections[0]
         (Field) field.selectionSet.selections[0]

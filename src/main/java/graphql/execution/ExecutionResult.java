@@ -12,6 +12,14 @@ public class ExecutionResult {
 
     private List<ValidationError> validationErrors = new ArrayList<>();
 
+    public void setValidationErrors(List<ValidationError> validationErrors) {
+        this.validationErrors = validationErrors;
+    }
+
+    public ExecutionResult(List<ValidationError> validationErrors) {
+        this.result = result;
+    }
+
     public ExecutionResult(Object result) {
         this.result = result;
     }
