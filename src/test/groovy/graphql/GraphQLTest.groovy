@@ -1,8 +1,10 @@
 package graphql
 
+import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
@@ -28,7 +30,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def result = new GraphQL(schema, '{ hello }').execute()
+        def result = new GraphQL(schema, '{ hello }').execute().result
 
         then:
         result == [hello: 'world']
@@ -64,9 +66,34 @@ class GraphQLTest extends Specification {
         ).build();
 
         when:
-        def result = new GraphQL(graphQLSchema, '{ simpson { id, name } }').execute()
+        def result = new GraphQL(graphQLSchema, '{ simpson { id, name } }').execute().result
 
         then:
         result == [simpson: [id: '123', name: 'homer']]
+    }
+
+    @Ignore
+    def "query with validation errors"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(GraphQLArgument.newArgument().name("arg").type(GraphQLString).build())
+                .staticValue("world")
+                .build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(fieldDefinition)
+                        .build()
+        ).build()
+
+        when:
+        def result = new GraphQL(schema, '{ hello }').execute()
+
+        then:
+        result == [hello: 'world']
+
+
     }
 }

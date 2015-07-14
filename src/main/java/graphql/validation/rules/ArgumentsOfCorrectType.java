@@ -5,6 +5,7 @@ import graphql.language.Argument;
 import graphql.schema.GraphQLArgument;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
 import graphql.validation.ValidationUtil;
 
 public class ArgumentsOfCorrectType extends AbstractRule {
@@ -21,7 +22,7 @@ public class ArgumentsOfCorrectType extends AbstractRule {
     public void checkArgument(Argument argument) {
         GraphQLArgument fieldArgument = validationContext.getArgument();
         if (validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType())) {
-
+            validationContext.addError(new ValidationError("Wrong type"));
         }
     }
 }
