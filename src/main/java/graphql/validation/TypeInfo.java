@@ -27,7 +27,9 @@ public class TypeInfo implements QueryLanguageVisitor {
 
     @Override
     public void enter(Node node) {
-        if (node instanceof SelectionSet) {
+        if (node instanceof Document) {
+
+        } else if (node instanceof SelectionSet) {
             enterImpl((SelectionSet) node);
         } else if (node instanceof Field) {
             enterImpl((Field) node);
@@ -48,7 +50,7 @@ public class TypeInfo implements QueryLanguageVisitor {
         } else if (node instanceof ObjectField) {
             enterImpl((ObjectField) node);
         } else {
-            throw new ShouldNotHappenException();
+//            throw new ShouldNotHappenException();
         }
     }
 
@@ -170,7 +172,7 @@ public class TypeInfo implements QueryLanguageVisitor {
         } else if (node instanceof ObjectField) {
             inputTypeStack.remove(inputTypeStack.size() - 1);
         } else {
-            throw new ShouldNotHappenException();
+//            throw new ShouldNotHappenException();
         }
 
     }

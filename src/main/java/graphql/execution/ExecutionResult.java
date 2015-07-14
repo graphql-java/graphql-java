@@ -17,7 +17,7 @@ public class ExecutionResult {
     }
 
     public ExecutionResult(List<ValidationError> validationErrors) {
-        this.result = result;
+        this.validationErrors = validationErrors;
     }
 
     public ExecutionResult(Object result) {

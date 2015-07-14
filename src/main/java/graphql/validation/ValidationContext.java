@@ -12,14 +12,25 @@ import java.util.Map;
 
 public class ValidationContext {
 
-    private GraphQLSchema schema;
-    private Document document;
+    private final GraphQLSchema schema;
+    private final Document document;
     private Map<String, FragmentDefinition> fragmentDefinitionMap = new LinkedHashMap<>();
 
     private final List<ValidationError> validationErrors = new ArrayList<>();
 
+
     private TypeInfo typeInfo;
 //    _fragments: {[name: string]: FragmentDefinition};
+
+
+    public ValidationContext(GraphQLSchema schema, Document document) {
+        this.schema = schema;
+        this.document = document;
+        this.typeInfo = new TypeInfo(schema);
+    }
+    public TypeInfo getTypeInfo() {
+        return typeInfo;
+    }
 
 
     public void addError(ValidationError validationError) {
