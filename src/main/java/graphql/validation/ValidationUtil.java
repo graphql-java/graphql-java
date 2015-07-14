@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class ValidationUtil {
 
-    public static boolean isValidLiteralValue(Value value, GraphQLType type) {
+    public boolean isValidLiteralValue(Value value, GraphQLType type) {
         if (value == null) {
             return !(type instanceof GraphQLNonNull);
         }
@@ -37,7 +37,7 @@ public class ValidationUtil {
         return false;
     }
 
-    private static boolean isValidLiteralValue(Value value, GraphQLInputObjectType type) {
+    private boolean isValidLiteralValue(Value value, GraphQLInputObjectType type) {
         if (!(value instanceof ObjectValue)) return false;
         ObjectValue objectValue = (ObjectValue) value;
         Map<String, ObjectField> objectFieldMap = fieldMap(objectValue);
@@ -53,7 +53,7 @@ public class ValidationUtil {
         return true;
     }
 
-    private static boolean isFieldMissing(GraphQLInputObjectType type, Map<String, ObjectField> objectFieldMap) {
+    private boolean isFieldMissing(GraphQLInputObjectType type, Map<String, ObjectField> objectFieldMap) {
         for (GraphQLInputObjectField inputObjectField : type.getFields()) {
             if (!objectFieldMap.containsKey(inputObjectField.getName()) &&
                     (inputObjectField.getType() instanceof GraphQLNonNull)) return true;
@@ -61,7 +61,7 @@ public class ValidationUtil {
         return false;
     }
 
-    private static Map<String, ObjectField> fieldMap(ObjectValue objectValue) {
+    private Map<String, ObjectField> fieldMap(ObjectValue objectValue) {
         Map<String, ObjectField> result = new LinkedHashMap<>();
         for (ObjectField objectField : objectValue.getObjectFields()) {
             result.put(objectField.getName(), objectField);
@@ -69,7 +69,7 @@ public class ValidationUtil {
         return result;
     }
 
-    private static boolean isValidLiteralValue(Value value, GraphQLList type) {
+    private boolean isValidLiteralValue(Value value, GraphQLList type) {
         GraphQLType wrappedType = type.getWrappedType();
         if (value instanceof ArrayValue) {
             for (Value innerValue : ((ArrayValue) value).getValues()) {

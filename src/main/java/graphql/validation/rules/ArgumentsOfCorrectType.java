@@ -7,10 +7,11 @@ import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationUtil;
 
-public class ArgumentsOfCorrectType extends AbstractRule{
+public class ArgumentsOfCorrectType extends AbstractRule {
 
     private final ValidationContext validationContext;
 
+    ValidationUtil validationUtil = new ValidationUtil();
 
     public ArgumentsOfCorrectType(ValidationContext validationContext) {
         this.validationContext = validationContext;
@@ -19,7 +20,7 @@ public class ArgumentsOfCorrectType extends AbstractRule{
     @Override
     public void checkArgument(Argument argument) {
         GraphQLFieldArgument fieldArgument = validationContext.getArgument();
-        if(ValidationUtil.isValidLiteralValue(argument.getValue(),fieldArgument.getType())){
+        if (validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType())) {
 
         }
     }

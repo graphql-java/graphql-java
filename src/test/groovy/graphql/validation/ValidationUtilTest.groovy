@@ -6,28 +6,29 @@ import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLString
-import static graphql.validation.ValidationUtil.isValidLiteralValue
 
 class ValidationUtilTest extends Specification {
 
+    def validationUtil = new ValidationUtil()
+
     def "null and NonNull is invalid"() {
         expect:
-        !isValidLiteralValue(null, new GraphQLNonNull(GraphQLString))
+        !validationUtil.isValidLiteralValue(null, new GraphQLNonNull(GraphQLString))
     }
 
     def "a nonNull value for a NonNull type is valid"() {
         expect:
-        isValidLiteralValue(new StringValue("string"), new GraphQLNonNull(GraphQLString))
+        validationUtil.isValidLiteralValue(new StringValue("string"), new GraphQLNonNull(GraphQLString))
     }
 
     def "null is valid when type is NonNull"() {
         expect:
-        isValidLiteralValue(null, GraphQLString)
+        validationUtil.isValidLiteralValue(null, GraphQLString)
     }
 
     def "variables are valid"() {
         expect:
-        isValidLiteralValue(new VariableReference("var"), GraphQLBoolean)
+        validationUtil.isValidLiteralValue(new VariableReference("var"), GraphQLBoolean)
     }
 
     def "ArrayValue and ListType is invalid when one entry is invalid"() {
@@ -36,7 +37,7 @@ class ValidationUtilTest extends Specification {
         def type = new GraphQLList(GraphQLString)
 
         expect:
-        !isValidLiteralValue(arrayValue, type)
+        !validationUtil.isValidLiteralValue(arrayValue, type)
     }
 
     def "One value is a single element List"() {
@@ -44,7 +45,7 @@ class ValidationUtilTest extends Specification {
         def singleValue = new BooleanValue(true)
         def type = new GraphQLList(GraphQLBoolean)
         expect:
-        isValidLiteralValue(singleValue, type)
+        validationUtil.isValidLiteralValue(singleValue, type)
     }
 
     def "a valid array"() {
@@ -53,19 +54,19 @@ class ValidationUtilTest extends Specification {
         def type = new GraphQLList(GraphQLString)
 
         expect:
-        isValidLiteralValue(arrayValue, type)
+        validationUtil.isValidLiteralValue(arrayValue, type)
     }
 
     def "a valid scalar"() {
         given:
         expect:
-        isValidLiteralValue(new BooleanValue(true), GraphQLBoolean)
+        validationUtil.isValidLiteralValue(new BooleanValue(true), GraphQLBoolean)
     }
 
     def "invalid scalar"() {
         given:
         expect:
-        !isValidLiteralValue(new BooleanValue(true), GraphQLString)
+        !validationUtil.isValidLiteralValue(new BooleanValue(true), GraphQLString)
     }
 
     def "valid enum"() {
@@ -73,14 +74,14 @@ class ValidationUtilTest extends Specification {
         def enumType = GraphQLEnumType.newEnum().value("PLUTO").build()
 
         expect:
-        isValidLiteralValue(new EnumValue("PLUTO"), enumType)
+        validationUtil.isValidLiteralValue(new EnumValue("PLUTO"), enumType)
     }
 
     def "invalid enum"() {
         given:
         def enumType = GraphQLEnumType.newEnum().value("PLUTO").build()
         expect:
-        !isValidLiteralValue(new StringValue("MARS"), enumType)
+        !validationUtil.isValidLiteralValue(new StringValue("MARS"), enumType)
     }
 
     def "a valid ObjectValue"() {
@@ -95,7 +96,7 @@ class ValidationUtilTest extends Specification {
         objectValue.getObjectFields().add(new ObjectField("hello", new StringValue("world")))
 
         expect:
-        isValidLiteralValue(objectValue, inputObjecType)
+        validationUtil.isValidLiteralValue(objectValue, inputObjecType)
     }
 
     def "a invalid ObjectValue with a invalid field"() {
@@ -110,7 +111,7 @@ class ValidationUtilTest extends Specification {
         objectValue.getObjectFields().add(new ObjectField("hello", new BooleanValue(false)))
 
         expect:
-        !isValidLiteralValue(objectValue, inputObjecType)
+        !validationUtil.isValidLiteralValue(objectValue, inputObjecType)
     }
 
     def "a invalid ObjectValue with a missing field"() {
@@ -124,6 +125,6 @@ class ValidationUtilTest extends Specification {
         def objectValue = new ObjectValue()
 
         expect:
-       !isValidLiteralValue(objectValue, inputObjecType)
+       !validationUtil.isValidLiteralValue(objectValue, inputObjecType)
     }
 }
