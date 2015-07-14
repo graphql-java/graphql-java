@@ -11,7 +11,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
-    private final List<GraphQLInterfaceType> interfaces = new ArrayList<>();
+    private  List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
         this.name = name;
@@ -25,6 +25,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             fieldDefinitionsByName.put(fieldDefinition.getName(), fieldDefinition);
         }
     }
+
 
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
@@ -48,6 +49,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     public String getName() {
         return name;
     }
+
 
     @Override
     public String toString() {

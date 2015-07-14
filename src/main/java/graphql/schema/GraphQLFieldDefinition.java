@@ -3,12 +3,13 @@ package graphql.schema;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class GraphQLFieldDefinition {
 
     private final String name;
     private final String description;
-    private final GraphQLOutputType type;
+    private GraphQLOutputType type;
     private final DataFetcher dataFetcher;
     private final String deprecationReason;
     private final List<GraphQLArgument> arguments = new ArrayList<>();
@@ -25,6 +26,10 @@ public class GraphQLFieldDefinition {
         this.deprecationReason = deprecationReason;
     }
 
+
+    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
+        type = (GraphQLOutputType) SchemaUtil.resolveTypeReference(type, typeMap);
+    }
 
     public String getName() {
         return name;

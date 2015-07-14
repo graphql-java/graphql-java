@@ -65,7 +65,11 @@ public class GraphQLSchema {
         }
 
         public GraphQLSchema build() {
-            return new GraphQLSchema(queryType, mutationType);
+            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType);
+            SchemaUtil.replaceTypeReferences(graphQLSchema);
+            return graphQLSchema;
         }
+
+
     }
 }

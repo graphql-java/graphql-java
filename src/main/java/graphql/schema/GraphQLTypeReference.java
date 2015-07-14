@@ -1,7 +1,7 @@
 package graphql.schema;
 
 
-public class GraphQLTypeReference implements GraphQLType {
+public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType {
 
     private final String name;
 

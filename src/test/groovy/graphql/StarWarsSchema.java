@@ -13,7 +13,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
 public class StarWarsSchema {
 
 
-    static GraphQLEnumType episodeEnum = newEnum()
+    public static GraphQLEnumType episodeEnum = newEnum()
             .name("Episode")
             .description("One of the films in the Star Wars Trilogy")
             .value("NEWHOPE", 4, "Released in 1977.")
@@ -22,7 +22,7 @@ public class StarWarsSchema {
             .build();
 
 
-    static GraphQLInterfaceType characterInterface = newInterface()
+    public static GraphQLInterfaceType characterInterface = newInterface()
             .name("Character")
             .description("A character in the Star Wars Trilogy")
             .field(newFieldDefinition()
@@ -48,7 +48,7 @@ public class StarWarsSchema {
             .typeResolver(StarWarsData.getCharacterTypeResolver())
             .build();
 
-    static GraphQLObjectType humanType = newObject()
+    public static GraphQLObjectType humanType = newObject()
             .name("Human")
             .description("A humanoid creature in the Star Wars universe.")
             .withInterface(characterInterface)
@@ -80,7 +80,7 @@ public class StarWarsSchema {
                     .build())
             .build();
 
-    static GraphQLObjectType droidType = newObject()
+    public static GraphQLObjectType droidType = newObject()
             .name("Droid")
             .description("A mechanical creature in the Star Wars universe.")
             .withInterface(characterInterface)
@@ -113,7 +113,7 @@ public class StarWarsSchema {
             .build();
 
 
-    static GraphQLObjectType queryType = newObject()
+    public static GraphQLObjectType queryType = newObject()
             .name("QueryType")
             .field(newFieldDefinition()
                     .name("hero")
@@ -141,7 +141,7 @@ public class StarWarsSchema {
             .build();
 
 
-    static GraphQLSchema starWarsSchema = GraphQLSchema.newSchema()
+    public static GraphQLSchema starWarsSchema = GraphQLSchema.newSchema()
             .query(queryType)
             .build();
 }
