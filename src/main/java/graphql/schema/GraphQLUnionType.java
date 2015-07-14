@@ -4,11 +4,11 @@ package graphql.schema;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType,GraphQLUnmodifiedType,GraphQLNullableType {
+public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
-    private final List<GraphQLType> types = new ArrayList<>();
+    private List<GraphQLType> types = new ArrayList<>();
     private final TypeResolver typeResolver;
 
 
@@ -18,6 +18,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         this.types.addAll(possibleTypes);
         this.typeResolver = typeResolver;
     }
+
 
     public List<GraphQLType> getTypes() {
         return new ArrayList<>(types);

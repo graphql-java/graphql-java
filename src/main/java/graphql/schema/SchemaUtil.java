@@ -95,4 +95,41 @@ public class SchemaUtil {
         }
         return result;
     }
+
+
+    static void replaceTypeReferences(GraphQLSchema schema) {
+        Map<String, GraphQLType> typeMap = allTypes(schema);
+        for (GraphQLType type : typeMap.values()) {
+            if (type instanceof GraphQLFieldsContainer) {
+                resolveTypeReferencesForFieldsContainer((GraphQLFieldsContainer) type, typeMap);
+            }
+        }
+    }
+
+    private static void resolveTypeReferencesForFieldsContainer(GraphQLFieldsContainer fieldsContainer, Map<String, GraphQLType> typeMap) {
+        for (GraphQLFieldDefinition fieldDefinition : fieldsContainer.getFieldDefinitions()) {
+            fieldDefinition.replaceTypeReferences(typeMap);
+        }
+    }
+
+    static GraphQLType resolveTypeReference(GraphQLType type, Map<String, GraphQLType> typeMap) {
+        if (type instanceof GraphQLTypeReference) {
+            return typeMap.get(type.getName());
+        }
+        if (type instanceof GraphQLList) {
+            ((GraphQLList) type).replaceTypeReferences(typeMap);
+        }
+        if (type instanceof GraphQLNonNull) {
+            ((GraphQLNonNull) type).replaceTypeReferences(typeMap);
+        }
+        return type;
+    }
+
+    static List<GraphQLType> resolveTypeReferences(List<GraphQLType> types, Map<String, GraphQLType> typeMap) {
+        List<GraphQLType> resolvedTypes = new ArrayList<>();
+        for (GraphQLType type : types) {
+            resolvedTypes.add(resolveTypeReference(type, typeMap));
+        }
+        return resolvedTypes;
+    }
 }

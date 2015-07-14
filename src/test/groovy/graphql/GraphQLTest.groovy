@@ -4,7 +4,6 @@ import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
@@ -72,7 +71,6 @@ class GraphQLTest extends Specification {
         result == [simpson: [id: '123', name: 'homer']]
     }
 
-    @Ignore
     def "query with validation errors"() {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()

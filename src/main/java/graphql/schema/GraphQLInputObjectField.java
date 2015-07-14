@@ -8,7 +8,7 @@ public class GraphQLInputObjectField {
 
     private final String name;
     private final String description;
-    private final GraphQLInputType type;
+    private GraphQLInputType type;
     private final Object defaultValue;
 
     public GraphQLInputObjectField(String name, GraphQLInputType type) {
@@ -21,6 +21,7 @@ public class GraphQLInputObjectField {
         this.defaultValue = defaultValue;
         this.description = description;
     }
+
 
     public String getName() {
         return name;
@@ -58,7 +59,7 @@ public class GraphQLInputObjectField {
             return this;
         }
 
-        public Builder type(GraphQLInputType type){
+        public Builder type(GraphQLInputType type) {
             this.type = type;
             return this;
         }

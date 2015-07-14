@@ -5,7 +5,7 @@ public class GraphQLArgument {
 
     private final String name;
     private final String description;
-    private final GraphQLInputType type;
+    private GraphQLInputType type;
     private final Object defaultValue;
 
     public GraphQLArgument(String name, String description, GraphQLInputType graphQLInputType, Object defaultValue) {
@@ -18,6 +18,7 @@ public class GraphQLArgument {
     public GraphQLArgument(String name, GraphQLInputType type) {
         this(name, null, type, null);
     }
+
 
     public String getName() {
         return name;

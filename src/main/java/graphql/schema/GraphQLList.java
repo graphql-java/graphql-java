@@ -1,9 +1,11 @@
 package graphql.schema;
 
 
+import java.util.Map;
+
 public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
 
-    private final GraphQLType wrappedType;
+    private  GraphQLType wrappedType;
 
     public GraphQLList(GraphQLType wrappedType) {
         this.wrappedType = wrappedType;
@@ -12,6 +14,10 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
     public GraphQLType getWrappedType() {
         return wrappedType;
+    }
+
+    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
+        wrappedType = SchemaUtil.resolveTypeReference(wrappedType, typeMap);
     }
 
     @Override
