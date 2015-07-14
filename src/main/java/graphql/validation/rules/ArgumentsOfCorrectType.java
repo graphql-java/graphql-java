@@ -2,7 +2,7 @@ package graphql.validation.rules;
 
 
 import graphql.language.Argument;
-import graphql.schema.GraphQLFieldArgument;
+import graphql.schema.GraphQLArgument;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationUtil;
@@ -19,7 +19,7 @@ public class ArgumentsOfCorrectType extends AbstractRule {
 
     @Override
     public void checkArgument(Argument argument) {
-        GraphQLFieldArgument fieldArgument = validationContext.getArgument();
+        GraphQLArgument fieldArgument = validationContext.getArgument();
         if (validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType())) {
 
         }

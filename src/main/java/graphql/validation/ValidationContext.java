@@ -34,7 +34,7 @@ public class ValidationContext {
         return typeInfo.getDirective();
     }
 
-    public GraphQLFieldArgument getArgument() {
+    public GraphQLArgument getArgument() {
         return typeInfo.getArgument();
     }
 }

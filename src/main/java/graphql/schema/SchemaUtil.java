@@ -46,7 +46,7 @@ public class SchemaUtil {
 
         for (GraphQLFieldDefinition fieldDefinition : interfaceType.getFieldDefinitions()) {
             collectTypes(fieldDefinition.getType(), result);
-            for (GraphQLFieldArgument fieldArgument : fieldDefinition.getArguments()) {
+            for (GraphQLArgument fieldArgument : fieldDefinition.getArguments()) {
                 collectTypes(fieldArgument.getType(), result);
             }
         }
@@ -59,7 +59,7 @@ public class SchemaUtil {
 
         for (GraphQLFieldDefinition fieldDefinition : objectType.getFieldDefinitions()) {
             collectTypes(fieldDefinition.getType(), result);
-            for (GraphQLFieldArgument fieldArgument : fieldDefinition.getArguments()) {
+            for (GraphQLArgument fieldArgument : fieldDefinition.getArguments()) {
                 collectTypes(fieldArgument.getType(), result);
             }
         }

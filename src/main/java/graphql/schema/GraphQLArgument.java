@@ -1,21 +1,21 @@
 package graphql.schema;
 
 
-public class GraphQLFieldArgument {
+public class GraphQLArgument {
 
     private final String name;
     private final String description;
     private final GraphQLInputType type;
     private final Object defaultValue;
 
-    public GraphQLFieldArgument(String name, String description, GraphQLInputType graphQLInputType, Object defaultValue) {
+    public GraphQLArgument(String name, String description, GraphQLInputType graphQLInputType, Object defaultValue) {
         this.name = name;
         this.description = description;
         this.type = graphQLInputType;
         this.defaultValue = defaultValue;
     }
 
-    public GraphQLFieldArgument(String name, GraphQLInputType type) {
+    public GraphQLArgument(String name, GraphQLInputType type) {
         this(name, null, type, null);
     }
 
@@ -36,7 +36,7 @@ public class GraphQLFieldArgument {
         return description;
     }
 
-    public static Builder newFieldArgument() {
+    public static Builder newArgument() {
         return new Builder();
     }
 
@@ -68,8 +68,8 @@ public class GraphQLFieldArgument {
             return this;
         }
 
-        public GraphQLFieldArgument build() {
-            return new GraphQLFieldArgument(name, description, type, defaultValue);
+        public GraphQLArgument build() {
+            return new GraphQLArgument(name, description, type, defaultValue);
         }
     }
 

@@ -18,7 +18,7 @@ public class TypeInfo implements QueryLanguageVisitor {
     List<GraphQLInputType> inputTypeStack = new ArrayList<>();
     List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
     GraphQLDirective directive;
-    GraphQLFieldArgument argument;
+    GraphQLArgument argument;
 
 
     public TypeInfo(GraphQLSchema graphQLSchema) {
@@ -104,14 +104,14 @@ public class TypeInfo implements QueryLanguageVisitor {
 
     private void enterImpl(Argument argument) {
         if (getDirective() != null) {
-            GraphQLFieldArgument fieldArgument = find(getDirective().getArguments(), argument.getName());
+            GraphQLArgument fieldArgument = find(getDirective().getArguments(), argument.getName());
             if (fieldArgument != null) {
                 this.argument = fieldArgument;
                 addInputType(fieldArgument.getType());
             }
         }
         if (getFieldDef() != null) {
-            GraphQLFieldArgument fieldArgument = find(getFieldDef().getArguments(), argument.getName());
+            GraphQLArgument fieldArgument = find(getFieldDef().getArguments(), argument.getName());
             if (fieldArgument != null) {
                 this.argument = fieldArgument;
                 addInputType(fieldArgument.getType());
@@ -138,8 +138,8 @@ public class TypeInfo implements QueryLanguageVisitor {
         addInputType(inputType);
     }
 
-    private GraphQLFieldArgument find(List<GraphQLFieldArgument> arguments, String name) {
-        for (GraphQLFieldArgument argument : arguments) {
+    private GraphQLArgument find(List<GraphQLArgument> arguments, String name) {
+        for (GraphQLArgument argument : arguments) {
             if (argument.getName().equals(name)) return argument;
         }
         return null;
@@ -227,7 +227,7 @@ public class TypeInfo implements QueryLanguageVisitor {
         return directive;
     }
 
-    public GraphQLFieldArgument getArgument() {
+    public GraphQLArgument getArgument() {
         return argument;
     }
 
