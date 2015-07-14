@@ -8,11 +8,9 @@ import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
+import org.antlr.v4.runtime.RecognitionException;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -41,7 +39,13 @@ public class GraphQL {
 
     public ExecutionResult execute() {
         Parser parser = new Parser();
-        Document document = parser.parseDocument(requestString);
+        Document document;
+        try {
+            document = parser.parseDocument(requestString);
+        } catch (RecognitionException e) {
+            ValidationError validationError = new ValidationError("Invalid syntax: " + e.toString());
+            return new ExecutionResult(Arrays.asList(validationError));
+        }
         Execution execution = new Execution(executorService);
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);

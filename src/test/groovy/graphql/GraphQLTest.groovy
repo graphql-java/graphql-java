@@ -91,7 +91,21 @@ class GraphQLTest extends Specification {
 
         then:
         errors.size() == 1
+    }
 
+    def "query with invalid syntax"() {
+        given:
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .build()
+        ).build()
 
+        when:
+        def errors = new GraphQL(schema, '{ hello(() }').execute().validationErrors
+
+        then:
+        errors.size() == 1
+        errors[0].description.contains("Invalid syntax")
     }
 }
