@@ -92,7 +92,7 @@ class GraphQLTest extends Specification {
         def errors = new GraphQL(schema, '{ hello(arg:11) }').execute().validationErrors
 
         then:
-        result == [hello: 'world']
+        errors.size() == 1
 
 
     }

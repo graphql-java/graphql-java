@@ -21,7 +21,8 @@ public class ArgumentsOfCorrectType extends AbstractRule {
     @Override
     public void checkArgument(Argument argument) {
         GraphQLArgument fieldArgument = validationContext.getArgument();
-        if (validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType())) {
+        if (fieldArgument == null) return;
+        if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType())) {
             validationContext.addError(new ValidationError("Wrong type"));
         }
     }
