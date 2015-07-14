@@ -2,6 +2,7 @@ package graphql;
 
 
 import graphql.execution.Execution;
+import graphql.execution.ExecutionResult;
 import graphql.language.Document;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
@@ -35,11 +36,11 @@ public class GraphQL {
         this.executorService = executorService;
     }
 
-    public Object execute() {
+    public ExecutionResult execute() {
         Parser parser = new Parser();
         Document document = parser.parseDocument(requestString);
         Execution execution = new Execution(executorService);
-        return execution.execute(graphQLSchema, null, document, null, arguments).getResult();
+        return execution.execute(graphQLSchema, null, document, null, arguments);
     }
 
 
