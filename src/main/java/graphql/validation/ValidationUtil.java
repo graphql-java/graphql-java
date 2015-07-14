@@ -80,4 +80,5 @@ public class ValidationUtil {
             return isValidLiteralValue(value, wrappedType);
         }
     }
+
 }

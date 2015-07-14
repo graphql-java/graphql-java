@@ -28,10 +28,18 @@ public class ValidationContext {
         this.document = document;
         this.typeInfo = new TypeInfo(schema);
     }
+
     public TypeInfo getTypeInfo() {
         return typeInfo;
     }
 
+    public GraphQLSchema getSchema() {
+        return schema;
+    }
+
+    public Document getDocument() {
+        return document;
+    }
 
     public void addError(ValidationError validationError) {
         validationErrors.add(validationError);
@@ -59,5 +67,9 @@ public class ValidationContext {
 
     public GraphQLArgument getArgument() {
         return typeInfo.getArgument();
+    }
+
+    public GraphQLOutputType getType() {
+        return typeInfo.getType();
     }
 }
