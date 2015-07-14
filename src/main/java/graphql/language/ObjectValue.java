@@ -21,7 +21,9 @@ public class ObjectValue implements Value {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        List<Node> result = new ArrayList<>();
+        result.addAll(objectFields);
+        return result;
     }
 
     @Override

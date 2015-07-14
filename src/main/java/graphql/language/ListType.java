@@ -25,7 +25,9 @@ public class ListType implements Type{
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        List<Node> result = new ArrayList<>();
+        result.add(type);
+        return result;
     }
 
     @Override

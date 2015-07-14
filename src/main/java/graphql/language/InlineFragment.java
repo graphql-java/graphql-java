@@ -55,7 +55,11 @@ public class InlineFragment implements Selection {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        List<Node> result = new ArrayList<>();
+        result.add(typeCondition);
+        result.addAll(directives);
+        result.add(selectionSet);
+        return result;
     }
 
     @Override

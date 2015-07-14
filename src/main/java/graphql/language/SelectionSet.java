@@ -21,7 +21,9 @@ public class SelectionSet implements  Node{
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        List<Node> result = new ArrayList<>();
+        result.addAll(selections);
+        return result;
     }
 
     @Override

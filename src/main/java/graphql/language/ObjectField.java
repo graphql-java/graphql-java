@@ -24,7 +24,9 @@ public class ObjectField implements Node {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        List<Node> result = new ArrayList<>();
+        result.add(value);
+        return result;
     }
 
     @Override
