@@ -121,7 +121,7 @@ Running the tests:
 
 The implementation is in Java 7, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
 
-The query parsing is done with [ANTLR](www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
+The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
 
 The only runtime dependencies are Antlr and probably Slf4J. 
  
