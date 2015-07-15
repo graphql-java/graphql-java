@@ -1,29 +1,68 @@
 # graphql-java
 
-## Note: This library is currently under development and not yet stable. GraphQL itself is just a working draft currently. So there will be changes!  
-
-
-## It's an early version, but nearly everything should be working, except validation. 
+## Friendly warning: This library is currently under development and not yet stable.     
 
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js). 
-   
 
+### Overview
 
-The execution part is WIP, and validation, error handling and more is still missing.
+This is a Java Implementation of GraphQL. The library aims for real-life usage in production. 
   
-### How to use it
+It takes care of parsing and executing a GraphQL query. It doesn't take care of actually fetching any data:
+Data comes from implementing callbacks.
+
+
+### Hello World
+
+This is the famous "hello world" in graphql-java: 
+
+```java
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+
+import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLObjectType.newObject;
+
+public class HelloWorld {
+
+    public static void main(String[] args) {
+    
+        GraphQLObjectType queryType = newObject()
+                .field(newFieldDefinition()
+                        .type(GraphQLString)
+                        .name("hello")
+                        .staticValue("world")
+                        .build())
+                .build();
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .build();
+        Object result = new GraphQL(schema, "{hello}").execute().getResult();
+        System.out.println(result);
+    }
+}
+```
+
+  
+### Manual
   
 #### Schema definition
 
-A complex schema (stolen from the js reference implementation): [StarWarsSchema](src/test/groovy/graphql/StarWarsSchema.java)
+`GraphQLSchema.newSchema()` returns a new `Builder` to define a new Schema. All other types are created with the same pattern:
+`newObject`, `newFieldDefinition` etc.
 
+A full schema example (stolen from the js reference implementation): [StarWarsSchema](src/test/groovy/graphql/StarWarsSchema.java)
 
-#### Query
+#### Executing a Query
 
-For how to define a simple schema and execute queries: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
+To execute a Query against a Schema instantiate a new `GraphQL` Object with the appropriate arguments and then call `execute()`. 
 
-More complex use cases: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
+Example: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
+
+Complexer examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
 
 
 ### How to build it 
@@ -46,9 +85,6 @@ In build/libs you will find the jar file.
 
 
 ### Details
-
-graphql-java is based on the same idea as the reference implementation: It assumes nothing about the persistence technology. 
-Instead hooks/callbacks are provided to fetch the data.
 
 The implementation is in Java 7, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
 
