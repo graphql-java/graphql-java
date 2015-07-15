@@ -127,9 +127,16 @@ ExponentPart : 'e' Sign? Digit+;
 
 Digit : '0'..'9';
 
-StringValue: '\"' StringCharacter+ '\"';
 
-StringCharacter: [a-zA-Z0-9];
+StringValue: '"' (~(["\\\n\r\u2028\u2029])|EscapedChar)* '"';
 
-WS : [ \t\r\n]+ -> skip ;
-COMMA : ','+ -> skip ;
+fragment EscapedChar :   '\\' (["\\/bfnrt] | Unicode) ;
+fragment Unicode : 'u' Hex Hex Hex Hex ;
+fragment Hex : [0-9a-fA-F] ;
+
+Ignored: (Whitspace|Comma|LineTerminator) -> skip;
+
+fragment LineTerminator: [\n\r\u2028\u2029];
+
+fragment Whitspace : [\t\u000b\f\u0020\u00a0];
+fragment Comma : ',';
