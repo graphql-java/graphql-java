@@ -27,16 +27,14 @@ public class TraversalContext implements QueryLanguageVisitor {
 
     @Override
     public void enter(Node node) {
-        if (node instanceof Document) {
-
+        if (node instanceof OperationDefinition) {
+            enterImpl((OperationDefinition) node);
         } else if (node instanceof SelectionSet) {
             enterImpl((SelectionSet) node);
         } else if (node instanceof Field) {
             enterImpl((Field) node);
         } else if (node instanceof Directive) {
             enterImpl((Directive) node);
-        } else if (node instanceof OperationDefinition) {
-            enterImpl((OperationDefinition) node);
         } else if (node instanceof InlineFragment) {
             enterImpl((InlineFragment) node);
         } else if (node instanceof FragmentDefinition) {
@@ -149,15 +147,15 @@ public class TraversalContext implements QueryLanguageVisitor {
 
     @Override
     public void leave(Node node) {
-        if (node instanceof SelectionSet) {
+        if (node instanceof OperationDefinition) {
+            typeStack.remove(typeStack.size() - 1);
+        } else if (node instanceof SelectionSet) {
             parentTypeStack.remove(parentTypeStack.size() - 1);
         } else if (node instanceof Field) {
             fieldDefStack.remove(fieldDefStack.size() - 1);
             typeStack.remove(typeStack.size() - 1);
         } else if (node instanceof Directive) {
             directive = null;
-        } else if (node instanceof OperationDefinition) {
-            typeStack.remove(typeStack.size() - 1);
         } else if (node instanceof InlineFragment) {
             typeStack.remove(typeStack.size() - 1);
         } else if (node instanceof FragmentDefinition) {
