@@ -12,6 +12,12 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
  
 - [Overview](#overview)
 - [Hello World](#hello-world)
+- [Manual](#manual)
+    - [Schema definition](#schema-definition)
+    - [Executing](#executing)
+    - [Execution strategies](#exeution-strategies)
+- [Build it](#build-it)
+- [Details](#details)
  
 
 ### Overview
@@ -67,7 +73,7 @@ public class HelloWorld {
 
 A full schema example (stolen from the js reference implementation): [StarWarsSchema](src/test/groovy/graphql/StarWarsSchema.java)
 
-#### Executing a Query or a Mutation
+#### Executing 
 
 To execute a Query/Mutation against a Schema instantiate a new `GraphQL` Object with the appropriate arguments and then call `execute()`.
  
@@ -78,13 +84,13 @@ Example: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
 Complexer examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
 
 
-#### Query execution vs Mutation execution
+#### Execution strategies
 
 All fields in a SelectionSet are executed in parallel per default (via a Thread-Pool). 
 
 The first level of a Mutation is executed serially.  
 
-### How to build it 
+### Build it 
 
 Just clone the repo and type 
 
@@ -94,8 +100,7 @@ Just clone the repo and type
 
 In build/libs you will find the jar file.
 
-### Run the tests
-
+Running the tests:
 
 ```sh
 ./gradlew test
@@ -109,6 +114,7 @@ The implementation is in Java 7, but the tests are in Groovy and [Spock](https:/
 
 The query parsing is done with [ANTLR](www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
 
+The only runtime dependencies are Antlr and probably Slf4J. 
  
 ### Feedback
 
