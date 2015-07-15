@@ -16,12 +16,13 @@ public class ScalarLeafs extends AbstractRule {
     @Override
     public void checkField(Field field) {
         GraphQLOutputType type = getValidationContext().getType();
+        if (type == null) return;
         if (SchemaUtil.isLeafType(type)) {
             if (field.getSelectionSet() != null) {
                 addError(new ValidationError(ValidationErrorType.SubSelectionNotAllowed));
             }
         } else {
-            if (field.getSelectionSet() != null) {
+            if (field.getSelectionSet() == null) {
                 addError(new ValidationError(ValidationErrorType.SubSelectionRequired));
             }
         }

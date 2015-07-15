@@ -14,24 +14,6 @@ public class DefaultValuesOfCorrectType extends AbstractRule {
     }
 
 
-//        var name = varDefAST.variable.name.value;
-//        var defaultValue = varDefAST.defaultValue;
-//        var type = context.getInputType();
-//        if (type instanceof GraphQLNonNull && defaultValue) {
-//            return new GraphQLError(
-//                    defaultForNonNullArgMessage(name, type, type.ofType),
-//                    [defaultValue]
-//            );
-//        }
-//        if (type && defaultValue && !isValidLiteralValue(defaultValue, type)) {
-//            return new GraphQLError(
-//                    badValueForDefaultArgMessage(name, type, print(defaultValue)),
-//                    [defaultValue]
-//            );
-//        }
-//    }
-
-
     @Override
     public void checkVariableDefinition(VariableDefinition variableDefinition) {
         GraphQLInputType inputType = getValidationContext().getInputType();
