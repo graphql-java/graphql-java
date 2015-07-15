@@ -3,7 +3,11 @@
 ## Friendly warning: This library is currently under development and not yet stable.     
 
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
-and the JavaScript [reference implementation](https://github.com/graphql/graphql-js). 
+and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
+ 
+
+**Status**: Parsing and executing are implemented. Validation is in place, but not complete.
+ 
 
 ### Overview
 
@@ -41,7 +45,9 @@ public class HelloWorld {
                 .query(queryType)
                 .build();
         Object result = new GraphQL(schema, "{hello}").execute().getResult();
+        
         System.out.println(result);
+        // Prints: {hello=world}
     }
 }
 ```
@@ -64,6 +70,8 @@ Example: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
 
 Complexer examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
 
+
+### 
 
 ### How to build it 
 
