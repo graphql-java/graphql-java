@@ -7,15 +7,17 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
  
 
 **Status**: Parsing and executing are implemented. Validation is in place, but not complete.
+There will be a first beta-release soon.  
 
 # Table of Contents
  
 - [Overview](#overview)
 - [Hello World](#hello-world)
+- [Getting started](#getting-started)
 - [Manual](#manual)
     - [Schema definition](#schema-definition)
     - [Executing](#executing)
-    - [Execution strategies](#exeution-strategies)
+    - [Execution strategies](#execution-strategies)
 - [Build it](#build-it)
 - [Details](#details)
  
@@ -25,7 +27,8 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
 This is a Java Implementation of GraphQL. The library aims for real-life usage in production. 
   
 It takes care of parsing and executing a GraphQL query. It doesn't take care of actually fetching any data:
-Data comes from implementing callbacks.
+Data comes from implementing callbacks or providing static data.
+
 
 
 ### Hello World
@@ -63,6 +66,12 @@ public class HelloWorld {
 }
 ```
 
+### Getting started
+
+Will be available soon via Bintray repository.
+
+Currently: Please clone and [Build it](#build-it).
+ 
   
 ### Manual
   
@@ -98,7 +107,7 @@ Just clone the repo and type
 ./gradlew build
 ```
 
-In build/libs you will find the jar file.
+In `build/libs` you will find the jar file.
 
 Running the tests:
 
