@@ -1,6 +1,6 @@
 # graphql-java
 
-## Friendly warning: This library is currently under development and not yet stable.     
+#### Friendly warning: This library is currently under development and not yet stable.     
 
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
