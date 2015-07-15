@@ -9,6 +9,7 @@ public enum ValidationErrorType {
     SubSelectionRequired,
     SubSelectionNotAllowed,
     InvalidSyntax,
-    BadValueForDefaultArg
+    BadValueForDefaultArg,
+    FieldUndefined
 
 }
