@@ -8,7 +8,6 @@ import org.antlr.v4.runtime.atn.ParserATNSimulator;
 import org.antlr.v4.runtime.atn.PredictionContextCache;
 import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.misc.NotNull;
-import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -25,8 +24,7 @@ public class GraphqlParser extends Parser {
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
 		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, BooleanValue=17, 
 		NAME=18, IntValue=19, FloatValue=20, Sign=21, IntegerPart=22, NonZeroDigit=23, 
-		ExponentPart=24, Digit=25, StringValue=26, StringCharacter=27, WS=28, 
-		COMMA=29;
+		ExponentPart=24, Digit=25, StringValue=26, Ignored=27;
 	public static final int
 		RULE_document = 0, RULE_definition = 1, RULE_operationDefinition = 2, 
 		RULE_operationType = 3, RULE_variableDefinitions = 4, RULE_variableDefinition = 5, 
@@ -57,7 +55,7 @@ public class GraphqlParser extends Parser {
 		null, null, null, null, null, null, null, null, null, null, null, null, 
 		null, null, null, null, null, "BooleanValue", "NAME", "IntValue", "FloatValue", 
 		"Sign", "IntegerPart", "NonZeroDigit", "ExponentPart", "Digit", "StringValue", 
-		"StringCharacter", "WS", "COMMA"
+		"Ignored"
 	};
 	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
 
@@ -120,14 +118,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_document; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterDocument(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitDocument(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitDocument(this);
 			else return visitor.visitChildren(this);
@@ -179,14 +169,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_definition; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterDefinition(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitDefinition(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitDefinition(this);
@@ -249,14 +231,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_operationDefinition; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterOperationDefinition(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitOperationDefinition(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitOperationDefinition(this);
@@ -329,14 +303,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_operationType; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterOperationType(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitOperationType(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitOperationType(this);
 			else return visitor.visitChildren(this);
@@ -380,14 +346,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_variableDefinitions; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterVariableDefinitions(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitVariableDefinitions(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitVariableDefinitions(this);
@@ -448,14 +406,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_variableDefinition; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterVariableDefinition(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitVariableDefinition(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitVariableDefinition(this);
 			else return visitor.visitChildren(this);
@@ -504,14 +454,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_variable; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterVariable(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitVariable(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitVariable(this);
 			else return visitor.visitChildren(this);
@@ -549,14 +491,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_defaultValue; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterDefaultValue(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitDefaultValue(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitDefaultValue(this);
@@ -598,14 +532,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_selectionSet; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterSelectionSet(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitSelectionSet(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitSelectionSet(this);
@@ -665,14 +591,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_selection; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterSelection(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitSelection(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitSelection(this);
@@ -738,14 +656,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_field; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterField(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitField(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitField(this);
@@ -818,14 +728,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_alias; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterAlias(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitAlias(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitAlias(this);
 			else return visitor.visitChildren(this);
@@ -866,14 +768,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_arguments; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterArguments(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitArguments(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitArguments(this);
@@ -929,14 +823,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_argument; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterArgument(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitArgument(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitArgument(this);
 			else return visitor.visitChildren(this);
@@ -979,14 +865,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_fragmentSpread; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterFragmentSpread(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitFragmentSpread(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitFragmentSpread(this);
@@ -1041,14 +919,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_inlineFragment; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterInlineFragment(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitInlineFragment(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitInlineFragment(this);
@@ -1111,14 +981,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_fragmentDefinition; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterFragmentDefinition(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitFragmentDefinition(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitFragmentDefinition(this);
 			else return visitor.visitChildren(this);
@@ -1171,14 +1033,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_fragmentName; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterFragmentName(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitFragmentName(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitFragmentName(this);
 			else return visitor.visitChildren(this);
@@ -1214,14 +1068,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_typeCondition; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterTypeCondition(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitTypeCondition(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitTypeCondition(this);
@@ -1268,14 +1114,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_value; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterValue(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitValue(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitValue(this);
@@ -1375,14 +1213,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_valueWithVariable; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterValueWithVariable(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitValueWithVariable(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitValueWithVariable(this);
 			else return visitor.visitChildren(this);
@@ -1473,14 +1303,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_enumValue; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterEnumValue(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitEnumValue(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitEnumValue(this);
 			else return visitor.visitChildren(this);
@@ -1519,14 +1341,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_arrayValue; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterArrayValue(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitArrayValue(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitArrayValue(this);
@@ -1584,14 +1398,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_arrayValueWithVariable; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterArrayValueWithVariable(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitArrayValueWithVariable(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitArrayValueWithVariable(this);
 			else return visitor.visitChildren(this);
@@ -1647,14 +1453,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_objectValue; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterObjectValue(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitObjectValue(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitObjectValue(this);
@@ -1712,14 +1510,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_objectValueWithVariable; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterObjectValueWithVariable(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitObjectValueWithVariable(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitObjectValueWithVariable(this);
 			else return visitor.visitChildren(this);
@@ -1774,14 +1564,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_objectField; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterObjectField(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitObjectField(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitObjectField(this);
 			else return visitor.visitChildren(this);
@@ -1822,14 +1604,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_objectFieldWithVariable; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterObjectFieldWithVariable(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitObjectFieldWithVariable(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitObjectFieldWithVariable(this);
@@ -1873,14 +1647,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_directives; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterDirectives(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitDirectives(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitDirectives(this);
@@ -1931,14 +1697,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_directive; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterDirective(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitDirective(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitDirective(this);
@@ -1994,14 +1752,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_type; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterType(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitType(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitType(this);
 			else return visitor.visitChildren(this);
@@ -2055,14 +1805,6 @@ public class GraphqlParser extends Parser {
 		}
 		@Override public int getRuleIndex() { return RULE_typeName; }
 		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterTypeName(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitTypeName(this);
-		}
-		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitTypeName(this);
 			else return visitor.visitChildren(this);
@@ -2098,14 +1840,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_listType; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterListType(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitListType(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitListType(this);
@@ -2149,14 +1883,6 @@ public class GraphqlParser extends Parser {
 			super(parent, invokingState);
 		}
 		@Override public int getRuleIndex() { return RULE_nonNullType; }
-		@Override
-		public void enterRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).enterNonNullType(this);
-		}
-		@Override
-		public void exitRule(ParseTreeListener listener) {
-			if ( listener instanceof GraphqlListener ) ((GraphqlListener)listener).exitNonNullType(this);
-		}
 		@Override
 		public <T> T accept(ParseTreeVisitor<? extends T> visitor) {
 			if ( visitor instanceof GraphqlVisitor ) return ((GraphqlVisitor<? extends T>)visitor).visitNonNullType(this);
@@ -2204,7 +1930,7 @@ public class GraphqlParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\3\37\u0114\4\2\t\2"+
+		"\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\3\35\u0114\4\2\t\2"+
 		"\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13"+
 		"\t\13\4\f\t\f\4\r\t\r\4\16\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22"+
 		"\4\23\t\23\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31\t\31"+

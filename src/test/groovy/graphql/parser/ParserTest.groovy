@@ -298,6 +298,22 @@ class ParserTest extends Specification {
         document.definitions[0] == queryDefinition
     }
 
+    def "parse complex string value"(){
+        given:
+        def input = """
+            {
+              hello(arg: "hello, world" ) }
+            """
+
+        when:
+        def document = new Parser().parseDocument(input)
+        def helloField = document.definitions[0].selectionSet.selections[0]
+
+        then:
+        helloField == new Field("hello", [new Argument("arg",new StringValue("hello, world"))])
+    }
+
+
 
 
     Field getInnerField(SelectionSet selectionSet) {
