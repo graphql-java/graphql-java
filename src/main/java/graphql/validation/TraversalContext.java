@@ -11,7 +11,7 @@ import java.util.List;
 
 import static graphql.introspection.Schema.*;
 
-public class TypeInfo implements QueryLanguageVisitor {
+public class TraversalContext implements QueryLanguageVisitor {
     GraphQLSchema schema;
     List<GraphQLOutputType> typeStack = new ArrayList<>();
     List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
@@ -21,7 +21,7 @@ public class TypeInfo implements QueryLanguageVisitor {
     GraphQLArgument argument;
 
 
-    public TypeInfo(GraphQLSchema graphQLSchema) {
+    public TraversalContext(GraphQLSchema graphQLSchema) {
         this.schema = graphQLSchema;
     }
 
@@ -62,7 +62,6 @@ public class TypeInfo implements QueryLanguageVisitor {
             compositeType = (GraphQLCompositeType) rawType;
         }
         addParentType(compositeType);
-        ;
     }
 
     private void enterImpl(Field field) {

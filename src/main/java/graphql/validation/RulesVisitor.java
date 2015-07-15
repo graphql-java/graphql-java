@@ -37,7 +37,7 @@ public class RulesVisitor implements QueryLanguageVisitor {
 
     @Override
     public void enter(Node node) {
-        validationContext.getTypeInfo().enter(node);
+        validationContext.getTraversalContext().enter(node);
         if (node instanceof Argument) {
             for (AbstractRule rule : rules) {
                 rule.checkArgument((Argument) node);
@@ -51,6 +51,6 @@ public class RulesVisitor implements QueryLanguageVisitor {
 
     @Override
     public void leave(Node node) {
-        validationContext.getTypeInfo().leave(node);
+        validationContext.getTraversalContext().leave(node);
     }
 }

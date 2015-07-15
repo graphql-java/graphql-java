@@ -15,18 +15,18 @@ public class ValidationContext {
     private Map<String, FragmentDefinition> fragmentDefinitionMap = new LinkedHashMap<>();
 
 
-    private TypeInfo typeInfo;
+    private TraversalContext traversalContext;
 //    _fragments: {[name: string]: FragmentDefinition};
 
 
     public ValidationContext(GraphQLSchema schema, Document document) {
         this.schema = schema;
         this.document = document;
-        this.typeInfo = new TypeInfo(schema);
+        this.traversalContext = new TraversalContext(schema);
     }
 
-    public TypeInfo getTypeInfo() {
-        return typeInfo;
+    public TraversalContext getTraversalContext() {
+        return traversalContext;
     }
 
     public GraphQLSchema getSchema() {
@@ -38,26 +38,26 @@ public class ValidationContext {
     }
 
     public GraphQLCompositeType getParentType() {
-        return typeInfo.getParentType();
+        return traversalContext.getParentType();
     }
 
     public GraphQLInputType getInputType() {
-        return typeInfo.getInputType();
+        return traversalContext.getInputType();
     }
 
     public GraphQLFieldDefinition getFieldDef() {
-        return typeInfo.getFieldDef();
+        return traversalContext.getFieldDef();
     }
 
     public GraphQLDirective getDirective() {
-        return typeInfo.getDirective();
+        return traversalContext.getDirective();
     }
 
     public GraphQLArgument getArgument() {
-        return typeInfo.getArgument();
+        return traversalContext.getArgument();
     }
 
     public GraphQLOutputType getType() {
-        return typeInfo.getType();
+        return traversalContext.getType();
     }
 }
