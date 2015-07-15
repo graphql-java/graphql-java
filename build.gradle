@@ -14,6 +14,8 @@ dependencies {
     compile 'org.antlr:antlr4-runtime:4.5'
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
     testCompile 'org.codehaus.groovy:groovy-all:2.4.3'
+    testCompile 'cglib:cglib-nodep:3.1'
+    testCompile 'org.objenesis:objenesis:2.1'
 }
 
 task wrapper(type: Wrapper) {

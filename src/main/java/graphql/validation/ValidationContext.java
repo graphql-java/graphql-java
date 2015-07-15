@@ -5,9 +5,7 @@ import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.schema.*;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ValidationContext {
@@ -15,8 +13,6 @@ public class ValidationContext {
     private final GraphQLSchema schema;
     private final Document document;
     private Map<String, FragmentDefinition> fragmentDefinitionMap = new LinkedHashMap<>();
-
-    private final List<ValidationError> validationErrors = new ArrayList<>();
 
 
     private TypeInfo typeInfo;
@@ -39,14 +35,6 @@ public class ValidationContext {
 
     public Document getDocument() {
         return document;
-    }
-
-    public void addError(ValidationError validationError) {
-        validationErrors.add(validationError);
-    }
-
-    public List<ValidationError> getValidationErrors() {
-        return validationErrors;
     }
 
     public GraphQLCompositeType getParentType() {

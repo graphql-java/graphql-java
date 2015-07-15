@@ -12,8 +12,9 @@ public class Validator {
         ValidationContext validationContext = new ValidationContext(schema, document);
 
         LanguageTraversal languageTraversal = new LanguageTraversal();
-        languageTraversal.traverse(document, new RulesVisitor(validationContext));
+        ErrorCollector  errorCollector = new ErrorCollector();
+        languageTraversal.traverse(document, new RulesVisitor(validationContext,errorCollector));
 
-        return validationContext.getValidationErrors();
+        return errorCollector.getErrors();
     }
 }
