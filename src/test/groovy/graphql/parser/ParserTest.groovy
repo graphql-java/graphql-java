@@ -298,11 +298,11 @@ class ParserTest extends Specification {
         document.definitions[0] == queryDefinition
     }
 
-    def "parse complex string value"(){
+    def "parse complex string value and comment"(){
         given:
         def input = """
-            {
-              hello(arg: "hello, world" ) }
+            { # this is some comment, which should be igored
+               hello(arg: "hello, world" ) }
             """
 
         when:
@@ -312,6 +312,7 @@ class ParserTest extends Specification {
         then:
         helloField == new Field("hello", [new Argument("arg",new StringValue("hello, world"))])
     }
+
 
 
 
