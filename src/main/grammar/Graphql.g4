@@ -134,7 +134,9 @@ fragment EscapedChar :   '\\' (["\\/bfnrt] | Unicode) ;
 fragment Unicode : 'u' Hex Hex Hex Hex ;
 fragment Hex : [0-9a-fA-F] ;
 
-Ignored: (Whitspace|Comma|LineTerminator) -> skip;
+Ignored: (Whitspace|Comma|LineTerminator|Comment) -> skip;
+
+fragment Comment: '#' ~[\n\r\u2028\u2029]*;
 
 fragment LineTerminator: [\n\r\u2028\u2029];
 
