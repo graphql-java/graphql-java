@@ -7,6 +7,11 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
  
 
 **Status**: Parsing and executing are implemented. Validation is in place, but not complete.
+
+# Table of Contents
+ 
+- [Overview](#overview)
+- [Hello World](#hello-world)
  
 
 ### Overview
@@ -62,16 +67,22 @@ public class HelloWorld {
 
 A full schema example (stolen from the js reference implementation): [StarWarsSchema](src/test/groovy/graphql/StarWarsSchema.java)
 
-#### Executing a Query
+#### Executing a Query or a Mutation
 
-To execute a Query against a Schema instantiate a new `GraphQL` Object with the appropriate arguments and then call `execute()`. 
+To execute a Query/Mutation against a Schema instantiate a new `GraphQL` Object with the appropriate arguments and then call `execute()`.
+ 
+The result of a Query is a `ExecutionResult` Object with the result and/or a list of Errors.
 
 Example: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
 
 Complexer examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
 
 
-### 
+#### Query execution vs Mutation execution
+
+All fields in a SelectionSet are executed in parallel per default (via a Thread-Pool). 
+
+The first level of a Mutation is executed serially.  
 
 ### How to build it 
 
