@@ -16,24 +16,22 @@ public class RulesVisitor implements QueryLanguageVisitor {
 
     private final List<AbstractRule> rules = new ArrayList<>();
     private ValidationContext validationContext;
+    private ErrorCollector errorCollector;
 
-    public RulesVisitor(ValidationContext validationContext) {
+    public RulesVisitor(ValidationContext validationContext,ErrorCollector errorCollector) {
         this.validationContext = validationContext;
+        this.errorCollector = errorCollector;
 
-        ArgumentsOfCorrectType argumentsOfCorrectType = new ArgumentsOfCorrectType();
-        argumentsOfCorrectType.setValidationContext(validationContext);
+        ArgumentsOfCorrectType argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, errorCollector);
         rules.add(argumentsOfCorrectType);
 
-        KnownTypeNames knownTypeNames = new KnownTypeNames();
-        knownTypeNames.setValidationContext(validationContext);
+        KnownTypeNames knownTypeNames = new KnownTypeNames(validationContext, errorCollector);
         rules.add(knownTypeNames);
 
-        DefaultValuesOfCorrectType defaultValuesOfCorrectType = new DefaultValuesOfCorrectType();
-        defaultValuesOfCorrectType.setValidationContext(validationContext);
+        DefaultValuesOfCorrectType defaultValuesOfCorrectType = new DefaultValuesOfCorrectType(validationContext, errorCollector);
         rules.add(defaultValuesOfCorrectType);
 
-        ScalarLeafs scalarLeafs = new ScalarLeafs();
-        scalarLeafs.setValidationContext(validationContext);
+        ScalarLeafs scalarLeafs = new ScalarLeafs(validationContext, errorCollector);
         rules.add(scalarLeafs);
     }
 

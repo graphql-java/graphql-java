@@ -3,11 +3,20 @@ package graphql.validation;
 
 import graphql.language.*;
 
+import java.util.List;
+
 public class AbstractRule {
 
-    private ValidationContext validationContext;
+    private final ValidationContext validationContext;
+    private final ErrorCollector errorCollector;
 
     private ValidationUtil validationUtil = new ValidationUtil();
+
+    public AbstractRule(ValidationContext validationContext, ErrorCollector errorCollector) {
+        this.validationContext = validationContext;
+        this.errorCollector = errorCollector;
+    }
+
 
     public ValidationUtil getValidationUtil() {
         return validationUtil;
@@ -17,9 +26,14 @@ public class AbstractRule {
         this.validationUtil = validationUtil;
     }
 
-    public void setValidationContext(ValidationContext validationContext) {
-        this.validationContext = validationContext;
+    public void addError(ValidationError error){
+        errorCollector.addError(error);
     }
+
+    public List<ValidationError> getErrors(){
+        return errorCollector.getErrors();
+    }
+
 
     public ValidationContext getValidationContext() {
         return validationContext;
