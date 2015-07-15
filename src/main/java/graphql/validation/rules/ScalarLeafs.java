@@ -4,10 +4,7 @@ package graphql.validation.rules;
 import graphql.language.Field;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.SchemaUtil;
-import graphql.validation.AbstractRule;
-import graphql.validation.ErrorCollector;
-import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
+import graphql.validation.*;
 
 public class ScalarLeafs extends AbstractRule {
 
@@ -21,11 +18,11 @@ public class ScalarLeafs extends AbstractRule {
         GraphQLOutputType type = getValidationContext().getType();
         if (SchemaUtil.isLeafType(type)) {
             if (field.getSelectionSet() != null) {
-                addError(new ValidationError("No subselection allowed on " + field.getName()));
+                addError(new ValidationError(ValidationErrorType.SubSelectionNotAllowed));
             }
         } else {
             if (field.getSelectionSet() != null) {
-                addError(new ValidationError("Subseletion required on " + field.getName()));
+                addError(new ValidationError(ValidationErrorType.SubSelectionRequired));
             }
         }
     }

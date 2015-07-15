@@ -7,6 +7,7 @@ import graphql.language.Document;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorType;
 import graphql.validation.Validator;
 import org.antlr.v4.runtime.RecognitionException;
 
@@ -43,7 +44,7 @@ public class GraphQL {
         try {
             document = parser.parseDocument(requestString);
         } catch (RecognitionException e) {
-            ValidationError validationError = new ValidationError("Invalid syntax: " + e.toString());
+            ValidationError validationError = new ValidationError(ValidationErrorType.InvalidSyntax);
             return new ExecutionResult(Arrays.asList(validationError));
         }
         Execution execution = new Execution(executorService);
