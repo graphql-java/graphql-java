@@ -15,4 +15,11 @@ public class ErrorCollector {
     public List<ValidationError> getErrors(){
         return errors;
     }
+
+    public boolean containsError(ValidationErrorType validationErrorType){
+        for(ValidationError validationError : errors){
+            if(validationError.getErrorType() == validationErrorType) return true;
+        }
+        return false;
+    }
 }

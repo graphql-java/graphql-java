@@ -4,6 +4,7 @@ import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
@@ -106,6 +107,6 @@ class GraphQLTest extends Specification {
 
         then:
         errors.size() == 1
-        errors[0].description.contains("Invalid syntax")
+        errors[0].errorType == ValidationErrorType.InvalidSyntax
     }
 }

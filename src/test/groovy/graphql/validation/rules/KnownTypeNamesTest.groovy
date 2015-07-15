@@ -4,6 +4,7 @@ import graphql.StarWarsSchema
 import graphql.language.TypeName
 import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 
@@ -21,7 +22,7 @@ class KnownTypeNamesTest extends Specification {
         knownTypeNames.checkTypeName(new TypeName("Simpson"))
 
         then:
-        errorCollector.getErrors().size() > 0
+        errorCollector.containsError(ValidationErrorType.UnknownType)
 
     }
 }

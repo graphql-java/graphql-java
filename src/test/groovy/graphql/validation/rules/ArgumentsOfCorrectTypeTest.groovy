@@ -5,6 +5,7 @@ import graphql.language.StringValue
 import graphql.schema.GraphQLArgument
 import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -28,7 +29,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
         then:
-        argumentsOfCorrectType.getErrors().size() > 0
+        errorCollector.containsError(ValidationErrorType.WrongType)
     }
 
     def "current null argument from context is no error"(){
