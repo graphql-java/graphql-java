@@ -1,10 +1,7 @@
 package graphql.validation
 
 import graphql.Directives
-import graphql.language.Directive
-import graphql.language.Field
-import graphql.language.OperationDefinition
-import graphql.language.SelectionSet
+import graphql.language.*
 import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
@@ -88,7 +85,23 @@ class TraversalContextTest extends Specification {
 
         then:
         traversalContext.getDirective() == null
+    }
 
+    def "inlineFragment type condition saved as type"(){
+        given:
+        InlineFragment inlineFragment =new InlineFragment(new TypeName(droidType.getName()))
+
+        when:
+        traversalContext.enter(inlineFragment)
+
+        then:
+        traversalContext.getType() == droidType
+
+        when:
+        traversalContext.leave(inlineFragment)
+
+        then:
+        traversalContext.getType() == null
     }
 
 }
