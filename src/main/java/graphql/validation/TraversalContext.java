@@ -13,7 +13,7 @@ import static graphql.introspection.Schema.*;
 
 public class TraversalContext implements QueryLanguageVisitor {
     GraphQLSchema schema;
-    List<GraphQLOutputType> typeStack = new ArrayList<>();
+    List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
     List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
     List<GraphQLInputType> inputTypeStack = new ArrayList<>();
     List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
@@ -141,18 +141,18 @@ public class TraversalContext implements QueryLanguageVisitor {
     @Override
     public void leave(Node node) {
         if (node instanceof OperationDefinition) {
-            typeStack.remove(typeStack.size() - 1);
+            outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof SelectionSet) {
             parentTypeStack.remove(parentTypeStack.size() - 1);
         } else if (node instanceof Field) {
             fieldDefStack.remove(fieldDefStack.size() - 1);
-            typeStack.remove(typeStack.size() - 1);
+            outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof Directive) {
             directive = null;
         } else if (node instanceof InlineFragment) {
-            typeStack.remove(typeStack.size() - 1);
+            outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof FragmentDefinition) {
-            typeStack.remove(typeStack.size() - 1);
+            outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof VariableDefinition) {
             inputTypeStack.remove(inputTypeStack.size() - 1);
         } else if (node instanceof Argument) {
@@ -171,11 +171,11 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
     public GraphQLOutputType getOutputType() {
-        return lastElement(typeStack);
+        return lastElement(outputTypeStack);
     }
 
     private void addType(GraphQLOutputType type) {
-        typeStack.add(type);
+        outputTypeStack.add(type);
     }
 
 
