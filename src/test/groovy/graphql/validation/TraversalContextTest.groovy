@@ -2,6 +2,7 @@ package graphql.validation
 
 import graphql.Directives
 import graphql.language.*
+import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
@@ -140,7 +141,7 @@ class TraversalContextTest extends Specification {
         traversalContext.getInputType() == null
     }
 
-    def "field argument saves argument and input type"(){
+    def "field argument saves argument and input type"() {
         given:
         Argument argument = new Argument("id", new StringValue("string"))
         traversalContext.fieldDefStack.add(queryType.getFieldDefinition("droid"))
@@ -161,7 +162,7 @@ class TraversalContextTest extends Specification {
 
     }
 
-    def "directive argument saves argument and input type"(){
+    def "directive argument saves argument and input type"() {
         given:
         Argument argument = new Argument("if", new BooleanValue(true))
         traversalContext.directive = IncludeDirective
@@ -179,6 +180,24 @@ class TraversalContextTest extends Specification {
         then:
         traversalContext.getArgument() == null
         traversalContext.getInputType() == null
+    }
 
+    def "array value saves input type"() {
+        given:
+        GraphQLNonNull graphQLList = new GraphQLNonNull(new GraphQLList(GraphQLString));
+        traversalContext.inputTypeStack.add(graphQLList);
+        ArrayValue arrayValue = new ArrayValue([new StringValue("string")])
+
+        when:
+        traversalContext.enter(arrayValue)
+
+        then:
+        traversalContext.getInputType() == GraphQLString
+
+        when:
+        traversalContext.leave(arrayValue)
+
+        then:
+        traversalContext.getInputType() == graphQLList
     }
 }
