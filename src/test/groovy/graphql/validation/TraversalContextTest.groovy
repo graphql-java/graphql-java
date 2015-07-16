@@ -35,7 +35,7 @@ class TraversalContextTest extends Specification {
         traversalContext.getOutputType() == null
     }
 
-    def "SelectionSet saves current type as parent"() {
+    def "SelectionSet saves current output type as parent"() {
         given:
         SelectionSet selectionSet = new SelectionSet()
         traversalContext.outputTypeStack.add(new GraphQLNonNull(droidType))
@@ -53,7 +53,7 @@ class TraversalContextTest extends Specification {
         traversalContext.getParentType() == null
     }
 
-    def "field saves type and fieldDefinition"() {
+    def "field saves output type and fieldDefinition"() {
         given:
         def parentType = droidType
         traversalContext.parentTypeStack.add(parentType)
@@ -92,7 +92,7 @@ class TraversalContextTest extends Specification {
         traversalContext.getDirective() == null
     }
 
-    def "inlineFragment type condition saved as type"() {
+    def "inlineFragment type condition saved as output type"() {
         given:
         InlineFragment inlineFragment = new InlineFragment(new TypeName(droidType.getName()))
 
@@ -109,7 +109,7 @@ class TraversalContextTest extends Specification {
         traversalContext.getOutputType() == null
     }
 
-    def "fragmentDefintion type condition saved as type"() {
+    def "fragmentDefinition type condition saved as output type"() {
         given:
         FragmentDefinition fragmentDefinition = new FragmentDefinition("fragment", new TypeName(droidType.getName()))
 
