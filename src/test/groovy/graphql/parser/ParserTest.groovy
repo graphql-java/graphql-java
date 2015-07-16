@@ -226,7 +226,7 @@ class ParserTest extends Specification {
         and: "expected query"
 
         def helloField = new Field("hello")
-        def variableDefinition = new VariableDefinition("someTest", type)
+        def variableDefinition = new VariableDefinition("someTest", getOutputType)
         def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
                 [variableDefinition],
                 new SelectionSet([helloField]))
@@ -239,7 +239,7 @@ class ParserTest extends Specification {
         document.definitions[0] == queryDefinition
 
         where:
-        typeString    | type
+        typeString    | getOutputType
         "String"      | new TypeName("String")
         "[String]"    | new ListType(new TypeName("String"))
         "Boolean!"    | new NonNullType(new TypeName("Boolean"))

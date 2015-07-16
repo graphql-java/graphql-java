@@ -15,7 +15,7 @@ public class ScalarLeafs extends AbstractRule {
 
     @Override
     public void checkField(Field field) {
-        GraphQLOutputType type = getValidationContext().getType();
+        GraphQLOutputType type = getValidationContext().getOutputType();
         if (type == null) return;
         if (SchemaUtil.isLeafType(type)) {
             if (field.getSelectionSet() != null) {
