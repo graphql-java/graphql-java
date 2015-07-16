@@ -1,5 +1,6 @@
 package graphql.validation
 
+import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.language.SelectionSet
 import graphql.schema.GraphQLNonNull
@@ -49,6 +50,25 @@ class TraversalContextTest extends Specification {
     }
 
     def "field tracks type and fieldDefinition"(){
+        given:
+        def parentType = droidType
+        traversalContext.parentTypeStack.add(parentType)
+        Field field = new Field("id")
+
+        when:
+        traversalContext.enter(field)
+
+        then:
+        traversalContext.getType() == droidType.getFieldDefinition("id").getType()
+        traversalContext.getFieldDef() == droidType.getFieldDefinition("id")
+
+        when:
+        traversalContext.leave(field)
+
+        then:
+        traversalContext.getType() == null
+        traversalContext.getFieldDef() == null
+
     }
 
 }
