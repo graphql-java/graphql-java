@@ -104,4 +104,20 @@ class TraversalContextTest extends Specification {
         traversalContext.getType() == null
     }
 
+    def "fragmentDefintion type condition saved as type"(){
+        given:
+        FragmentDefinition fragmentDefinition =new FragmentDefinition("fragment",new TypeName(droidType.getName()))
+
+        when:
+        traversalContext.enter(fragmentDefinition)
+
+        then:
+        traversalContext.getType() == droidType
+
+        when:
+        traversalContext.leave(fragmentDefinition)
+
+        then:
+        traversalContext.getType() == null
+    }
 }
