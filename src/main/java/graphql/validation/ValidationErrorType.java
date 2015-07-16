@@ -10,6 +10,8 @@ public enum ValidationErrorType {
     SubSelectionNotAllowed,
     InvalidSyntax,
     BadValueForDefaultArg,
-    FieldUndefined
+    FieldUndefined,
+    InlineFragmentTypeConditionInvalid,
+    FragmentTypeConditionInvalid
 
 }

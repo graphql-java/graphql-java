@@ -47,8 +47,6 @@ public class TraversalContext implements QueryLanguageVisitor {
             enterImpl((ArrayValue) node);
         } else if (node instanceof ObjectField) {
             enterImpl((ObjectField) node);
-        } else {
-//            throw new ShouldNotHappenException();
         }
     }
 
