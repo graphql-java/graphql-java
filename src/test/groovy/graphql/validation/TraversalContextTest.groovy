@@ -2,6 +2,8 @@ package graphql.validation
 
 import graphql.Directives
 import graphql.language.*
+import graphql.schema.GraphQLInputObjectField
+import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
@@ -199,5 +201,25 @@ class TraversalContextTest extends Specification {
 
         then:
         traversalContext.getInputType() == graphQLList
+    }
+
+    def "object field saves input type"() {
+        given:
+        def inputObjectField = GraphQLInputObjectField.newInputObjectField().name("field").type(GraphQLString).build()
+        GraphQLInputObjectType inputObjectType = GraphQLInputObjectType.newInputObject().field(inputObjectField).build()
+        traversalContext.inputTypeStack.add(inputObjectType);
+        ObjectField objectField = new ObjectField("field", new StringValue("value"))
+
+        when:
+        traversalContext.enter(objectField)
+
+        then:
+        traversalContext.getInputType() == GraphQLString
+
+        when:
+        traversalContext.leave(objectField)
+
+        then:
+        traversalContext.getInputType() == inputObjectType
     }
 }
