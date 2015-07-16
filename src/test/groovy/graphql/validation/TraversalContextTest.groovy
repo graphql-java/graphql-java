@@ -1,5 +1,7 @@
 package graphql.validation
 
+import graphql.Directives
+import graphql.language.Directive
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.language.SelectionSet
@@ -13,10 +15,10 @@ class TraversalContextTest extends Specification {
 
     TraversalContext traversalContext = new TraversalContext(starWarsSchema)
 
-    def "operation definition"(){
+    def "operation definition"() {
         given:
         SelectionSet selectionSet = new SelectionSet([])
-        OperationDefinition operationDefinition = new OperationDefinition(queryType.getName(),QUERY,selectionSet)
+        OperationDefinition operationDefinition = new OperationDefinition(queryType.getName(), QUERY, selectionSet)
 
         when:
         traversalContext.enter(operationDefinition)
@@ -31,7 +33,7 @@ class TraversalContextTest extends Specification {
         traversalContext.getType() == null
     }
 
-    def "SelectionSet tracks current type as parent"(){
+    def "SelectionSet saves current type as parent"() {
         given:
         SelectionSet selectionSet = new SelectionSet()
         traversalContext.typeStack.add(new GraphQLNonNull(droidType))
@@ -49,7 +51,7 @@ class TraversalContextTest extends Specification {
         traversalContext.getParentType() == null
     }
 
-    def "field tracks type and fieldDefinition"(){
+    def "field saves type and fieldDefinition"() {
         given:
         def parentType = droidType
         traversalContext.parentTypeStack.add(parentType)
@@ -68,6 +70,24 @@ class TraversalContextTest extends Specification {
         then:
         traversalContext.getType() == null
         traversalContext.getFieldDef() == null
+
+    }
+
+    def "directives are saved"() {
+        given:
+        Directive directive = new Directive("skip")
+
+        when:
+        traversalContext.enter(directive)
+
+        then:
+        traversalContext.getDirective() == Directives.SkipDirective
+
+        when:
+        traversalContext.leave(directive)
+
+        then:
+        traversalContext.getDirective() == null
 
     }
 
