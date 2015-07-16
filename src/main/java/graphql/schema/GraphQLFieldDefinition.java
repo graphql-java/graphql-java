@@ -44,6 +44,13 @@ public class GraphQLFieldDefinition {
         return dataFetcher;
     }
 
+    public GraphQLArgument getArgument(String name) {
+        for (GraphQLArgument argument : arguments) {
+            if (argument.getName().equals(name)) return argument;
+        }
+        return null;
+    }
+
     public List<GraphQLArgument> getArguments() {
         return new ArrayList<>(arguments);
     }
