@@ -26,13 +26,13 @@ class TraversalContextTest extends Specification {
         traversalContext.enter(operationDefinition)
 
         then:
-        traversalContext.getType() == queryType
+        traversalContext.getOutputType() == queryType
 
         when:
         traversalContext.leave(operationDefinition)
 
         then:
-        traversalContext.getType() == null
+        traversalContext.getOutputType() == null
     }
 
     def "SelectionSet saves current type as parent"() {
@@ -63,14 +63,14 @@ class TraversalContextTest extends Specification {
         traversalContext.enter(field)
 
         then:
-        traversalContext.getType() == droidType.getFieldDefinition("id").getType()
+        traversalContext.getOutputType() == droidType.getFieldDefinition("id").getType()
         traversalContext.getFieldDef() == droidType.getFieldDefinition("id")
 
         when:
         traversalContext.leave(field)
 
         then:
-        traversalContext.getType() == null
+        traversalContext.getOutputType() == null
         traversalContext.getFieldDef() == null
 
     }
@@ -100,13 +100,13 @@ class TraversalContextTest extends Specification {
         traversalContext.enter(inlineFragment)
 
         then:
-        traversalContext.getType() == droidType
+        traversalContext.getOutputType() == droidType
 
         when:
         traversalContext.leave(inlineFragment)
 
         then:
-        traversalContext.getType() == null
+        traversalContext.getOutputType() == null
     }
 
     def "fragmentDefintion type condition saved as type"() {
@@ -117,13 +117,13 @@ class TraversalContextTest extends Specification {
         traversalContext.enter(fragmentDefinition)
 
         then:
-        traversalContext.getType() == droidType
+        traversalContext.getOutputType() == droidType
 
         when:
         traversalContext.leave(fragmentDefinition)
 
         then:
-        traversalContext.getType() == null
+        traversalContext.getOutputType() == null
     }
 
     def "variableDefinition saved as input type"() {

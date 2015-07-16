@@ -19,7 +19,7 @@ class ScalarLeafsTest extends Specification {
     def "sub selection not allowed"() {
         given:
         Field field = new Field("hello", new SelectionSet([new Field("world")]))
-        validationContext.getType() >> Scalars.GraphQLString
+        validationContext.getOutputType() >> Scalars.GraphQLString
         when:
         scalarLeafs.checkField(field)
 
@@ -30,7 +30,7 @@ class ScalarLeafsTest extends Specification {
     def "sub selection required"() {
         given:
         Field field = new Field("hello")
-        validationContext.getType() >> GraphQLObjectType.newObject().build()
+        validationContext.getOutputType() >> GraphQLObjectType.newObject().build()
         when:
         scalarLeafs.checkField(field)
 

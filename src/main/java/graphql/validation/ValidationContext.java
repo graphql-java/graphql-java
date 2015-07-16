@@ -69,8 +69,8 @@ public class ValidationContext {
         return traversalContext.getArgument();
     }
 
-    public GraphQLOutputType getType() {
-        return traversalContext.getType();
+    public GraphQLOutputType getOutputType() {
+        return traversalContext.getOutputType();
     }
 
 

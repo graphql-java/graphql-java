@@ -52,7 +52,7 @@ public class TraversalContext implements QueryLanguageVisitor {
 
 
     private void enterImpl(SelectionSet selectionSet) {
-        GraphQLUnmodifiedType rawType = SchemaUtil.getUnmodifiedType(getType());
+        GraphQLUnmodifiedType rawType = SchemaUtil.getUnmodifiedType(getOutputType());
         GraphQLCompositeType parentType = null;
         if (rawType instanceof GraphQLCompositeType) {
             parentType = (GraphQLCompositeType) rawType;
@@ -170,7 +170,7 @@ public class TraversalContext implements QueryLanguageVisitor {
         return (GraphQLNullableType) (type instanceof GraphQLNonNull ? ((GraphQLNonNull) type).getWrappedType() : type);
     }
 
-    public GraphQLOutputType getType() {
+    public GraphQLOutputType getOutputType() {
         return lastElement(typeStack);
     }
 
