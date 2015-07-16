@@ -30,6 +30,13 @@ public class GraphQLDirective {
         return new ArrayList<>(arguments);
     }
 
+    public GraphQLArgument getArgument(String name) {
+        for (GraphQLArgument argument : arguments) {
+            if (argument.getName().equals(name)) return argument;
+        }
+        return null;
+    }
+
     public boolean isOnOperation() {
         return onOperation;
     }

@@ -5,6 +5,7 @@ import graphql.language.*
 import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
+import static graphql.Directives.IncludeDirective
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.*
 import static graphql.language.OperationDefinition.Operation.QUERY
@@ -137,5 +138,47 @@ class TraversalContextTest extends Specification {
 
         then:
         traversalContext.getInputType() == null
+    }
+
+    def "field argument saves argument and input type"(){
+        given:
+        Argument argument = new Argument("id", new StringValue("string"))
+        traversalContext.fieldDefStack.add(queryType.getFieldDefinition("droid"))
+
+        when:
+        traversalContext.enter(argument)
+
+        then:
+        traversalContext.getArgument() == queryType.getFieldDefinition("droid").getArgument("id")
+        traversalContext.getInputType() == queryType.getFieldDefinition("droid").getArgument("id").getType()
+
+        when:
+        traversalContext.leave(argument)
+
+        then:
+        traversalContext.getArgument() == null
+        traversalContext.getInputType() == null
+
+    }
+
+    def "directive argument saves argument and input type"(){
+        given:
+        Argument argument = new Argument("if", new BooleanValue(true))
+        traversalContext.directive = IncludeDirective
+
+        when:
+        traversalContext.enter(argument)
+
+        then:
+        traversalContext.getArgument() == IncludeDirective.getArgument("if")
+        traversalContext.getInputType() == IncludeDirective.getArgument("if").getType()
+
+        when:
+        traversalContext.leave(argument)
+
+        then:
+        traversalContext.getArgument() == null
+        traversalContext.getInputType() == null
+
     }
 }

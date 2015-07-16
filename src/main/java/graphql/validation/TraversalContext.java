@@ -100,20 +100,15 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
     private void enterImpl(Argument argument) {
+        GraphQLArgument argumentType = null;
         if (getDirective() != null) {
-            GraphQLArgument fieldArgument = find(getDirective().getArguments(), argument.getName());
-            if (fieldArgument != null) {
-                this.argument = fieldArgument;
-                addInputType(fieldArgument.getType());
-            }
+            argumentType = find(getDirective().getArguments(), argument.getName());
+        } else if (getFieldDef() != null) {
+            argumentType = find(getFieldDef().getArguments(), argument.getName());
         }
-        if (getFieldDef() != null) {
-            GraphQLArgument fieldArgument = find(getFieldDef().getArguments(), argument.getName());
-            if (fieldArgument != null) {
-                this.argument = fieldArgument;
-                addInputType(fieldArgument.getType());
-            }
-        }
+
+        addInputType(argumentType != null ? argumentType.getType() : null);
+        this.argument = argumentType;
     }
 
     private void enterImpl(ArrayValue arrayValue) {
@@ -162,6 +157,7 @@ public class TraversalContext implements QueryLanguageVisitor {
             inputTypeStack.remove(inputTypeStack.size() - 1);
         } else if (node instanceof Argument) {
             argument = null;
+            inputTypeStack.remove(inputTypeStack.size()-1);
         } else if (node instanceof ArrayValue) {
             inputTypeStack.remove(inputTypeStack.size() - 1);
         } else if (node instanceof ObjectField) {
