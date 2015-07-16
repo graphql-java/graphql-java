@@ -13,6 +13,7 @@ public enum ValidationErrorType {
     FieldUndefined,
     InlineFragmentTypeConditionInvalid,
     FragmentTypeConditionInvalid,
-    UnknownArgument
+    UnknownArgument,
+    UndefinedFragment
 
 }
