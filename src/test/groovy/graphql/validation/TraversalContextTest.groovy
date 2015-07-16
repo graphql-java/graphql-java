@@ -38,7 +38,7 @@ class TraversalContextTest extends Specification {
     def "SelectionSet saves current type as parent"() {
         given:
         SelectionSet selectionSet = new SelectionSet()
-        traversalContext.typeStack.add(new GraphQLNonNull(droidType))
+        traversalContext.outputTypeStack.add(new GraphQLNonNull(droidType))
 
         when:
         traversalContext.enter(selectionSet)
