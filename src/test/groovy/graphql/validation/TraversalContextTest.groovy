@@ -5,6 +5,7 @@ import graphql.language.*
 import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
+import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.*
 import static graphql.language.OperationDefinition.Operation.QUERY
 
@@ -87,9 +88,9 @@ class TraversalContextTest extends Specification {
         traversalContext.getDirective() == null
     }
 
-    def "inlineFragment type condition saved as type"(){
+    def "inlineFragment type condition saved as type"() {
         given:
-        InlineFragment inlineFragment =new InlineFragment(new TypeName(droidType.getName()))
+        InlineFragment inlineFragment = new InlineFragment(new TypeName(droidType.getName()))
 
         when:
         traversalContext.enter(inlineFragment)
@@ -104,9 +105,9 @@ class TraversalContextTest extends Specification {
         traversalContext.getType() == null
     }
 
-    def "fragmentDefintion type condition saved as type"(){
+    def "fragmentDefintion type condition saved as type"() {
         given:
-        FragmentDefinition fragmentDefinition =new FragmentDefinition("fragment",new TypeName(droidType.getName()))
+        FragmentDefinition fragmentDefinition = new FragmentDefinition("fragment", new TypeName(droidType.getName()))
 
         when:
         traversalContext.enter(fragmentDefinition)
@@ -119,5 +120,22 @@ class TraversalContextTest extends Specification {
 
         then:
         traversalContext.getType() == null
+    }
+
+    def "variableDefinition saved as input type"() {
+        given:
+        VariableDefinition variableDefinition = new VariableDefinition("var", new TypeName("String"))
+
+        when:
+        traversalContext.enter(variableDefinition)
+
+        then:
+        traversalContext.getInputType() == GraphQLString
+
+        when:
+        traversalContext.leave(variableDefinition)
+
+        then:
+        traversalContext.getInputType() == null
     }
 }

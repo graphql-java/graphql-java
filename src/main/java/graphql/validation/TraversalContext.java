@@ -159,7 +159,7 @@ public class TraversalContext implements QueryLanguageVisitor {
         } else if (node instanceof FragmentDefinition) {
             typeStack.remove(typeStack.size() - 1);
         } else if (node instanceof VariableDefinition) {
-            argument = null;
+            inputTypeStack.remove(inputTypeStack.size() - 1);
         } else if (node instanceof Argument) {
             argument = null;
         } else if (node instanceof ArrayValue) {
