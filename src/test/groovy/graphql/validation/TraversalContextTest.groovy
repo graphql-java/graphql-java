@@ -46,7 +46,9 @@ class TraversalContextTest extends Specification {
 
         then:
         traversalContext.getParentType() == null
-
-
     }
+
+    def "field tracks type and fieldDefinition"(){
+    }
+
 }

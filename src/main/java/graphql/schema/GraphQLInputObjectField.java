@@ -1,9 +1,7 @@
 package graphql.schema;
 
 
-/**
- * This is not a real type: It's just a part of a GraphQLInputObject.
- */
+
 public class GraphQLInputObjectField {
 
     private final String name;
