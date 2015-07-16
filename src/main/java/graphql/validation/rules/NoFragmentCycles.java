@@ -10,4 +10,5 @@ public class NoFragmentCycles extends AbstractRule{
     public NoFragmentCycles(ValidationContext validationContext, ErrorCollector errorCollector) {
         super(validationContext, errorCollector);
     }
+
 }
