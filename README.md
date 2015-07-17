@@ -77,6 +77,68 @@ Currently: Please clone and [Build it](#build-it).
   
 #### Schema definition
 
+##### Built-in Types
+
+The `Scalars` Class has the following built-in types:
+
+* `GraphQLString`
+* `GraphQLBoolean`
+* `GraphQLInt`
+* `GraphQLFloat`
+
+##### Creating a new Object Type
+
+Example:
+```java
+GraphQLObjectType simpsonCharacter = newObject()
+    .name("SimpsonCharacter")
+    .description("A Simpson character")
+    .field(newFieldDefinition()
+            .name("name")
+            .description("The name of the character.")
+            .type(GraphQLString)
+            .build())
+    .field(newFieldDefinition()
+            .name("mainCharacter")
+            .description("One of the main Simpson characters?")
+            .type(GraphQLBoolean)
+            .build())                    
+.build();
+
+```
+
+##### Creating a new Interface Type
+
+Example:
+```java
+GraphQLObjectType comicCharacter = newObject()
+    .name("ComicCharacter")
+    .description("A abstract comic character.")
+    .field(newFieldDefinition()
+            .name("name")
+            .description("The name of the character.")
+            .type(GraphQLString)
+            .build())
+    .build();
+
+```
+
+##### Creating a new Enum Type
+
+Example:
+```java
+GraphQLEnumType colorEnum = newEnum()
+    .name("Color")
+    .description("Supported colors.")
+    .value("RED")
+    .value("GREEN")
+    .value("BLUE")
+    .build();
+       
+```
+
+
+
 `GraphQLSchema.newSchema()` returns a new `Builder` to define a new Schema. All other types are created with the same pattern:
 `newObject`, `newFieldDefinition` etc.
 
