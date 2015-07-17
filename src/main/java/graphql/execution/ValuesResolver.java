@@ -24,8 +24,13 @@ public class ValuesResolver {
         Map<String, Argument> argumentMap = argumentMap(arguments);
         for (GraphQLArgument fieldArgument : argumentTypes) {
             Argument argument = argumentMap.get(fieldArgument.getName());
-            Object value = coerceValueAst(fieldArgument.getType(), argument.getValue(), variables);
-            result.put(argument.getName(), value);
+            Object value;
+            if (argument != null) {
+                value = coerceValueAst(fieldArgument.getType(), argument.getValue(), variables);
+            } else {
+                value = fieldArgument.getDefaultValue();
+            }
+            result.put(fieldArgument.getName(), value);
         }
         return result;
     }
@@ -120,7 +125,7 @@ public class ValuesResolver {
             return ((GraphQLEnumType) type).getCoercing().coerceLiteral(inputValue);
         }
         if (type instanceof GraphQLList) {
-            return coerceValueAstForList((GraphQLList) type,inputValue,variables);
+            return coerceValueAstForList((GraphQLList) type, inputValue, variables);
         }
         return null;
     }

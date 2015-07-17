@@ -5,7 +5,7 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.*
 
-class SchemaUtilTest extends Specification {
+class IntrospectionUtilTest extends Specification {
 
     def "collectAllTypes"() {
         when:

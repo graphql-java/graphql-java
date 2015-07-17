@@ -56,6 +56,7 @@ public class SchemaUtil {
     }
 
     private  void collectTypesForUnions(GraphQLUnionType unionType, Map<String, GraphQLType> result) {
+        result.put(unionType.getName(), unionType);
         for (GraphQLType type : unionType.getTypes()) {
             collectTypes(type, result);
         }

@@ -9,7 +9,7 @@ import graphql.schema.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.introspection.Schema.*;
+import static graphql.introspection.Introspection.*;
 
 public class TraversalContext implements QueryLanguageVisitor {
     GraphQLSchema schema;

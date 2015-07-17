@@ -8,10 +8,11 @@ import java.util.List;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
-public class Schema {
+public class Introspection {
 
     public enum TypeKind {
         SCALAR,
@@ -253,7 +254,7 @@ public class Schema {
             .field(newFieldDefinition()
                     .name("fields")
                     .type(new GraphQLList(new GraphQLNonNull(__Field)))
-                    .argument(GraphQLArgument.newArgument()
+                    .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
                             .defaultValue(false)
@@ -273,7 +274,7 @@ public class Schema {
             .field(newFieldDefinition()
                     .name("enumValues")
                     .type(new GraphQLList(new GraphQLNonNull(__EnumValue)))
-                    .argument(GraphQLArgument.newArgument()
+                    .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
                             .defaultValue(false)
@@ -323,7 +324,7 @@ public class Schema {
 
     public static GraphQLObjectType __Schema = newObject()
             .name("__Schema")
-            .description("A GraphQL Schema defines the capabilities" +
+            .description("A GraphQL Introspection defines the capabilities" +
                     " of a GraphQL server. It exposes all available types and directives on " +
                     "'the server, as well as the entry points for query and  'mutation operations.")
             .field(newFieldDefinition()
@@ -390,8 +391,12 @@ public class Schema {
 
     public static GraphQLFieldDefinition TypeMetaFieldDef = newFieldDefinition()
             .name("__type")
-            .type(new GraphQLNonNull(__Type))
-            .description("Access the current type schema of this server.")
+            .type(__Type)
+            .description("Request the type information of a single type.")
+            .argument(newArgument()
+                    .name("name")
+                    .type(new GraphQLNonNull(GraphQLString))
+                    .build())
             .dataFetcher(new DataFetcher() {
                 @Override
                 public Object get(DataFetchingEnvironment environment) {
@@ -404,7 +409,7 @@ public class Schema {
     public static GraphQLFieldDefinition TypeNameMetaFieldDef = newFieldDefinition()
             .name("__typename")
             .type(new GraphQLNonNull(GraphQLString))
-            .description("Access the current type schema of this server.")
+            .description("The name of the current Object type at runtime.")
             .dataFetcher(new DataFetcher() {
                 @Override
                 public Object get(DataFetchingEnvironment environment) {
@@ -414,4 +419,14 @@ public class Schema {
             .build();
 
 
+    static {
+        // make sure all TypeReferences are resolved
+        GraphQLSchema.newSchema()
+                .query(GraphQLObjectType.newObject()
+                        .field(SchemaMetaFieldDef)
+                        .field(TypeMetaFieldDef)
+                        .field(TypeNameMetaFieldDef)
+                        .build())
+                .build();
+    }
 }

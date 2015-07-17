@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static graphql.introspection.Schema.*;
+import static graphql.introspection.Introspection.*;
 
 public class Execution {
 
