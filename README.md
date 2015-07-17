@@ -20,6 +20,8 @@ There will be a first beta-release soon.
     - [Execution strategies](#execution-strategies)
 - [Build it](#build-it)
 - [Details](#details)
+- [Acknowledgment](#acknowledgment)
+- [Feedback](#feedback)
  
 
 ### Overview
@@ -185,7 +187,12 @@ The implementation is in Java 7, but the tests are in Groovy and [Spock](https:/
 
 The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
 
-The only runtime dependencies are Antlr and probably Slf4J. 
+The only runtime dependencies are Antlr and probably in the future Slf4J.
+ 
+### Acknowledgment
+
+This implementation is based on the [js reference implementation](https://github.com/graphql/graphql-js).
+For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
  
 ### Feedback
 
