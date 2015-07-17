@@ -20,6 +20,8 @@ public class TraversalContext implements QueryLanguageVisitor {
     GraphQLDirective directive;
     GraphQLArgument argument;
 
+    SchemaUtil schemaUtil = new SchemaUtil();
+
 
     public TraversalContext(GraphQLSchema graphQLSchema) {
         this.schema = graphQLSchema;
@@ -52,7 +54,7 @@ public class TraversalContext implements QueryLanguageVisitor {
 
 
     private void enterImpl(SelectionSet selectionSet) {
-        GraphQLUnmodifiedType rawType = SchemaUtil.getUnmodifiedType(getOutputType());
+        GraphQLUnmodifiedType rawType = new SchemaUtil().getUnmodifiedType(getOutputType());
         GraphQLCompositeType parentType = null;
         if (rawType instanceof GraphQLCompositeType) {
             parentType = (GraphQLCompositeType) rawType;
@@ -85,12 +87,12 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
     private void enterImpl(InlineFragment inlineFragment) {
-        GraphQLType type = SchemaUtil.findType(schema, inlineFragment.getTypeCondition().getName());
+        GraphQLType type = schemaUtil.findType(schema, inlineFragment.getTypeCondition().getName());
         addType((GraphQLOutputType) type);
     }
 
     private void enterImpl(FragmentDefinition fragmentDefinition) {
-        GraphQLType type = SchemaUtil.findType(schema, fragmentDefinition.getTypeCondition().getName());
+        GraphQLType type = schemaUtil.findType(schema, fragmentDefinition.getTypeCondition().getName());
         addType((GraphQLOutputType) type);
     }
 
@@ -121,7 +123,7 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
     private void enterImpl(ObjectField objectField) {
-        GraphQLUnmodifiedType objectType = SchemaUtil.getUnmodifiedType(getInputType());
+        GraphQLUnmodifiedType objectType = schemaUtil.getUnmodifiedType(getInputType());
         GraphQLInputType inputType = null;
         if (objectType instanceof GraphQLInputObjectType) {
             GraphQLInputObjectField inputField = ((GraphQLInputObjectType) objectType).getField(objectField.getName());
@@ -157,7 +159,7 @@ public class TraversalContext implements QueryLanguageVisitor {
             inputTypeStack.remove(inputTypeStack.size() - 1);
         } else if (node instanceof Argument) {
             argument = null;
-            inputTypeStack.remove(inputTypeStack.size()-1);
+            inputTypeStack.remove(inputTypeStack.size() - 1);
         } else if (node instanceof ArrayValue) {
             inputTypeStack.remove(inputTypeStack.size() - 1);
         } else if (node instanceof ObjectField) {

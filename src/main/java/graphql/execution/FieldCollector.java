@@ -2,22 +2,20 @@ package graphql.execution;
 
 
 import graphql.language.*;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
+import graphql.schema.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.execution.TypeFromAST.getTypeFromAST;
-import static graphql.schema.SchemaUtil.findImplementations;
 
 public class FieldCollector {
 
     private ValuesResolver valuesResolver;
     private ConditionalNodes conditionalNodes;
+
+    private SchemaUtil schemaUtil = new SchemaUtil();
 
     public FieldCollector() {
         valuesResolver = new ValuesResolver();
@@ -100,7 +98,7 @@ public class FieldCollector {
         }
 
         if (conditionType instanceof GraphQLInterfaceType) {
-            List<GraphQLObjectType> implementations = findImplementations(executionContext.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
+            List<GraphQLObjectType> implementations = schemaUtil.findImplementations(executionContext.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
             return implementations.contains(type);
         } else if (conditionType instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) conditionType).getTypes().contains(type);

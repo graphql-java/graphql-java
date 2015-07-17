@@ -10,13 +10,15 @@ import graphql.validation.*;
 
 public class FragmentsOnCompositeType extends AbstractRule {
 
+    private SchemaUtil schemaUtil = new SchemaUtil();
+
     public FragmentsOnCompositeType(ValidationContext validationContext, ErrorCollector errorCollector) {
         super(validationContext, errorCollector);
     }
 
     @Override
     public void checkInlineFragment(InlineFragment inlineFragment) {
-        GraphQLType type = SchemaUtil.findType(getValidationContext().getSchema(), inlineFragment.getTypeCondition().getName());
+        GraphQLType type = schemaUtil.findType(getValidationContext().getSchema(), inlineFragment.getTypeCondition().getName());
         if (type == null) return;
         if (!(type instanceof GraphQLCompositeType)) {
             addError(new ValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid));
@@ -25,7 +27,7 @@ public class FragmentsOnCompositeType extends AbstractRule {
 
     @Override
     public void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
-        GraphQLType type = SchemaUtil.findType(getValidationContext().getSchema(), fragmentDefinition.getTypeCondition().getName());
+        GraphQLType type = schemaUtil.findType(getValidationContext().getSchema(), fragmentDefinition.getTypeCondition().getName());
         if (type == null) return;
         if (!(type instanceof GraphQLCompositeType)) {
             addError(new ValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid));

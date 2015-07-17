@@ -196,7 +196,7 @@ public class Schema {
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
             if (type instanceof GraphQLInterfaceType) {
-                return SchemaUtil.findImplementations(environment.getGraphQLSchema(), (GraphQLInterfaceType) type);
+                return new SchemaUtil().findImplementations(environment.getGraphQLSchema(), (GraphQLInterfaceType) type);
             }
             if (type instanceof GraphQLUnionType) {
                 return ((GraphQLUnionType) type).getTypes();
@@ -334,7 +334,7 @@ public class Schema {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
                             GraphQLSchema schema = (GraphQLSchema) environment.getSource();
-                            return SchemaUtil.allTypesAsList(schema);
+                            return new SchemaUtil().allTypesAsList(schema);
                         }
                     })
                     .build())
@@ -396,7 +396,7 @@ public class Schema {
                 @Override
                 public Object get(DataFetchingEnvironment environment) {
                     String name = environment.getArgument("name");
-                    return SchemaUtil.findType(environment.getGraphQLSchema(), name);
+                    return new SchemaUtil().findType(environment.getGraphQLSchema(), name);
                 }
             })
             .build();
