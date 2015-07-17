@@ -115,7 +115,7 @@ NAME: [_A-Za-z][_0-9A-Za-z]* ;
 
 IntValue : Sign? IntegerPart;
 
-FloatValue : Sign? IntegerPart '.' Digit+ ExponentPart?;
+FloatValue : Sign? IntegerPart ('.' Digit+)? ExponentPart?;
 
 Sign : '-';
 
@@ -123,7 +123,7 @@ IntegerPart : '0' | NonZeroDigit | NonZeroDigit Digit+;
 
 NonZeroDigit: '1'.. '9';
 
-ExponentPart : 'e' Sign? Digit+;
+ExponentPart : ('e'|'E') Sign? Digit+;
 
 Digit : '0'..'9';
 

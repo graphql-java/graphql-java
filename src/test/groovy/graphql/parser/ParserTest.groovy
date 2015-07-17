@@ -310,4 +310,28 @@ class ParserTest extends Specification {
         helloField == new Field("hello", [new Argument("arg",new StringValue("hello, world"))])
     }
 
+    @Unroll
+    def "parse floatValue #floatString"(){
+        given:
+        def input="""
+            { hello(arg: ${floatString}) }
+            """
+        when:
+        def document = new Parser().parseDocument(input)
+        def helloField = document.definitions[0].selectionSet.selections[0]
+
+        then:
+        helloField == new Field("hello", [new Argument("arg",new FloatValue(floatValue))])
+
+        where:
+        floatString | floatValue
+        '1.0' | 1.0
+        '-0.3' | -0.3
+        '-3.4' | -3.4
+        '-3.4e3' | -3.4e3
+        '3.4E3' | 3.4e3
+        '3e4' | 3e4
+
+    }
+
 }
