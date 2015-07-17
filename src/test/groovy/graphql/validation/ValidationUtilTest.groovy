@@ -11,6 +11,27 @@ class ValidationUtilTest extends Specification {
 
     def validationUtil = new ValidationUtil()
 
+    def "getUnmodified type of list of nonNull"(){
+        given:
+        def unmodifiedType = new TypeName("String")
+        expect:
+        validationUtil.getUnmodifiedType(new ListType(new NonNullType(unmodifiedType))) == unmodifiedType
+    }
+
+    def "getUnmodified type of string"(){
+        given:
+        def unmodifiedType = new TypeName("String")
+        expect:
+        validationUtil.getUnmodifiedType(unmodifiedType) == unmodifiedType
+    }
+
+    def "getUnmodified type of nonNull"(){
+        given:
+        def unmodifiedType = new TypeName("String")
+        expect:
+        validationUtil.getUnmodifiedType(new NonNullType(unmodifiedType)) == unmodifiedType
+    }
+
     def "null and NonNull is invalid"() {
         expect:
         !validationUtil.isValidLiteralValue(null, new GraphQLNonNull(GraphQLString))

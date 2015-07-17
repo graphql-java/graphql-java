@@ -9,6 +9,15 @@ import java.util.Map;
 
 public class ValidationUtil {
 
+    public Type getUnmodifiedType(Type type) {
+        if (type instanceof ListType) {
+            return getUnmodifiedType(((ListType) type).getType());
+        } else if (type instanceof NonNullType) {
+            return getUnmodifiedType(((NonNullType) type).getType());
+        }
+        return type;
+    }
+
     public boolean isValidLiteralValue(Value value, GraphQLType type) {
         if (value == null) {
             return !(type instanceof GraphQLNonNull);
