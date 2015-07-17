@@ -331,6 +331,7 @@ class ParserTest extends Specification {
         '-3.4e3' | -3.4e3
         '3.4E3' | 3.4e3
         '3e4' | 3e4
+        '123e-4' | 123e-4
 
     }
 
