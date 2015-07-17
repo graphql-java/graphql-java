@@ -1,6 +1,7 @@
 package graphql.validation;
 
 
+import graphql.ShouldNotHappenException;
 import graphql.language.*;
 import graphql.schema.*;
 
@@ -9,13 +10,15 @@ import java.util.Map;
 
 public class ValidationUtil {
 
-    public Type getUnmodifiedType(Type type) {
+    public TypeName getUnmodifiedType(Type type) {
         if (type instanceof ListType) {
             return getUnmodifiedType(((ListType) type).getType());
         } else if (type instanceof NonNullType) {
             return getUnmodifiedType(((NonNullType) type).getType());
+        } else if (type instanceof TypeName) {
+            return (TypeName) type;
         }
-        return type;
+        throw new ShouldNotHappenException();
     }
 
     public boolean isValidLiteralValue(Value value, GraphQLType type) {

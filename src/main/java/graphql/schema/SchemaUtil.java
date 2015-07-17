@@ -11,8 +11,16 @@ public class SchemaUtil {
     public static boolean isLeafType(GraphQLType type) {
         GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(type);
         return
-                unmodifiedType instanceof GraphQLScalarType ||
-                        unmodifiedType instanceof GraphQLEnumType;
+                unmodifiedType instanceof GraphQLScalarType
+                        || unmodifiedType instanceof GraphQLEnumType;
+    }
+
+    public static boolean isInputType(GraphQLType graphQLType) {
+        GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(graphQLType);
+        return
+                unmodifiedType instanceof GraphQLScalarType
+                        || unmodifiedType instanceof GraphQLEnumType
+                    || unmodifiedType instanceof  GraphQLInputObjectType;
     }
 
     public static GraphQLUnmodifiedType getUnmodifiedType(GraphQLType graphQLType) {
