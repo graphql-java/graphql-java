@@ -16,6 +16,7 @@ There will be a first beta-release soon.
 - [Getting started](#getting-started)
 - [Manual](#manual)
     - [Schema definition](#schema-definition)
+    - [Data fetching](#data-fetching)
     - [Executing](#executing)
     - [Execution strategies](#execution-strategies)
 - [Build it](#build-it)
