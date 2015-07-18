@@ -83,5 +83,9 @@ public class AbstractRule {
 
     }
 
+    public void documentFinished(Document document){
+
+    }
+
 
 }
