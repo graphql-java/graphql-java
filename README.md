@@ -125,6 +125,29 @@ GraphQLObjectType comicCharacter = newObject()
 
 ```
 
+##### Creating a new Union Type
+
+Example: (a snippet from [here](src/test/groovy/graphql/GarfieldSchema.java))
+```java
+PetType = GraphQLUnionType.newUnionType()
+    .name("Pet")
+    .possibleType(CatType)
+    .possibleType(DogType)
+    .typeResolver(new TypeResolver() {
+        @Override
+        public GraphQLObjectType getType(Object object) {
+            if (object instanceof Cat) {
+                return CatType;
+            }
+            if (object instanceof Dog) {
+                return DogType;
+            }
+            return null;
+        }
+    })
+    .build();
+```
+
 ##### Creating a new Enum Type
 
 Example:
@@ -139,12 +162,20 @@ GraphQLEnumType colorEnum = newEnum()
        
 ```
 
+#### Creating a Schema
+
+```java
+GraphQLSchema schema = GraphQLSchema.newSchema()
+    .query(queryType) // must be provided
+    .mutation(mutationType) // is optional
+    .build();
+            
+```
 
 
-`GraphQLSchema.newSchema()` returns a new `Builder` to define a new Schema. All other types are created with the same pattern:
-`newObject`, `newFieldDefinition` etc.
+A full schema example: [StarWarsSchema](src/test/groovy/graphql/StarWarsSchema.java)
 
-A full schema example (stolen from the js reference implementation): [StarWarsSchema](src/test/groovy/graphql/StarWarsSchema.java)
+Another schema example, including union types: [GarfieldSchema](src/test/groovy/graphql/GarfieldSchema.java) 
 
 #### Executing 
 
@@ -159,9 +190,15 @@ Complexer examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQuery
 
 #### Execution strategies
 
-All fields in a SelectionSet are executed in parallel per default (via a Thread-Pool). 
+All fields in a SelectionSet are executed serially per default. 
 
-The first level of a Mutation is executed serially.  
+`GraphQL` takes as second constructor argument an optional [ExecutorService](http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html).
+When provided fields will be executed parallel, except the first level of a mutation operation.
+
+See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) for details.
+
+It's recommended to use a `ExcutorService` to speed up execution.
+
 
 ### Build it 
 
