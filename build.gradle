@@ -1,16 +1,17 @@
 apply plugin: 'java'
 apply plugin: 'maven'
 
-group = 'graphql'
 
 sourceCompatibility = 1.7
 version = '1.0'
+group = 'graphql'
 
 repositories {
     mavenCentral()
 }
 
 apply plugin: 'groovy'
+
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.11'
@@ -21,6 +22,13 @@ dependencies {
     testCompile 'org.objenesis:objenesis:2.1'
 }
 
+task sourcesJar(type: Jar) {
+    dependsOn classes
+    classifier 'sources'
+    from sourceSets.main.allSource
+}
+
 task wrapper(type: Wrapper) {
     gradleVersion = '2.5'
+    distributionUrl = "http://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
 }
