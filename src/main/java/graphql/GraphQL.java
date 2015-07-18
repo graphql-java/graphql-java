@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static graphql.Assert.assertNotNull;
 
@@ -27,7 +26,7 @@ public class GraphQL {
     private final ExecutorService executorService;
 
     public GraphQL(GraphQLSchema graphQLSchema) {
-        this(graphQLSchema, Executors.newCachedThreadPool());
+        this(graphQLSchema, null);
     }
 
 
@@ -54,13 +53,14 @@ public class GraphQL {
             ValidationError validationError = new ValidationError(ValidationErrorType.InvalidSyntax);
             return new ExecutionResult(Arrays.asList(validationError));
         }
-        Execution execution = new Execution(executorService);
+
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
         if (validationErrors.size() > 0) {
             ExecutionResult result = new ExecutionResult(validationErrors);
             return result;
         }
+        Execution execution = new Execution(executorService);
         return execution.execute(graphQLSchema, context, document, null, arguments);
     }
 

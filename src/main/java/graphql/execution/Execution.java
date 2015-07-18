@@ -58,10 +58,11 @@ public class Execution {
         fieldCollector.collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<String>(), fields);
 
 
-        if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION
+                ) {
             executeFieldsSerially(executionContext, operationRootType, root, fields);
         }
-        Object result = executeFields(executionContext, operationRootType, root, fields);
+        Object result = executeFieldsParallel(executionContext, operationRootType, root, fields);
         return new ExecutionResult(result);
     }
 
@@ -76,7 +77,9 @@ public class Execution {
     }
 
 
-    private Map<String, Object> executeFields(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, Map<String, List<Field>> fields) {
+    private Map<String, Object> executeFieldsParallel(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, Map<String, List<Field>> fields) {
+        if (executorService == null) return executeFieldsSerially(executionContext, parentType, source, fields);
+
         Map<String, Future<Object>> futures = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
             final List<Field> fieldList = fields.get(fieldName);
@@ -154,7 +157,7 @@ public class Execution {
             if (field.getSelectionSet() == null) continue;
             fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
         }
-        return executeFields(executionContext, resolvedType, result, subFields);
+        return executeFieldsParallel(executionContext, resolvedType, result, subFields);
     }
 
     private GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
