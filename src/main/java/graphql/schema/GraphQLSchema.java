@@ -6,6 +6,8 @@ import graphql.Directives;
 import java.util.Arrays;
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+
 public class GraphQLSchema {
 
     private final GraphQLObjectType queryType;
@@ -17,6 +19,7 @@ public class GraphQLSchema {
 
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType) {
+        assertNotNull(queryType, "queryType can't be null");
         this.queryType = queryType;
         this.mutationType = mutationType;
     }

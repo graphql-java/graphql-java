@@ -30,7 +30,7 @@ class ScalarLeafsTest extends Specification {
     def "sub selection required"() {
         given:
         Field field = new Field("hello")
-        validationContext.getOutputType() >> GraphQLObjectType.newObject().build()
+        validationContext.getOutputType() >> GraphQLObjectType.newObject().name("objectType").build()
         when:
         scalarLeafs.checkField(field)
 

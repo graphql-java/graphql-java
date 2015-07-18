@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import static graphql.Assert.assertNotNull;
 
 public class GraphQLInputObjectField {
 
@@ -14,6 +15,8 @@ public class GraphQLInputObjectField {
     }
 
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue) {
+        assertNotNull(name, "name can't be null");
+        assertNotNull(type, "type can't be null");
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;

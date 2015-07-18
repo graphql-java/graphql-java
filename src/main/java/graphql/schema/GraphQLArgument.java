@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import static graphql.Assert.assertNotNull;
+
 public class GraphQLArgument {
 
     private final String name;
@@ -8,10 +10,12 @@ public class GraphQLArgument {
     private GraphQLInputType type;
     private final Object defaultValue;
 
-    public GraphQLArgument(String name, String description, GraphQLInputType graphQLInputType, Object defaultValue) {
+    public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue) {
+        assertNotNull(name, "name can't be null");
+        assertNotNull(type, "type can't be null");
         this.name = name;
         this.description = description;
-        this.type = graphQLInputType;
+        this.type = type;
         this.defaultValue = defaultValue;
     }
 

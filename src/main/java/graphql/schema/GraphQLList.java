@@ -3,11 +3,14 @@ package graphql.schema;
 
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
+
 public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
 
-    private  GraphQLType wrappedType;
+    private GraphQLType wrappedType;
 
     public GraphQLList(GraphQLType wrappedType) {
+        assertNotNull(wrappedType, "wrappedType can't be null");
         this.wrappedType = wrappedType;
     }
 

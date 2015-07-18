@@ -8,6 +8,7 @@ import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.Scalars.GraphQLString
 
 class KnownArgumentNamesTest extends Specification {
 
@@ -18,7 +19,7 @@ class KnownArgumentNamesTest extends Specification {
     def "unknown argument"(){
         given:
         Argument argument = new Argument("unknownArg",new StringValue("value"))
-        def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").build();
+        def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build();
         validationContext.getFieldDef() >> fieldDefinition
         when:
         knownArgumentNames.checkArgument(argument)

@@ -6,7 +6,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType,GraphQLUnmodifiedType,GraphQLNullableType {
+import static graphql.Assert.assertNotNull;
+
+public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
@@ -14,6 +16,9 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     private final TypeResolver typeResolver;
 
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
+        assertNotNull(name, "name can't null");
+        assertNotNull(typeResolver, "typeResolver can't null");
+        assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
         this.name = name;
         this.description = description;
         buildDefinitionMap(fieldDefinitions);

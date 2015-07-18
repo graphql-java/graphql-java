@@ -4,6 +4,8 @@ package graphql.schema;
 import java.util.ArrayList;
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+
 public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
@@ -12,10 +14,13 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     private final TypeResolver typeResolver;
 
 
-    public GraphQLUnionType(String name, String description, List<GraphQLType> possibleTypes, TypeResolver typeResolver) {
+    public GraphQLUnionType(String name, String description, List<GraphQLType> types, TypeResolver typeResolver) {
+        assertNotNull(name, "name can't be null");
+        assertNotNull(types, "types can't be null");
+        assertNotNull(typeResolver, "typeResolver can't be null");
         this.name = name;
         this.description = description;
-        this.types.addAll(possibleTypes);
+        this.types.addAll(types);
         this.typeResolver = typeResolver;
     }
 

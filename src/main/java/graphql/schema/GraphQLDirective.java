@@ -4,6 +4,8 @@ package graphql.schema;
 import java.util.ArrayList;
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+
 public class GraphQLDirective {
 
     private final String name;
@@ -14,6 +16,8 @@ public class GraphQLDirective {
     private final boolean onField;
 
     public GraphQLDirective(String name, String description, List<GraphQLArgument> arguments, boolean onOperation, boolean onFragment, boolean onField) {
+        assertNotNull(name, "name can't be null");
+        assertNotNull(arguments, "arguments can't be null");
         this.name = name;
         this.description = description;
         this.arguments.addAll(arguments);

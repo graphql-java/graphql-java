@@ -206,7 +206,7 @@ class TraversalContextTest extends Specification {
     def "object field saves input type"() {
         given:
         def inputObjectField = GraphQLInputObjectField.newInputObjectField().name("field").type(GraphQLString).build()
-        GraphQLInputObjectType inputObjectType = GraphQLInputObjectType.newInputObject().field(inputObjectField).build()
+        GraphQLInputObjectType inputObjectType = GraphQLInputObjectType.newInputObject().name("inputObjectType").field(inputObjectField).build()
         traversalContext.inputTypeStack.add(inputObjectType);
         ObjectField objectField = new ObjectField("field", new StringValue("value"))
 

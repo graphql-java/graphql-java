@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
+
 public class GraphQLFieldDefinition {
 
     private final String name;
@@ -16,13 +18,15 @@ public class GraphQLFieldDefinition {
 
 
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
+        assertNotNull(name, "name can't be null");
+        assertNotNull(dataFetcher, "dataFetcher can't be null");
+        assertNotNull(type, "type can't be null");
+        assertNotNull(arguments, "arguments can't be null");
         this.name = name;
         this.description = description;
         this.type = type;
         this.dataFetcher = dataFetcher;
-        if (arguments != null) {
-            this.arguments.addAll(arguments);
-        }
+        this.arguments.addAll(arguments);
         this.deprecationReason = deprecationReason;
     }
 

@@ -76,7 +76,7 @@ public class Introspection {
                     .build())
             .field(newFieldDefinition()
                     .name("type")
-                    .type(new GraphQLNonNull(new GraphQLTypeReference("__TYPE")))
+                    .type(new GraphQLNonNull(new GraphQLTypeReference("__Type")))
                     .build())
             .field(newFieldDefinition()
                     .name("defaultValue")
@@ -115,7 +115,7 @@ public class Introspection {
                     .build())
             .field(newFieldDefinition()
                     .name("type")
-                    .type(new GraphQLNonNull(new GraphQLTypeReference("__TYPE")))
+                    .type(new GraphQLNonNull(new GraphQLTypeReference("__Type")))
                     .build())
             .field(newFieldDefinition()
                     .name("isDeprecated")
@@ -289,6 +289,7 @@ public class Introspection {
             .build();
 
     public static GraphQLObjectType __Directive = newObject()
+            .name("__Directive")
             .field(newFieldDefinition()
                     .name("name")
                     .type(GraphQLString)
@@ -423,6 +424,7 @@ public class Introspection {
         // make sure all TypeReferences are resolved
         GraphQLSchema.newSchema()
                 .query(GraphQLObjectType.newObject()
+                        .name("dummySchema")
                         .field(SchemaMetaFieldDef)
                         .field(TypeMetaFieldDef)
                         .field(TypeNameMetaFieldDef)

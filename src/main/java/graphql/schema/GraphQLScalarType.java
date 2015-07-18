@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import static graphql.Assert.assertNotNull;
+
 public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType,GraphQLNullableType {
 
     private final String name;
@@ -9,6 +11,8 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
 
 
     public GraphQLScalarType(String name, String description, Coercing coercing) {
+        assertNotNull(name, "name can't be null");
+        assertNotNull(coercing, "coercing can't be null");
         this.name = name;
         this.description = description;
         this.coercing = coercing;

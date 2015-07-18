@@ -16,7 +16,7 @@ class FieldsOnCorrectTypeTest extends Specification {
 
     def "field undefined"() {
         given:
-        def parentType = GraphQLObjectType.newObject().build()
+        def parentType = GraphQLObjectType.newObject().name("parentType").build()
         validationContext.getParentType() >> parentType
         validationContext.getFieldDef() >> null
         def field = new Field("name")

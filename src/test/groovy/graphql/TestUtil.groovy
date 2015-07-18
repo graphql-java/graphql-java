@@ -15,4 +15,6 @@ class TestUtil {
         GraphQLObjectType queryType = GraphQLObjectType.newObject().name("query").field(name).build()
         new GraphQLSchema(queryType)
     }
+
+    static dummyObjec
 }

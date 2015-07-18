@@ -6,19 +6,22 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
+
 public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
-    private List<GraphQLInterfaceType> interfaces = new ArrayList<>();
-    private final TypeResolver typeResolver;
+    private final List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
-    public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces, TypeResolver typeResolver) {
+    public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
+        assertNotNull(name, "name can't null");
+        assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
+        assertNotNull(interfaces, "interfaces can't null");
         this.name = name;
         this.description = description;
         this.interfaces.addAll(interfaces);
-        this.typeResolver = typeResolver;
         buildDefinitionMap(fieldDefinitions);
     }
 
@@ -73,7 +76,6 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         private String description;
         private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
         private List<GraphQLInterfaceType> interfaces = new ArrayList<>();
-        private TypeResolver typeResolver;
 
         public Builder name(String name) {
             this.name = name;
@@ -95,13 +97,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             return this;
         }
 
-        public Builder typeResolver(TypeResolver typeResolver) {
-            this.typeResolver = typeResolver;
-            return this;
-        }
-
         public GraphQLObjectType build() {
-            return new GraphQLObjectType(name, description, fieldDefinitions, interfaces, null);
+            return new GraphQLObjectType(name, description, fieldDefinitions, interfaces);
         }
 
 

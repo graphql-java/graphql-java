@@ -11,21 +11,21 @@ class ValidationUtilTest extends Specification {
 
     def validationUtil = new ValidationUtil()
 
-    def "getUnmodified type of list of nonNull"(){
+    def "getUnmodified type of list of nonNull"() {
         given:
         def unmodifiedType = new TypeName("String")
         expect:
         validationUtil.getUnmodifiedType(new ListType(new NonNullType(unmodifiedType))) == unmodifiedType
     }
 
-    def "getUnmodified type of string"(){
+    def "getUnmodified type of string"() {
         given:
         def unmodifiedType = new TypeName("String")
         expect:
         validationUtil.getUnmodifiedType(unmodifiedType) == unmodifiedType
     }
 
-    def "getUnmodified type of nonNull"(){
+    def "getUnmodified type of nonNull"() {
         given:
         def unmodifiedType = new TypeName("String")
         expect:
@@ -92,7 +92,7 @@ class ValidationUtilTest extends Specification {
 
     def "valid enum"() {
         given:
-        def enumType = GraphQLEnumType.newEnum().value("PLUTO").build()
+        def enumType = GraphQLEnumType.newEnum().name("enumType").value("PLUTO").build()
 
         expect:
         validationUtil.isValidLiteralValue(new EnumValue("PLUTO"), enumType)
@@ -100,14 +100,15 @@ class ValidationUtilTest extends Specification {
 
     def "invalid enum"() {
         given:
-        def enumType = GraphQLEnumType.newEnum().value("PLUTO").build()
+        def enumType = GraphQLEnumType.newEnum().name("enumType").value("PLUTO").build()
         expect:
         !validationUtil.isValidLiteralValue(new StringValue("MARS"), enumType)
     }
 
     def "a valid ObjectValue"() {
         given:
-        def inputObjecType = GraphQLInputObjectType.newInputObject()
+        def inputObjectType = GraphQLInputObjectType.newInputObject()
+                .name("inputObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
                 .name("hello")
                 .type(GraphQLString)
@@ -117,12 +118,13 @@ class ValidationUtilTest extends Specification {
         objectValue.getObjectFields().add(new ObjectField("hello", new StringValue("world")))
 
         expect:
-        validationUtil.isValidLiteralValue(objectValue, inputObjecType)
+        validationUtil.isValidLiteralValue(objectValue, inputObjectType)
     }
 
     def "a invalid ObjectValue with a invalid field"() {
         given:
-        def inputObjecType = GraphQLInputObjectType.newInputObject()
+        def inputObjectType = GraphQLInputObjectType.newInputObject()
+                .name("inputObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
                 .name("hello")
                 .type(GraphQLString)
@@ -132,12 +134,13 @@ class ValidationUtilTest extends Specification {
         objectValue.getObjectFields().add(new ObjectField("hello", new BooleanValue(false)))
 
         expect:
-        !validationUtil.isValidLiteralValue(objectValue, inputObjecType)
+        !validationUtil.isValidLiteralValue(objectValue, inputObjectType)
     }
 
     def "a invalid ObjectValue with a missing field"() {
         given:
-        def inputObjecType = GraphQLInputObjectType.newInputObject()
+        def inputObjectType = GraphQLInputObjectType.newInputObject()
+                .name("inputObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
                 .name("hello")
                 .type(new GraphQLNonNull(GraphQLString))
@@ -146,6 +149,6 @@ class ValidationUtilTest extends Specification {
         def objectValue = new ObjectValue()
 
         expect:
-       !validationUtil.isValidLiteralValue(objectValue, inputObjecType)
+        !validationUtil.isValidLiteralValue(objectValue, inputObjectType)
     }
 }
