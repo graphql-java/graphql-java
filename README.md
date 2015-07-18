@@ -162,8 +162,9 @@ GraphQLEnumType colorEnum = newEnum()
        
 ```
 
-#### Creating a Schema
+##### Creating a Schema
 
+Example:
 ```java
 GraphQLSchema schema = GraphQLSchema.newSchema()
     .query(queryType) // must be provided
@@ -175,7 +176,43 @@ GraphQLSchema schema = GraphQLSchema.newSchema()
 
 A full schema example: [StarWarsSchema](src/test/groovy/graphql/StarWarsSchema.java)
 
-Another schema example, including union types: [GarfieldSchema](src/test/groovy/graphql/GarfieldSchema.java) 
+Another schema example, including union types: [GarfieldSchema](src/test/groovy/graphql/GarfieldSchema.java)
+ 
+ 
+#### Data fetching
+
+The actual data comes from `DataFetcher` objects.
+ 
+Every field definition has a `DataFetcher`. When no one is configured, a 
+[PropertyDataFetcher](src/main/java/graphql/schema/PropertyDataFetcher.java) is used.
+
+`PropertyDataFetcher` fetches data from `Map` and Java Beans. So when the field name matches the Map key or
+the property name of the source Object, no `DataFetcher` is needed. 
+
+
+
+Example of configuring a custom `DataFetcher`:
+```java
+
+DataFetcher calculateComplicatedValue = new DataFetcher() {
+    @Override
+    Object get(DataFetchingEnvironment environment) {
+        // environment.getSource() is the value of the surrounding
+        // object. In this case described by objectType
+        Object value = ... // Perhaps getting from a DB or whatever 
+        return value;
+    }
+
+GraphQLObjectType objectType = newObject()
+    .name("ObjectType")
+    .field(newFieldDefinition()
+            .name("someComplicatedValue")
+            .type(GraphQLString)
+            .dataFetcher(calculateComplicatedValue)
+            .build())
+    .build();
+
+```
 
 #### Executing 
 
