@@ -67,7 +67,6 @@ class UnionTest extends Specification {
     }
 
 
-
     def "executes union types with inline fragments"() {
 
         def query = """
@@ -97,11 +96,62 @@ class UnionTest extends Specification {
         ]
 
         when:
-        def executionResult = new GraphQL(GarfieldSchema.GarfieldSchema).execute(query,GarfieldSchema.john)
+        def executionResult = new GraphQL(GarfieldSchema.GarfieldSchema).execute(query, GarfieldSchema.john)
 
         then:
         executionResult.result == expectedResult
 
+    }
+
+    def "allows fragment conditions to be abstract types"() {
+        given:
+        def query = """
+                {
+                    __typename
+                    name
+                    pets { ...PetFields }
+                    friends { ...FriendFields }
+                }
+                fragment PetFields on Pet {
+            __typename
+            ... on Dog {
+                name
+                barks
+            }
+            ... on Cat {
+                name
+                meows
+            }
+        }
+                fragment FriendFields on Named {
+            __typename
+            name
+            ... on Dog {
+                barks
+            }
+            ... on Cat {
+                meows
+            }
+        }
+                """
+
+        def expectedResult = [
+                __typename: 'Person',
+                name      : 'John',
+                pets      : [
+                        [__typename: 'Cat', name: 'Garfield', meows: false],
+                        [__typename: 'Dog', name: 'Odie', barks: true]
+                ],
+                friends   : [
+                        [__typename: 'Person', name: 'Liz'],
+                        [__typename: 'Dog', name: 'Odie', barks: true]
+                ]
+        ]
+        when:
+        def executionResult = new GraphQL(GarfieldSchema.GarfieldSchema).execute(query, GarfieldSchema.john)
+
+        then:
+        executionResult.result == expectedResult
     }
 
 }

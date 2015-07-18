@@ -89,6 +89,10 @@ public class GarfieldSchema {
         public String getName() {
             return name;
         }
+
+        public List<Named> getFriends() {
+            return friends;
+        }
     }
 
     public static Cat garfield = new Cat("Garfield", false);
@@ -102,6 +106,21 @@ public class GarfieldSchema {
                     .name("name")
                     .type(GraphQLString)
                     .build())
+            .typeResolver(new TypeResolver() {
+                @Override
+                public GraphQLObjectType getType(Object object) {
+                    if (object instanceof Dog) {
+                        return DogType;
+                    }
+                    if (object instanceof Person) {
+                        return PersonType;
+                    }
+                    if (object instanceof Cat) {
+                        return CatType;
+                    }
+                    return null;
+                }
+            })
             .build();
 
     public static GraphQLObjectType DogType = newObject()
