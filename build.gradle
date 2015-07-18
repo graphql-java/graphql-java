@@ -1,4 +1,7 @@
 apply plugin: 'java'
+apply plugin: 'maven'
+
+group = 'graphql'
 
 sourceCompatibility = 1.7
 version = '1.0'
