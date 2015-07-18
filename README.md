@@ -22,6 +22,7 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
 - [Feedback](#feedback)
+- [License](#License)
  
 
 ### Overview
@@ -323,4 +324,9 @@ For example the StarWarSchema and the tests (among a lot of other things) are si
 
 I would appreciate any feedback via Twitter [@andimarek](https://twitter.com/andimarek) or Pull request/Issue.
 
+### License
+
+This project is licensed under BSD-3. See [LICENSE](LICENSE.md) for details.
+
+Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/andimarek/graphql-java/graphs/contributors)
 
