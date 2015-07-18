@@ -22,7 +22,7 @@ public class HelloWorld {
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(queryType)
                 .build();
-        Object result = new GraphQL(schema, "{hello}").execute().getResult();
+        Object result = new GraphQL(schema).execute("{hello}").getResult();
         System.out.println(result);
     }
 }

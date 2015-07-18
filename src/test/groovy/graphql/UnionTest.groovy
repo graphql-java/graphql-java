@@ -1,5 +1,6 @@
 package graphql
 
+import spock.lang.Ignore
 import spock.lang.Specification
 
 class UnionTest extends Specification {
@@ -28,11 +29,8 @@ class UnionTest extends Specification {
                 }
             }
             """
-        when:
-        def exeutionResult = new GraphQL(GarfieldSchema.GarfieldSchema, query).execute()
 
-        then:
-        exeutionResult.result == [Named: [
+        def expectedResult = [Named: [
                 kind         : 'INTERFACE',
                 name         : 'Named',
                 fields       : [
@@ -47,20 +45,63 @@ class UnionTest extends Specification {
                 enumValues   : null,
                 inputFields  : null
         ],
-                                  Pet  : [
-                                          kind         : 'UNION',
-                                          name         : 'Pet',
-                                          fields       : null,
-                                          interfaces   : null,
-                                          possibleTypes: [
-                                                  [name: 'Cat'],
-                                                  [name: 'Dog']
-                                          ],
-                                          enumValues   : null,
-                                          inputFields  : null
-                                  ]
+                              Pet  : [
+                                      kind         : 'UNION',
+                                      name         : 'Pet',
+                                      fields       : null,
+                                      interfaces   : null,
+                                      possibleTypes: [
+                                              [name: 'Cat'],
+                                              [name: 'Dog']
+                                      ],
+                                      enumValues   : null,
+                                      inputFields  : null
+                              ]
+        ]
+        when:
+        def executionResult = new GraphQL(GarfieldSchema.GarfieldSchema).execute(query)
+
+        then:
+        executionResult.result == expectedResult
+
+
+    }
+
+
+    @Ignore
+    def "executes union types with inline fragments"() {
+
+        def query = """
+                {
+                    __typename
+                    name
+                    pets {
+                        __typename
+                        ... on Dog {
+                            name
+                            barks
+                        }
+                        ... on Cat {
+                            name
+                            meows
+                        }
+                    }
+                }
+                """
+        def expectedResult = [
+                __typename: 'Person',
+                name      : 'John',
+                pets      : [
+                        [__typename: 'Cat', name: 'Garfield', meows: false],
+                        [__typename: 'Dog', name: 'Odie', barks: true]
+                ]
         ]
 
+        when:
+        def executionResult = new GraphQL(GarfieldSchema.GarfieldSchema).execute(query)
+
+        then:
+        executionResult.result == expectedResult
 
     }
 

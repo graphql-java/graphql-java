@@ -11,34 +11,41 @@ import graphql.validation.ValidationErrorType;
 import graphql.validation.Validator;
 import org.antlr.v4.runtime.RecognitionException;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import static graphql.Assert.assertNotNull;
 
 public class GraphQL {
 
 
     private final GraphQLSchema graphQLSchema;
-    private final String requestString;
-    private final Map<String, Object> arguments = new LinkedHashMap<>();
     private final ExecutorService executorService;
 
-    public GraphQL(GraphQLSchema graphQLSchema, String requestString) {
-        this(graphQLSchema, requestString, Collections.<String, Object>emptyMap());
+    public GraphQL(GraphQLSchema graphQLSchema) {
+        this(graphQLSchema, Executors.newCachedThreadPool());
     }
 
-    public GraphQL(GraphQLSchema graphQLSchema, String requestString, Map<String, Object> arguments) {
-        this(graphQLSchema, requestString, arguments, Executors.newCachedThreadPool());
-    }
 
-    public GraphQL(GraphQLSchema graphQLSchema, String requestString, Map<String, Object> arguments, ExecutorService executorService) {
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutorService executorService) {
         this.graphQLSchema = graphQLSchema;
-        this.requestString = requestString;
-        this.arguments.putAll(arguments);
         this.executorService = executorService;
     }
 
-    public ExecutionResult execute() {
+    public ExecutionResult execute(String requestString) {
+        return execute(requestString, null);
+    }
+
+    public ExecutionResult execute(String requestString, Object context) {
+        return execute(requestString, context, Collections.<String, Object>emptyMap());
+    }
+
+    public ExecutionResult execute(String requestString, Object context, Map<String, Object> arguments) {
+        assertNotNull(arguments, "arguments can't be null");
         Parser parser = new Parser();
         Document document;
         try {
@@ -54,7 +61,7 @@ public class GraphQL {
             ExecutionResult result = new ExecutionResult(validationErrors);
             return result;
         }
-        return execution.execute(graphQLSchema, null, document, null, arguments);
+        return execution.execute(graphQLSchema, context, document, null, arguments);
     }
 
 
