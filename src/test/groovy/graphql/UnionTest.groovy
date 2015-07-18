@@ -1,6 +1,5 @@
 package graphql
 
-import spock.lang.Ignore
 import spock.lang.Specification
 
 class UnionTest extends Specification {
@@ -68,7 +67,7 @@ class UnionTest extends Specification {
     }
 
 
-    @Ignore
+
     def "executes union types with inline fragments"() {
 
         def query = """
@@ -98,7 +97,7 @@ class UnionTest extends Specification {
         ]
 
         when:
-        def executionResult = new GraphQL(GarfieldSchema.GarfieldSchema).execute(query)
+        def executionResult = new GraphQL(GarfieldSchema.GarfieldSchema).execute(query,GarfieldSchema.john)
 
         then:
         executionResult.result == expectedResult

@@ -3,6 +3,7 @@ package graphql;
 
 import graphql.schema.*;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -21,11 +22,17 @@ public class GarfieldSchema {
 
     public static class Dog implements Named {
         private final String name;
+
+
         private final boolean barks;
 
         public Dog(String name, boolean barks) {
             this.name = name;
             this.barks = barks;
+        }
+
+        public boolean isBarks() {
+            return barks;
         }
 
         @Override
@@ -36,11 +43,16 @@ public class GarfieldSchema {
 
     public static class Cat implements Named {
         private final String name;
+
         private final boolean meows;
 
         public Cat(String name, boolean meows) {
             this.name = name;
             this.meows = meows;
+        }
+
+        public boolean isMeows() {
+            return meows;
         }
 
         @Override
@@ -64,6 +76,13 @@ public class GarfieldSchema {
             this.dogs = dogs;
             this.cats = cats;
             this.friends = friends;
+        }
+
+        public List<Object> getPets() {
+            List<Object> pets = new ArrayList<>();
+            pets.addAll(cats);
+            pets.addAll(dogs);
+            return pets;
         }
 
         @Override
@@ -121,7 +140,7 @@ public class GarfieldSchema {
                     if (object instanceof Cat) {
                         return CatType;
                     }
-                    if (object instanceof Dog){
+                    if (object instanceof Dog) {
                         return DogType;
                     }
                     return null;
