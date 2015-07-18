@@ -1,13 +1,12 @@
 # graphql-java
 
-#### Friendly warning: This library is currently under development and not yet stable.     
+#### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.     
 
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
  
 
-**Status**: Parsing and executing are implemented. Validation is in place, but not complete.
-There will be a first beta-release soon.  
+**Status/Plans**: A first version is released. Future work will include more validations, logging and error reporting.
 
 # Table of Contents
  
@@ -71,9 +70,10 @@ public class HelloWorld {
 
 ### Getting started
 
-Will be available soon via Bintray repository.
 
-Currently: Please clone and [Build it](#build-it).
+
+
+For the latest version: Please clone and [Build it](#build-it).
  
   
 ### Manual
@@ -235,7 +235,7 @@ When provided fields will be executed parallel, except the first level of a muta
 
 See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) for details.
 
-It's recommended to use a `ExcutorService` to speed up execution.
+It's recommended to use a `ExecutorService` to speed up execution.
 
 
 ### Build it 
@@ -252,6 +252,12 @@ Running the tests:
 
 ```sh
 ./gradlew test
+```
+
+Installing in the local Maven repository:
+
+```sh
+./gradlew install
 ```
 
 
