@@ -1,7 +1,10 @@
+plugins {
+    id "com.jfrog.bintray" version "1.2"
+}
+
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
-
 
 sourceCompatibility = 1.7
 version = '1.1'
@@ -31,11 +34,25 @@ task sourcesJar(type: Jar) {
 
 publishing {
     publications {
-        grapqhl(MavenPublication) {
+        graphqlJava(MavenPublication) {
             version version
             from components.java
             artifact sourcesJar
         }
+    }
+}
+
+
+bintray {
+    user = project["bintray.user"]
+    key = project["bintray.key"]
+    publications = ['graphqlJava']
+    pkg {
+        repo = 'graphql-java'
+        name = 'graphql-java'
+        desc = 'GraphQL in Java'
+        licenses = ['BSD 3-Clause']
+        vcsUrl= 'https://github.com/andimarek/graphql-java'
     }
 }
 

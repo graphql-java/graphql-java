@@ -50,6 +50,7 @@ public class HelloWorld {
     public static void main(String[] args) {
     
         GraphQLObjectType queryType = newObject()
+                .name("queryType")
                 .field(newFieldDefinition()
                         .type(GraphQLString)
                         .name("hello")
@@ -70,8 +71,51 @@ public class HelloWorld {
 
 ### Getting started
 
+##### Gradle
 
+The repository:
+```groovy
+repositories {
+    maven { url  "http://dl.bintray.com/andimarek/graphql-java" }
+}
 
+```
+Dependency:
+
+```groovy
+dependencies {
+  compile 'graphql-java:graphql-java:1.0'
+}
+
+```
+
+##### Maven
+
+The repository:
+
+```xml
+<repository>
+    <snapshots>
+        <enabled>false</enabled>
+    </snapshots>
+    <id>bintray-andimarek-graphql-java</id>
+    <name>bintray</name>
+    <url>http://dl.bintray.com/andimarek/graphql-java</url>
+</repository>
+
+```
+
+Dependency:
+
+```xml
+<dependency>
+    <groupId>graphql-java</groupId>
+    <artifactId>graphql-java</artifactId>
+    <version>1.0</version>
+</dependency>
+
+```
+##### Latest Version
 
 For the latest version: Please clone and [Build it](#build-it).
  
