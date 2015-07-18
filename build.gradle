@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'maven'
+apply plugin: 'maven-publish'
 
 
 sourceCompatibility = 1.7
@@ -14,8 +15,8 @@ apply plugin: 'groovy'
 
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.11'
     compile 'org.antlr:antlr4-runtime:4.5'
+    testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
     testCompile 'org.codehaus.groovy:groovy-all:2.4.4'
     testCompile 'cglib:cglib-nodep:3.1'
@@ -26,6 +27,20 @@ task sourcesJar(type: Jar) {
     dependsOn classes
     classifier 'sources'
     from sourceSets.main.allSource
+}
+
+publishing {
+    publications {
+        grapqhl(MavenPublication) {
+            version version
+            from components.java
+            artifact sourcesJar
+        }
+    }
+}
+
+artifacts {
+    archives sourcesJar
 }
 
 task wrapper(type: Wrapper) {
