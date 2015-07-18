@@ -16,6 +16,9 @@ repositories {
 
 apply plugin: 'groovy'
 
+jar {
+    from "LICENSE.md"
+}
 
 dependencies {
     compile 'org.antlr:antlr4-runtime:4.5'
