@@ -326,9 +326,9 @@ I would appreciate any feedback via Twitter [@andimarek](https://twitter.com/and
 
 ### License
 
-graphql-java is licensed under BSD-3. See [LICENSE](LICENSE.md) for details.
+graphql-java is licensed under the MIT License. See [LICENSE](LICENSE.md) for details.
 
 Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/andimarek/graphql-java/graphs/contributors)
 
-[GraphQL License](https://github.com/graphql/graphql-js/blob/master/LICENSE)
+[graphql-js License](https://github.com/graphql/graphql-js/blob/master/LICENSE)
 
