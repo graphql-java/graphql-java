@@ -54,7 +54,7 @@ bintray {
         repo = 'graphql-java'
         name = 'graphql-java'
         desc = 'GraphQL in Java'
-        licenses = ['BSD 3-Clause']
+        licenses = ['MIT']
         vcsUrl= 'https://github.com/andimarek/graphql-java'
     }
 }
