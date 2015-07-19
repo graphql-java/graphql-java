@@ -15,6 +15,7 @@ public enum ValidationErrorType {
     FragmentTypeConditionInvalid,
     UnknownArgument,
     UndefinedFragment,
-    NonInputTypeOnVariable
+    NonInputTypeOnVariable,
+    UnusedFragment,
 
 }
