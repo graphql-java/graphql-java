@@ -28,8 +28,6 @@ public class Validator {
         rules.add(argumentsOfCorrectType);
         DefaultValuesOfCorrectType defaultValuesOfCorrectType = new DefaultValuesOfCorrectType(validationContext, errorCollector);
         rules.add(defaultValuesOfCorrectType);
-        DirectivesOfCorrectType directivesOfCorrectType = new DirectivesOfCorrectType(validationContext, errorCollector);
-        rules.add(directivesOfCorrectType);
         FieldsOnCorrectType fieldsOnCorrectType = new FieldsOnCorrectType(validationContext, errorCollector);
         rules.add(fieldsOnCorrectType);
         FragmentsOnCompositeType fragmentsOnCompositeType = new FragmentsOnCompositeType(validationContext, errorCollector);
