@@ -6,6 +6,8 @@ import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
 import graphql.schema.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,6 +25,9 @@ public class Execution {
     private FieldCollector fieldCollector;
     private ValuesResolver valuesResolver;
     private ExecutorService executorService;
+
+
+    private static final Logger log = LoggerFactory.getLogger(Execution.class);
 
     public Execution(ExecutorService executorService) {
         fieldCollector = new FieldCollector();
@@ -123,7 +128,7 @@ public class Execution {
         try {
             resolvedValue = fieldDef.getDataFetcher().get(environment);
         } catch (Exception e) {
-
+            log.info("Exception while fetching data", e);
         }
 
 
