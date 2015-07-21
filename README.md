@@ -1,14 +1,16 @@
-[![Build Status](https://travis-ci.org/andimarek/graphql-java.svg?branch=master)](https://travis-ci.org/andimarek/graphql-java)
-
 # graphql-java
 
-#### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.     
+#### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.
+     
+
 
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
  
 
 **Status/Plans**: A first version is released. Future work will include more validations, logging and error reporting.
+[![Build Status](https://travis-ci.org/andimarek/graphql-java.svg?branch=master)](https://travis-ci.org/andimarek/graphql-java)
+
 
 # Table of Contents
  
