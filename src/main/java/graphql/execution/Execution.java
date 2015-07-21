@@ -107,7 +107,7 @@ public class Execution {
     private Object resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
         if (fieldDef == null) return null;
-        Object resolvedValue;
+        ;
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
         DataFetchingEnvironment environment = new DataFetchingEnvironment(
                 source,
@@ -118,7 +118,13 @@ public class Execution {
                 parentType,
                 executionContext.getGraphQLSchema()
         );
-        resolvedValue = fieldDef.getDataFetcher().get(environment);
+
+        Object resolvedValue = null;
+        try {
+            resolvedValue = fieldDef.getDataFetcher().get(environment);
+        } catch (Exception e) {
+
+        }
 
 
         return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
