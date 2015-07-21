@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/andimarek/graphql-java.svg?branch=master)](https://travis-ci.org/andimarek/graphql-java)
+
 # graphql-java
 
 #### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.     
