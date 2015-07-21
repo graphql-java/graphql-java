@@ -56,8 +56,8 @@ public class Validator {
         rules.add(scalarLeafs);
         VariablesAreInputTypes variablesAreInputTypes = new VariablesAreInputTypes(validationContext, errorCollector);
         rules.add(variablesAreInputTypes);
-        VariablesInAllowedPosition variablesInAllowedPosition = new VariablesInAllowedPosition(validationContext, errorCollector);
-        rules.add(variablesInAllowedPosition);
+        VariableTypesMatchRule variableTypesMatchRule = new VariableTypesMatchRule(validationContext, errorCollector);
+        rules.add(variableTypesMatchRule);
         return rules;
     }
 }

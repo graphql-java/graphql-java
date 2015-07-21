@@ -18,7 +18,7 @@ public enum ValidationErrorType {
     NonInputTypeOnVariable,
     UnusedFragment,
     MissingFieldArgument,
-    MissingDirectiveArgument
-
+    MissingDirectiveArgument,
+    VariableTypeMismatch
 
 }
