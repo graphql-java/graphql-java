@@ -43,7 +43,15 @@ public class GraphQL {
         return execute(requestString, context, Collections.<String, Object>emptyMap());
     }
 
+    public ExecutionResult execute(String requestString, String operationName, Object context) {
+        return execute(requestString, operationName, context, Collections.<String, Object>emptyMap());
+    }
+
     public ExecutionResult execute(String requestString, Object context, Map<String, Object> arguments) {
+        return execute(requestString, null, context, arguments);
+    }
+
+    public ExecutionResult execute(String requestString, String operationName, Object context, Map<String, Object> arguments) {
         assertNotNull(arguments, "arguments can't be null");
         Parser parser = new Parser();
         Document document;
@@ -61,7 +69,7 @@ public class GraphQL {
             return result;
         }
         Execution execution = new Execution(executorService);
-        return execution.execute(graphQLSchema, context, document, null, arguments);
+        return execution.execute(graphQLSchema, context, document, operationName, arguments);
     }
 
 
