@@ -12,11 +12,11 @@ import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
 
-class DefaultValuesOfCorrectTypeTest extends Specification {
+class VariableDefaultValuesOfCorrectTypeTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
     ErrorCollector errorCollector = new ErrorCollector()
-    DefaultValuesOfCorrectType defaultValuesOfCorrectType = new DefaultValuesOfCorrectType(validationContext, errorCollector)
+    VariableDefaultValuesOfCorrectType defaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, errorCollector)
 
     def "NonNull type, but with default value"() {
         given:

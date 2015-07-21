@@ -26,8 +26,8 @@ public class Validator {
         List<AbstractRule> rules = new ArrayList<>();
         ArgumentsOfCorrectType argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, errorCollector);
         rules.add(argumentsOfCorrectType);
-        DefaultValuesOfCorrectType defaultValuesOfCorrectType = new DefaultValuesOfCorrectType(validationContext, errorCollector);
-        rules.add(defaultValuesOfCorrectType);
+        VariableDefaultValuesOfCorrectType variableDefaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, errorCollector);
+        rules.add(variableDefaultValuesOfCorrectType);
         FieldsOnCorrectType fieldsOnCorrectType = new FieldsOnCorrectType(validationContext, errorCollector);
         rules.add(fieldsOnCorrectType);
         FragmentsOnCompositeType fragmentsOnCompositeType = new FragmentsOnCompositeType(validationContext, errorCollector);

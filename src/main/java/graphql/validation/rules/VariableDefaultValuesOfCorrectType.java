@@ -6,10 +6,10 @@ import graphql.schema.GraphQLNonNull;
 import graphql.validation.*;
 
 
-public class DefaultValuesOfCorrectType extends AbstractRule {
+public class VariableDefaultValuesOfCorrectType extends AbstractRule {
 
 
-    public DefaultValuesOfCorrectType(ValidationContext validationContext, ErrorCollector errorCollector) {
+    public VariableDefaultValuesOfCorrectType(ValidationContext validationContext, ErrorCollector errorCollector) {
         super(validationContext, errorCollector);
     }
 
