@@ -9,6 +9,7 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
  
 
 **Status/Plans**: A first version is released. Future work will include more validations, logging and error reporting.
+
 [![Build Status](https://travis-ci.org/andimarek/graphql-java.svg?branch=master)](https://travis-ci.org/andimarek/graphql-java)
 
 
