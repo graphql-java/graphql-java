@@ -19,8 +19,9 @@ public class ExecutionResultImpl implements ExecutionResult {
         this.errors.addAll(errors);
     }
 
-    public ExecutionResultImpl(Map<String, Object> result) {
+    public ExecutionResultImpl(Map<String, Object> result,List<? extends GraphQLError> errors) {
         this.result = result;
+        this.errors.addAll(errors);
     }
 
 

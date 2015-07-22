@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
@@ -64,13 +65,13 @@ public class Execution {
         Map<String, List<Field>> fields = new LinkedHashMap<>();
         fieldCollector.collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<String>(), fields);
 
-
-        if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION
-                ) {
-            executeFieldsSerially(executionContext, operationRootType, root, fields);
+        Map<String, Object> result;
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+            result = executeFieldsSerially(executionContext, operationRootType, root, fields);
+        } else {
+            result = executeFieldsParallel(executionContext, operationRootType, root, fields);
         }
-        Map<String,Object> result = executeFieldsParallel(executionContext, operationRootType, root, fields);
-        return new ExecutionResultImpl(result);
+        return new ExecutionResultImpl(result, executionContext.getErrors());
     }
 
     private Map<String, Object> executeFieldsSerially(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
@@ -114,7 +115,7 @@ public class Execution {
     private Object resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
         if (fieldDef == null) return null;
-        ;
+
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
         DataFetchingEnvironment environment = new DataFetchingEnvironment(
                 source,
@@ -131,6 +132,7 @@ public class Execution {
             resolvedValue = fieldDef.getDataFetcher().get(environment);
         } catch (Exception e) {
             log.info("Exception while fetching data", e);
+            executionContext.addError(new ExceptionWhileDataFetching(e));
         }
 
 

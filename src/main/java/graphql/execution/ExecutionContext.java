@@ -1,11 +1,14 @@
 package graphql.execution;
 
 
+import graphql.GraphQLError;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ExecutionContext {
@@ -15,7 +18,7 @@ public class ExecutionContext {
     private OperationDefinition operationDefinition;
     private Map<String, Object> variables = new LinkedHashMap<>();
     private Object root;
-
+    private List<GraphQLError> errors = new ArrayList<>();
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
@@ -59,5 +62,13 @@ public class ExecutionContext {
 
     public FragmentDefinition getFragment(String name) {
         return fragmentsByName.get(name);
+    }
+
+    public void addError(GraphQLError error) {
+        this.errors.add(error);
+    }
+
+    public List<GraphQLError> getErrors(){
+        return errors;
     }
 }
