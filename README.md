@@ -28,7 +28,7 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
 - [Feedback](#feedback)
-- [License](#License)
+- [License](#license)
  
 
 ### Overview
