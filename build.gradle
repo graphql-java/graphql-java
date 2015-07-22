@@ -36,12 +36,58 @@ task sourcesJar(type: Jar) {
     from sourceSets.main.allSource
 }
 
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+
 publishing {
     publications {
         graphqlJava(MavenPublication) {
             version version
             from components.java
             artifact sourcesJar
+
+            artifact sourcesJar {
+                classifier "sources"
+            }
+            artifact javadocJar {
+                classifier "javadoc"
+            }
+            pom.withXml {
+                asNode().children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+                    name 'graphql-java'
+                    description 'GraphqL Java'
+                    url "https://github.com/andimarek/graphql-java"
+                    scm {
+                        url "https://github.com/andimarek/graphql-java"
+                        connection "https://github.com/andimarek/graphql-java"
+                        developerConnection "https://github.com/andimarek/graphql-java"
+                    }
+                    licenses {
+                        license {
+                            name 'MIT'
+                            url 'https://github.com/andimarek/graphql-java/blob/master/LICENSE.md'
+                            distribution 'repo'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id 'andimarek'
+                            name 'andimarek'
+                            email 'andimarek@fastmail.fm'
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -60,9 +106,6 @@ bintray {
     }
 }
 
-artifacts {
-    archives sourcesJar
-}
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.5'
