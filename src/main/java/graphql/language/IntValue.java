@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class IntValue implements Value{
+public class IntValue extends AbstractNode implements  Value{
 
     private int value;
 

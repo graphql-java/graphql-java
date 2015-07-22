@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Argument implements Node {
+public class Argument extends AbstractNode {
 
     private String name;
     private Value value;

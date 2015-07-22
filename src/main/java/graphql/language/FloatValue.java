@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FloatValue implements Value {
+public class FloatValue extends AbstractNode  implements  Value{
 
     private BigDecimal value;
 

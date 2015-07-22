@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ObjectField implements Node {
+public class ObjectField extends AbstractNode {
 
     private String name;
     private Value value;

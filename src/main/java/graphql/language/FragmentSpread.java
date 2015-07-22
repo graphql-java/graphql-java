@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FragmentSpread implements Selection {
+public class FragmentSpread extends AbstractNode implements Selection {
 
     private String name;
     private List<Directive> directives = new ArrayList<>();

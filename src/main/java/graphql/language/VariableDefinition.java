@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VariableDefinition implements Node {
+public class VariableDefinition extends AbstractNode {
 
     private String name;
     private Type type;

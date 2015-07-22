@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Field implements Selection {
+public class Field extends AbstractNode implements  Selection {
 
     private String name;
     private String alias;

@@ -1,9 +1,11 @@
 package graphql.parser;
 
 
+import graphql.ShouldNotHappenException;
 import graphql.language.*;
 import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.misc.NotNull;
 
 import java.math.BigDecimal;
@@ -97,6 +99,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitDocument(@NotNull GraphqlParser.DocumentContext ctx) {
         result = new Document();
+        newNode(result, ctx);
         return super.visitDocument(ctx);
     }
 
@@ -104,6 +107,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx) {
         OperationDefinition operationDefinition;
         operationDefinition = new OperationDefinition();
+        newNode(operationDefinition, ctx);
+        newNode(operationDefinition, ctx);
         if (ctx.operationType() == null) {
             operationDefinition.setOperation(OperationDefinition.Operation.QUERY);
         } else {
@@ -133,6 +138,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx) {
         FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
+        newNode(fragmentSpread, ctx);
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(fragmentSpread);
         addContextProperty(ContextProperty.FragmentSpread, fragmentSpread);
         super.visitFragmentSpread(ctx);
@@ -143,6 +149,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitVariableDefinition(@NotNull GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition variableDefinition = new VariableDefinition();
+        newNode(variableDefinition, ctx);
         variableDefinition.setName(ctx.variable().NAME().getText());
         if (ctx.defaultValue() != null) {
             Value value = getValue(ctx.defaultValue().value());
@@ -160,6 +167,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitFragmentDefinition(@NotNull GraphqlParser.FragmentDefinitionContext ctx) {
         FragmentDefinition fragmentDefinition = new FragmentDefinition();
+        newNode(fragmentDefinition, ctx);
         fragmentDefinition.setName(ctx.fragmentName().getText());
         fragmentDefinition.setTypeCondition(new TypeName(ctx.typeCondition().getText()));
         addContextProperty(ContextProperty.FragmentDefinition, fragmentDefinition);
@@ -173,20 +181,18 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitSelectionSet(@NotNull GraphqlParser.SelectionSetContext ctx) {
         SelectionSet newSelectionSet = new SelectionSet();
+        newNode(newSelectionSet, ctx);
         addContextProperty(ContextProperty.SelectionSet, newSelectionSet);
         super.visitSelectionSet(ctx);
         popContext();
         return null;
     }
 
-    @Override
-    public Void visitSelection(@NotNull GraphqlParser.SelectionContext ctx) {
-        return super.visitSelection(ctx);
-    }
 
     @Override
     public Void visitField(@NotNull GraphqlParser.FieldContext ctx) {
         Field newField = new Field();
+        newNode(newField, ctx);
         newField.setName(ctx.NAME().getText());
         if (ctx.alias() != null) {
             newField.setAlias(ctx.alias().NAME().getText());
@@ -199,9 +205,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitTypeName(@NotNull GraphqlParser.TypeNameContext ctx) {
-
+        TypeName typeName = new TypeName(ctx.NAME().getText());
+        newNode(typeName, ctx);
         for (ContextEntry contextEntry : contextStack) {
-            TypeName typeName = new TypeName(ctx.NAME().getText());
             if (contextEntry.value instanceof ListType) {
                 ((ListType) contextEntry.value).setType(typeName);
                 break;
@@ -221,6 +227,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitNonNullType(@NotNull GraphqlParser.NonNullTypeContext ctx) {
         NonNullType nonNullType = new NonNullType();
+        newNode(nonNullType, ctx);
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.value instanceof ListType) {
                 ((ListType) contextEntry.value).setType(nonNullType);
@@ -240,6 +247,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitListType(@NotNull GraphqlParser.ListTypeContext ctx) {
         ListType listType = new ListType();
+        newNode(listType, ctx);
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.value instanceof ListType) {
                 ((ListType) contextEntry.value).setType(listType);
@@ -263,6 +271,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitArgument(@NotNull GraphqlParser.ArgumentContext ctx) {
         Argument argument = new Argument(ctx.NAME().getText(), getValue(ctx.valueWithVariable()));
+        newNode(argument, ctx);
         if (getFromContextStack(ContextProperty.Directive, false) != null) {
             ((Directive) getFromContextStack(ContextProperty.Directive)).getArguments().add(argument);
         } else {
@@ -275,6 +284,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitInlineFragment(@NotNull GraphqlParser.InlineFragmentContext ctx) {
         InlineFragment inlineFragment = new InlineFragment(new TypeName(ctx.typeCondition().getText()));
+        newNode(inlineFragment, ctx);
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(inlineFragment);
         addContextProperty(ContextProperty.InlineFragment, inlineFragment);
         super.visitInlineFragment(ctx);
@@ -285,6 +295,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     @Override
     public Void visitDirective(@NotNull GraphqlParser.DirectiveContext ctx) {
         Directive directive = new Directive(ctx.NAME().getText());
+        newNode(directive, ctx);
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.contextProperty == ContextProperty.Field) {
                 ((Field) contextEntry.value).getDirectives().add(directive);
@@ -312,27 +323,34 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     private Value getValue(GraphqlParser.ValueWithVariableContext ctx) {
         if (ctx.IntValue() != null) {
             IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
+            newNode(intValue, ctx);
             return intValue;
         } else if (ctx.FloatValue() != null) {
             FloatValue floatValue = new FloatValue(new BigDecimal(ctx.FloatValue().getText()));
+            newNode(floatValue, ctx);
             return floatValue;
         } else if (ctx.BooleanValue() != null) {
             BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
+            newNode(booleanValue, ctx);
             return booleanValue;
         } else if (ctx.StringValue() != null) {
             StringValue stringValue = new StringValue(trimQuotes(ctx.StringValue().getText()));
+            newNode(stringValue, ctx);
             return stringValue;
         } else if (ctx.enumValue() != null) {
             EnumValue enumValue = new EnumValue(ctx.enumValue().getText());
+            newNode(enumValue, ctx);
             return enumValue;
         } else if (ctx.arrayValueWithVariable() != null) {
             ArrayValue arrayValue = new ArrayValue();
+            newNode(arrayValue, ctx);
             for (GraphqlParser.ValueWithVariableContext valueWithVariableContext : ctx.arrayValueWithVariable().valueWithVariable()) {
                 arrayValue.getValues().add(getValue(valueWithVariableContext));
             }
             return arrayValue;
         } else if (ctx.objectValueWithVariable() != null) {
             ObjectValue objectValue = new ObjectValue();
+            newNode(objectValue, ctx);
             for (GraphqlParser.ObjectFieldWithVariableContext objectFieldWithVariableContext :
                     ctx.objectValueWithVariable().objectFieldWithVariable()) {
                 ObjectField objectField = new ObjectField(objectFieldWithVariableContext.NAME().getText(), getValue(objectFieldWithVariableContext.valueWithVariable()));
@@ -341,35 +359,43 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             return objectValue;
         } else if (ctx.variable() != null) {
             VariableReference variableReference = new VariableReference(ctx.variable().NAME().getText());
+            newNode(variableReference, ctx);
             return variableReference;
         }
-        throw new RuntimeException();
+        throw new ShouldNotHappenException();
     }
 
     private Value getValue(GraphqlParser.ValueContext ctx) {
         if (ctx.IntValue() != null) {
             IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
+            newNode(intValue, ctx);
             return intValue;
         } else if (ctx.FloatValue() != null) {
             FloatValue floatValue = new FloatValue(new BigDecimal(ctx.FloatValue().getText()));
+            newNode(floatValue, ctx);
             return floatValue;
         } else if (ctx.BooleanValue() != null) {
             BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
+            newNode(booleanValue, ctx);
             return booleanValue;
         } else if (ctx.StringValue() != null) {
             StringValue stringValue = new StringValue(trimQuotes(ctx.StringValue().getText()));
+            newNode(stringValue, ctx);
             return stringValue;
         } else if (ctx.enumValue() != null) {
             EnumValue enumValue = new EnumValue(ctx.enumValue().getText());
+            newNode(enumValue, ctx);
             return enumValue;
         } else if (ctx.arrayValue() != null) {
             ArrayValue arrayValue = new ArrayValue();
+            newNode(arrayValue, ctx);
             for (GraphqlParser.ValueContext valueWithVariableContext : ctx.arrayValue().value()) {
                 arrayValue.getValues().add(getValue(valueWithVariableContext));
             }
             return arrayValue;
         } else if (ctx.objectValue() != null) {
             ObjectValue objectValue = new ObjectValue();
+            newNode(objectValue,ctx);
             for (GraphqlParser.ObjectFieldContext objectFieldContext :
                     ctx.objectValue().objectField()) {
                 ObjectField objectField = new ObjectField(objectFieldContext.NAME().getText(), getValue(objectFieldContext.value()));
@@ -377,12 +403,20 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             }
             return objectValue;
         }
-        throw new RuntimeException();
+        throw new ShouldNotHappenException();
     }
 
 
     private String trimQuotes(String string) {
         return string.substring(1, string.length() - 1);
+    }
+
+    private void newNode(AbstractNode abstractNode, ParserRuleContext parserRuleContext) {
+        abstractNode.setSourceLocation(getSourceLocation(parserRuleContext));
+    }
+
+    private SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
+        return new SourceLocation(parserRuleContext.getStart().getLine(), parserRuleContext.getStart().getCharPositionInLine());
     }
 
 }

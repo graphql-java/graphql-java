@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Document implements Node {
+public class Document extends AbstractNode {
 
     private List<Definition> definitions = new ArrayList<>();
 

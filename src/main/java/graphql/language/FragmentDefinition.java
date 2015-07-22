@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FragmentDefinition implements Definition {
+public class FragmentDefinition extends AbstractNode implements  Definition {
     private String name;
     private TypeName typeCondition;
     private List<Directive> directives = new ArrayList<>();

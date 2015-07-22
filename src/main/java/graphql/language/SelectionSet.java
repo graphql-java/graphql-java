@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SelectionSet implements  Node{
+public class SelectionSet extends AbstractNode{
 
     private final List<Selection> selections = new ArrayList<>();
 

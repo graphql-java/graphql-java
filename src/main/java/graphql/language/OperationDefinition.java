@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OperationDefinition implements Definition {
+public class OperationDefinition extends AbstractNode implements Definition {
 
     public enum Operation {
         QUERY, MUTATION

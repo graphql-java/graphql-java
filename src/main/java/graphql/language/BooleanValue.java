@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BooleanValue implements Value {
+public class BooleanValue extends AbstractNode implements Value {
 
     private boolean value;
 

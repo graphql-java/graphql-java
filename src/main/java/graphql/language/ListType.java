@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListType implements Type{
+public class ListType extends AbstractNode implements Type{
 
     private Type type;
 
