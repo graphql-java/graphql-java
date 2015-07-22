@@ -197,6 +197,7 @@ PetType = GraphQLUnionType.newUnionType()
         }
     })
     .build();
+    
 ```
 
 ##### Creating a new Enum Type
@@ -212,6 +213,22 @@ GraphQLEnumType colorEnum = newEnum()
     .build();
        
 ```
+
+##### Creating a Object-Input Type
+
+Example
+
+```java
+GraphQLInputObjectType inputObjectType = newInputObject()
+    .name("inputObjectType")
+    .field(newInputObjectField()
+        .name("field")
+        .type(GraphQLString)
+        .build())
+    .build()
+
+```
+
 
 ##### Creating a Schema
 
