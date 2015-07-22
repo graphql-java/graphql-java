@@ -23,6 +23,7 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
     - [Data fetching](#data-fetching)
     - [Executing](#executing)
     - [Execution strategies](#execution-strategies)
+    - [Logging](#logging)
 - [Build it](#build-it)
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
@@ -304,6 +305,11 @@ See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) fo
 
 It's recommended to use a `ExecutorService` to speed up execution.
 
+#### Logging
+
+Logging is done with [SLF4J](http://www.slf4j.org/). Please have a lookout at the [Manual](http://www.slf4j.org/manual.html) for details.
+The `grapqhl-java` root Logger name is `graphql`.
+
 
 ### Build it 
 
@@ -335,7 +341,7 @@ The implementation is in Java 7, but the tests are in Groovy and [Spock](https:/
 
 The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
 
-The only runtime dependencies are Antlr and probably in the future Slf4J.
+The only runtime dependencies are ANTLR and Slf4J.
  
 ### Acknowledgment
 
