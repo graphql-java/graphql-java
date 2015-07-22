@@ -56,7 +56,7 @@ public class HelloWorld {
     public static void main(String[] args) {
     
         GraphQLObjectType queryType = newObject()
-                .name("queryType")
+                .name("helloWorldQuery")
                 .field(newFieldDefinition()
                         .type(GraphQLString)
                         .name("hello")
@@ -67,7 +67,7 @@ public class HelloWorld {
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(queryType)
                 .build();
-        Object result = new GraphQL(schema).execute("{hello}").getResult();
+        Map<String, Object> result = new GraphQL(schema).execute("{hello}").getResult();
         
         System.out.println(result);
         // Prints: {hello=world}
