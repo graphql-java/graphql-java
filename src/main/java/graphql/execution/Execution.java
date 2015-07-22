@@ -1,6 +1,8 @@
 package graphql.execution;
 
 
+import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -67,8 +69,8 @@ public class Execution {
                 ) {
             executeFieldsSerially(executionContext, operationRootType, root, fields);
         }
-        Object result = executeFieldsParallel(executionContext, operationRootType, root, fields);
-        return new ExecutionResult(result);
+        Map<String,Object> result = executeFieldsParallel(executionContext, operationRootType, root, fields);
+        return new ExecutionResultImpl(result);
     }
 
     private Map<String, Object> executeFieldsSerially(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {

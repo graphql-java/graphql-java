@@ -88,7 +88,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = new GraphQL(schema).execute( '{ hello(arg:11) }').validationErrors
+        def errors = new GraphQL(schema).execute( '{ hello(arg:11) }').errors
 
         then:
         errors.size() == 1
@@ -103,7 +103,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = new GraphQL(schema).execute( '{ hello(() }').validationErrors
+        def errors = new GraphQL(schema).execute( '{ hello(() }').errors
 
         then:
         errors.size() == 1

@@ -1,7 +1,9 @@
 package graphql.validation;
 
 
-public class ValidationError {
+import graphql.GraphQLError;
+
+public class ValidationError implements GraphQLError {
 
     private final ValidationErrorType errorType;
 

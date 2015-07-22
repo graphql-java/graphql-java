@@ -2,7 +2,6 @@ package graphql;
 
 
 import graphql.execution.Execution;
-import graphql.execution.ExecutionResult;
 import graphql.language.Document;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
@@ -59,13 +58,13 @@ public class GraphQL {
             document = parser.parseDocument(requestString);
         } catch (RecognitionException e) {
             ValidationError validationError = new ValidationError(ValidationErrorType.InvalidSyntax);
-            return new ExecutionResult(Arrays.asList(validationError));
+            return new ExecutionResultImpl(Arrays.asList(validationError));
         }
 
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
         if (validationErrors.size() > 0) {
-            ExecutionResult result = new ExecutionResult(validationErrors);
+            ExecutionResult result = new ExecutionResultImpl(validationErrors);
             return result;
         }
         Execution execution = new Execution(executorService);
