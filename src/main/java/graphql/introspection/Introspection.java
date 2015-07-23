@@ -65,7 +65,7 @@ public class Introspection {
     };
 
     public static GraphQLObjectType __InputValue = newObject()
-            .name("__Field")
+            .name("__InputValue")
             .field(newFieldDefinition()
                     .name("name")
                     .type(new GraphQLNonNull(GraphQLString))
