@@ -32,6 +32,6 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
 
     @Override
     public String getName() {
-        return "GraphQLNonNull";
+        return null;
     }
 }

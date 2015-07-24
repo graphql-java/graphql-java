@@ -25,6 +25,6 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
     @Override
     public String getName() {
-        return "GraphQLList";
+        return null;
     }
 }

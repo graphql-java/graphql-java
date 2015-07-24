@@ -92,7 +92,7 @@ class StarWarsIntrospectionTests extends Specification {
         result == expected
     }
 
-    def 'Allows querying the schema for an object kind'(){
+    def 'Allows querying the schema for an object kind'() {
         given:
         def query = """
         query IntrospectionDroidKindQuery {
@@ -103,10 +103,10 @@ class StarWarsIntrospectionTests extends Specification {
         }
         """
         def expected = [
-            __type: [
-                name: 'Droid',
-                kind: 'OBJECT'
-            ]
+                __type: [
+                        name: 'Droid',
+                        kind: 'OBJECT'
+                ]
         ];
         when:
         def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).result
@@ -115,7 +115,7 @@ class StarWarsIntrospectionTests extends Specification {
         result == expected
     }
 
-    def 'Allows querying the schema for an interface kind'(){
+    def 'Allows querying the schema for an interface kind'() {
         given:
         def query = """
         query IntrospectionCharacterKindQuery {
@@ -126,10 +126,76 @@ class StarWarsIntrospectionTests extends Specification {
         }
         """
         def expected = [
-            __type: [
-                name: 'Character',
-                kind: 'INTERFACE'
-            ]
+                __type: [
+                        name: 'Character',
+                        kind: 'INTERFACE'
+                ]
+        ];
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).result
+
+        then:
+        result == expected
+    }
+
+
+    def 'Allows querying the schema for object fields'() {
+        given:
+        def query = """
+        query IntrospectionDroidFieldsQuery {
+            __type(name: "Droid") {
+                name
+                fields {
+                    name
+                    type {
+                        name
+                        kind
+                    }
+                }
+            }
+        }
+        """
+        def expected = [
+                __type: [
+                        name  : 'Droid',
+                        fields: [
+                                [
+                                        name: 'id',
+                                        type: [
+                                                name: null,
+                                                kind: 'NON_NULL'
+                                        ]
+                                ],
+                                [
+                                        name: 'name',
+                                        type: [
+                                                name: 'String',
+                                                kind: 'SCALAR'
+                                        ]
+                                ],
+                                [
+                                        name: 'friends',
+                                        type: [
+                                                name: null,
+                                                kind: 'LIST'
+                                        ]
+                                ],
+                                [
+                                        name: 'appearsIn',
+                                        type: [
+                                                name: null,
+                                                kind: 'LIST'
+                                        ]
+                                ],
+                                [
+                                        name: 'primaryFunction',
+                                        type: [
+                                                name: 'String',
+                                                kind: 'SCALAR'
+                                        ]
+                                ]
+                        ]
+                ]
         ];
         when:
         def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).result
