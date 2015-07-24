@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.GraphQLException;
+import graphql.introspection.Introspection;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -101,6 +102,7 @@ public class SchemaUtil {
         if (schema.isSupportingMutations()) {
             collectTypes(schema.getMutationType(), typesByName);
         }
+        collectTypes(Introspection.__Schema, typesByName);
         return typesByName;
     }
 
