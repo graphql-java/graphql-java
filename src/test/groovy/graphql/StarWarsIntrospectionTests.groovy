@@ -44,4 +44,29 @@ class StarWarsIntrospectionTests extends Specification {
     }
 
 
+    def "Allows querying the schema for query type"() {
+        given:
+        def query = """
+        query IntrospectionQueryTypeQuery {
+            __schema {
+                queryType {
+                    name
+                }
+            }
+        }
+        """
+        def expected = [
+                __schema: [
+                        queryType: [
+                                name: 'QueryType'
+                        ],
+                ]
+        ]
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).result
+
+        then:
+        result == expected
+    }
+
 }
