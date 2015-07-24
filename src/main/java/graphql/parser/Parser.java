@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.DefaultErrorStrategy;
 import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.atn.PredictionMode;
 
 public class Parser {
 
@@ -18,6 +19,7 @@ public class Parser {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 
         GraphqlParser parser = new GraphqlParser(tokens);
+        parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
         parser.setErrorHandler(new ErrorStrategy());
         GraphqlParser.DocumentContext document = parser.document();
 
