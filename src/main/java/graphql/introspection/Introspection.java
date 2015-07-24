@@ -235,6 +235,20 @@ public class Introspection {
         }
     };
 
+    public static DataFetcher OfTypeFetcher = new DataFetcher() {
+        @Override
+        public Object get(DataFetchingEnvironment environment) {
+            Object type = environment.getSource();
+            if (type instanceof GraphQLList) {
+                return ((GraphQLList) type).getWrappedType();
+            }
+            if (type instanceof GraphQLNonNull) {
+                return ((GraphQLNonNull) type).getWrappedType();
+            }
+            return null;
+        }
+    };
+
 
     public static GraphQLObjectType __Type = newObject()
             .name("__Type")
@@ -285,6 +299,11 @@ public class Introspection {
                     .name("inputFields")
                     .type(new GraphQLList(new GraphQLNonNull(__InputValue)))
                     .dataFetcher(inputFieldsFetcher)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("ofType")
+                    .type(new GraphQLTypeReference("__Type"))
+                    .dataFetcher(OfTypeFetcher)
                     .build())
             .build();
 

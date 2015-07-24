@@ -204,4 +204,88 @@ class StarWarsIntrospectionTests extends Specification {
         result == expected
     }
 
+    def "Allows querying the schema for nested object fields"() {
+        given:
+        def query = """
+        query IntrospectionDroidNestedFieldsQuery {
+            __type(name: "Droid") {
+                name
+                fields {
+                    name
+                    type {
+                        name
+                        kind
+                        ofType {
+                            name
+                            kind
+                        }
+                    }
+                }
+            }
+        }
+        """
+        def expected = [
+                __type: [
+                        name  : 'Droid',
+                        fields: [
+                                [
+                                        name: 'id',
+                                        type: [
+                                                name  : null,
+                                                kind  : 'NON_NULL',
+                                                ofType: [
+                                                        name: 'String',
+                                                        kind: 'SCALAR'
+                                                ]
+                                        ]
+                                ],
+                                [
+                                        name: 'name',
+                                        type: [
+                                                name  : 'String',
+                                                kind  : 'SCALAR',
+                                                ofType: null
+                                        ]
+                                ],
+                                [
+                                        name: 'friends',
+                                        type: [
+                                                name  : null,
+                                                kind  : 'LIST',
+                                                ofType: [
+                                                        name: 'Character',
+                                                        kind: 'INTERFACE'
+                                                ]
+                                        ]
+                                ],
+                                [
+                                        name: 'appearsIn',
+                                        type: [
+                                                name  : null,
+                                                kind  : 'LIST',
+                                                ofType: [
+                                                        name: 'Episode',
+                                                        kind: 'ENUM'
+                                                ]
+                                        ]
+                                ],
+                                [
+                                        name: 'primaryFunction',
+                                        type: [
+                                                name  : 'String',
+                                                kind  : 'SCALAR',
+                                                ofType: null
+                                        ]
+                                ]
+                        ]
+                ]
+        ]
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query)
+
+        then:
+        result.result == expected
+    }
+
+
 }
