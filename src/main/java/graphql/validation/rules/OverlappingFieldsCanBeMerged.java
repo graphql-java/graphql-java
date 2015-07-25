@@ -7,6 +7,7 @@ import graphql.validation.ValidationErrorCollector;
 
 public class OverlappingFieldsCanBeMerged extends AbstractRule{
 
+    // TODO
     public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
