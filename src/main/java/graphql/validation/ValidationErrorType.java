@@ -23,6 +23,7 @@ public enum ValidationErrorType {
     UnknownDirective,
     MisplacedDirective,
     UndefinedVariable,
-    UnusedVariable
+    UnusedVariable,
+    FragmentCycle
 
 }
