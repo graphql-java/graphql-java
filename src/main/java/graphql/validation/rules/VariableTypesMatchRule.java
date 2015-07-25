@@ -18,6 +18,7 @@ public class VariableTypesMatchRule extends AbstractRule {
 
     public VariableTypesMatchRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
+        setVisitFragmentSpreads(true);
     }
 
     private Map<String, VariableDefinition> variableDefinitionMap;
