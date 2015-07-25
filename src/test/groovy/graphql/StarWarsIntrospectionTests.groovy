@@ -322,11 +322,11 @@ class StarWarsIntrospectionTests extends Specification {
                                                 args: [
                                                         [
 
-                                                                name           : 'episode',
-                                                                description    : 'If omitted, returns the hero of the whole ' +
+                                                                name        : 'episode',
+                                                                description : 'If omitted, returns the hero of the whole ' +
                                                                         'saga. If provided, returns the hero of ' +
                                                                         'that particular episode.',
-                                                                type           : [
+                                                                type        : [
                                                                         kind  : 'ENUM',
                                                                         name  : 'Episode',
                                                                         ofType: null
@@ -374,6 +374,31 @@ class StarWarsIntrospectionTests extends Specification {
                                         ]
                                 ]
                         ]
+                ]
+        ];
+
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query)
+
+        then:
+        result.result == expected
+    }
+
+
+    def "Allows querying the schema for documentation"() {
+        given:
+        def query = """
+        query IntrospectionDroidDescriptionQuery {
+            __type(name: "Droid") {
+                name
+                description
+            }
+        }
+        """
+        def expected = [
+                __type: [
+                        name       : 'Droid',
+                        description: 'A mechanical creature in the Star Wars universe.'
                 ]
         ];
 
