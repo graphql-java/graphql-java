@@ -59,7 +59,7 @@ public class AbstractRule {
 
     }
 
-    public void checkDirective(Directive directive) {
+    public void checkDirective(Directive directive,List<Node> ancestors) {
 
     }
 

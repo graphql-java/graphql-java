@@ -72,7 +72,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
         def directive = new Directive("directive")
 
         when:
-        providedNonNullArguments.checkDirective(directive)
+        providedNonNullArguments.checkDirective(directive,[])
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.MissingDirectiveArgument)
@@ -92,7 +92,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
 
 
         when:
-        providedNonNullArguments.checkDirective(directive)
+        providedNonNullArguments.checkDirective(directive,[])
 
         then:
         errorCollector.getErrors().isEmpty()

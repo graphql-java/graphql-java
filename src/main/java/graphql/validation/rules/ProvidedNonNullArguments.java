@@ -4,6 +4,7 @@ package graphql.validation.rules;
 import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.Field;
+import graphql.language.Node;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
@@ -45,7 +46,7 @@ public class ProvidedNonNullArguments extends AbstractRule {
 
 
     @Override
-    public void checkDirective(Directive directive) {
+    public void checkDirective(Directive directive, List<Node> ancestors) {
         GraphQLDirective graphQLDirective = getValidationContext().getDirective();
         if (graphQLDirective == null) return;
         Map<String, Argument> argumentMap = argumentMap(directive.getArguments());

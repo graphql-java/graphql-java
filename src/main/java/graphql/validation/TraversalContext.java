@@ -28,7 +28,7 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
     @Override
-    public void enter(Node node) {
+    public void enter(Node node, List<Node> path) {
         if (node instanceof OperationDefinition) {
             enterImpl((OperationDefinition) node);
         } else if (node instanceof SelectionSet) {
@@ -141,7 +141,7 @@ public class TraversalContext implements QueryLanguageVisitor {
 
 
     @Override
-    public void leave(Node node) {
+    public void leave(Node node,List<Node> ancestors) {
         if (node instanceof OperationDefinition) {
             outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof SelectionSet) {

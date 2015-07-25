@@ -17,8 +17,8 @@ public class RulesVisitor implements QueryLanguageVisitor {
     }
 
     @Override
-    public void enter(Node node) {
-        validationContext.getTraversalContext().enter(node);
+    public void enter(Node node, List<Node> ancestors) {
+        validationContext.getTraversalContext().enter(node, ancestors);
         if (node instanceof Argument) {
             checkArgument((Argument) node);
         } else if (node instanceof TypeName) {
@@ -30,7 +30,7 @@ public class RulesVisitor implements QueryLanguageVisitor {
         } else if (node instanceof InlineFragment) {
             checkInlineFragment((InlineFragment) node);
         } else if (node instanceof Directive) {
-            checkDirective((Directive) node);
+            checkDirective((Directive) node, ancestors);
         } else if (node instanceof FragmentSpread) {
             checkFragmentSpread((FragmentSpread) node);
         } else if (node instanceof FragmentDefinition) {
@@ -76,9 +76,9 @@ public class RulesVisitor implements QueryLanguageVisitor {
         }
     }
 
-    private void checkDirective(Directive directive) {
+    private void checkDirective(Directive directive, List<Node> ancestors) {
         for (AbstractRule rule : rules) {
-            rule.checkDirective(directive);
+            rule.checkDirective(directive, ancestors);
         }
     }
 
@@ -114,8 +114,8 @@ public class RulesVisitor implements QueryLanguageVisitor {
 
 
     @Override
-    public void leave(Node node) {
-        validationContext.getTraversalContext().leave(node);
+    public void leave(Node node, List<Node> ancestors) {
+        validationContext.getTraversalContext().leave(node, ancestors);
         if (node instanceof Document) {
             documentFinished((Document) node);
         }
