@@ -287,5 +287,100 @@ class StarWarsIntrospectionTests extends Specification {
         result.result == expected
     }
 
+    def 'Allows querying the schema for field args'() {
+        given:
+        def query = """
+        query IntrospectionQueryTypeQuery {
+            __schema {
+                queryType {
+                    fields {
+                        name
+                        args {
+                            name
+                            description
+                            type {
+                                name
+                                kind
+                                ofType {
+                                    name
+                                    kind
+                                }
+                            }
+                            defaultValue
+                        }
+                    }
+                }
+            }
+        }
+        """
+        def expected = [
+                __schema: [
+                        queryType: [
+                                fields: [
+                                        [
+                                                name: 'hero',
+                                                args: [
+                                                        [
 
+                                                                name           : 'episode',
+                                                                description    : 'If omitted, returns the hero of the whole ' +
+                                                                        'saga. If provided, returns the hero of ' +
+                                                                        'that particular episode.',
+                                                                type           : [
+                                                                        kind  : 'ENUM',
+                                                                        name  : 'Episode',
+                                                                        ofType: null
+                                                                ],
+                                                                defaultValue: null,
+
+                                                        ]
+                                                ]
+                                        ],
+                                        [
+                                                name: 'human',
+                                                args: [
+                                                        [
+                                                                name        : 'id',
+                                                                description : 'id of the human',
+                                                                type        : [
+                                                                        kind  : 'NON_NULL',
+                                                                        name  : null,
+                                                                        ofType: [
+                                                                                kind: 'SCALAR',
+                                                                                name: 'String'
+                                                                        ]
+                                                                ],
+                                                                defaultValue: null
+                                                        ]
+                                                ]
+                                        ],
+                                        [
+                                                name: 'droid',
+                                                args: [
+                                                        [
+                                                                name        : 'id',
+                                                                description : 'id of the droid',
+                                                                type        : [
+                                                                        kind  : 'NON_NULL',
+                                                                        name  : null,
+                                                                        ofType: [
+                                                                                kind: 'SCALAR',
+                                                                                name: 'String'
+                                                                        ]
+                                                                ],
+                                                                defaultValue: null
+                                                        ]
+                                                ]
+                                        ]
+                                ]
+                        ]
+                ]
+        ];
+
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query)
+
+        then:
+        result.result == expected
+    }
 }

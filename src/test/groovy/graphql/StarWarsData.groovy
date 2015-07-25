@@ -121,5 +121,13 @@ class StarWarsData {
         }
     }
 
+    static DataFetcher heroDataFetcher = new DataFetcher() {
+        @Override
+        public Object get(DataFetchingEnvironment environment) {
+            if (environment.containsArgument("episode")
+                    && 5 == environment.getArgument("episode")) return luke;
+            return artoo;
+        }
+    }
 
 }

@@ -33,6 +33,10 @@ public class DataFetchingEnvironment {
         return arguments;
     }
 
+    public boolean containsArgument(String name) {
+        return arguments.containsKey(name);
+    }
+
     public <T> T getArgument(String name) {
         return (T) arguments.get(name);
     }
