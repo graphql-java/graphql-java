@@ -3,10 +3,10 @@ package graphql;
 
 import graphql.execution.Execution;
 import graphql.language.Document;
+import graphql.language.SourceLocation;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
-import graphql.validation.ValidationErrorType;
 import graphql.validation.Validator;
 import org.antlr.v4.runtime.RecognitionException;
 
@@ -57,8 +57,9 @@ public class GraphQL {
         try {
             document = parser.parseDocument(requestString);
         } catch (RecognitionException e) {
-            ValidationError validationError = new ValidationError(ValidationErrorType.InvalidSyntax);
-            return new ExecutionResultImpl(Arrays.asList(validationError));
+            SourceLocation sourceLocation = new SourceLocation(e.getOffendingToken().getLine(), e.getOffendingToken().getCharPositionInLine());
+            InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
+            return new ExecutionResultImpl(Arrays.asList(invalidSyntaxError));
         }
 
         Validator validator = new Validator();

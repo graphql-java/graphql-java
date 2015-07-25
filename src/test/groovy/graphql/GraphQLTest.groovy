@@ -1,10 +1,10 @@
 package graphql
 
+import graphql.language.SourceLocation
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
@@ -66,7 +66,7 @@ class GraphQLTest extends Specification {
         ).build();
 
         when:
-        def result = new GraphQL(graphQLSchema).execute( '{ simpson { id, name } }').result
+        def result = new GraphQL(graphQLSchema).execute('{ simpson { id, name } }').result
 
         then:
         result == [simpson: [id: '123', name: 'homer']]
@@ -88,7 +88,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = new GraphQL(schema).execute( '{ hello(arg:11) }').errors
+        def errors = new GraphQL(schema).execute('{ hello(arg:11) }').errors
 
         then:
         errors.size() == 1
@@ -103,10 +103,11 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = new GraphQL(schema).execute( '{ hello(() }').errors
+        def errors = new GraphQL(schema).execute('{ hello(() }').errors
 
         then:
         errors.size() == 1
-        errors[0].validationErrorType == ValidationErrorType.InvalidSyntax
+        errors[0].geErrorType() == ErrorType.InvalidSyntax
+        errors[0].sourceLocation == new SourceLocation(1, 8)
     }
 }
