@@ -12,6 +12,6 @@ public abstract class AbstractNode implements Node {
 
     @Override
     public SourceLocation getSourceLocation() {
-        return null;
+        return sourceLocation;
     }
 }

@@ -10,11 +10,22 @@ public class AbstractRule {
     private final ValidationContext validationContext;
     private final ValidationErrorCollector validationErrorCollector;
 
+
+    private boolean visitFragmentSpreads;
+
     private ValidationUtil validationUtil = new ValidationUtil();
 
     public AbstractRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         this.validationContext = validationContext;
         this.validationErrorCollector = validationErrorCollector;
+    }
+
+    public boolean isVisitFragmentSpreads() {
+        return visitFragmentSpreads;
+    }
+
+    public void setVisitFragmentSpreads(boolean visitFragmentSpreads) {
+        this.visitFragmentSpreads = visitFragmentSpreads;
     }
 
 
@@ -26,11 +37,11 @@ public class AbstractRule {
         this.validationUtil = validationUtil;
     }
 
-    public void addError(ValidationError error){
+    public void addError(ValidationError error) {
         validationErrorCollector.addError(error);
     }
 
-    public List<ValidationError> getErrors(){
+    public List<ValidationError> getErrors() {
         return validationErrorCollector.getErrors();
     }
 
@@ -59,7 +70,7 @@ public class AbstractRule {
 
     }
 
-    public void checkDirective(Directive directive,List<Node> ancestors) {
+    public void checkDirective(Directive directive, List<Node> ancestors) {
 
     }
 
@@ -75,6 +86,10 @@ public class AbstractRule {
 
     }
 
+    public void leaveOperationDefinition(OperationDefinition operationDefinition) {
+
+    }
+
     public void checkSelectionSet(SelectionSet selectionSet) {
 
     }
@@ -83,7 +98,7 @@ public class AbstractRule {
 
     }
 
-    public void documentFinished(Document document){
+    public void documentFinished(Document document) {
 
     }
 

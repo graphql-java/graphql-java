@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.TestUtil
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.*
@@ -8,13 +9,16 @@ import spock.lang.Specification
 class NoUndefinedVariablesTest extends Specification {
 
 
-    ValidationContext validationContext = Mock(ValidationContext)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, errorCollector)
 
-    def setup() {
-        def traversalContext = Mock(TraversalContext)
-        validationContext.getTraversalContext() >> traversalContext
+
+    def traverse(String query){
+        Document document = new Parser().parseDocument(query)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema,document)
+        NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, errorCollector)
+        LanguageTraversal languageTraversal = new LanguageTraversal();
+
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]));
     }
 
 
@@ -26,11 +30,8 @@ class NoUndefinedVariablesTest extends Specification {
             }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]));
+        traverse(query)
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
@@ -45,14 +46,67 @@ class NoUndefinedVariablesTest extends Specification {
             }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]));
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
+
+    }
+
+    def "all variables in fragments deeply defined"() {
+        given:
+        def query = """
+            fragment FragA on Type {
+                field(a: \$a) {
+                    ...FragB
+                }
+            }
+            fragment FragB on Type {
+                field(b: \$b) {
+                    ...FragC
+                }
+            }
+            fragment FragC on Type {
+                field(c: \$c)
+            }
+            query Foo(\$a: String, \$b: String, \$c: String) {
+                ...FragA
+            }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+    def 'variable in fragment not defined by operation'() {
+        given:
+        def query = """
+        query Foo(\$a: String, \$b: String) {
+            ...FragA
+        }
+        fragment FragA on Type {
+            field(a: \$a) {
+                ...FragB
+            }
+        }
+        fragment FragB on Type {
+            field(b: \$b) {
+                ...FragC
+            }
+        }
+        fragment FragC on Type {
+            field(c: \$c)
+        }
+        """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
 
     }
 }
