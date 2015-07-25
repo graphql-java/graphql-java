@@ -307,7 +307,7 @@ It's recommended to use a `ExecutorService` to speed up execution.
 
 #### Logging
 
-Logging is done with [SLF4J](http://www.slf4j.org/). Please have a lookout at the [Manual](http://www.slf4j.org/manual.html) for details.
+Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [Manual](http://www.slf4j.org/manual.html) for details.
 The `grapqhl-java` root Logger name is `graphql`.
 
 
