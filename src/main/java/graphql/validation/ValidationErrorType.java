@@ -22,6 +22,7 @@ public enum ValidationErrorType {
     VariableTypeMismatch,
     UnknownDirective,
     MisplacedDirective,
-    UndefinedVariable
+    UndefinedVariable,
+    UnusedVariable
 
 }
