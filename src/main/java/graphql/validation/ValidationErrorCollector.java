@@ -4,7 +4,7 @@ package graphql.validation;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ErrorCollector {
+public class ValidationErrorCollector {
 
     private final List<ValidationError> errors = new ArrayList<>();
 
@@ -16,9 +16,9 @@ public class ErrorCollector {
         return errors;
     }
 
-    public boolean containsError(ValidationErrorType validationErrorType){
+    public boolean containsValidationError(ValidationErrorType validationErrorType){
         for(ValidationError validationError : errors){
-            if(validationError.getErrorType() == validationErrorType) return true;
+            if(validationError.getValidationErrorType() == validationErrorType) return true;
         }
         return false;
     }

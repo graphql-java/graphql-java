@@ -16,8 +16,8 @@ import java.util.Map;
 
 public class ProvidedNonNullArguments extends AbstractRule {
 
-    public ProvidedNonNullArguments(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public ProvidedNonNullArguments(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
     @Override

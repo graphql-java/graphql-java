@@ -2,12 +2,12 @@ package graphql.validation.rules;
 
 
 import graphql.validation.AbstractRule;
-import graphql.validation.ErrorCollector;
 import graphql.validation.ValidationContext;
+import graphql.validation.ValidationErrorCollector;
 
 public class OverlappingFieldsCanBeMerged extends AbstractRule{
 
-    public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 }

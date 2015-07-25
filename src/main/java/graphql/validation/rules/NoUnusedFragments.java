@@ -21,8 +21,8 @@ public class NoUnusedFragments extends AbstractRule {
     private Map<String, List<String>> spreadsInDefinition = new LinkedHashMap<>();
     private final List<List<String>>  fragmentsUsedDirectlyInOperation = new ArrayList<>();
 
-    public NoUnusedFragments(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public NoUnusedFragments(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
     @Override

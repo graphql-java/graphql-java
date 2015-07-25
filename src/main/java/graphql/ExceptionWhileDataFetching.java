@@ -1,7 +1,7 @@
 package graphql;
 
 
-public class ExceptionWhileDataFetching implements GraphQLError{
+public class ExceptionWhileDataFetching implements GraphQLError {
 
     private final Exception exception;
 
@@ -11,6 +11,12 @@ public class ExceptionWhileDataFetching implements GraphQLError{
 
     public Exception getException() {
         return exception;
+    }
+
+
+    @Override
+    public ErrorType geErrorType() {
+        return ErrorType.DataFetchingException;
     }
 
     @Override

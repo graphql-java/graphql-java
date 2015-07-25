@@ -3,8 +3,8 @@ package graphql.validation.rules
 import graphql.language.Argument
 import graphql.language.StringValue
 import graphql.schema.GraphQLArgument
-import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
@@ -14,7 +14,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
 
     ArgumentsOfCorrectType argumentsOfCorrectType
     ValidationContext validationContext = Mock(ValidationContext)
-    ErrorCollector errorCollector = new ErrorCollector()
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
     def setup() {
         argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, errorCollector)
@@ -29,7 +29,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
         then:
-        errorCollector.containsError(ValidationErrorType.WrongType)
+        errorCollector.containsValidationError(ValidationErrorType.WrongType)
     }
 
     def "current null argument from context is no error"(){

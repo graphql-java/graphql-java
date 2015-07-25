@@ -5,16 +5,15 @@ import graphql.language.ListType
 import graphql.language.NonNullType
 import graphql.language.TypeName
 import graphql.language.VariableDefinition
-import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
-
 
 class VariablesAreInputTypesTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
-    ErrorCollector errorCollector = new ErrorCollector()
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariablesAreInputTypes variablesAreInputTypes = new VariablesAreInputTypes(validationContext, errorCollector)
 
 
@@ -28,6 +27,6 @@ class VariablesAreInputTypesTest extends Specification {
         variablesAreInputTypes.checkVariableDefinition(variableDefinition)
 
         then:
-        errorCollector.containsError(ValidationErrorType.NonInputTypeOnVariable)
+        errorCollector.containsValidationError(ValidationErrorType.NonInputTypeOnVariable)
     }
 }

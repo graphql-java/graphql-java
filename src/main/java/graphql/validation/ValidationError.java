@@ -1,34 +1,42 @@
 package graphql.validation;
 
 
+import graphql.ErrorType;
 import graphql.GraphQLError;
+import graphql.language.SourceLocation;
 
 public class ValidationError implements GraphQLError {
 
-    private final ValidationErrorType errorType;
 
-    public ValidationError(ValidationErrorType errorType) {
-        this.errorType = errorType;
+    private final ValidationErrorType validationErrorType;
+    private final SourceLocation sourceLocation;
+    private final String description;
+
+    public ValidationError(ValidationErrorType validationErrorType) {
+        this(validationErrorType, null, null);
     }
 
-    public ValidationErrorType getErrorType() {
-        return errorType;
+    public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description) {
+        this.validationErrorType = validationErrorType;
+        this.sourceLocation = sourceLocation;
+        this.description = description;
     }
 
-    //    private final String description;
+    public ValidationErrorType getValidationErrorType() {
+        return validationErrorType;
+    }
 
-//    public ValidationError(String description, Object... args) {
-//        this.description = String.format(description, args);
-//    }
+    @Override
+    public ErrorType geErrorType() {
+        return ErrorType.ValidationError;
+    }
 
-//    public String getDescription() {
-//        return description;
-//    }
-//
-//    @Override
-//    public String toString() {
-//        return "ValidationError{" +
-//                "description='" + description + '\'' +
-//                '}';
-//    }
+    @Override
+    public String toString() {
+        return "ValidationError{" +
+                "validationErrorType=" + validationErrorType +
+                ", sourceLocation=" + sourceLocation +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }

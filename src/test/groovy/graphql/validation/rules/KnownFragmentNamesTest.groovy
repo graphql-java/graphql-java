@@ -1,16 +1,15 @@
 package graphql.validation.rules
 
 import graphql.language.FragmentSpread
-import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
-
 
 class KnownFragmentNamesTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
-    ErrorCollector errorCollector = new ErrorCollector()
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     KnownFragmentNames knownFragmentNames = new KnownFragmentNames(validationContext, errorCollector)
 
     def "unknown fragment reference in fragment spread"() {
@@ -21,7 +20,7 @@ class KnownFragmentNamesTest extends Specification {
         knownFragmentNames.checkFragmentSpread(fragmentSpread);
 
         then:
-        errorCollector.containsError(ValidationErrorType.UndefinedFragment)
+        errorCollector.containsValidationError(ValidationErrorType.UndefinedFragment)
 
     }
 

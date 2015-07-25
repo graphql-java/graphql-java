@@ -8,8 +8,8 @@ import graphql.validation.*;
 
 public class KnownArgumentNames extends AbstractRule {
 
-    public KnownArgumentNames(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public KnownArgumentNames(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
 

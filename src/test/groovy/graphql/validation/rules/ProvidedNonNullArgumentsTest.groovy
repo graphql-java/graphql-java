@@ -8,8 +8,8 @@ import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLNonNull
-import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
@@ -18,7 +18,7 @@ import static graphql.Scalars.GraphQLString
 class ProvidedNonNullArgumentsTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
-    ErrorCollector errorCollector = new ErrorCollector()
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     ProvidedNonNullArguments providedNonNullArguments = new ProvidedNonNullArguments(validationContext, errorCollector)
 
     def "not provided field argument"() {
@@ -37,7 +37,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
         providedNonNullArguments.checkField(field)
 
         then:
-        errorCollector.containsError(ValidationErrorType.MissingFieldArgument)
+        errorCollector.containsValidationError(ValidationErrorType.MissingFieldArgument)
     }
 
 
@@ -75,7 +75,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
         providedNonNullArguments.checkDirective(directive)
 
         then:
-        errorCollector.containsError(ValidationErrorType.MissingDirectiveArgument)
+        errorCollector.containsValidationError(ValidationErrorType.MissingDirectiveArgument)
     }
 
 

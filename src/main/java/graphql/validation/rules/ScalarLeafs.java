@@ -10,8 +10,8 @@ public class ScalarLeafs extends AbstractRule {
 
     private SchemaUtil schemaUtil = new SchemaUtil();
 
-    public ScalarLeafs(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public ScalarLeafs(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
     @Override

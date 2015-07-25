@@ -11,8 +11,8 @@ public class VariablesAreInputTypes extends AbstractRule {
 
     private SchemaUtil schemaUtil = new SchemaUtil();
 
-    public VariablesAreInputTypes(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public VariablesAreInputTypes(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
     @Override

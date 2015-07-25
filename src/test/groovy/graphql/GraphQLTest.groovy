@@ -107,6 +107,6 @@ class GraphQLTest extends Specification {
 
         then:
         errors.size() == 1
-        errors[0].errorType == ValidationErrorType.InvalidSyntax
+        errors[0].validationErrorType == ValidationErrorType.InvalidSyntax
     }
 }

@@ -7,8 +7,8 @@ import graphql.validation.*;
 
 public class ArgumentsOfCorrectType extends AbstractRule {
 
-    public ArgumentsOfCorrectType(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public ArgumentsOfCorrectType(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
     @Override

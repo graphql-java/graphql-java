@@ -2,14 +2,14 @@ package graphql.validation.rules
 
 import graphql.language.Field
 import graphql.schema.GraphQLObjectType
-import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class FieldsOnCorrectTypeTest extends Specification {
 
-    ErrorCollector errorCollector = new ErrorCollector()
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     ValidationContext validationContext = Mock(ValidationContext)
     FieldsOnCorrectType fieldsOnCorrectType = new FieldsOnCorrectType(validationContext, errorCollector)
 
@@ -24,7 +24,7 @@ class FieldsOnCorrectTypeTest extends Specification {
         fieldsOnCorrectType.checkField(field)
 
         then:
-        errorCollector.containsError(ValidationErrorType.FieldUndefined)
+        errorCollector.containsValidationError(ValidationErrorType.FieldUndefined)
 
     }
 }

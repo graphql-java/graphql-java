@@ -8,7 +8,7 @@ import spock.lang.Specification
 class NoUnusedFragmentsTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
-    ErrorCollector errorCollector = new ErrorCollector()
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     NoUnusedFragments noUnusedFragments = new NoUnusedFragments(validationContext, errorCollector)
 
     def setup() {
@@ -121,7 +121,7 @@ class NoUnusedFragmentsTest extends Specification {
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]));
 
         then:
-        errorCollector.containsError(ValidationErrorType.UnusedFragment)
+        errorCollector.containsValidationError(ValidationErrorType.UnusedFragment)
         errorCollector.getErrors().size() == 2
 
     }
@@ -166,7 +166,7 @@ class NoUnusedFragmentsTest extends Specification {
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]));
 
         then:
-        errorCollector.containsError(ValidationErrorType.UnusedFragment)
+        errorCollector.containsValidationError(ValidationErrorType.UnusedFragment)
         errorCollector.getErrors().size() == 2
     }
 }

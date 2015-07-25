@@ -4,15 +4,14 @@ import graphql.Scalars
 import graphql.language.Field
 import graphql.language.SelectionSet
 import graphql.schema.GraphQLObjectType
-import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-
 class ScalarLeafsTest extends Specification {
 
-    ErrorCollector errorCollector = new ErrorCollector()
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     ValidationContext validationContext = Mock(ValidationContext)
     ScalarLeafs scalarLeafs = new ScalarLeafs(validationContext, errorCollector)
 
@@ -24,7 +23,7 @@ class ScalarLeafsTest extends Specification {
         scalarLeafs.checkField(field)
 
         then:
-        errorCollector.containsError(ValidationErrorType.SubSelectionNotAllowed)
+        errorCollector.containsValidationError(ValidationErrorType.SubSelectionNotAllowed)
     }
 
     def "sub selection required"() {
@@ -35,6 +34,6 @@ class ScalarLeafsTest extends Specification {
         scalarLeafs.checkField(field)
 
         then:
-        errorCollector.containsError(ValidationErrorType.SubSelectionRequired)
+        errorCollector.containsValidationError(ValidationErrorType.SubSelectionRequired)
     }
 }

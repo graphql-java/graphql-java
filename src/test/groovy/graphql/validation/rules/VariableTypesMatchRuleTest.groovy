@@ -3,15 +3,15 @@ package graphql.validation.rules
 import graphql.Scalars
 import graphql.StarWarsSchema
 import graphql.language.*
-import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class VariableTypesMatchRuleTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
-    ErrorCollector errorCollector = new ErrorCollector()
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariableTypesMatchRule variableTypesMatchRule = new VariableTypesMatchRule(validationContext,errorCollector)
 
     def setup(){
@@ -36,7 +36,7 @@ class VariableTypesMatchRuleTest extends Specification {
         variableTypesMatchRule.checkVariable(new VariableReference("var"))
 
         then:
-        errorCollector.containsError(ValidationErrorType.VariableTypeMismatch)
+        errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
 
 
     }

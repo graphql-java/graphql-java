@@ -2,13 +2,13 @@ package graphql.validation.rules;
 
 
 import graphql.validation.AbstractRule;
-import graphql.validation.ErrorCollector;
 import graphql.validation.ValidationContext;
+import graphql.validation.ValidationErrorCollector;
 
 public class NoFragmentCycles extends AbstractRule{
 
-    public NoFragmentCycles(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
 }

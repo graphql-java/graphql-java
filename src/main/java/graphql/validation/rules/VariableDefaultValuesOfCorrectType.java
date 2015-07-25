@@ -9,8 +9,8 @@ import graphql.validation.*;
 public class VariableDefaultValuesOfCorrectType extends AbstractRule {
 
 
-    public VariableDefaultValuesOfCorrectType(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public VariableDefaultValuesOfCorrectType(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
 

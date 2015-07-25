@@ -8,13 +8,13 @@ import java.util.List;
 public class AbstractRule {
 
     private final ValidationContext validationContext;
-    private final ErrorCollector errorCollector;
+    private final ValidationErrorCollector validationErrorCollector;
 
     private ValidationUtil validationUtil = new ValidationUtil();
 
-    public AbstractRule(ValidationContext validationContext, ErrorCollector errorCollector) {
+    public AbstractRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         this.validationContext = validationContext;
-        this.errorCollector = errorCollector;
+        this.validationErrorCollector = validationErrorCollector;
     }
 
 
@@ -27,11 +27,11 @@ public class AbstractRule {
     }
 
     public void addError(ValidationError error){
-        errorCollector.addError(error);
+        validationErrorCollector.addError(error);
     }
 
     public List<ValidationError> getErrors(){
-        return errorCollector.getErrors();
+        return validationErrorCollector.getErrors();
     }
 
 

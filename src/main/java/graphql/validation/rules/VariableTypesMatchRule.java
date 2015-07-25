@@ -16,8 +16,8 @@ public class VariableTypesMatchRule extends AbstractRule {
 
     VariablesTypesMatcher variablesTypesMatcher = new VariablesTypesMatcher();
 
-    public VariableTypesMatchRule(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public VariableTypesMatchRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
     private Map<String, VariableDefinition> variableDefinitionMap;

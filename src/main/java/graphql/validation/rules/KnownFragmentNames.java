@@ -7,8 +7,8 @@ import graphql.validation.*;
 
 public class KnownFragmentNames extends AbstractRule{
 
-    public KnownFragmentNames(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public KnownFragmentNames(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
     @Override

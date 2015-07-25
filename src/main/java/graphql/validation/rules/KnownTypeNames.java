@@ -9,8 +9,8 @@ public class KnownTypeNames extends AbstractRule {
 
     private SchemaUtil schemaUtil = new SchemaUtil();
 
-    public KnownTypeNames(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public KnownTypeNames(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
     @Override

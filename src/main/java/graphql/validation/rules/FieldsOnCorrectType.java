@@ -9,8 +9,8 @@ import graphql.validation.*;
 public class FieldsOnCorrectType extends AbstractRule {
 
 
-    public FieldsOnCorrectType(ValidationContext validationContext, ErrorCollector errorCollector) {
-        super(validationContext, errorCollector);
+    public FieldsOnCorrectType(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        super(validationContext, validationErrorCollector);
     }
 
 

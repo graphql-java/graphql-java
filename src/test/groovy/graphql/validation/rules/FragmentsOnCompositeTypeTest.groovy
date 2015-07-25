@@ -4,16 +4,15 @@ import graphql.StarWarsSchema
 import graphql.language.FragmentDefinition
 import graphql.language.InlineFragment
 import graphql.language.TypeName
-import graphql.validation.ErrorCollector
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
-
 
 class FragmentsOnCompositeTypeTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
-    ErrorCollector errorCollector = new ErrorCollector()
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     FragmentsOnCompositeType fragmentsOnCompositeType = new FragmentsOnCompositeType(validationContext, errorCollector)
 
     def "inline fragment type condition must refer to a composite type"() {
@@ -25,7 +24,7 @@ class FragmentsOnCompositeTypeTest extends Specification {
         fragmentsOnCompositeType.checkInlineFragment(inlineFragment)
 
         then:
-        errorCollector.containsError(ValidationErrorType.InlineFragmentTypeConditionInvalid)
+        errorCollector.containsValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid)
     }
 
     def "fragment type condition must refer to a composite type"() {
@@ -37,7 +36,7 @@ class FragmentsOnCompositeTypeTest extends Specification {
         fragmentsOnCompositeType.checkFragmentDefinition(fragmentDefinition)
 
         then:
-        errorCollector.containsError(ValidationErrorType.InlineFragmentTypeConditionInvalid)
+        errorCollector.containsValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid)
     }
 
 
