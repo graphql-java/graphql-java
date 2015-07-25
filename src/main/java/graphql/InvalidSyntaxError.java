@@ -19,4 +19,12 @@ public class InvalidSyntaxError implements GraphQLError {
     public ErrorType geErrorType() {
         return ErrorType.InvalidSyntax;
     }
+
+    @Override
+    public String toString() {
+        return "InvalidSyntaxError{" +
+                "sourceLocation=" + sourceLocation +
+                '}';
+    }
+
 }
