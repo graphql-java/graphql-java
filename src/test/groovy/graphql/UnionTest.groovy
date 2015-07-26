@@ -106,13 +106,13 @@ class UnionTest extends Specification {
     def "allows fragment conditions to be abstract types"() {
         given:
         def query = """
-                {
-                    __typename
-                    name
-                    pets { ...PetFields }
-                    friends { ...FriendFields }
-                }
-                fragment PetFields on Pet {
+        {
+            __typename
+            name
+            pets { ...PetFields }
+            friends { ...FriendFields }
+        }
+         fragment PetFields on Pet {
             __typename
             ... on Dog {
                 name
@@ -123,7 +123,7 @@ class UnionTest extends Specification {
                 meows
             }
         }
-                fragment FriendFields on Named {
+        fragment FriendFields on Named {
             __typename
             name
             ... on Dog {

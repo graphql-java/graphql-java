@@ -24,6 +24,7 @@ public enum ValidationErrorType {
     MisplacedDirective,
     UndefinedVariable,
     UnusedVariable,
-    FragmentCycle
+    FragmentCycle,
+    FieldsConflict
 
 }
