@@ -57,14 +57,86 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         Field field1 = fieldAndType1.field;
         Field field2 = fieldAndType2.field;
 
+        GraphQLType type1 = fieldAndType1.graphQLType;
+        GraphQLType type2 = fieldAndType2.graphQLType;
+
         String fieldName1 = field1.getName();
         String fieldName2 = field2.getName();
         if (!fieldName1.equals(fieldName2)) {
-            String reason = String.format("%s and %s are different fields", fieldName1, fieldName2);
+            String reason = String.format("%s: %s and %s are different fields", responseName, fieldName1, fieldName2);
             return new Conflict(responseName, reason, field1, field2);
         }
+
+        if (!sameType(type1, type2)) {
+            String reason = String.format("%s: they return differing types %s and %s", responseName, type1.getName(), type2.getName());
+            return new Conflict(responseName, reason, field1, field2);
+        }
+
+//        var arguments1 = ast1.arguments || [];
+//        var arguments2 = ast2.arguments || [];
+//        if (!sameArguments(arguments1, arguments2)) {
+//            return [
+//            [responseName, 'they have differing arguments'],
+//            [ast1, ast2]
+//            ];
+//        }
+//
+//        var directives1 = ast1.directives || [];
+//        var directives2 = ast2.directives || [];
+//        if (!sameDirectives(directives1, directives2)) {
+//            return [
+//            [responseName, 'they have differing directives'],
+//            [ast1, ast2]
+//            ];
+//        }
+//
+//        var selectionSet1 = ast1.selectionSet;
+//        var selectionSet2 = ast2.selectionSet;
+//        if (selectionSet1 && selectionSet2) {
+//            var visitedFragmentNames = {};
+//            var subfieldMap = collectFieldASTsAndDefs(
+//                    context,
+//                    type1,
+//                    selectionSet1,
+//                    visitedFragmentNames
+//            );
+//            subfieldMap = collectFieldASTsAndDefs(
+//                    context,
+//                    type2,
+//                    selectionSet2,
+//                    visitedFragmentNames,
+//                    subfieldMap
+//            );
+//            var conflicts = findConflicts(subfieldMap);
+//            if (conflicts.length > 0) {
+//                return [
+//                [responseName, conflicts.map(([reason]) => reason)],
+//                conflicts.reduce(
+//                        (list: Array<Field>, [, blameNodes]) => list.concat(blameNodes),
+//                [ast1, ast2]
+//                )
+//                ];
+//            }
+//        }
+
+
         return null;
 
+    }
+
+    private boolean sameType(GraphQLType type1, GraphQLType type2) {
+        if (type1 == null && type2 == null) return true;
+        if (type1 == null) return false;
+        if (type2 == null) return false;
+        return type1.equals(type2);
+    }
+
+    private boolean sameArguments() {
+        return false;
+    }
+
+    private boolean sameDirectives(List<Directive> directives1, List<Directive> directives2) {
+        return false;
     }
 
 

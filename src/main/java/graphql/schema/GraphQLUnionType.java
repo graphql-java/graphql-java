@@ -70,7 +70,15 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
 
         public Builder possibleType(GraphQLType type) {
+            assertNotNull(type, "possible type can't be null");
             types.add(type);
+            return this;
+        }
+
+        public Builder possibleTypes(GraphQLType... type) {
+            for (GraphQLType graphQLType : type) {
+                possibleType(graphQLType);
+            }
             return this;
         }
 
