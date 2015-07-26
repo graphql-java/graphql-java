@@ -2,12 +2,15 @@ package graphql.validation.rules
 
 import graphql.Scalars
 import graphql.language.Document
+import graphql.language.SourceLocation
 import graphql.parser.Parser
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import graphql.validation.*
-import spock.lang.Ignore
+import graphql.validation.LanguageTraversal
+import graphql.validation.RulesVisitor
+import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
 import spock.lang.Specification
 
 class OverlappingFieldsCanBeMergedTest extends Specification {
@@ -31,7 +34,6 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [overlappingFieldsCanBeMerged]));
     }
 
-    @Ignore
     def "identical fields are ok"() {
         given:
         def query = """
@@ -47,7 +49,6 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.errors.isEmpty()
     }
 
-    @Ignore
     def "two aliases with different targets"() {
         given:
         def query = """
@@ -60,7 +61,10 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         traverse(query)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.FieldsConflict)
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: name and nickname are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 17),new SourceLocation(4, 17)]
+
     }
 
 }

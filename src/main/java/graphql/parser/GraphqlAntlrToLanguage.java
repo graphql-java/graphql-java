@@ -416,7 +416,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     private SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
-        return new SourceLocation(parserRuleContext.getStart().getLine(), parserRuleContext.getStart().getCharPositionInLine());
+        return new SourceLocation(parserRuleContext.getStart().getLine(), parserRuleContext.getStart().getCharPositionInLine()+1);
     }
 
 }

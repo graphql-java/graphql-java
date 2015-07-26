@@ -8,13 +8,17 @@ import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.validation.AbstractRule;
+import graphql.validation.ErrorFactory;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 
 import java.util.*;
 
+import static graphql.validation.ValidationErrorType.FieldsConflict;
+
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
+    ErrorFactory errorFactory = new ErrorFactory();
 
     public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -27,7 +31,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         collectFields(fieldMap, selectionSet, getValidationContext().getOutputType(), visitedFragmentSpreads);
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
-//            addError(new ValidationError(ValidationErrorType.FieldsConflict));
+            addError(errorFactory.newError(FieldsConflict, conflict.fields, conflict.reason));
         }
 
     }
@@ -69,12 +73,12 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 Field field = (Field) selection;
-                String responseName = field.getAlias();
+                String responseName = field.getAlias() != null ? field.getAlias() : field.getName();
                 if (!fieldMap.containsKey(responseName)) {
                     fieldMap.put(responseName, new ArrayList<FieldAndType>());
                 }
                 GraphQLOutputType fieldType = null;
-                if(parentType instanceof  GraphQLFieldsContainer) {
+                if (parentType instanceof GraphQLFieldsContainer) {
                     GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
                     GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(((Field) selection).getName());
                     fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
