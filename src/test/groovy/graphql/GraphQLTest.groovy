@@ -108,6 +108,6 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].geErrorType() == ErrorType.InvalidSyntax
-        errors[0].sourceLocation == new SourceLocation(1, 8)
+        errors[0].sourceLocations == [new SourceLocation(1, 8)]
     }
 }

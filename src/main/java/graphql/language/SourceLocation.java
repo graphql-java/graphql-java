@@ -4,19 +4,19 @@ package graphql.language;
 public class SourceLocation {
 
     private final int line;
-    private final int positionInLine;
+    private final int column;
 
-    public SourceLocation(int line, int positionInLine) {
+    public SourceLocation(int line, int column) {
         this.line = line;
-        this.positionInLine = positionInLine;
+        this.column = column;
     }
 
     public int getLine() {
         return line;
     }
 
-    public int getPositionInLine() {
-        return positionInLine;
+    public int getColumn() {
+        return column;
     }
 
     @Override
@@ -27,14 +27,14 @@ public class SourceLocation {
         SourceLocation that = (SourceLocation) o;
 
         if (line != that.line) return false;
-        return positionInLine == that.positionInLine;
+        return column == that.column;
 
     }
 
     @Override
     public int hashCode() {
         int result = line;
-        result = 31 * result + positionInLine;
+        result = 31 * result + column;
         return result;
     }
 
@@ -42,7 +42,7 @@ public class SourceLocation {
     public String toString() {
         return "SourceLocation{" +
                 "line=" + line +
-                ", positionInLine=" + positionInLine +
+                ", column=" + column +
                 '}';
     }
 }

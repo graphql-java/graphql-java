@@ -5,20 +5,31 @@ import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.language.SourceLocation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ValidationError implements GraphQLError {
 
 
     private final ValidationErrorType validationErrorType;
-    private final SourceLocation sourceLocation;
+    private final List<SourceLocation> sourceLocations = new ArrayList<>();
     private final String description;
 
     public ValidationError(ValidationErrorType validationErrorType) {
-        this(validationErrorType, null, null);
+        this(validationErrorType, (SourceLocation) null, null);
     }
 
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description) {
         this.validationErrorType = validationErrorType;
-        this.sourceLocation = sourceLocation;
+        if (sourceLocation != null)
+            this.sourceLocations.add(sourceLocation);
+        this.description = description;
+    }
+
+    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
+        this.validationErrorType = validationErrorType;
+        if (sourceLocations != null)
+            this.sourceLocations.addAll(sourceLocations);
         this.description = description;
     }
 
@@ -27,15 +38,26 @@ public class ValidationError implements GraphQLError {
     }
 
     @Override
+    public String getMessage() {
+        return String.format("Validation error of type %s: %s", validationErrorType, description);
+    }
+
+    @Override
+    public List<SourceLocation> getLocations() {
+        return sourceLocations;
+    }
+
+    @Override
     public ErrorType geErrorType() {
         return ErrorType.ValidationError;
     }
+
 
     @Override
     public String toString() {
         return "ValidationError{" +
                 "validationErrorType=" + validationErrorType +
-                ", sourceLocation=" + sourceLocation +
+                ", sourceLocations=" + sourceLocations +
                 ", description='" + description + '\'' +
                 '}';
     }

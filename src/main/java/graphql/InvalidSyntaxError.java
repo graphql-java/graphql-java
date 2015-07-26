@@ -3,16 +3,33 @@ package graphql;
 
 import graphql.language.SourceLocation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class InvalidSyntaxError implements GraphQLError {
 
+    private final List<SourceLocation> sourceLocations = new ArrayList<>();
+
     public InvalidSyntaxError(SourceLocation sourceLocation) {
-        this.sourceLocation = sourceLocation;
+        if (sourceLocation != null)
+            this.sourceLocations.add(sourceLocation);
     }
 
-    private final SourceLocation sourceLocation;
+    public InvalidSyntaxError(List<SourceLocation> sourceLocations) {
+        if (sourceLocations != null) {
+            this.sourceLocations.addAll(sourceLocations);
+        }
+    }
 
-    public SourceLocation getSourceLocation() {
-        return sourceLocation;
+
+    @Override
+    public String getMessage() {
+        return "Invalid Syntax";
+    }
+
+    @Override
+    public List<SourceLocation> getLocations() {
+        return sourceLocations;
     }
 
     @Override
@@ -23,7 +40,7 @@ public class InvalidSyntaxError implements GraphQLError {
     @Override
     public String toString() {
         return "InvalidSyntaxError{" +
-                "sourceLocation=" + sourceLocation +
+                "sourceLocations=" + sourceLocations +
                 '}';
     }
 
