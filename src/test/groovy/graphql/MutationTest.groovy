@@ -51,7 +51,7 @@ class MutationTest extends Specification {
 
 
         then:
-        executionResult.result == expectedResult
+        executionResult.data == expectedResult
 
     }
 
@@ -97,7 +97,7 @@ class MutationTest extends Specification {
 
 
         then:
-        executionResult.result == expectedResult
+        executionResult.data == expectedResult
         executionResult.errors.size() == 2
         executionResult.errors.every({ it instanceof ExceptionWhileDataFetching })
 

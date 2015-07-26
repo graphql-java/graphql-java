@@ -31,7 +31,7 @@ public class ExecutionResultImpl implements ExecutionResult {
 
 
     @Override
-    public Map<String, Object> getResult() {
+    public Map<String, Object> getData() {
         return result;
     }
 

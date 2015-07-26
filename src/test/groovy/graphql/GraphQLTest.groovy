@@ -30,7 +30,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def result = new GraphQL(schema).execute('{ hello }').result
+        def result = new GraphQL(schema).execute('{ hello }').data
 
         then:
         result == [hello: 'world']
@@ -66,7 +66,7 @@ class GraphQLTest extends Specification {
         ).build();
 
         when:
-        def result = new GraphQL(graphQLSchema).execute('{ simpson { id, name } }').result
+        def result = new GraphQL(graphQLSchema).execute('{ simpson { id, name } }').data
 
         then:
         result == [simpson: [id: '123', name: 'homer']]

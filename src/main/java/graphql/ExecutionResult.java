@@ -6,7 +6,7 @@ import java.util.Map;
 
 public interface ExecutionResult {
 
-    Map<String, Object> getResult();
+    Map<String, Object> getData();
 
     List<GraphQLError> getErrors();
 }
