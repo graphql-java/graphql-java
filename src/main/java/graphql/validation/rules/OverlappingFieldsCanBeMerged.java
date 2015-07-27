@@ -20,6 +20,9 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
     ErrorFactory errorFactory = new ErrorFactory();
 
+
+    private List<FieldPair> alreadyChecked = new ArrayList<>();
+
     public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
@@ -41,7 +44,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         for (String name : fieldMap.keySet()) {
             List<FieldAndType> fieldAndTypes = fieldMap.get(name);
             for (int i = 0; i < fieldAndTypes.size(); i++) {
-                for (int j = i + i; j < fieldAndTypes.size(); j++) {
+                for (int j = i + 1; j < fieldAndTypes.size(); j++) {
                     Conflict conflict = findConflict(name, fieldAndTypes.get(i), fieldAndTypes.get(j));
                     if (conflict != null) {
                         result.add(conflict);
@@ -52,16 +55,36 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return result;
     }
 
+    private boolean isAlreadyChecked(Field field1, Field field2) {
+        for (FieldPair fieldPair : alreadyChecked) {
+            if (fieldPair.field1 == field1 && fieldPair.field2 == field2) {
+                return true;
+            }
+            if (fieldPair.field1 == field2 && fieldPair.field2 == field1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private Conflict findConflict(String responseName, FieldAndType fieldAndType1, FieldAndType fieldAndType2) {
 
         Field field1 = fieldAndType1.field;
         Field field2 = fieldAndType2.field;
+
 
         GraphQLType type1 = fieldAndType1.graphQLType;
         GraphQLType type2 = fieldAndType2.graphQLType;
 
         String fieldName1 = field1.getName();
         String fieldName2 = field2.getName();
+
+
+        if (isAlreadyChecked(field1, field2)) {
+            return null;
+        }
+        alreadyChecked.add(new FieldPair(field1, field2));
+
         if (!fieldName1.equals(fieldName2)) {
             String reason = String.format("%s: %s and %s are different fields", responseName, fieldName1, fieldName2);
             return new Conflict(responseName, reason, field1, field2);
@@ -90,7 +113,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             collectFields(subfieldMap, selectionSet2, type2, visitedFragmentSpreads);
             List<Conflict> subConflicts = findConflicts(subfieldMap);
             if (subConflicts.size() > 0) {
-                for(Conflict conflict : subConflicts){
+                for (Conflict conflict : subConflicts) {
 
                 }
             }
@@ -187,6 +210,17 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
                 collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
             }
         }
+
+    }
+
+    private static class FieldPair {
+        public FieldPair(Field field1, Field field2) {
+            this.field1 = field1;
+            this.field2 = field2;
+        }
+
+        Field field1;
+        Field field2;
 
     }
 

@@ -386,7 +386,6 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors()[0].locations == [new SourceLocation(7, 13), new SourceLocation(10, 13)]
     }
 
-    @Ignore
     def 'reports each conflict once'() {
         def query = """
         {
@@ -418,13 +417,13 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors().size() == 3
 
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: x: a and b are different fields"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+        errorCollector.getErrors()[0].locations == [new SourceLocation(18, 13), new SourceLocation(21, 13)]
 
         errorCollector.getErrors()[1].message == "Validation error of type FieldsConflict: x: a and c are different fields"
-        errorCollector.getErrors()[1].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+        errorCollector.getErrors()[1].locations == [new SourceLocation(18, 13), new SourceLocation(14, 17)]
 
         errorCollector.getErrors()[2].message == "Validation error of type FieldsConflict: x: b and c are different fields"
-        errorCollector.getErrors()[2].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+        errorCollector.getErrors()[2].locations == [new SourceLocation(21, 13), new SourceLocation(14, 17)]
     }
 
     @Ignore
