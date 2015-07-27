@@ -94,6 +94,10 @@ public class AbstractRule {
 
     }
 
+    public void leaveSelectionSet(SelectionSet selectionSet) {
+
+    }
+
     public void checkVariable(VariableReference variableReference) {
 
     }

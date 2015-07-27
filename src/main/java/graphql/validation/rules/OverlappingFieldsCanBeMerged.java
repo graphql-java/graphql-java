@@ -28,7 +28,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     @Override
-    public void checkSelectionSet(SelectionSet selectionSet) {
+    public void leaveSelectionSet(SelectionSet selectionSet) {
         Map<String, List<FieldAndType>> fieldMap = new LinkedHashMap<>();
         Set<String> visitedFragmentSpreads = new LinkedHashSet<>();
         collectFields(fieldMap, selectionSet, getValidationContext().getOutputType(), visitedFragmentSpreads);
@@ -38,6 +38,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         }
 
     }
+
 
     private List<Conflict> findConflicts(Map<String, List<FieldAndType>> fieldMap) {
         List<Conflict> result = new ArrayList<>();
@@ -84,6 +85,8 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             return null;
         }
         alreadyChecked.add(new FieldPair(field1, field2));
+
+//        System.out.println(responseName + " -> " + fieldName1 + " - " + fieldName2);
 
         if (!fieldName1.equals(fieldName2)) {
             String reason = String.format("%s: %s and %s are different fields", responseName, fieldName1, fieldName2);

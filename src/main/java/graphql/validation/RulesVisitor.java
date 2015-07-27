@@ -160,12 +160,14 @@ public class RulesVisitor implements QueryLanguageVisitor {
 
     @Override
     public void leave(Node node, List<Node> ancestors) {
-//        System.out.println("Leave: " + node);
         validationContext.getTraversalContext().leave(node, ancestors);
+
         if (node instanceof Document) {
             documentFinished((Document) node);
         } else if (node instanceof OperationDefinition) {
             leaveOperationDefinition((OperationDefinition) node);
+        }else if(node instanceof SelectionSet){
+            leaveSelectionSet((SelectionSet) node);
         }
 
         if (rulesToSkipByUntilNode.containsKey(node)) {
@@ -174,6 +176,12 @@ public class RulesVisitor implements QueryLanguageVisitor {
         }
 
 
+    }
+
+    private void leaveSelectionSet(SelectionSet selectionSet) {
+        for (AbstractRule rule : rules) {
+            rule.leaveSelectionSet(selectionSet);
+        }
     }
 
     private void leaveOperationDefinition(OperationDefinition operationDefinition) {
