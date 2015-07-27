@@ -448,7 +448,6 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 //        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
-    @Ignore
     def 'deep conflict with multiple issues'() {
         def query = """"
                 {
@@ -466,10 +465,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         traverse(query, null)
 
         then:
-        // TODO: multiple errorMessages per one error for field 'field'
-        //'a and b are different fields'
-        // 'c and d are different fields'
         errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: (x: a and b are different fields, y: c and d are different fields)"
         errorCollector.getErrors()[0].locations.size() == 6
     }
 

@@ -108,19 +108,42 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         SelectionSet selectionSet2 = field2.getSelectionSet();
         if (selectionSet1 != null && selectionSet2 != null) {
             Set<String> visitedFragmentSpreads = new LinkedHashSet<>();
-            Map<String, List<FieldAndType>> subfieldMap = new LinkedHashMap<>();
-            collectFields(subfieldMap, selectionSet1, type1, visitedFragmentSpreads);
-            collectFields(subfieldMap, selectionSet2, type2, visitedFragmentSpreads);
-            List<Conflict> subConflicts = findConflicts(subfieldMap);
+            Map<String, List<FieldAndType>> subFieldMap = new LinkedHashMap<>();
+            collectFields(subFieldMap, selectionSet1, type1, visitedFragmentSpreads);
+            collectFields(subFieldMap, selectionSet2, type2, visitedFragmentSpreads);
+            List<Conflict> subConflicts = findConflicts(subFieldMap);
             if (subConflicts.size() > 0) {
-                for (Conflict conflict : subConflicts) {
-
-                }
+                String reason = String.format("%s: %s", responseName, joinReasons(subConflicts));
+                List<Field> fields = new ArrayList<>();
+                fields.add(field1);
+                fields.add(field2);
+                fields.addAll(collectFields(subConflicts));
+                return new Conflict(responseName, reason, fields);
             }
         }
 
         return null;
 
+    }
+
+    private List<Field> collectFields(List<Conflict> conflicts) {
+        List<Field> result = new ArrayList<>();
+        for (Conflict conflict : conflicts) {
+            result.addAll(conflict.fields);
+        }
+        return result;
+    }
+
+    private String joinReasons(List<Conflict> conflicts) {
+        StringBuilder result = new StringBuilder();
+        result.append("(");
+        for (Conflict conflict : conflicts) {
+            result.append(conflict.reason);
+            result.append(", ");
+        }
+        result.delete(result.length() - 2, result.length());
+        result.append(")");
+        return result.toString();
     }
 
     private boolean sameType(GraphQLType type1, GraphQLType type2) {
@@ -234,6 +257,12 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             this.reason = reason;
             this.fields.add(field1);
             this.fields.add(field2);
+        }
+
+        public Conflict(String responseName, String reason, List<Field> fields) {
+            this.responseName = responseName;
+            this.reason = reason;
+            this.fields.addAll(fields);
         }
 
     }
