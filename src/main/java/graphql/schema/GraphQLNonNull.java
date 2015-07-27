@@ -22,6 +22,21 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         wrappedType = new SchemaUtil().resolveTypeReference(wrappedType, typeMap);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLNonNull that = (GraphQLNonNull) o;
+
+        return !(wrappedType != null ? !wrappedType.equals(that.wrappedType) : that.wrappedType != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return wrappedType != null ? wrappedType.hashCode() : 0;
+    }
 
     @Override
     public String toString() {

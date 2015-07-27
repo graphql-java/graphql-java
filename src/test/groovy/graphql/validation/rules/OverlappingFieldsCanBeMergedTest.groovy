@@ -11,7 +11,6 @@ import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
@@ -131,7 +130,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: scalar: they return differing types Int and String"
     }
 
-    @Ignore
+
     def 'same wrapped scalar return types'() {
         given:
         def schema = unionSchema()
@@ -426,7 +425,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors()[2].locations == [new SourceLocation(21, 13), new SourceLocation(14, 17)]
     }
 
-    @Ignore
+
     def 'deep conflict'() {
         def query = """
         {
@@ -443,13 +442,12 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: a and b are different fields"
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: (x: a and b are different fields)"
         errorCollector.getErrors()[0].locations.size() == 4
-//        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
     def 'deep conflict with multiple issues'() {
-        def query = """"
+        def query = """
                 {
                     field {
                         x: a

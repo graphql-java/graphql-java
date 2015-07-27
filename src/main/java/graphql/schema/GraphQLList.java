@@ -24,6 +24,22 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLList that = (GraphQLList) o;
+
+        return !(wrappedType != null ? !wrappedType.equals(that.wrappedType) : that.wrappedType != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return wrappedType != null ? wrappedType.hashCode() : 0;
+    }
+
+    @Override
     public String getName() {
         return null;
     }
