@@ -72,53 +72,29 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             return new Conflict(responseName, reason, field1, field2);
         }
 
-//        var arguments1 = ast1.arguments || [];
-//        var arguments2 = ast2.arguments || [];
-//        if (!sameArguments(arguments1, arguments2)) {
-//            return [
-//            [responseName, 'they have differing arguments'],
-//            [ast1, ast2]
-//            ];
-//        }
-//
-//        var directives1 = ast1.directives || [];
-//        var directives2 = ast2.directives || [];
-//        if (!sameDirectives(directives1, directives2)) {
-//            return [
-//            [responseName, 'they have differing directives'],
-//            [ast1, ast2]
-//            ];
-//        }
-//
-//        var selectionSet1 = ast1.selectionSet;
-//        var selectionSet2 = ast2.selectionSet;
-//        if (selectionSet1 && selectionSet2) {
-//            var visitedFragmentNames = {};
-//            var subfieldMap = collectFieldASTsAndDefs(
-//                    context,
-//                    type1,
-//                    selectionSet1,
-//                    visitedFragmentNames
-//            );
-//            subfieldMap = collectFieldASTsAndDefs(
-//                    context,
-//                    type2,
-//                    selectionSet2,
-//                    visitedFragmentNames,
-//                    subfieldMap
-//            );
-//            var conflicts = findConflicts(subfieldMap);
-//            if (conflicts.length > 0) {
-//                return [
-//                [responseName, conflicts.map(([reason]) => reason)],
-//                conflicts.reduce(
-//                        (list: Array<Field>, [, blameNodes]) => list.concat(blameNodes),
-//                [ast1, ast2]
-//                )
-//                ];
-//            }
-//        }
 
+        if (!sameArguments(field1.getArguments(), field2.getArguments())) {
+            String reason = String.format("%s: they have differing arguments", responseName);
+            return new Conflict(responseName, reason, field1, field2);
+        }
+        if (!sameDirectives(field1.getDirectives(), field2.getDirectives())) {
+            String reason = String.format("%s: they have differing directives", responseName);
+            return new Conflict(responseName, reason, field1, field2);
+        }
+        SelectionSet selectionSet1 = field1.getSelectionSet();
+        SelectionSet selectionSet2 = field2.getSelectionSet();
+        if (selectionSet1 != null && selectionSet2 != null) {
+            Set<String> visitedFragmentSpreads = new LinkedHashSet<>();
+            Map<String, List<FieldAndType>> subfieldMap = new LinkedHashMap<>();
+            collectFields(subfieldMap, selectionSet1, type1, visitedFragmentSpreads);
+            collectFields(subfieldMap, selectionSet2, type2, visitedFragmentSpreads);
+            List<Conflict> subConflicts = findConflicts(subfieldMap);
+            if (subConflicts.size() > 0) {
+                for(Conflict conflict : subConflicts){
+
+                }
+            }
+        }
 
         return null;
 
@@ -131,16 +107,51 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return type1.equals(type2);
     }
 
-    private boolean sameArguments() {
-        return false;
+    private boolean sameValue(Value value1, Value value2) {
+        if (value1 == null && value2 == null) return true;
+        if (value1 == null) return false;
+        if (value2 == null) return false;
+        return value1.equals(value2);
+    }
+
+    private boolean sameArguments(List<Argument> arguments1, List<Argument> arguments2) {
+        if (arguments1.size() != arguments2.size()) return false;
+        for (Argument argument : arguments1) {
+            Argument matchedArgument = findArgumentByName(argument.getName(), arguments2);
+            if (matchedArgument == null) return false;
+            if (!sameValue(argument.getValue(), matchedArgument.getValue())) return false;
+        }
+        return true;
+    }
+
+    private Argument findArgumentByName(String name, List<Argument> arguments) {
+        for (Argument argument : arguments) {
+            if (argument.getName().equals(name)) return argument;
+        }
+        return null;
     }
 
     private boolean sameDirectives(List<Directive> directives1, List<Directive> directives2) {
-        return false;
+        if (directives1.size() != directives2.size()) return false;
+        for (Directive directive : directives1) {
+            Directive matchedDirective = findDirectiveByName(directive.getName(), directives2);
+            if (matchedDirective == null) return false;
+            if (!sameArguments(directive.getArguments(), matchedDirective.getArguments())) return false;
+        }
+        return true;
+    }
+
+    private Directive findDirectiveByName(String name, List<Directive> directives) {
+        for (Directive directive : directives) {
+            if (directive.getName().equals(name)) {
+                return directive;
+            }
+        }
+        return null;
     }
 
 
-    private void collectFields(Map<String, List<FieldAndType>> fieldMap, SelectionSet selectionSet, GraphQLOutputType parentType, Set<String> visitedFragmentSpreads) {
+    private void collectFields(Map<String, List<FieldAndType>> fieldMap, SelectionSet selectionSet, GraphQLType parentType, Set<String> visitedFragmentSpreads) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {

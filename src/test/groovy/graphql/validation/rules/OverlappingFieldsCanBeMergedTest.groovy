@@ -11,6 +11,7 @@ import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
@@ -74,8 +75,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 17), new SourceLocation(4, 17)]
     }
 
-    def 'conflicting scalar return types'() {
-
+    GraphQLSchema unionSchema() {
         def StringBox = newObject().name("StringBox")
                 .field(newFieldDefinition().name("scalar").type(GraphQLString).build())
                 .build()
@@ -104,9 +104,12 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         def QueryRoot = newObject()
                 .name("QueryRoot")
                 .field(newFieldDefinition().name("boxUnion").type(BoxUnion).build()).build()
-        def schema = GraphQLSchema.newSchema().query(QueryRoot).build()
+        return GraphQLSchema.newSchema().query(QueryRoot).build()
+    }
 
+    def 'conflicting scalar return types'() {
         given:
+        def schema = unionSchema()
         def query = """
                 {
                     boxUnion {
@@ -126,13 +129,402 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         then:
         errorCollector.getErrors().size() == 1
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: scalar: they return differing types Int and String"
-//        [
-//                { message: fieldsConflictMessage(
-//                        'scalar',
-//                        'they return differing types Int and String'
-//                ),
-//                    locations: [ { line: 5, column: 15 }, { line: 8, column: 15 } ] }
-//        ]);
+    }
+
+    @Ignore
+    def 'same wrapped scalar return types'() {
+        given:
+        def schema = unionSchema()
+        def query = """
+                {
+                    boxUnion {
+                        ...on NonNullStringBox1 {
+                            scalar
+                        }
+                        ...on NonNullStringBox2 {
+                            scalar
+                        }
+                    }
+                }
+                """
+
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+
+    def 'unique fields'() {
+        given:
+        def query = """
+        fragment uniqueFields on Dog {
+            name
+            nickname
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def 'identical fields'() {
+        given:
+        def query = """
+        fragment mergeIdenticalFields on Dog {
+            name
+            name
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def 'identical fields with identical args'() {
+        given:
+        def query = """
+        fragment mergeIdenticalFieldsWithIdenticalArgs on Dog {
+            doesKnowCommand(dogCommand: SIT)
+            doesKnowCommand(dogCommand: SIT)
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def 'identical fields with identical directives'() {
+        given:
+        def query = """
+        fragment mergeSameFieldsWithSameDirectives on Dog {
+            name @include(if: true)
+            name @include(if: true)
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def 'different args with different aliases'() {
+        given:
+        def query = """
+        fragment differentArgsWithDifferentAliases on Dog {
+            knowsSit: doesKnowCommand(dogCommand: SIT)
+            knowsDown: doesKnowCommand(dogCommand: DOWN)
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def 'different directives with different aliases'() {
+        given:
+        def query = """
+                fragment differentDirectivesWithDifferentAliases on Dog {
+            nameIfTrue: name @include(if: true)
+            nameIfFalse: name @include(if: false)
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def 'Same aliases with different field targets'() {
+        given:
+        def query = """
+        fragment sameAliasesWithDifferentFieldTargets on Dog {
+            fido: name
+            fido: nickname
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: fido: name and nickname are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    def 'Alias masking direct field access'() {
+        given:
+        def query = """
+        fragment aliasMaskingDirectFieldAccess on Dog {
+            name: nickname
+            name
+        }
+         """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: name: nickname and name are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    def 'conflicting args'() {
+        given:
+        def query = """
+                fragment conflictingArgs on Dog {
+            doesKnowCommand(dogCommand: SIT)
+            doesKnowCommand(dogCommand: HEEL)
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: doesKnowCommand: they have differing arguments"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    def 'conflicting directives'() {
+        given:
+        def query = """
+        fragment conflictingDirectiveArgs on Dog {
+            name @include(if: true)
+            name @skip(if: false)
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: name: they have differing directives"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    def 'conflicting directive args'() {
+        given:
+        def query = """
+        fragment conflictingDirectiveArgs on Dog {
+            name @include(if: true)
+            name @include(if: false)
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: name: they have differing directives"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    def 'conflicting args with matching directives'() {
+        given:
+        def query = """
+        fragment conflictingArgsWithMatchingDirectiveArgs on Dog {
+            doesKnowCommand(dogCommand: SIT) @include(if: true)
+            doesKnowCommand(dogCommand: HEEL) @include(if: true)
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: doesKnowCommand: they have differing arguments"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    def 'conflicting directives with matching args'() {
+        def query = """
+        fragment conflictingDirectiveArgsWithMatchingArgs on Dog {
+            doesKnowCommand(dogCommand: SIT) @include(if: true)
+            doesKnowCommand(dogCommand: SIT) @skip(if: false)
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: doesKnowCommand: they have differing directives"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    def 'encounters conflict in fragments'() {
+        def query = """
+        {
+            ...A
+            ...B
+        }
+        fragment A on Type {
+            x: a
+        }
+        fragment B on Type {
+            x: b
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: x: a and b are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(7, 13), new SourceLocation(10, 13)]
+    }
+
+    @Ignore
+    def 'reports each conflict once'() {
+        def query = """
+        {
+            f1 {
+                ...A
+                ...B
+            }
+            f2 {
+                ...B
+                ...A
+            }
+            f3 {
+                ...A
+                ...B
+                x: c
+            }
+        }
+        fragment A on Type {
+            x: a
+        }
+        fragment B on Type {
+            x: b
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 3
+
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: x: a and b are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+
+        errorCollector.getErrors()[1].message == "Validation error of type FieldsConflict: x: a and c are different fields"
+        errorCollector.getErrors()[1].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+
+        errorCollector.getErrors()[2].message == "Validation error of type FieldsConflict: x: b and c are different fields"
+        errorCollector.getErrors()[2].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    @Ignore
+    def 'deep conflict'() {
+        def query = """
+        {
+            field {
+                x: a
+            },
+            field {
+                x: b
+            }
+        }
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field: a and b are different fields"
+        errorCollector.getErrors()[0].locations.size() == 4
+//        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    @Ignore
+    def 'deep conflict with multiple issues'() {
+        def query = """"
+                {
+                    field {
+                        x: a
+                        y: c
+                    },
+                    field {
+                        x: b
+                        y: d
+                    }
+                }
+                """
+        when:
+        traverse(query, null)
+
+        then:
+        // TODO: multiple errorMessages per one error for field 'field'
+        //'a and b are different fields'
+        // 'c and d are different fields'
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].locations.size() == 6
+    }
+
+    @Ignore
+    def 'very deep conflict'() {
+        def query = """
+                {
+                    field {
+                        deepField {
+                            x: a
+                        }
+                    },
+                    field {
+                        deepField {
+                            x: b
+                        }
+                    }
+                }
+                """
+        when:
+        traverse(query, null)
+
+        then:
+        // errorMessage: 'field', [['deepField', [['x', 'a and b are different fields']]]]
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].locations.size() == 6
+    }
+
+    @Ignore
+    def 'reports deep conflict to nearest common ancestor'() {
+        def query = """
+                {
+                    field {
+                        deepField {
+                            x: a
+                        }
+                        deepField {
+                            x: b
+                        }
+                    },
+                    field {
+                        deepField {
+                            y
+                        }
+                    }
+                }
+                """
+        when:
+        traverse(query, null)
+
+        then:
+        // 'deepField', [['x', 'a and b are different fields']]
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].locations.size() == 4
     }
 
 }
