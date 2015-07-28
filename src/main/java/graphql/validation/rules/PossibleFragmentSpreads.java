@@ -21,7 +21,7 @@ public class PossibleFragmentSpreads extends AbstractRule {
 
     @Override
     public void checkInlineFragment(InlineFragment inlineFragment) {
-        GraphQLInputType fragType = getValidationContext().getInputType();
+        GraphQLOutputType fragType = getValidationContext().getOutputType();
         GraphQLCompositeType parentType = getValidationContext().getParentType();
         if (fragType == null || parentType == null) return;
         if (!doTypesOverlap(fragType, parentType)) {

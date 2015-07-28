@@ -89,6 +89,9 @@ public class SchemaUtil {
                 collectTypes(fieldArgument.getType(), result);
             }
         }
+        for (GraphQLInterfaceType interfaceType : objectType.getInterfaces()) {
+            collectTypes(interfaceType, result);
+        }
     }
 
     public Map<String, GraphQLType> allTypes(GraphQLSchema schema) {

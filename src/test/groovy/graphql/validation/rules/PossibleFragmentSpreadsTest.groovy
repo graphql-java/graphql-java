@@ -155,4 +155,144 @@ class PossibleFragmentSpreadsTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
+
+    def 'different object into object'() {
+        def query = """
+                fragment invalidObjectWithinObject on Cat { ...dogFragment }
+                fragment dogFragment on Dog { barkVolume }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+    }
+
+    def 'different object into object in inline fragment'() {
+        def query = """
+        fragment invalidObjectWithinObjectAnon on Cat {
+            ... on Dog { barkVolume }
+        }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+    }
+
+    def 'object into not implementing interface'() {
+        def query = """
+                fragment invalidObjectWithinInterface on Pet { ...humanFragment }
+                fragment humanFragment on Human { pets { name } }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+    }
+
+    def 'object into not containing union'() {
+        def query = """
+                fragment invalidObjectWithinUnion on CatOrDog { ...humanFragment }
+                fragment humanFragment on Human { pets { name } }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+    }
+
+    def 'union into not contained object'() {
+        def query = """
+                fragment invalidUnionWithinObject on Human { ...catOrDogFragment }
+                fragment catOrDogFragment on CatOrDog { __typename }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+    }
+
+    def 'union into non overlapping interface'() {
+        def query = """
+                fragment invalidUnionWithinInterface on Pet { ...humanOrAlienFragment }
+                fragment humanOrAlienFragment on HumanOrAlien { __typename }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+    }
+
+    def 'union into non overlapping union'() {
+        def query = """
+                fragment invalidUnionWithinUnion on CatOrDog { ...humanOrAlienFragment }
+                fragment humanOrAlienFragment on HumanOrAlien { __typename }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+    }
+
+    def 'interface into non implementing object'() {
+        def query = """
+                fragment invalidInterfaceWithinObject on Cat { ...intelligentFragment }
+                fragment intelligentFragment on Intelligent { iq }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+
+    }
+
+    def 'interface into non overlapping interface'() {
+        def query = """
+                fragment invalidInterfaceWithinInterface on Pet {
+            ...intelligentFragment
+        }
+                fragment intelligentFragment on Intelligent { iq }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+    }
+
+    def 'interface into non overlapping interface in inline fragment'() {
+        def query = """
+                fragment invalidInterfaceWithinInterfaceAnon on Pet {
+            ...on Intelligent { iq }
+        }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+
+    }
+
+    def 'interface into non overlapping union'() {
+        def query = """
+                fragment invalidInterfaceWithinUnion on HumanOrAlien { ...petFragment }
+                fragment petFragment on Pet { name }
+                """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().size() == 1
+
+    }
+
 }
