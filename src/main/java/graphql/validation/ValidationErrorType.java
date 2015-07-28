@@ -25,6 +25,7 @@ public enum ValidationErrorType {
     UndefinedVariable,
     UnusedVariable,
     FragmentCycle,
-    FieldsConflict
+    FieldsConflict,
+    InvalidFragmentType
 
 }
