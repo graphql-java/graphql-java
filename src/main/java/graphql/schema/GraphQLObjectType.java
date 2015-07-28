@@ -88,19 +88,27 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         }
 
         public Builder field(GraphQLFieldDefinition fieldDefinition) {
-            assertNotNull(fieldDefinition,"fieldDefinition can't be null");
+            assertNotNull(fieldDefinition, "fieldDefinition can't be null");
             this.fieldDefinitions.add(fieldDefinition);
             return this;
         }
 
         public Builder fields(List<GraphQLFieldDefinition> fieldDefinitions) {
-            assertNotNull(fieldDefinitions,"fieldDefinitions can't be null");
+            assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
             this.fieldDefinitions.addAll(fieldDefinitions);
             return this;
         }
 
         public Builder withInterface(GraphQLInterfaceType interfaceType) {
+            assertNotNull(interfaceType, "interfaceType can't be null");
             this.interfaces.add(interfaceType);
+            return this;
+        }
+
+        public Builder withInterfaces(GraphQLInterfaceType... interfaceType) {
+            for (GraphQLInterfaceType type : interfaceType) {
+                withInterface(type);
+            }
             return this;
         }
 

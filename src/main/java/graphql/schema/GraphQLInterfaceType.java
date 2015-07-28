@@ -98,6 +98,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
             return new GraphQLInterfaceType(name, description, fields, typeResolver);
         }
 
+
     }
 
 

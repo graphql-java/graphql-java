@@ -56,6 +56,7 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (parent instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) parent).getTypes().contains(type);
         }
+        //TODO not complete
         return false;
 
     }
