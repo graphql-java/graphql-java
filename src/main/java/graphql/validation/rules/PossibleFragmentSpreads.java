@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.ShouldNotHappenException;
 import graphql.execution.TypeFromAST;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -8,6 +9,7 @@ import graphql.language.InlineFragment;
 import graphql.schema.*;
 import graphql.validation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 public class PossibleFragmentSpreads extends AbstractRule {
@@ -49,15 +51,29 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (type == parent) {
             return true;
         }
-        if (parent instanceof GraphQLInterfaceType) {
-            List<GraphQLObjectType> implementations = new SchemaUtil().findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) parent);
-            return implementations.contains(type);
+
+        List<? extends GraphQLType> possibleParentTypes;
+        if (parent instanceof GraphQLObjectType) {
+            possibleParentTypes = Collections.<GraphQLType>singletonList(parent);
+        } else if (parent instanceof GraphQLInterfaceType) {
+            possibleParentTypes = new SchemaUtil().findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) parent);
+        } else if (parent instanceof GraphQLUnionType) {
+            possibleParentTypes = ((GraphQLUnionType) parent).getTypes();
+        } else {
+            throw new ShouldNotHappenException();
         }
-        if (parent instanceof GraphQLUnionType) {
-            return ((GraphQLUnionType) parent).getTypes().contains(type);
+        List<? extends GraphQLType> possibleConditionTypes;
+        if (type instanceof GraphQLObjectType) {
+            possibleConditionTypes = Collections.singletonList(type);
+        } else if (type instanceof GraphQLInterfaceType) {
+            possibleConditionTypes = new SchemaUtil().findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) type);
+        } else if (type instanceof GraphQLUnionType) {
+            possibleConditionTypes = ((GraphQLUnionType) type).getTypes();
+        } else {
+            throw new ShouldNotHappenException();
         }
-        //TODO not complete
-        return false;
+
+        return !Collections.disjoint(possibleParentTypes, possibleConditionTypes);
 
     }
 }

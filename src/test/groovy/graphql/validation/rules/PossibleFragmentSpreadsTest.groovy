@@ -6,7 +6,6 @@ import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
-import spock.lang.Ignore
 import spock.lang.Specification
 
 class PossibleFragmentSpreadsTest extends Specification {
@@ -72,7 +71,6 @@ class PossibleFragmentSpreadsTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
-    @Ignore
     def 'union into contained object'() {
         def query = """
                 fragment unionWithinObject on Dog { ...catOrDogFragment }
@@ -85,7 +83,6 @@ class PossibleFragmentSpreadsTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
-    @Ignore
     def 'union into overlapping interface'() {
         def query = """
                 fragment unionWithinInterface on Pet { ...catOrDogFragment }
@@ -98,7 +95,6 @@ class PossibleFragmentSpreadsTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
-    @Ignore
     def 'union into overlapping union'() {
         def query = """
                 fragment unionWithinUnion on DogOrHuman { ...catOrDogFragment }
@@ -111,7 +107,6 @@ class PossibleFragmentSpreadsTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
-    @Ignore
     def 'interface into implemented object'() {
         def query = """
         fragment interfaceWithinObject on Dog { ... petFragment }
@@ -147,7 +142,7 @@ class PossibleFragmentSpreadsTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
-    @Ignore
+
     def 'interface into overlapping union'() {
         def query = """
         fragment interfaceWithinUnion on CatOrDog { ... petFragment }
