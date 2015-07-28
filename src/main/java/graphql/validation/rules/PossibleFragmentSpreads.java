@@ -5,10 +5,10 @@ import graphql.execution.TypeFromAST;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
-import graphql.schema.GraphQLCompositeType;
-import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLType;
+import graphql.schema.*;
 import graphql.validation.*;
+
+import java.util.List;
 
 public class PossibleFragmentSpreads extends AbstractRule {
 
@@ -46,6 +46,17 @@ public class PossibleFragmentSpreads extends AbstractRule {
     }
 
     private boolean doTypesOverlap(GraphQLType type, GraphQLCompositeType parent) {
-        return true;
+        if (type == parent) {
+            return true;
+        }
+        if (parent instanceof GraphQLInterfaceType) {
+            List<GraphQLObjectType> implementations = new SchemaUtil().findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) parent);
+            return implementations.contains(type);
+        }
+        if (parent instanceof GraphQLUnionType) {
+            return ((GraphQLUnionType) parent).getTypes().contains(type);
+        }
+        return false;
+
     }
 }
