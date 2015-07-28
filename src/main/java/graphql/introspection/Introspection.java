@@ -355,7 +355,7 @@ public class Introspection {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
                             GraphQLSchema schema = (GraphQLSchema) environment.getSource();
-                            return new SchemaUtil().allTypesAsList(schema);
+                            return schema.getAllTypesAsList();
                         }
                     })
                     .build())
@@ -421,7 +421,7 @@ public class Introspection {
                 @Override
                 public Object get(DataFetchingEnvironment environment) {
                     String name = environment.getArgument("name");
-                    return new SchemaUtil().findType(environment.getGraphQLSchema(), name);
+                    return environment.getGraphQLSchema().getType(name);
                 }
             })
             .build();

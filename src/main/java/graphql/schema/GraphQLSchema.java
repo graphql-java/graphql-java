@@ -3,8 +3,10 @@ package graphql.schema;
 
 import graphql.Directives;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
@@ -12,6 +14,7 @@ public class GraphQLSchema {
 
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
+    private final Map<String, GraphQLType> typeMap;
 
     public GraphQLSchema(GraphQLObjectType queryType) {
         this(queryType, null);
@@ -22,6 +25,15 @@ public class GraphQLSchema {
         assertNotNull(queryType, "queryType can't be null");
         this.queryType = queryType;
         this.mutationType = mutationType;
+        typeMap = new SchemaUtil().allTypes(this);
+    }
+
+    public GraphQLType getType(String typeName) {
+        return typeMap.get(typeName);
+    }
+
+    public List<GraphQLType> getAllTypesAsList() {
+        return new ArrayList<>(typeMap.values());
     }
 
     public GraphQLObjectType getQueryType() {

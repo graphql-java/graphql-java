@@ -19,7 +19,7 @@ public class VariablesAreInputTypes extends AbstractRule {
     public void checkVariableDefinition(VariableDefinition variableDefinition) {
         TypeName unmodifiedAstType = getValidationUtil().getUnmodifiedType(variableDefinition.getType());
 
-        GraphQLType type = schemaUtil.findType(getValidationContext().getSchema(), unmodifiedAstType.getName());
+        GraphQLType type = getValidationContext().getSchema().getType(unmodifiedAstType.getName());
         if (type == null) return;
         if (!schemaUtil.isInputType(type)) {
             addError(new ValidationError(ValidationErrorType.NonInputTypeOnVariable));

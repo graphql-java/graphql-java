@@ -91,11 +91,6 @@ public class SchemaUtil {
         }
     }
 
-    public GraphQLType findType(GraphQLSchema schema, String name) {
-        Map<String, GraphQLType> typesByName = allTypes(schema);
-        return typesByName.get(name);
-    }
-
     public Map<String, GraphQLType> allTypes(GraphQLSchema schema) {
         Map<String, GraphQLType> typesByName = new LinkedHashMap<>();
         collectTypes(schema.getQueryType(), typesByName);
@@ -104,10 +99,6 @@ public class SchemaUtil {
         }
         collectTypes(Introspection.__Schema, typesByName);
         return typesByName;
-    }
-
-    public List<GraphQLType> allTypesAsList(GraphQLSchema graphQLSchema) {
-        return new ArrayList<>(allTypes(graphQLSchema).values());
     }
 
     public List<GraphQLObjectType> findImplementations(GraphQLSchema schema, GraphQLInterfaceType interfaceType) {
