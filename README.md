@@ -9,6 +9,7 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
  
 
 **Status**: Version 1.2 is released. This version aims to be feature complete in regard to the current spec.
+    
 
 
 **Hint**: This README documents the latest release, but `master` contains the current development version. So please make sure 
@@ -254,7 +255,7 @@ GraphQLObjectType person = newObject()
             .name("friends")
             .type(new GraphQLList(new GraphQLTypeReference("Person")))
             .build())
-.build();
+    .build();
 
 ```
  
