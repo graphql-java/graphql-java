@@ -12,7 +12,7 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
 
 
 **Hint**: This README documents the latest release, but `master` contains the current development version. So please make sure 
-to checkout the appropriate branch when looking for the version documented here.
+to checkout the appropriate tag when looking for the version documented here.
 
 [![Build Status](https://travis-ci.org/andimarek/graphql-java.svg?branch=master)](https://travis-ci.org/andimarek/graphql-java)
 
