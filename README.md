@@ -96,7 +96,7 @@ Dependency:
 
 ```groovy
 dependencies {
-  compile 'graphql-java:graphql-java:1.2'
+  compile 'com.graphql-java:graphql-java:1.2'
 }
 
 ```
@@ -121,7 +121,7 @@ Dependency:
 
 ```xml
 <dependency>
-    <groupId>graphql-java</groupId>
+    <groupId>com.graphql-java</groupId>
     <artifactId>graphql-java</artifactId>
     <version>1.2</version>
 </dependency>
