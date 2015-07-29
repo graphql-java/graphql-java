@@ -228,9 +228,9 @@ There are no builders to create now objects. Just normal constructors, because t
 Example:
 
 ```java
-new GraphQLList(GraphQLString) // a list of Strings
+new GraphQLList(GraphQLString); // a list of Strings
 
-new GraphQLNonNull(GraphQLString) // a non null String
+new GraphQLNonNull(GraphQLString); // a non null String
 
 ```
 
