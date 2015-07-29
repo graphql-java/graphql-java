@@ -206,7 +206,7 @@ GraphQLEnumType colorEnum = newEnum()
 
 ##### Creating a Object-Input Type
 
-Example
+Example:
 
 ```java
 GraphQLInputObjectType inputObjectType = newInputObject()
@@ -216,6 +216,21 @@ GraphQLInputObjectType inputObjectType = newInputObject()
         .type(GraphQLString)
         .build())
     .build()
+
+```
+
+##### Lists and NonNull
+
+`GraphQLList` and `GraphQLNonNull` wrap another type to declare a list or to forbid null values. 
+
+There are no builders to create now objects. Just normal constructors, because they are so simple.
+
+Example:
+
+```java
+new GraphQLList(GraphQLString) // a list of Strings
+
+new GraphQLNonNull(GraphQLString) // a non null String
 
 ```
 
