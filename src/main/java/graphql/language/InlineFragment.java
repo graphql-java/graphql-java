@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InlineFragment extends AbstractNode implements  Selection {
+public class InlineFragment extends AbstractNode implements Selection {
     private TypeName typeCondition;
     private List<Directive> directives = new ArrayList<>();
     private SelectionSet selectionSet;
@@ -63,26 +63,14 @@ public class InlineFragment extends AbstractNode implements  Selection {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        InlineFragment that = (InlineFragment) o;
-
-        if (typeCondition != null ? !typeCondition.equals(that.typeCondition) : that.typeCondition != null)
-            return false;
-        if (directives != null ? !directives.equals(that.directives) : that.directives != null) return false;
-        return !(selectionSet != null ? !selectionSet.equals(that.selectionSet) : that.selectionSet != null);
+        return true;
 
     }
 
-    @Override
-    public int hashCode() {
-        int result = typeCondition != null ? typeCondition.hashCode() : 0;
-        result = 31 * result + (directives != null ? directives.hashCode() : 0);
-        result = 31 * result + (selectionSet != null ? selectionSet.hashCode() : 0);
-        return result;
-    }
 
     @Override
     public String toString() {

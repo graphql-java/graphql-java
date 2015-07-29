@@ -27,7 +27,7 @@ public class BooleanValue extends AbstractNode implements Value {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -35,11 +35,6 @@ public class BooleanValue extends AbstractNode implements Value {
 
         return value == that.value;
 
-    }
-
-    @Override
-    public int hashCode() {
-        return (value ? 1 : 0);
     }
 
     @Override

@@ -34,7 +34,7 @@ public class StringValue extends AbstractNode implements Value {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -44,8 +44,4 @@ public class StringValue extends AbstractNode implements Value {
 
     }
 
-    @Override
-    public int hashCode() {
-        return value != null ? value.hashCode() : 0;
-    }
 }

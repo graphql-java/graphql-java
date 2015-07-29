@@ -27,20 +27,16 @@ public class ObjectValue extends AbstractNode implements Value {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         ObjectValue that = (ObjectValue) o;
 
-        return !(objectFields != null ? !objectFields.equals(that.objectFields) : that.objectFields != null);
+        return true;
 
     }
 
-    @Override
-    public int hashCode() {
-        return objectFields != null ? objectFields.hashCode() : 0;
-    }
 
     @Override
     public String toString() {

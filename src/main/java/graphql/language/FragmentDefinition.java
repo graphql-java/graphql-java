@@ -4,7 +4,8 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FragmentDefinition extends AbstractNode implements  Definition {
+public class FragmentDefinition extends AbstractNode implements Definition {
+
     private String name;
     private TypeName typeCondition;
     private List<Directive> directives = new ArrayList<>();
@@ -68,28 +69,16 @@ public class FragmentDefinition extends AbstractNode implements  Definition {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         FragmentDefinition that = (FragmentDefinition) o;
 
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        if (typeCondition != null ? !typeCondition.equals(that.typeCondition) : that.typeCondition != null)
-            return false;
-        if (directives != null ? !directives.equals(that.directives) : that.directives != null) return false;
-        return !(selectionSet != null ? !selectionSet.equals(that.selectionSet) : that.selectionSet != null);
+        return !(name != null ? !name.equals(that.name) : that.name != null);
 
     }
 
-    @Override
-    public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (typeCondition != null ? typeCondition.hashCode() : 0);
-        result = 31 * result + (directives != null ? directives.hashCode() : 0);
-        result = 31 * result + (selectionSet != null ? selectionSet.hashCode() : 0);
-        return result;
-    }
 
     @Override
     public String toString() {

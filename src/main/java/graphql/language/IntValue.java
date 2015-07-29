@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class IntValue extends AbstractNode implements  Value{
+public class IntValue extends AbstractNode implements Value {
 
     private int value;
 
@@ -26,7 +26,7 @@ public class IntValue extends AbstractNode implements  Value{
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -36,10 +36,6 @@ public class IntValue extends AbstractNode implements  Value{
 
     }
 
-    @Override
-    public int hashCode() {
-        return value;
-    }
 
     @Override
     public String toString() {

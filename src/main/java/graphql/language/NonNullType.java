@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NonNullType extends AbstractNode implements Type{
+public class NonNullType extends AbstractNode implements Type {
 
     private Type type;
 
@@ -35,19 +35,12 @@ public class NonNullType extends AbstractNode implements Type{
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        NonNullType that = (NonNullType) o;
+        return true;
 
-        return !(type != null ? !type.equals(that.type) : that.type != null);
-
-    }
-
-    @Override
-    public int hashCode() {
-        return type != null ? type.hashCode() : 0;
     }
 
     @Override

@@ -30,19 +30,11 @@ public class ArrayValue extends AbstractNode implements Value {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ArrayValue that = (ArrayValue) o;
-
-        return !(values != null ? !values.equals(that.values) : that.values != null);
-
-    }
-
-    @Override
-    public int hashCode() {
-        return values != null ? values.hashCode() : 0;
+        return true;
     }
 
     @Override

@@ -5,7 +5,14 @@ import java.util.List;
 
 public interface Node {
 
-     List<Node> getChildren();
+    List<Node> getChildren();
 
-     SourceLocation getSourceLocation();
+    SourceLocation getSourceLocation();
+
+    /**
+     * Compares just the content and not the children.
+     * @param node
+     * @return
+     */
+    boolean isEqualTo(Node node);
 }

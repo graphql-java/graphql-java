@@ -26,7 +26,7 @@ public class TypeName extends AbstractNode implements Type {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -37,10 +37,6 @@ public class TypeName extends AbstractNode implements Type {
         return true;
     }
 
-    @Override
-    public int hashCode() {
-        return name != null ? name.hashCode() : 0;
-    }
 
     @Override
     public String toString() {

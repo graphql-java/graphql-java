@@ -33,28 +33,21 @@ public class FragmentSpread extends AbstractNode implements Selection {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         FragmentSpread that = (FragmentSpread) o;
 
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        return !(directives != null ? !directives.equals(that.directives) : that.directives != null);
+        return !(name != null ? !name.equals(that.name) : that.name != null);
 
     }
+
 
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(directives);
-        return result;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (directives != null ? directives.hashCode() : 0);
         return result;
     }
 

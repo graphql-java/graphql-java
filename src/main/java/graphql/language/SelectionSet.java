@@ -27,20 +27,16 @@ public class SelectionSet extends AbstractNode{
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         SelectionSet that = (SelectionSet) o;
 
-        return !(selections != null ? !selections.equals(that.selections) : that.selections != null);
+        return true;
 
     }
 
-    @Override
-    public int hashCode() {
-        return selections != null ? selections.hashCode() : 0;
-    }
 
     @Override
     public String toString() {

@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Field extends AbstractNode implements  Selection {
+public class Field extends AbstractNode implements Selection {
 
     private String name;
     private String alias;
@@ -96,29 +96,17 @@ public class Field extends AbstractNode implements  Selection {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         Field field = (Field) o;
 
         if (name != null ? !name.equals(field.name) : field.name != null) return false;
-        if (alias != null ? !alias.equals(field.alias) : field.alias != null) return false;
-        if (arguments != null ? !arguments.equals(field.arguments) : field.arguments != null) return false;
-        if (directives != null ? !directives.equals(field.directives) : field.directives != null) return false;
-        return !(selectionSet != null ? !selectionSet.equals(field.selectionSet) : field.selectionSet != null);
+        return !(alias != null ? !alias.equals(field.alias) : field.alias != null);
 
     }
 
-    @Override
-    public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (alias != null ? alias.hashCode() : 0);
-        result = 31 * result + (arguments != null ? arguments.hashCode() : 0);
-        result = 31 * result + (directives != null ? directives.hashCode() : 0);
-        result = 31 * result + (selectionSet != null ? selectionSet.hashCode() : 0);
-        return result;
-    }
 
     @Override
     public String toString() {

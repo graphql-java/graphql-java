@@ -160,7 +160,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         if (value1 == null && value2 == null) return true;
         if (value1 == null) return false;
         if (value2 == null) return false;
-        return value1.equals(value2);
+        return new AstComparator().isEqual(value1, value2);
     }
 
     private boolean sameArguments(List<Argument> arguments1, List<Argument> arguments2) {

@@ -91,30 +91,17 @@ public class OperationDefinition extends AbstractNode implements Definition {
         this.selectionSet = selectionSet;
     }
 
+
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         OperationDefinition that = (OperationDefinition) o;
 
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        if (operation != that.operation) return false;
-        if (variableDefinitions != null ? !variableDefinitions.equals(that.variableDefinitions) : that.variableDefinitions != null)
-            return false;
-        if (directives != null ? !directives.equals(that.directives) : that.directives != null) return false;
-        return !(selectionSet != null ? !selectionSet.equals(that.selectionSet) : that.selectionSet != null);
+        return operation == that.operation;
 
-    }
-
-    @Override
-    public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (operation != null ? operation.hashCode() : 0);
-        result = 31 * result + (variableDefinitions != null ? variableDefinitions.hashCode() : 0);
-        result = 31 * result + (directives != null ? directives.hashCode() : 0);
-        result = 31 * result + (selectionSet != null ? selectionSet.hashCode() : 0);
-        return result;
     }
 
     @Override

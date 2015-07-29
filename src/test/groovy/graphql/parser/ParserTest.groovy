@@ -7,7 +7,6 @@ import spock.lang.Unroll
 class ParserTest extends Specification {
 
 
-
     def "parse anonymous simple query"() {
         given:
         def input = "{ me }"
@@ -31,12 +30,16 @@ class ParserTest extends Specification {
     }
 
 
+    boolean isEqual(Node node1, Node node2) {
+        return new AstComparator().isEqual(node1, node2)
+    }
+
     def "parse selectionSet for field"() {
         given:
         def input = "{ me { name } }"
 
         def innerSelectionSet = new SelectionSet([new Field("name")])
-        def selectionSet = new SelectionSet([new Field("me",innerSelectionSet)])
+        def selectionSet = new SelectionSet([new Field("me", innerSelectionSet)])
         def definition = new OperationDefinition(null, OperationDefinition.Operation.QUERY, [], selectionSet)
         def expectedResult = new Document([definition])
 
@@ -45,7 +48,7 @@ class ParserTest extends Specification {
 
 
         then:
-        document == expectedResult
+        isEqual(document, expectedResult)
     }
 
     def "parse query with variable definition"() {
@@ -61,7 +64,7 @@ class ParserTest extends Specification {
         when:
         Document document = new Parser().parseDocument(input)
         then:
-        document == expectedResult
+        isEqual(document,expectedResult)
 
     }
 
@@ -95,7 +98,7 @@ class ParserTest extends Specification {
         Document document = new Parser().parseDocument(input)
 
         then:
-        document == expectedResult
+        isEqual(document, expectedResult)
     }
 
     def "parse fragment and query"() {
@@ -139,8 +142,8 @@ class ParserTest extends Specification {
 
         then:
         document.definitions.size() == 2
-        document.definitions[0] == queryDefinition
-        document.definitions[1] == fragmentDefinition
+        isEqual(document.definitions[0],queryDefinition)
+        isEqual(document.definitions[1], fragmentDefinition)
     }
 
     def "parse inline fragment"() {
@@ -181,7 +184,7 @@ class ParserTest extends Specification {
 
         then:
         document.definitions.size() == 1
-        document.definitions[0] == queryDefinition
+        isEqual(document.definitions[0], queryDefinition)
 
     }
 
@@ -208,7 +211,7 @@ class ParserTest extends Specification {
         def document = new Parser().parseDocument(input)
 
         then:
-        document.definitions[0] == queryDefinition
+        isEqual(document.definitions[0], queryDefinition)
 
     }
 
@@ -233,7 +236,7 @@ class ParserTest extends Specification {
         def document = new Parser().parseDocument(input)
 
         then:
-        document.definitions[0] == queryDefinition
+        isEqual(document.definitions[0], queryDefinition)
 
         where:
         typeString    | getOutputType
@@ -264,7 +267,7 @@ class ParserTest extends Specification {
         def document = new Parser().parseDocument(input)
 
         then:
-        document.definitions[0] == queryDefinition
+        isEqual(document.definitions[0], queryDefinition)
     }
 
     def "parse complex object values"() {
@@ -292,10 +295,10 @@ class ParserTest extends Specification {
         def document = new Parser().parseDocument(input)
 
         then:
-        document.definitions[0] == queryDefinition
+        isEqual(document.definitions[0], queryDefinition)
     }
 
-    def "parse complex string value and comment"(){
+    def "parse complex string value and comment"() {
         given:
         def input = """
             { # this is some comment, which should be igored
@@ -304,34 +307,34 @@ class ParserTest extends Specification {
 
         when:
         def document = new Parser().parseDocument(input)
-        def helloField = document.definitions[0].selectionSet.selections[0]
+        Field helloField = document.definitions[0].selectionSet.selections[0]
 
         then:
-        helloField == new Field("hello", [new Argument("arg",new StringValue("hello, world"))])
+        isEqual(helloField,new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
     }
 
     @Unroll
-    def "parse floatValue #floatString"(){
+    def "parse floatValue #floatString"() {
         given:
-        def input="""
+        def input = """
             { hello(arg: ${floatString}) }
             """
         when:
         def document = new Parser().parseDocument(input)
-        def helloField = document.definitions[0].selectionSet.selections[0]
+        Field helloField = document.definitions[0].selectionSet.selections[0]
 
         then:
-        helloField == new Field("hello", [new Argument("arg",new FloatValue(floatValue))])
+        isEqual(helloField, new Field("hello", [new Argument("arg", new FloatValue(floatValue))]))
 
         where:
         floatString | floatValue
-        '1.0' | 1.0
-        '-0.3' | -0.3
-        '-3.4' | -3.4
-        '-3.4e3' | -3.4e3
-        '3.4E3' | 3.4e3
-        '3e4' | 3e4
-        '123e-4' | 123e-4
+        '1.0'       | 1.0
+        '-0.3'      | -0.3
+        '-3.4'      | -3.4
+        '-3.4e3'    | -3.4e3
+        '3.4E3'     | 3.4e3
+        '3e4'       | 3e4
+        '123e-4'    | 123e-4
 
     }
 

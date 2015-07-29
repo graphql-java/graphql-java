@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FloatValue extends AbstractNode  implements  Value{
+public class FloatValue extends AbstractNode implements Value {
 
     private BigDecimal value;
 
@@ -35,7 +35,7 @@ public class FloatValue extends AbstractNode  implements  Value{
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -45,8 +45,4 @@ public class FloatValue extends AbstractNode  implements  Value{
 
     }
 
-    @Override
-    public int hashCode() {
-        return value != null ? value.hashCode() : 0;
-    }
 }

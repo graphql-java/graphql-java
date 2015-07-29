@@ -40,22 +40,14 @@ public class Directive extends AbstractNode {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
         Directive directive = (Directive) o;
 
-        if (name != null ? !name.equals(directive.name) : directive.name != null) return false;
-        return !(arguments != null ? !arguments.equals(directive.arguments) : directive.arguments != null);
+        return !(name != null ? !name.equals(directive.name) : directive.name != null);
 
-    }
-
-    @Override
-    public int hashCode() {
-        int result = name != null ? name.hashCode() : 0;
-        result = 31 * result + (arguments != null ? arguments.hashCode() : 0);
-        return result;
     }
 
     @Override
