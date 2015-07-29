@@ -247,6 +247,29 @@ GraphQLSchema schema = GraphQLSchema.newSchema()
 A full schema example: [StarWarsSchema](src/test/groovy/graphql/StarWarsSchema.java)
 
 Another schema example, including union types: [GarfieldSchema](src/test/groovy/graphql/GarfieldSchema.java)
+
+
+
+##### Recursive Type References
+
+GraphQL supports recursive Types: For example a `Person` can contain a list of friends of the same Type.
+ 
+To be able to declare such a Type, `graphql-java` has a `GraphQLTypeReference` class.
+
+When the schema is created, the `GraphQLTypeReference` is replaced with the actual real Type Object.
+
+For example:
+
+```java
+GraphQLObjectType person = newObject()
+    .name("Person")
+    .field(newFieldDefinition()
+            .name("friends")
+            .type(new GraphQLList(new GraphQLTypeReference("Person")))
+            .build())
+.build();
+
+```
  
  
 #### Data fetching
