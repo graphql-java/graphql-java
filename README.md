@@ -8,7 +8,11 @@ This is a GraphQL Java implementation based on the [specification](https://githu
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
  
 
-**Status/Plans**: A first version is released. Future work will include more validations, logging and error reporting.
+**Status**: Version 1.2 is released. This version aims to be feature complete in regard to the current spec.
+
+
+**Hint**: This README documents the latest release, but `master` contains the current development version. So please make sure 
+to checkout the appropriate branch when looking for the version documented here.
 
 [![Build Status](https://travis-ci.org/andimarek/graphql-java.svg?branch=master)](https://travis-ci.org/andimarek/graphql-java)
 
@@ -92,7 +96,7 @@ Dependency:
 
 ```groovy
 dependencies {
-  compile 'graphql-java:graphql-java:1.0'
+  compile 'graphql-java:graphql-java:1.2'
 }
 
 ```
@@ -119,7 +123,7 @@ Dependency:
 <dependency>
     <groupId>graphql-java</groupId>
     <artifactId>graphql-java</artifactId>
-    <version>1.0</version>
+    <version>1.2</version>
 </dependency>
 
 ```
