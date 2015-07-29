@@ -100,6 +100,7 @@ bintray {
     user = System.env.BINTRAY_USER ?: project["bintray.user"]
     key = System.env.BINTRAY_API_KEY ?: project["bintray.key"]
     publications = ['graphqlJava']
+    publish = true
     pkg {
         repo = 'graphql-java'
         name = 'graphql-java'
