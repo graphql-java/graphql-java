@@ -83,12 +83,13 @@ public class HelloWorld {
 
 ### Getting started
 
-##### Gradle
+##### How to use the latest release with Gradle
 
-The repository:
+Make sure `mavenCentral` is among your repos:
+
 ```groovy
 repositories {
-    maven { url  "http://dl.bintray.com/andimarek/graphql-java" }
+    mavenCentral()
 }
 
 ```
@@ -101,21 +102,7 @@ dependencies {
 
 ```
 
-##### Maven
-
-The repository:
-
-```xml
-<repository>
-    <snapshots>
-        <enabled>false</enabled>
-    </snapshots>
-    <id>bintray-andimarek-graphql-java</id>
-    <name>bintray</name>
-    <url>http://dl.bintray.com/andimarek/graphql-java</url>
-</repository>
-
-```
+##### How to use the latest release with Maven
 
 Dependency:
 
@@ -344,7 +331,59 @@ The `grapqhl-java` root Logger name is `graphql`.
 The latest development build is available on Bintray.
 
 Please look at [Latest Build](https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion) for the 
-actual value.
+latest version value.
+
+
+#### How to use the latest build with Gradle
+
+Add the repository:
+
+```groovy
+repositories {
+    maven { url  "http://dl.bintray.com/andimarek/graphql-java" }
+}
+
+```
+
+Dependency:
+
+```groovy
+dependencies {
+  compile 'com.graphql-java:graphql-java:INSERT_LATEST_VERSION_HERE'
+}
+
+
+
+#### How to use the latest build with Maven
+
+Add the repository:
+
+```xml
+<repository>
+    <snapshots>
+        <enabled>false</enabled>
+    </snapshots>
+    <id>bintray-andimarek-graphql-java</id>
+    <name>bintray</name>
+    <url>http://dl.bintray.com/andimarek/graphql-java</url>
+</repository>
+
+```
+
+Dependency:
+
+```xml
+<dependency>
+    <groupId>com.graphql-java</groupId>
+    <artifactId>graphql-java</artifactId>
+    <version>INSERT_LATEST_VERSION_HERE</version>
+</dependency>
+
+```
+
+
+
+
 
 
 
