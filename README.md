@@ -348,6 +348,7 @@ dependencies {
   compile 'com.graphql-java:graphql-java:INSERT_LATEST_VERSION_HERE'
 }
 
+```
 
 
 #### How to use the latest build with Maven
