@@ -25,6 +25,7 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
     - [Execution strategies](#execution-strategies)
     - [Logging](#logging)
 - [Build it](#build-it)
+- [Development Build](#development-build)
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
 - [Feedback](#feedback)
@@ -309,6 +310,15 @@ It's recommended to use a `ExecutorService` to speed up execution.
 
 Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [Manual](http://www.slf4j.org/manual.html) for details.
 The `grapqhl-java` root Logger name is `graphql`.
+
+
+#### Development Build
+
+The latest development build is available on Bintray.
+
+Please look at [Latest Build](https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion) for the 
+actual value.
+
 
 
 ### Build it 
