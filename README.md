@@ -114,10 +114,6 @@ Dependency:
 </dependency>
 
 ```
-##### Latest Version
-
-For the latest version: Please clone and [Build it](#build-it).
- 
   
 ### Manual
   
