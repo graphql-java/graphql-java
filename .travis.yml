@@ -1,1 +1,5 @@
 language: java
+jdk:
+  - oraclejdk7
+after_success:
+  - ./gradlew bintrayUpload -x check --info

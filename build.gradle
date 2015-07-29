@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+
 plugins {
     id "com.jfrog.bintray" version "1.2"
 }
@@ -7,8 +9,10 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 
 sourceCompatibility = 1.7
-version = '1.1'
+def releaseVersion = System.properties.RELEASE_VERSION
+version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
 group = 'com.graphql-java'
+
 
 repositories {
     mavenCentral()
@@ -93,15 +97,15 @@ publishing {
 
 
 bintray {
-    user = project["bintray.user"]
-    key = project["bintray.key"]
+    user = System.env.BINTRAY_USER ?: project["bintray.user"]
+    key = System.env.BINTRAY_API_KEY ?: project["bintray.key"]
     publications = ['graphqlJava']
     pkg {
         repo = 'graphql-java'
         name = 'graphql-java'
         desc = 'GraphQL in Java'
         licenses = ['MIT']
-        vcsUrl= 'https://github.com/andimarek/graphql-java'
+        vcsUrl = 'https://github.com/andimarek/graphql-java'
     }
 }
 
