@@ -18,17 +18,20 @@ public class KnownDirectives extends AbstractRule {
     public void checkDirective(Directive directive, List<Node> ancestors) {
         GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(directive.getName());
         if (graphQLDirective == null) {
-            addError(new ValidationError(ValidationErrorType.UnknownDirective, directive.getSourceLocation(), null));
+            String message = String.format("Unknown directive %s", directive.getName());
+            addError(new ValidationError(ValidationErrorType.UnknownDirective, directive.getSourceLocation(), message));
             return;
         }
 
         Node ancestor = ancestors.get(ancestors.size() - 1);
         if (ancestor instanceof OperationDefinition && !graphQLDirective.isOnOperation()) {
-            addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), null));
+            String message = String.format("Directive %s not allowed here", directive.getName());
+            addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), message));
 
         }
         if (ancestor instanceof Field && !graphQLDirective.isOnField()) {
-            addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), null));
+            String message = String.format("Directive %s not allowed here", directive.getName());
+            addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), message));
 
         }
 
@@ -36,7 +39,8 @@ public class KnownDirectives extends AbstractRule {
                 || ancestor instanceof FragmentDefinition
                 || ancestor instanceof InlineFragment)
                 && !graphQLDirective.isOnFragment()) {
-            addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), null));
+            String message = String.format("Directive %s not allowed here", directive.getName());
+            addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), message));
         }
 
     }

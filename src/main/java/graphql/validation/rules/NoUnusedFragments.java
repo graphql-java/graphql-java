@@ -19,7 +19,7 @@ public class NoUnusedFragments extends AbstractRule {
 
     private List<String> usedFragments = new ArrayList<>();
     private Map<String, List<String>> spreadsInDefinition = new LinkedHashMap<>();
-    private final List<List<String>>  fragmentsUsedDirectlyInOperation = new ArrayList<>();
+    private final List<List<String>> fragmentsUsedDirectlyInOperation = new ArrayList<>();
 
     public NoUnusedFragments(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -48,26 +48,27 @@ public class NoUnusedFragments extends AbstractRule {
     public void documentFinished(Document document) {
 
         List<String> allUsedFragments = new ArrayList<>();
-        for(List<String> fragmentsInOneOperation : fragmentsUsedDirectlyInOperation){
-            for(String fragment : fragmentsInOneOperation){
-                collectUsedFragmentsInDefinition(allUsedFragments,fragment);
+        for (List<String> fragmentsInOneOperation : fragmentsUsedDirectlyInOperation) {
+            for (String fragment : fragmentsInOneOperation) {
+                collectUsedFragmentsInDefinition(allUsedFragments, fragment);
             }
         }
 
-        for(FragmentDefinition fragmentDefinition : allDeclaredFragments){
-            if(!allUsedFragments.contains(fragmentDefinition.getName())){
-                addError(new ValidationError(ValidationErrorType.UnusedFragment));
+        for (FragmentDefinition fragmentDefinition : allDeclaredFragments) {
+            if (!allUsedFragments.contains(fragmentDefinition.getName())) {
+                String message = String.format("Unused fragment %s", fragmentDefinition.getName());
+                addError(new ValidationError(ValidationErrorType.UnusedFragment, fragmentDefinition.getSourceLocation(), message));
             }
         }
 
     }
 
-    private void collectUsedFragmentsInDefinition(List<String> result,String fragmentName){
-        if(result.contains(fragmentName)) return;
+    private void collectUsedFragmentsInDefinition(List<String> result, String fragmentName) {
+        if (result.contains(fragmentName)) return;
         result.add(fragmentName);
         List<String> spreadList = spreadsInDefinition.get(fragmentName);
-        for(String fragment : spreadList){
-            collectUsedFragmentsInDefinition(result,fragment);
+        for (String fragment : spreadList) {
+            collectUsedFragmentsInDefinition(result, fragment);
         }
 
     }

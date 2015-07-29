@@ -41,7 +41,8 @@ public class VariableTypesMatchRule extends AbstractRule {
         if (variableType == null) return;
         GraphQLInputType inputType = getValidationContext().getInputType();
         if (!variablesTypesMatcher.doesVariableTypesMatch(variableType, variableDefinition.getDefaultValue(), inputType)) {
-            addError(new ValidationError(ValidationErrorType.VariableTypeMismatch));
+            String message = "Variable type doesn't match";
+            addError(new ValidationError(ValidationErrorType.VariableTypeMismatch, variableReference.getSourceLocation(), message));
         }
     }
 

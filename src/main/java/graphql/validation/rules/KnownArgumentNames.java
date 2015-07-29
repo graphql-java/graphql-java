@@ -18,8 +18,9 @@ public class KnownArgumentNames extends AbstractRule {
         GraphQLFieldDefinition fieldDef = getValidationContext().getFieldDef();
         if (fieldDef == null) return;
         GraphQLArgument fieldArgument = fieldDef.getArgument(argument.getName());
-        if(fieldArgument == null){
-            addError(new ValidationError(ValidationErrorType.UnknownArgument));
+        if (fieldArgument == null) {
+            String message = String.format("Unknown argument %s", argument.getName());
+            addError(new ValidationError(ValidationErrorType.UnknownArgument, argument.getSourceLocation(), message));
         }
     }
 }

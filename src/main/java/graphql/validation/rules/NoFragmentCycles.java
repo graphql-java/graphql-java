@@ -7,13 +7,15 @@ import graphql.language.FragmentSpread;
 import graphql.language.Node;
 import graphql.validation.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class NoFragmentCycles extends AbstractRule {
 
     private Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
 
-    private Set<String> foundCycles = new LinkedHashSet<>();
 
     public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -63,11 +65,10 @@ public class NoFragmentCycles extends AbstractRule {
 
         outer:
         for (FragmentSpread fragmentSpread : fragmentSpreads) {
-            if (foundCycles.contains(fragmentSpread.getName())) {
-                continue;
-            }
+
             if (fragmentSpread.getName().equals(initialName)) {
-                addError(new ValidationError(ValidationErrorType.FragmentCycle));
+                String message = "Fragment cycles not allowed";
+                addError(new ErrorFactory().newError(ValidationErrorType.FragmentCycle, spreadPath, message));
                 continue;
             }
             for (FragmentSpread spread : spreadPath) {

@@ -20,7 +20,8 @@ public class FieldsOnCorrectType extends AbstractRule {
         if (parentType == null) return;
         GraphQLFieldDefinition fieldDef = getValidationContext().getFieldDef();
         if (fieldDef == null) {
-            addError(new ValidationError(ValidationErrorType.FieldUndefined));
+            String message = String.format("Field %s is undefined", field.getName());
+            addError(new ValidationError(ValidationErrorType.FieldUndefined, field.getSourceLocation(), message));
         }
 
     }

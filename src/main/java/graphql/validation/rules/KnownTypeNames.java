@@ -14,7 +14,8 @@ public class KnownTypeNames extends AbstractRule {
     @Override
     public void checkTypeName(TypeName typeName) {
         if ((getValidationContext().getSchema().getType(typeName.getName())) == null) {
-            addError(new ValidationError(ValidationErrorType.UnknownType));
+            String message = String.format("Unknown type %s", typeName.getName());
+            addError(new ValidationError(ValidationErrorType.UnknownType, typeName.getSourceLocation(), message));
         }
     }
 }

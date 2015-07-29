@@ -204,39 +204,51 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
-                Field field = (Field) selection;
-                String responseName = field.getAlias() != null ? field.getAlias() : field.getName();
-                if (!fieldMap.containsKey(responseName)) {
-                    fieldMap.put(responseName, new ArrayList<FieldAndType>());
-                }
-                GraphQLOutputType fieldType = null;
-                if (parentType instanceof GraphQLFieldsContainer) {
-                    GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
-                    GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(field.getName());
-                    fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
-                }
-                fieldMap.get(responseName).add(new FieldAndType(field, fieldType));
+                collectFieldsForField(fieldMap, parentType, (Field) selection);
 
             } else if (selection instanceof InlineFragment) {
-                InlineFragment inlineFragment = (InlineFragment) selection;
-                GraphQLOutputType graphQLType = (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(),
-                        inlineFragment.getTypeCondition());
-                collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
+                collectFieldsForInlineFragment(fieldMap, visitedFragmentSpreads, (InlineFragment) selection);
 
             } else if (selection instanceof FragmentSpread) {
-                FragmentSpread fragmentSpread = (FragmentSpread) selection;
-                FragmentDefinition fragment = getValidationContext().getFragment(fragmentSpread.getName());
-                if (fragment == null) continue;
-                if (visitedFragmentSpreads.contains(fragment.getName())) {
-                    continue;
-                }
-                visitedFragmentSpreads.add(fragment.getName());
-                GraphQLOutputType graphQLType = (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(),
-                        fragment.getTypeCondition());
-                collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
+                collectFieldsForFragmentSpread(fieldMap, visitedFragmentSpreads, (FragmentSpread) selection);
             }
         }
 
+    }
+
+    private void collectFieldsForFragmentSpread(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, FragmentSpread selection) {
+        FragmentSpread fragmentSpread = selection;
+        FragmentDefinition fragment = getValidationContext().getFragment(fragmentSpread.getName());
+        if (fragment == null) return;
+        if (visitedFragmentSpreads.contains(fragment.getName())) {
+            return;
+        }
+        visitedFragmentSpreads.add(fragment.getName());
+        GraphQLOutputType graphQLType = (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(),
+                fragment.getTypeCondition());
+        collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
+    }
+
+    private void collectFieldsForInlineFragment(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, InlineFragment selection) {
+        InlineFragment inlineFragment = selection;
+        GraphQLOutputType graphQLType = (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(),
+                inlineFragment.getTypeCondition());
+        collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
+    }
+
+    private void collectFieldsForField(Map<String, List<FieldAndType>> fieldMap, GraphQLType parentType, Field selection) {
+        Field field = selection;
+        String responseName = field.getAlias() != null ? field.getAlias() : field.getName();
+        if (!fieldMap.containsKey(responseName)) {
+            fieldMap.put(responseName, new ArrayList<FieldAndType>());
+        }
+        GraphQLOutputType fieldType = null;
+        if (parentType instanceof GraphQLFieldsContainer) {
+            GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
+            GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(field.getName());
+            fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
+        }
+        fieldMap.get(responseName).add(new FieldAndType(field, fieldType));
     }
 
     private static class FieldPair {

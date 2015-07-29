@@ -25,7 +25,8 @@ public class NoUnusedVariables extends AbstractRule {
     public void leaveOperationDefinition(OperationDefinition operationDefinition) {
         for (VariableDefinition variableDefinition : variableDefinitions) {
             if (!usedVariables.contains(variableDefinition.getName())) {
-                addError(new ValidationError(ValidationErrorType.UnusedVariable, variableDefinition.getSourceLocation(), null));
+                String message = String.format("Unused variable %s",variableDefinition.getName());
+                addError(new ValidationError(ValidationErrorType.UnusedVariable, variableDefinition.getSourceLocation(), message));
             }
         }
     }

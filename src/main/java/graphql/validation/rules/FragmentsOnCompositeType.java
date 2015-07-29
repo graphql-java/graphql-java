@@ -19,7 +19,8 @@ public class FragmentsOnCompositeType extends AbstractRule {
         GraphQLType type = getValidationContext().getSchema().getType(inlineFragment.getTypeCondition().getName());
         if (type == null) return;
         if (!(type instanceof GraphQLCompositeType)) {
-            addError(new ValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid));
+            String message = "Inline fragment type condition is invalid, must be on Object/Interface/Union";
+            addError(new ValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid, inlineFragment.getSourceLocation(), message));
         }
     }
 
@@ -28,7 +29,8 @@ public class FragmentsOnCompositeType extends AbstractRule {
         GraphQLType type = getValidationContext().getSchema().getType(fragmentDefinition.getTypeCondition().getName());
         if (type == null) return;
         if (!(type instanceof GraphQLCompositeType)) {
-            addError(new ValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid));
+            String message = "Fragment type condition is invalid, must be on Object/Interface/Union";
+            addError(new ValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid, fragmentDefinition.getSourceLocation(), message));
         }
     }
 }
