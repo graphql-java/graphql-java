@@ -9,6 +9,8 @@ import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
 import org.antlr.v4.runtime.RecognitionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +25,8 @@ public class GraphQL {
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutorService executorService;
+
+    private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
     public GraphQL(GraphQLSchema graphQLSchema) {
         this(graphQLSchema, null);
@@ -52,6 +56,7 @@ public class GraphQL {
 
     public ExecutionResult execute(String requestString, String operationName, Object context, Map<String, Object> arguments) {
         assertNotNull(arguments, "arguments can't be null");
+        log.info("Executing request. operation name: {}. Request: {} ", operationName, requestString);
         Parser parser = new Parser();
         Document document;
         try {
@@ -65,8 +70,7 @@ public class GraphQL {
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
         if (validationErrors.size() > 0) {
-            ExecutionResult result = new ExecutionResultImpl(validationErrors);
-            return result;
+            return new ExecutionResultImpl(validationErrors);
         }
         Execution execution = new Execution(executorService);
         return execution.execute(graphQLSchema, context, document, operationName, arguments);
