@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class ExecutionResultImpl implements ExecutionResult {
 
-    private Map<String, Object> result;
+    private Map<String, Object> data;
 
     private final List<GraphQLError> errors = new ArrayList<>();
 
@@ -19,20 +19,20 @@ public class ExecutionResultImpl implements ExecutionResult {
         this.errors.addAll(errors);
     }
 
-    public ExecutionResultImpl(Map<String, Object> result,List<? extends GraphQLError> errors) {
-        this.result = result;
+    public ExecutionResultImpl(Map<String, Object> data, List<? extends GraphQLError> errors) {
+        this.data = data;
         this.errors.addAll(errors);
     }
 
 
-    public void setResult(Map<String, Object> result) {
-        this.result = result;
+    public void setData(Map<String, Object> result) {
+        this.data = result;
     }
 
 
     @Override
     public Map<String, Object> getData() {
-        return result;
+        return data;
     }
 
     @Override
