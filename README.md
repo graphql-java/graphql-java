@@ -16,6 +16,8 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
 to checkout the appropriate tag when looking for the version documented here.
 
 [![Build Status](https://travis-ci.org/andimarek/graphql-java.svg?branch=master)](https://travis-ci.org/andimarek/graphql-java)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
+
 
 
 # Table of Contents
