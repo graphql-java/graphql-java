@@ -86,7 +86,6 @@ publishing {
                         developer {
                             id 'andimarek'
                             name 'Andreas Marek'
-                            email 'andimarek@fastmail.fm'
                         }
                     }
                 }
