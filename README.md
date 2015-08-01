@@ -351,10 +351,11 @@ latest version value.
 
 #### How to use the latest build with Gradle
 
-Add the repository:
+Add the repositories:
 
 ```groovy
 repositories {
+    mavenCentral()
     maven { url  "http://dl.bintray.com/andimarek/graphql-java" }
 }
 
