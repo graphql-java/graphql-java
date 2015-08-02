@@ -154,8 +154,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             Value value = getValue(ctx.defaultValue().value());
             variableDefinition.setDefaultValue(value);
         }
-        OperationDefinition operationDefiniton = (OperationDefinition) getFromContextStack(ContextProperty.OperationDefinition);
-        operationDefiniton.getVariableDefinitions().add(variableDefinition);
+        OperationDefinition operationDefinition = (OperationDefinition) getFromContextStack(ContextProperty.OperationDefinition);
+        operationDefinition.getVariableDefinitions().add(variableDefinition);
 
         addContextProperty(ContextProperty.VariableDefinition, variableDefinition);
         super.visitVariableDefinition(ctx);
