@@ -5,11 +5,13 @@ import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.Type;
 import graphql.language.TypeName;
-import graphql.schema.*;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
 
 public class TypeFromAST {
 
-    private static SchemaUtil schemaUtil = new SchemaUtil();
 
     public static GraphQLType getTypeFromAST(GraphQLSchema schema, Type type) {
         if (type instanceof ListType) {

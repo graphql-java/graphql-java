@@ -12,13 +12,11 @@ import static graphql.execution.TypeFromAST.getTypeFromAST;
 
 public class FieldCollector {
 
-    private ValuesResolver valuesResolver;
     private ConditionalNodes conditionalNodes;
 
     private SchemaUtil schemaUtil = new SchemaUtil();
 
     public FieldCollector() {
-        valuesResolver = new ValuesResolver();
         conditionalNodes = new ConditionalNodes();
     }
 
