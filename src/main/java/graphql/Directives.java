@@ -28,7 +28,7 @@ public class Directives {
             .argument(newArgument()
                     .name("skip")
                     .type(new GraphQLNonNull(GraphQLBoolean))
-                    .description("Skipped when true")
+                    .description("Skipped when true.")
                     .build())
             .onOperation(false)
             .onFragment(true)
