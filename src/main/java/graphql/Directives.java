@@ -24,7 +24,7 @@ public class Directives {
 
     public static GraphQLDirective SkipDirective = GraphQLDirective.newDirective()
             .name("skip")
-            .description(" 'Directs the executor to skip this field or fragment when the `if`'argument is true.")
+            .description("Directs the executor to skip this field or fragment when the `if`'argument is true.")
             .argument(newArgument()
                     .name("skip")
                     .type(new GraphQLNonNull(GraphQLBoolean))
