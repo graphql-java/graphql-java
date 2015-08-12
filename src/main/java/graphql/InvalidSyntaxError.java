@@ -33,7 +33,7 @@ public class InvalidSyntaxError implements GraphQLError {
     }
 
     @Override
-    public ErrorType geErrorType() {
+    public ErrorType getErrorType() {
         return ErrorType.InvalidSyntax;
     }
 

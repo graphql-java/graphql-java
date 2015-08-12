@@ -48,7 +48,7 @@ public class ValidationError implements GraphQLError {
     }
 
     @Override
-    public ErrorType geErrorType() {
+    public ErrorType getErrorType() {
         return ErrorType.ValidationError;
     }
 
