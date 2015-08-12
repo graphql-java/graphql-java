@@ -11,6 +11,6 @@ public interface GraphQLError {
 
     List<SourceLocation> getLocations();
 
-    ErrorType geErrorType();
+    ErrorType getErrorType();
 
 }

@@ -29,7 +29,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     }
 
     @Override
-    public ErrorType geErrorType() {
+    public ErrorType getErrorType() {
         return ErrorType.DataFetchingException;
     }
 
