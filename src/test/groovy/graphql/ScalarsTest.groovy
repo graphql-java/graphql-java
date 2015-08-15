@@ -28,6 +28,24 @@ class ScalarsTest extends Specification {
         "test"        | "test"
     }
 
+    def "ID coerce literal"() {
+        expect:
+        Scalars.GraphQLID.getCoercing().coerceLiteral(literal) == result
+
+        where:
+        literal                 | result
+        new StringValue("5457486ABSBHS4w646") | "5457486ABSBHS4w646"
+    }
+
+    def "ID coerce object"() {
+        expect:
+        Scalars.GraphQLID.getCoercing().coerce(value) == result
+
+        where:
+        value         | result
+        "5457486ABSBHS4w646"        | "5457486ABSBHS4w646"
+    }
+
     def "Int coerce literal"() {
         expect:
         Scalars.GraphQLInt.getCoercing().coerceLiteral(literal) == result
