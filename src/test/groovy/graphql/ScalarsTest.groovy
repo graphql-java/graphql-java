@@ -37,6 +37,26 @@ class ScalarsTest extends Specification {
         new IntValue(42) | 42
     }
 
+    def "Long coerce object"() {
+        expect:
+        Scalars.GraphQLLong.getCoercing().coerce(value) == result
+
+        where:
+        value                        | result
+        "42"                         | 42
+        new Long(42345784398534785l) | 42345784398534785l
+        new Integer(42)              | 42
+    }
+
+    def "Long coerce literal"() {
+        expect:
+        Scalars.GraphQLLong.getCoercing().coerceLiteral(literal) == result
+
+        where:
+        literal               | result
+        new StringValue("42") | 42
+    }
+
     def "Int coerce object"() {
         expect:
         Scalars.GraphQLInt.getCoercing().coerce(value) == result
@@ -88,7 +108,6 @@ class ScalarsTest extends Specification {
         0       | false
         1       | true
     }
-
 
 
 }

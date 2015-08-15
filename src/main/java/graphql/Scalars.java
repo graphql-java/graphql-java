@@ -30,6 +30,28 @@ public class Scalars {
         }
     });
 
+
+    public static GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new Coercing() {
+        @Override
+        public Object coerce(Object input) {
+            if (input instanceof String) {
+                return Long.parseLong((String) input);
+            } else if (input instanceof Long) {
+                return input;
+            } else if (input instanceof Integer) {
+                return ((Integer) input).longValue();
+            } else {
+                throw new GraphQLException("");
+            }
+        }
+
+        @Override
+        public Object coerceLiteral(Object input) {
+            if (!(input instanceof StringValue)) return null;
+            return Long.parseLong(((StringValue) input).getValue());
+        }
+    });
+
     public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing() {
         @Override
         public Object coerce(Object input) {
