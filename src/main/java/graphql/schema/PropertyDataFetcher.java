@@ -1,11 +1,11 @@
 package graphql.schema;
 
 
-import graphql.Scalars;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
+
+import static graphql.Scalars.GraphQLBoolean;
 
 public class PropertyDataFetcher implements DataFetcher {
 
@@ -22,11 +22,11 @@ public class PropertyDataFetcher implements DataFetcher {
         if (source instanceof Map) {
             return ((Map<?, ?>) source).get(propertyName);
         }
-        return getPropertyViaGetter(source,environment.getFieldType());
+        return getPropertyViaGetter(source, environment.getFieldType());
     }
 
     private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType) {
-        String prefix = outputType == Scalars.GraphQLBoolean ? "is" : "get";
+        String prefix = isBooleanProperty(outputType) ? "is" : "get";
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         try {
             Method method = object.getClass().getMethod(getterName);
@@ -37,5 +37,13 @@ public class PropertyDataFetcher implements DataFetcher {
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private boolean isBooleanProperty(GraphQLOutputType outputType) {
+        if (outputType == GraphQLBoolean) return true;
+        if (outputType instanceof GraphQLNonNull) {
+            return ((GraphQLNonNull) outputType).getWrappedType() == GraphQLBoolean;
+        }
+        return false;
     }
 }
