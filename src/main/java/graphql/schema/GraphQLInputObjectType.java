@@ -66,7 +66,15 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         }
 
         public Builder field(GraphQLInputObjectField field) {
+            assertNotNull(field, "field can't be null");
             fields.add(field);
+            return this;
+        }
+
+        public Builder fields(List<GraphQLInputObjectField> fields) {
+            for (GraphQLInputObjectField field : fields) {
+                field(field);
+            }
             return this;
         }
 
