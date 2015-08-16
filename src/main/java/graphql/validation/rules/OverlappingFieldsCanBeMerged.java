@@ -94,7 +94,9 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         }
 
         if (!sameType(type1, type2)) {
-            String reason = String.format("%s: they return differing types %s and %s", responseName, type1.getName(), type2.getName());
+            String name1 = type1 != null ? type1.getName() : "null";
+            String name2 = type2 != null ? type2.getName() : "null";
+            String reason = String.format("%s: they return differing types %s and %s", responseName, name1, name2);
             return new Conflict(responseName, reason, field1, field2);
         }
 
@@ -150,9 +152,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     private boolean sameType(GraphQLType type1, GraphQLType type2) {
-        if (type1 == null && type2 == null) return true;
-        if (type1 == null) return false;
-        if (type2 == null) return false;
+        if (type1 == null || type2 == null) return true;
         return type1.equals(type2);
     }
 
