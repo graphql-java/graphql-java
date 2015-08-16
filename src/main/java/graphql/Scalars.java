@@ -19,7 +19,7 @@ public class Scalars {
             } else if (input instanceof Integer) {
                 return input;
             } else {
-                throw new GraphQLException("");
+                throw new GraphQLException("Illegal value for GraphQLInt:" + input);
             }
         }
 
@@ -109,7 +109,7 @@ public class Scalars {
     public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing() {
         @Override
         public Object coerce(Object input) {
-            if(input instanceof String){
+            if (input instanceof String) {
                 return input;
             }
 
