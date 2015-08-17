@@ -4,6 +4,7 @@ package graphql;
 import graphql.language.BooleanValue;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
+import graphql.language.LongValue;
 import graphql.language.StringValue;
 import graphql.schema.Coercing;
 import graphql.schema.GraphQLScalarType;
@@ -104,7 +105,34 @@ public class Scalars {
             return ((BooleanValue) input).isValue();
         }
     });
+    
+    public static final GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Built-in Long", new Coercing() {
+      @Override
+      public Object coerce(Object input) {
+        if (input instanceof String) {
+          return Long.parseLong((String) input);
+        } else if (input instanceof Integer) {
+          return new Long((int)input);
+        } else if (input instanceof Long) {
+          return input;
+        } else {
+          throw new GraphQLException("Unable to coerce: " + input.getClass().getName() + " to Long");
+        }
+      }
 
+      @Override
+      public Object coerceLiteral(Object input) {
+        if ((input instanceof LongValue)) {
+          return ((LongValue) input).getValue();
+        }
+        else if (input instanceof IntValue) {
+          return Long.valueOf(((IntValue) input).getValue());
+        }
+        else {
+          return null;
+        }
+      }
+    });
 
     public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing() {
         @Override
