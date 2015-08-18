@@ -84,8 +84,14 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLInputObjectField inputField = (GraphQLInputObjectField) environment.getSource();
-                            return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
+                            if (environment.getSource() instanceof GraphQLArgument) {
+                                GraphQLArgument inputField = (GraphQLArgument) environment.getSource();
+                                return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
+                            } else if (environment.getSource() instanceof GraphQLInputObjectField) {
+                                GraphQLInputObjectField inputField = (GraphQLInputObjectField) environment.getSource();
+                                return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
+                            }
+                            return null;
                         }
                     })
                     .build())
