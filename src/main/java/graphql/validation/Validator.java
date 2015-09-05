@@ -7,22 +7,23 @@ import graphql.validation.rules.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class Validator {
 
-    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Map<String, Object> arguments) {
         ValidationContext validationContext = new ValidationContext(schema, document);
 
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();
-        List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
+        List<AbstractRule> rules = createRules(validationContext, validationErrorCollector, arguments);
         LanguageTraversal languageTraversal = new LanguageTraversal();
         languageTraversal.traverse(document, new RulesVisitor(validationContext, rules));
 
         return validationErrorCollector.getErrors();
     }
 
-    private List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+    private List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector, Map<String, Object> arguments) {
         List<AbstractRule> rules = new ArrayList<>();
         ArgumentsOfCorrectType argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, validationErrorCollector);
         rules.add(argumentsOfCorrectType);
@@ -58,6 +59,8 @@ public class Validator {
         rules.add(variablesAreInputTypes);
         VariableTypesMatchRule variableTypesMatchRule = new VariableTypesMatchRule(validationContext, validationErrorCollector);
         rules.add(variableTypesMatchRule);
+        VariablesAreBoundRule variablesAreBoundRule = new VariablesAreBoundRule(validationContext, validationErrorCollector, arguments);
+        rules.add(variablesAreBoundRule);
         return rules;
     }
 }
