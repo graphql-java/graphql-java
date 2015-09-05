@@ -34,8 +34,6 @@ public class ConnectionCursor {
 
     @Override
     public String toString() {
-        return "ConnectionCursor{" +
-                "value='" + value + '\'' +
-                '}';
+        return value;
     }
 }
