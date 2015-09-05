@@ -68,7 +68,7 @@ public class GraphQL {
         }
 
         Validator validator = new Validator();
-        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
+        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document, arguments);
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
