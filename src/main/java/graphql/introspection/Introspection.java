@@ -380,7 +380,7 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("mutationType")
                     .description("If this server supports mutation, the type that mutation operations will be rooted at.")
-                    .type(new GraphQLNonNull(__Type))
+                    .type(__Type)
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
