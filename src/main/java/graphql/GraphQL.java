@@ -2,6 +2,7 @@ package graphql;
 
 
 import graphql.execution.Execution;
+import graphql.execution.ExecutionStrategy;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.Parser;
@@ -24,7 +25,7 @@ public class GraphQL {
 
 
     private final GraphQLSchema graphQLSchema;
-    private final ExecutorService executorService;
+    private final ExecutionStrategy executionStrategy;
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
@@ -33,9 +34,9 @@ public class GraphQL {
     }
 
 
-    public GraphQL(GraphQLSchema graphQLSchema, ExecutorService executorService) {
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy) {
         this.graphQLSchema = graphQLSchema;
-        this.executorService = executorService;
+        this.executionStrategy = executionStrategy;
     }
 
     public ExecutionResult execute(String requestString) {
@@ -72,7 +73,7 @@ public class GraphQL {
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
-        Execution execution = new Execution(executorService);
+        Execution execution = new Execution(executionStrategy);
         return execution.execute(graphQLSchema, context, document, operationName, arguments);
     }
 
