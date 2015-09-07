@@ -23,7 +23,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
     }
 
     @Override
-    ExecutionResult execute(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, final Map<String, List<Field>> fields) {
+    public ExecutionResult execute(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, final Map<String, List<Field>> fields) {
         if (executorService == null) return new SimpleExecutionStrategy().execute(executionContext, parentType, source, fields);
 
         Map<String, Future<Object>> futures = new LinkedHashMap<>();
