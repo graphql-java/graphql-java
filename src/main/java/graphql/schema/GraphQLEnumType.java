@@ -102,7 +102,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         }
 
         public Builder value(String name) {
-            values.add(new GraphQLEnumValueDefinition(name, null, null));
+            values.add(new GraphQLEnumValueDefinition(name, null, name));
             return this;
         }
 
