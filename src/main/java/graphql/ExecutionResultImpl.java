@@ -8,15 +8,18 @@ import java.util.Map;
 public class ExecutionResultImpl implements ExecutionResult {
 
     private final List<GraphQLError> errors = new ArrayList<>();
-    private Map<String, Object> data;
+    private Object data;
 
     public ExecutionResultImpl(List<? extends GraphQLError> errors) {
         this.errors.addAll(errors);
     }
 
-    public ExecutionResultImpl(Map<String, Object> data, List<? extends GraphQLError> errors) {
+    public ExecutionResultImpl(Object data, List<? extends GraphQLError> errors) {
         this.data = data;
-        this.errors.addAll(errors);
+
+        if (errors != null) {
+            this.errors.addAll(errors);
+        }
     }
 
     public void addErrors(List<? extends GraphQLError> errors) {
@@ -24,11 +27,11 @@ public class ExecutionResultImpl implements ExecutionResult {
     }
 
     @Override
-    public Map<String, Object> getData() {
+    public Object getData() {
         return data;
     }
 
-    public void setData(Map<String, Object> result) {
+    public void setData(Object result) {
         this.data = result;
     }
 

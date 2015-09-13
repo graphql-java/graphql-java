@@ -15,8 +15,9 @@ public class SimpleExecutionStrategy extends ExecutionStrategy {
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
             List<Field> fieldList = fields.get(fieldName);
-            Object resolvedResult = resolveField(executionContext, parentType, source, fieldList);
-            results.put(fieldName, resolvedResult);
+            ExecutionResult resolvedResult = resolveField(executionContext, parentType, source, fieldList);
+
+            results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
         }
         return new ExecutionResultImpl(results, executionContext.getErrors());
     }
