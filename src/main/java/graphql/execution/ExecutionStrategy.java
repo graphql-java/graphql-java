@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.language.Field;
 import graphql.schema.*;
@@ -25,7 +26,7 @@ public abstract class ExecutionStrategy {
 
     public abstract ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields);
 
-    protected Object resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
+    protected ExecutionResult resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
         if (fieldDef == null) return null;
 
@@ -51,10 +52,10 @@ public abstract class ExecutionStrategy {
         return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
     }
 
-    protected Object completeValue(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fields, Object result) {
+    protected ExecutionResult completeValue(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fields, Object result) {
         if (fieldType instanceof GraphQLNonNull) {
             GraphQLNonNull graphQLNonNull = (GraphQLNonNull) fieldType;
-            Object completed = completeValue(executionContext, graphQLNonNull.getWrappedType(), fields, result);
+            ExecutionResult completed = completeValue(executionContext, graphQLNonNull.getWrappedType(), fields, result);
             if (completed == null) throw new GraphQLException("Cannot return null for non-nullable type: " + fields);
             return completed;
 
@@ -88,7 +89,7 @@ public abstract class ExecutionStrategy {
         // Calling this from the executionContext so that you can shift from the simple execution strategy for mutations
         // back to the desired strategy.
 
-        return executionContext.getExecutionStrategy().execute(executionContext, resolvedType, result, subFields).getData();
+        return executionContext.getExecutionStrategy().execute(executionContext, resolvedType, result, subFields);
     }
 
     protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
@@ -104,20 +105,21 @@ public abstract class ExecutionStrategy {
     }
 
 
-    protected Object completeValueForEnum(GraphQLEnumType enumType, Object result) {
-        return enumType.getCoercing().coerce(result);
+    protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, Object result) {
+        return new ExecutionResultImpl(enumType.getCoercing().coerce(result), null);
     }
 
-    protected Object completeValueForScalar(GraphQLScalarType scalarType, Object result) {
-        return scalarType.getCoercing().coerce(result);
+    protected ExecutionResult completeValueForScalar(GraphQLScalarType scalarType, Object result) {
+        return new ExecutionResultImpl(scalarType.getCoercing().coerce(result), null);
     }
 
-    protected Object completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
+    protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
         List<Object> completedResults = new ArrayList<>();
         for (Object item : result) {
-            completedResults.add(completeValue(executionContext, fieldType.getWrappedType(), fields, item));
+            ExecutionResult completedValue = completeValue(executionContext, fieldType.getWrappedType(), fields, item);
+            completedResults.add(completedValue != null ? completedValue.getData() : null);
         }
-        return completedResults;
+        return new ExecutionResultImpl(completedResults, null);
     }
 
     protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
