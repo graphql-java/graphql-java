@@ -10,6 +10,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
 import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 
 import static graphql.Assert.assertNotNull;
 
@@ -62,8 +62,9 @@ public class GraphQL {
         Document document;
         try {
             document = parser.parseDocument(requestString);
-        } catch (RecognitionException e) {
-            SourceLocation sourceLocation = new SourceLocation(e.getOffendingToken().getLine(), e.getOffendingToken().getCharPositionInLine());
+        } catch (ParseCancellationException e) {
+            RecognitionException recognitionException = (RecognitionException) e.getCause();
+            SourceLocation sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
             InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
             return new ExecutionResultImpl(Arrays.asList(invalidSyntaxError));
         }

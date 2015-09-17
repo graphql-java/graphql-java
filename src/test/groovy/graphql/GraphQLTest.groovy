@@ -110,4 +110,21 @@ class GraphQLTest extends Specification {
         errors[0].errorType == ErrorType.InvalidSyntax
         errors[0].sourceLocations == [new SourceLocation(1, 8)]
     }
+
+    def "query with invalid syntax 2"() {
+        given:
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .build()
+        ).build()
+
+        when:
+        def errors = new GraphQL(schema).execute('{ hello[](() }').errors
+
+        then:
+        errors.size() == 1
+        errors[0].errorType == ErrorType.InvalidSyntax
+        errors[0].sourceLocations == [new SourceLocation(1, 7)]
+    }
 }

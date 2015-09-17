@@ -1,6 +1,7 @@
 package graphql.parser
 
 import graphql.language.*
+import org.antlr.v4.runtime.misc.ParseCancellationException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -64,7 +65,7 @@ class ParserTest extends Specification {
         when:
         Document document = new Parser().parseDocument(input)
         then:
-        isEqual(document,expectedResult)
+        isEqual(document, expectedResult)
 
     }
 
@@ -142,7 +143,7 @@ class ParserTest extends Specification {
 
         then:
         document.definitions.size() == 2
-        isEqual(document.definitions[0],queryDefinition)
+        isEqual(document.definitions[0], queryDefinition)
         isEqual(document.definitions[1], fragmentDefinition)
     }
 
@@ -310,7 +311,7 @@ class ParserTest extends Specification {
         Field helloField = document.definitions[0].selectionSet.selections[0]
 
         then:
-        isEqual(helloField,new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
+        isEqual(helloField, new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
     }
 
     @Unroll
@@ -336,6 +337,28 @@ class ParserTest extends Specification {
         '3e4'       | 3e4
         '123e-4'    | 123e-4
 
+    }
+
+    def "extraneous input is an excpetion"() {
+        given:
+        def input = """
+        mutation event(\$var: SomeType[]!) { res: update(arg: \$var) {id} }
+        """
+        when:
+        new Parser().parseDocument(input)
+        then:
+        thrown(ParseCancellationException)
+    }
+
+    def "invalid syntax is an error"() {
+        given:
+        def input = """
+        mutation event(() }
+        """
+        when:
+        new Parser().parseDocument(input)
+        then:
+        thrown(ParseCancellationException)
     }
 
 }
