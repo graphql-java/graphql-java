@@ -445,6 +445,8 @@ For example the StarWarSchema and the tests (among a lot of other things) are si
 
 I would appreciate any feedback via Twitter [@andimarek](https://twitter.com/andimarek) or Pull request/Issue.
 
+There is also the #jvm channel in the slack GraphQL Team. [Join here](https://graphql-slack.herokuapp.com/). 
+
 ### License
 
 graphql-java is licensed under the MIT License. See [LICENSE](LICENSE.md) for details.
