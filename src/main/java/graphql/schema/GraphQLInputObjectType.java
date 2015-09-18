@@ -8,18 +8,16 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLInputObjectType extends AbstractGraphQLType implements GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType {
 
-    private final String name;
     private final String description;
 
 
     private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
 
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
-        assertNotNull(name, "name can't be null");
+        super(name);
         assertNotNull(fields, "fields can't be null");
-        this.name = name;
         this.description = description;
         buildMap(fields);
     }
@@ -28,10 +26,6 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         for (GraphQLInputObjectField field : fields) {
             fieldMap.put(field.getName(), field);
         }
-    }
-
-    public String getName() {
-        return name;
     }
 
     public String getDescription() {

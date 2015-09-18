@@ -6,19 +6,17 @@ import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLUnionType extends AbstractGraphQLType implements GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
-    private final String name;
     private final String description;
     private List<GraphQLType> types = new ArrayList<>();
     private final TypeResolver typeResolver;
 
 
     public GraphQLUnionType(String name, String description, List<GraphQLType> types, TypeResolver typeResolver) {
-        assertNotNull(name, "name can't be null");
+        super(name);
         assertNotNull(types, "types can't be null");
         assertNotNull(typeResolver, "typeResolver can't be null");
-        this.name = name;
         this.description = description;
         this.types.addAll(types);
         this.typeResolver = typeResolver;
@@ -31,11 +29,6 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
     public TypeResolver getTypeResolver() {
         return typeResolver;
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 
     public String getDescription() {

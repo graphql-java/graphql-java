@@ -11,9 +11,8 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
+public class GraphQLEnumType extends AbstractGraphQLType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
 
-    private final String name;
     private final String description;
     private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
 
@@ -46,8 +45,8 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
 
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
+        super(name);
         assertNotNull(name, "name can't be null");
-        this.name = name;
         this.description = description;
         buildMap(values);
     }
@@ -56,10 +55,6 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         for (GraphQLEnumValueDefinition valueDefinition : values) {
             valueDefinitionMap.put(valueDefinition.getName(), valueDefinition);
         }
-    }
-
-    public String getName() {
-        return name;
     }
 
     public String getDescription() {

@@ -5,11 +5,12 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
+public class GraphQLNonNull extends AbstractGraphQLType implements GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
     private  GraphQLType wrappedType;
 
     public GraphQLNonNull(GraphQLType wrappedType) {
+        super("");
         assertNotNull(wrappedType, "wrappedType can't be null");
         this.wrappedType = wrappedType;
     }
