@@ -11,7 +11,7 @@ class SchemaUtilTest extends Specification {
 
     def "collectAllTypes"() {
         when:
-        Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema)
+        Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema, null)
         then:
         types == [(droidType.name)                 : droidType,
                   (humanType.name)                 : humanType,
