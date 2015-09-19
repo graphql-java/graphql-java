@@ -113,8 +113,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         } else {
             operationDefinition.setOperation(parseOperation(ctx.operationType()));
         }
-        if (ctx.NAME() != null) {
-            operationDefinition.setName(ctx.NAME().getText());
+        if (ctx.name() != null) {
+            operationDefinition.setName(ctx.name().getText());
         }
         result.getDefinitions().add(operationDefinition);
         addContextProperty(ContextProperty.OperationDefinition, operationDefinition);
@@ -149,7 +149,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitVariableDefinition( GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition variableDefinition = new VariableDefinition();
         newNode(variableDefinition, ctx);
-        variableDefinition.setName(ctx.variable().NAME().getText());
+        variableDefinition.setName(ctx.variable().name().getText());
         if (ctx.defaultValue() != null) {
             Value value = getValue(ctx.defaultValue().value());
             variableDefinition.setDefaultValue(value);
@@ -192,9 +192,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitField( GraphqlParser.FieldContext ctx) {
         Field newField = new Field();
         newNode(newField, ctx);
-        newField.setName(ctx.NAME().getText());
+        newField.setName(ctx.name().getText());
         if (ctx.alias() != null) {
-            newField.setAlias(ctx.alias().NAME().getText());
+            newField.setAlias(ctx.alias().name().getText());
         }
         addContextProperty(ContextProperty.Field, newField);
         super.visitField(ctx);
@@ -204,7 +204,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitTypeName( GraphqlParser.TypeNameContext ctx) {
-        TypeName typeName = new TypeName(ctx.NAME().getText());
+        TypeName typeName = new TypeName(ctx.name().getText());
         newNode(typeName, ctx);
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.value instanceof ListType) {
@@ -269,7 +269,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitArgument( GraphqlParser.ArgumentContext ctx) {
-        Argument argument = new Argument(ctx.NAME().getText(), getValue(ctx.valueWithVariable()));
+        Argument argument = new Argument(ctx.name().getText(), getValue(ctx.valueWithVariable()));
         newNode(argument, ctx);
         if (getFromContextStack(ContextProperty.Directive, false) != null) {
             ((Directive) getFromContextStack(ContextProperty.Directive)).getArguments().add(argument);
@@ -293,7 +293,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitDirective( GraphqlParser.DirectiveContext ctx) {
-        Directive directive = new Directive(ctx.NAME().getText());
+        Directive directive = new Directive(ctx.name().getText());
         newNode(directive, ctx);
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.contextProperty == ContextProperty.Field) {
@@ -352,12 +352,12 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             newNode(objectValue, ctx);
             for (GraphqlParser.ObjectFieldWithVariableContext objectFieldWithVariableContext :
                     ctx.objectValueWithVariable().objectFieldWithVariable()) {
-                ObjectField objectField = new ObjectField(objectFieldWithVariableContext.NAME().getText(), getValue(objectFieldWithVariableContext.valueWithVariable()));
+                ObjectField objectField = new ObjectField(objectFieldWithVariableContext.name().getText(), getValue(objectFieldWithVariableContext.valueWithVariable()));
                 objectValue.getObjectFields().add(objectField);
             }
             return objectValue;
         } else if (ctx.variable() != null) {
-            VariableReference variableReference = new VariableReference(ctx.variable().NAME().getText());
+            VariableReference variableReference = new VariableReference(ctx.variable().name().getText());
             newNode(variableReference, ctx);
             return variableReference;
         }
@@ -397,7 +397,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             newNode(objectValue,ctx);
             for (GraphqlParser.ObjectFieldContext objectFieldContext :
                     ctx.objectValue().objectField()) {
-                ObjectField objectField = new ObjectField(objectFieldContext.NAME().getText(), getValue(objectFieldContext.value()));
+                ObjectField objectField = new ObjectField(objectFieldContext.name().getText(), getValue(objectFieldContext.value()));
                 objectValue.getObjectFields().add(objectField);
             }
             return objectValue;

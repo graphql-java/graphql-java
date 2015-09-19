@@ -11,7 +11,7 @@ fragmentDefinition
 
 operationDefinition:
 selectionSet |
-operationType NAME variableDefinitions? directives? selectionSet;
+operationType name variableDefinitions? directives? selectionSet;
 
 operationType : 'query' | 'mutation';
 
@@ -19,7 +19,7 @@ variableDefinitions : '(' variableDefinition+ ')';
 
 variableDefinition : variable ':' type defaultValue?;
 
-variable : '$' NAME;
+variable : '$' name;
 
 defaultValue : '=' value;
 
@@ -32,13 +32,13 @@ field |
 fragmentSpread |
 inlineFragment;
 
-field : alias? NAME arguments? directives? selectionSet?;
+field : alias? name arguments? directives? selectionSet?;
 
-alias : NAME ':';
+alias : name ':';
 
 arguments : '(' argument+ ')';
 
-argument : NAME ':' valueWithVariable;
+argument : name ':' valueWithVariable;
 
 // Fragments
 
@@ -48,9 +48,11 @@ inlineFragment : '...' 'on' typeCondition directives? selectionSet;
 
 fragmentDefinition : 'fragment' fragmentName 'on' typeCondition directives? selectionSet;
 
-fragmentName :  NAME;
+fragmentName :  name;
 
 typeCondition : typeName;
+
+name: NAME | 'query';
 
 // Value
 
@@ -75,7 +77,7 @@ arrayValueWithVariable |
 objectValueWithVariable;
 
 
-enumValue : NAME ;
+enumValue : name ;
 
 // Array Value
 
@@ -88,20 +90,20 @@ arrayValueWithVariable: '[' valueWithVariable* ']';
 
 objectValue: '{' objectField* '}';
 objectValueWithVariable: '{' objectFieldWithVariable* '}';
-objectField : NAME ':' value;
-objectFieldWithVariable : NAME ':' valueWithVariable;
+objectField : name ':' value;
+objectFieldWithVariable : name ':' valueWithVariable;
 
 // Directives
 
 directives : directive+;
 
-directive :'@' NAME arguments?;
+directive :'@' name arguments?;
 
 // Types
 
 type : typeName | listType | nonNullType;
 
-typeName : NAME;
+typeName : name;
 listType : '[' type ']';
 nonNullType: typeName '!' | listType '!';
 

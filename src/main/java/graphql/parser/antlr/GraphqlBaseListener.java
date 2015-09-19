@@ -1,8 +1,7 @@
-// Generated from /Users/andi/dev/projects/graphql-java/src/main/grammar/Graphql.g4 by ANTLR 4.5
+// Generated from Graphql.g4 by ANTLR 4.5.1
 package graphql.parser.antlr;
 
 import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -17,432 +16,444 @@ public class GraphqlBaseListener implements GraphqlListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDocument(@NotNull GraphqlParser.DocumentContext ctx) { }
+	@Override public void enterDocument(GraphqlParser.DocumentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDocument(@NotNull GraphqlParser.DocumentContext ctx) { }
+	@Override public void exitDocument(GraphqlParser.DocumentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDefinition(@NotNull GraphqlParser.DefinitionContext ctx) { }
+	@Override public void enterDefinition(GraphqlParser.DefinitionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDefinition(@NotNull GraphqlParser.DefinitionContext ctx) { }
+	@Override public void exitDefinition(GraphqlParser.DefinitionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx) { }
+	@Override public void enterOperationDefinition(GraphqlParser.OperationDefinitionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx) { }
+	@Override public void exitOperationDefinition(GraphqlParser.OperationDefinitionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOperationType(@NotNull GraphqlParser.OperationTypeContext ctx) { }
+	@Override public void enterOperationType(GraphqlParser.OperationTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOperationType(@NotNull GraphqlParser.OperationTypeContext ctx) { }
+	@Override public void exitOperationType(GraphqlParser.OperationTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVariableDefinitions(@NotNull GraphqlParser.VariableDefinitionsContext ctx) { }
+	@Override public void enterVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVariableDefinitions(@NotNull GraphqlParser.VariableDefinitionsContext ctx) { }
+	@Override public void exitVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVariableDefinition(@NotNull GraphqlParser.VariableDefinitionContext ctx) { }
+	@Override public void enterVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVariableDefinition(@NotNull GraphqlParser.VariableDefinitionContext ctx) { }
+	@Override public void exitVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterVariable(@NotNull GraphqlParser.VariableContext ctx) { }
+	@Override public void enterVariable(GraphqlParser.VariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitVariable(@NotNull GraphqlParser.VariableContext ctx) { }
+	@Override public void exitVariable(GraphqlParser.VariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDefaultValue(@NotNull GraphqlParser.DefaultValueContext ctx) { }
+	@Override public void enterDefaultValue(GraphqlParser.DefaultValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDefaultValue(@NotNull GraphqlParser.DefaultValueContext ctx) { }
+	@Override public void exitDefaultValue(GraphqlParser.DefaultValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSelectionSet(@NotNull GraphqlParser.SelectionSetContext ctx) { }
+	@Override public void enterSelectionSet(GraphqlParser.SelectionSetContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSelectionSet(@NotNull GraphqlParser.SelectionSetContext ctx) { }
+	@Override public void exitSelectionSet(GraphqlParser.SelectionSetContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterSelection(@NotNull GraphqlParser.SelectionContext ctx) { }
+	@Override public void enterSelection(GraphqlParser.SelectionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitSelection(@NotNull GraphqlParser.SelectionContext ctx) { }
+	@Override public void exitSelection(GraphqlParser.SelectionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterField(@NotNull GraphqlParser.FieldContext ctx) { }
+	@Override public void enterField(GraphqlParser.FieldContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitField(@NotNull GraphqlParser.FieldContext ctx) { }
+	@Override public void exitField(GraphqlParser.FieldContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterAlias(@NotNull GraphqlParser.AliasContext ctx) { }
+	@Override public void enterAlias(GraphqlParser.AliasContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitAlias(@NotNull GraphqlParser.AliasContext ctx) { }
+	@Override public void exitAlias(GraphqlParser.AliasContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArguments(@NotNull GraphqlParser.ArgumentsContext ctx) { }
+	@Override public void enterArguments(GraphqlParser.ArgumentsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArguments(@NotNull GraphqlParser.ArgumentsContext ctx) { }
+	@Override public void exitArguments(GraphqlParser.ArgumentsContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArgument(@NotNull GraphqlParser.ArgumentContext ctx) { }
+	@Override public void enterArgument(GraphqlParser.ArgumentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArgument(@NotNull GraphqlParser.ArgumentContext ctx) { }
+	@Override public void exitArgument(GraphqlParser.ArgumentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx) { }
+	@Override public void enterFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx) { }
+	@Override public void exitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterInlineFragment(@NotNull GraphqlParser.InlineFragmentContext ctx) { }
+	@Override public void enterInlineFragment(GraphqlParser.InlineFragmentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitInlineFragment(@NotNull GraphqlParser.InlineFragmentContext ctx) { }
+	@Override public void exitInlineFragment(GraphqlParser.InlineFragmentContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFragmentDefinition(@NotNull GraphqlParser.FragmentDefinitionContext ctx) { }
+	@Override public void enterFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFragmentDefinition(@NotNull GraphqlParser.FragmentDefinitionContext ctx) { }
+	@Override public void exitFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFragmentName(@NotNull GraphqlParser.FragmentNameContext ctx) { }
+	@Override public void enterFragmentName(GraphqlParser.FragmentNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitFragmentName(@NotNull GraphqlParser.FragmentNameContext ctx) { }
+	@Override public void exitFragmentName(GraphqlParser.FragmentNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTypeCondition(@NotNull GraphqlParser.TypeConditionContext ctx) { }
+	@Override public void enterTypeCondition(GraphqlParser.TypeConditionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTypeCondition(@NotNull GraphqlParser.TypeConditionContext ctx) { }
+	@Override public void exitTypeCondition(GraphqlParser.TypeConditionContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterValue(@NotNull GraphqlParser.ValueContext ctx) { }
+	@Override public void enterName(GraphqlParser.NameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitValue(@NotNull GraphqlParser.ValueContext ctx) { }
+	@Override public void exitName(GraphqlParser.NameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx) { }
+	@Override public void enterValue(GraphqlParser.ValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx) { }
+	@Override public void exitValue(GraphqlParser.ValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterEnumValue(@NotNull GraphqlParser.EnumValueContext ctx) { }
+	@Override public void enterValueWithVariable(GraphqlParser.ValueWithVariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitEnumValue(@NotNull GraphqlParser.EnumValueContext ctx) { }
+	@Override public void exitValueWithVariable(GraphqlParser.ValueWithVariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArrayValue(@NotNull GraphqlParser.ArrayValueContext ctx) { }
+	@Override public void enterEnumValue(GraphqlParser.EnumValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArrayValue(@NotNull GraphqlParser.ArrayValueContext ctx) { }
+	@Override public void exitEnumValue(GraphqlParser.EnumValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx) { }
+	@Override public void enterArrayValue(GraphqlParser.ArrayValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx) { }
+	@Override public void exitArrayValue(GraphqlParser.ArrayValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterObjectValue(@NotNull GraphqlParser.ObjectValueContext ctx) { }
+	@Override public void enterArrayValueWithVariable(GraphqlParser.ArrayValueWithVariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitObjectValue(@NotNull GraphqlParser.ObjectValueContext ctx) { }
+	@Override public void exitArrayValueWithVariable(GraphqlParser.ArrayValueWithVariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx) { }
+	@Override public void enterObjectValue(GraphqlParser.ObjectValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx) { }
+	@Override public void exitObjectValue(GraphqlParser.ObjectValueContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterObjectField(@NotNull GraphqlParser.ObjectFieldContext ctx) { }
+	@Override public void enterObjectValueWithVariable(GraphqlParser.ObjectValueWithVariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitObjectField(@NotNull GraphqlParser.ObjectFieldContext ctx) { }
+	@Override public void exitObjectValueWithVariable(GraphqlParser.ObjectValueWithVariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx) { }
+	@Override public void enterObjectField(GraphqlParser.ObjectFieldContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx) { }
+	@Override public void exitObjectField(GraphqlParser.ObjectFieldContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDirectives(@NotNull GraphqlParser.DirectivesContext ctx) { }
+	@Override public void enterObjectFieldWithVariable(GraphqlParser.ObjectFieldWithVariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDirectives(@NotNull GraphqlParser.DirectivesContext ctx) { }
+	@Override public void exitObjectFieldWithVariable(GraphqlParser.ObjectFieldWithVariableContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDirective(@NotNull GraphqlParser.DirectiveContext ctx) { }
+	@Override public void enterDirectives(GraphqlParser.DirectivesContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDirective(@NotNull GraphqlParser.DirectiveContext ctx) { }
+	@Override public void exitDirectives(GraphqlParser.DirectivesContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterType(@NotNull GraphqlParser.TypeContext ctx) { }
+	@Override public void enterDirective(GraphqlParser.DirectiveContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitType(@NotNull GraphqlParser.TypeContext ctx) { }
+	@Override public void exitDirective(GraphqlParser.DirectiveContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterTypeName(@NotNull GraphqlParser.TypeNameContext ctx) { }
+	@Override public void enterType(GraphqlParser.TypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitTypeName(@NotNull GraphqlParser.TypeNameContext ctx) { }
+	@Override public void exitType(GraphqlParser.TypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterListType(@NotNull GraphqlParser.ListTypeContext ctx) { }
+	@Override public void enterTypeName(GraphqlParser.TypeNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitListType(@NotNull GraphqlParser.ListTypeContext ctx) { }
+	@Override public void exitTypeName(GraphqlParser.TypeNameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterNonNullType(@NotNull GraphqlParser.NonNullTypeContext ctx) { }
+	@Override public void enterListType(GraphqlParser.ListTypeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitNonNullType(@NotNull GraphqlParser.NonNullTypeContext ctx) { }
+	@Override public void exitListType(GraphqlParser.ListTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNonNullType(GraphqlParser.NonNullTypeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNonNullType(GraphqlParser.NonNullTypeContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterEveryRule(@NotNull ParserRuleContext ctx) { }
+	@Override public void enterEveryRule(ParserRuleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitEveryRule(@NotNull ParserRuleContext ctx) { }
+	@Override public void exitEveryRule(ParserRuleContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void visitTerminal(@NotNull TerminalNode node) { }
+	@Override public void visitTerminal(TerminalNode node) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void visitErrorNode(@NotNull ErrorNode node) { }
+	@Override public void visitErrorNode(ErrorNode node) { }
 }
