@@ -16,6 +16,18 @@ public class GraphqlBaseListener implements GraphqlListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterName(GraphqlParser.NameContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitName(GraphqlParser.NameContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterDocument(GraphqlParser.DocumentContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -184,18 +196,6 @@ public class GraphqlBaseListener implements GraphqlListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterInlineFragment(GraphqlParser.InlineFragmentContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -203,6 +203,18 @@ public class GraphqlBaseListener implements GraphqlListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitInlineFragment(GraphqlParser.InlineFragmentContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -239,18 +251,6 @@ public class GraphqlBaseListener implements GraphqlListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitTypeCondition(GraphqlParser.TypeConditionContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterName(GraphqlParser.NameContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitName(GraphqlParser.NameContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

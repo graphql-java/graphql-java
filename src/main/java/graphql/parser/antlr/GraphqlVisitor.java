@@ -11,6 +11,12 @@ import org.antlr.v4.runtime.tree.ParseTreeVisitor;
  */
 public interface GraphqlVisitor<T> extends ParseTreeVisitor<T> {
 	/**
+	 * Visit a parse tree produced by {@link GraphqlParser#name}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitName(GraphqlParser.NameContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link GraphqlParser#document}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -95,17 +101,17 @@ public interface GraphqlVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitArgument(GraphqlParser.ArgumentContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link GraphqlParser#fragmentSpread}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx);
-	/**
 	 * Visit a parse tree produced by {@link GraphqlParser#inlineFragment}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitInlineFragment(GraphqlParser.InlineFragmentContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link GraphqlParser#fragmentSpread}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link GraphqlParser#fragmentDefinition}.
 	 * @param ctx the parse tree
@@ -124,12 +130,6 @@ public interface GraphqlVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitTypeCondition(GraphqlParser.TypeConditionContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link GraphqlParser#name}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitName(GraphqlParser.NameContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link GraphqlParser#value}.
 	 * @param ctx the parse tree

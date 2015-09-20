@@ -8,6 +8,16 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
  */
 public interface GraphqlListener extends ParseTreeListener {
 	/**
+	 * Enter a parse tree produced by {@link GraphqlParser#name}.
+	 * @param ctx the parse tree
+	 */
+	void enterName(GraphqlParser.NameContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link GraphqlParser#name}.
+	 * @param ctx the parse tree
+	 */
+	void exitName(GraphqlParser.NameContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#document}.
 	 * @param ctx the parse tree
 	 */
@@ -148,16 +158,6 @@ public interface GraphqlListener extends ParseTreeListener {
 	 */
 	void exitArgument(GraphqlParser.ArgumentContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link GraphqlParser#fragmentSpread}.
-	 * @param ctx the parse tree
-	 */
-	void enterFragmentSpread(GraphqlParser.FragmentSpreadContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link GraphqlParser#fragmentSpread}.
-	 * @param ctx the parse tree
-	 */
-	void exitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx);
-	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#inlineFragment}.
 	 * @param ctx the parse tree
 	 */
@@ -167,6 +167,16 @@ public interface GraphqlListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitInlineFragment(GraphqlParser.InlineFragmentContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link GraphqlParser#fragmentSpread}.
+	 * @param ctx the parse tree
+	 */
+	void enterFragmentSpread(GraphqlParser.FragmentSpreadContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link GraphqlParser#fragmentSpread}.
+	 * @param ctx the parse tree
+	 */
+	void exitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#fragmentDefinition}.
 	 * @param ctx the parse tree
@@ -197,16 +207,6 @@ public interface GraphqlListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitTypeCondition(GraphqlParser.TypeConditionContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link GraphqlParser#name}.
-	 * @param ctx the parse tree
-	 */
-	void enterName(GraphqlParser.NameContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link GraphqlParser#name}.
-	 * @param ctx the parse tree
-	 */
-	void exitName(GraphqlParser.NameContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#value}.
 	 * @param ctx the parse tree

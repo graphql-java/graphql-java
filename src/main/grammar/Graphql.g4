@@ -1,6 +1,7 @@
 grammar Graphql;
 
 // Document
+name: NAME | 'query' | 'mutation' | 'fragment';
 
 document : definition+;
 
@@ -29,8 +30,8 @@ selectionSet :  '{' selection+ '}';
 
 selection :
 field |
-fragmentSpread |
-inlineFragment;
+inlineFragment |
+fragmentSpread;
 
 field : alias? name arguments? directives? selectionSet?;
 
@@ -42,17 +43,16 @@ argument : name ':' valueWithVariable;
 
 // Fragments
 
-fragmentSpread : '...' fragmentName directives?;
-
 inlineFragment : '...' 'on' typeCondition directives? selectionSet;
 
-fragmentDefinition : 'fragment' fragmentName 'on' typeCondition directives? selectionSet;
+fragmentSpread : '...' fragmentName directives?;
 
-fragmentName :  name;
+fragmentDefinition : 'fragment' name 'on' typeCondition directives? selectionSet;
+
+fragmentName :  (NAME | 'query' | 'mutation' | 'fragment');
 
 typeCondition : typeName;
 
-name: NAME | 'query';
 
 // Value
 
@@ -77,7 +77,7 @@ arrayValueWithVariable |
 objectValueWithVariable;
 
 
-enumValue : name ;
+enumValue : NAME | 'query' | 'mutation' | 'fragment' | 'on';
 
 // Array Value
 

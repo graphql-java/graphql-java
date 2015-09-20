@@ -167,7 +167,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitFragmentDefinition( GraphqlParser.FragmentDefinitionContext ctx) {
         FragmentDefinition fragmentDefinition = new FragmentDefinition();
         newNode(fragmentDefinition, ctx);
-        fragmentDefinition.setName(ctx.fragmentName().getText());
+        fragmentDefinition.setName(ctx.name().getText());
         fragmentDefinition.setTypeCondition(new TypeName(ctx.typeCondition().getText()));
         addContextProperty(ContextProperty.FragmentDefinition, fragmentDefinition);
         result.getDefinitions().add(fragmentDefinition);
