@@ -11,8 +11,9 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLEnumType extends AbstractGraphQLType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
+public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
 
+    private final String name;
     private final String description;
     private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
 
@@ -45,8 +46,8 @@ public class GraphQLEnumType extends AbstractGraphQLType implements GraphQLType,
 
 
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
-        super(name);
-        assertNotNull(name, "name can't be null");
+        assertNotNull(name, "name can't null");
+        this.name = name;
         this.description = description;
         buildMap(values);
     }
@@ -68,6 +69,26 @@ public class GraphQLEnumType extends AbstractGraphQLType implements GraphQLType,
 
     public static Builder newEnum() {
         return new Builder();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLType that = (GraphQLType) o;
+
+        return getName().equals(that.getName());
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
     public static class Builder {

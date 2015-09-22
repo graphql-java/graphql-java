@@ -8,16 +8,16 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLInputObjectType extends AbstractGraphQLType implements GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLInputObjectType implements GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType {
 
+    private final String name;
     private final String description;
-
-
     private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
 
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
-        super(name);
+        assertNotNull(name, "name can't null");
         assertNotNull(fields, "fields can't be null");
+        this.name = name;
         this.description = description;
         buildMap(fields);
     }
@@ -42,6 +42,26 @@ public class GraphQLInputObjectType extends AbstractGraphQLType implements Graph
 
     public static Builder newInputObject() {
         return new Builder();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLType that = (GraphQLType) o;
+
+        return getName().equals(that.getName());
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
     public static class Builder {

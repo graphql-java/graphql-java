@@ -6,17 +6,19 @@ import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLUnionType extends AbstractGraphQLType implements GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLUnionType implements GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
+    private final String name;
     private final String description;
     private List<GraphQLType> types = new ArrayList<>();
     private final TypeResolver typeResolver;
 
 
     public GraphQLUnionType(String name, String description, List<GraphQLType> types, TypeResolver typeResolver) {
-        super(name);
+        assertNotNull(name, "name can't null");
         assertNotNull(types, "types can't be null");
         assertNotNull(typeResolver, "typeResolver can't be null");
+        this.name = name;
         this.description = description;
         this.types.addAll(types);
         this.typeResolver = typeResolver;
@@ -37,6 +39,26 @@ public class GraphQLUnionType extends AbstractGraphQLType implements GraphQLOutp
 
     public static Builder newUnionType() {
         return new Builder();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLType that = (GraphQLType) o;
+
+        return getName().equals(that.getName());
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
     public static class Builder {

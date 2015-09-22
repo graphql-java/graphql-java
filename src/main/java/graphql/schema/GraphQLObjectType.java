@@ -8,16 +8,18 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLObjectType extends AbstractGraphQLType implements GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLObjectType implements GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
+    private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private final List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
-        super(name);
+        assertNotNull(name, "name can't null");
         assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
         assertNotNull(interfaces, "interfaces can't null");
+        this.name = name;
         this.description = description;
         this.interfaces.addAll(interfaces);
         buildDefinitionMap(fieldDefinitions);
@@ -60,6 +62,26 @@ public class GraphQLObjectType extends AbstractGraphQLType implements GraphQLOut
 
     public static Builder newObject() {
         return new Builder();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLType that = (GraphQLType) o;
+
+        return getName().equals(that.getName());
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
 
