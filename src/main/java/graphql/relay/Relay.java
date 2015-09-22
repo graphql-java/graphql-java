@@ -123,7 +123,7 @@ public class Relay {
                         .build())
                 .field(newFieldDefinition()
                         .name("pageInfo")
-                        .type(pageInfoType)
+                        .type(new GraphQLNonNull(pageInfoType))
                         .build())
                 .fields(connectionFields)
                 .build();
