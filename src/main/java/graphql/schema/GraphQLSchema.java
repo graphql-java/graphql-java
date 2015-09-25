@@ -1,31 +1,40 @@
 package graphql.schema;
 
 
-import graphql.Directives;
+import static graphql.Assert.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static graphql.Assert.assertNotNull;
+import graphql.Assert;
+import graphql.Directives;
 
 public class GraphQLSchema {
 
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
     private final Map<String, GraphQLType> typeMap;
+    private Set<GraphQLType> dictionary;
 
     public GraphQLSchema(GraphQLObjectType queryType) {
-        this(queryType, null);
+        this(queryType, null, Collections.<GraphQLType>emptySet());
     }
 
+    public Set<GraphQLType> getDictionary() {
+      return dictionary;
+    }
 
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType) {
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> dictionary) {
+        assertNotNull(dictionary, "dictionary can't be null");
         assertNotNull(queryType, "queryType can't be null");
         this.queryType = queryType;
         this.mutationType = mutationType;
-        typeMap = new SchemaUtil().allTypes(this);
+        this.dictionary = dictionary;
+        typeMap = new SchemaUtil().allTypes(this, dictionary);
     }
 
     public GraphQLType getType(String typeName) {
@@ -80,11 +89,17 @@ public class GraphQLSchema {
         }
 
         public GraphQLSchema build() {
-            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType);
-            new SchemaUtil().replaceTypeReferences(graphQLSchema);
-            return graphQLSchema;
-        }
+          return build(Collections.<GraphQLType>emptySet());
+      }
+
+        public GraphQLSchema build(Set<GraphQLType> dictionary) {
+          Assert.assertNotNull(dictionary, "dictionary can't be null");
+          GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, dictionary);
+          new SchemaUtil().replaceTypeReferences(graphQLSchema);
+          return graphQLSchema;
+      }
 
 
     }
+
 }

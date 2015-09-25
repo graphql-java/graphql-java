@@ -3,6 +3,8 @@ package graphql.schema
 import graphql.introspection.Introspection
 import spock.lang.Specification
 
+import java.util.Collections;
+
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.*
@@ -11,7 +13,7 @@ class SchemaUtilTest extends Specification {
 
     def "collectAllTypes"() {
         when:
-        Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema)
+        Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema, Collections.emptySet())
         then:
         types == [(droidType.name)                 : droidType,
                   (humanType.name)                 : humanType,
