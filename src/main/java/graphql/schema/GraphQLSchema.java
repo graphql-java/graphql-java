@@ -5,10 +5,12 @@ import static graphql.Assert.assertNotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import graphql.Assert;
 import graphql.Directives;
 
 public class GraphQLSchema {
@@ -19,7 +21,7 @@ public class GraphQLSchema {
     private Set<GraphQLType> dictionary;
 
     public GraphQLSchema(GraphQLObjectType queryType) {
-        this(queryType, null, null);
+        this(queryType, null, Collections.<GraphQLType>emptySet());
     }
 
     public Set<GraphQLType> getDictionary() {
@@ -27,6 +29,7 @@ public class GraphQLSchema {
     }
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> dictionary) {
+        assertNotNull(dictionary, "dictionary can't be null");
         assertNotNull(queryType, "queryType can't be null");
         this.queryType = queryType;
         this.mutationType = mutationType;
@@ -86,10 +89,11 @@ public class GraphQLSchema {
         }
 
         public GraphQLSchema build() {
-          return build(null);
+          return build(Collections.<GraphQLType>emptySet());
       }
 
         public GraphQLSchema build(Set<GraphQLType> dictionary) {
+          Assert.assertNotNull(dictionary, "dictionary can't be null");
           GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, dictionary);
           new SchemaUtil().replaceTypeReferences(graphQLSchema);
           return graphQLSchema;
