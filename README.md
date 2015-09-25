@@ -157,7 +157,7 @@ GraphQLObjectType simpsonCharacter = newObject()
 
 Example:
 ```java
-GraphQLObjectType comicCharacter = newObject()
+GraphQLInterfaceType comicCharacter = newInterface()
     .name("ComicCharacter")
     .description("A abstract comic character.")
     .field(newFieldDefinition()
