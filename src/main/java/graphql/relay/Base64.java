@@ -14,7 +14,7 @@ public class Base64 {
         }
     }
 
-    public static String fromeBase64(String string) {
+    public static String fromBase64(String string) {
         return new String(DatatypeConverter.parseBase64Binary(string));
     }
 }

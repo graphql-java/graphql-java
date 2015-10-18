@@ -94,7 +94,7 @@ public class SimpleListConnection implements DataFetcher {
 
     private int getOffsetFromCursor(String cursor, int defaultValue) {
         if (cursor == null) return defaultValue;
-        String string = Base64.fromeBase64(cursor);
+        String string = Base64.fromBase64(cursor);
         return Integer.parseInt(string.substring(DUMMY_CURSOR_PREFIX.length()));
     }
 
