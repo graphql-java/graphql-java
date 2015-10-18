@@ -178,7 +178,7 @@ public class Relay {
     }
 
     public ResolvedGlobalId fromGlobalId(String globalId) {
-        String[] split = Base64.fromeBase64(globalId).split(":", 2);
+        String[] split = Base64.fromBase64(globalId).split(":", 2);
         return new ResolvedGlobalId(split[0], split[1]);
     }
 }
