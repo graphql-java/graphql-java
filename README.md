@@ -173,7 +173,7 @@ GraphQLInterfaceType comicCharacter = newInterface()
 
 Example: (a snippet from [here](src/test/groovy/graphql/GarfieldSchema.java))
 ```java
-PetType = GraphQLUnionType.newUnionType()
+GraphQLUnionType PetType = newUnionType()
     .name("Pet")
     .possibleType(CatType)
     .possibleType(DogType)

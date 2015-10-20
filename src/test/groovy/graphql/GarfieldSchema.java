@@ -13,6 +13,7 @@ import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static graphql.schema.GraphQLObjectType.newObject;
+import static graphql.schema.GraphQLUnionType.newUnionType;
 
 public class GarfieldSchema {
 
@@ -149,7 +150,7 @@ public class GarfieldSchema {
             .withInterface(NamedType)
             .build();
 
-    public static GraphQLUnionType PetType = GraphQLUnionType.newUnionType()
+    public static GraphQLUnionType PetType = newUnionType()
             .name("Pet")
             .possibleType(CatType)
             .possibleType(DogType)
