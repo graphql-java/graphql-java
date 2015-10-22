@@ -1,6 +1,5 @@
-// Generated from /Users/andi/dev/projects/graphql-java/src/main/grammar/Graphql.g4 by ANTLR 4.5
+// Generated from Graphql.g4 by ANTLR 4.5.1
 package graphql.parser.antlr;
-import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 /**
@@ -18,236 +17,243 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDocument(@NotNull GraphqlParser.DocumentContext ctx) { return visitChildren(ctx); }
+	@Override public T visitName(GraphqlParser.NameContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDefinition(@NotNull GraphqlParser.DefinitionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDocument(GraphqlParser.DocumentContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDefinition(GraphqlParser.DefinitionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitOperationType(@NotNull GraphqlParser.OperationTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitOperationDefinition(GraphqlParser.OperationDefinitionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitVariableDefinitions(@NotNull GraphqlParser.VariableDefinitionsContext ctx) { return visitChildren(ctx); }
+	@Override public T visitOperationType(GraphqlParser.OperationTypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitVariableDefinition(@NotNull GraphqlParser.VariableDefinitionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitVariable(@NotNull GraphqlParser.VariableContext ctx) { return visitChildren(ctx); }
+	@Override public T visitVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDefaultValue(@NotNull GraphqlParser.DefaultValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitVariable(GraphqlParser.VariableContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSelectionSet(@NotNull GraphqlParser.SelectionSetContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDefaultValue(GraphqlParser.DefaultValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitSelection(@NotNull GraphqlParser.SelectionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSelectionSet(GraphqlParser.SelectionSetContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitField(@NotNull GraphqlParser.FieldContext ctx) { return visitChildren(ctx); }
+	@Override public T visitSelection(GraphqlParser.SelectionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitAlias(@NotNull GraphqlParser.AliasContext ctx) { return visitChildren(ctx); }
+	@Override public T visitField(GraphqlParser.FieldContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitArguments(@NotNull GraphqlParser.ArgumentsContext ctx) { return visitChildren(ctx); }
+	@Override public T visitAlias(GraphqlParser.AliasContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitArgument(@NotNull GraphqlParser.ArgumentContext ctx) { return visitChildren(ctx); }
+	@Override public T visitArguments(GraphqlParser.ArgumentsContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx) { return visitChildren(ctx); }
+	@Override public T visitArgument(GraphqlParser.ArgumentContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitInlineFragment(@NotNull GraphqlParser.InlineFragmentContext ctx) { return visitChildren(ctx); }
+	@Override public T visitInlineFragment(GraphqlParser.InlineFragmentContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFragmentDefinition(@NotNull GraphqlParser.FragmentDefinitionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitFragmentName(@NotNull GraphqlParser.FragmentNameContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTypeCondition(@NotNull GraphqlParser.TypeConditionContext ctx) { return visitChildren(ctx); }
+	@Override public T visitFragmentName(GraphqlParser.FragmentNameContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitValue(@NotNull GraphqlParser.ValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTypeCondition(GraphqlParser.TypeConditionContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx) { return visitChildren(ctx); }
+	@Override public T visitValue(GraphqlParser.ValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitEnumValue(@NotNull GraphqlParser.EnumValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitValueWithVariable(GraphqlParser.ValueWithVariableContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitArrayValue(@NotNull GraphqlParser.ArrayValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitEnumValue(GraphqlParser.EnumValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx) { return visitChildren(ctx); }
+	@Override public T visitArrayValue(GraphqlParser.ArrayValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitObjectValue(@NotNull GraphqlParser.ObjectValueContext ctx) { return visitChildren(ctx); }
+	@Override public T visitArrayValueWithVariable(GraphqlParser.ArrayValueWithVariableContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx) { return visitChildren(ctx); }
+	@Override public T visitObjectValue(GraphqlParser.ObjectValueContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitObjectField(@NotNull GraphqlParser.ObjectFieldContext ctx) { return visitChildren(ctx); }
+	@Override public T visitObjectValueWithVariable(GraphqlParser.ObjectValueWithVariableContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx) { return visitChildren(ctx); }
+	@Override public T visitObjectField(GraphqlParser.ObjectFieldContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDirectives(@NotNull GraphqlParser.DirectivesContext ctx) { return visitChildren(ctx); }
+	@Override public T visitObjectFieldWithVariable(GraphqlParser.ObjectFieldWithVariableContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitDirective(@NotNull GraphqlParser.DirectiveContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDirectives(GraphqlParser.DirectivesContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitType(@NotNull GraphqlParser.TypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitDirective(GraphqlParser.DirectiveContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitTypeName(@NotNull GraphqlParser.TypeNameContext ctx) { return visitChildren(ctx); }
+	@Override public T visitType(GraphqlParser.TypeContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitListType(@NotNull GraphqlParser.ListTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitTypeName(GraphqlParser.TypeNameContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitNonNullType(@NotNull GraphqlParser.NonNullTypeContext ctx) { return visitChildren(ctx); }
+	@Override public T visitListType(GraphqlParser.ListTypeContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitNonNullType(GraphqlParser.NonNullTypeContext ctx) { return visitChildren(ctx); }
 }

@@ -1,6 +1,5 @@
-// Generated from /Users/andi/dev/projects/graphql-java/src/main/grammar/Graphql.g4 by ANTLR 4.5
+// Generated from Graphql.g4 by ANTLR 4.5.1
 package graphql.parser.antlr;
-import org.antlr.v4.runtime.misc.NotNull;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -9,343 +8,353 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
  */
 public interface GraphqlListener extends ParseTreeListener {
 	/**
+	 * Enter a parse tree produced by {@link GraphqlParser#name}.
+	 * @param ctx the parse tree
+	 */
+	void enterName(GraphqlParser.NameContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link GraphqlParser#name}.
+	 * @param ctx the parse tree
+	 */
+	void exitName(GraphqlParser.NameContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#document}.
 	 * @param ctx the parse tree
 	 */
-	void enterDocument(@NotNull GraphqlParser.DocumentContext ctx);
+	void enterDocument(GraphqlParser.DocumentContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#document}.
 	 * @param ctx the parse tree
 	 */
-	void exitDocument(@NotNull GraphqlParser.DocumentContext ctx);
+	void exitDocument(GraphqlParser.DocumentContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#definition}.
 	 * @param ctx the parse tree
 	 */
-	void enterDefinition(@NotNull GraphqlParser.DefinitionContext ctx);
+	void enterDefinition(GraphqlParser.DefinitionContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#definition}.
 	 * @param ctx the parse tree
 	 */
-	void exitDefinition(@NotNull GraphqlParser.DefinitionContext ctx);
+	void exitDefinition(GraphqlParser.DefinitionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#operationDefinition}.
 	 * @param ctx the parse tree
 	 */
-	void enterOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx);
+	void enterOperationDefinition(GraphqlParser.OperationDefinitionContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#operationDefinition}.
 	 * @param ctx the parse tree
 	 */
-	void exitOperationDefinition(@NotNull GraphqlParser.OperationDefinitionContext ctx);
+	void exitOperationDefinition(GraphqlParser.OperationDefinitionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#operationType}.
 	 * @param ctx the parse tree
 	 */
-	void enterOperationType(@NotNull GraphqlParser.OperationTypeContext ctx);
+	void enterOperationType(GraphqlParser.OperationTypeContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#operationType}.
 	 * @param ctx the parse tree
 	 */
-	void exitOperationType(@NotNull GraphqlParser.OperationTypeContext ctx);
+	void exitOperationType(GraphqlParser.OperationTypeContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#variableDefinitions}.
 	 * @param ctx the parse tree
 	 */
-	void enterVariableDefinitions(@NotNull GraphqlParser.VariableDefinitionsContext ctx);
+	void enterVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#variableDefinitions}.
 	 * @param ctx the parse tree
 	 */
-	void exitVariableDefinitions(@NotNull GraphqlParser.VariableDefinitionsContext ctx);
+	void exitVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#variableDefinition}.
 	 * @param ctx the parse tree
 	 */
-	void enterVariableDefinition(@NotNull GraphqlParser.VariableDefinitionContext ctx);
+	void enterVariableDefinition(GraphqlParser.VariableDefinitionContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#variableDefinition}.
 	 * @param ctx the parse tree
 	 */
-	void exitVariableDefinition(@NotNull GraphqlParser.VariableDefinitionContext ctx);
+	void exitVariableDefinition(GraphqlParser.VariableDefinitionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#variable}.
 	 * @param ctx the parse tree
 	 */
-	void enterVariable(@NotNull GraphqlParser.VariableContext ctx);
+	void enterVariable(GraphqlParser.VariableContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#variable}.
 	 * @param ctx the parse tree
 	 */
-	void exitVariable(@NotNull GraphqlParser.VariableContext ctx);
+	void exitVariable(GraphqlParser.VariableContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#defaultValue}.
 	 * @param ctx the parse tree
 	 */
-	void enterDefaultValue(@NotNull GraphqlParser.DefaultValueContext ctx);
+	void enterDefaultValue(GraphqlParser.DefaultValueContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#defaultValue}.
 	 * @param ctx the parse tree
 	 */
-	void exitDefaultValue(@NotNull GraphqlParser.DefaultValueContext ctx);
+	void exitDefaultValue(GraphqlParser.DefaultValueContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#selectionSet}.
 	 * @param ctx the parse tree
 	 */
-	void enterSelectionSet(@NotNull GraphqlParser.SelectionSetContext ctx);
+	void enterSelectionSet(GraphqlParser.SelectionSetContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#selectionSet}.
 	 * @param ctx the parse tree
 	 */
-	void exitSelectionSet(@NotNull GraphqlParser.SelectionSetContext ctx);
+	void exitSelectionSet(GraphqlParser.SelectionSetContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#selection}.
 	 * @param ctx the parse tree
 	 */
-	void enterSelection(@NotNull GraphqlParser.SelectionContext ctx);
+	void enterSelection(GraphqlParser.SelectionContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#selection}.
 	 * @param ctx the parse tree
 	 */
-	void exitSelection(@NotNull GraphqlParser.SelectionContext ctx);
+	void exitSelection(GraphqlParser.SelectionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#field}.
 	 * @param ctx the parse tree
 	 */
-	void enterField(@NotNull GraphqlParser.FieldContext ctx);
+	void enterField(GraphqlParser.FieldContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#field}.
 	 * @param ctx the parse tree
 	 */
-	void exitField(@NotNull GraphqlParser.FieldContext ctx);
+	void exitField(GraphqlParser.FieldContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#alias}.
 	 * @param ctx the parse tree
 	 */
-	void enterAlias(@NotNull GraphqlParser.AliasContext ctx);
+	void enterAlias(GraphqlParser.AliasContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#alias}.
 	 * @param ctx the parse tree
 	 */
-	void exitAlias(@NotNull GraphqlParser.AliasContext ctx);
+	void exitAlias(GraphqlParser.AliasContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#arguments}.
 	 * @param ctx the parse tree
 	 */
-	void enterArguments(@NotNull GraphqlParser.ArgumentsContext ctx);
+	void enterArguments(GraphqlParser.ArgumentsContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#arguments}.
 	 * @param ctx the parse tree
 	 */
-	void exitArguments(@NotNull GraphqlParser.ArgumentsContext ctx);
+	void exitArguments(GraphqlParser.ArgumentsContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#argument}.
 	 * @param ctx the parse tree
 	 */
-	void enterArgument(@NotNull GraphqlParser.ArgumentContext ctx);
+	void enterArgument(GraphqlParser.ArgumentContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#argument}.
 	 * @param ctx the parse tree
 	 */
-	void exitArgument(@NotNull GraphqlParser.ArgumentContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link GraphqlParser#fragmentSpread}.
-	 * @param ctx the parse tree
-	 */
-	void enterFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link GraphqlParser#fragmentSpread}.
-	 * @param ctx the parse tree
-	 */
-	void exitFragmentSpread(@NotNull GraphqlParser.FragmentSpreadContext ctx);
+	void exitArgument(GraphqlParser.ArgumentContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#inlineFragment}.
 	 * @param ctx the parse tree
 	 */
-	void enterInlineFragment(@NotNull GraphqlParser.InlineFragmentContext ctx);
+	void enterInlineFragment(GraphqlParser.InlineFragmentContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#inlineFragment}.
 	 * @param ctx the parse tree
 	 */
-	void exitInlineFragment(@NotNull GraphqlParser.InlineFragmentContext ctx);
+	void exitInlineFragment(GraphqlParser.InlineFragmentContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link GraphqlParser#fragmentSpread}.
+	 * @param ctx the parse tree
+	 */
+	void enterFragmentSpread(GraphqlParser.FragmentSpreadContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link GraphqlParser#fragmentSpread}.
+	 * @param ctx the parse tree
+	 */
+	void exitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#fragmentDefinition}.
 	 * @param ctx the parse tree
 	 */
-	void enterFragmentDefinition(@NotNull GraphqlParser.FragmentDefinitionContext ctx);
+	void enterFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#fragmentDefinition}.
 	 * @param ctx the parse tree
 	 */
-	void exitFragmentDefinition(@NotNull GraphqlParser.FragmentDefinitionContext ctx);
+	void exitFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#fragmentName}.
 	 * @param ctx the parse tree
 	 */
-	void enterFragmentName(@NotNull GraphqlParser.FragmentNameContext ctx);
+	void enterFragmentName(GraphqlParser.FragmentNameContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#fragmentName}.
 	 * @param ctx the parse tree
 	 */
-	void exitFragmentName(@NotNull GraphqlParser.FragmentNameContext ctx);
+	void exitFragmentName(GraphqlParser.FragmentNameContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#typeCondition}.
 	 * @param ctx the parse tree
 	 */
-	void enterTypeCondition(@NotNull GraphqlParser.TypeConditionContext ctx);
+	void enterTypeCondition(GraphqlParser.TypeConditionContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#typeCondition}.
 	 * @param ctx the parse tree
 	 */
-	void exitTypeCondition(@NotNull GraphqlParser.TypeConditionContext ctx);
+	void exitTypeCondition(GraphqlParser.TypeConditionContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#value}.
 	 * @param ctx the parse tree
 	 */
-	void enterValue(@NotNull GraphqlParser.ValueContext ctx);
+	void enterValue(GraphqlParser.ValueContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#value}.
 	 * @param ctx the parse tree
 	 */
-	void exitValue(@NotNull GraphqlParser.ValueContext ctx);
+	void exitValue(GraphqlParser.ValueContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#valueWithVariable}.
 	 * @param ctx the parse tree
 	 */
-	void enterValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx);
+	void enterValueWithVariable(GraphqlParser.ValueWithVariableContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#valueWithVariable}.
 	 * @param ctx the parse tree
 	 */
-	void exitValueWithVariable(@NotNull GraphqlParser.ValueWithVariableContext ctx);
+	void exitValueWithVariable(GraphqlParser.ValueWithVariableContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#enumValue}.
 	 * @param ctx the parse tree
 	 */
-	void enterEnumValue(@NotNull GraphqlParser.EnumValueContext ctx);
+	void enterEnumValue(GraphqlParser.EnumValueContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#enumValue}.
 	 * @param ctx the parse tree
 	 */
-	void exitEnumValue(@NotNull GraphqlParser.EnumValueContext ctx);
+	void exitEnumValue(GraphqlParser.EnumValueContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#arrayValue}.
 	 * @param ctx the parse tree
 	 */
-	void enterArrayValue(@NotNull GraphqlParser.ArrayValueContext ctx);
+	void enterArrayValue(GraphqlParser.ArrayValueContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#arrayValue}.
 	 * @param ctx the parse tree
 	 */
-	void exitArrayValue(@NotNull GraphqlParser.ArrayValueContext ctx);
+	void exitArrayValue(GraphqlParser.ArrayValueContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#arrayValueWithVariable}.
 	 * @param ctx the parse tree
 	 */
-	void enterArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx);
+	void enterArrayValueWithVariable(GraphqlParser.ArrayValueWithVariableContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#arrayValueWithVariable}.
 	 * @param ctx the parse tree
 	 */
-	void exitArrayValueWithVariable(@NotNull GraphqlParser.ArrayValueWithVariableContext ctx);
+	void exitArrayValueWithVariable(GraphqlParser.ArrayValueWithVariableContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#objectValue}.
 	 * @param ctx the parse tree
 	 */
-	void enterObjectValue(@NotNull GraphqlParser.ObjectValueContext ctx);
+	void enterObjectValue(GraphqlParser.ObjectValueContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#objectValue}.
 	 * @param ctx the parse tree
 	 */
-	void exitObjectValue(@NotNull GraphqlParser.ObjectValueContext ctx);
+	void exitObjectValue(GraphqlParser.ObjectValueContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#objectValueWithVariable}.
 	 * @param ctx the parse tree
 	 */
-	void enterObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx);
+	void enterObjectValueWithVariable(GraphqlParser.ObjectValueWithVariableContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#objectValueWithVariable}.
 	 * @param ctx the parse tree
 	 */
-	void exitObjectValueWithVariable(@NotNull GraphqlParser.ObjectValueWithVariableContext ctx);
+	void exitObjectValueWithVariable(GraphqlParser.ObjectValueWithVariableContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#objectField}.
 	 * @param ctx the parse tree
 	 */
-	void enterObjectField(@NotNull GraphqlParser.ObjectFieldContext ctx);
+	void enterObjectField(GraphqlParser.ObjectFieldContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#objectField}.
 	 * @param ctx the parse tree
 	 */
-	void exitObjectField(@NotNull GraphqlParser.ObjectFieldContext ctx);
+	void exitObjectField(GraphqlParser.ObjectFieldContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#objectFieldWithVariable}.
 	 * @param ctx the parse tree
 	 */
-	void enterObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx);
+	void enterObjectFieldWithVariable(GraphqlParser.ObjectFieldWithVariableContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#objectFieldWithVariable}.
 	 * @param ctx the parse tree
 	 */
-	void exitObjectFieldWithVariable(@NotNull GraphqlParser.ObjectFieldWithVariableContext ctx);
+	void exitObjectFieldWithVariable(GraphqlParser.ObjectFieldWithVariableContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#directives}.
 	 * @param ctx the parse tree
 	 */
-	void enterDirectives(@NotNull GraphqlParser.DirectivesContext ctx);
+	void enterDirectives(GraphqlParser.DirectivesContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#directives}.
 	 * @param ctx the parse tree
 	 */
-	void exitDirectives(@NotNull GraphqlParser.DirectivesContext ctx);
+	void exitDirectives(GraphqlParser.DirectivesContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#directive}.
 	 * @param ctx the parse tree
 	 */
-	void enterDirective(@NotNull GraphqlParser.DirectiveContext ctx);
+	void enterDirective(GraphqlParser.DirectiveContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#directive}.
 	 * @param ctx the parse tree
 	 */
-	void exitDirective(@NotNull GraphqlParser.DirectiveContext ctx);
+	void exitDirective(GraphqlParser.DirectiveContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#type}.
 	 * @param ctx the parse tree
 	 */
-	void enterType(@NotNull GraphqlParser.TypeContext ctx);
+	void enterType(GraphqlParser.TypeContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#type}.
 	 * @param ctx the parse tree
 	 */
-	void exitType(@NotNull GraphqlParser.TypeContext ctx);
+	void exitType(GraphqlParser.TypeContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#typeName}.
 	 * @param ctx the parse tree
 	 */
-	void enterTypeName(@NotNull GraphqlParser.TypeNameContext ctx);
+	void enterTypeName(GraphqlParser.TypeNameContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#typeName}.
 	 * @param ctx the parse tree
 	 */
-	void exitTypeName(@NotNull GraphqlParser.TypeNameContext ctx);
+	void exitTypeName(GraphqlParser.TypeNameContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#listType}.
 	 * @param ctx the parse tree
 	 */
-	void enterListType(@NotNull GraphqlParser.ListTypeContext ctx);
+	void enterListType(GraphqlParser.ListTypeContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#listType}.
 	 * @param ctx the parse tree
 	 */
-	void exitListType(@NotNull GraphqlParser.ListTypeContext ctx);
+	void exitListType(GraphqlParser.ListTypeContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link GraphqlParser#nonNullType}.
 	 * @param ctx the parse tree
 	 */
-	void enterNonNullType(@NotNull GraphqlParser.NonNullTypeContext ctx);
+	void enterNonNullType(GraphqlParser.NonNullTypeContext ctx);
 	/**
 	 * Exit a parse tree produced by {@link GraphqlParser#nonNullType}.
 	 * @param ctx the parse tree
 	 */
-	void exitNonNullType(@NotNull GraphqlParser.NonNullTypeContext ctx);
+	void exitNonNullType(GraphqlParser.NonNullTypeContext ctx);
 }
