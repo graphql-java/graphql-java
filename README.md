@@ -8,7 +8,7 @@ This is a GraphQL Java implementation based on the [specification](https://githu
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
  
 
-**Status**: Version 1.2 is released. This version aims to be feature complete in regard to the current spec.
+**Status**: Version 1.3 is released. 
     
 
 
@@ -101,7 +101,7 @@ Dependency:
 
 ```groovy
 dependencies {
-  compile 'com.graphql-java:graphql-java:1.2'
+  compile 'com.graphql-java:graphql-java:1.3'
 }
 
 ```
@@ -114,7 +114,7 @@ Dependency:
 <dependency>
     <groupId>com.graphql-java</groupId>
     <artifactId>graphql-java</artifactId>
-    <version>1.2</version>
+    <version>1.3</version>
 </dependency>
 
 ```
