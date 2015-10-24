@@ -32,6 +32,7 @@ to checkout the appropriate tag when looking for the version documented here.
     - [Executing](#executing)
     - [Execution strategies](#execution-strategies)
     - [Logging](#logging)
+    - [Relay Support](#relay-support)
 - [Build it](#build-it)
 - [Development Build](#development-build)
 - [Details](#details)
@@ -340,6 +341,11 @@ It's recommended to use a `ExecutorService` to speed up execution.
 Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [Manual](http://www.slf4j.org/manual.html) for details.
 The `grapqhl-java` root Logger name is `graphql`.
 
+
+#### Relay Support
+
+There is a very basic Relay support included. Please look at https://github.com/andimarek/todomvc-relay-java for an example
+project how to use it.
 
 #### Development Build
 
