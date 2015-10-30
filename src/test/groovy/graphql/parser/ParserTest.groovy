@@ -361,4 +361,16 @@ class ParserTest extends Specification {
         thrown(ParseCancellationException)
     }
 
+    def "mutation without a name"(){
+        given:
+        def input="""
+        mutation { m }
+        """
+        when:
+        def document = new Parser().parseDocument(input)
+        then:
+        document.definitions[0].operation == OperationDefinition.Operation.MUTATION
+
+    }
+
 }

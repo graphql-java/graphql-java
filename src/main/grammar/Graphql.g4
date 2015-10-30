@@ -11,7 +11,7 @@ fragmentDefinition
 
 operationDefinition:
 selectionSet |
-operationType NAME variableDefinitions? directives? selectionSet;
+operationType  NAME? variableDefinitions? directives? selectionSet;
 
 operationType : 'query' | 'mutation';
 
