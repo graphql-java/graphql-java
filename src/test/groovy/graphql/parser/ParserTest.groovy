@@ -339,7 +339,7 @@ class ParserTest extends Specification {
 
     }
 
-    def "extraneous input is an excpetion"() {
+    def "extraneous input is an exception"() {
         given:
         def input = """
         mutation event(\$var: SomeType[]!) { res: update(arg: \$var) {id} }
