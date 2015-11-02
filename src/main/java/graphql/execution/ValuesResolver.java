@@ -79,6 +79,9 @@ public class ValuesResolver {
     }
 
     private Object coerceValueForInputObjectField(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
+        if (input == null) {
+            return null;
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
             Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
@@ -89,15 +92,17 @@ public class ValuesResolver {
     }
 
     private Object coerceValueForScalar(GraphQLScalarType graphQLScalarType, Object value) {
-        return graphQLScalarType.getCoercing().coerce(value);
+        return value == null?null:graphQLScalarType.getCoercing().coerce(value);
     }
 
     private Object coerceValueForEnum(GraphQLEnumType graphQLEnumType, Object value) {
-        return graphQLEnumType.getCoercing().coerce(value);
+        return value == null?null:graphQLEnumType.getCoercing().coerce(value);
     }
 
     private List coerceValueForList(GraphQLList graphQLList, Object value) {
-        if (value instanceof Iterable) {
+        if (value == null) {
+            return null;
+        } else if (value instanceof Iterable) {
             List<Object> result = new ArrayList<>();
             for (Object val : (Iterable) value) {
                 result.add(coerceValue(graphQLList.getWrappedType(), val));
