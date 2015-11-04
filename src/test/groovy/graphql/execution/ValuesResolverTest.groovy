@@ -201,7 +201,7 @@ class ValuesResolverTest extends Specification {
         where:
         inputValue   || outputValue
         "A_TEST"     || "A_TEST"
-        1 || 1
+        "VALUE_TEST" || 1
 
     }
 }

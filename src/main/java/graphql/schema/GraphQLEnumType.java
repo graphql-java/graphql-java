@@ -25,7 +25,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
         @Override
         public Object coerceValue(Object input) {
-            return getValueByValue(input);
+            return getValueByName(input);
         }
 
         @Override
@@ -38,10 +38,9 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         }
     };
 
-    private Object getValueByValue(Object value) {
-        for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
-            if (value.equals(valueDefinition.getValue())) return valueDefinition.getValue();
-        }
+    private Object getValueByName(Object value) {
+        GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value);
+        if (enumValueDefinition.getValue() != null) return enumValueDefinition.getValue();
         throw new GraphQLException("");
     }
 
