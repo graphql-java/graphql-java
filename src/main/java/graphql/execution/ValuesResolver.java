@@ -93,7 +93,7 @@ public class ValuesResolver {
     }
 
     private Object coerceValueForEnum(GraphQLEnumType graphQLEnumType, Object value) {
-        return graphQLEnumType.getCoercing().coerce(value);
+        return graphQLEnumType.getCoercing().coerceValue(value);
     }
 
     private List coerceValueForList(GraphQLList graphQLList, Object value) {

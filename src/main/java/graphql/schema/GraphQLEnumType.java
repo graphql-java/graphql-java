@@ -24,14 +24,26 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         }
 
         @Override
+        public Object coerceValue(Object input) {
+            return getValueByValue(input);
+        }
+
+        @Override
         public Object coerceLiteral(Object input) {
             if (!(input instanceof EnumValue)) return null;
             EnumValue enumValue = (EnumValue) input;
             GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(enumValue.getName());
             if (enumValueDefinition.getValue() != null) return enumValueDefinition.getValue();
-            return enumValueDefinition.getName();
+            return enumValueDefinition.getValue();
         }
     };
+
+    private Object getValueByValue(Object value) {
+        for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
+            if (value.equals(valueDefinition.getValue())) return valueDefinition.getValue();
+        }
+        throw new GraphQLException("");
+    }
 
     private Object getNameByValue(Object value) {
         for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {

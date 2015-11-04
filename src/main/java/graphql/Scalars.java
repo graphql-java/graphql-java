@@ -24,6 +24,11 @@ public class Scalars {
         }
 
         @Override
+        public Object coerceValue(Object input) {
+            return null;
+        }
+
+        @Override
         public Object coerceLiteral(Object input) {
             if (!(input instanceof IntValue)) return null;
             return ((IntValue) input).getValue();
@@ -46,6 +51,11 @@ public class Scalars {
         }
 
         @Override
+        public Object coerceValue(Object input) {
+            return null;
+        }
+
+        @Override
         public Object coerceLiteral(Object input) {
             if (!(input instanceof StringValue)) return null;
             return Long.parseLong(((StringValue) input).getValue());
@@ -65,6 +75,11 @@ public class Scalars {
         }
 
         @Override
+        public Object coerceValue(Object input) {
+            return null;
+        }
+
+        @Override
         public Object coerceLiteral(Object input) {
             return ((FloatValue) input).getValue().floatValue();
         }
@@ -74,6 +89,11 @@ public class Scalars {
         @Override
         public Object coerce(Object input) {
             return input == null ? null : input.toString();
+        }
+
+        @Override
+        public Object coerceValue(Object input) {
+            return null;
         }
 
         @Override
@@ -99,6 +119,11 @@ public class Scalars {
         }
 
         @Override
+        public Object coerceValue(Object input) {
+            return null;
+        }
+
+        @Override
         public Object coerceLiteral(Object input) {
             if (!(input instanceof BooleanValue)) return null;
             return ((BooleanValue) input).isValue();
@@ -114,6 +139,11 @@ public class Scalars {
             }
 
             throw new GraphQLException();
+        }
+
+        @Override
+        public Object coerceValue(Object input) {
+            return null;
         }
 
         @Override

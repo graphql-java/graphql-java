@@ -3,12 +3,12 @@ package graphql.execution
 import graphql.TestUtil
 import graphql.language.*
 import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLList
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import static graphql.Scalars.*
+import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
 
@@ -136,7 +136,7 @@ class ValuesResolverTest extends Specification {
         def argument2 = new Argument("arg2", enumValue2)
 
         and: "the schema"
-        def enumType = GraphQLEnumType.newEnum()
+        def enumType = newEnum()
                 .name("EnumType")
                 .value("PLUTO")
                 .value("MARS", "mars")
@@ -180,6 +180,28 @@ class ValuesResolverTest extends Specification {
 
         then:
         values['arg'] == ['world']
+
+    }
+
+    def "enum as variable input"() {
+        given:
+        def enumDef = newEnum()
+                .name("Test")
+                .value("A_TEST")
+                .value("VALUE_TEST", 1)
+                .build()
+
+        def schema = TestUtil.schemaWithInputType(enumDef)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Test"))
+
+        when:
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+        then:
+        resolvedValues['variable'] == outputValue
+        where:
+        inputValue   || outputValue
+        "A_TEST"     || "A_TEST"
+        1 || 1
 
     }
 }
