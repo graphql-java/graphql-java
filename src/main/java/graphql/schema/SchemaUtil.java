@@ -51,7 +51,7 @@ public class SchemaUtil {
         } else if (root instanceof GraphQLUnionType) {
             collectTypesForUnions((GraphQLUnionType) root, result);
         } else if (root instanceof GraphQLInputObjectType) {
-            result.put(((GraphQLInputObjectType) root).getName(), root);
+            collectTypesForInputObjects((GraphQLInputObjectType) root, result);
         } else if (root instanceof GraphQLTypeReference) {
             // nothing to do
         } else {
@@ -94,6 +94,16 @@ public class SchemaUtil {
             collectTypes(interfaceType, result);
         }
     }
+
+    private void collectTypesForInputObjects(GraphQLInputObjectType objectType, Map<String, GraphQLType> result) {
+        if (result.containsKey(objectType.getName())) return;
+        result.put(objectType.getName(), objectType);
+
+        for (GraphQLInputObjectField fieldDefinition : objectType.getFields()) {
+            collectTypes(fieldDefinition.getType(), result);
+        }
+    }
+
 
     public Map<String, GraphQLType> allTypes(GraphQLSchema schema,  Set<GraphQLType> dictionary) {
         Map<String, GraphQLType> typesByName = new LinkedHashMap<>();
