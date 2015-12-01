@@ -336,6 +336,8 @@ See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) fo
 
 It's recommended to use a `ExecutorService` to speed up execution.
 
+Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
+
 #### Logging
 
 Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [Manual](http://www.slf4j.org/manual.html) for details.
