@@ -28,31 +28,31 @@ import java.lang.annotation.Target;
  *
  * For example, the following two {@link graphql.schema.DataFetcher} objects are interchangeable if used with a
  * {@link BatchedExecutionStrategy}.
- * <pre>
- * {@code
+ <pre>
+  <code>
  new DataFetcher() {
-     @literal @Override
-     @literal @Batched
+     {@literal @}Override
+     {@literal @}Batched
       public Object get(DataFetchingEnvironment environment) {
-        List<String> retVal = new ArrayList<>();
-        for (String s: (List<String>) environment.getSource()) {
+         {@code List<String> retVal = new ArrayList<>();}
+         {@code for (String s: (List<String>) environment.getSource())} {
             retVal.add(s + environment.getArgument("text"));
         }
        return retVal;
       }
     }
- }
- * </pre>
+ </code>
+ </pre>
  *
  * <pre>
- * {@code
+ * <code>
  new DataFetcher() {
-     @literal @Override
+     {@literal @}Override
       public Object get(DataFetchingEnvironment e) {
           return ((String)e.getSource()) + e.getArgument("text");
       }
  }
-}
+</code>
  * </pre>
  *
  */
