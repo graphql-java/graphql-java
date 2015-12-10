@@ -56,7 +56,9 @@ public abstract class ExecutionStrategy {
         if (fieldType instanceof GraphQLNonNull) {
             GraphQLNonNull graphQLNonNull = (GraphQLNonNull) fieldType;
             ExecutionResult completed = completeValue(executionContext, graphQLNonNull.getWrappedType(), fields, result);
-            if (completed == null) throw new GraphQLException("Cannot return null for non-nullable type: " + fields);
+            if (completed == null) {
+                throw new GraphQLException("Cannot return null for non-nullable type: " + fields);
+            }
             return completed;
 
         } else if (result == null) {
@@ -94,13 +96,17 @@ public abstract class ExecutionStrategy {
 
     protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
         GraphQLObjectType result = graphQLInterfaceType.getTypeResolver().getType(value);
-        if (result == null) throw new GraphQLException("could not determine type");
+        if (result == null) {
+            throw new GraphQLException("could not determine type");
+        }
         return result;
     }
 
     protected GraphQLObjectType resolveType(GraphQLUnionType graphQLUnionType, Object value) {
         GraphQLObjectType result = graphQLUnionType.getTypeResolver().getType(value);
-        if (result == null) throw new GraphQLException("could not determine type");
+        if (result == null) {
+            throw new GraphQLException("could not determine type");
+        }
         return result;
     }
 
@@ -136,7 +142,9 @@ public abstract class ExecutionStrategy {
         }
 
         GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());
-        if (fieldDefinition == null) throw new GraphQLException("unknown field " + field.getName());
+        if (fieldDefinition == null) {
+            throw new GraphQLException("unknown field " + field.getName());
+        }
         return fieldDefinition;
     }
 
