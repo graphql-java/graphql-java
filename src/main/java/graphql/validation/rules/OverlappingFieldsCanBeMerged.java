@@ -3,10 +3,7 @@ package graphql.validation.rules;
 
 import graphql.execution.TypeFromAST;
 import graphql.language.*;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLFieldsContainer;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLType;
+import graphql.schema.*;
 import graphql.validation.AbstractRule;
 import graphql.validation.ErrorFactory;
 import graphql.validation.ValidationContext;
@@ -86,7 +83,18 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         }
         alreadyChecked.add(new FieldPair(field1, field2));
 
-//        System.out.println(responseName + " -> " + fieldName1 + " - " + fieldName2);
+        // If the statically known parent types could not possibly apply at the same
+        // time, then it is safe to permit them to diverge as they will not present
+        // any ambiguity by differing.
+        // It is known that two parent types could never overlap if they are
+        // different Object types. Interface or Union types might overlap - if not
+        // in the current state of the schema, then perhaps in some future version,
+        // thus may not safely diverge.
+        if (!sameType(fieldAndType1.parentType, fieldAndType1.parentType) &&
+                fieldAndType1.parentType instanceof GraphQLObjectType &&
+                fieldAndType2.parentType instanceof GraphQLObjectType) {
+            return null;
+        }
 
         if (!fieldName1.equals(fieldName2)) {
             String reason = String.format("%s: %s and %s are different fields", responseName, fieldName1, fieldName2);
@@ -248,7 +256,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(field.getName());
             fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
         }
-        fieldMap.get(responseName).add(new FieldAndType(field, fieldType));
+        fieldMap.get(responseName).add(new FieldAndType(field, fieldType, parentType));
     }
 
     private static class FieldPair {
@@ -284,12 +292,14 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
 
     private static class FieldAndType {
-        public FieldAndType(Field field, GraphQLType graphQLType) {
+        public FieldAndType(Field field, GraphQLType graphQLType, GraphQLType parentType) {
             this.field = field;
             this.graphQLType = graphQLType;
+            this.parentType = parentType;
         }
 
         Field field;
         GraphQLType graphQLType;
+        GraphQLType parentType;
     }
 }
