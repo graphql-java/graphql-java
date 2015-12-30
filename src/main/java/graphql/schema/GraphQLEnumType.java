@@ -33,6 +33,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             if (!(input instanceof EnumValue)) return null;
             EnumValue enumValue = (EnumValue) input;
             GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(enumValue.getName());
+            if (enumValueDefinition == null) return null;
             if (enumValueDefinition.getValue() != null) return enumValueDefinition.getValue();
             return enumValueDefinition.getValue();
         }
