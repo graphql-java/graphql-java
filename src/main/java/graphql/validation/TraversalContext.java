@@ -127,7 +127,8 @@ public class TraversalContext implements QueryLanguageVisitor {
         GraphQLInputType inputType = null;
         if (objectType instanceof GraphQLInputObjectType) {
             GraphQLInputObjectField inputField = ((GraphQLInputObjectType) objectType).getField(objectField.getName());
-            inputType = inputField.getType();
+            if (inputField != null)
+                inputType = inputField.getType();
         }
         addInputType(inputType);
     }
