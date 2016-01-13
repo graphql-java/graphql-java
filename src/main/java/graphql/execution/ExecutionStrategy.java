@@ -64,6 +64,13 @@ public abstract class ExecutionStrategy {
         } else if (result == null) {
             return null;
         } else if (fieldType instanceof GraphQLList) {
+            if (result.getClass().isArray()) {
+                List<Object> resultList = new ArrayList<>();
+                for (Object value : (Object[]) result) {
+                    resultList.add(value);
+                }
+                return completeValueForList(executionContext, (GraphQLList) fieldType, fields, resultList);
+            }
             return completeValueForList(executionContext, (GraphQLList) fieldType, fields, (List<Object>) result);
         } else if (fieldType instanceof GraphQLScalarType) {
             return completeValueForScalar((GraphQLScalarType) fieldType, result);
