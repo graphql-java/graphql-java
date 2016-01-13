@@ -57,8 +57,12 @@ public class Scalars {
 
         @Override
         public Object coerceLiteral(Object input) {
-            if (!(input instanceof StringValue)) return null;
-            return Long.parseLong(((StringValue) input).getValue());
+            if (input instanceof IntValue) {
+                return (long) ((IntValue) input).getValue();
+            } else if (input instanceof StringValue) {
+                return Long.parseLong(((StringValue) input).getValue());
+            }
+            return null;
         }
     });
 
