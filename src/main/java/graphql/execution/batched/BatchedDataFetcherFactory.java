@@ -2,6 +2,7 @@ package graphql.execution.batched;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+
 import java.lang.reflect.Method;
 
 /**
@@ -33,6 +34,6 @@ public class BatchedDataFetcherFactory {
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException(e);
         }
-        return new UnbatchingDataFetcher(supplied);
+        return new UnbatchedDataFetcher(supplied);
     }
 }

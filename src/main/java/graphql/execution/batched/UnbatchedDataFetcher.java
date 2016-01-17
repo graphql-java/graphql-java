@@ -3,6 +3,7 @@ package graphql.execution.batched;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,11 +12,11 @@ import java.util.List;
  * uses that fetcher in a batched context by iterating through each source value and calling
  * the delegate.
  */
-public class UnbatchingDataFetcher implements BatchedDataFetcher {
+public class UnbatchedDataFetcher implements BatchedDataFetcher {
 
     private final DataFetcher delegate;
 
-    public UnbatchingDataFetcher(DataFetcher delegate) {
+    public UnbatchedDataFetcher(DataFetcher delegate) {
         assert !(delegate instanceof BatchedDataFetcher);
         this.delegate = delegate;
     }
