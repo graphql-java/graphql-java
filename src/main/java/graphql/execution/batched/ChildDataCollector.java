@@ -9,11 +9,11 @@ import java.util.Map;
 
 public class ChildDataCollector {
 
-    private final Map<String, List<GraphqlExecutionNodeDatum22>> childDataByTypename = new HashMap<>();
+    private final Map<String, List<GraphQLExecutionNodeDatum>> childDataByTypename = new HashMap<>();
     private final Map<String, GraphQLObjectType> childTypesByName = new HashMap<>();
 
 
-    public void putChildData(GraphQLObjectType objectType, GraphqlExecutionNodeDatum22 datum) {
+    public void putChildData(GraphQLObjectType objectType, GraphQLExecutionNodeDatum datum) {
         childTypesByName.put(objectType.getName(), objectType);
         multimapPut(childDataByTypename, objectType.getName(), datum);
     }
@@ -38,7 +38,7 @@ public class ChildDataCollector {
         List<Entry> entries = new ArrayList<>();
         for (String childTypename: childTypesByName.keySet()) {
             GraphQLObjectType childType = childTypesByName.get(childTypename);
-            List<GraphqlExecutionNodeDatum22> childData = multimapGet(childDataByTypename, childTypename);
+            List<GraphQLExecutionNodeDatum> childData = multimapGet(childDataByTypename, childTypename);
             entries.add(new Entry(childType, childData));
         }
         return entries;
@@ -46,10 +46,10 @@ public class ChildDataCollector {
 
     public static class Entry {
         private final GraphQLObjectType objectType;
-        private final List<GraphqlExecutionNodeDatum22> data;
+        private final List<GraphQLExecutionNodeDatum> data;
 
         public Entry(GraphQLObjectType objectType,
-                List<GraphqlExecutionNodeDatum22> data) {
+                List<GraphQLExecutionNodeDatum> data) {
             this.objectType = objectType;
             this.data = data;
         }
@@ -58,7 +58,7 @@ public class ChildDataCollector {
             return objectType;
         }
 
-        public List<GraphqlExecutionNodeDatum22> getData() {
+        public List<GraphQLExecutionNodeDatum> getData() {
             return data;
         }
     }

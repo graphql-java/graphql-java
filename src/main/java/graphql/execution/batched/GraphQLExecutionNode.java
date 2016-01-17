@@ -6,15 +6,15 @@ import graphql.schema.GraphQLObjectType;
 import java.util.List;
 import java.util.Map;
 
-class GraphqlExecutionNode2 {
+class GraphQLExecutionNode {
 
     private final GraphQLObjectType parentType;
     private final Map<String, List<Field>> fields;
-    private final List<GraphqlExecutionNodeDatum22> data;
+    private final List<GraphQLExecutionNodeDatum> data;
 
-    public GraphqlExecutionNode2(GraphQLObjectType parentType,
-                                 Map<String, List<Field>> fields,
-                                 List<GraphqlExecutionNodeDatum22> data) {
+    public GraphQLExecutionNode(GraphQLObjectType parentType,
+                                Map<String, List<Field>> fields,
+                                List<GraphQLExecutionNodeDatum> data) {
         this.parentType = parentType;
         this.fields = fields;
         this.data = data;
@@ -28,7 +28,7 @@ class GraphqlExecutionNode2 {
         return fields;
     }
 
-    public List<GraphqlExecutionNodeDatum22> getData() {
+    public List<GraphQLExecutionNodeDatum> getData() {
         return data;
     }
 }
