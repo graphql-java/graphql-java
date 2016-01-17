@@ -73,6 +73,7 @@ class ScalarsTest extends Specification {
         where:
         literal               | result
         new StringValue("42") | 42
+        new IntValue(42)      | 42
     }
 
     def "Int serialize object"() {

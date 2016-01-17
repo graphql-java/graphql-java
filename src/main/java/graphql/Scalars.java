@@ -57,8 +57,12 @@ public class Scalars {
 
         @Override
         public Object parseLiteral(Object input) {
-            if (!(input instanceof StringValue)) return null;
-            return Long.parseLong(((StringValue) input).getValue());
+            if (input instanceof StringValue) {
+                return Long.parseLong(((StringValue) input).getValue());
+            } else if (input instanceof IntValue) {
+                return ((IntValue) input).getValue();
+            }
+            return null;
         }
     });
 
