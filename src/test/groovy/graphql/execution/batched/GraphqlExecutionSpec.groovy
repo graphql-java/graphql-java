@@ -108,7 +108,7 @@ class GraphqlExecutionSpec extends Specification {
         runTest(query, expected);
     }
 
-    def "Handles explict null input"() {
+    def "Handles explicit null input"() {
         given:
         String query = "{ string(value: \"null\"){value} }";
 
