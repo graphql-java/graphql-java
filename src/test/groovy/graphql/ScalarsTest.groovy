@@ -20,7 +20,7 @@ class ScalarsTest extends Specification {
 
     def "String coerce object"() {
         expect:
-        Scalars.GraphQLString.getCoercing().coerce(value) == result
+        Scalars.GraphQLString.getCoercing().serialize(value) == result
 
         where:
         value         | result
@@ -39,7 +39,7 @@ class ScalarsTest extends Specification {
 
     def "ID coerce object"() {
         expect:
-        Scalars.GraphQLID.getCoercing().coerce(value) == result
+        Scalars.GraphQLID.getCoercing().serialize(value) == result
 
         where:
         value         | result
@@ -57,7 +57,7 @@ class ScalarsTest extends Specification {
 
     def "Long coerce object"() {
         expect:
-        Scalars.GraphQLLong.getCoercing().coerce(value) == result
+        Scalars.GraphQLLong.getCoercing().serialize(value) == result
 
         where:
         value                        | result
@@ -77,7 +77,7 @@ class ScalarsTest extends Specification {
 
     def "Int coerce object"() {
         expect:
-        Scalars.GraphQLInt.getCoercing().coerce(value) == result
+        Scalars.GraphQLInt.getCoercing().serialize(value) == result
 
         where:
         value           | result
@@ -96,7 +96,7 @@ class ScalarsTest extends Specification {
 
     def "Float coerce object"() {
         expect:
-        Scalars.GraphQLFloat.getCoercing().coerce(value) == result
+        Scalars.GraphQLFloat.getCoercing().serialize(value) == result
 
         where:
         value           | result
@@ -116,7 +116,7 @@ class ScalarsTest extends Specification {
 
     def "Boolean coerce object"() {
         expect:
-        Scalars.GraphQLBoolean.getCoercing().coerce(value) == result
+        Scalars.GraphQLBoolean.getCoercing().serialize(value) == result
 
         where:
         value   | result

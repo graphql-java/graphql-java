@@ -5,10 +5,11 @@ public interface Coercing {
 
 
     /**
+     * Called to convert a result of a DataFetcher to a valid runtime value.
      * @param input
      * @return
      */
-    Object coerce(Object input);
+    Object serialize(Object input);
 
     /**
      * Called to resolve a input from a variable.

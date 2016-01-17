@@ -1,27 +1,18 @@
 package graphql.execution;
 
 
-import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
-import graphql.schema.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
-import static graphql.introspection.Introspection.*;
 
 public class Execution {
 

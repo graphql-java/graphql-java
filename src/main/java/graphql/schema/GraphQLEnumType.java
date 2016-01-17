@@ -19,7 +19,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     private final Coercing coercing = new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             return getNameByValue(input);
         }
 

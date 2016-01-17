@@ -13,7 +13,7 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             if (input instanceof String) {
                 return Integer.parseInt((String) input);
             } else if (input instanceof Integer) {
@@ -38,7 +38,7 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             if (input instanceof String) {
                 return Long.parseLong((String) input);
             } else if (input instanceof Long) {
@@ -64,7 +64,7 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             if (input instanceof String) {
                 return Float.parseFloat((String) input);
             } else if (input instanceof Float) {
@@ -87,7 +87,7 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             return input == null ? null : input.toString();
         }
 
@@ -106,7 +106,7 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             if (input instanceof Boolean) {
                 return input;
             } else if (input instanceof Integer) {
@@ -133,7 +133,7 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             if (input instanceof String) {
                 return input;
             }

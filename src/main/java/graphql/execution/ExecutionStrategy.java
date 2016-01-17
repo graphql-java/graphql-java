@@ -14,9 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
+import static graphql.introspection.Introspection.*;
 
 public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
@@ -112,11 +110,11 @@ public abstract class ExecutionStrategy {
 
 
     protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, Object result) {
-        return new ExecutionResultImpl(enumType.getCoercing().coerce(result), null);
+        return new ExecutionResultImpl(enumType.getCoercing().serialize(result), null);
     }
 
     protected ExecutionResult completeValueForScalar(GraphQLScalarType scalarType, Object result) {
-        return new ExecutionResultImpl(scalarType.getCoercing().coerce(result), null);
+        return new ExecutionResultImpl(scalarType.getCoercing().serialize(result), null);
     }
 
     protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
