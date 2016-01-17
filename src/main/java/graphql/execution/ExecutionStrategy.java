@@ -9,10 +9,7 @@ import graphql.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static graphql.introspection.Introspection.*;
 
@@ -62,14 +59,7 @@ public abstract class ExecutionStrategy {
         } else if (result == null) {
             return null;
         } else if (fieldType instanceof GraphQLList) {
-            if (result.getClass().isArray()) {
-                List<Object> resultList = new ArrayList<>();
-                for (Object value : (Object[]) result) {
-                    resultList.add(value);
-                }
-                return completeValueForList(executionContext, (GraphQLList) fieldType, fields, resultList);
-            }
-            return completeValueForList(executionContext, (GraphQLList) fieldType, fields, (List<Object>) result);
+            return completeValueForList(executionContext, (GraphQLList) fieldType, fields, result);
         } else if (fieldType instanceof GraphQLScalarType) {
             return completeValueForScalar((GraphQLScalarType) fieldType, result);
         } else if (fieldType instanceof GraphQLEnumType) {
@@ -97,6 +87,14 @@ public abstract class ExecutionStrategy {
         // back to the desired strategy.
 
         return executionContext.getExecutionStrategy().execute(executionContext, resolvedType, result, subFields);
+    }
+
+    private ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, Object result) {
+        if (result.getClass().isArray()) {
+            result = Arrays.asList((Object[]) result);
+        }
+
+        return completeValueForList(executionContext, fieldType, fields, (List<Object>) result);
     }
 
     protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
