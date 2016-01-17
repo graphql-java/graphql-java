@@ -5,7 +5,6 @@ import graphql.Scalars
 import graphql.language.Field
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLObjectType
-import spock.lang.Ignore
 import spock.lang.Specification
 
 class ExecutionStrategySpec extends Specification {
@@ -34,13 +33,13 @@ class ExecutionStrategySpec extends Specification {
         executionResult.data == ["test"]
     }
 
-    @Ignore
-    def "completes value for a array"() {
+
+    def "completes value for an array"() {
         given:
         ExecutionContext executionContext = new ExecutionContext();
         Field field = new Field()
         def fieldType = new GraphQLList(Scalars.GraphQLString)
-        String[] result = {"test"}
+        String[] result = ["test"]
         when:
         def executionResult = executionStrategy.completeValue(executionContext, fieldType, [field], result)
 
