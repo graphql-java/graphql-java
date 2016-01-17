@@ -60,7 +60,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     // Use the data.source objects to fetch
-    // Use the data.parentResult objects to put values into.  These are either primatives or empty maps
+    // Use the data.parentResult objects to put values into.  These are either primitives or empty maps
     // If they were empty maps, we need that list of nodes to process
 
     private List<GraphQLExecutionNode> resolveField(ExecutionContext executionContext, GraphQLObjectType parentType,
