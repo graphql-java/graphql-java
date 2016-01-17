@@ -2,11 +2,11 @@ package graphql.execution.batched;
 
 import java.util.List;
 
-public class GraphqlExecutionResultList extends GraphqlExecutionResultContainer {
+public class GraphqlExecutionResultList2 extends GraphqlExecutionResultContainer2 {
 
     private final List<Object> results;
 
-    public GraphqlExecutionResultList(List<Object> results) {
+    public GraphqlExecutionResultList2(List<Object> results) {
         this.results = results;
     }
 

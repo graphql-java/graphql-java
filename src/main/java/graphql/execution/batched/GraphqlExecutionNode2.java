@@ -2,18 +2,19 @@ package graphql.execution.batched;
 
 import graphql.language.Field;
 import graphql.schema.GraphQLObjectType;
+
 import java.util.List;
 import java.util.Map;
 
-class GraphqlExecutionNode {
+class GraphqlExecutionNode2 {
 
     private final GraphQLObjectType parentType;
     private final Map<String, List<Field>> fields;
-    private final List<GraphqlExecutionNodeDatum> data;
+    private final List<GraphqlExecutionNodeDatum22> data;
 
-    public GraphqlExecutionNode(GraphQLObjectType parentType,
-            Map<String, List<Field>> fields,
-            List<GraphqlExecutionNodeDatum> data) {
+    public GraphqlExecutionNode2(GraphQLObjectType parentType,
+                                 Map<String, List<Field>> fields,
+                                 List<GraphqlExecutionNodeDatum22> data) {
         this.parentType = parentType;
         this.fields = fields;
         this.data = data;
@@ -27,7 +28,7 @@ class GraphqlExecutionNode {
         return fields;
     }
 
-    public List<GraphqlExecutionNodeDatum> getData() {
+    public List<GraphqlExecutionNodeDatum22> getData() {
         return data;
     }
 }

@@ -1,6 +1,7 @@
 package graphql.execution.batched;
 
 import graphql.schema.GraphQLObjectType;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,11 +9,11 @@ import java.util.Map;
 
 public class ChildDataCollector {
 
-    private final Map<String, List<GraphqlExecutionNodeDatum>> childDataByTypename = new HashMap<>();
+    private final Map<String, List<GraphqlExecutionNodeDatum22>> childDataByTypename = new HashMap<>();
     private final Map<String, GraphQLObjectType> childTypesByName = new HashMap<>();
 
 
-    public void putChildData(GraphQLObjectType objectType, GraphqlExecutionNodeDatum datum) {
+    public void putChildData(GraphQLObjectType objectType, GraphqlExecutionNodeDatum22 datum) {
         childTypesByName.put(objectType.getName(), objectType);
         multimapPut(childDataByTypename, objectType.getName(), datum);
     }
@@ -37,7 +38,7 @@ public class ChildDataCollector {
         List<Entry> entries = new ArrayList<>();
         for (String childTypename: childTypesByName.keySet()) {
             GraphQLObjectType childType = childTypesByName.get(childTypename);
-            List<GraphqlExecutionNodeDatum> childData = multimapGet(childDataByTypename, childTypename);
+            List<GraphqlExecutionNodeDatum22> childData = multimapGet(childDataByTypename, childTypename);
             entries.add(new Entry(childType, childData));
         }
         return entries;
@@ -45,10 +46,10 @@ public class ChildDataCollector {
 
     public static class Entry {
         private final GraphQLObjectType objectType;
-        private final List<GraphqlExecutionNodeDatum> data;
+        private final List<GraphqlExecutionNodeDatum22> data;
 
         public Entry(GraphQLObjectType objectType,
-                List<GraphqlExecutionNodeDatum> data) {
+                List<GraphqlExecutionNodeDatum22> data) {
             this.objectType = objectType;
             this.data = data;
         }
@@ -57,7 +58,7 @@ public class ChildDataCollector {
             return objectType;
         }
 
-        public List<GraphqlExecutionNodeDatum> getData() {
+        public List<GraphqlExecutionNodeDatum22> getData() {
             return data;
         }
     }

@@ -2,11 +2,11 @@ package graphql.execution.batched;
 
 import java.util.Map;
 
-class GraphqlExecutionNodeDatum extends GraphqlExecutionResultContainer {
+class GraphqlExecutionNodeDatum22 extends GraphqlExecutionResultContainer2 {
     private final Map<String, Object> parentResult;
     private final Object source;
 
-    public GraphqlExecutionNodeDatum(Map<String, Object> parentResult, Object source) {
+    public GraphqlExecutionNodeDatum22(Map<String, Object> parentResult, Object source) {
         this.parentResult = parentResult;
         this.source = source;
     }
