@@ -11,7 +11,7 @@ class ScalarsTest extends Specification {
 
     def "String coerce literal"() {
         expect:
-        Scalars.GraphQLString.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLString.getCoercing().parseLiteral(literal) == result
 
         where:
         literal                 | result
@@ -30,7 +30,7 @@ class ScalarsTest extends Specification {
 
     def "ID coerce literal"() {
         expect:
-        Scalars.GraphQLID.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLID.getCoercing().parseLiteral(literal) == result
 
         where:
         literal                 | result
@@ -48,7 +48,7 @@ class ScalarsTest extends Specification {
 
     def "Int coerce literal"() {
         expect:
-        Scalars.GraphQLInt.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLInt.getCoercing().parseLiteral(literal) == result
 
         where:
         literal          | result
@@ -68,7 +68,7 @@ class ScalarsTest extends Specification {
 
     def "Long coerce literal"() {
         expect:
-        Scalars.GraphQLLong.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLLong.getCoercing().parseLiteral(literal) == result
 
         where:
         literal               | result
@@ -87,7 +87,7 @@ class ScalarsTest extends Specification {
 
     def "Float coerce literal"() {
         expect:
-        Scalars.GraphQLFloat.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLFloat.getCoercing().parseLiteral(literal) == result
 
         where:
         literal              | result
@@ -107,7 +107,7 @@ class ScalarsTest extends Specification {
 
     def "Boolean coerce literal"() {
         expect:
-        Scalars.GraphQLBoolean.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal) == result
 
         where:
         literal                | result

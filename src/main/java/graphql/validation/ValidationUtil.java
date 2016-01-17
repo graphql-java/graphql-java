@@ -33,10 +33,10 @@ public class ValidationUtil {
         }
 
         if (type instanceof GraphQLScalarType) {
-            return ((GraphQLScalarType) type).getCoercing().coerceLiteral(value) != null;
+            return ((GraphQLScalarType) type).getCoercing().parseLiteral(value) != null;
         }
         if (type instanceof GraphQLEnumType) {
-            return ((GraphQLEnumType) type).getCoercing().coerceLiteral(value) != null;
+            return ((GraphQLEnumType) type).getCoercing().parseLiteral(value) != null;
         }
 
         if (type instanceof GraphQLList) {

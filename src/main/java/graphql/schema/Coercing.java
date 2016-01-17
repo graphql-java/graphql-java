@@ -12,5 +12,5 @@ public interface Coercing {
      * @param input
      * @return return null if not valid
      */
-    Object coerceLiteral(Object input);
+    Object parseLiteral(Object input);
 }

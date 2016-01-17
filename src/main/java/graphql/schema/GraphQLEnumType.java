@@ -29,7 +29,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             if (!(input instanceof EnumValue)) return null;
             EnumValue enumValue = (EnumValue) input;
             GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(enumValue.getName());

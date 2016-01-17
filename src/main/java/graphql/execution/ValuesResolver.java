@@ -113,7 +113,7 @@ public class ValuesResolver {
             return variables.get(((VariableReference) inputValue).getName());
         }
         if (type instanceof GraphQLScalarType) {
-            return ((GraphQLScalarType) type).getCoercing().coerceLiteral(inputValue);
+            return ((GraphQLScalarType) type).getCoercing().parseLiteral(inputValue);
         }
         if (type instanceof GraphQLNonNull) {
             return coerceValueAst(((GraphQLNonNull) type).getWrappedType(), inputValue, variables);
@@ -122,7 +122,7 @@ public class ValuesResolver {
             return coerceValueAstForInputObject((GraphQLInputObjectType) type, (ObjectValue) inputValue, variables);
         }
         if (type instanceof GraphQLEnumType) {
-            return ((GraphQLEnumType) type).getCoercing().coerceLiteral(inputValue);
+            return ((GraphQLEnumType) type).getCoercing().parseLiteral(inputValue);
         }
         if (type instanceof GraphQLList) {
             return coerceValueAstForList((GraphQLList) type, inputValue, variables);

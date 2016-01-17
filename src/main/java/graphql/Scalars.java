@@ -29,7 +29,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             if (!(input instanceof IntValue)) return null;
             return ((IntValue) input).getValue();
         }
@@ -56,7 +56,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             if (!(input instanceof StringValue)) return null;
             return Long.parseLong(((StringValue) input).getValue());
         }
@@ -80,7 +80,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             return ((FloatValue) input).getValue().floatValue();
         }
     });
@@ -97,7 +97,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             if (!(input instanceof StringValue)) return null;
             return ((StringValue) input).getValue();
         }
@@ -124,7 +124,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             if (!(input instanceof BooleanValue)) return null;
             return ((BooleanValue) input).isValue();
         }
@@ -147,7 +147,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             if (!(input instanceof StringValue)) return null;
             return ((StringValue) input).getValue();
         }
