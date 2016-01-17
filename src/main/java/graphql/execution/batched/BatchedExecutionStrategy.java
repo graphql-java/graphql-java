@@ -7,27 +7,11 @@ import graphql.GraphQLException;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
 import graphql.language.Field;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import graphql.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 /**
  * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link DataFetcher}s that have
@@ -229,9 +213,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private Object coerce(GraphQLType type, Object value) {
         if (type instanceof GraphQLEnumType) {
-            return ((GraphQLEnumType)type).getCoercing().coerce(value);
+            return ((GraphQLEnumType)type).getCoercing().serialize(value);
         } else {
-            return ((GraphQLScalarType)type).getCoercing().coerce(value);
+            return ((GraphQLScalarType)type).getCoercing().serialize(value);
         }
     }
 
