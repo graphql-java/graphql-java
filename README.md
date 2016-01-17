@@ -24,6 +24,7 @@ to checkout the appropriate tag when looking for the version documented here.
 # Table of Contents
  
 - [Overview](#overview)
+- [Mailing List](#mailing-list)
 - [Hello World](#hello-world)
 - [Getting started](#getting-started)
 - [Manual](#manual)
@@ -48,7 +49,13 @@ This is a Java Implementation of GraphQL. The library aims for real-life usage i
 It takes care of parsing and executing a GraphQL query. It doesn't take care of actually fetching any data:
 Data comes from implementing callbacks or providing static data.
 
+### Mailing List
 
+If you have a question or wants to discuss something: 
+
+There is a mailing list (Google Group) for graphql-java:
+
+[graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
 
 ### Hello World
 
@@ -451,7 +458,6 @@ For example the StarWarSchema and the tests (among a lot of other things) are si
 
 I would appreciate any feedback via Twitter [@andimarek](https://twitter.com/andimarek) or Pull request/Issue.
 
-There is also the #jvm channel in the slack GraphQL Team. [Join here](https://graphql-slack.herokuapp.com/). 
 
 ### License
 
