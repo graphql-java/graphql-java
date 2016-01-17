@@ -51,11 +51,9 @@ Data comes from implementing callbacks or providing static data.
 
 ### Mailing List
 
-If you have a question or wants to discuss something: 
+If you have a question or discuss anything else: 
 
-There is a mailing list (Google Group) for graphql-java:
-
-[graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
+There is a mailing list (Google Group) for graphql-java: [graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
 
 ### Hello World
 
