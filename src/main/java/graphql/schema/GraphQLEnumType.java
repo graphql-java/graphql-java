@@ -24,7 +24,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         }
 
         @Override
-        public Object coerceValue(Object input) {
+        public Object parseValue(Object input) {
             return getValueByName(input);
         }
 

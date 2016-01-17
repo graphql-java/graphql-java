@@ -4,9 +4,19 @@ package graphql.schema;
 public interface Coercing {
 
 
+    /**
+     * @param input
+     * @return
+     */
     Object coerce(Object input);
 
-    Object coerceValue(Object input);
+    /**
+     * Called to resolve a input from a variable.
+     *
+     * @param input
+     * @return
+     */
+    Object parseValue(Object input);
 
     /**
      * @param input

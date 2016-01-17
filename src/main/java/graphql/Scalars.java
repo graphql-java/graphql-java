@@ -24,7 +24,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceValue(Object input) {
+        public Object parseValue(Object input) {
             return null;
         }
 
@@ -51,7 +51,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceValue(Object input) {
+        public Object parseValue(Object input) {
             return null;
         }
 
@@ -75,7 +75,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceValue(Object input) {
+        public Object parseValue(Object input) {
             return null;
         }
 
@@ -92,7 +92,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceValue(Object input) {
+        public Object parseValue(Object input) {
             return null;
         }
 
@@ -119,7 +119,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceValue(Object input) {
+        public Object parseValue(Object input) {
             return null;
         }
 
@@ -142,7 +142,7 @@ public class Scalars {
         }
 
         @Override
-        public Object coerceValue(Object input) {
+        public Object parseValue(Object input) {
             return null;
         }
 
