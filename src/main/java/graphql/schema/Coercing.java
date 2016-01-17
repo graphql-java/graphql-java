@@ -6,6 +6,7 @@ public interface Coercing {
 
     /**
      * Called to convert a result of a DataFetcher to a valid runtime value.
+     *
      * @param input
      * @return
      */

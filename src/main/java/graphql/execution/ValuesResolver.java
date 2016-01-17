@@ -89,7 +89,7 @@ public class ValuesResolver {
     }
 
     private Object coerceValueForScalar(GraphQLScalarType graphQLScalarType, Object value) {
-        return graphQLScalarType.getCoercing().serialize(value);
+        return graphQLScalarType.getCoercing().parseValue(value);
     }
 
     private Object coerceValueForEnum(GraphQLEnumType graphQLEnumType, Object value) {

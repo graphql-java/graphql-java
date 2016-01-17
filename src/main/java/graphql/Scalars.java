@@ -25,7 +25,7 @@ public class Scalars {
 
         @Override
         public Object parseValue(Object input) {
-            return null;
+            return serialize(input);
         }
 
         @Override
@@ -52,7 +52,7 @@ public class Scalars {
 
         @Override
         public Object parseValue(Object input) {
-            return null;
+            return serialize(input);
         }
 
         @Override
@@ -76,7 +76,7 @@ public class Scalars {
 
         @Override
         public Object parseValue(Object input) {
-            return null;
+            return serialize(input);
         }
 
         @Override
@@ -93,7 +93,7 @@ public class Scalars {
 
         @Override
         public Object parseValue(Object input) {
-            return null;
+            return serialize(input);
         }
 
         @Override
@@ -120,7 +120,7 @@ public class Scalars {
 
         @Override
         public Object parseValue(Object input) {
-            return null;
+            return serialize(input);
         }
 
         @Override
@@ -143,7 +143,7 @@ public class Scalars {
 
         @Override
         public Object parseValue(Object input) {
-            return null;
+            return serialize(input);
         }
 
         @Override
