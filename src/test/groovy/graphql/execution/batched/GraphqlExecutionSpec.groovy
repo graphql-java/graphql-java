@@ -71,7 +71,7 @@ class GraphqlExecutionSpec extends Specification {
         Map<String, Object> retVal = new HashMap<>();
         retVal.put(firstKey, firstVal);
         for (int i = 0; i < more.length; i += 2) {
-            retVal.put((String) more[i], more[i+1]);
+            retVal.put((String) more[i], more[i + 1]);
         }
         return retVal;
     }
@@ -120,18 +120,18 @@ class GraphqlExecutionSpec extends Specification {
 
     def "Shatter works"() {
         given:
-        String query = "{ string(value: \"Shatter\"){shatter{value}} }";
+        String query = "{ string(value: \"Shatter\") {shatter{value}} }";
 
-        Map<String, Object> expected = mapOf(
-                "string", mapOf("shatter", Arrays.asList(
-                mapOf("value", "S"),
-                mapOf("value", "h"),
-                mapOf("value", "a"),
-                mapOf("value", "t"),
-                mapOf("value", "t"),
-                mapOf("value", "e"),
-                mapOf("value", "r")
-        )));
+        def expected = ["string": ["shatter": [
+                ["value": "S"],
+                ["value": "h"],
+                ["value": "a"],
+                ["value": "t"],
+                ["value": "t"],
+                ["value": "e"],
+                ["value": "r"]
+        ]]]
+
 
         expect:
         runTest(query, expected);
@@ -159,16 +159,16 @@ class GraphqlExecutionSpec extends Specification {
         given:
         String query =
                 "{ " +
-        "string(value: \"Sh\") {" +
-        "shatter { " +
-        "append(text: \"1\") {" +
-        "split(regex: \"h\") {" +
-        "value " +
-        "} " +
-        "} " +
-        "} " +
-        "} " +
-        "}";
+                        "string(value: \"Sh\") {" +
+                        "shatter { " +
+                        "append(text: \"1\") {" +
+                        "split(regex: \"h\") {" +
+                        "value " +
+                        "} " +
+                        "} " +
+                        "} " +
+                        "} " +
+                        "}";
 
         Map<String, Object> expected = mapOf(
                 "string", mapOf("shatter", Arrays.asList(
@@ -188,16 +188,16 @@ class GraphqlExecutionSpec extends Specification {
         given:
         String query =
                 "{ " +
-        "string(value: \"Sh\") {" +
-        "shatter { " +
-        "append(text: \"1\") {" +
-        "split {" +
-        "value " +
-        "} " +
-        "} " +
-        "} " +
-        "} " +
-        "}";
+                        "string(value: \"Sh\") {" +
+                        "shatter { " +
+                        "append(text: \"1\") {" +
+                        "split {" +
+                        "value " +
+                        "} " +
+                        "} " +
+                        "} " +
+                        "} " +
+                        "}";
 
         Map<String, Object> nullSplit = new HashMap<>();
         nullSplit.put("split", null);
@@ -219,12 +219,12 @@ class GraphqlExecutionSpec extends Specification {
         given:
         String query =
                 "{ " +
-        "string(value: \"Shxnull\") {" +
-        "split(regex: \"x\") {" +
-        "value " +
-        "} " +
-        "} " +
-        "}";
+                        "string(value: \"Shxnull\") {" +
+                        "split(regex: \"x\") {" +
+                        "value " +
+                        "} " +
+                        "} " +
+                        "}";
 
         Map<String, Object> expected = mapOf(
                 "string", mapOf("split", Arrays.asList(
@@ -242,12 +242,12 @@ class GraphqlExecutionSpec extends Specification {
         given:
         String query =
                 "{ " +
-        "string(value: \"Shxnull\") {" +
-        "split(regex: \"x\") {" +
-        "nonNullValue " +
-        "} " +
-        "} " +
-        "}";
+                        "string(value: \"Shxnull\") {" +
+                        "split(regex: \"x\") {" +
+                        "nonNullValue " +
+                        "} " +
+                        "} " +
+                        "}";
 
         expect:
         runTestExpectError(query, "non-null");
@@ -258,12 +258,12 @@ class GraphqlExecutionSpec extends Specification {
         given:
         String query =
                 "{ " +
-        "string(value: \"\") {" +
-        "shatter { " +
-        "value " +
-        "} " +
-        "} " +
-        "}";
+                        "string(value: \"\") {" +
+                        "shatter { " +
+                        "value " +
+                        "} " +
+                        "} " +
+                        "}";
 
         expect:
         runTestExpectError(query, "non-null");
@@ -275,12 +275,12 @@ class GraphqlExecutionSpec extends Specification {
         given:
         String query =
                 "{ " +
-        "string(value: \"Shxnull\") {" +
-        "split(regex: \"x\") {" +
-        "veryNonNullValue " +
-        "} " +
-        "} " +
-        "}";
+                        "string(value: \"Shxnull\") {" +
+                        "split(regex: \"x\") {" +
+                        "veryNonNullValue " +
+                        "} " +
+                        "} " +
+                        "}";
 
         expect:
         runTestExpectError(query, "non-null");
@@ -291,16 +291,16 @@ class GraphqlExecutionSpec extends Specification {
         given:
         String query =
                 "{ " +
-        "string(value: \"Sh\") {" +
-        "shatter { " +
-        "append(text: \"1\") {" +
-        "splitNonNull(regex: \"h\") {" +
-        "value " +
-        "} " +
-        "} " +
-        "} " +
-        "} " +
-        "}";
+                        "string(value: \"Sh\") {" +
+                        "shatter { " +
+                        "append(text: \"1\") {" +
+                        "splitNonNull(regex: \"h\") {" +
+                        "value " +
+                        "} " +
+                        "} " +
+                        "} " +
+                        "} " +
+                        "}";
 
         expect:
         runTestExpectError(query, "non-null");
@@ -308,17 +308,16 @@ class GraphqlExecutionSpec extends Specification {
     }
 
 
-
     def "Nested lists"() {
         given:
         String query =
                 "{ " +
-        "string(value: \"List of words\") {" +
-        "wordsAndLetters { " +
-        " value " +
-        "} " +
-        "} " +
-        "}";
+                        "string(value: \"List of words\") {" +
+                        "wordsAndLetters { " +
+                        " value " +
+                        "} " +
+                        "} " +
+                        "}";
 
         Map<String, Object> expected = mapOf(
                 "string", mapOf("wordsAndLetters", Arrays.asList(
@@ -347,18 +346,17 @@ class GraphqlExecutionSpec extends Specification {
 
     def "Batching works"() {
         given:
-        String query =
-                "{ " +
-        "string(value: \"Batch\") {" +
-        "shatter { " +
-        "append(text: \"1\") {" +
-        "split(regex: \"h\") {" +
-        "value " +
-        "} " +
-        "} " +
-        "} " +
-        "} " +
-        "}";
+        String query = """
+                { string(value: "Batch") {
+                        shatter {
+                            append(text: "1") {
+                                split(regex: "h") {
+                                    value
+                                }
+                            }
+                        }
+                    }
+                }"""
 
         Map<String, Object> expected = mapOf(
                 "string", mapOf("shatter", Arrays.asList(
@@ -382,8 +380,6 @@ class GraphqlExecutionSpec extends Specification {
         1 == this.countMap.get(FunWithStringsSchemaFactory.CallType.APPEND).get();
         1 == this.countMap.get(FunWithStringsSchemaFactory.CallType.SPLIT).get();
     }
-
-
 
 
 }
