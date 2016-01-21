@@ -4,6 +4,7 @@ package graphql.schema;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 
 import static graphql.Assert.assertNotNull;
 
@@ -12,12 +13,13 @@ public class GraphQLFieldDefinition {
     private final String name;
     private final String description;
     private GraphQLOutputType type;
+    private Callable<GraphQLOutputType> typeReturningFunction;
     private final DataFetcher dataFetcher;
     private final String deprecationReason;
     private final List<GraphQLArgument> arguments = new ArrayList<>();
 
 
-    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
+    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, Callable<GraphQLOutputType> typeReturningFunction, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
         assertNotNull(name, "name can't be null");
         assertNotNull(dataFetcher, "dataFetcher can't be null");
         assertNotNull(type, "type can't be null");
@@ -25,6 +27,7 @@ public class GraphQLFieldDefinition {
         this.name = name;
         this.description = description;
         this.type = type;
+        this.typeReturningFunction = typeReturningFunction;
         this.dataFetcher = dataFetcher;
         this.arguments.addAll(arguments);
         this.deprecationReason = deprecationReason;
@@ -41,6 +44,12 @@ public class GraphQLFieldDefinition {
 
 
     public GraphQLOutputType getType() {
+        if(type != null) {
+            return type;
+        }
+        if(typeReturningFunction != null) {
+            return typeReturningFunction.call();
+        }
         return type;
     }
 
@@ -80,6 +89,7 @@ public class GraphQLFieldDefinition {
         private String name;
         private String description;
         private GraphQLOutputType type;
+        private Callable<GraphQLOutputType> typeReturningFunction;
         private DataFetcher dataFetcher;
         private List<GraphQLArgument> arguments = new ArrayList<>();
         private String deprecationReason;
@@ -98,6 +108,11 @@ public class GraphQLFieldDefinition {
 
         public Builder type(GraphQLOutputType type) {
             this.type = type;
+            return this;
+        }
+        
+        public Builder type(Callable<GraphQLOutputType> typeReturningFunction) {
+            this.typeReturningFunction = typeReturningFunction;
             return this;
         }
 
@@ -148,7 +163,7 @@ public class GraphQLFieldDefinition {
                     dataFetcher = new PropertyDataFetcher(name);
                 }
             }
-            return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments, deprecationReason);
+            return new GraphQLFieldDefinition(name, description, type, typeReturningFunction, dataFetcher, arguments, deprecationReason);
         }
 
 
