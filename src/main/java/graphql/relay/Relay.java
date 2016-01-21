@@ -91,6 +91,34 @@ public class Relay {
                 .build());
         return args;
     }
+    
+    public List<GraphQLArgument> getBackwardPaginationConnectionFieldArguments() {
+        List<GraphQLArgument> args = new ArrayList<>();
+
+        args.add(newArgument()
+                .name("before")
+                .type(GraphQLString)
+                .build());
+        args.add(newArgument()
+                .name("last")
+                .type(GraphQLInt)
+                .build());
+        return args;
+    }
+    
+    public List<GraphQLArgument> getForwardPaginationConnectionFieldArguments() {
+        List<GraphQLArgument> args = new ArrayList<>();
+
+        args.add(newArgument()
+                .name("after")
+                .type(GraphQLString)
+                .build());
+        args.add(newArgument()
+                .name("first")
+                .type(GraphQLInt)
+                .build());
+        return args;
+    }
 
     public GraphQLObjectType edgeType(String name, GraphQLOutputType nodeType, GraphQLInterfaceType nodeInterface, List<GraphQLFieldDefinition> edgeFields) {
 
