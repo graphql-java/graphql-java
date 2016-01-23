@@ -5,7 +5,7 @@ import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
 import spock.lang.Specification
-
+import spock.lang.Unroll
 
 class ScalarsTest extends Specification {
 
@@ -107,18 +107,20 @@ class ScalarsTest extends Specification {
         new FloatValue(42.3) | 42.3f
     }
 
-    def "Float serialize/parseValue object"() {
+    @Unroll
+    def "Float serialize/parseValue #value into #result"() {
         expect:
         Scalars.GraphQLFloat.getCoercing().serialize(value) == result
         Scalars.GraphQLFloat.getCoercing().parseValue(value) == result
 
         where:
-        value           | result
-        "42.3"          | 42.3f
-        "42.0"          | 42.0f
-        new Float(42.3) | 42.3f
-        10              | 10.0f
-        null            | null
+        value      | result
+        "11.3"     | 11.3d
+        "24.0"     | 24.0d
+        42.3f      | 42.3f
+        10         | 10.0d
+        90.000004d | 90.000004d
+        null       | null
     }
 
     def "Boolean parse literal"() {
