@@ -27,6 +27,7 @@ class ScalarsTest extends Specification {
         value         | result
         Boolean.FALSE | "false"
         "test"        | "test"
+        null| null
     }
 
 
