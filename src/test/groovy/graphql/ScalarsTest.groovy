@@ -48,7 +48,7 @@ class ScalarsTest extends Specification {
         where:
         value                | result
         "5457486ABSBHS4w646" | "5457486ABSBHS4w646"
-
+        null | null
     }
 
     def "Long parse literal"() {
@@ -72,6 +72,7 @@ class ScalarsTest extends Specification {
         "42"                         | 42
         new Long(42345784398534785l) | 42345784398534785l
         new Integer(42)              | 42
+        null | null
     }
 
 
@@ -94,6 +95,7 @@ class ScalarsTest extends Specification {
         value           | result
         "42"            | 42
         new Integer(42) | 42
+        null | null
     }
 
     def "Float parse literal"() {
@@ -115,6 +117,7 @@ class ScalarsTest extends Specification {
         "42.3"          | 42.3f
         "42.0"          | 42.0f
         new Float(42.3) | 42.3f
+        null | null
     }
 
     def "Boolean parse literal"() {
@@ -138,6 +141,7 @@ class ScalarsTest extends Specification {
         "true"  | true
         0       | false
         1       | true
+        null | null
     }
 
 

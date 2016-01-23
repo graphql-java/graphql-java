@@ -19,7 +19,7 @@ public class Scalars {
             } else if (input instanceof Integer) {
                 return input;
             } else {
-                throw new GraphQLException("Illegal value for GraphQLInt:" + input);
+                return null;
             }
         }
 
@@ -46,7 +46,7 @@ public class Scalars {
             } else if (input instanceof Integer) {
                 return ((Integer) input).longValue();
             } else {
-                throw new GraphQLException("");
+                return null;
             }
         }
 
@@ -74,7 +74,7 @@ public class Scalars {
             } else if (input instanceof Float) {
                 return input;
             } else {
-                throw new GraphQLException();
+                return null;
             }
         }
 
@@ -118,7 +118,7 @@ public class Scalars {
             } else if (input instanceof String) {
                 return Boolean.parseBoolean((String) input);
             } else {
-                throw new GraphQLException();
+                return null;
             }
         }
 
@@ -142,7 +142,7 @@ public class Scalars {
                 return input;
             }
 
-            throw new GraphQLException();
+            return null;
         }
 
         @Override
