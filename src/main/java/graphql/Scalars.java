@@ -68,11 +68,13 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing() {
         @Override
-        public Object serialize(Object input) {
+        public Float serialize(Object input) {
             if (input instanceof String) {
                 return Float.parseFloat((String) input);
             } else if (input instanceof Float) {
-                return input;
+                return (Float) input;
+            } else if (input instanceof Integer) {
+                return (float) (Integer) input;
             } else {
                 return null;
             }
