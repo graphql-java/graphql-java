@@ -25,7 +25,8 @@ import java.util.concurrent.Future;
  * </ul><p>
  *
  * Failure to follow 1. and 2. can result in a very large number of threads created or hanging. (deadlock)
- * @see {@link graphql.execution.ExecutorServiceExecutionStrategyTest} for example usage
+ * <p>
+ * See {@code graphql.execution.ExecutorServiceExecutionStrategyTest} for example usage.
  */
 public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
