@@ -18,15 +18,17 @@ class ScalarsTest extends Specification {
         new StringValue("test") | "test"
     }
 
-    def "String serialize object"() {
+    def "String serialize/parseValue object"() {
         expect:
         Scalars.GraphQLString.getCoercing().serialize(value) == result
+        Scalars.GraphQLString.getCoercing().parseValue(value) == result
 
         where:
         value         | result
         Boolean.FALSE | "false"
         "test"        | "test"
     }
+
 
     def "ID parse literal"() {
         expect:
@@ -37,33 +39,15 @@ class ScalarsTest extends Specification {
         new StringValue("5457486ABSBHS4w646") | "5457486ABSBHS4w646"
     }
 
-    def "ID serialize object"() {
+    def "ID serialize/parseValue object"() {
         expect:
         Scalars.GraphQLID.getCoercing().serialize(value) == result
+        Scalars.GraphQLID.getCoercing().parseValue(value) == result
 
         where:
         value                | result
         "5457486ABSBHS4w646" | "5457486ABSBHS4w646"
-    }
 
-    def "Int parse literal"() {
-        expect:
-        Scalars.GraphQLInt.getCoercing().parseLiteral(literal) == result
-
-        where:
-        literal          | result
-        new IntValue(42) | 42
-    }
-
-    def "Long serialize object"() {
-        expect:
-        Scalars.GraphQLLong.getCoercing().serialize(value) == result
-
-        where:
-        value                        | result
-        "42"                         | 42
-        new Long(42345784398534785l) | 42345784398534785l
-        new Integer(42)              | 42
     }
 
     def "Long parse literal"() {
@@ -76,9 +60,34 @@ class ScalarsTest extends Specification {
         new IntValue(42)      | 42
     }
 
-    def "Int serialize object"() {
+
+    def "Long serialize/parseValue object"() {
+        expect:
+        Scalars.GraphQLLong.getCoercing().serialize(value) == result
+        Scalars.GraphQLLong.getCoercing().parseValue(value) == result
+
+        where:
+        value                        | result
+        "42"                         | 42
+        new Long(42345784398534785l) | 42345784398534785l
+        new Integer(42)              | 42
+    }
+
+
+    def "Int parse literal"() {
+        expect:
+        Scalars.GraphQLInt.getCoercing().parseLiteral(literal) == result
+
+        where:
+        literal          | result
+        new IntValue(42) | 42
+
+    }
+
+    def "Int serialize/parseValue object"() {
         expect:
         Scalars.GraphQLInt.getCoercing().serialize(value) == result
+        Scalars.GraphQLInt.getCoercing().parseValue(value) == result
 
         where:
         value           | result
@@ -95,9 +104,10 @@ class ScalarsTest extends Specification {
         new FloatValue(42.3) | 42.3f
     }
 
-    def "Float serialize object"() {
+    def "Float serialize/parseValue object"() {
         expect:
         Scalars.GraphQLFloat.getCoercing().serialize(value) == result
+        Scalars.GraphQLFloat.getCoercing().parseValue(value) == result
 
         where:
         value           | result
@@ -115,9 +125,10 @@ class ScalarsTest extends Specification {
         new BooleanValue(true) | true
     }
 
-    def "Boolean serialize object"() {
+    def "Boolean serialize/parseValue object"() {
         expect:
         Scalars.GraphQLBoolean.getCoercing().serialize(value) == result
+        Scalars.GraphQLBoolean.getCoercing().parseValue(value) == result
 
         where:
         value   | result
