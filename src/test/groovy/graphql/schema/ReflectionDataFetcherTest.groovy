@@ -7,9 +7,13 @@ class ReflectionDataFetcherTest extends Specification {
 
     static final EXPECTED = "expected"
 
-    static final String SOME_SUPER_FIELD = "someSuperField";
+    static final String SOME_SUPER_FIELD = "someSuperField"
+
+    private static final String SOME_SUPER_FIELD_SNAKE_CASE = "some_super_field";
 
     def environment = Mock(DataFetchingEnvironment);
+
+    def fieldDefinition
 
     def "setup"(){
         environment.getSource() >> new TestObject(EXPECTED);
@@ -25,8 +29,10 @@ class ReflectionDataFetcherTest extends Specification {
 
         where:
         dataFetcher << [
-            new PropertyDataFetcher(SOME_SUPER_FIELD),
-            new FieldDataFetcher(SOME_SUPER_FIELD)
+            GraphQLFieldDefinition.newFieldDefinition().nameAndFieldName(SOME_SUPER_FIELD_SNAKE_CASE,SOME_SUPER_FIELD).type(GraphQLString).build().getDataFetcher(),
+            GraphQLFieldDefinition.newFieldDefinition().nameAndFieldName(SOME_SUPER_FIELD_SNAKE_CASE,SOME_SUPER_FIELD).type(GraphQLString).fetchField().build().getDataFetcher(),
+            GraphQLFieldDefinition.newFieldDefinition().name(SOME_SUPER_FIELD).type(GraphQLString).build().getDataFetcher(),
+            GraphQLFieldDefinition.newFieldDefinition().name(SOME_SUPER_FIELD).type(GraphQLString).fetchField().build().getDataFetcher()
         ]
     }
 }
