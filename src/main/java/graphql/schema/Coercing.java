@@ -7,9 +7,8 @@ public interface Coercing {
     /**
      * Called to convert a result of a DataFetcher to a valid runtime value.
      *
-     *
-     * @param input
-     * @return  null if not possible/invalid
+     * @param input is never null
+     * @return null if not possible/invalid
      */
     Object serialize(Object input);
 
@@ -17,14 +16,15 @@ public interface Coercing {
      * Called to resolve a input from a variable.
      * Null if not possible.
      *
-     * @param input
-     * @return  null if not possible/invalid
+     * @param input is never null
+     * @return null if not possible/invalid
      */
     Object parseValue(Object input);
 
     /**
-     * @param input
-     * @return  null if not possible/invalid
+     * Called to convert a AST node
+     * @param input is never null
+     * @return null if not possible/invalid
      */
     Object parseLiteral(Object input);
 }
