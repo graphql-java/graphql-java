@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.GraphQLException;
 import graphql.language.EnumValue;
 
 import java.util.ArrayList;
@@ -40,15 +39,15 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     private Object getValueByName(Object value) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value);
-        if (enumValueDefinition.getValue() != null) return enumValueDefinition.getValue();
-        throw new GraphQLException("");
+        if (enumValueDefinition != null) return enumValueDefinition.getValue();
+        return null;
     }
 
     private Object getNameByValue(Object value) {
         for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
             if (value.equals(valueDefinition.getValue())) return valueDefinition.getName();
         }
-        throw new GraphQLException("");
+        return null;
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
