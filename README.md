@@ -24,6 +24,7 @@ to checkout the appropriate tag when looking for the version documented here.
 # Table of Contents
  
 - [Overview](#overview)
+- [Code of Conduct](#code-of-conduct)
 - [Mailing List](#mailing-list)
 - [Hello World](#hello-world)
 - [Getting started](#getting-started)
@@ -34,6 +35,7 @@ to checkout the appropriate tag when looking for the version documented here.
     - [Execution strategies](#execution-strategies)
     - [Logging](#logging)
     - [Relay Support](#relay-support)
+- Contributions
 - [Build it](#build-it)
 - [Development Build](#development-build)
 - [Details](#details)
@@ -48,6 +50,13 @@ This is a Java Implementation of GraphQL. The library aims for real-life usage i
   
 It takes care of parsing and executing a GraphQL query. It doesn't take care of actually fetching any data:
 Data comes from implementing callbacks or providing static data.
+
+### Code of Conduct
+
+Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md).
+By contributing to this project (commenting or opening PR/Issues etc) you are agreeing to follow this conduct, so please
+take the time and read it. 
+
 
 ### Mailing List
 
