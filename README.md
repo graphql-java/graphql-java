@@ -60,7 +60,7 @@ take the time to read it.
 
 ### Mailing List
 
-If you have a question or discuss anything else: 
+If you have a question or want to discuss anything else related to this project: 
 
 There is a mailing list (Google Group) for graphql-java: [graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
 
