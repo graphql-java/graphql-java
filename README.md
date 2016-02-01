@@ -35,7 +35,7 @@ to checkout the appropriate tag when looking for the version documented here.
     - [Execution strategies](#execution-strategies)
     - [Logging](#logging)
     - [Relay Support](#relay-support)
-- [Contributions](#Contributions)
+- [Contributions](#contributions)
 - [Build it](#build-it)
 - [Development Build](#development-build)
 - [Details](#details)
