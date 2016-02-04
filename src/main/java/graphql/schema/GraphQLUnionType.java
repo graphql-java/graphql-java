@@ -6,7 +6,7 @@ import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLUnionType implements GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
@@ -15,7 +15,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
 
     public GraphQLUnionType(String name, String description, List<GraphQLType> types, TypeResolver typeResolver) {
-        assertNotNull(name, "name can't be null");
+        assertNotNull(name, "name can't null");
         assertNotNull(types, "types can't be null");
         assertNotNull(typeResolver, "typeResolver can't be null");
         this.name = name;
@@ -33,17 +33,32 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         return typeResolver;
     }
 
-    @Override
-    public String getName() {
-        return name;
-    }
-
     public String getDescription() {
         return description;
     }
 
     public static Builder newUnionType() {
         return new Builder();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLType that = (GraphQLType) o;
+
+        return getName().equals(that.getName());
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
     public static class Builder {

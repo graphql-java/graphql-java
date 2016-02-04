@@ -5,7 +5,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
+public class GraphQLNonNull implements GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
     private  GraphQLType wrappedType;
 

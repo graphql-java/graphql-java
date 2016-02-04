@@ -56,7 +56,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
 
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
-        assertNotNull(name, "name can't be null");
+        assertNotNull(name, "name can't null");
         this.name = name;
         this.description = description;
         buildMap(values);
@@ -66,10 +66,6 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         for (GraphQLEnumValueDefinition valueDefinition : values) {
             valueDefinitionMap.put(valueDefinition.getName(), valueDefinition);
         }
-    }
-
-    public String getName() {
-        return name;
     }
 
     public String getDescription() {
@@ -83,6 +79,26 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     public static Builder newEnum() {
         return new Builder();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLType that = (GraphQLType) o;
+
+        return getName().equals(that.getName());
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
     public static class Builder {

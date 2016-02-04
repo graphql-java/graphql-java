@@ -8,7 +8,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLObjectType implements GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
@@ -50,16 +50,10 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         return description;
     }
 
-
-    public String getName() {
-        return name;
-    }
-
-
     @Override
     public String toString() {
         return "GraphQLObjectType{" +
-                "name='" + name + '\'' +
+                "name='" + getName() + '\'' +
                 ", description='" + description + '\'' +
                 ", fieldDefinitionsByName=" + fieldDefinitionsByName +
                 ", interfaces=" + interfaces +
@@ -68,6 +62,26 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     public static Builder newObject() {
         return new Builder();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLType that = (GraphQLType) o;
+
+        return getName().equals(that.getName());
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
 

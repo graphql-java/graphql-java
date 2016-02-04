@@ -5,7 +5,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
+public class GraphQLList implements GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
 
     private GraphQLType wrappedType;
 
@@ -39,7 +39,6 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         return wrappedType != null ? wrappedType.hashCode() : 0;
     }
 
-    @Override
     public String getName() {
         return null;
     }

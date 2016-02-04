@@ -8,7 +8,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLInterfaceType implements GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
@@ -40,10 +40,6 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         return new ArrayList<>(fieldDefinitionsByName.values());
     }
 
-    public String getName() {
-        return name;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -55,7 +51,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     @Override
     public String toString() {
         return "GraphQLInterfaceType{" +
-                "name='" + name + '\'' +
+                "name='" + getName() + '\'' +
                 ", description='" + description + '\'' +
                 ", fieldDefinitionsByName=" + fieldDefinitionsByName +
                 ", typeResolver=" + typeResolver +
@@ -64,6 +60,26 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
     public static Builder newInterface() {
         return new Builder();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GraphQLType that = (GraphQLType) o;
+
+        return getName().equals(that.getName());
+
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 
 
