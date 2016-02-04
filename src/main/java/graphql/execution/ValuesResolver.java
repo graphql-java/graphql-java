@@ -84,8 +84,14 @@ public class ValuesResolver {
     private Object coerceValueForInputObjectField(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
         Map<String, Object> result = new LinkedHashMap<>();
         for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
-            Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
-            result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
+            Object inputValueForField = input.get(inputField.getName());
+            // Only set input if users explicitly specify the field
+            if (inputValueForField != null) {
+                Object value = coerceValue(inputField.getType(), inputValueForField);
+                result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
+            } else if (inputValueForField == null && inputField.getType() instanceof GraphQLNonNull) {
+                throw new GraphQLException(inputField.getName() + " is a required field but doesn't have value");
+            }
 
         }
         return result;
