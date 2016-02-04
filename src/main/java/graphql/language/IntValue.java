@@ -22,7 +22,7 @@ public class IntValue extends AbstractNode implements Value {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        return new ArrayList<Node>();
     }
 
     @Override

@@ -29,7 +29,7 @@ public class NonNullType extends AbstractNode implements Type {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
+        List<Node> result = new ArrayList<Node>();
         result.add(type);
         return result;
     }

@@ -9,8 +9,8 @@ public class Field extends AbstractNode implements Selection {
     private String name;
     private String alias;
 
-    private List<Argument> arguments = new ArrayList<>();
-    private List<Directive> directives = new ArrayList<>();
+    private List<Argument> arguments = new ArrayList<Argument>();
+    private List<Directive> directives = new ArrayList<Directive>();
     private SelectionSet selectionSet;
 
     public Field() {

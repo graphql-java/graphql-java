@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Document extends AbstractNode {
 
-    private List<Definition> definitions = new ArrayList<>();
+    private List<Definition> definitions = new ArrayList<Definition>();
 
     public Document() {
 

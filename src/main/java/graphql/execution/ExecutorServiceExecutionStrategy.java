@@ -40,7 +40,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
     public ExecutionResult execute(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, final Map<String, List<Field>> fields) {
         if (executorService == null) return new SimpleExecutionStrategy().execute(executionContext, parentType, source, fields);
 
-        Map<String, Future<ExecutionResult>> futures = new LinkedHashMap<>();
+        Map<String, Future<ExecutionResult>> futures = new LinkedHashMap<String, Future<ExecutionResult>>();
         for (String fieldName : fields.keySet()) {
             final List<Field> fieldList = fields.get(fieldName);
             Callable<ExecutionResult> resolveField = new Callable<ExecutionResult>() {
@@ -53,14 +53,16 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
             futures.put(fieldName, executorService.submit(resolveField));
         }
         try {
-            Map<String, Object> results = new LinkedHashMap<>();
+            Map<String, Object> results = new LinkedHashMap<String, Object>();
             for (String fieldName : futures.keySet()) {
                 ExecutionResult executionResult = futures.get(fieldName).get();
 
                 results.put(fieldName, executionResult != null ? executionResult.getData() : null);
             }
             return new ExecutionResultImpl(results, executionContext.getErrors());
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException e) {
+            throw new GraphQLException(e);
+        } catch (ExecutionException e) {
             throw new GraphQLException(e);
         }
     }
