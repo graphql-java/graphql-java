@@ -14,7 +14,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
+    private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<String, GraphQLEnumValueDefinition>();
 
     private final Coercing coercing = new Coercing() {
         @Override
@@ -51,7 +51,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
-        return new ArrayList<>(valueDefinitionMap.values());
+        return new ArrayList<GraphQLEnumValueDefinition>(valueDefinitionMap.values());
     }
 
 
@@ -89,7 +89,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
         private String name;
         private String description;
-        private final List<GraphQLEnumValueDefinition> values = new ArrayList<>();
+        private final List<GraphQLEnumValueDefinition> values = new ArrayList<GraphQLEnumValueDefinition>();
 
         public Builder name(String name) {
             this.name = name;

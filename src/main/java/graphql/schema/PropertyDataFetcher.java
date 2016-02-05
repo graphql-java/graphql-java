@@ -34,7 +34,9 @@ public class PropertyDataFetcher implements DataFetcher {
 
         } catch (NoSuchMethodException e) {
             return null;
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }

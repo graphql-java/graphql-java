@@ -33,7 +33,8 @@ public abstract class ExecutionStrategy {
                 fields,
                 fieldDef.getType(),
                 parentType,
-                executionContext.getGraphQLSchema()
+                executionContext.getGraphQLSchema(),
+                executionContext.getFragmentsByName()
         );
 
         Object resolvedValue = null;
@@ -76,8 +77,8 @@ public abstract class ExecutionStrategy {
             resolvedType = (GraphQLObjectType) fieldType;
         }
 
-        Map<String, List<Field>> subFields = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
+        Map<String, List<Field>> subFields = new LinkedHashMap<String, List<Field>>();
+        List<String> visitedFragments = new ArrayList<String>();
         for (Field field : fields) {
             if (field.getSelectionSet() == null) continue;
             fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
@@ -123,7 +124,7 @@ public abstract class ExecutionStrategy {
     }
 
     protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
-        List<Object> completedResults = new ArrayList<>();
+        List<Object> completedResults = new ArrayList<Object>();
         for (Object item : result) {
             ExecutionResult completedValue = completeValue(executionContext, fieldType.getWrappedType(), fields, item);
             completedResults.add(completedValue != null ? completedValue.getData() : null);

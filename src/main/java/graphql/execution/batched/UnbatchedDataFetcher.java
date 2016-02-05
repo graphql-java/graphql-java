@@ -26,7 +26,7 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
     public Object get(DataFetchingEnvironment environment) {
         @SuppressWarnings("unchecked")
         List<Object> sources = (List<Object>) environment.getSource();
-        List<Object> results = new ArrayList<>();
+        List<Object> results = new ArrayList<Object>();
         for (Object source: sources) {
             DataFetchingEnvironment singleEnv = new DataFetchingEnvironment(
                     source,
@@ -35,7 +35,8 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
                     environment.getFields(),
                     environment.getFieldType(),
                     environment.getParentType(),
-                    environment.getGraphQLSchema());
+                    environment.getGraphQLSchema(),
+                    environment.getFragmentsByName());
             results.add(delegate.get(singleEnv));
         }
         return results;

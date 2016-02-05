@@ -14,7 +14,7 @@ public class GraphQLFieldDefinition {
     private GraphQLOutputType type;
     private final DataFetcher dataFetcher;
     private final String deprecationReason;
-    private final List<GraphQLArgument> arguments = new ArrayList<>();
+    private final List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
 
 
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
@@ -56,7 +56,7 @@ public class GraphQLFieldDefinition {
     }
 
     public List<GraphQLArgument> getArguments() {
-        return new ArrayList<>(arguments);
+        return new ArrayList<GraphQLArgument>(arguments);
     }
 
     public String getDescription() {
@@ -81,7 +81,7 @@ public class GraphQLFieldDefinition {
         private String description;
         private GraphQLOutputType type;
         private DataFetcher dataFetcher;
-        private List<GraphQLArgument> arguments = new ArrayList<>();
+        private List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
         private String deprecationReason;
         private boolean isField;
 

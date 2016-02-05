@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.language.Field;
+import graphql.language.FragmentDefinition;
 
 import java.util.List;
 import java.util.Map;
@@ -14,8 +15,11 @@ public class DataFetchingEnvironment {
     private final GraphQLOutputType fieldType;
     private final GraphQLType parentType;
     private final GraphQLSchema graphQLSchema;
+    private final Map<String, FragmentDefinition> fragmentsByName;
 
-    public DataFetchingEnvironment(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema) {
+    public DataFetchingEnvironment(Object source, Map<String, Object> arguments, Object context, List<Field> fields,
+                                   GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema,
+                                   Map<String, FragmentDefinition> fragmentsByName) {
         this.source = source;
         this.arguments = arguments;
         this.context = context;
@@ -23,6 +27,7 @@ public class DataFetchingEnvironment {
         this.fieldType = fieldType;
         this.parentType = parentType;
         this.graphQLSchema = graphQLSchema;
+        this.fragmentsByName = fragmentsByName;
     }
 
     public Object getSource() {
@@ -59,5 +64,9 @@ public class DataFetchingEnvironment {
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
+    }
+
+    public Map<String, FragmentDefinition> getFragmentsByName() {
+        return fragmentsByName;
     }
 }
