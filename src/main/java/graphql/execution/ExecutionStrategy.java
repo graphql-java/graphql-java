@@ -33,7 +33,8 @@ public abstract class ExecutionStrategy {
                 fields,
                 fieldDef.getType(),
                 parentType,
-                executionContext.getGraphQLSchema()
+                executionContext.getGraphQLSchema(),
+                executionContext.getFragmentsByName()
         );
 
         Object resolvedValue = null;

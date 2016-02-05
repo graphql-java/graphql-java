@@ -253,7 +253,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 fields,
                 fieldDef.getType(),
                 parentType,
-                executionContext.getGraphQLSchema()
+                executionContext.getGraphQLSchema(),
+                executionContext.getFragmentsByName()
         );
 
         List<Object> values;
