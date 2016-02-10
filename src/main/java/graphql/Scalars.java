@@ -13,23 +13,23 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             if (input instanceof String) {
                 return Integer.parseInt((String) input);
             } else if (input instanceof Integer) {
                 return input;
             } else {
-                throw new GraphQLException("Illegal value for GraphQLInt:" + input);
+                return null;
             }
         }
 
         @Override
-        public Object coerceValue(Object input) {
-            return null;
+        public Object parseValue(Object input) {
+            return serialize(input);
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             if (!(input instanceof IntValue)) return null;
             return ((IntValue) input).getValue();
         }
@@ -38,7 +38,7 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             if (input instanceof String) {
                 return Long.parseLong((String) input);
             } else if (input instanceof Long) {
@@ -46,21 +46,21 @@ public class Scalars {
             } else if (input instanceof Integer) {
                 return ((Integer) input).longValue();
             } else {
-                throw new GraphQLException("");
+                return null;
             }
         }
 
         @Override
-        public Object coerceValue(Object input) {
-            return null;
+        public Object parseValue(Object input) {
+            return serialize(input);
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
-            if (input instanceof IntValue) {
-                return (long) ((IntValue) input).getValue();
-            } else if (input instanceof StringValue) {
+        public Object parseLiteral(Object input) {
+            if (input instanceof StringValue) {
                 return Long.parseLong(((StringValue) input).getValue());
+            } else if (input instanceof IntValue) {
+                return ((IntValue) input).getValue();
             }
             return null;
         }
@@ -68,40 +68,44 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Double serialize(Object input) {
             if (input instanceof String) {
-                return Float.parseFloat((String) input);
+                return Double.parseDouble((String) input);
+            } else if (input instanceof Double) {
+                return (Double) input;
             } else if (input instanceof Float) {
-                return input;
+                return (double) (Float) input;
+            } else if (input instanceof Integer) {
+                return (double) (Integer) input;
             } else {
-                throw new GraphQLException();
+                return null;
             }
         }
 
         @Override
-        public Object coerceValue(Object input) {
-            return null;
+        public Object parseValue(Object input) {
+            return serialize(input);
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             return ((FloatValue) input).getValue().floatValue();
         }
     });
 
     public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             return input == null ? null : input.toString();
         }
 
         @Override
-        public Object coerceValue(Object input) {
-            return null;
+        public Object parseValue(Object input) {
+            return serialize(input);
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             if (!(input instanceof StringValue)) return null;
             return ((StringValue) input).getValue();
         }
@@ -110,7 +114,7 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             if (input instanceof Boolean) {
                 return input;
             } else if (input instanceof Integer) {
@@ -118,17 +122,17 @@ public class Scalars {
             } else if (input instanceof String) {
                 return Boolean.parseBoolean((String) input);
             } else {
-                throw new GraphQLException();
+                return null;
             }
         }
 
         @Override
-        public Object coerceValue(Object input) {
-            return null;
+        public Object parseValue(Object input) {
+            return serialize(input);
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseLiteral(Object input) {
             if (!(input instanceof BooleanValue)) return null;
             return ((BooleanValue) input).isValue();
         }
@@ -137,21 +141,21 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing() {
         @Override
-        public Object coerce(Object input) {
+        public Object serialize(Object input) {
             if (input instanceof String) {
                 return input;
             }
 
-            throw new GraphQLException();
-        }
-
-        @Override
-        public Object coerceValue(Object input) {
             return null;
         }
 
         @Override
-        public Object coerceLiteral(Object input) {
+        public Object parseValue(Object input) {
+            return serialize(input);
+        }
+
+        @Override
+        public Object parseLiteral(Object input) {
             if (!(input instanceof StringValue)) return null;
             return ((StringValue) input).getValue();
         }

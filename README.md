@@ -24,6 +24,8 @@ to checkout the appropriate tag when looking for the version documented here.
 # Table of Contents
  
 - [Overview](#overview)
+- [Code of Conduct](#code-of-conduct)
+- [Mailing List](#mailing-list)
 - [Hello World](#hello-world)
 - [Getting started](#getting-started)
 - [Manual](#manual)
@@ -33,6 +35,7 @@ to checkout the appropriate tag when looking for the version documented here.
     - [Execution strategies](#execution-strategies)
     - [Logging](#logging)
     - [Relay Support](#relay-support)
+- [Contributions](#contributions)
 - [Build it](#build-it)
 - [Development Build](#development-build)
 - [Details](#details)
@@ -48,7 +51,18 @@ This is a Java Implementation of GraphQL. The library aims for real-life usage i
 It takes care of parsing and executing a GraphQL query. It doesn't take care of actually fetching any data:
 Data comes from implementing callbacks or providing static data.
 
+### Code of Conduct
 
+Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md).
+By contributing to this project (commenting or opening PR/Issues etc) you are agreeing to follow this conduct, so please
+take the time to read it. 
+
+
+### Mailing List
+
+If you have a question or want to discuss anything else related to this project: 
+
+There is a mailing list (Google Group) for graphql-java: [graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
 
 ### Hello World
 
@@ -336,6 +350,8 @@ See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) fo
 
 It's recommended to use a `ExecutorService` to speed up execution.
 
+Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
+
 #### Logging
 
 Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [Manual](http://www.slf4j.org/manual.html) for details.
@@ -346,6 +362,21 @@ The `grapqhl-java` root Logger name is `graphql`.
 
 There is a very basic Relay support included. Please look at https://github.com/andimarek/todomvc-relay-java for an example
 project how to use it.
+
+#### Contributions
+
+Every contribution to make this project better is welcome: Thank you! 
+
+In order to make this a pleasant as possible for everybody involved, here are some tips:
+
+- Respect the [Code of Conduct](#code-of-conduct)
+- Before opening an Issue to report a bug, please try the latest development version. It can happen that the problem is already solved.
+- Please use  Markdown to format your comments properly. If you are not familiar with that: [Getting started with writing and formatting on GitHub](https://help.github.com/articles/getting-started-with-writing-and-formatting-on-github/)
+- For Pull Requests:
+  - Here are some [general tips](https://github.com/blog/1943-how-to-write-the-perfect-pull-request)
+  - Please be a as focused and clear as possible  and don't mix concerns. This includes refactorings mixed with bug-fixes/features, see [Open Source Contribution Etiquette](http://tirania.org/blog/archive/2010/Dec-31.html) 
+  - It would be good to add a automatic test. All tests are written in [Spock](http://spockframework.github.io/spock/docs/1.0/index.html).
+   
 
 #### Development Build
 
@@ -447,11 +478,6 @@ The only runtime dependencies are ANTLR and Slf4J.
 This implementation is based on the [js reference implementation](https://github.com/graphql/graphql-js).
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
  
-### Feedback
-
-I would appreciate any feedback via Twitter [@andimarek](https://twitter.com/andimarek) or Pull request/Issue.
-
-There is also the #jvm channel in the slack GraphQL Team. [Join here](https://graphql-slack.herokuapp.com/). 
 
 ### License
 

@@ -64,6 +64,8 @@ public class ValuesResolver {
     }
 
     private Object coerceValue(GraphQLType graphQLType, Object value) {
+        if (value == null) return null;
+
         if (graphQLType instanceof GraphQLScalarType) {
             return coerceValueForScalar((GraphQLScalarType) graphQLType, value);
         } else if (graphQLType instanceof GraphQLEnumType) {
@@ -74,8 +76,9 @@ public class ValuesResolver {
             return coerceValueForInputObjectField((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
         } else if (graphQLType instanceof GraphQLNonNull) {
             return coerceValue(((GraphQLNonNull) graphQLType).getWrappedType(), value);
+        } else {
+            throw new GraphQLException("unknown type " + graphQLType);
         }
-        return null;
     }
 
     private Object coerceValueForInputObjectField(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
@@ -89,11 +92,11 @@ public class ValuesResolver {
     }
 
     private Object coerceValueForScalar(GraphQLScalarType graphQLScalarType, Object value) {
-        return graphQLScalarType.getCoercing().coerce(value);
+        return graphQLScalarType.getCoercing().parseValue(value);
     }
 
     private Object coerceValueForEnum(GraphQLEnumType graphQLEnumType, Object value) {
-        return graphQLEnumType.getCoercing().coerceValue(value);
+        return graphQLEnumType.getCoercing().parseValue(value);
     }
 
     private List coerceValueForList(GraphQLList graphQLList, Object value) {
@@ -113,7 +116,7 @@ public class ValuesResolver {
             return variables.get(((VariableReference) inputValue).getName());
         }
         if (type instanceof GraphQLScalarType) {
-            return ((GraphQLScalarType) type).getCoercing().coerceLiteral(inputValue);
+            return ((GraphQLScalarType) type).getCoercing().parseLiteral(inputValue);
         }
         if (type instanceof GraphQLNonNull) {
             return coerceValueAst(((GraphQLNonNull) type).getWrappedType(), inputValue, variables);
@@ -122,7 +125,7 @@ public class ValuesResolver {
             return coerceValueAstForInputObject((GraphQLInputObjectType) type, (ObjectValue) inputValue, variables);
         }
         if (type instanceof GraphQLEnumType) {
-            return ((GraphQLEnumType) type).getCoercing().coerceLiteral(inputValue);
+            return ((GraphQLEnumType) type).getCoercing().parseLiteral(inputValue);
         }
         if (type instanceof GraphQLList) {
             return coerceValueAstForList((GraphQLList) type, inputValue, variables);

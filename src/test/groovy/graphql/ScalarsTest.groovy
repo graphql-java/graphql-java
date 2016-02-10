@@ -5,118 +5,137 @@ import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
 import spock.lang.Specification
-
+import spock.lang.Unroll
 
 class ScalarsTest extends Specification {
 
-    def "String coerce literal"() {
+    def "String parse literal"() {
         expect:
-        Scalars.GraphQLString.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLString.getCoercing().parseLiteral(literal) == result
 
         where:
         literal                 | result
         new StringValue("test") | "test"
     }
 
-    def "String coerce object"() {
+    def "String serialize/parseValue object"() {
         expect:
-        Scalars.GraphQLString.getCoercing().coerce(value) == result
+        Scalars.GraphQLString.getCoercing().serialize(value) == result
+        Scalars.GraphQLString.getCoercing().parseValue(value) == result
 
         where:
         value         | result
         Boolean.FALSE | "false"
         "test"        | "test"
+        null          | null
     }
 
-    def "ID coerce literal"() {
+
+    def "ID parse literal"() {
         expect:
-        Scalars.GraphQLID.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLID.getCoercing().parseLiteral(literal) == result
 
         where:
-        literal                 | result
+        literal                               | result
         new StringValue("5457486ABSBHS4w646") | "5457486ABSBHS4w646"
     }
 
-    def "ID coerce object"() {
+    def "ID serialize/parseValue object"() {
         expect:
-        Scalars.GraphQLID.getCoercing().coerce(value) == result
+        Scalars.GraphQLID.getCoercing().serialize(value) == result
+        Scalars.GraphQLID.getCoercing().parseValue(value) == result
 
         where:
-        value         | result
-        "5457486ABSBHS4w646"        | "5457486ABSBHS4w646"
+        value                | result
+        "5457486ABSBHS4w646" | "5457486ABSBHS4w646"
+        null                 | null
     }
 
-    def "Int coerce literal"() {
+    def "Long parse literal"() {
         expect:
-        Scalars.GraphQLInt.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLLong.getCoercing().parseLiteral(literal) == result
 
         where:
-        literal          | result
-        new IntValue(42) | 42
+        literal               | result
+        new StringValue("42") | 42
+        new IntValue(42)      | 42
     }
 
-    def "Long coerce object"() {
+
+    def "Long serialize/parseValue object"() {
         expect:
-        Scalars.GraphQLLong.getCoercing().coerce(value) == result
+        Scalars.GraphQLLong.getCoercing().serialize(value) == result
+        Scalars.GraphQLLong.getCoercing().parseValue(value) == result
 
         where:
         value                        | result
         "42"                         | 42
         new Long(42345784398534785l) | 42345784398534785l
         new Integer(42)              | 42
+        null                         | null
     }
 
-    def "Long coerce literal"() {
+
+    def "Int parse literal"() {
         expect:
-        Scalars.GraphQLLong.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLInt.getCoercing().parseLiteral(literal) == result
 
         where:
-        literal               | result
-        new StringValue("42") | 42
+        literal          | result
+        new IntValue(42) | 42
+
     }
 
-    def "Int coerce object"() {
+    def "Int serialize/parseValue object"() {
         expect:
-        Scalars.GraphQLInt.getCoercing().coerce(value) == result
+        Scalars.GraphQLInt.getCoercing().serialize(value) == result
+        Scalars.GraphQLInt.getCoercing().parseValue(value) == result
 
         where:
         value           | result
         "42"            | 42
         new Integer(42) | 42
+        null            | null
     }
 
-    def "Float coerce literal"() {
+    def "Float parse literal"() {
         expect:
-        Scalars.GraphQLFloat.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLFloat.getCoercing().parseLiteral(literal) == result
 
         where:
         literal              | result
         new FloatValue(42.3) | 42.3f
     }
 
-    def "Float coerce object"() {
+    @Unroll
+    def "Float serialize/parseValue #value into #result"() {
         expect:
-        Scalars.GraphQLFloat.getCoercing().coerce(value) == result
+        Scalars.GraphQLFloat.getCoercing().serialize(value) == result
+        Scalars.GraphQLFloat.getCoercing().parseValue(value) == result
 
         where:
-        value           | result
-        "42.3"          | 42.3f
-        "42.0"          | 42.0f
-        new Float(42.3) | 42.3f
+        value      | result
+        "11.3"     | 11.3d
+        "24.0"     | 24.0d
+        42.3f      | 42.3f
+        10         | 10.0d
+        90.000004d | 90.000004d
+        null       | null
     }
 
-    def "Boolean coerce literal"() {
+    def "Boolean parse literal"() {
         expect:
-        Scalars.GraphQLBoolean.getCoercing().coerceLiteral(literal) == result
+        Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal) == result
 
         where:
         literal                | result
         new BooleanValue(true) | true
     }
 
-    def "Boolean coerce object"() {
+    def "Boolean serialize/parseValue object"() {
         expect:
-        Scalars.GraphQLBoolean.getCoercing().coerce(value) == result
+        Scalars.GraphQLBoolean.getCoercing().serialize(value) == result
+        Scalars.GraphQLBoolean.getCoercing().parseValue(value) == result
 
         where:
         value   | result
@@ -125,6 +144,7 @@ class ScalarsTest extends Specification {
         "true"  | true
         0       | false
         1       | true
+        null    | null
     }
 
 

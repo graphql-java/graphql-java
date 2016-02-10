@@ -4,13 +4,27 @@ package graphql.schema;
 public interface Coercing {
 
 
-    Object coerce(Object input);
-
-    Object coerceValue(Object input);
+    /**
+     * Called to convert a result of a DataFetcher to a valid runtime value.
+     *
+     * @param input is never null
+     * @return null if not possible/invalid
+     */
+    Object serialize(Object input);
 
     /**
-     * @param input
-     * @return return null if not valid
+     * Called to resolve a input from a variable.
+     * Null if not possible.
+     *
+     * @param input is never null
+     * @return null if not possible/invalid
      */
-    Object coerceLiteral(Object input);
+    Object parseValue(Object input);
+
+    /**
+     * Called to convert a AST node
+     * @param input is never null
+     * @return null if not possible/invalid
+     */
+    Object parseLiteral(Object input);
 }

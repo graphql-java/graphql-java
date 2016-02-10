@@ -9,14 +9,9 @@ import graphql.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
+import static graphql.introspection.Introspection.*;
 
 public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
@@ -64,14 +59,7 @@ public abstract class ExecutionStrategy {
         } else if (result == null) {
             return null;
         } else if (fieldType instanceof GraphQLList) {
-            if (result.getClass().isArray()) {
-                List<Object> resultList = new ArrayList<>();
-                for (Object value : (Object[]) result) {
-                    resultList.add(value);
-                }
-                return completeValueForList(executionContext, (GraphQLList) fieldType, fields, resultList);
-            }
-            return completeValueForList(executionContext, (GraphQLList) fieldType, fields, (List<Object>) result);
+            return completeValueForList(executionContext, (GraphQLList) fieldType, fields, result);
         } else if (fieldType instanceof GraphQLScalarType) {
             return completeValueForScalar((GraphQLScalarType) fieldType, result);
         } else if (fieldType instanceof GraphQLEnumType) {
@@ -101,6 +89,14 @@ public abstract class ExecutionStrategy {
         return executionContext.getExecutionStrategy().execute(executionContext, resolvedType, result, subFields);
     }
 
+    private ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, Object result) {
+        if (result.getClass().isArray()) {
+            result = Arrays.asList((Object[]) result);
+        }
+
+        return completeValueForList(executionContext, fieldType, fields, (List<Object>) result);
+    }
+
     protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
         GraphQLObjectType result = graphQLInterfaceType.getTypeResolver().getType(value);
         if (result == null) {
@@ -119,11 +115,11 @@ public abstract class ExecutionStrategy {
 
 
     protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, Object result) {
-        return new ExecutionResultImpl(enumType.getCoercing().coerce(result), null);
+        return new ExecutionResultImpl(enumType.getCoercing().serialize(result), null);
     }
 
     protected ExecutionResult completeValueForScalar(GraphQLScalarType scalarType, Object result) {
-        return new ExecutionResultImpl(scalarType.getCoercing().coerce(result), null);
+        return new ExecutionResultImpl(scalarType.getCoercing().serialize(result), null);
     }
 
     protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
