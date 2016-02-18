@@ -19,9 +19,9 @@ import static java.util.Collections.singletonList;
  * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link DataFetcher}s that have
  * {@link DataFetcher#get(DataFetchingEnvironment)} methods annotated with {@link Batched}. See the javadoc comment on
  * {@link Batched} for a more detailed description of batched data fetchers.
- * <p/>
+ * <p>
  * The strategy runs a BFS over terms of the query and passes a list of all the relevant sources to the batched data fetcher.
- * <p/>
+ * </p>
  * Normal DataFetchers can be used, however they will not see benefits of batching as they expect a single source object
  * at a time.
  */
