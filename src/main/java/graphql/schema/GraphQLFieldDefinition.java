@@ -84,10 +84,18 @@ public class GraphQLFieldDefinition {
         private List<GraphQLArgument> arguments = new ArrayList<>();
         private String deprecationReason;
         private boolean isField;
+        private String fieldName;
 
 
         public Builder name(String name) {
             this.name = name;
+            this.fieldName = name;
+            return this;
+        }
+        
+        public Builder nameAndFieldName(String name,String fieldName) {
+            this.name = name;
+            this.fieldName = fieldName;
             return this;
         }
 
@@ -143,9 +151,9 @@ public class GraphQLFieldDefinition {
         public GraphQLFieldDefinition build() {
             if (dataFetcher == null) {
                 if (isField) {
-                    dataFetcher = new FieldDataFetcher(name);
+                    dataFetcher = new FieldDataFetcher(fieldName);
                 } else {
-                    dataFetcher = new PropertyDataFetcher(name);
+                    dataFetcher = new PropertyDataFetcher(fieldName);
                 }
             }
             return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments, deprecationReason);

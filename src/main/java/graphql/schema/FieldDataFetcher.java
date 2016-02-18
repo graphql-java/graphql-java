@@ -1,39 +1,22 @@
 package graphql.schema;
 
-
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.Map;
-
-import static graphql.Scalars.GraphQLBoolean;
 
 /**
  * Fetches data directly from a field.
  */
-public class FieldDataFetcher implements DataFetcher {
-
-    /**
-     * The name of the field.
-     */
-    private final String fieldName;
+public class FieldDataFetcher
+    extends AbstractReflectionDataFetcher
+    implements DataFetcher {
 
     /**
      * Ctor.
      * @param fieldName The name of the field.
      */
-    public FieldDataFetcher(String fieldName) {
-        this.fieldName = fieldName;
-    }
+    public FieldDataFetcher(
+        String fieldName) {
 
-    @Override
-    public Object get(DataFetchingEnvironment environment) {
-        Object source = environment.getSource();
-        if (source == null) return null;
-        if (source instanceof Map) {
-            return ((Map<?, ?>) source).get(fieldName);
-        }
-        return getFieldValue(source, environment.getFieldType());
+        super(fieldName);
     }
 
     /**
@@ -42,10 +25,13 @@ public class FieldDataFetcher implements DataFetcher {
      * @param outputType The output type; ignored in this case.
      * @return An object, or null.
      */
-    private Object getFieldValue(Object object, GraphQLOutputType outputType) {
+    protected Object getValue(
+        Object target,
+        GraphQLOutputType outputType) {
+
         try {
-            Field field = object.getClass().getField(fieldName);
-            return field.get(object);
+            Field field = target.getClass().getField(name);
+            return field.get(target);
         } catch (NoSuchFieldException e) {
             return null;
         } catch (IllegalAccessException e) {
