@@ -39,7 +39,7 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.VALUE);
-                List<String> retVal = new ArrayList<>();
+                List<String> retVal = new ArrayList<String>();
                 for (String s: (List<String>) environment.getSource()) {
                     retVal.add("null".equals(s) ? null : s);
                 }
@@ -53,7 +53,7 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.APPEND);
-                List<String> retVal = new ArrayList<>();
+                List<String> retVal = new ArrayList<String>();
                 for (String s: (List<String>) environment.getSource()) {
                     retVal.add(s + environment.getArgument("text"));
                 }
@@ -68,11 +68,11 @@ public class FunWithStringsSchemaFactory {
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.WORDS_AND_LETTERS);
                 List<String> sources = (List<String>) environment.getSource();
-                List<List<List<String>>> retVal = new ArrayList<>();
+                List<List<List<String>>> retVal = new ArrayList<List<List<String>>>();
                 for (String source : sources) {
-                    List<List<String>> sentence = new ArrayList<>();
+                    List<List<String>> sentence = new ArrayList<List<String>>();
                     for (String word : source.split(" ")) {
-                        List<String> letters = new ArrayList<>();
+                        List<String> letters = new ArrayList<String>();
                         for (char c : word.toCharArray()) {
                             letters.add(Character.toString(c));
                         }
@@ -92,7 +92,7 @@ public class FunWithStringsSchemaFactory {
                 increment(callCounts, CallType.SPLIT);
                 String regex = environment.getArgument("regex");
                 List<String> sources = (List<String>) environment.getSource();
-                List<List<String>> retVal = new ArrayList<>();
+                List<List<String>> retVal = new ArrayList<List<String>>();
                 if (regex == null) {
                     for (String source: sources) {
                         retVal.add(null);
@@ -100,7 +100,7 @@ public class FunWithStringsSchemaFactory {
                     return retVal;
                 }
                 for (String source: sources) {
-                    List<String> retItem = new ArrayList<>();
+                    List<String> retItem = new ArrayList<String>();
                     for (String str: source.split(regex)) {
                         if (str.isEmpty()) {
                             retItem.add(null);
@@ -121,9 +121,9 @@ public class FunWithStringsSchemaFactory {
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.SHATTER);
                 List<String> sources = (List<String>) environment.getSource();
-                List<List<String>> retVal = new ArrayList<>();
+                List<List<String>> retVal = new ArrayList<List<String>>();
                 for (String source: sources) {
-                    List<String> retItem = new ArrayList<>();
+                    List<String> retItem = new ArrayList<String>();
                     for (char c: source.toCharArray()) {
                         retItem.add(Character.toString(c));
                     }
@@ -152,7 +152,7 @@ public class FunWithStringsSchemaFactory {
             if(source.isEmpty()) {
                 return null; // trigger error
             }
-            List<String> retVal = new ArrayList<>();
+            List<String> retVal = new ArrayList<String>();
             for (char c: source.toCharArray()) {
                 retVal.add(Character.toString(c));
             }
@@ -164,9 +164,9 @@ public class FunWithStringsSchemaFactory {
         @Override
         public Object get(DataFetchingEnvironment e) {
             String source = (String) e.getSource();
-            List<List<String>> retVal = new ArrayList<>();
+            List<List<String>> retVal = new ArrayList<List<String>>();
             for (String word: source.split(" ")) {
-                List<String> retItem = new ArrayList<>();
+                List<String> retItem = new ArrayList<String>();
                 for (char c: word.toCharArray()) {
                     retItem.add(Character.toString(c));
                 }
@@ -184,7 +184,7 @@ public class FunWithStringsSchemaFactory {
                 return null;
             }
             String source = (String) e.getSource();
-            List<String> retVal = new ArrayList<>();
+            List<String> retVal = new ArrayList<String>();
             for (String str: source.split(regex)) {
                 if (str.isEmpty()) {
                     retVal.add(null);

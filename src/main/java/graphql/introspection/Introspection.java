@@ -177,7 +177,7 @@ public class Introspection {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
                 List<GraphQLFieldDefinition> fieldDefinitions = fieldsContainer.getFieldDefinitions();
                 if (includeDeprecated) return fieldDefinitions;
-                List<GraphQLFieldDefinition> filtered = new ArrayList<>(fieldDefinitions);
+                List<GraphQLFieldDefinition> filtered = new ArrayList<GraphQLFieldDefinition>(fieldDefinitions);
                 for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
                     if (fieldDefinition.isDeprecated()) filtered.remove(fieldDefinition);
                 }
@@ -220,7 +220,7 @@ public class Introspection {
             if (type instanceof GraphQLEnumType) {
                 List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
                 if (includeDeprecated) return values;
-                List<GraphQLEnumValueDefinition> filtered = new ArrayList<>(values);
+                List<GraphQLEnumValueDefinition> filtered = new ArrayList<GraphQLEnumValueDefinition>(values);
                 for (GraphQLEnumValueDefinition valueDefinition : values) {
                     if (valueDefinition.isDeprecated()) filtered.remove(valueDefinition);
                 }

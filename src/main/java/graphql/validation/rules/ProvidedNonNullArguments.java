@@ -38,7 +38,7 @@ public class ProvidedNonNullArguments extends AbstractRule {
     }
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>();
+        Map<String, Argument> result = new LinkedHashMap<String, Argument>();
         for (Argument argument : arguments) {
             result.put(argument.getName(), argument);
         }
