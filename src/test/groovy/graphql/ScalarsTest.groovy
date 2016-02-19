@@ -104,7 +104,7 @@ class ScalarsTest extends Specification {
 
         where:
         literal              | result
-        new FloatValue(42.3) | 42.3f
+        new FloatValue(42.3) | 42.3d
     }
 
     @Unroll

@@ -89,7 +89,7 @@ public class Scalars {
 
         @Override
         public Object parseLiteral(Object input) {
-            return ((FloatValue) input).getValue().floatValue();
+            return ((FloatValue) input).getValue().doubleValue();
         }
     });
 
