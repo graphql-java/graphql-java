@@ -13,6 +13,12 @@ import java.util.*;
 
 import static graphql.validation.ValidationErrorType.FieldsConflict;
 
+/**
+ * <p>OverlappingFieldsCanBeMerged class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
     ErrorFactory errorFactory = new ErrorFactory();
@@ -20,10 +26,17 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
     private List<FieldPair> alreadyChecked = new ArrayList<>();
 
+    /**
+     * <p>Constructor for OverlappingFieldsCanBeMerged.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param validationErrorCollector a {@link graphql.validation.ValidationErrorCollector} object.
+     */
     public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void leaveSelectionSet(SelectionSet selectionSet) {
         Map<String, List<FieldAndType>> fieldMap = new LinkedHashMap<>();

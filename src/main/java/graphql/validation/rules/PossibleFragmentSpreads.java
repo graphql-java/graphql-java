@@ -12,13 +12,26 @@ import graphql.validation.*;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * <p>PossibleFragmentSpreads class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class PossibleFragmentSpreads extends AbstractRule {
 
+    /**
+     * <p>Constructor for PossibleFragmentSpreads.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param validationErrorCollector a {@link graphql.validation.ValidationErrorCollector} object.
+     */
     public PossibleFragmentSpreads(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public void checkInlineFragment(InlineFragment inlineFragment) {
         GraphQLOutputType fragType = getValidationContext().getOutputType();
@@ -32,6 +45,7 @@ public class PossibleFragmentSpreads extends AbstractRule {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkFragmentSpread(FragmentSpread fragmentSpread) {
         FragmentDefinition fragment = getValidationContext().getFragment(fragmentSpread.getName());

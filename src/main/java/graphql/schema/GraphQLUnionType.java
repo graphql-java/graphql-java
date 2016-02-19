@@ -6,6 +6,12 @@ import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * <p>GraphQLUnionType class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
@@ -14,6 +20,14 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     private final TypeResolver typeResolver;
 
 
+    /**
+     * <p>Constructor for GraphQLUnionType.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param description a {@link java.lang.String} object.
+     * @param types a {@link java.util.List} object.
+     * @param typeResolver a {@link graphql.schema.TypeResolver} object.
+     */
     public GraphQLUnionType(String name, String description, List<GraphQLType> types, TypeResolver typeResolver) {
         assertNotNull(name, "name can't be null");
         assertNotNull(types, "types can't be null");
@@ -25,23 +39,44 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     }
 
 
+    /**
+     * <p>Getter for the field <code>types</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<GraphQLType> getTypes() {
         return new ArrayList<>(types);
     }
 
+    /**
+     * <p>Getter for the field <code>typeResolver</code>.</p>
+     *
+     * @return a {@link graphql.schema.TypeResolver} object.
+     */
     public TypeResolver getTypeResolver() {
         return typeResolver;
     }
 
+    /** {@inheritDoc} */
     @Override
     public String getName() {
         return name;
     }
 
+    /**
+     * <p>Getter for the field <code>description</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * <p>newUnionType.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLUnionType.Builder} object.
+     */
     public static Builder newUnionType() {
         return new Builder();
     }

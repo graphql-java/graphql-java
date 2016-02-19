@@ -12,11 +12,23 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * <p>NoFragmentCycles class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class NoFragmentCycles extends AbstractRule {
 
     private Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
 
 
+    /**
+     * <p>Constructor for NoFragmentCycles.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param validationErrorCollector a {@link graphql.validation.ValidationErrorCollector} object.
+     */
     public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
         prepareFragmentMap();
@@ -54,6 +66,7 @@ public class NoFragmentCycles extends AbstractRule {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
         List<FragmentSpread> spreadPath = new ArrayList<>();

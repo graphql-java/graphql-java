@@ -7,14 +7,26 @@ import java.util.Map;
 
 import static graphql.Scalars.GraphQLBoolean;
 
+/**
+ * <p>PropertyDataFetcher class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class PropertyDataFetcher implements DataFetcher {
 
     private final String propertyName;
 
+    /**
+     * <p>Constructor for PropertyDataFetcher.</p>
+     *
+     * @param propertyName a {@link java.lang.String} object.
+     */
     public PropertyDataFetcher(String propertyName) {
         this.propertyName = propertyName;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();

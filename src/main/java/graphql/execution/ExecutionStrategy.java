@@ -13,14 +13,38 @@ import java.util.*;
 
 import static graphql.introspection.Introspection.*;
 
+/**
+ * <p>Abstract ExecutionStrategy class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.3
+ */
 public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
 
     protected ValuesResolver valuesResolver = new ValuesResolver();
     protected FieldCollector fieldCollector = new FieldCollector();
 
+    /**
+     * <p>execute.</p>
+     *
+     * @param executionContext a {@link graphql.execution.ExecutionContext} object.
+     * @param parentType a {@link graphql.schema.GraphQLObjectType} object.
+     * @param source a {@link java.lang.Object} object.
+     * @param fields a {@link java.util.Map} object.
+     * @return a {@link graphql.ExecutionResult} object.
+     */
     public abstract ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields);
 
+    /**
+     * <p>resolveField.</p>
+     *
+     * @param executionContext a {@link graphql.execution.ExecutionContext} object.
+     * @param parentType a {@link graphql.schema.GraphQLObjectType} object.
+     * @param source a {@link java.lang.Object} object.
+     * @param fields a {@link java.util.List} object.
+     * @return a {@link graphql.ExecutionResult} object.
+     */
     protected ExecutionResult resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
         if (fieldDef == null) return null;
@@ -47,6 +71,15 @@ public abstract class ExecutionStrategy {
         return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
     }
 
+    /**
+     * <p>completeValue.</p>
+     *
+     * @param executionContext a {@link graphql.execution.ExecutionContext} object.
+     * @param fieldType a {@link graphql.schema.GraphQLType} object.
+     * @param fields a {@link java.util.List} object.
+     * @param result a {@link java.lang.Object} object.
+     * @return a {@link graphql.ExecutionResult} object.
+     */
     protected ExecutionResult completeValue(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fields, Object result) {
         if (fieldType instanceof GraphQLNonNull) {
             GraphQLNonNull graphQLNonNull = (GraphQLNonNull) fieldType;
@@ -97,6 +130,13 @@ public abstract class ExecutionStrategy {
         return completeValueForList(executionContext, fieldType, fields, (List<Object>) result);
     }
 
+    /**
+     * <p>resolveType.</p>
+     *
+     * @param graphQLInterfaceType a {@link graphql.schema.GraphQLInterfaceType} object.
+     * @param value a {@link java.lang.Object} object.
+     * @return a {@link graphql.schema.GraphQLObjectType} object.
+     */
     protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
         GraphQLObjectType result = graphQLInterfaceType.getTypeResolver().getType(value);
         if (result == null) {
@@ -105,6 +145,13 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
+    /**
+     * <p>resolveType.</p>
+     *
+     * @param graphQLUnionType a {@link graphql.schema.GraphQLUnionType} object.
+     * @param value a {@link java.lang.Object} object.
+     * @return a {@link graphql.schema.GraphQLObjectType} object.
+     */
     protected GraphQLObjectType resolveType(GraphQLUnionType graphQLUnionType, Object value) {
         GraphQLObjectType result = graphQLUnionType.getTypeResolver().getType(value);
         if (result == null) {
@@ -114,14 +161,37 @@ public abstract class ExecutionStrategy {
     }
 
 
+    /**
+     * <p>completeValueForEnum.</p>
+     *
+     * @param enumType a {@link graphql.schema.GraphQLEnumType} object.
+     * @param result a {@link java.lang.Object} object.
+     * @return a {@link graphql.ExecutionResult} object.
+     */
     protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, Object result) {
         return new ExecutionResultImpl(enumType.getCoercing().serialize(result), null);
     }
 
+    /**
+     * <p>completeValueForScalar.</p>
+     *
+     * @param scalarType a {@link graphql.schema.GraphQLScalarType} object.
+     * @param result a {@link java.lang.Object} object.
+     * @return a {@link graphql.ExecutionResult} object.
+     */
     protected ExecutionResult completeValueForScalar(GraphQLScalarType scalarType, Object result) {
         return new ExecutionResultImpl(scalarType.getCoercing().serialize(result), null);
     }
 
+    /**
+     * <p>completeValueForList.</p>
+     *
+     * @param executionContext a {@link graphql.execution.ExecutionContext} object.
+     * @param fieldType a {@link graphql.schema.GraphQLList} object.
+     * @param fields a {@link java.util.List} object.
+     * @param result a {@link java.util.List} object.
+     * @return a {@link graphql.ExecutionResult} object.
+     */
     protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
         List<Object> completedResults = new ArrayList<>();
         for (Object item : result) {
@@ -131,6 +201,14 @@ public abstract class ExecutionStrategy {
         return new ExecutionResultImpl(completedResults, null);
     }
 
+    /**
+     * <p>getFieldDef.</p>
+     *
+     * @param schema a {@link graphql.schema.GraphQLSchema} object.
+     * @param parentType a {@link graphql.schema.GraphQLObjectType} object.
+     * @param field a {@link graphql.language.Field} object.
+     * @return a {@link graphql.schema.GraphQLFieldDefinition} object.
+     */
     protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
         if (schema.getQueryType() == parentType) {
             if (field.getName().equals(SchemaMetaFieldDef.getName())) {

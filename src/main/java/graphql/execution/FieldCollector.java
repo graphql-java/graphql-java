@@ -10,17 +10,35 @@ import java.util.Map;
 
 import static graphql.execution.TypeFromAST.getTypeFromAST;
 
+/**
+ * <p>FieldCollector class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class FieldCollector {
 
     private ConditionalNodes conditionalNodes;
 
     private SchemaUtil schemaUtil = new SchemaUtil();
 
+    /**
+     * <p>Constructor for FieldCollector.</p>
+     */
     public FieldCollector() {
         conditionalNodes = new ConditionalNodes();
     }
 
 
+    /**
+     * <p>collectFields.</p>
+     *
+     * @param executionContext a {@link graphql.execution.ExecutionContext} object.
+     * @param type a {@link graphql.schema.GraphQLObjectType} object.
+     * @param selectionSet a {@link graphql.language.SelectionSet} object.
+     * @param visitedFragments a {@link java.util.List} object.
+     * @param fields a {@link java.util.Map} object.
+     */
     public void collectFields(ExecutionContext executionContext, GraphQLObjectType type, SelectionSet selectionSet, List<String> visitedFragments, Map<String, List<Field>> fields) {
 
         for (Selection selection : selectionSet.getSelections()) {

@@ -15,12 +15,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * <p>ProvidedNonNullArguments class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class ProvidedNonNullArguments extends AbstractRule {
 
+    /**
+     * <p>Constructor for ProvidedNonNullArguments.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param validationErrorCollector a {@link graphql.validation.ValidationErrorCollector} object.
+     */
     public ProvidedNonNullArguments(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkField(Field field) {
         GraphQLFieldDefinition fieldDef = getValidationContext().getFieldDef();
@@ -46,6 +59,7 @@ public class ProvidedNonNullArguments extends AbstractRule {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public void checkDirective(Directive directive, List<Node> ancestors) {
         GraphQLDirective graphQLDirective = getValidationContext().getDirective();

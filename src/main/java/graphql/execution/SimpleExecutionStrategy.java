@@ -9,7 +9,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * <p>SimpleExecutionStrategy class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.3
+ */
 public class SimpleExecutionStrategy extends ExecutionStrategy {
+    /** {@inheritDoc} */
     @Override
     public ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
         Map<String, Object> results = new LinkedHashMap<>();

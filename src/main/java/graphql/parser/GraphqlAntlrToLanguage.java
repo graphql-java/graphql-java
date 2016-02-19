@@ -11,6 +11,12 @@ import java.math.BigDecimal;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
+/**
+ * <p>GraphqlAntlrToLanguage class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     Document result;
@@ -95,6 +101,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public Void visitDocument( GraphqlParser.DocumentContext ctx) {
         result = new Document();
@@ -102,6 +109,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return super.visitDocument(ctx);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitOperationDefinition( GraphqlParser.OperationDefinitionContext ctx) {
         OperationDefinition operationDefinition;
@@ -134,6 +142,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitFragmentSpread( GraphqlParser.FragmentSpreadContext ctx) {
         FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
@@ -145,6 +154,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitVariableDefinition( GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition variableDefinition = new VariableDefinition();
@@ -163,6 +173,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitFragmentDefinition( GraphqlParser.FragmentDefinitionContext ctx) {
         FragmentDefinition fragmentDefinition = new FragmentDefinition();
@@ -177,6 +188,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public Void visitSelectionSet( GraphqlParser.SelectionSetContext ctx) {
         SelectionSet newSelectionSet = new SelectionSet();
@@ -188,6 +200,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public Void visitField( GraphqlParser.FieldContext ctx) {
         Field newField = new Field();
@@ -202,6 +215,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitTypeName( GraphqlParser.TypeNameContext ctx) {
         TypeName typeName = new TypeName(ctx.NAME().getText());
@@ -223,6 +237,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return super.visitTypeName(ctx);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitNonNullType( GraphqlParser.NonNullTypeContext ctx) {
         NonNullType nonNullType = new NonNullType();
@@ -243,6 +258,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitListType( GraphqlParser.ListTypeContext ctx) {
         ListType listType = new ListType();
@@ -267,6 +283,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitArgument( GraphqlParser.ArgumentContext ctx) {
         Argument argument = new Argument(ctx.NAME().getText(), getValue(ctx.valueWithVariable()));
@@ -280,6 +297,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return super.visitArgument(ctx);
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitInlineFragment( GraphqlParser.InlineFragmentContext ctx) {
         InlineFragment inlineFragment = new InlineFragment(new TypeName(ctx.typeCondition().getText()));
@@ -291,6 +309,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Void visitDirective( GraphqlParser.DirectiveContext ctx) {
         Directive directive = new Directive(ctx.NAME().getText());

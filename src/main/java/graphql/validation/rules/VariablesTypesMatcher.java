@@ -6,8 +6,22 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
+/**
+ * <p>VariablesTypesMatcher class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.2
+ */
 public class VariablesTypesMatcher {
 
+    /**
+     * <p>doesVariableTypesMatch.</p>
+     *
+     * @param variableType a {@link graphql.schema.GraphQLType} object.
+     * @param variableDefaultValue a {@link graphql.language.Value} object.
+     * @param expectedType a {@link graphql.schema.GraphQLType} object.
+     * @return a boolean.
+     */
     public boolean doesVariableTypesMatch(GraphQLType variableType, Value variableDefaultValue, GraphQLType expectedType) {
         return checkType(effectiveType(variableType, variableDefaultValue), expectedType);
     }

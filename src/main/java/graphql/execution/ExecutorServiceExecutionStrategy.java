@@ -15,9 +15,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
- * ExecutorServiceExecutionStrategy uses an {@link ExecutorService} to parallelize the resolve.
+ * ExecutorServiceExecutionStrategy uses an {@link java.util.concurrent.ExecutorService} to parallelize the resolve.
  * <p>
- * Due to the nature of {@link #execute(ExecutionContext, GraphQLObjectType, Object, Map)} implementation, {@link ExecutorService}
+ * Due to the nature of {@link #execute(ExecutionContext, GraphQLObjectType, Object, Map)} implementation, {@link java.util.concurrent.ExecutorService}
  * MUST have the following 2 characteristics:
  * <ul>
  *     <li>1. The underlying {@link java.util.concurrent.ThreadPoolExecutor} MUST have a reasonable {@code maximumPoolSize}
@@ -27,15 +27,24 @@ import java.util.concurrent.Future;
  * Failure to follow 1. and 2. can result in a very large number of threads created or hanging. (deadlock)
  * <p>
  * See {@code graphql.execution.ExecutorServiceExecutionStrategyTest} for example usage.
+ *
+ * @author Andreas Marek
+ * @version v1.3
  */
 public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
     ExecutorService executorService;
 
+    /**
+     * <p>Constructor for ExecutorServiceExecutionStrategy.</p>
+     *
+     * @param executorService a {@link java.util.concurrent.ExecutorService} object.
+     */
     public ExecutorServiceExecutionStrategy(ExecutorService executorService) {
         this.executorService = executorService;
     }
 
+    /** {@inheritDoc} */
     @Override
     public ExecutionResult execute(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, final Map<String, List<Field>> fields) {
         if (executorService == null) return new SimpleExecutionStrategy().execute(executionContext, parentType, source, fields);

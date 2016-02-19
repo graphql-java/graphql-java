@@ -7,9 +7,23 @@ import graphql.schema.*;
 
 import java.util.*;
 
+/**
+ * <p>ValuesResolver class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class ValuesResolver {
 
 
+    /**
+     * <p>getVariableValues.</p>
+     *
+     * @param schema a {@link graphql.schema.GraphQLSchema} object.
+     * @param variableDefinitions a {@link java.util.List} object.
+     * @param inputs a {@link java.util.Map} object.
+     * @return a {@link java.util.Map} object.
+     */
     public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> inputs) {
         Map<String, Object> result = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
@@ -19,6 +33,14 @@ public class ValuesResolver {
     }
 
 
+    /**
+     * <p>getArgumentValues.</p>
+     *
+     * @param argumentTypes a {@link java.util.List} object.
+     * @param arguments a {@link java.util.List} object.
+     * @param variables a {@link java.util.Map} object.
+     * @return a {@link java.util.Map} object.
+     */
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
         Map<String, Object> result = new LinkedHashMap<>();
         Map<String, Argument> argumentMap = argumentMap(arguments);

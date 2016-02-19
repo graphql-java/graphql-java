@@ -13,9 +13,16 @@ import java.lang.reflect.Method;
  * Otherwise we wrap the fetcher in a BatchedDataFetcher that iterates over the sources and invokes the delegate
  * on each source. Note that this forgoes any performance benefits of batching,
  * so regular DataFetchers should normally only be used if they are in-memory.
+ *
+ * @author Andreas Marek
  */
-
 public class BatchedDataFetcherFactory {
+    /**
+     * <p>create.</p>
+     *
+     * @param supplied a {@link graphql.schema.DataFetcher} object.
+     * @return a {@link graphql.execution.batched.BatchedDataFetcher} object.
+     */
     public BatchedDataFetcher create(final DataFetcher supplied) {
         if (supplied instanceof BatchedDataFetcher) {
             return (BatchedDataFetcher) supplied;

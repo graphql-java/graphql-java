@@ -10,6 +10,9 @@ import static graphql.Scalars.GraphQLBoolean;
 
 /**
  * Fetches data directly from a field.
+ *
+ * @author Andreas Marek
+ * @version v1.3
  */
 public class FieldDataFetcher implements DataFetcher {
 
@@ -20,12 +23,14 @@ public class FieldDataFetcher implements DataFetcher {
 
     /**
      * Ctor.
+     *
      * @param fieldName The name of the field.
      */
     public FieldDataFetcher(String fieldName) {
         this.fieldName = fieldName;
     }
 
+    /** {@inheritDoc} */
     @Override
     public Object get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();

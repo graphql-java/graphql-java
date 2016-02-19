@@ -12,6 +12,12 @@ import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
+/**
+ * <p>Introspection class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class Introspection {
 
     public enum TypeKind {
@@ -25,6 +31,7 @@ public class Introspection {
         NON_NULL
     }
 
+    /** Constant <code>__TypeKind</code> */
     public static GraphQLEnumType __TypeKind = GraphQLEnumType.newEnum()
             .name("__TypeKind")
             .description("An enum describing what kind of type a given __Type is")
@@ -38,6 +45,7 @@ public class Introspection {
             .value("NON_NULL", TypeKind.NON_NULL, "Indicates this type is a non-null. `ofType` is a valid field.")
             .build();
 
+    /** Constant <code>kindDataFetcher</code> */
     public static DataFetcher kindDataFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
@@ -64,6 +72,7 @@ public class Introspection {
         }
     };
 
+    /** Constant <code>__InputValue</code> */
     public static GraphQLObjectType __InputValue = newObject()
             .name("__InputValue")
             .field(newFieldDefinition()
@@ -98,6 +107,7 @@ public class Introspection {
             .build();
 
 
+    /** Constant <code>__Field</code> */
     public static GraphQLObjectType __Field = newObject()
             .name("__Field")
             .field(newFieldDefinition()
@@ -141,6 +151,7 @@ public class Introspection {
             .build();
 
 
+    /** Constant <code>__EnumValue</code> */
     public static GraphQLObjectType __EnumValue = newObject()
             .name("__EnumValue")
             .field(newFieldDefinition()
@@ -168,6 +179,7 @@ public class Introspection {
                     .build())
             .build();
 
+    /** Constant <code>fieldsFetcher</code> */
     public static DataFetcher fieldsFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
@@ -187,6 +199,7 @@ public class Introspection {
         }
     };
 
+    /** Constant <code>interfacesFetcher</code> */
     public static DataFetcher interfacesFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
@@ -198,6 +211,7 @@ public class Introspection {
         }
     };
 
+    /** Constant <code>possibleTypesFetcher</code> */
     public static DataFetcher possibleTypesFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
@@ -212,6 +226,7 @@ public class Introspection {
         }
     };
 
+    /** Constant <code>enumValuesTypesFetcher</code> */
     public static DataFetcher enumValuesTypesFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
@@ -230,6 +245,7 @@ public class Introspection {
         }
     };
 
+    /** Constant <code>inputFieldsFetcher</code> */
     public static DataFetcher inputFieldsFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
@@ -241,6 +257,7 @@ public class Introspection {
         }
     };
 
+    /** Constant <code>OfTypeFetcher</code> */
     public static DataFetcher OfTypeFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
@@ -256,6 +273,7 @@ public class Introspection {
     };
 
 
+    /** Constant <code>__Type</code> */
     public static GraphQLObjectType __Type = newObject()
             .name("__Type")
             .field(newFieldDefinition()
@@ -313,6 +331,7 @@ public class Introspection {
                     .build())
             .build();
 
+    /** Constant <code>__Directive</code> */
     public static GraphQLObjectType __Directive = newObject()
             .name("__Directive")
             .field(newFieldDefinition()
@@ -348,6 +367,7 @@ public class Introspection {
                     .build())
             .build();
 
+    /** Constant <code>__Schema</code> */
     public static GraphQLObjectType __Schema = newObject()
             .name("__Schema")
             .description("A GraphQL Introspection defines the capabilities" +
@@ -415,6 +435,7 @@ public class Introspection {
             .build();
 
 
+    /** Constant <code>SchemaMetaFieldDef</code> */
     public static GraphQLFieldDefinition SchemaMetaFieldDef = newFieldDefinition()
             .name("__schema")
             .type(new GraphQLNonNull(__Schema))
@@ -427,6 +448,7 @@ public class Introspection {
             })
             .build();
 
+    /** Constant <code>TypeMetaFieldDef</code> */
     public static GraphQLFieldDefinition TypeMetaFieldDef = newFieldDefinition()
             .name("__type")
             .type(__Type)
@@ -444,6 +466,7 @@ public class Introspection {
             })
             .build();
 
+    /** Constant <code>TypeNameMetaFieldDef</code> */
     public static GraphQLFieldDefinition TypeNameMetaFieldDef = newFieldDefinition()
             .name("__typename")
             .type(new GraphQLNonNull(GraphQLString))

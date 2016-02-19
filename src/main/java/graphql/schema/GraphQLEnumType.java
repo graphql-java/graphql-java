@@ -10,6 +10,12 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * <p>GraphQLEnumType class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
 
     private final String name;
@@ -50,11 +56,23 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         return null;
     }
 
+    /**
+     * <p>getValues.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<GraphQLEnumValueDefinition> getValues() {
         return new ArrayList<>(valueDefinitionMap.values());
     }
 
 
+    /**
+     * <p>Constructor for GraphQLEnumType.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param description a {@link java.lang.String} object.
+     * @param values a {@link java.util.List} object.
+     */
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
         assertNotNull(name, "name can't be null");
         this.name = name;
@@ -68,19 +86,39 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         }
     }
 
+    /**
+     * <p>Getter for the field <code>name</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * <p>Getter for the field <code>description</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * <p>Getter for the field <code>coercing</code>.</p>
+     *
+     * @return a {@link graphql.schema.Coercing} object.
+     */
     public Coercing getCoercing() {
         return coercing;
     }
 
 
+    /**
+     * <p>newEnum.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLEnumType.Builder} object.
+     */
     public static Builder newEnum() {
         return new Builder();
     }
