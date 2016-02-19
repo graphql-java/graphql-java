@@ -12,7 +12,7 @@ public class ValidationError implements GraphQLError {
 
 
     private final ValidationErrorType validationErrorType;
-    private final List<SourceLocation> sourceLocations = new ArrayList<>();
+    private final List<SourceLocation> sourceLocations = new ArrayList<SourceLocation>();
     private final String description;
 
     public ValidationError(ValidationErrorType validationErrorType) {

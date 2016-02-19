@@ -15,11 +15,11 @@ import java.util.Map;
 public class NoUnusedFragments extends AbstractRule {
 
 
-    private final List<FragmentDefinition> allDeclaredFragments = new ArrayList<>();
+    private final List<FragmentDefinition> allDeclaredFragments = new ArrayList<FragmentDefinition>();
 
-    private List<String> usedFragments = new ArrayList<>();
-    private Map<String, List<String>> spreadsInDefinition = new LinkedHashMap<>();
-    private final List<List<String>> fragmentsUsedDirectlyInOperation = new ArrayList<>();
+    private List<String> usedFragments = new ArrayList<String>();
+    private Map<String, List<String>> spreadsInDefinition = new LinkedHashMap<String, List<String>>();
+    private final List<List<String>> fragmentsUsedDirectlyInOperation = new ArrayList<List<String>>();
 
     public NoUnusedFragments(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -27,7 +27,7 @@ public class NoUnusedFragments extends AbstractRule {
 
     @Override
     public void checkOperationDefinition(OperationDefinition operationDefinition) {
-        usedFragments = new ArrayList<>();
+        usedFragments = new ArrayList<String>();
         fragmentsUsedDirectlyInOperation.add(usedFragments);
     }
 
@@ -40,14 +40,14 @@ public class NoUnusedFragments extends AbstractRule {
     @Override
     public void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
         allDeclaredFragments.add(fragmentDefinition);
-        usedFragments = new ArrayList<>();
+        usedFragments = new ArrayList<String>();
         spreadsInDefinition.put(fragmentDefinition.getName(), usedFragments);
     }
 
     @Override
     public void documentFinished(Document document) {
 
-        List<String> allUsedFragments = new ArrayList<>();
+        List<String> allUsedFragments = new ArrayList<String>();
         for (List<String> fragmentsInOneOperation : fragmentsUsedDirectlyInOperation) {
             for (String fragment : fragmentsInOneOperation) {
                 collectUsedFragmentsInDefinition(allUsedFragments, fragment);

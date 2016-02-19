@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class ExecutionResultImpl implements ExecutionResult {
 
-    private final List<GraphQLError> errors = new ArrayList<>();
+    private final List<GraphQLError> errors = new ArrayList<GraphQLError>();
     private Object data;
 
     public ExecutionResultImpl(List<? extends GraphQLError> errors) {
@@ -37,7 +37,7 @@ public class ExecutionResultImpl implements ExecutionResult {
 
     @Override
     public List<GraphQLError> getErrors() {
-        return new ArrayList<>(errors);
+        return new ArrayList<GraphQLError>(errors);
     }
 
 

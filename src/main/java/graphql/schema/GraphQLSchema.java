@@ -42,7 +42,7 @@ public class GraphQLSchema {
     }
 
     public List<GraphQLType> getAllTypesAsList() {
-        return new ArrayList<>(typeMap.values());
+        return new ArrayList<GraphQLType>(typeMap.values());
     }
 
     public GraphQLObjectType getQueryType() {

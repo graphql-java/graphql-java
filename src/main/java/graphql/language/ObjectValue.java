@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ObjectValue extends AbstractNode implements Value {
 
-    private List<ObjectField> objectFields = new ArrayList<>();
+    private List<ObjectField> objectFields = new ArrayList<ObjectField>();
 
     public ObjectValue() {
     }
@@ -21,7 +21,7 @@ public class ObjectValue extends AbstractNode implements Value {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
+        List<Node> result = new ArrayList<Node>();
         result.addAll(objectFields);
         return result;
     }

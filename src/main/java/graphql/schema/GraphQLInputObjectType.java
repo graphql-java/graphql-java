@@ -14,7 +14,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     private final String description;
 
 
-    private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
+    private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<String, GraphQLInputObjectField>();
 
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
         assertNotNull(name, "name can't be null");
@@ -39,7 +39,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     }
 
     public List<GraphQLInputObjectField> getFields() {
-        return new ArrayList<>(fieldMap.values());
+        return new ArrayList<GraphQLInputObjectField>(fieldMap.values());
     }
 
     public GraphQLInputObjectField getField(String name) {
@@ -53,7 +53,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLInputObjectField> fields = new ArrayList<>();
+        private List<GraphQLInputObjectField> fields = new ArrayList<GraphQLInputObjectField>();
 
         public Builder name(String name) {
             this.name = name;

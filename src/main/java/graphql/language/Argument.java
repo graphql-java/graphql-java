@@ -33,7 +33,7 @@ public class Argument extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
+        List<Node> result = new ArrayList<Node>();
         result.add(value);
         return result;
     }

@@ -15,11 +15,11 @@ public class ExecutionContext {
 
     private GraphQLSchema graphQLSchema;
     private ExecutionStrategy executionStrategy;
-    private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+    private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
     private OperationDefinition operationDefinition;
-    private Map<String, Object> variables = new LinkedHashMap<>();
+    private Map<String, Object> variables = new LinkedHashMap<String, Object>();
     private Object root;
-    private List<GraphQLError> errors = new ArrayList<>();
+    private List<GraphQLError> errors = new ArrayList<GraphQLError>();
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;

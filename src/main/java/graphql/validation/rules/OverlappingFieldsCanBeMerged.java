@@ -18,7 +18,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     ErrorFactory errorFactory = new ErrorFactory();
 
 
-    private List<FieldPair> alreadyChecked = new ArrayList<>();
+    private List<FieldPair> alreadyChecked = new ArrayList<FieldPair>();
 
     public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -26,8 +26,8 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
     @Override
     public void leaveSelectionSet(SelectionSet selectionSet) {
-        Map<String, List<FieldAndType>> fieldMap = new LinkedHashMap<>();
-        Set<String> visitedFragmentSpreads = new LinkedHashSet<>();
+        Map<String, List<FieldAndType>> fieldMap = new LinkedHashMap<String, List<FieldAndType>>();
+        Set<String> visitedFragmentSpreads = new LinkedHashSet<String>();
         collectFields(fieldMap, selectionSet, getValidationContext().getOutputType(), visitedFragmentSpreads);
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
@@ -38,7 +38,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
 
     private List<Conflict> findConflicts(Map<String, List<FieldAndType>> fieldMap) {
-        List<Conflict> result = new ArrayList<>();
+        List<Conflict> result = new ArrayList<Conflict>();
         for (String name : fieldMap.keySet()) {
             List<FieldAndType> fieldAndTypes = fieldMap.get(name);
             for (int i = 0; i < fieldAndTypes.size(); i++) {
@@ -120,14 +120,14 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         SelectionSet selectionSet1 = field1.getSelectionSet();
         SelectionSet selectionSet2 = field2.getSelectionSet();
         if (selectionSet1 != null && selectionSet2 != null) {
-            Set<String> visitedFragmentSpreads = new LinkedHashSet<>();
-            Map<String, List<FieldAndType>> subFieldMap = new LinkedHashMap<>();
+            Set<String> visitedFragmentSpreads = new LinkedHashSet<String>();
+            Map<String, List<FieldAndType>> subFieldMap = new LinkedHashMap<String, List<FieldAndType>>();
             collectFields(subFieldMap, selectionSet1, type1, visitedFragmentSpreads);
             collectFields(subFieldMap, selectionSet2, type2, visitedFragmentSpreads);
             List<Conflict> subConflicts = findConflicts(subFieldMap);
             if (subConflicts.size() > 0) {
                 String reason = String.format("%s: %s", responseName, joinReasons(subConflicts));
-                List<Field> fields = new ArrayList<>();
+                List<Field> fields = new ArrayList<Field>();
                 fields.add(field1);
                 fields.add(field2);
                 fields.addAll(collectFields(subConflicts));
@@ -140,7 +140,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     private List<Field> collectFields(List<Conflict> conflicts) {
-        List<Field> result = new ArrayList<>();
+        List<Field> result = new ArrayList<Field>();
         for (Conflict conflict : conflicts) {
             result.addAll(conflict.fields);
         }
@@ -273,7 +273,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     private static class Conflict {
         String responseName;
         String reason;
-        List<Field> fields = new ArrayList<>();
+        List<Field> fields = new ArrayList<Field>();
 
         public Conflict(String responseName, String reason, Field field1, Field field2) {
             this.responseName = responseName;
