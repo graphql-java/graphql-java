@@ -64,6 +64,14 @@ public class ValuesResolver {
     }
 
     private Object coerceValue(GraphQLType graphQLType, Object value) {
+        if (graphQLType instanceof GraphQLNonNull) {
+            Object returnValue = coerceValue(((GraphQLNonNull) graphQLType).getWrappedType(), value);
+            if (returnValue == null) {
+                throw new GraphQLException("Null value for NonNull type " + graphQLType);
+            }
+            return returnValue;
+        }
+
         if (value == null) return null;
 
         if (graphQLType instanceof GraphQLScalarType) {
@@ -74,8 +82,6 @@ public class ValuesResolver {
             return coerceValueForList((GraphQLList) graphQLType, value);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
             return coerceValueForInputObjectField((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
-        } else if (graphQLType instanceof GraphQLNonNull) {
-            return coerceValue(((GraphQLNonNull) graphQLType).getWrappedType(), value);
         } else {
             throw new GraphQLException("unknown type " + graphQLType);
         }

@@ -1,9 +1,11 @@
 package graphql.execution
 
+import graphql.GraphQLException
 import graphql.TestUtil
 import graphql.language.*
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -231,5 +233,31 @@ class ValuesResolverTest extends Specification {
         then:
         resolvedValues['variable'].stringKey == 'defaultString'
         resolvedValues['variable'].intKey == 10
+    }
+
+    def "getVariableInput: Missing InputObject fields which are non-null cause error"() {
+
+        given:
+        def inputObjectType = newInputObject()
+                .name("InputObject")
+                .field(newInputObjectField()
+                .name("intKey")
+                .type(GraphQLInt)
+                .build())
+                .field(newInputObjectField()
+                .name("requiredField")
+                .type(new GraphQLNonNull(GraphQLString))
+                .build())
+                .build()
+        def inputValue = [intKey: 10]
+
+        def schema = TestUtil.schemaWithInputType(inputObjectType)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
+
+        when:
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+
+        then:
+        thrown(GraphQLException)
     }
 }
