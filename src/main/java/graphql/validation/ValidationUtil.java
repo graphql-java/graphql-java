@@ -8,8 +8,20 @@ import graphql.schema.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * <p>ValidationUtil class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class ValidationUtil {
 
+    /**
+     * <p>getUnmodifiedType.</p>
+     *
+     * @param type a {@link graphql.language.Type} object.
+     * @return a {@link graphql.language.TypeName} object.
+     */
     public TypeName getUnmodifiedType(Type type) {
         if (type instanceof ListType) {
             return getUnmodifiedType(((ListType) type).getType());
@@ -21,6 +33,13 @@ public class ValidationUtil {
         throw new ShouldNotHappenException();
     }
 
+    /**
+     * <p>isValidLiteralValue.</p>
+     *
+     * @param value a {@link graphql.language.Value} object.
+     * @param type a {@link graphql.schema.GraphQLType} object.
+     * @return a boolean.
+     */
     public boolean isValidLiteralValue(Value value, GraphQLType type) {
         if (value == null) {
             return !(type instanceof GraphQLNonNull);

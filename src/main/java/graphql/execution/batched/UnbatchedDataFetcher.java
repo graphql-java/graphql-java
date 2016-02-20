@@ -11,17 +11,25 @@ import java.util.List;
  * Given a normal data fetcher as a delegate,
  * uses that fetcher in a batched context by iterating through each source value and calling
  * the delegate.
+ *
+ * @author Andreas Marek
  */
 public class UnbatchedDataFetcher implements BatchedDataFetcher {
 
     private final DataFetcher delegate;
 
+    /**
+     * <p>Constructor for UnbatchedDataFetcher.</p>
+     *
+     * @param delegate a {@link graphql.schema.DataFetcher} object.
+     */
     public UnbatchedDataFetcher(DataFetcher delegate) {
         assert !(delegate instanceof BatchedDataFetcher);
         this.delegate = delegate;
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public Object get(DataFetchingEnvironment environment) {
         @SuppressWarnings("unchecked")

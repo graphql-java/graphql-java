@@ -3,12 +3,14 @@ package graphql.parser.antlr;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
 /**
- * This class provides an empty implementation of {@link GraphqlVisitor},
+ * This class provides an empty implementation of {@link graphql.parser.antlr.GraphqlVisitor},
  * which can be extended to create a visitor which only needs to handle a subset
  * of the available methods.
  *
- * @param <T> The return type of the visit operation. Use {@link Void} for
+ * @param <T> The return type of the visit operation. Use {@link java.lang.Void} for
  * operations with no return type.
+ * @author Andreas Marek
+ * @version v1.0
  */
 public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements GraphqlVisitor<T> {
 	/**

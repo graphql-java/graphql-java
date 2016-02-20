@@ -8,9 +8,16 @@ import graphql.language.StringValue;
 import graphql.schema.Coercing;
 import graphql.schema.GraphQLScalarType;
 
+/**
+ * <p>Scalars class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class Scalars {
 
 
+    /** Constant <code>GraphQLInt</code> */
     public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing() {
         @Override
         public Object serialize(Object input) {
@@ -36,6 +43,7 @@ public class Scalars {
     });
 
 
+    /** Constant <code>GraphQLLong</code> */
     public static GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new Coercing() {
         @Override
         public Object serialize(Object input) {
@@ -66,6 +74,7 @@ public class Scalars {
         }
     });
 
+    /** Constant <code>GraphQLFloat</code> */
     public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing() {
         @Override
         public Double serialize(Object input) {
@@ -93,6 +102,7 @@ public class Scalars {
         }
     });
 
+    /** Constant <code>GraphQLString</code> */
     public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing() {
         @Override
         public Object serialize(Object input) {
@@ -112,6 +122,7 @@ public class Scalars {
     });
 
 
+    /** Constant <code>GraphQLBoolean</code> */
     public static GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing() {
         @Override
         public Object serialize(Object input) {
@@ -139,6 +150,7 @@ public class Scalars {
     });
 
 
+    /** Constant <code>GraphQLID</code> */
     public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing() {
         @Override
         public Object serialize(Object input) {

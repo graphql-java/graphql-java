@@ -1,6 +1,12 @@
 package graphql.schema;
 
 
+/**
+ * <p>Coercing interface.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public interface Coercing {
 
 
@@ -23,6 +29,7 @@ public interface Coercing {
 
     /**
      * Called to convert a AST node
+     *
      * @param input is never null
      * @return null if not possible/invalid
      */

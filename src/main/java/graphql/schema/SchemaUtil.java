@@ -10,8 +10,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * <p>SchemaUtil class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class SchemaUtil {
 
+    /**
+     * <p>isLeafType.</p>
+     *
+     * @param type a {@link graphql.schema.GraphQLType} object.
+     * @return a boolean.
+     */
     public boolean isLeafType(GraphQLType type) {
         GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(type);
         return
@@ -19,6 +31,12 @@ public class SchemaUtil {
                         || unmodifiedType instanceof GraphQLEnumType;
     }
 
+    /**
+     * <p>isInputType.</p>
+     *
+     * @param graphQLType a {@link graphql.schema.GraphQLType} object.
+     * @return a boolean.
+     */
     public boolean isInputType(GraphQLType graphQLType) {
         GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(graphQLType);
         return
@@ -27,6 +45,12 @@ public class SchemaUtil {
                         || unmodifiedType instanceof GraphQLInputObjectType;
     }
 
+    /**
+     * <p>getUnmodifiedType.</p>
+     *
+     * @param graphQLType a {@link graphql.schema.GraphQLType} object.
+     * @return a {@link graphql.schema.GraphQLUnmodifiedType} object.
+     */
     public GraphQLUnmodifiedType getUnmodifiedType(GraphQLType graphQLType) {
         if (graphQLType instanceof GraphQLModifiedType) {
             return getUnmodifiedType(((GraphQLModifiedType) graphQLType).getWrappedType());
@@ -105,6 +129,13 @@ public class SchemaUtil {
     }
 
 
+    /**
+     * <p>allTypes.</p>
+     *
+     * @param schema a {@link graphql.schema.GraphQLSchema} object.
+     * @param dictionary a {@link java.util.Set} object.
+     * @return a {@link java.util.Map} object.
+     */
     public Map<String, GraphQLType> allTypes(GraphQLSchema schema,  Set<GraphQLType> dictionary) {
         Map<String, GraphQLType> typesByName = new LinkedHashMap<String, GraphQLType>();
         collectTypes(schema.getQueryType(), typesByName);
@@ -120,6 +151,13 @@ public class SchemaUtil {
         return typesByName;
     }
 
+    /**
+     * <p>findImplementations.</p>
+     *
+     * @param schema a {@link graphql.schema.GraphQLSchema} object.
+     * @param interfaceType a {@link graphql.schema.GraphQLInterfaceType} object.
+     * @return a {@link java.util.List} object.
+     */
     public List<GraphQLObjectType> findImplementations(GraphQLSchema schema, GraphQLInterfaceType interfaceType) {
         Map<String, GraphQLType> allTypes = allTypes(schema, schema.getDictionary());
         List<GraphQLObjectType> result = new ArrayList<GraphQLObjectType>();

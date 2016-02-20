@@ -8,22 +8,59 @@ import org.antlr.v4.runtime.atn.LexerATNSimulator;
 import org.antlr.v4.runtime.atn.PredictionContextCache;
 import org.antlr.v4.runtime.dfa.DFA;
 
+/**
+ * <p>GraphqlLexer class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class GraphqlLexer extends Lexer {
 	static { RuntimeMetaData.checkVersion("4.5.1", RuntimeMetaData.VERSION); }
 
+	/** Constant <code>_decisionToDFA</code> */
 	protected static final DFA[] _decisionToDFA;
+	/** Constant <code>_sharedContextCache</code> */
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
+	/** Constant <code>T__0=1</code> */
 	public static final int
+		/** Constant <code>T__1=2</code> */
+		/** Constant <code>T__2=3</code> */
+		/** Constant <code>T__3=4</code> */
+		/** Constant <code>T__4=5</code> */
+		/** Constant <code>T__5=6</code> */
+		/** Constant <code>T__6=7</code> */
+		/** Constant <code>T__7=8</code> */
+		/** Constant <code>T__8=9</code> */
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
+		/** Constant <code>T__9=10</code> */
+		/** Constant <code>T__10=11</code> */
+		/** Constant <code>T__11=12</code> */
+		/** Constant <code>T__12=13</code> */
+		/** Constant <code>T__13=14</code> */
+		/** Constant <code>T__14=15</code> */
+		/** Constant <code>T__15=16</code> */
+		/** Constant <code>BooleanValue=17</code> */
 		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, BooleanValue=17, 
+		/** Constant <code>NAME=18</code> */
+		/** Constant <code>IntValue=19</code> */
+		/** Constant <code>FloatValue=20</code> */
+		/** Constant <code>Sign=21</code> */
+		/** Constant <code>IntegerPart=22</code> */
+		/** Constant <code>NonZeroDigit=23</code> */
 		NAME=18, IntValue=19, FloatValue=20, Sign=21, IntegerPart=22, NonZeroDigit=23, 
+		/** Constant <code>ExponentPart=24</code> */
+		/** Constant <code>Digit=25</code> */
+		/** Constant <code>StringValue=26</code> */
+		/** Constant <code>Ignored=27</code> */
 		ExponentPart=24, Digit=25, StringValue=26, Ignored=27;
+	/** Constant <code>modeNames="{DEFAULT_MODE}"</code> */
 	public static String[] modeNames = {
 		"DEFAULT_MODE"
 	};
 
+	/** Constant <code>ruleNames="{T__0, T__1, T__2, T__3, T__4, T__5, T_"{trunked}</code> */
 	public static final String[] ruleNames = {
 		"T__0", "T__1", "T__2", "T__3", "T__4", "T__5", "T__6", "T__7", "T__8", 
 		"T__9", "T__10", "T__11", "T__12", "T__13", "T__14", "T__15", "BooleanValue", 
@@ -43,6 +80,7 @@ public class GraphqlLexer extends Lexer {
 		"Sign", "IntegerPart", "NonZeroDigit", "ExponentPart", "Digit", "StringValue", 
 		"Ignored"
 	};
+	/** Constant <code>VOCABULARY</code> */
 	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
 
 	/**
@@ -64,12 +102,14 @@ public class GraphqlLexer extends Lexer {
 		}
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	@Deprecated
 	public String[] getTokenNames() {
 		return tokenNames;
 	}
 
+	/** {@inheritDoc} */
 	@Override
 
 	public Vocabulary getVocabulary() {
@@ -77,26 +117,37 @@ public class GraphqlLexer extends Lexer {
 	}
 
 
+	/**
+	 * <p>Constructor for GraphqlLexer.</p>
+	 *
+	 * @param input a {@link org.antlr.v4.runtime.CharStream} object.
+	 */
 	public GraphqlLexer(CharStream input) {
 		super(input);
 		_interp = new LexerATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public String getGrammarFileName() { return "Graphql.g4"; }
 
+	/** {@inheritDoc} */
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
 
+	/** {@inheritDoc} */
 	@Override
 	public String getSerializedATN() { return _serializedATN; }
 
+	/** {@inheritDoc} */
 	@Override
 	public String[] getModeNames() { return modeNames; }
 
+	/** {@inheritDoc} */
 	@Override
 	public ATN getATN() { return _ATN; }
 
+	/** Constant <code>_serializedATN="\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\"{trunked}</code> */
 	public static final String _serializedATN =
 		"\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\2\35\u00e7\b\1\4\2"+
 		"\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4"+
@@ -175,6 +226,7 @@ public class GraphqlLexer extends Lexer {
 		"\u00e2B\3\2\2\2\u00e3\u00e4\t\t\2\2\u00e4D\3\2\2\2\u00e5\u00e6\7.\2\2"+
 		"\u00e6F\3\2\2\2\23\2\u0085\u008b\u008f\u0094\u009b\u009d\u00a0\u00aa\u00ac"+
 		"\u00b2\u00b7\u00be\u00c0\u00c8\u00d6\u00de\3\b\2\2";
+	/** Constant <code>_ATN</code> */
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

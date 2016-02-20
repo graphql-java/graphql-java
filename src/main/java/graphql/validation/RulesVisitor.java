@@ -5,6 +5,12 @@ import graphql.language.*;
 
 import java.util.*;
 
+/**
+ * <p>RulesVisitor class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class RulesVisitor implements QueryLanguageVisitor {
 
     private final List<AbstractRule> rules = new ArrayList<AbstractRule>();
@@ -14,10 +20,23 @@ public class RulesVisitor implements QueryLanguageVisitor {
     private Map<Node, List<AbstractRule>> rulesToSkipByUntilNode = new IdentityHashMap<Node, List<AbstractRule>>();
     private Set<AbstractRule> rulesToSkip = new LinkedHashSet<AbstractRule>();
 
+    /**
+     * <p>Constructor for RulesVisitor.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param rules a {@link java.util.List} object.
+     */
     public RulesVisitor(ValidationContext validationContext, List<AbstractRule> rules) {
         this(validationContext, rules, false);
     }
 
+    /**
+     * <p>Constructor for RulesVisitor.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param rules a {@link java.util.List} object.
+     * @param subVisitor a boolean.
+     */
     public RulesVisitor(ValidationContext validationContext, List<AbstractRule> rules, boolean subVisitor) {
         this.validationContext = validationContext;
         this.subVisitor = subVisitor;
@@ -34,6 +53,7 @@ public class RulesVisitor implements QueryLanguageVisitor {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void enter(Node node, List<Node> ancestors) {
 //        System.out.println("enter: " + node);
@@ -158,6 +178,7 @@ public class RulesVisitor implements QueryLanguageVisitor {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public void leave(Node node, List<Node> ancestors) {
         validationContext.getTraversalContext().leave(node, ancestors);

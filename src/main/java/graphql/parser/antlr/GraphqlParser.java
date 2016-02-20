@@ -12,29 +12,99 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.List;
 
+/**
+ * <p>GraphqlParser class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class GraphqlParser extends Parser {
 	static { RuntimeMetaData.checkVersion("4.5.1", RuntimeMetaData.VERSION); }
 
+	/** Constant <code>_decisionToDFA</code> */
 	protected static final DFA[] _decisionToDFA;
+	/** Constant <code>_sharedContextCache</code> */
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
+	/** Constant <code>T__0=1</code> */
 	public static final int
+		/** Constant <code>T__1=2</code> */
+		/** Constant <code>T__2=3</code> */
+		/** Constant <code>T__3=4</code> */
+		/** Constant <code>T__4=5</code> */
+		/** Constant <code>T__5=6</code> */
+		/** Constant <code>T__6=7</code> */
+		/** Constant <code>T__7=8</code> */
+		/** Constant <code>T__8=9</code> */
 		T__0=1, T__1=2, T__2=3, T__3=4, T__4=5, T__5=6, T__6=7, T__7=8, T__8=9, 
+		/** Constant <code>T__9=10</code> */
+		/** Constant <code>T__10=11</code> */
+		/** Constant <code>T__11=12</code> */
+		/** Constant <code>T__12=13</code> */
+		/** Constant <code>T__13=14</code> */
+		/** Constant <code>T__14=15</code> */
+		/** Constant <code>T__15=16</code> */
+		/** Constant <code>BooleanValue=17</code> */
 		T__9=10, T__10=11, T__11=12, T__12=13, T__13=14, T__14=15, T__15=16, BooleanValue=17, 
+		/** Constant <code>NAME=18</code> */
+		/** Constant <code>IntValue=19</code> */
+		/** Constant <code>FloatValue=20</code> */
+		/** Constant <code>Sign=21</code> */
+		/** Constant <code>IntegerPart=22</code> */
+		/** Constant <code>NonZeroDigit=23</code> */
 		NAME=18, IntValue=19, FloatValue=20, Sign=21, IntegerPart=22, NonZeroDigit=23, 
+		/** Constant <code>ExponentPart=24</code> */
+		/** Constant <code>Digit=25</code> */
+		/** Constant <code>StringValue=26</code> */
+		/** Constant <code>Ignored=27</code> */
 		ExponentPart=24, Digit=25, StringValue=26, Ignored=27;
+	/** Constant <code>RULE_document=0</code> */
 	public static final int
+		/** Constant <code>RULE_definition=1</code> */
+		/** Constant <code>RULE_operationDefinition=2</code> */
 		RULE_document = 0, RULE_definition = 1, RULE_operationDefinition = 2, 
+		/** Constant <code>RULE_operationType=3</code> */
+		/** Constant <code>RULE_variableDefinitions=4</code> */
+		/** Constant <code>RULE_variableDefinition=5</code> */
 		RULE_operationType = 3, RULE_variableDefinitions = 4, RULE_variableDefinition = 5, 
+		/** Constant <code>RULE_variable=6</code> */
+		/** Constant <code>RULE_defaultValue=7</code> */
+		/** Constant <code>RULE_selectionSet=8</code> */
+		/** Constant <code>RULE_selection=9</code> */
 		RULE_variable = 6, RULE_defaultValue = 7, RULE_selectionSet = 8, RULE_selection = 9, 
+		/** Constant <code>RULE_field=10</code> */
+		/** Constant <code>RULE_alias=11</code> */
+		/** Constant <code>RULE_arguments=12</code> */
+		/** Constant <code>RULE_argument=13</code> */
 		RULE_field = 10, RULE_alias = 11, RULE_arguments = 12, RULE_argument = 13, 
+		/** Constant <code>RULE_fragmentSpread=14</code> */
+		/** Constant <code>RULE_inlineFragment=15</code> */
+		/** Constant <code>RULE_fragmentDefinition=16</code> */
 		RULE_fragmentSpread = 14, RULE_inlineFragment = 15, RULE_fragmentDefinition = 16, 
+		/** Constant <code>RULE_fragmentName=17</code> */
+		/** Constant <code>RULE_typeCondition=18</code> */
+		/** Constant <code>RULE_value=19</code> */
+		/** Constant <code>RULE_valueWithVariable=20</code> */
 		RULE_fragmentName = 17, RULE_typeCondition = 18, RULE_value = 19, RULE_valueWithVariable = 20, 
+		/** Constant <code>RULE_enumValue=21</code> */
+		/** Constant <code>RULE_arrayValue=22</code> */
+		/** Constant <code>RULE_arrayValueWithVariable=23</code> */
 		RULE_enumValue = 21, RULE_arrayValue = 22, RULE_arrayValueWithVariable = 23, 
+		/** Constant <code>RULE_objectValue=24</code> */
+		/** Constant <code>RULE_objectValueWithVariable=25</code> */
+		/** Constant <code>RULE_objectField=26</code> */
 		RULE_objectValue = 24, RULE_objectValueWithVariable = 25, RULE_objectField = 26, 
+		/** Constant <code>RULE_objectFieldWithVariable=27</code> */
+		/** Constant <code>RULE_directives=28</code> */
+		/** Constant <code>RULE_directive=29</code> */
 		RULE_objectFieldWithVariable = 27, RULE_directives = 28, RULE_directive = 29, 
+		/** Constant <code>RULE_type=30</code> */
+		/** Constant <code>RULE_typeName=31</code> */
+		/** Constant <code>RULE_listType=32</code> */
+		/** Constant <code>RULE_nonNullType=33</code> */
 		RULE_type = 30, RULE_typeName = 31, RULE_listType = 32, RULE_nonNullType = 33;
+	/** Constant <code>ruleNames="{document, definition, operationDefinit"{trunked}</code> */
 	public static final String[] ruleNames = {
 		"document", "definition", "operationDefinition", "operationType", "variableDefinitions", 
 		"variableDefinition", "variable", "defaultValue", "selectionSet", "selection", 
@@ -56,6 +126,7 @@ public class GraphqlParser extends Parser {
 		"Sign", "IntegerPart", "NonZeroDigit", "ExponentPart", "Digit", "StringValue", 
 		"Ignored"
 	};
+	/** Constant <code>VOCABULARY</code> */
 	public static final Vocabulary VOCABULARY = new VocabularyImpl(_LITERAL_NAMES, _SYMBOLIC_NAMES);
 
 	/**
@@ -77,30 +148,41 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	@Deprecated
 	public String[] getTokenNames() {
 		return tokenNames;
 	}
 
+	/** {@inheritDoc} */
 	@Override
 
 	public Vocabulary getVocabulary() {
 		return VOCABULARY;
 	}
 
+	/** {@inheritDoc} */
 	@Override
 	public String getGrammarFileName() { return "Graphql.g4"; }
 
+	/** {@inheritDoc} */
 	@Override
 	public String[] getRuleNames() { return ruleNames; }
 
+	/** {@inheritDoc} */
 	@Override
 	public String getSerializedATN() { return _serializedATN; }
 
+	/** {@inheritDoc} */
 	@Override
 	public ATN getATN() { return _ATN; }
 
+	/**
+	 * <p>Constructor for GraphqlParser.</p>
+	 *
+	 * @param input a {@link org.antlr.v4.runtime.TokenStream} object.
+	 */
 	public GraphqlParser(TokenStream input) {
 		super(input);
 		_interp = new ParserATNSimulator(this,_ATN,_decisionToDFA,_sharedContextCache);
@@ -123,6 +205,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>document.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.DocumentContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final DocumentContext document() throws RecognitionException {
 		DocumentContext _localctx = new DocumentContext(_ctx, getState());
 		enterRule(_localctx, 0, RULE_document);
@@ -175,6 +263,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>definition.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.DefinitionContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final DefinitionContext definition() throws RecognitionException {
 		DefinitionContext _localctx = new DefinitionContext(_ctx, getState());
 		enterRule(_localctx, 2, RULE_definition);
@@ -237,6 +331,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>operationDefinition.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.OperationDefinitionContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final OperationDefinitionContext operationDefinition() throws RecognitionException {
 		OperationDefinitionContext _localctx = new OperationDefinitionContext(_ctx, getState());
 		enterRule(_localctx, 4, RULE_operationDefinition);
@@ -315,6 +415,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>operationType.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.OperationTypeContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final OperationTypeContext operationType() throws RecognitionException {
 		OperationTypeContext _localctx = new OperationTypeContext(_ctx, getState());
 		enterRule(_localctx, 6, RULE_operationType);
@@ -360,6 +466,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>variableDefinitions.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.VariableDefinitionsContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final VariableDefinitionsContext variableDefinitions() throws RecognitionException {
 		VariableDefinitionsContext _localctx = new VariableDefinitionsContext(_ctx, getState());
 		enterRule(_localctx, 8, RULE_variableDefinitions);
@@ -419,6 +531,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>variableDefinition.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.VariableDefinitionContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final VariableDefinitionContext variableDefinition() throws RecognitionException {
 		VariableDefinitionContext _localctx = new VariableDefinitionContext(_ctx, getState());
 		enterRule(_localctx, 10, RULE_variableDefinition);
@@ -467,6 +585,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>variable.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.VariableContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final VariableContext variable() throws RecognitionException {
 		VariableContext _localctx = new VariableContext(_ctx, getState());
 		enterRule(_localctx, 12, RULE_variable);
@@ -505,6 +629,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>defaultValue.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.DefaultValueContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final DefaultValueContext defaultValue() throws RecognitionException {
 		DefaultValueContext _localctx = new DefaultValueContext(_ctx, getState());
 		enterRule(_localctx, 14, RULE_defaultValue);
@@ -546,6 +676,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>selectionSet.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.SelectionSetContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final SelectionSetContext selectionSet() throws RecognitionException {
 		SelectionSetContext _localctx = new SelectionSetContext(_ctx, getState());
 		enterRule(_localctx, 16, RULE_selectionSet);
@@ -605,6 +741,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>selection.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.SelectionContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final SelectionContext selection() throws RecognitionException {
 		SelectionContext _localctx = new SelectionContext(_ctx, getState());
 		enterRule(_localctx, 18, RULE_selection);
@@ -670,6 +812,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>field.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.FieldContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final FieldContext field() throws RecognitionException {
 		FieldContext _localctx = new FieldContext(_ctx, getState());
 		enterRule(_localctx, 20, RULE_field);
@@ -741,6 +889,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>alias.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.AliasContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final AliasContext alias() throws RecognitionException {
 		AliasContext _localctx = new AliasContext(_ctx, getState());
 		enterRule(_localctx, 22, RULE_alias);
@@ -782,6 +936,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>arguments.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ArgumentsContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ArgumentsContext arguments() throws RecognitionException {
 		ArgumentsContext _localctx = new ArgumentsContext(_ctx, getState());
 		enterRule(_localctx, 24, RULE_arguments);
@@ -836,6 +996,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>argument.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ArgumentContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ArgumentContext argument() throws RecognitionException {
 		ArgumentContext _localctx = new ArgumentContext(_ctx, getState());
 		enterRule(_localctx, 26, RULE_argument);
@@ -879,6 +1045,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>fragmentSpread.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.FragmentSpreadContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final FragmentSpreadContext fragmentSpread() throws RecognitionException {
 		FragmentSpreadContext _localctx = new FragmentSpreadContext(_ctx, getState());
 		enterRule(_localctx, 28, RULE_fragmentSpread);
@@ -933,6 +1105,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>inlineFragment.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.InlineFragmentContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final InlineFragmentContext inlineFragment() throws RecognitionException {
 		InlineFragmentContext _localctx = new InlineFragmentContext(_ctx, getState());
 		enterRule(_localctx, 30, RULE_inlineFragment);
@@ -994,6 +1172,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>fragmentDefinition.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.FragmentDefinitionContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final FragmentDefinitionContext fragmentDefinition() throws RecognitionException {
 		FragmentDefinitionContext _localctx = new FragmentDefinitionContext(_ctx, getState());
 		enterRule(_localctx, 32, RULE_fragmentDefinition);
@@ -1046,6 +1230,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>fragmentName.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.FragmentNameContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final FragmentNameContext fragmentName() throws RecognitionException {
 		FragmentNameContext _localctx = new FragmentNameContext(_ctx, getState());
 		enterRule(_localctx, 34, RULE_fragmentName);
@@ -1082,6 +1272,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>typeCondition.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.TypeConditionContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final TypeConditionContext typeCondition() throws RecognitionException {
 		TypeConditionContext _localctx = new TypeConditionContext(_ctx, getState());
 		enterRule(_localctx, 36, RULE_typeCondition);
@@ -1128,6 +1324,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>value.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ValueContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ValueContext value() throws RecognitionException {
 		ValueContext _localctx = new ValueContext(_ctx, getState());
 		enterRule(_localctx, 38, RULE_value);
@@ -1226,6 +1428,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>valueWithVariable.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ValueWithVariableContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ValueWithVariableContext valueWithVariable() throws RecognitionException {
 		ValueWithVariableContext _localctx = new ValueWithVariableContext(_ctx, getState());
 		enterRule(_localctx, 40, RULE_valueWithVariable);
@@ -1316,6 +1524,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>enumValue.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.EnumValueContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final EnumValueContext enumValue() throws RecognitionException {
 		EnumValueContext _localctx = new EnumValueContext(_ctx, getState());
 		enterRule(_localctx, 42, RULE_enumValue);
@@ -1355,6 +1569,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>arrayValue.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ArrayValueContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ArrayValueContext arrayValue() throws RecognitionException {
 		ArrayValueContext _localctx = new ArrayValueContext(_ctx, getState());
 		enterRule(_localctx, 44, RULE_arrayValue);
@@ -1411,6 +1631,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>arrayValueWithVariable.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ArrayValueWithVariableContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ArrayValueWithVariableContext arrayValueWithVariable() throws RecognitionException {
 		ArrayValueWithVariableContext _localctx = new ArrayValueWithVariableContext(_ctx, getState());
 		enterRule(_localctx, 46, RULE_arrayValueWithVariable);
@@ -1467,6 +1693,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>objectValue.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ObjectValueContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ObjectValueContext objectValue() throws RecognitionException {
 		ObjectValueContext _localctx = new ObjectValueContext(_ctx, getState());
 		enterRule(_localctx, 48, RULE_objectValue);
@@ -1523,6 +1755,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>objectValueWithVariable.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ObjectValueWithVariableContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ObjectValueWithVariableContext objectValueWithVariable() throws RecognitionException {
 		ObjectValueWithVariableContext _localctx = new ObjectValueWithVariableContext(_ctx, getState());
 		enterRule(_localctx, 50, RULE_objectValueWithVariable);
@@ -1577,6 +1815,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>objectField.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ObjectFieldContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ObjectFieldContext objectField() throws RecognitionException {
 		ObjectFieldContext _localctx = new ObjectFieldContext(_ctx, getState());
 		enterRule(_localctx, 52, RULE_objectField);
@@ -1618,6 +1862,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>objectFieldWithVariable.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ObjectFieldWithVariableContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ObjectFieldWithVariableContext objectFieldWithVariable() throws RecognitionException {
 		ObjectFieldWithVariableContext _localctx = new ObjectFieldWithVariableContext(_ctx, getState());
 		enterRule(_localctx, 54, RULE_objectFieldWithVariable);
@@ -1661,6 +1911,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>directives.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.DirectivesContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final DirectivesContext directives() throws RecognitionException {
 		DirectivesContext _localctx = new DirectivesContext(_ctx, getState());
 		enterRule(_localctx, 56, RULE_directives);
@@ -1711,6 +1967,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>directive.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.DirectiveContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final DirectiveContext directive() throws RecognitionException {
 		DirectiveContext _localctx = new DirectiveContext(_ctx, getState());
 		enterRule(_localctx, 58, RULE_directive);
@@ -1765,6 +2027,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>type.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.TypeContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final TypeContext type() throws RecognitionException {
 		TypeContext _localctx = new TypeContext(_ctx, getState());
 		enterRule(_localctx, 60, RULE_type);
@@ -1818,6 +2086,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>typeName.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.TypeNameContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final TypeNameContext typeName() throws RecognitionException {
 		TypeNameContext _localctx = new TypeNameContext(_ctx, getState());
 		enterRule(_localctx, 62, RULE_typeName);
@@ -1854,6 +2128,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>listType.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.ListTypeContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final ListTypeContext listType() throws RecognitionException {
 		ListTypeContext _localctx = new ListTypeContext(_ctx, getState());
 		enterRule(_localctx, 64, RULE_listType);
@@ -1897,6 +2177,12 @@ public class GraphqlParser extends Parser {
 		}
 	}
 
+	/**
+	 * <p>nonNullType.</p>
+	 *
+	 * @return a {@link graphql.parser.antlr.GraphqlParser.NonNullTypeContext} object.
+	 * @throws org.antlr.v4.runtime.RecognitionException if any.
+	 */
 	public final NonNullTypeContext nonNullType() throws RecognitionException {
 		NonNullTypeContext _localctx = new NonNullTypeContext(_ctx, getState());
 		enterRule(_localctx, 66, RULE_nonNullType);
@@ -1936,6 +2222,7 @@ public class GraphqlParser extends Parser {
 		return _localctx;
 	}
 
+	/** Constant <code>_serializedATN="\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\"{trunked}</code> */
 	public static final String _serializedATN =
 		"\3\u0430\ud6d1\u8206\uad2d\u4417\uaef1\u8d80\uaadd\3\35\u0116\4\2\t\2"+
 		"\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7\4\b\t\b\4\t\t\t\4\n\t\n\4\13"+
@@ -2029,6 +2316,7 @@ public class GraphqlParser extends Parser {
 		"\u0110\3\2\2\2\u0114E\3\2\2\2\36IMRUX\\dlx\177\u0082\u0086\u0089\u008c"+
 		"\u0095\u00a0\u00a6\u00af\u00be\u00c8\u00d0\u00d9\u00e2\u00eb\u00fb\u0100"+
 		"\u0105\u0113";
+	/** Constant <code>_ATN</code> */
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

@@ -7,12 +7,23 @@ import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * <p>SimpleListConnection class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class SimpleListConnection implements DataFetcher {
 
     private static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
     private List<?> data = new ArrayList<Object>();
 
 
+    /**
+     * <p>Constructor for SimpleListConnection.</p>
+     *
+     * @param data a {@link java.util.List} object.
+     */
     public SimpleListConnection(List<?> data) {
         this.data = data;
 
@@ -28,6 +39,7 @@ public class SimpleListConnection implements DataFetcher {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public Object get(DataFetchingEnvironment environment) {
 
@@ -85,6 +97,12 @@ public class SimpleListConnection implements DataFetcher {
     }
 
 
+    /**
+     * <p>cursorForObjectInConnection.</p>
+     *
+     * @param object a {@link java.lang.Object} object.
+     * @return a {@link graphql.relay.ConnectionCursor} object.
+     */
     public ConnectionCursor cursorForObjectInConnection(Object object) {
         int index = data.indexOf(object);
         String cursor = createCursor(index);

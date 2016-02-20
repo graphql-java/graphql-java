@@ -7,12 +7,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * <p>ChildDataCollector class.</p>
+ *
+ * @author Andreas Marek
+ */
 public class ChildDataCollector {
 
     private final Map<String, List<GraphQLExecutionNodeDatum>> childDataByTypename = new HashMap<String, List<GraphQLExecutionNodeDatum>>();
     private final Map<String, GraphQLObjectType> childTypesByName = new HashMap<String, GraphQLObjectType>();
 
 
+    /**
+     * <p>putChildData.</p>
+     *
+     * @param objectType a {@link graphql.schema.GraphQLObjectType} object.
+     * @param datum a {@link graphql.execution.batched.GraphQLExecutionNodeDatum} object.
+     */
     public void putChildData(GraphQLObjectType objectType, GraphQLExecutionNodeDatum datum) {
         childTypesByName.put(objectType.getName(), objectType);
         multimapPut(childDataByTypename, objectType.getName(), datum);
@@ -34,6 +45,11 @@ public class ChildDataCollector {
         return map.get(key);
     }
 
+    /**
+     * <p>getEntries.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<Entry> getEntries() {
         List<Entry> entries = new ArrayList<Entry>();
         for (String childTypename: childTypesByName.keySet()) {

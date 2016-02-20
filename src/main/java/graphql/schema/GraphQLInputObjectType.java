@@ -8,6 +8,12 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * <p>GraphQLInputObjectType class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
@@ -16,6 +22,13 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
 
     private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<String, GraphQLInputObjectField>();
 
+    /**
+     * <p>Constructor for GraphQLInputObjectType.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param description a {@link java.lang.String} object.
+     * @param fields a {@link java.util.List} object.
+     */
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
         assertNotNull(name, "name can't be null");
         assertNotNull(fields, "fields can't be null");
@@ -30,22 +43,48 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         }
     }
 
+    /**
+     * <p>Getter for the field <code>name</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * <p>Getter for the field <code>description</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * <p>getFields.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<GraphQLInputObjectField> getFields() {
         return new ArrayList<GraphQLInputObjectField>(fieldMap.values());
     }
 
+    /**
+     * <p>getField.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @return a {@link graphql.schema.GraphQLInputObjectField} object.
+     */
     public GraphQLInputObjectField getField(String name) {
         return fieldMap.get(name);
     }
 
+    /**
+     * <p>newInputObject.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLInputObjectType.Builder} object.
+     */
     public static Builder newInputObject() {
         return new Builder();
     }

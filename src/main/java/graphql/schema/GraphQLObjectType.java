@@ -8,6 +8,12 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * <p>GraphQLObjectType class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
@@ -15,6 +21,14 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
     private final List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
 
+    /**
+     * <p>Constructor for GraphQLObjectType.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param description a {@link java.lang.String} object.
+     * @param fieldDefinitions a {@link java.util.List} object.
+     * @param interfaces a {@link java.util.List} object.
+     */
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
         assertNotNull(name, "name can't null");
         assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
@@ -32,30 +46,52 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     }
 
 
+    /** {@inheritDoc} */
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }
 
 
+    /**
+     * <p>getFieldDefinitions.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
         return new ArrayList<GraphQLFieldDefinition>(fieldDefinitionsByName.values());
     }
 
 
+    /**
+     * <p>Getter for the field <code>interfaces</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<GraphQLInterfaceType> getInterfaces() {
         return new ArrayList<GraphQLInterfaceType>(interfaces);
     }
 
+    /**
+     * <p>Getter for the field <code>description</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getDescription() {
         return description;
     }
 
 
+    /**
+     * <p>Getter for the field <code>name</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getName() {
         return name;
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public String toString() {
         return "GraphQLObjectType{" +
@@ -66,6 +102,11 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
                 '}';
     }
 
+    /**
+     * <p>newObject.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLObjectType.Builder} object.
+     */
     public static Builder newObject() {
         return new Builder();
     }

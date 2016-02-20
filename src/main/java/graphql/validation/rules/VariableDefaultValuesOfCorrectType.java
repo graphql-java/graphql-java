@@ -6,14 +6,27 @@ import graphql.schema.GraphQLNonNull;
 import graphql.validation.*;
 
 
+/**
+ * <p>VariableDefaultValuesOfCorrectType class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.2
+ */
 public class VariableDefaultValuesOfCorrectType extends AbstractRule {
 
 
+    /**
+     * <p>Constructor for VariableDefaultValuesOfCorrectType.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param validationErrorCollector a {@link graphql.validation.ValidationErrorCollector} object.
+     */
     public VariableDefaultValuesOfCorrectType(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public void checkVariableDefinition(VariableDefinition variableDefinition) {
         GraphQLInputType inputType = getValidationContext().getInputType();

@@ -10,25 +10,40 @@ import graphql.validation.*;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * <p>NoUndefinedVariables class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class NoUndefinedVariables extends AbstractRule {
 
     private Set<String> variableNames = new LinkedHashSet<String>();
 
+    /**
+     * <p>Constructor for NoUndefinedVariables.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param validationErrorCollector a {@link graphql.validation.ValidationErrorCollector} object.
+     */
     public NoUndefinedVariables(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
         setVisitFragmentSpreads(true);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkOperationDefinition(OperationDefinition operationDefinition) {
         variableNames.clear();
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
         super.checkFragmentDefinition(fragmentDefinition);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkVariable(VariableReference variableReference) {
         if (!variableNames.contains(variableReference.getName())) {
@@ -37,6 +52,7 @@ public class NoUndefinedVariables extends AbstractRule {
         }
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkVariableDefinition(VariableDefinition variableDefinition) {
         variableNames.add(variableDefinition.getName());

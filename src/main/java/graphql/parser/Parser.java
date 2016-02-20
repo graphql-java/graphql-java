@@ -10,11 +10,23 @@ import org.antlr.v4.runtime.atn.PredictionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * <p>Parser class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class Parser {
 
     private static final Logger log = LoggerFactory.getLogger(Parser.class);
 
 
+    /**
+     * <p>parseDocument.</p>
+     *
+     * @param input a {@link java.lang.String} object.
+     * @return a {@link graphql.language.Document} object.
+     */
     public Document parseDocument(String input) {
 
         GraphqlLexer lexer = new GraphqlLexer(new ANTLRInputStream(input));

@@ -8,8 +8,21 @@ import graphql.validation.rules.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * <p>Validator class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class Validator {
 
+    /**
+     * <p>validateDocument.</p>
+     *
+     * @param schema a {@link graphql.schema.GraphQLSchema} object.
+     * @param document a {@link graphql.language.Document} object.
+     * @return a {@link java.util.List} object.
+     */
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
         ValidationContext validationContext = new ValidationContext(schema, document);
 

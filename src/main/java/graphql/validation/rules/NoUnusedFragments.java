@@ -12,6 +12,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * <p>NoUnusedFragments class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class NoUnusedFragments extends AbstractRule {
 
 
@@ -21,10 +27,17 @@ public class NoUnusedFragments extends AbstractRule {
     private Map<String, List<String>> spreadsInDefinition = new LinkedHashMap<String, List<String>>();
     private final List<List<String>> fragmentsUsedDirectlyInOperation = new ArrayList<List<String>>();
 
+    /**
+     * <p>Constructor for NoUnusedFragments.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param validationErrorCollector a {@link graphql.validation.ValidationErrorCollector} object.
+     */
     public NoUnusedFragments(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkOperationDefinition(OperationDefinition operationDefinition) {
         usedFragments = new ArrayList<String>();
@@ -32,11 +45,13 @@ public class NoUnusedFragments extends AbstractRule {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public void checkFragmentSpread(FragmentSpread fragmentSpread) {
         usedFragments.add(fragmentSpread.getName());
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
         allDeclaredFragments.add(fragmentDefinition);
@@ -44,6 +59,7 @@ public class NoUnusedFragments extends AbstractRule {
         spreadsInDefinition.put(fragmentDefinition.getName(), usedFragments);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void documentFinished(Document document) {
 

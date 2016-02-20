@@ -16,14 +16,16 @@ import java.util.*;
 import static java.util.Collections.singletonList;
 
 /**
- * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link DataFetcher}s that have
- * {@link DataFetcher#get(DataFetchingEnvironment)} methods annotated with {@link Batched}. See the javadoc comment on
- * {@link Batched} for a more detailed description of batched data fetchers.
+ * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link graphql.schema.DataFetcher}s that have
+ * {@link graphql.schema.DataFetcher#get(DataFetchingEnvironment)} methods annotated with {@link graphql.execution.batched.Batched}. See the javadoc comment on
+ * {@link graphql.execution.batched.Batched} for a more detailed description of batched data fetchers.
  * <p>
  * The strategy runs a BFS over terms of the query and passes a list of all the relevant sources to the batched data fetcher.
  * </p>
  * Normal DataFetchers can be used, however they will not see benefits of batching as they expect a single source object
  * at a time.
+ *
+ * @author Andreas Marek
  */
 public class BatchedExecutionStrategy extends ExecutionStrategy {
 
@@ -31,6 +33,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private final BatchedDataFetcherFactory batchingFactory = new BatchedDataFetcherFactory();
 
+    /** {@inheritDoc} */
     @Override
     public ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
         GraphQLExecutionNodeDatum data = new GraphQLExecutionNodeDatum(new LinkedHashMap<String, Object>(), source);

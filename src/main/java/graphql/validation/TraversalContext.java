@@ -11,6 +11,12 @@ import java.util.List;
 
 import static graphql.introspection.Introspection.*;
 
+/**
+ * <p>TraversalContext class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class TraversalContext implements QueryLanguageVisitor {
     GraphQLSchema schema;
     List<GraphQLOutputType> outputTypeStack = new ArrayList<GraphQLOutputType>();
@@ -23,10 +29,16 @@ public class TraversalContext implements QueryLanguageVisitor {
     SchemaUtil schemaUtil = new SchemaUtil();
 
 
+    /**
+     * <p>Constructor for TraversalContext.</p>
+     *
+     * @param graphQLSchema a {@link graphql.schema.GraphQLSchema} object.
+     */
     public TraversalContext(GraphQLSchema graphQLSchema) {
         this.schema = graphQLSchema;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void enter(Node node, List<Node> path) {
         if (node instanceof OperationDefinition) {
@@ -141,6 +153,7 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
 
+    /** {@inheritDoc} */
     @Override
     public void leave(Node node, List<Node> ancestors) {
         if (node instanceof OperationDefinition) {
@@ -173,6 +186,11 @@ public class TraversalContext implements QueryLanguageVisitor {
         return (GraphQLNullableType) (type instanceof GraphQLNonNull ? ((GraphQLNonNull) type).getWrappedType() : type);
     }
 
+    /**
+     * <p>getOutputType.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLOutputType} object.
+     */
     public GraphQLOutputType getOutputType() {
         return lastElement(outputTypeStack);
     }
@@ -187,6 +205,11 @@ public class TraversalContext implements QueryLanguageVisitor {
         return list.get(list.size() - 1);
     }
 
+    /**
+     * <p>getParentType.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLCompositeType} object.
+     */
     public GraphQLCompositeType getParentType() {
         return lastElement(parentTypeStack);
     }
@@ -195,6 +218,11 @@ public class TraversalContext implements QueryLanguageVisitor {
         parentTypeStack.add(compositeType);
     }
 
+    /**
+     * <p>getInputType.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLInputType} object.
+     */
     public GraphQLInputType getInputType() {
         return lastElement(inputTypeStack);
     }
@@ -203,6 +231,11 @@ public class TraversalContext implements QueryLanguageVisitor {
         inputTypeStack.add(graphQLInputType);
     }
 
+    /**
+     * <p>getFieldDef.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLFieldDefinition} object.
+     */
     public GraphQLFieldDefinition getFieldDef() {
         return lastElement(fieldDefStack);
     }
@@ -211,10 +244,20 @@ public class TraversalContext implements QueryLanguageVisitor {
         fieldDefStack.add(fieldDefinition);
     }
 
+    /**
+     * <p>Getter for the field <code>directive</code>.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLDirective} object.
+     */
     public GraphQLDirective getDirective() {
         return directive;
     }
 
+    /**
+     * <p>Getter for the field <code>argument</code>.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLArgument} object.
+     */
     public GraphQLArgument getArgument() {
         return argument;
     }

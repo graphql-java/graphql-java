@@ -6,9 +6,21 @@ import graphql.language.Node;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * <p>LanguageTraversal class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class LanguageTraversal {
 
 
+    /**
+     * <p>traverse.</p>
+     *
+     * @param root a {@link graphql.language.Node} object.
+     * @param queryLanguageVisitor a {@link graphql.validation.QueryLanguageVisitor} object.
+     */
     public void traverse(Node root, QueryLanguageVisitor queryLanguageVisitor) {
         List<Node> path = new ArrayList<Node>();
         traverseImpl(root, queryLanguageVisitor, path);

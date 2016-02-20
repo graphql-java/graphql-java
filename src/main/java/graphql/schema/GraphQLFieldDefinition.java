@@ -7,6 +7,12 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * <p>GraphQLFieldDefinition class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.0
+ */
 public class GraphQLFieldDefinition {
 
     private final String name;
@@ -17,6 +23,16 @@ public class GraphQLFieldDefinition {
     private final List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
 
 
+    /**
+     * <p>Constructor for GraphQLFieldDefinition.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @param description a {@link java.lang.String} object.
+     * @param type a {@link graphql.schema.GraphQLOutputType} object.
+     * @param dataFetcher a {@link graphql.schema.DataFetcher} object.
+     * @param arguments a {@link java.util.List} object.
+     * @param deprecationReason a {@link java.lang.String} object.
+     */
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
         assertNotNull(name, "name can't be null");
         assertNotNull(dataFetcher, "dataFetcher can't be null");
@@ -35,19 +51,40 @@ public class GraphQLFieldDefinition {
         type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap);
     }
 
+    /**
+     * <p>Getter for the field <code>name</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getName() {
         return name;
     }
 
 
+    /**
+     * <p>Getter for the field <code>type</code>.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLOutputType} object.
+     */
     public GraphQLOutputType getType() {
         return type;
     }
 
+    /**
+     * <p>Getter for the field <code>dataFetcher</code>.</p>
+     *
+     * @return a {@link graphql.schema.DataFetcher} object.
+     */
     public DataFetcher getDataFetcher() {
         return dataFetcher;
     }
 
+    /**
+     * <p>getArgument.</p>
+     *
+     * @param name a {@link java.lang.String} object.
+     * @return a {@link graphql.schema.GraphQLArgument} object.
+     */
     public GraphQLArgument getArgument(String name) {
         for (GraphQLArgument argument : arguments) {
             if (argument.getName().equals(name)) return argument;
@@ -55,22 +92,47 @@ public class GraphQLFieldDefinition {
         return null;
     }
 
+    /**
+     * <p>Getter for the field <code>arguments</code>.</p>
+     *
+     * @return a {@link java.util.List} object.
+     */
     public List<GraphQLArgument> getArguments() {
         return new ArrayList<GraphQLArgument>(arguments);
     }
 
+    /**
+     * <p>Getter for the field <code>description</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getDescription() {
         return description;
     }
 
+    /**
+     * <p>Getter for the field <code>deprecationReason</code>.</p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
     public String getDeprecationReason() {
         return deprecationReason;
     }
 
+    /**
+     * <p>isDeprecated.</p>
+     *
+     * @return a boolean.
+     */
     public boolean isDeprecated() {
         return deprecationReason != null;
     }
 
+    /**
+     * <p>newFieldDefinition.</p>
+     *
+     * @return a {@link graphql.schema.GraphQLFieldDefinition.Builder} object.
+     */
     public static Builder newFieldDefinition() {
         return new Builder();
     }

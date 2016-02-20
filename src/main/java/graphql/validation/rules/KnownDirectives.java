@@ -7,13 +7,26 @@ import graphql.validation.*;
 
 import java.util.List;
 
+/**
+ * <p>KnownDirectives class.</p>
+ *
+ * @author Andreas Marek
+ * @version v1.2
+ */
 public class KnownDirectives extends AbstractRule {
 
 
+    /**
+     * <p>Constructor for KnownDirectives.</p>
+     *
+     * @param validationContext a {@link graphql.validation.ValidationContext} object.
+     * @param validationErrorCollector a {@link graphql.validation.ValidationErrorCollector} object.
+     */
     public KnownDirectives(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
 
+    /** {@inheritDoc} */
     @Override
     public void checkDirective(Directive directive, List<Node> ancestors) {
         GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(directive.getName());
