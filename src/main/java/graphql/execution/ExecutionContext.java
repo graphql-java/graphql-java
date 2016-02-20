@@ -69,7 +69,7 @@ public class ExecutionContext {
         this.errors.add(error);
     }
 
-    public List<GraphQLError> getErrors(){
+    public List<GraphQLError> getErrors() {
         return errors;
     }
 

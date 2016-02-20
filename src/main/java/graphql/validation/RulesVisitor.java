@@ -166,7 +166,7 @@ public class RulesVisitor implements QueryLanguageVisitor {
             documentFinished((Document) node);
         } else if (node instanceof OperationDefinition) {
             leaveOperationDefinition((OperationDefinition) node);
-        }else if(node instanceof SelectionSet){
+        } else if (node instanceof SelectionSet) {
             leaveSelectionSet((SelectionSet) node);
         }
 

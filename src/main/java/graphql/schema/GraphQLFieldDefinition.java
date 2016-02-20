@@ -118,6 +118,7 @@ public class GraphQLFieldDefinition {
 
         /**
          * Get the data from a field.
+         *
          * @return
          */
         public Builder fetchField() {

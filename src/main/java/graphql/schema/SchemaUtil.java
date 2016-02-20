@@ -4,11 +4,7 @@ package graphql.schema;
 import graphql.GraphQLException;
 import graphql.introspection.Introspection;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class SchemaUtil {
 
@@ -105,16 +101,16 @@ public class SchemaUtil {
     }
 
 
-    public Map<String, GraphQLType> allTypes(GraphQLSchema schema,  Set<GraphQLType> dictionary) {
+    public Map<String, GraphQLType> allTypes(GraphQLSchema schema, Set<GraphQLType> dictionary) {
         Map<String, GraphQLType> typesByName = new LinkedHashMap<String, GraphQLType>();
         collectTypes(schema.getQueryType(), typesByName);
         if (schema.isSupportingMutations()) {
             collectTypes(schema.getMutationType(), typesByName);
         }
         if (dictionary != null) {
-          for (GraphQLType type : dictionary) {
-            collectTypes(type, typesByName);
-          }
+            for (GraphQLType type : dictionary) {
+                collectTypes(type, typesByName);
+            }
         }
         collectTypes(Introspection.__Schema, typesByName);
         return typesByName;

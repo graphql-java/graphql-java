@@ -1,17 +1,12 @@
 package graphql.schema;
 
 
-import static graphql.Assert.assertNotNull;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import graphql.Assert;
 import graphql.Directives;
+
+import java.util.*;
+
+import static graphql.Assert.assertNotNull;
 
 public class GraphQLSchema {
 
@@ -25,7 +20,7 @@ public class GraphQLSchema {
     }
 
     public Set<GraphQLType> getDictionary() {
-      return dictionary;
+        return dictionary;
     }
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> dictionary) {
@@ -89,15 +84,15 @@ public class GraphQLSchema {
         }
 
         public GraphQLSchema build() {
-          return build(Collections.<GraphQLType>emptySet());
-      }
+            return build(Collections.<GraphQLType>emptySet());
+        }
 
         public GraphQLSchema build(Set<GraphQLType> dictionary) {
-          Assert.assertNotNull(dictionary, "dictionary can't be null");
-          GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, dictionary);
-          new SchemaUtil().replaceTypeReferences(graphQLSchema);
-          return graphQLSchema;
-      }
+            Assert.assertNotNull(dictionary, "dictionary can't be null");
+            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, dictionary);
+            new SchemaUtil().replaceTypeReferences(graphQLSchema);
+            return graphQLSchema;
+        }
 
 
     }

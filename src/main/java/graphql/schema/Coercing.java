@@ -23,6 +23,7 @@ public interface Coercing {
 
     /**
      * Called to convert a AST node
+     *
      * @param input is never null
      * @return null if not possible/invalid
      */

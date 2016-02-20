@@ -36,7 +36,7 @@ public class ChildDataCollector {
 
     public List<Entry> getEntries() {
         List<Entry> entries = new ArrayList<Entry>();
-        for (String childTypename: childTypesByName.keySet()) {
+        for (String childTypename : childTypesByName.keySet()) {
             GraphQLObjectType childType = childTypesByName.get(childTypename);
             List<GraphQLExecutionNodeDatum> childData = multimapGet(childDataByTypename, childTypename);
             entries.add(new Entry(childType, childData));
@@ -49,7 +49,7 @@ public class ChildDataCollector {
         private final List<GraphQLExecutionNodeDatum> data;
 
         public Entry(GraphQLObjectType objectType,
-                List<GraphQLExecutionNodeDatum> data) {
+                     List<GraphQLExecutionNodeDatum> data) {
             this.objectType = objectType;
             this.data = data;
         }

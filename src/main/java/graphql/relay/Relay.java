@@ -91,7 +91,7 @@ public class Relay {
                 .build());
         return args;
     }
-    
+
     public List<GraphQLArgument> getBackwardPaginationConnectionFieldArguments() {
         List<GraphQLArgument> args = new ArrayList<GraphQLArgument>();
 
@@ -105,7 +105,7 @@ public class Relay {
                 .build());
         return args;
     }
-    
+
     public List<GraphQLArgument> getForwardPaginationConnectionFieldArguments() {
         List<GraphQLArgument> args = new ArrayList<GraphQLArgument>();
 

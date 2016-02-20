@@ -1,5 +1,5 @@
 package graphql.language;
 
 
-public interface Value extends Node{
+public interface Value extends Node {
 }

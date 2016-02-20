@@ -1,5 +1,5 @@
 package graphql.schema;
 
 
-public interface GraphQLNullableType extends  GraphQLType{
+public interface GraphQLNullableType extends GraphQLType {
 }

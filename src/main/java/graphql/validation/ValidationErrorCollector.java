@@ -8,17 +8,17 @@ public class ValidationErrorCollector {
 
     private final List<ValidationError> errors = new ArrayList<ValidationError>();
 
-    public void addError(ValidationError validationError){
+    public void addError(ValidationError validationError) {
         this.errors.add(validationError);
     }
 
-    public List<ValidationError> getErrors(){
+    public List<ValidationError> getErrors() {
         return errors;
     }
 
-    public boolean containsValidationError(ValidationErrorType validationErrorType){
-        for(ValidationError validationError : errors){
-            if(validationError.getValidationErrorType() == validationErrorType) return true;
+    public boolean containsValidationError(ValidationErrorType validationErrorType) {
+        for (ValidationError validationError : errors) {
+            if (validationError.getValidationErrorType() == validationErrorType) return true;
         }
         return false;
     }

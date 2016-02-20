@@ -11,7 +11,7 @@ public abstract class GraphQLExecutionResultContainer {
      * Creates a child datum which is linked through the results container to this parent.
      */
     public GraphQLExecutionNodeDatum createAndPutChildDatum(String fieldName, Object value) {
-        Map<String,Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new HashMap<String, Object>();
         putResult(fieldName, map);
         return new GraphQLExecutionNodeDatum(map, value);
     }
