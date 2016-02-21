@@ -8,7 +8,7 @@ This is a GraphQL Java implementation based on the [specification](https://githu
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
  
 
-**Status**: Version 2.0.0 is released. 
+**Status**: Version `2.0.0` is released. 
     
 The versioning follows [Semantic Versioning](http://semver.org) since `2.0.0`. 
 
