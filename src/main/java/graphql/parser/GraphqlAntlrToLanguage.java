@@ -8,6 +8,7 @@ import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -321,7 +322,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     private Value getValue(GraphqlParser.ValueWithVariableContext ctx) {
         if (ctx.IntValue() != null) {
-            IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
+            IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
             return intValue;
         } else if (ctx.FloatValue() != null) {
@@ -366,7 +367,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     private Value getValue(GraphqlParser.ValueContext ctx) {
         if (ctx.IntValue() != null) {
-            IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
+            IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
             return intValue;
         } else if (ctx.FloatValue() != null) {
