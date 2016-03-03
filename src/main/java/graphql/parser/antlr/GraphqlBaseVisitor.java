@@ -14,7 +14,7 @@ import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements GraphqlVisitor<T> {
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -25,7 +25,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -36,7 +36,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -47,7 +47,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -58,7 +58,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -69,7 +69,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -80,7 +80,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -91,7 +91,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -102,7 +102,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -113,7 +113,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -124,7 +124,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -135,7 +135,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -146,7 +146,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -157,7 +157,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -168,7 +168,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -179,7 +179,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -190,7 +190,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -201,7 +201,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -212,7 +212,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -223,7 +223,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -234,7 +234,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -245,7 +245,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -256,7 +256,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -267,7 +267,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -278,7 +278,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -289,7 +289,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -300,7 +300,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -311,7 +311,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -322,7 +322,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -333,7 +333,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -344,7 +344,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -355,7 +355,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -366,7 +366,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */
@@ -377,7 +377,7 @@ public class GraphqlBaseVisitor<T> extends AbstractParseTreeVisitor<T> implement
 
     /**
      * {@inheritDoc}
-     * <p/>
+     * <br>
      * <p>The default implementation returns the result of calling
      * {@link #visitChildren} on {@code ctx}.</p>
      */

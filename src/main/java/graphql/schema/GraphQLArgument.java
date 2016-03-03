@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.Scalars;
+
 import static graphql.Assert.assertNotNull;
 
 public class GraphQLArgument {
@@ -65,6 +67,37 @@ public class GraphQLArgument {
 
         public Builder type(GraphQLInputType type) {
             this.type = type;
+            return this;
+        }
+
+        public Builder stringType() {
+            this.type = Scalars.GraphQLString;
+            return this;
+        }
+
+        public Builder integerType() {
+            this.type = Scalars.GraphQLInt;
+            return this;
+        }
+
+        public Builder floatType() {
+            this.type = Scalars.GraphQLFloat;
+            return this;
+        }
+
+        public Builder booleanType() {
+            this.type = Scalars.GraphQLBoolean;
+            return this;
+        }
+
+        public Builder longType() {
+            this.type = Scalars.GraphQLLong;
+            return this;
+        }
+
+        public Builder notNull() {
+            assertNotNull(this.type, "type must be set before setting non-nullable");
+            this.type = new GraphQLNonNull(this.type);
             return this;
         }
 

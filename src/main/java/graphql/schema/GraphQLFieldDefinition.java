@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.schema.lambda.BuilderFunction;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -128,6 +130,13 @@ public class GraphQLFieldDefinition {
 
         public Builder argument(GraphQLArgument argument) {
             this.arguments.add(argument);
+            return this;
+        }
+
+        public Builder argument(BuilderFunction<GraphQLArgument.Builder> builderFunction) {
+            GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+            builder = builderFunction.implement(builder);
+            this.arguments.add(builder.build());
             return this;
         }
 

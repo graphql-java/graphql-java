@@ -16,16 +16,16 @@ import java.util.concurrent.Future;
 
 /**
  * ExecutorServiceExecutionStrategy uses an {@link ExecutorService} to parallelize the resolve.
- * <p/>
+ * <br>
  * Due to the nature of {@link #execute(ExecutionContext, GraphQLObjectType, Object, Map)} implementation, {@link ExecutorService}
  * MUST have the following 2 characteristics:
  * <ul>
  * <li>1. The underlying {@link java.util.concurrent.ThreadPoolExecutor} MUST have a reasonable {@code maximumPoolSize}
  * <li>2. The underlying {@link java.util.concurrent.ThreadPoolExecutor} SHALL NOT use its task queue.
  * </ul><p>
- * <p/>
+ * <br>
  * Failure to follow 1. and 2. can result in a very large number of threads created or hanging. (deadlock)
- * <p/>
+ * <br>
  * See {@code graphql.execution.ExecutorServiceExecutionStrategyTest} for example usage.
  */
 public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {

@@ -14,19 +14,19 @@ import java.lang.annotation.Target;
  * This annotation must be used in conjunction with {@link BatchedExecutionStrategy}. Batching is valuable in many
  * situations, such as when a {@link graphql.schema.DataFetcher} must make a network or file system request.
  * </p>
- * <p/>
+ * <br>
  * <p>
  * When a {@link graphql.schema.DataFetcher} is batched, the {@link DataFetchingEnvironment#getSource()} method is
  * guaranteed to return a {@link java.util.List}.  The {@link graphql.schema.DataFetcher#get(DataFetchingEnvironment)}
  * method MUST return a parallel {@link java.util.List} which is equivalent to running a {@link graphql.schema.DataFetcher}
  * over each input element individually.
  * </p>
- * <p/>
+ * <br>
  * <p>
  * Using the {@link Batched} annotation is equivalent to implementing {@link BatchedDataFetcher} instead of {@link graphql.schema.DataFetcher}.
  * It is preferred to use the {@link Batched} annotation.
  * </p>
- * <p/>
+ * <br>
  * For example, the following two {@link graphql.schema.DataFetcher} objects are interchangeable if used with a
  * {@link BatchedExecutionStrategy}.
  * <pre>
@@ -44,7 +44,7 @@ import java.lang.annotation.Target;
  * }
  * </code>
  * </pre>
- * <p/>
+ * <br>
  * <pre>
  * <code>
  * new DataFetcher() {
