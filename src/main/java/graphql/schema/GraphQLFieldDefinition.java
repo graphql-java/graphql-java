@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.Scalars;
 import graphql.schema.lambda.BuilderFunction;
 
 import java.util.ArrayList;
@@ -100,6 +101,56 @@ public class GraphQLFieldDefinition {
 
         public Builder type(GraphQLOutputType type) {
             this.type = type;
+            return this;
+        }
+
+        public Builder stringType() {
+            this.type = Scalars.GraphQLString;
+            return this;
+        }
+
+        public Builder integerType() {
+            this.type = Scalars.GraphQLInt;
+            return this;
+        }
+
+        public Builder floatType() {
+            this.type = Scalars.GraphQLFloat;
+            return this;
+        }
+
+        public Builder booleanType() {
+            this.type = Scalars.GraphQLBoolean;
+            return this;
+        }
+
+        public Builder longType() {
+            this.type = Scalars.GraphQLLong;
+            return this;
+        }
+
+        public Builder notNullType(GraphQLType type) {
+            this.type = new GraphQLNonNull(type);
+            return this;
+        }
+
+        public Builder listType(GraphQLType type) {
+            this.type = new GraphQLList(type);
+            return this;
+        }
+
+        public Builder notNull() {
+            this.type = new GraphQLNonNull(this.type);
+            return this;
+        }
+
+        public Builder list() {
+            this.type = new GraphQLList(this.type);
+            return this;
+        }
+
+        public Builder refType(String typeRefName) {
+            this.type = new GraphQLTypeReference(typeRefName);
             return this;
         }
 

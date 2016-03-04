@@ -95,9 +95,23 @@ public class GraphQLArgument {
             return this;
         }
 
+        public Builder notNullType(GraphQLType type) {
+            this.type = new GraphQLNonNull(type);
+            return this;
+        }
+
+        public Builder listType(GraphQLType type) {
+            this.type = new GraphQLList(type);
+            return this;
+        }
+
         public Builder notNull() {
-            assertNotNull(this.type, "type must be set before setting non-nullable");
             this.type = new GraphQLNonNull(this.type);
+            return this;
+        }
+
+        public Builder list() {
+            this.type = new GraphQLList(this.type);
             return this;
         }
 
