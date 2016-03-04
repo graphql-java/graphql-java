@@ -31,7 +31,7 @@ public class Scalars {
         @Override
         public Object parseLiteral(Object input) {
             if (!(input instanceof IntValue)) return null;
-            return ((IntValue) input).getValue();
+            return ((IntValue) input).getIntegerValue();
         }
     });
 
@@ -60,7 +60,7 @@ public class Scalars {
             if (input instanceof StringValue) {
                 return Long.parseLong(((StringValue) input).getValue());
             } else if (input instanceof IntValue) {
-                return ((IntValue) input).getValue();
+                return ((IntValue) input).getLongValue();
             }
             return null;
         }

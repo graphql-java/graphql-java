@@ -58,7 +58,7 @@ class ScalarsTest extends Specification {
         where:
         literal               | result
         new StringValue("42") | 42
-        new IntValue(42)      | 42
+        new IntValue("42")      | 42
     }
 
 
@@ -82,7 +82,7 @@ class ScalarsTest extends Specification {
 
         where:
         literal          | result
-        new IntValue(42) | 42
+        new IntValue("42") | 42
 
     }
 

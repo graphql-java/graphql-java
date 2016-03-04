@@ -7,13 +7,13 @@ plugins {
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
+apply plugin: 'antlr'
 
 sourceCompatibility = 1.6
 targetCompatibility = 1.6
 def releaseVersion = System.properties.RELEASE_VERSION
 version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
 group = 'com.graphql-java'
-
 
 repositories {
     mavenCentral()
@@ -28,11 +28,20 @@ jar {
 dependencies {
     compile 'org.antlr:antlr4-runtime:4.5.1'
     compile 'org.slf4j:slf4j-api:1.7.12'
+    antlr "org.antlr:antlr4:4.5.1"
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
     testCompile 'org.codehaus.groovy:groovy-all:2.4.4'
     testCompile 'cglib:cglib-nodep:3.1'
     testCompile 'org.objenesis:objenesis:2.1'
+}
+
+compileJava.source file("build/generated-src"), sourceSets.main.java
+
+generateGrammarSource {
+    maxHeapSize = "64m"
+    arguments += ["-visitor"]
+    outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
 }
 
 task sourcesJar(type: Jar) {
@@ -109,7 +118,6 @@ bintray {
         vcsUrl = 'https://github.com/andimarek/graphql-java'
     }
 }
-
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.11'

@@ -84,7 +84,7 @@ class ParserTest extends Specification {
         given:
         def input = '{ user(id: 10, name: "homer", admin:true, floatValue: 3.04) }'
 
-        def argument = new Argument("id", new IntValue(10))
+        def argument = new Argument("id", new IntValue("10"))
         def argument2 = new Argument("name", new StringValue("homer"))
         def argument3 = new Argument("admin", new BooleanValue(true))
         def argument4 = new Argument("floatValue", new FloatValue(3.04))
@@ -120,20 +120,20 @@ class ParserTest extends Specification {
         and: "expected query"
         def fragmentSpreadFriends = new FragmentSpread("friendFields")
         def selectionSetFriends = new SelectionSet([fragmentSpreadFriends])
-        def friendsField = new Field("friends", [new Argument("first", new IntValue(10))], selectionSetFriends)
+        def friendsField = new Field("friends", [new Argument("first", new IntValue("10"))], selectionSetFriends)
 
         def fragmentSpreadMutalFriends = new FragmentSpread("friendFields")
         def selectionSetMutalFriends = new SelectionSet([fragmentSpreadMutalFriends])
-        def mutalFriendsField = new Field("mutualFriends", [new Argument("first", new IntValue(10))], selectionSetMutalFriends)
+        def mutalFriendsField = new Field("mutualFriends", [new Argument("first", new IntValue("10"))], selectionSetMutalFriends)
 
-        def userField = new Field("user", [new Argument("id", new IntValue(4))], new SelectionSet([friendsField, mutalFriendsField]))
+        def userField = new Field("user", [new Argument("id", new IntValue("4"))], new SelectionSet([friendsField, mutalFriendsField]))
 
         def queryDefinition = new OperationDefinition("withFragments", OperationDefinition.Operation.QUERY, new SelectionSet([userField]))
 
         and: "expected fragment definition"
         def idField = new Field("id")
         def nameField = new Field("name")
-        def profilePicField = new Field("profilePic", [new Argument("size", new IntValue(50))])
+        def profilePicField = new Field("profilePic", [new Argument("size", new IntValue("50"))])
         def selectionSet = new SelectionSet([idField, nameField, profilePicField])
         def fragmentDefinition = new FragmentDefinition("friendFields", new TypeName("User"), selectionSet)
 
@@ -281,7 +281,7 @@ class ParserTest extends Specification {
         and: "expected query"
 
         def objectValue = new ObjectValue()
-        objectValue.getObjectFields().add(new ObjectField("intKey", new IntValue(1)))
+        objectValue.getObjectFields().add(new ObjectField("intKey", new IntValue("1")))
         objectValue.getObjectFields().add(new ObjectField("stringKey", new StringValue("world")))
         def subObject = new ObjectValue()
         subObject.getObjectFields().add(new ObjectField("subKey", new BooleanValue(true)))

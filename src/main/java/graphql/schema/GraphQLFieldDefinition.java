@@ -1,6 +1,9 @@
 package graphql.schema;
 
 
+import graphql.Scalars;
+import graphql.schema.lambda.BuilderFunction;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +104,56 @@ public class GraphQLFieldDefinition {
             return this;
         }
 
+        public Builder stringType() {
+            this.type = Scalars.GraphQLString;
+            return this;
+        }
+
+        public Builder integerType() {
+            this.type = Scalars.GraphQLInt;
+            return this;
+        }
+
+        public Builder floatType() {
+            this.type = Scalars.GraphQLFloat;
+            return this;
+        }
+
+        public Builder booleanType() {
+            this.type = Scalars.GraphQLBoolean;
+            return this;
+        }
+
+        public Builder longType() {
+            this.type = Scalars.GraphQLLong;
+            return this;
+        }
+
+        public Builder notNullType(GraphQLType type) {
+            this.type = new GraphQLNonNull(type);
+            return this;
+        }
+
+        public Builder listType(GraphQLType type) {
+            this.type = new GraphQLList(type);
+            return this;
+        }
+
+        public Builder notNull() {
+            this.type = new GraphQLNonNull(this.type);
+            return this;
+        }
+
+        public Builder list() {
+            this.type = new GraphQLList(this.type);
+            return this;
+        }
+
+        public Builder refType(String typeRefName) {
+            this.type = new GraphQLTypeReference(typeRefName);
+            return this;
+        }
+
         public Builder dataFetcher(DataFetcher dataFetcher) {
             this.dataFetcher = dataFetcher;
             return this;
@@ -128,6 +181,13 @@ public class GraphQLFieldDefinition {
 
         public Builder argument(GraphQLArgument argument) {
             this.arguments.add(argument);
+            return this;
+        }
+
+        public Builder argument(BuilderFunction<GraphQLArgument.Builder> builderFunction) {
+            GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+            builder = builderFunction.implement(builder);
+            this.arguments.add(builder.build());
             return this;
         }
 

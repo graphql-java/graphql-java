@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.schema.lambda.BuilderFunction;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -72,8 +74,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
 
     public static class Builder {
-        private String name;
-        private String description;
+        private String name = null;
+        private String description = null;
         private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<GraphQLFieldDefinition>();
         private List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
 
@@ -90,6 +92,14 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         public Builder field(GraphQLFieldDefinition fieldDefinition) {
             assertNotNull(fieldDefinition, "fieldDefinition can't be null");
             this.fieldDefinitions.add(fieldDefinition);
+            return this;
+        }
+
+        public Builder field(BuilderFunction<GraphQLFieldDefinition.Builder> builderFunction) {
+            assertNotNull(builderFunction, "builderFunction can't be null");
+            GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
+            builder = builderFunction.implement(builder);
+            this.fieldDefinitions.add(builder.build());
             return this;
         }
 

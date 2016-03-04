@@ -91,7 +91,7 @@ class ValuesResolverTest extends Specification {
     def "getArgumentValues: resolves object literal"() {
         given: "complex object value"
         def complexObjectValue = new ObjectValue()
-        complexObjectValue.getObjectFields().add(new ObjectField("intKey", new IntValue(1)))
+        complexObjectValue.getObjectFields().add(new ObjectField("intKey", new IntValue("1")))
         complexObjectValue.getObjectFields().add(new ObjectField("stringKey", new StringValue("world")))
         def subObject = new ObjectValue()
         subObject.getObjectFields().add(new ObjectField("subKey", new BooleanValue(true)))

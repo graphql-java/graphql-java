@@ -6,18 +6,18 @@ import java.util.List;
 
 public class IntValue extends AbstractNode implements Value {
 
-    private int value;
+    private final String valueText;
 
-    public IntValue(int value) {
-        this.value = value;
+    public IntValue(final String valueText) {
+        this.valueText = valueText;
     }
 
-    public int getValue() {
-        return value;
+    public int getIntegerValue() {
+        return Integer.parseInt(this.valueText);
     }
 
-    public void setValue(int value) {
-        this.value = value;
+    public long getLongValue() {
+        return Long.parseLong(this.valueText);
     }
 
     @Override
@@ -32,7 +32,7 @@ public class IntValue extends AbstractNode implements Value {
 
         IntValue intValue = (IntValue) o;
 
-        return value == intValue.value;
+        return valueText.equals(intValue.valueText);
 
     }
 
@@ -40,7 +40,7 @@ public class IntValue extends AbstractNode implements Value {
     @Override
     public String toString() {
         return "IntValue{" +
-                "value=" + value +
+                "value=" + valueText +
                 '}';
     }
 }
