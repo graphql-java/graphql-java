@@ -3,6 +3,7 @@ package graphql.schema;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.Map;
 
 import static graphql.Scalars.GraphQLBoolean;
@@ -33,7 +34,7 @@ public class PropertyDataFetcher implements DataFetcher {
             return method.invoke(object);
 
         } catch (NoSuchMethodException e) {
-            return null;
+            return getFieldValue(object, outputType);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
@@ -47,5 +48,16 @@ public class PropertyDataFetcher implements DataFetcher {
             return ((GraphQLNonNull) outputType).getWrappedType() == GraphQLBoolean;
         }
         return false;
+    }
+
+    private Object getFieldValue(Object object, GraphQLOutputType outputType) {
+        try {
+            Field field = object.getClass().getField(propertyName);
+            return field.get(object);
+        } catch (NoSuchFieldException e) {
+            return null;
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

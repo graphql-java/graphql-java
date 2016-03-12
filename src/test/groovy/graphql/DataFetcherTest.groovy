@@ -47,4 +47,13 @@ class DataFetcherTest extends Specification {
         then:
         result == "propertyValue"
     }
+
+    def "get field value as property"() {
+        given:
+        def environment = new DataFetchingEnvironment(dataHolder, null, null, null, GraphQLString, null, null)
+        when:
+        def result = new PropertyDataFetcher("publicField").get(environment)
+        then:
+        result == "publicValue"
+    }
 }
