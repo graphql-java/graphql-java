@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.language.EnumValue;
+import graphql.AssertException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -64,7 +65,10 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     private void buildMap(List<GraphQLEnumValueDefinition> values) {
         for (GraphQLEnumValueDefinition valueDefinition : values) {
-            valueDefinitionMap.put(valueDefinition.getName(), valueDefinition);
+            String name = valueDefinition.getName();
+            if (valueDefinitionMap.containsKey(name))
+                throw new AssertException("value " + name + " redefined");
+            valueDefinitionMap.put(name, valueDefinition);
         }
     }
 
