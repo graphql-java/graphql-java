@@ -58,8 +58,8 @@ class ScalarsTest extends Specification {
         where:
         literal                          | result
         new StringValue("42")            | 42
-        new IntValue(42)                 | 42
-        new IntValue(42345784398534785l) | 42345784398534785l
+        new IntValue(new BigInteger("42"))                | 42
+        new IntValue(new BigInteger("42345784398534785")) | 42345784398534785l
     }
 
 
