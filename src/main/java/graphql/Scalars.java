@@ -12,9 +12,11 @@ import java.math.BigInteger;
 
 public class Scalars {
 
+    private static final BigInteger INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
+    private static final BigInteger INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
 
     public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing() {
-        @Override
+
         public Object serialize(Object input) {
             if (input instanceof String) {
                 return Integer.parseInt((String) input);
@@ -34,6 +36,9 @@ public class Scalars {
         public Object parseLiteral(Object input) {
             if (!(input instanceof IntValue)) return null;
             BigInteger value = ((IntValue) input).getValue();
+            if (value.compareTo(INT_MIN) == -1 || value.compareTo(INT_MAX) == 1) {
+                throw new GraphQLException("Int literal is too big or too small");
+            }
             return value.intValue();
         }
     });
