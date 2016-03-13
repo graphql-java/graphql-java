@@ -1,14 +1,14 @@
 package graphql;
 
 
-import java.math.BigInteger;
-
 import graphql.language.BooleanValue;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
 import graphql.language.StringValue;
 import graphql.schema.Coercing;
 import graphql.schema.GraphQLScalarType;
+
+import java.math.BigInteger;
 
 public class Scalars {
 
@@ -34,8 +34,6 @@ public class Scalars {
         public Object parseLiteral(Object input) {
             if (!(input instanceof IntValue)) return null;
             BigInteger value = ((IntValue) input).getValue();
-            // Check if out of bounds.
-            Integer.parseInt(value.toString());
             return value.intValue();
         }
     });
