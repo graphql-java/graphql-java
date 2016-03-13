@@ -2,6 +2,8 @@ package graphql.schema
 
 import spock.lang.Specification
 
+import graphql.AssertException
+
 import static graphql.schema.GraphQLEnumType.newEnum
 
 
@@ -36,5 +38,13 @@ class GraphQLEnumTypeTest extends Specification {
         enumType.getCoercing().serialize(12) == null
     }
 
-
+    def "duplicate value definition fails"() {
+        when:
+        newEnum().name("AnotherTestEnum")
+                .value("NAME", 42)
+                .value("NAME", 43)
+                .build();
+        then:
+        thrown(AssertException)
+    }
 }

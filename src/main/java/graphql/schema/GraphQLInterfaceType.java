@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.AssertException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -27,7 +28,10 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-            fieldDefinitionsByName.put(fieldDefinition.getName(), fieldDefinition);
+            String name = fieldDefinition.getName();
+            if (fieldDefinitionsByName.containsKey(name))
+                throw new AssertException("field " + name + " redefined");
+            fieldDefinitionsByName.put(name, fieldDefinition);
         }
     }
 

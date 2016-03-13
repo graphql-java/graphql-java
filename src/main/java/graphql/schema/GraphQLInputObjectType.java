@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.AssertException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,7 +27,10 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
 
     private void buildMap(List<GraphQLInputObjectField> fields) {
         for (GraphQLInputObjectField field : fields) {
-            fieldMap.put(field.getName(), field);
+            String name = field.getName();
+            if (fieldMap.containsKey(name))
+                throw new AssertException("field " + name + " redefined");
+            fieldMap.put(name, field);
         }
     }
 
