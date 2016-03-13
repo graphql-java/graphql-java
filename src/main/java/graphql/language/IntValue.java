@@ -1,22 +1,23 @@
 package graphql.language;
 
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
 public class IntValue extends AbstractNode implements Value {
 
-    private int value;
+    private BigInteger value;
 
-    public IntValue(int value) {
+    public IntValue(BigInteger value) {
         this.value = value;
     }
 
-    public int getValue() {
+    public BigInteger getValue() {
         return value;
     }
 
-    public void setValue(int value) {
+    public void setValue(BigInteger value) {
         this.value = value;
     }
 
@@ -30,9 +31,9 @@ public class IntValue extends AbstractNode implements Value {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        IntValue intValue = (IntValue) o;
+        IntValue that = (IntValue) o;
 
-        return value == intValue.value;
+        return !(value != null ? !value.equals(that.value) : that.value != null);
 
     }
 

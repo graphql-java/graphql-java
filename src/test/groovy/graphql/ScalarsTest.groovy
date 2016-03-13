@@ -56,9 +56,10 @@ class ScalarsTest extends Specification {
         Scalars.GraphQLLong.getCoercing().parseLiteral(literal) == result
 
         where:
-        literal               | result
-        new StringValue("42") | 42
-        new IntValue(42)      | 42
+        literal                          | result
+        new StringValue("42")            | 42
+        new IntValue(new BigInteger("42"))                | 42
+        new IntValue(new BigInteger("42345784398534785")) | 42345784398534785l
     }
 
 

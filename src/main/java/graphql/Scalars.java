@@ -8,6 +8,8 @@ import graphql.language.StringValue;
 import graphql.schema.Coercing;
 import graphql.schema.GraphQLScalarType;
 
+import java.math.BigInteger;
+
 public class Scalars {
 
 
@@ -31,7 +33,8 @@ public class Scalars {
         @Override
         public Object parseLiteral(Object input) {
             if (!(input instanceof IntValue)) return null;
-            return ((IntValue) input).getValue();
+            BigInteger value = ((IntValue) input).getValue();
+            return value.intValue();
         }
     });
 
@@ -60,7 +63,10 @@ public class Scalars {
             if (input instanceof StringValue) {
                 return Long.parseLong(((StringValue) input).getValue());
             } else if (input instanceof IntValue) {
-                return ((IntValue) input).getValue();
+                BigInteger value = ((IntValue) input).getValue();
+                // Check if out of bounds.
+                Long.parseLong(value.toString());
+                return value.longValue();
             }
             return null;
         }
