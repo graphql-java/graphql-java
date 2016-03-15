@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class NoUndefinedVariables extends AbstractRule {
 
-    private Set<String> variableNames = new LinkedHashSet<>();
+    private Set<String> variableNames = new LinkedHashSet<String>();
 
     public NoUndefinedVariables(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -32,7 +32,7 @@ public class NoUndefinedVariables extends AbstractRule {
     @Override
     public void checkVariable(VariableReference variableReference) {
         if (!variableNames.contains(variableReference.getName())) {
-            String message = String.format("Undefined variable %s",variableReference.getName());
+            String message = String.format("Undefined variable %s", variableReference.getName());
             addError(new ValidationError(ValidationErrorType.UndefinedVariable, variableReference.getSourceLocation(), message));
         }
     }

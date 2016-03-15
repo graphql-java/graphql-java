@@ -1,9 +1,11 @@
 package graphql.execution
 
+import graphql.GraphQLException
 import graphql.TestUtil
 import graphql.language.*
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -18,7 +20,7 @@ class ValuesResolverTest extends Specification {
 
 
     @Unroll
-    def "simple variable input #inputValue"() {
+    def "getVariableValues: simple variable input #inputValue"() {
         given:
         def schema = TestUtil.schemaWithInputType(inputType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", variableType)
@@ -36,7 +38,7 @@ class ValuesResolverTest extends Specification {
 
     }
 
-    def "object as variable input"() {
+    def "getVariableValues: object as variable input"() {
         given:
         def nameField = newInputObjectField()
                 .name("name")
@@ -60,7 +62,7 @@ class ValuesResolverTest extends Specification {
         resolvedValues['variable'] == [name: 'a', id: 123]
     }
 
-    def "simple value gets resolved to a list when the type is a List"() {
+    def "getVariableValues: simple value gets resolved to a list when the type is a List"() {
         given:
         def schema = TestUtil.schemaWithInputType(new GraphQLList(GraphQLString))
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
@@ -73,7 +75,7 @@ class ValuesResolverTest extends Specification {
     }
 
 
-    def "resolves argument with variable reference"() {
+    def "getArgumentValues: resolves argument with variable reference"() {
         given:
         def variables = [var: 'hello']
         def fieldArgument = new GraphQLArgument("arg", GraphQLString)
@@ -86,7 +88,7 @@ class ValuesResolverTest extends Specification {
         values['arg'] == 'hello'
     }
 
-    def "resolves object literal"() {
+    def "getArgumentValues: resolves object literal"() {
         given: "complex object value"
         def complexObjectValue = new ObjectValue()
         complexObjectValue.getObjectFields().add(new ObjectField("intKey", new IntValue(1)))
@@ -128,7 +130,7 @@ class ValuesResolverTest extends Specification {
         values['arg'] == [intKey: 1, stringKey: 'world', subObject: [subKey: true]]
     }
 
-    def "resolves enum literals"() {
+    def "getArgumentValues: resolves enum literals"() {
         given: "the ast"
         EnumValue enumValue1 = new EnumValue("PLUTO");
         EnumValue enumValue2 = new EnumValue("MARS");
@@ -151,7 +153,7 @@ class ValuesResolverTest extends Specification {
         values['arg2'] == 'mars'
     }
 
-    def "resolves array literals"() {
+    def "getArgumentValues: resolves array literals"() {
         given:
         ArrayValue arrayValue = new ArrayValue()
         arrayValue.getValues().add(new BooleanValue(true))
@@ -168,7 +170,7 @@ class ValuesResolverTest extends Specification {
 
     }
 
-    def "resolves single value literal to a list when type is a list "() {
+    def "getArgumentValues: resolves single value literal to a list when type is a list "() {
         given:
         StringValue stringValue = new StringValue("world")
         def argument = new Argument("arg", stringValue)
@@ -183,7 +185,7 @@ class ValuesResolverTest extends Specification {
 
     }
 
-    def "enum as variable input"() {
+    def "getVariableValues: enum as variable input"() {
         given:
         def enumDef = newEnum()
                 .name("Test")
@@ -203,5 +205,59 @@ class ValuesResolverTest extends Specification {
         "A_TEST"     || "A_TEST"
         "VALUE_TEST" || 1
 
+    }
+
+    def "getVariableValues: input object with non-required fields and default values"() {
+        given:
+
+        def inputObjectType = newInputObject()
+                .name("InputObject")
+                .field(newInputObjectField()
+                .name("intKey")
+                .type(GraphQLInt)
+                .build())
+                .field(newInputObjectField()
+                .name("stringKey")
+                .type(GraphQLString)
+                .defaultValue("defaultString")
+                .build())
+                .build()
+        def inputValue = [intKey: 10]
+
+        def schema = TestUtil.schemaWithInputType(inputObjectType)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
+
+        when:
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+
+        then:
+        resolvedValues['variable'].stringKey == 'defaultString'
+        resolvedValues['variable'].intKey == 10
+    }
+
+    def "getVariableInput: Missing InputObject fields which are non-null cause error"() {
+
+        given:
+        def inputObjectType = newInputObject()
+                .name("InputObject")
+                .field(newInputObjectField()
+                .name("intKey")
+                .type(GraphQLInt)
+                .build())
+                .field(newInputObjectField()
+                .name("requiredField")
+                .type(new GraphQLNonNull(GraphQLString))
+                .build())
+                .build()
+        def inputValue = [intKey: 10]
+
+        def schema = TestUtil.schemaWithInputType(inputObjectType)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
+
+        when:
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+
+        then:
+        thrown(GraphQLException)
     }
 }

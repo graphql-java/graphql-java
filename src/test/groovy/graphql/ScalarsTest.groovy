@@ -58,7 +58,8 @@ class ScalarsTest extends Specification {
         where:
         literal               | result
         new StringValue("42") | 42
-        new IntValue(42)      | 42
+        new IntValue(new BigInteger("42"))                | 42
+        new IntValue(new BigInteger("42345784398534785")) | 42345784398534785l
     }
 
 
@@ -86,6 +87,17 @@ class ScalarsTest extends Specification {
 
     }
 
+    def "int parse error for too big/small literal"() {
+        when:
+        Scalars.GraphQLInt.getCoercing().parseLiteral(new IntValue(BigInteger.valueOf(intValue)))
+
+        then:
+        thrown(GraphQLException)
+
+        where:
+        intValue << [Integer.MIN_VALUE - 1l, Integer.MAX_VALUE + 1l]
+    }
+
     def "Int serialize/parseValue object"() {
         expect:
         Scalars.GraphQLInt.getCoercing().serialize(value) == result
@@ -104,7 +116,7 @@ class ScalarsTest extends Specification {
 
         where:
         literal              | result
-        new FloatValue(42.3) | 42.3f
+        new FloatValue(42.3) | 42.3d
     }
 
     @Unroll

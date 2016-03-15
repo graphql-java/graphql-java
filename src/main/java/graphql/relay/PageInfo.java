@@ -4,8 +4,8 @@ package graphql.relay;
 public class PageInfo {
     private ConnectionCursor startCursor;
     private ConnectionCursor endCursor;
-    private  boolean hasPreviousPage;
-    private  boolean hasNextPage;
+    private boolean hasPreviousPage;
+    private boolean hasNextPage;
 
     public ConnectionCursor getStartCursor() {
         return startCursor;

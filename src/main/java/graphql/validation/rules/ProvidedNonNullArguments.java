@@ -31,14 +31,14 @@ public class ProvidedNonNullArguments extends AbstractRule {
             Argument argument = argumentMap.get(graphQLArgument.getName());
             if (argument == null
                     && (graphQLArgument.getType() instanceof GraphQLNonNull)) {
-                String message = String.format("Missing field argument %s",graphQLArgument.getName());
-                addError(new ValidationError(ValidationErrorType.MissingFieldArgument,field.getSourceLocation(),message));
+                String message = String.format("Missing field argument %s", graphQLArgument.getName());
+                addError(new ValidationError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message));
             }
         }
     }
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>();
+        Map<String, Argument> result = new LinkedHashMap<String, Argument>();
         for (Argument argument : arguments) {
             result.put(argument.getName(), argument);
         }
@@ -56,8 +56,8 @@ public class ProvidedNonNullArguments extends AbstractRule {
             Argument argument = argumentMap.get(graphQLArgument.getName());
             if (argument == null
                     && (graphQLArgument.getType() instanceof GraphQLNonNull)) {
-                String message = String.format("Missing directive argument %s",graphQLArgument.getName());
-                addError(new ValidationError(ValidationErrorType.MissingDirectiveArgument,directive.getSourceLocation(),message));
+                String message = String.format("Missing directive argument %s", graphQLArgument.getName());
+                addError(new ValidationError(ValidationErrorType.MissingDirectiveArgument, directive.getSourceLocation(), message));
             }
         }
     }

@@ -6,7 +6,6 @@ import graphql.schema.DataFetchingEnvironment;
 import java.lang.reflect.Method;
 
 /**
- *
  * Produces a BatchedDataFetcher for a given DataFetcher.
  * If that fetcher is already a BatchedDataFetcher we return it.
  * If that fetcher's get method is annotated @Batched then we delegate to it directly.

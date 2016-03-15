@@ -3,7 +3,7 @@ package graphql.schema;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType,GraphQLNullableType {
+public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;

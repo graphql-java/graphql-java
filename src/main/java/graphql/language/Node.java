@@ -11,6 +11,7 @@ public interface Node {
 
     /**
      * Compares just the content and not the children.
+     *
      * @param node
      * @return
      */

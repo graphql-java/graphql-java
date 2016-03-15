@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EnumValue extends AbstractNode implements  Value {
+public class EnumValue extends AbstractNode implements Value {
 
     private String name;
 
@@ -23,7 +23,7 @@ public class EnumValue extends AbstractNode implements  Value {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        return new ArrayList<Node>();
     }
 
     @Override

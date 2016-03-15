@@ -11,7 +11,7 @@ public class ValuesResolver {
 
 
     public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> inputs) {
-        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
             result.put(variableDefinition.getName(), getVariableValue(schema, variableDefinition, inputs.get(variableDefinition.getName())));
         }
@@ -20,7 +20,7 @@ public class ValuesResolver {
 
 
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
-        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
         Map<String, Argument> argumentMap = argumentMap(arguments);
         for (GraphQLArgument fieldArgument : argumentTypes) {
             Argument argument = argumentMap.get(fieldArgument.getName());
@@ -37,7 +37,7 @@ public class ValuesResolver {
 
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>();
+        Map<String, Argument> result = new LinkedHashMap<String, Argument>();
         for (Argument argument : arguments) {
             result.put(argument.getName(), argument);
         }
@@ -64,6 +64,14 @@ public class ValuesResolver {
     }
 
     private Object coerceValue(GraphQLType graphQLType, Object value) {
+        if (graphQLType instanceof GraphQLNonNull) {
+            Object returnValue = coerceValue(((GraphQLNonNull) graphQLType).getWrappedType(), value);
+            if (returnValue == null) {
+                throw new GraphQLException("Null value for NonNull type " + graphQLType);
+            }
+            return returnValue;
+        }
+
         if (value == null) return null;
 
         if (graphQLType instanceof GraphQLScalarType) {
@@ -74,15 +82,13 @@ public class ValuesResolver {
             return coerceValueForList((GraphQLList) graphQLType, value);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
             return coerceValueForInputObjectField((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
-        } else if (graphQLType instanceof GraphQLNonNull) {
-            return coerceValue(((GraphQLNonNull) graphQLType).getWrappedType(), value);
         } else {
             throw new GraphQLException("unknown type " + graphQLType);
         }
     }
 
     private Object coerceValueForInputObjectField(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
-        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
         for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
             Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
             result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
@@ -101,7 +107,7 @@ public class ValuesResolver {
 
     private List coerceValueForList(GraphQLList graphQLList, Object value) {
         if (value instanceof Iterable) {
-            List<Object> result = new ArrayList<>();
+            List<Object> result = new ArrayList<Object>();
             for (Object val : (Iterable) value) {
                 result.add(coerceValue(graphQLList.getWrappedType(), val));
             }
@@ -136,7 +142,7 @@ public class ValuesResolver {
     private Object coerceValueAstForList(GraphQLList graphQLList, Value value, Map<String, Object> variables) {
         if (value instanceof ArrayValue) {
             ArrayValue arrayValue = (ArrayValue) value;
-            List<Object> result = new ArrayList<>();
+            List<Object> result = new ArrayList<Object>();
             for (Value singleValue : arrayValue.getValues()) {
                 result.add(coerceValueAst(graphQLList.getWrappedType(), singleValue, variables));
             }
@@ -147,7 +153,7 @@ public class ValuesResolver {
     }
 
     private Object coerceValueAstForInputObject(GraphQLInputObjectType type, ObjectValue inputValue, Map<String, Object> variables) {
-        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, Object> result = new LinkedHashMap<String, Object>();
 
         for (ObjectField objectField : inputValue.getObjectFields()) {
             GraphQLInputObjectField inputObjectField = type.getField(objectField.getName());

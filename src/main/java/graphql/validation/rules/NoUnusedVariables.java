@@ -13,8 +13,8 @@ import java.util.Set;
 
 public class NoUnusedVariables extends AbstractRule {
 
-    private List<VariableDefinition> variableDefinitions = new ArrayList<>();
-    private Set<String> usedVariables = new LinkedHashSet<>();
+    private List<VariableDefinition> variableDefinitions = new ArrayList<VariableDefinition>();
+    private Set<String> usedVariables = new LinkedHashSet<String>();
 
     public NoUnusedVariables(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -25,7 +25,7 @@ public class NoUnusedVariables extends AbstractRule {
     public void leaveOperationDefinition(OperationDefinition operationDefinition) {
         for (VariableDefinition variableDefinition : variableDefinitions) {
             if (!usedVariables.contains(variableDefinition.getName())) {
-                String message = String.format("Unused variable %s",variableDefinition.getName());
+                String message = String.format("Unused variable %s", variableDefinition.getName());
                 addError(new ValidationError(ValidationErrorType.UnusedVariable, variableDefinition.getSourceLocation(), message));
             }
         }

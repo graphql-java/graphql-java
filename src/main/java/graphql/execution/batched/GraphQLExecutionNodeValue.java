@@ -14,7 +14,8 @@ public class GraphQLExecutionNodeValue {
         return resultContainer;
     }
 
-    /*Nullable*/ public Object getValue() {
+    /*Nullable*/
+    public Object getValue() {
         return value;
     }
 }

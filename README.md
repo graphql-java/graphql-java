@@ -8,9 +8,9 @@ This is a GraphQL Java implementation based on the [specification](https://githu
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
  
 
-**Status**: Version 1.3 is released. 
+**Status**: Version `2.0.0` is released. 
     
-
+The versioning follows [Semantic Versioning](http://semver.org) since `2.0.0`. 
 
 **Hint**: This README documents the latest release, but `master` contains the current development version. So please make sure 
 to checkout the appropriate tag when looking for the version documented here.
@@ -116,7 +116,7 @@ Dependency:
 
 ```groovy
 dependencies {
-  compile 'com.graphql-java:graphql-java:1.3'
+  compile 'com.graphql-java:graphql-java:2.0.0'
 }
 
 ```
@@ -129,7 +129,7 @@ Dependency:
 <dependency>
     <groupId>com.graphql-java</groupId>
     <artifactId>graphql-java</artifactId>
-    <version>1.3</version>
+    <version>2.0.0</version>
 </dependency>
 
 ```
@@ -467,7 +467,7 @@ Installing in the local Maven repository:
 
 ### Details
 
-The implementation is in Java 7, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
+The implementation is in Java 6, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
 
 The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
 

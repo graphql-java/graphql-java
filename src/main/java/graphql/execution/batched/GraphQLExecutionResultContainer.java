@@ -11,13 +11,13 @@ public abstract class GraphQLExecutionResultContainer {
      * Creates a child datum which is linked through the results container to this parent.
      */
     public GraphQLExecutionNodeDatum createAndPutChildDatum(String fieldName, Object value) {
-        Map<String,Object> map = new HashMap<>();
+        Map<String, Object> map = new HashMap<String, Object>();
         putResult(fieldName, map);
         return new GraphQLExecutionNodeDatum(map, value);
     }
 
     public GraphQLExecutionResultList createAndPutEmptyChildList(String fieldName) {
-        List<Object> resultList = new ArrayList<>();
+        List<Object> resultList = new ArrayList<Object>();
         putResult(fieldName, resultList);
         return new GraphQLExecutionResultList(resultList);
     }

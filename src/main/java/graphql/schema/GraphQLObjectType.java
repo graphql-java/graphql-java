@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.AssertException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -12,8 +13,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
-    private final List<GraphQLInterfaceType> interfaces = new ArrayList<>();
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
+    private final List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
 
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
         assertNotNull(name, "name can't null");
@@ -27,7 +28,10 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-            fieldDefinitionsByName.put(fieldDefinition.getName(), fieldDefinition);
+            String name = fieldDefinition.getName();
+            if (fieldDefinitionsByName.containsKey(name))
+                throw new AssertException("field " + name + " redefined");
+            fieldDefinitionsByName.put(name, fieldDefinition);
         }
     }
 
@@ -38,12 +42,12 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
 
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
-        return new ArrayList<>(fieldDefinitionsByName.values());
+        return new ArrayList<GraphQLFieldDefinition>(fieldDefinitionsByName.values());
     }
 
 
     public List<GraphQLInterfaceType> getInterfaces() {
-        return new ArrayList<>(interfaces);
+        return new ArrayList<GraphQLInterfaceType>(interfaces);
     }
 
     public String getDescription() {
@@ -74,8 +78,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
-        private List<GraphQLInterfaceType> interfaces = new ArrayList<>();
+        private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<GraphQLFieldDefinition>();
+        private List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
 
         public Builder name(String name) {
             this.name = name;

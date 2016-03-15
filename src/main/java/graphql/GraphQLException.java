@@ -1,7 +1,7 @@
 package graphql;
 
 
-public class GraphQLException extends RuntimeException{
+public class GraphQLException extends RuntimeException {
 
     public GraphQLException() {
     }

@@ -8,6 +8,7 @@ import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -38,7 +39,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         }
     }
 
-    private Deque<ContextEntry> contextStack = new ArrayDeque<>();
+    private Deque<ContextEntry> contextStack = new ArrayDeque<ContextEntry>();
 
 
     private void addContextProperty(ContextProperty contextProperty, Object value) {
@@ -96,14 +97,14 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     @Override
-    public Void visitDocument( GraphqlParser.DocumentContext ctx) {
+    public Void visitDocument(GraphqlParser.DocumentContext ctx) {
         result = new Document();
         newNode(result, ctx);
         return super.visitDocument(ctx);
     }
 
     @Override
-    public Void visitOperationDefinition( GraphqlParser.OperationDefinitionContext ctx) {
+    public Void visitOperationDefinition(GraphqlParser.OperationDefinitionContext ctx) {
         OperationDefinition operationDefinition;
         operationDefinition = new OperationDefinition();
         newNode(operationDefinition, ctx);
@@ -135,7 +136,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitFragmentSpread( GraphqlParser.FragmentSpreadContext ctx) {
+    public Void visitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) {
         FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
         newNode(fragmentSpread, ctx);
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(fragmentSpread);
@@ -146,7 +147,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitVariableDefinition( GraphqlParser.VariableDefinitionContext ctx) {
+    public Void visitVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition variableDefinition = new VariableDefinition();
         newNode(variableDefinition, ctx);
         variableDefinition.setName(ctx.variable().NAME().getText());
@@ -164,7 +165,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitFragmentDefinition( GraphqlParser.FragmentDefinitionContext ctx) {
+    public Void visitFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx) {
         FragmentDefinition fragmentDefinition = new FragmentDefinition();
         newNode(fragmentDefinition, ctx);
         fragmentDefinition.setName(ctx.fragmentName().getText());
@@ -178,7 +179,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     @Override
-    public Void visitSelectionSet( GraphqlParser.SelectionSetContext ctx) {
+    public Void visitSelectionSet(GraphqlParser.SelectionSetContext ctx) {
         SelectionSet newSelectionSet = new SelectionSet();
         newNode(newSelectionSet, ctx);
         addContextProperty(ContextProperty.SelectionSet, newSelectionSet);
@@ -189,7 +190,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     @Override
-    public Void visitField( GraphqlParser.FieldContext ctx) {
+    public Void visitField(GraphqlParser.FieldContext ctx) {
         Field newField = new Field();
         newNode(newField, ctx);
         newField.setName(ctx.NAME().getText());
@@ -203,7 +204,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitTypeName( GraphqlParser.TypeNameContext ctx) {
+    public Void visitTypeName(GraphqlParser.TypeNameContext ctx) {
         TypeName typeName = new TypeName(ctx.NAME().getText());
         newNode(typeName, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -224,7 +225,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitNonNullType( GraphqlParser.NonNullTypeContext ctx) {
+    public Void visitNonNullType(GraphqlParser.NonNullTypeContext ctx) {
         NonNullType nonNullType = new NonNullType();
         newNode(nonNullType, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -244,7 +245,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitListType( GraphqlParser.ListTypeContext ctx) {
+    public Void visitListType(GraphqlParser.ListTypeContext ctx) {
         ListType listType = new ListType();
         newNode(listType, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -268,7 +269,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitArgument( GraphqlParser.ArgumentContext ctx) {
+    public Void visitArgument(GraphqlParser.ArgumentContext ctx) {
         Argument argument = new Argument(ctx.NAME().getText(), getValue(ctx.valueWithVariable()));
         newNode(argument, ctx);
         if (getFromContextStack(ContextProperty.Directive, false) != null) {
@@ -281,7 +282,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitInlineFragment( GraphqlParser.InlineFragmentContext ctx) {
+    public Void visitInlineFragment(GraphqlParser.InlineFragmentContext ctx) {
         InlineFragment inlineFragment = new InlineFragment(new TypeName(ctx.typeCondition().getText()));
         newNode(inlineFragment, ctx);
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(inlineFragment);
@@ -292,7 +293,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitDirective( GraphqlParser.DirectiveContext ctx) {
+    public Void visitDirective(GraphqlParser.DirectiveContext ctx) {
         Directive directive = new Directive(ctx.NAME().getText());
         newNode(directive, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -321,7 +322,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     private Value getValue(GraphqlParser.ValueWithVariableContext ctx) {
         if (ctx.IntValue() != null) {
-            IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
+            IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
             return intValue;
         } else if (ctx.FloatValue() != null) {
@@ -366,7 +367,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     private Value getValue(GraphqlParser.ValueContext ctx) {
         if (ctx.IntValue() != null) {
-            IntValue intValue = new IntValue(Integer.parseInt(ctx.IntValue().getText()));
+            IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
             return intValue;
         } else if (ctx.FloatValue() != null) {
@@ -394,7 +395,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             return arrayValue;
         } else if (ctx.objectValue() != null) {
             ObjectValue objectValue = new ObjectValue();
-            newNode(objectValue,ctx);
+            newNode(objectValue, ctx);
             for (GraphqlParser.ObjectFieldContext objectFieldContext :
                     ctx.objectValue().objectField()) {
                 ObjectField objectField = new ObjectField(objectFieldContext.NAME().getText(), getValue(objectFieldContext.value()));
@@ -415,7 +416,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     private SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
-        return new SourceLocation(parserRuleContext.getStart().getLine(), parserRuleContext.getStart().getCharPositionInLine()+1);
+        return new SourceLocation(parserRuleContext.getStart().getLine(), parserRuleContext.getStart().getCharPositionInLine() + 1);
     }
 
 }

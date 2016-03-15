@@ -4,9 +4,9 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SelectionSet extends AbstractNode{
+public class SelectionSet extends AbstractNode {
 
-    private final List<Selection> selections = new ArrayList<>();
+    private final List<Selection> selections = new ArrayList<Selection>();
 
     public List<Selection> getSelections() {
         return selections;
@@ -21,7 +21,7 @@ public class SelectionSet extends AbstractNode{
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
+        List<Node> result = new ArrayList<Node>();
         result.addAll(selections);
         return result;
     }

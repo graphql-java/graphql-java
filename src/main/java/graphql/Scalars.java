@@ -8,11 +8,15 @@ import graphql.language.StringValue;
 import graphql.schema.Coercing;
 import graphql.schema.GraphQLScalarType;
 
+import java.math.BigInteger;
+
 public class Scalars {
 
+    private static final BigInteger INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
+    private static final BigInteger INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
 
     public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing() {
-        @Override
+
         public Object serialize(Object input) {
             if (input instanceof String) {
                 return Integer.parseInt((String) input);
@@ -33,7 +37,11 @@ public class Scalars {
         @Override
         public Object parseLiteral(Object input) {
             if (!(input instanceof IntValue)) return null;
-            return ((IntValue) input).getValue();
+            BigInteger value = ((IntValue) input).getValue();
+            if (value.compareTo(INT_MIN) == -1 || value.compareTo(INT_MAX) == 1) {
+                throw new GraphQLException("Int literal is too big or too small");
+            }
+            return value.intValue();
         }
     });
 
@@ -64,7 +72,10 @@ public class Scalars {
             if (input instanceof StringValue) {
                 return Long.parseLong(((StringValue) input).getValue());
             } else if (input instanceof IntValue) {
-                return (long) ((IntValue) input).getValue();
+                BigInteger value = ((IntValue) input).getValue();
+                // Check if out of bounds.
+                Long.parseLong(value.toString());
+                return value.longValue();
             }
             return null;
         }
@@ -93,7 +104,7 @@ public class Scalars {
 
         @Override
         public Object parseLiteral(Object input) {
-            return ((FloatValue) input).getValue().floatValue();
+            return ((FloatValue) input).getValue().doubleValue();
         }
     });
 

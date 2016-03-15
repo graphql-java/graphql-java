@@ -7,7 +7,7 @@ import java.util.List;
 public class FragmentSpread extends AbstractNode implements Selection {
 
     private String name;
-    private List<Directive> directives = new ArrayList<>();
+    private List<Directive> directives = new ArrayList<Directive>();
 
     public FragmentSpread() {
     }
@@ -46,7 +46,7 @@ public class FragmentSpread extends AbstractNode implements Selection {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
+        List<Node> result = new ArrayList<Node>();
         result.addAll(directives);
         return result;
     }

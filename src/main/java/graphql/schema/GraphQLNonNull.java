@@ -7,7 +7,7 @@ import static graphql.Assert.assertNotNull;
 
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
-    private  GraphQLType wrappedType;
+    private GraphQLType wrappedType;
 
     public GraphQLNonNull(GraphQLType wrappedType) {
         assertNotNull(wrappedType, "wrappedType can't be null");

@@ -10,7 +10,7 @@ public class GraphQLDirective {
 
     private final String name;
     private final String description;
-    private final List<GraphQLArgument> arguments = new ArrayList<>();
+    private final List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
     private final boolean onOperation;
     private final boolean onFragment;
     private final boolean onField;
@@ -31,7 +31,7 @@ public class GraphQLDirective {
     }
 
     public List<GraphQLArgument> getArguments() {
-        return new ArrayList<>(arguments);
+        return new ArrayList<GraphQLArgument>(arguments);
     }
 
     public GraphQLArgument getArgument(String name) {
@@ -64,7 +64,7 @@ public class GraphQLDirective {
     public static class Builder {
 
         private String name;
-        private final List<GraphQLArgument> arguments = new ArrayList<>();
+        private final List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
         private String description;
         private boolean onOperation;
         private boolean onFragment;

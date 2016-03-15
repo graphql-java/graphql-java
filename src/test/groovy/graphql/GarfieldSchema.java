@@ -80,7 +80,7 @@ public class GarfieldSchema {
         }
 
         public List<Object> getPets() {
-            List<Object> pets = new ArrayList<>();
+            List<Object> pets = new ArrayList<Object>();
             pets.addAll(cats);
             pets.addAll(dogs);
             return pets;
