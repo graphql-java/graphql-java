@@ -1,6 +1,5 @@
 package graphql.relay;
 
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -38,6 +37,8 @@ public class SimpleListConnection implements DataFetcher {
         int begin = Math.max(afterOffset, -1) + 1;
         int beforeOffset = getOffsetFromCursor(environment.<String>getArgument("before"), edges.size());
         int end = Math.min(beforeOffset, edges.size());
+
+        if (begin > end) begin = end;
 
         edges = edges.subList(begin, end);
         if (edges.size() == 0) {
