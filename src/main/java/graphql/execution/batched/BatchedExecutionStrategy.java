@@ -209,7 +209,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private void handlePrimitives(List<GraphQLExecutionNodeValue> values, String fieldName,
                                   GraphQLType type) {
         for (GraphQLExecutionNodeValue value : values) {
-            Object coercedValue = coerce(type, value.getValue());
+            Object coercedValue = value.getValue() == null ? null : coerce(type, value.getValue());
             value.getResultContainer().putResult(fieldName, coercedValue);
         }
     }
