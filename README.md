@@ -40,7 +40,7 @@ to checkout the appropriate tag when looking for the version documented here.
 - [Development Build](#development-build)
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
-- [Feedback](#feedback)
+- [Related Projects](#related-projects)
 - [License](#license)
  
 
@@ -477,7 +477,12 @@ The only runtime dependencies are ANTLR and Slf4J.
 
 This implementation is based on the [js reference implementation](https://github.com/graphql/graphql-js).
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
- 
+
+### Related projects
+
+[graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
+
+[graphql-java-annotations](https://github.com/yrashk/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
 
 ### License
 
