@@ -115,8 +115,10 @@ class ScalarsTest extends Specification {
         Scalars.GraphQLFloat.getCoercing().parseLiteral(literal) == result
 
         where:
-        literal              | result
-        new FloatValue(42.3) | 42.3d
+        literal                | result
+        new FloatValue(42.3)   | 42.3d
+        new IntValue(42)       | 42.0d
+        new StringValue("foo") | null
     }
 
     @Unroll

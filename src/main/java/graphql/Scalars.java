@@ -100,7 +100,13 @@ public class Scalars {
 
         @Override
         public Object parseLiteral(Object input) {
-            return ((FloatValue) input).getValue().doubleValue();
+            if (input instanceof IntValue) {
+                return ((IntValue) input).getValue().doubleValue();
+            } else if (input instanceof FloatValue) {
+                return ((FloatValue) input).getValue().doubleValue();
+            } else {
+                return null;
+            }
         }
     });
 
