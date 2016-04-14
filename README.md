@@ -484,6 +484,8 @@ For example the StarWarSchema and the tests (among a lot of other things) are si
 
 [graphql-java-annotations](https://github.com/yrashk/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
 
+[graphql-java-servlet](https://github.com/yrashk/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
+
 ### License
 
 graphql-java is licensed under the MIT License. See [LICENSE](LICENSE.md) for details.
