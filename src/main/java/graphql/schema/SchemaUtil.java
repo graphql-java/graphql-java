@@ -169,13 +169,4 @@ public class SchemaUtil {
         }
         return resolvedTypes;
     }
-
-    void linkTypes(GraphQLSchema schema) {
-        Map<String, GraphQLType> typeMap = allTypes(schema, schema.getDictionary());
-        for (GraphQLType type : typeMap.values()) {
-            if (type instanceof GraphQLFieldsContainer) {
-                resolveTypeReferencesForFieldsContainer((GraphQLFieldsContainer) type, typeMap);
-            }
-        }
-    }
 }
