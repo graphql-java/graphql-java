@@ -146,7 +146,7 @@ public class SchemaUtil {
     }
 
     GraphQLType resolveTypeReference(GraphQLType type, Map<String, GraphQLType> typeMap) {
-        if (type instanceof GraphQLTypeReference) {
+        if (type instanceof GraphQLTypeReference || typeMap.containsKey(type.getName())) {
             GraphQLType resolvedType = typeMap.get(type.getName());
             if (resolvedType == null) {
                 throw new GraphQLException("type " + type.getName() + " not found in schema");
@@ -168,5 +168,14 @@ public class SchemaUtil {
             resolvedTypes.add(resolveTypeReference(type, typeMap));
         }
         return resolvedTypes;
+    }
+
+    void linkTypes(GraphQLSchema schema) {
+        Map<String, GraphQLType> typeMap = allTypes(schema, schema.getDictionary());
+        for (GraphQLType type : typeMap.values()) {
+            if (type instanceof GraphQLFieldsContainer) {
+                resolveTypeReferencesForFieldsContainer((GraphQLFieldsContainer) type, typeMap);
+            }
+        }
     }
 }
