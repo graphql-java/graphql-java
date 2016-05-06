@@ -4,19 +4,20 @@ package graphql.schema;
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.Assert.assertNotNull;
+import static graphql.Assert.*;
 
 public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
-    private List<GraphQLType> types = new ArrayList<GraphQLType>();
+    private List<GraphQLObjectType> types = new ArrayList<GraphQLObjectType>();
     private final TypeResolver typeResolver;
 
 
-    public GraphQLUnionType(String name, String description, List<GraphQLType> types, TypeResolver typeResolver) {
+    public GraphQLUnionType(String name, String description, List<GraphQLObjectType> types, TypeResolver typeResolver) {
         assertNotNull(name, "name can't be null");
         assertNotNull(types, "types can't be null");
+        assertNotEmpty(types, "A Union type must define one or more member types.");
         assertNotNull(typeResolver, "typeResolver can't be null");
         this.name = name;
         this.description = description;
@@ -25,8 +26,8 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     }
 
 
-    public List<GraphQLType> getTypes() {
-        return new ArrayList<GraphQLType>(types);
+    public List<GraphQLObjectType> getTypes() {
+        return new ArrayList<GraphQLObjectType>(types);
     }
 
     public TypeResolver getTypeResolver() {
@@ -49,7 +50,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLType> types = new ArrayList<GraphQLType>();
+        private List<GraphQLObjectType> types = new ArrayList<GraphQLObjectType>();
         private TypeResolver typeResolver;
 
         public Builder name(String name) {
@@ -69,14 +70,14 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         }
 
 
-        public Builder possibleType(GraphQLType type) {
+        public Builder possibleType(GraphQLObjectType type) {
             assertNotNull(type, "possible type can't be null");
             types.add(type);
             return this;
         }
 
-        public Builder possibleTypes(GraphQLType... type) {
-            for (GraphQLType graphQLType : type) {
+        public Builder possibleTypes(GraphQLObjectType... type) {
+            for (GraphQLObjectType graphQLType : type) {
                 possibleType(graphQLType);
             }
             return this;
