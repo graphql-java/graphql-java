@@ -90,7 +90,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         if (isPrimitive(fieldType)) {
             handlePrimitives(values, fieldName, fieldType);
             return Collections.emptyList();
-        } else if (isObject(fieldType)) {
+        } else if (isEnum(fieldType)) {
+            handleEnums(values, fieldName, fieldType);
+            return Collections.emptyList();
+        } if (isObject(fieldType)) {
             return handleObject(executionContext, values, fieldName, fields, fieldType);
         } else if (isList(fieldType)) {
             return handleList(executionContext, values, fieldName, fields, parentType, (GraphQLList) fieldType);
@@ -214,6 +217,19 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
     }
 
+    private void handleEnums(List<GraphQLExecutionNodeValue> values, String fieldName,
+                                  GraphQLType type) {
+        for (GraphQLExecutionNodeValue value : values) {
+            Object coercedValue;
+            if (value.getValue() == null) {
+                coercedValue = null;
+            } else {
+                coercedValue = coerce(type, value.getValue());
+            }
+            value.getResultContainer().putResult(fieldName, coercedValue);
+        }
+    }
+
     private Object coerce(GraphQLType type, Object value) {
         if (type instanceof GraphQLEnumType) {
             return ((GraphQLEnumType) type).getCoercing().serialize(value);
@@ -227,7 +243,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     private boolean isPrimitive(GraphQLType type) {
-        return type instanceof GraphQLScalarType || type instanceof GraphQLEnumType;
+        return type instanceof GraphQLScalarType;
+    }
+
+    private boolean isEnum(GraphQLType type) {
+        return type instanceof GraphQLEnumType;
     }
 
     private boolean isObject(GraphQLType type) {
