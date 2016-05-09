@@ -299,15 +299,6 @@ public class FunWithStringsSchemaFactory {
                 .description("Day of the week")
                 .build();
 
-        GraphQLObjectType enumObjectType = GraphQLObjectType.newObject()
-                .name("EnumObject")
-                .field(GraphQLFieldDefinition.newFieldDefinition()
-                       .name("value")
-                       .type(enumDayType)
-                       .dataFetcher(stringObjectValueFetcher)
-                       .build())
-                .build();
-
         GraphQLObjectType queryType = GraphQLObjectType.newObject()
                 .name("StringQuery")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
@@ -324,15 +315,11 @@ public class FunWithStringsSchemaFactory {
                         .build())
                 .name("EnumQuery")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
-                        .name("enum")
-                        .type(enumObjectType)
-                        .argument(GraphQLArgument.newArgument()
-                             .name("value")
-                             .type(Scalars.GraphQLString)
-                             .build())
+                        .name("nullEnum")
+                        .type(enumDayType)
                         .dataFetcher(new DataFetcher() {
                            @Override
-                           public Object get(DataFetchingEnvironment env) {return env.getArgument("value");}
+                           public Object get(DataFetchingEnvironment env) {return null;}
                         })
                         .build())
                 .build();

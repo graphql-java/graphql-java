@@ -241,10 +241,10 @@ class GraphqlExecutionSpec extends Specification {
 
         given:
         String query =
-                "{ enum(value: \"null\") { value } }";
+                "{ nullEnum }";
 
         Map<String, Object> expected = mapOf(
-                "enum", mapOf("value", null));
+                "nullEnum", null);
 
         expect:
         runTest(query, expected);
