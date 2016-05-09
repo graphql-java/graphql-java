@@ -1,5 +1,7 @@
 # graphql-java
 
+[![Join the chat at https://gitter.im/graphql-java/graphql-java](https://badges.gitter.im/graphql-java/graphql-java.svg)](https://gitter.im/graphql-java/graphql-java?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 #### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.
      
 
@@ -40,7 +42,7 @@ to checkout the appropriate tag when looking for the version documented here.
 - [Development Build](#development-build)
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
-- [Feedback](#feedback)
+- [Related Projects](#related-projects)
 - [License](#license)
  
 
@@ -477,7 +479,14 @@ The only runtime dependencies are ANTLR and Slf4J.
 
 This implementation is based on the [js reference implementation](https://github.com/graphql/graphql-js).
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
- 
+
+### Related projects
+
+[graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
+
+[graphql-java-annotations](https://github.com/yrashk/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
+
+[graphql-java-servlet](https://github.com/yrashk/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
 
 ### License
 

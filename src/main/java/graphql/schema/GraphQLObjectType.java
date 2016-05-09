@@ -17,9 +17,9 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     private final List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
 
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
-        assertNotNull(name, "name can't null");
-        assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
-        assertNotNull(interfaces, "interfaces can't null");
+        assertNotNull(name, "name can't be null");
+        assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
+        assertNotNull(interfaces, "interfaces can't be null");
         this.name = name;
         this.description = description;
         this.interfaces.addAll(interfaces);
