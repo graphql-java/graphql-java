@@ -31,7 +31,8 @@ class StarWarsIntrospectionTests extends Specification {
                                     [name: '__InputValue'],
                                     [name: 'Boolean'],
                                     [name: '__EnumValue'],
-                                    [name: '__Directive']]
+                                    [name: '__Directive'],
+                                    [name: '__DirectiveLocation']]
                 ]
 
         ];

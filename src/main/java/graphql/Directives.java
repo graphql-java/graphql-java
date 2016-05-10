@@ -5,6 +5,7 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNonNull;
 
 import static graphql.Scalars.GraphQLBoolean;
+import static graphql.introspection.Introspection.DirectiveLocation.*;
 import static graphql.schema.GraphQLArgument.newArgument;
 
 public class Directives {
@@ -17,9 +18,7 @@ public class Directives {
                     .type(new GraphQLNonNull(GraphQLBoolean))
                     .description("Included when true.")
                     .build())
-            .onOperation(false)
-            .onFragment(true)
-            .onField(true)
+            .validLocations(FRAGMENT_DEFINITION, FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
             .build();
 
     public static GraphQLDirective SkipDirective = GraphQLDirective.newDirective()
@@ -30,9 +29,7 @@ public class Directives {
                     .type(new GraphQLNonNull(GraphQLBoolean))
                     .description("Skipped when true.")
                     .build())
-            .onOperation(false)
-            .onFragment(true)
-            .onField(true)
+            .validLocations(FRAGMENT_DEFINITION, FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
             .build();
 
 

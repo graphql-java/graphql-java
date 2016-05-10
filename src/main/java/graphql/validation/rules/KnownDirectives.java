@@ -1,7 +1,9 @@
 package graphql.validation.rules;
 
 
+import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.*;
+import graphql.language.OperationDefinition.Operation;
 import graphql.schema.GraphQLDirective;
 import graphql.validation.*;
 
@@ -24,24 +26,27 @@ public class KnownDirectives extends AbstractRule {
         }
 
         Node ancestor = ancestors.get(ancestors.size() - 1);
-        if (ancestor instanceof OperationDefinition && !graphQLDirective.isOnOperation()) {
-            String message = String.format("Directive %s not allowed here", directive.getName());
-            addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), message));
-
-        }
-        if (ancestor instanceof Field && !graphQLDirective.isOnField()) {
-            String message = String.format("Directive %s not allowed here", directive.getName());
-            addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), message));
-
-        }
-
-        if ((ancestor instanceof FragmentSpread
-                || ancestor instanceof FragmentDefinition
-                || ancestor instanceof InlineFragment)
-                && !graphQLDirective.isOnFragment()) {
+        if (hasInvalidLocation(graphQLDirective, ancestor)) {
             String message = String.format("Directive %s not allowed here", directive.getName());
             addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), message));
         }
+    }
 
+    private boolean hasInvalidLocation(GraphQLDirective directive, Node ancestor) {
+        if (ancestor instanceof OperationDefinition) {
+            Operation operation = ((OperationDefinition) ancestor).getOperation();
+            return Operation.QUERY.equals(operation) ?
+                    !directive.validLocations().contains(DirectiveLocation.QUERY) :
+                    !directive.validLocations().contains(DirectiveLocation.MUTATION);
+        } else if (ancestor instanceof Field) {
+            return !directive.validLocations().contains(DirectiveLocation.FIELD);
+        } else if (ancestor instanceof FragmentSpread) {
+            return  !directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD);
+        } else if (ancestor instanceof FragmentDefinition) {
+            return !directive.validLocations().contains(DirectiveLocation.FRAGMENT_DEFINITION);
+        } else if (ancestor instanceof InlineFragment) {
+            return !directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT);
+        }
+        return true;
     }
 }
