@@ -13,6 +13,7 @@ class SchemaUtilTest extends Specification {
         when:
         Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema, Collections.emptySet())
         then:
+        types.size() == 15
         types == [(droidType.name)                 : droidType,
                   (humanType.name)                 : humanType,
                   (queryType.name)                 : queryType,
