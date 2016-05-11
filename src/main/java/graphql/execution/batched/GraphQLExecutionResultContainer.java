@@ -9,6 +9,9 @@ public abstract class GraphQLExecutionResultContainer {
 
     /**
      * Creates a child datum which is linked through the results container to this parent.
+     * @param fieldName fieldName
+     * @param value value
+     * @return datum
      */
     public GraphQLExecutionNodeDatum createAndPutChildDatum(String fieldName, Object value) {
         Map<String, Object> map = new HashMap<String, Object>();
@@ -24,6 +27,8 @@ public abstract class GraphQLExecutionResultContainer {
 
     /**
      * Inserts this result into the parent for the specified field.
+     * @param fieldName fieldName
+     * @param value value
      */
     abstract void putResult(String fieldName, Object value);
 

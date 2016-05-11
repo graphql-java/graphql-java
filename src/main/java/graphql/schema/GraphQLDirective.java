@@ -52,6 +52,7 @@ public class GraphQLDirective {
 
     /**
      * @deprecated  Use {@link #validLocations()}
+     * @return onOperation
      */
     @Deprecated
     public boolean isOnOperation() {
@@ -60,6 +61,7 @@ public class GraphQLDirective {
 
     /**
      * @deprecated  Use {@link #validLocations()}
+     * @return onFragment
      */
     @Deprecated
     public boolean isOnFragment() {
@@ -68,6 +70,7 @@ public class GraphQLDirective {
 
     /**
      * @deprecated  Use {@link #validLocations()}
+     * @return onField
      */
     @Deprecated
     public boolean isOnField() {
@@ -115,7 +118,9 @@ public class GraphQLDirective {
         }
 
         /**
-         * @deprecated  Use {@link graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
+         * @deprecated  Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
+         * @param onOperation onOperation
+         * @return this builder
          */
         @Deprecated
         public Builder onOperation(boolean onOperation) {
@@ -124,7 +129,9 @@ public class GraphQLDirective {
         }
 
         /**
-         * @deprecated  Use {@link graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
+         * @deprecated  Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
+         * @param onFragment onFragment
+         * @return this builder
          */
         @Deprecated
         public Builder onFragment(boolean onFragment) {
@@ -133,7 +140,9 @@ public class GraphQLDirective {
         }
 
         /**
-         * @deprecated  Use {@link graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
+         * @deprecated  Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
+         * @param onField onField
+         * @return this builder
          */
         @Deprecated
         public Builder onField(boolean onField) {

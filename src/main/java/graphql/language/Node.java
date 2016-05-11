@@ -12,8 +12,8 @@ public interface Node {
     /**
      * Compares just the content and not the children.
      *
-     * @param node
-     * @return
+     * @param node the other node to compare to
+     * @return isEqualTo
      */
     boolean isEqualTo(Node node);
 }
