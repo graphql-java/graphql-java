@@ -1,15 +1,10 @@
 package graphql.schema
 
 import graphql.NestedInputSchema
-import graphql.Scalars
 import graphql.introspection.Introspection
 import spock.lang.Specification
 
-import java.util.Collections;
-
-import static graphql.Scalars.GraphQLBoolean
-import static graphql.Scalars.GraphQLInt
-import static graphql.Scalars.GraphQLString
+import static graphql.Scalars.*
 import static graphql.StarWarsSchema.*
 
 class SchemaUtilTest extends Specification {
@@ -18,6 +13,7 @@ class SchemaUtilTest extends Specification {
         when:
         Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema, Collections.emptySet())
         then:
+        types.size() == 15
         types == [(droidType.name)                 : droidType,
                   (humanType.name)                 : humanType,
                   (queryType.name)                 : queryType,
@@ -31,6 +27,7 @@ class SchemaUtilTest extends Specification {
                   (Introspection.__InputValue.name): Introspection.__InputValue,
                   (Introspection.__EnumValue.name) : Introspection.__EnumValue,
                   (Introspection.__Directive.name) : Introspection.__Directive,
+                  (Introspection.__DirectiveLocation.name) : Introspection.__DirectiveLocation,
                   (GraphQLBoolean.name)            : GraphQLBoolean]
     }
 
@@ -51,6 +48,7 @@ class SchemaUtilTest extends Specification {
                   (Introspection.__InputValue.name): Introspection.__InputValue,
                   (Introspection.__EnumValue.name) : Introspection.__EnumValue,
           (Introspection.__Directive.name) : Introspection.__Directive,
+          (Introspection.__DirectiveLocation.name) : Introspection.__DirectiveLocation,
           (GraphQLBoolean.name)            : GraphQLBoolean];
         then:
         types.keySet() == expected.keySet()
