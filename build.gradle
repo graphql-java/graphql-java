@@ -74,16 +74,16 @@ publishing {
                     resolveStrategy = Closure.DELEGATE_FIRST
                     name 'graphql-java'
                     description 'GraphqL Java'
-                    url "https://github.com/andimarek/graphql-java"
+                    url "https://github.com/graphql-java/graphql-java"
                     scm {
-                        url "https://github.com/andimarek/graphql-java"
-                        connection "https://github.com/andimarek/graphql-java"
-                        developerConnection "https://github.com/andimarek/graphql-java"
+                        url "https://github.com/graphql-java/graphql-java"
+                        connection "https://github.com/graphql-java/graphql-java"
+                        developerConnection "https://github.com/graphql-java/graphql-java"
                     }
                     licenses {
                         license {
                             name 'MIT'
-                            url 'https://github.com/andimarek/graphql-java/blob/master/LICENSE.md'
+                            url 'https://github.com/graphql-java/graphql-java/blob/master/LICENSE.md'
                             distribution 'repo'
                         }
                     }
@@ -110,7 +110,7 @@ bintray {
         name = 'graphql-java'
         desc = 'GraphQL in Java'
         licenses = ['MIT']
-        vcsUrl = 'https://github.com/andimarek/graphql-java'
+        vcsUrl = 'https://github.com/graphql-java/graphql-java'
     }
 }
 
