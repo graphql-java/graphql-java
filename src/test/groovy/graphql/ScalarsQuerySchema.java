@@ -25,6 +25,25 @@ public class ScalarsQuerySchema {
                     .staticValue(BigDecimal.valueOf(1234.0))
                     .build())
             .field(newFieldDefinition()
+                    .name("doubleNaN")
+                    .type(Scalars.GraphQLFloat)
+                    .staticValue(Double.NaN)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("doubleNaNInput")
+                    .type(Scalars.GraphQLFloat)
+                    .argument(newArgument()
+                            .name("input")
+                            .type(new GraphQLNonNull(Scalars.GraphQLFloat))
+                            .build())
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            return environment.getArgument("input");
+                        }
+                    })
+                    .build())
+            .field(newFieldDefinition()
                     .name("bigIntegerInput")
                     .type(Scalars.GraphQLBigInteger)
                     .argument(newArgument()

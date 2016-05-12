@@ -47,4 +47,22 @@ class ScalarsQueryTest extends Specification {
         then:
         result == expected
     }
+
+    def 'Double NaN Not a Number '() {
+        given:
+        def query = """
+        query DoubleNaN {
+          doubleNaN
+        }
+        """
+        def expected = [
+                doubleNaN: null
+        ]
+
+        when:
+        def result = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema).execute(query).data
+
+        then:
+        result == expected
+    }
 }
