@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.batched.BatchedExecutionStrategy
 import spock.lang.Specification
 
 class ScalarsQueryTest extends Specification {
@@ -46,5 +47,25 @@ class ScalarsQueryTest extends Specification {
 
         then:
         result == expected
+    }
+
+    def 'Double NaN Not a Number '() {
+        given:
+        def query = """
+        query DoubleNaN {
+          doubleNaN
+        }
+        """
+        def expected = [
+                doubleNaN: null
+        ]
+
+        when:
+        def result = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema).execute(query).data
+        def resultBatched = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema, new BatchedExecutionStrategy()).execute(query).data
+
+        then:
+        result == expected
+        resultBatched == expected
     }
 }

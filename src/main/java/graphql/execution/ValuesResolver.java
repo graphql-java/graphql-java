@@ -122,10 +122,7 @@ public class ValuesResolver {
             return variables.get(((VariableReference) inputValue).getName());
         }
         if (type instanceof GraphQLScalarType) {
-            //6.6.1 http://facebook.github.io/graphql/#sec-Field-entries
-            Object value = ((GraphQLScalarType) type).getCoercing().parseLiteral(inputValue);
-            if (value instanceof Double && ((Double) value).isNaN()) return null;
-            return value;
+            return ((GraphQLScalarType) type).getCoercing().parseLiteral(inputValue);
         }
         if (type instanceof GraphQLNonNull) {
             return coerceValueAst(((GraphQLNonNull) type).getWrappedType(), inputValue, variables);
