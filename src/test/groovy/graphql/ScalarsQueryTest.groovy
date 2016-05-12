@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.batched.BatchedExecutionStrategy
 import spock.lang.Specification
 
 class ScalarsQueryTest extends Specification {
@@ -61,8 +62,10 @@ class ScalarsQueryTest extends Specification {
 
         when:
         def result = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema).execute(query).data
+        def resultBatched = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema, new BatchedExecutionStrategy()).execute(query).data
 
         then:
         result == expected
+        resultBatched == expected
     }
 }
