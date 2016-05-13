@@ -55,6 +55,15 @@ allprojects {
     tasks.withType(Javadoc) {
         exclude('**/antlr/**')
     }
+
+    tasks.withType(JavaCompile) {
+        doFirst {
+            if (sourceCompatibility == '1.6' && System.env.JDK6_HOME != null) {
+                options.bootClasspath = "$System.env.JDK6_HOME/jre/lib/rt.jar"
+            }
+        }
+    }
+
 }
 
 publishing {
