@@ -455,8 +455,6 @@ The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [he
 
 The only runtime dependencies are ANTLR and Slf4J.
 
-**NOTE**: Though project output is Java 6 compliant you will need a JDK 7 to build the project (see [#135](https://github.com/graphql-java/graphql-java/issues/135) for more info).
- 
 ### Acknowledgments
 
 This implementation is based on the [js reference implementation](https://github.com/graphql/graphql-js).
