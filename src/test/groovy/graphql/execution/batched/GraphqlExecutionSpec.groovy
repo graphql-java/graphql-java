@@ -237,6 +237,20 @@ class GraphqlExecutionSpec extends Specification {
 
     }
 
+    def "Legal null value for enum"() {
+
+        given:
+        String query =
+                "{ nullEnum }";
+
+        Map<String, Object> expected = mapOf(
+                "nullEnum", null);
+
+        expect:
+        runTest(query, expected);
+
+    }
+
     def "Illegal null value for primitives"() {
 
         given:

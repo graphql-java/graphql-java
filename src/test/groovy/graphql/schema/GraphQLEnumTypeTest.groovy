@@ -38,6 +38,21 @@ class GraphQLEnumTypeTest extends Specification {
         enumType.getCoercing().serialize(12) == null
     }
 
+    def "serialize returns NULL for null and null being an known value"() {
+        setup:
+        def enumType = newEnum().name("TestEnum")
+                .value("NAME", 42)
+                .value("NULL", null)
+                .build();
+        expect:
+        enumType.getCoercing().serialize(null) == "NULL"
+    }
+
+    def "serialize returns null for null value "() {
+        expect:
+        enumType.getCoercing().serialize(null) == null
+    }
+
     def "duplicate value definition fails"() {
         when:
         newEnum().name("AnotherTestEnum")

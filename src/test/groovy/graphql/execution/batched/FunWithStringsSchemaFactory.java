@@ -4,6 +4,7 @@ import graphql.Scalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
@@ -290,6 +291,14 @@ public class FunWithStringsSchemaFactory {
 
                 .build();
 
+
+        GraphQLEnumType enumDayType = GraphQLEnumType.newEnum()
+                .name("Day")
+                .value("MONDAY")
+                .value("TUESDAY")
+                .description("Day of the week")
+                .build();
+
         GraphQLObjectType queryType = GraphQLObjectType.newObject()
                 .name("StringQuery")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
@@ -302,6 +311,15 @@ public class FunWithStringsSchemaFactory {
                         .dataFetcher(new DataFetcher() {
                             @Override
                             public Object get(DataFetchingEnvironment env) {return env.getArgument("value");}
+                        })
+                        .build())
+                .name("EnumQuery")
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("nullEnum")
+                        .type(enumDayType)
+                        .dataFetcher(new DataFetcher() {
+                           @Override
+                           public Object get(DataFetchingEnvironment env) {return null;}
                         })
                         .build())
                 .build();
