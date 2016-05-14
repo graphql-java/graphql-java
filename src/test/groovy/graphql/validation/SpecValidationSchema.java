@@ -71,7 +71,7 @@ public class SpecValidationSchema {
             .name("Human")
             .field(new GraphQLFieldDefinition(
                     "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
-            .withInterface(sentient)
+            .withInterface(SpecValidationSchema.sentient)
             .build();
             
     public static final GraphQLObjectType alien = GraphQLObjectType.newObject()
@@ -80,7 +80,7 @@ public class SpecValidationSchema {
                     "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
             .field(new GraphQLFieldDefinition(
                     "homePlanet", null, Scalars.GraphQLString, new FieldDataFetcher("homePlanet"), Collections.<GraphQLArgument>emptyList(), null))
-            .withInterface(sentient)
+            .withInterface(SpecValidationSchema.sentient)
             .build();
             
     public static final GraphQLArgument dogCommandArg = GraphQLArgument.newArgument()
@@ -114,7 +114,7 @@ public class SpecValidationSchema {
                     Arrays.asList(atOtherHomesArg), null))
             .field(new GraphQLFieldDefinition(
                     "owner", null, human, new FieldDataFetcher("owner"), Collections.<GraphQLArgument>emptyList(), null))
-            .withInterface(pet)
+            .withInterface(SpecValidationSchema.pet)
             .build();
             
     public static final GraphQLObjectType cat = GraphQLObjectType.newObject()
@@ -128,7 +128,7 @@ public class SpecValidationSchema {
             .field(new GraphQLFieldDefinition(
                     "doesKnowCommand", null, new GraphQLNonNull(Scalars.GraphQLBoolean), new FieldDataFetcher("doesKnowCommand"),
                     Arrays.asList(catCommandArg), null))
-            .withInterface(pet)
+            .withInterface(SpecValidationSchema.pet)
             .build();
             
     public static final GraphQLUnionType catOrDog = GraphQLUnionType.newUnionType()

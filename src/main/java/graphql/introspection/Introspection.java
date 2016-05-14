@@ -172,7 +172,7 @@ public class Introspection {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
-            boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             if (type instanceof GraphQLFieldsContainer) {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
                 List<GraphQLFieldDefinition> fieldDefinitions = fieldsContainer.getFieldDefinitions();
@@ -216,7 +216,7 @@ public class Introspection {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
-            boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             if (type instanceof GraphQLEnumType) {
                 List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
                 if (includeDeprecated) return values;
