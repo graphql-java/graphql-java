@@ -24,20 +24,24 @@ public class Validator {
 
     private List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         List<AbstractRule> rules = new ArrayList<AbstractRule>();
+        
         ArgumentsOfCorrectType argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, validationErrorCollector);
         rules.add(argumentsOfCorrectType);
-        VariableDefaultValuesOfCorrectType variableDefaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, validationErrorCollector);
-        rules.add(variableDefaultValuesOfCorrectType);
+        
         FieldsOnCorrectType fieldsOnCorrectType = new FieldsOnCorrectType(validationContext, validationErrorCollector);
         rules.add(fieldsOnCorrectType);
         FragmentsOnCompositeType fragmentsOnCompositeType = new FragmentsOnCompositeType(validationContext, validationErrorCollector);
         rules.add(fragmentsOnCompositeType);
+        
         KnownArgumentNames knownArgumentNames = new KnownArgumentNames(validationContext, validationErrorCollector);
         rules.add(knownArgumentNames);
+        KnownDirectives knownDirectives = new KnownDirectives(validationContext, validationErrorCollector);
+        rules.add(knownDirectives);
         KnownFragmentNames knownFragmentNames = new KnownFragmentNames(validationContext, validationErrorCollector);
         rules.add(knownFragmentNames);
         KnownTypeNames knownTypeNames = new KnownTypeNames(validationContext, validationErrorCollector);
         rules.add(knownTypeNames);
+        
         NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, validationErrorCollector);
         rules.add(noFragmentCycles);
         NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, validationErrorCollector);
@@ -46,18 +50,25 @@ public class Validator {
         rules.add(noUnusedFragments);
         NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, validationErrorCollector);
         rules.add(noUnusedVariables);
+        
         OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, validationErrorCollector);
         rules.add(overlappingFieldsCanBeMerged);
+        
         PossibleFragmentSpreads possibleFragmentSpreads = new PossibleFragmentSpreads(validationContext, validationErrorCollector);
         rules.add(possibleFragmentSpreads);
         ProvidedNonNullArguments providedNonNullArguments = new ProvidedNonNullArguments(validationContext, validationErrorCollector);
         rules.add(providedNonNullArguments);
+        
         ScalarLeafs scalarLeafs = new ScalarLeafs(validationContext, validationErrorCollector);
         rules.add(scalarLeafs);
+        
+        VariableDefaultValuesOfCorrectType variableDefaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, validationErrorCollector);
+        rules.add(variableDefaultValuesOfCorrectType);
         VariablesAreInputTypes variablesAreInputTypes = new VariablesAreInputTypes(validationContext, validationErrorCollector);
         rules.add(variablesAreInputTypes);
         VariableTypesMatchRule variableTypesMatchRule = new VariableTypesMatchRule(validationContext, validationErrorCollector);
         rules.add(variableTypesMatchRule);
+        
         return rules;
     }
 }

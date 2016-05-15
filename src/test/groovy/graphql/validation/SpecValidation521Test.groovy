@@ -7,12 +7,12 @@ import graphql.validation.Validator
 import spock.lang.Specification
 
 /**
- * validation examples used in the spec in section 5.2.1
+ * validation examples used in the spec in given section
  * http://facebook.github.io/graphql/#sec-Validation
  * @author dwinsor
  *        
  */
-class SpecValidationTest extends SpecValidationBase {
+class SpecValidation521Test extends SpecValidationBase {
 
     def '5.2.1 Field Selections on ... fieldNotDefined'() {
         def query = """
