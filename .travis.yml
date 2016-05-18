@@ -2,7 +2,5 @@ sudo: required
 services:
   - docker
 script:
-  - docker create -v /usr/lib/jvm/java-6-openjdk-amd64/jre/lib --name java6-rt java:6 /bin/true
-  - docker run -it --rm --volumes-from java6-rt -v `pwd .`:/build -e JDK6_HOME=/usr/lib/jvm/java-6-openjdk-amd64 -e BINTRAY_USER=$BINTRAY_USER -e BINTRAY_API_KEY=$BINTRAY_API_KEY -w /build java:8 bash -c "./gradlew assemble && ./gradlew check && ./gradlew bintrayUpload -x check --info"
-
+  - ./travis-build.sh
 
