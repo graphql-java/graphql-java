@@ -1,7 +1,7 @@
 package graphql.execution.batched;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,7 +14,7 @@ public abstract class GraphQLExecutionResultContainer {
      * @return datum
      */
     public GraphQLExecutionNodeDatum createAndPutChildDatum(String fieldName, Object value) {
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
         putResult(fieldName, map);
         return new GraphQLExecutionNodeDatum(map, value);
     }

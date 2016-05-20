@@ -396,4 +396,31 @@ class GraphqlExecutionSpec extends Specification {
     }
 
 
+    def "Return value ordering"() {
+        given:
+        String query = """
+                { string(value: "TS") {
+                        append(text:"1") {
+                            v1:value
+                            v2:nonNullValue
+                            v3:veryNonNullValue
+                            v4:value
+                            v5:nonNullValue
+                            v6:veryNonNullValue
+                            v7:value
+                            v8:nonNullValue
+                            v9:veryNonNullValue
+                        }
+                    }
+                }"""
+
+        expect:
+        Arrays.asList(this.graphQLSimple, this.graphQLBatchedButUnbatched,this.graphQLBatchedValue).each { GraphQL graphQL ->
+            Map<String, Object> response = graphQL.execute(query).getData() as Map<String, Object>;
+            Map<String, Object> values = (response.get("string") as Map<String, Object>).get("append") as Map<String, Object>;
+            assert Arrays.asList("v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9") == values.keySet().toList();
+        }
+    }
+
+
 }
