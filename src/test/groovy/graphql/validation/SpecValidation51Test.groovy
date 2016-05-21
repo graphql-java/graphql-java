@@ -8,7 +8,7 @@ import spock.lang.Requires
 import spock.lang.Specification
 
 /**
- * validation examples used in the spec in section 5.1
+ * validation examples used in the spec in given section
  * http://facebook.github.io/graphql/#sec-Validation
  * @author dwinsor
  *        
