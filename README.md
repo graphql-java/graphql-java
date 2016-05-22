@@ -14,7 +14,7 @@ and the JavaScript [reference implementation](https://github.com/graphql/graphql
     
 The versioning follows [Semantic Versioning](http://semver.org) since `2.0.0`. 
 
-**Hint**: This README documents the latest release, but `master` contains the current development version. So please make sure 
+**Hint**: This README documents the latest release, but `master` contains the [current development version](#development-build). So please make sure
 to checkout the appropriate tag when looking for the version documented here.
 
 [![Build Status](https://travis-ci.org/graphql-java/graphql-java.svg?branch=master)](https://travis-ci.org/graphql-java/graphql-java)
@@ -37,11 +37,11 @@ to checkout the appropriate tag when looking for the version documented here.
     - [Execution strategies](#execution-strategies)
     - [Logging](#logging)
     - [Relay Support](#relay-support)
-- [Contributions](#contributions)
 - [Build it](#build-it)
 - [Development Build](#development-build)
-- [Details](#details)
-- [Acknowledgment](#acknowledgment)
+    - [Details](#details)
+- [Acknowledgments](#acknowledgments)
+- [Contributions](#contributions)
 - [Related Projects](#related-projects)
 - [License](#license)
  
@@ -365,22 +365,31 @@ The `grapqhl-java` root Logger name is `graphql`.
 There is a very basic Relay support included. Please look at https://github.com/andimarek/todomvc-relay-java for an example
 project how to use it.
 
-#### Contributions
 
-Every contribution to make this project better is welcome: Thank you! 
+### Build it
 
-In order to make this a pleasant as possible for everybody involved, here are some tips:
+Just clone the repo and type
 
-- Respect the [Code of Conduct](#code-of-conduct)
-- Before opening an Issue to report a bug, please try the latest development version. It can happen that the problem is already solved.
-- Please use  Markdown to format your comments properly. If you are not familiar with that: [Getting started with writing and formatting on GitHub](https://help.github.com/articles/getting-started-with-writing-and-formatting-on-github/)
-- For Pull Requests:
-  - Here are some [general tips](https://github.com/blog/1943-how-to-write-the-perfect-pull-request)
-  - Please be a as focused and clear as possible  and don't mix concerns. This includes refactorings mixed with bug-fixes/features, see [Open Source Contribution Etiquette](http://tirania.org/blog/archive/2010/Dec-31.html) 
-  - It would be good to add a automatic test. All tests are written in [Spock](http://spockframework.github.io/spock/docs/1.0/index.html).
-   
+```sh
+./gradlew build
+```
 
-#### Development Build
+In `build/libs` you will find the jar file.
+
+Running the tests:
+
+```sh
+./gradlew test
+```
+
+Installing in the local Maven repository:
+
+```sh
+./gradlew install
+```
+
+
+### Development Build
 
 The latest development build is available on Bintray.
 
@@ -438,47 +447,35 @@ Dependency:
 ```
 
 
-
-
-
-
-
-### Build it 
-
-Just clone the repo and type 
-
-```sh
-./gradlew build
-```
-
-In `build/libs` you will find the jar file.
-
-Running the tests:
-
-```sh
-./gradlew test
-```
-
-Installing in the local Maven repository:
-
-```sh
-./gradlew install
-```
-
-
-
-### Details
+#### Details
 
 The implementation is in Java 6, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
 
 The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
 
 The only runtime dependencies are ANTLR and Slf4J.
- 
-### Acknowledgment
+
+### Acknowledgments
 
 This implementation is based on the [js reference implementation](https://github.com/graphql/graphql-js).
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
+
+Currently the project is in the process of supporting the latest [GraphQL specification of April 2016](https://github.com/facebook/graphql/releases/tag/April2016).
+
+### Contributions
+
+Every contribution to make this project better is welcome: Thank you!
+
+In order to make this a pleasant as possible for everybody involved, here are some tips:
+
+- Respect the [Code of Conduct](#code-of-conduct)
+- Before opening an Issue to report a bug, please try the latest development version. It can happen that the problem is already solved.
+- Please use  Markdown to format your comments properly. If you are not familiar with that: [Getting started with writing and formatting on GitHub](https://help.github.com/articles/getting-started-with-writing-and-formatting-on-github/)
+- For Pull Requests:
+  - Here are some [general tips](https://github.com/blog/1943-how-to-write-the-perfect-pull-request)
+  - Please be a as focused and clear as possible  and don't mix concerns. This includes refactorings mixed with bug-fixes/features, see [Open Source Contribution Etiquette](http://tirania.org/blog/archive/2010/Dec-31.html)
+  - It would be good to add a automatic test. All tests are written in [Spock](http://spockframework.github.io/spock/docs/1.0/index.html).
+
 
 ### Related projects
 
@@ -492,7 +489,7 @@ For example the StarWarSchema and the tests (among a lot of other things) are si
 
 graphql-java is licensed under the MIT License. See [LICENSE](LICENSE.md) for details.
 
-Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/andimarek/graphql-java/graphs/contributors)
+Copyright (c) 2015-2016, Andreas Marek and [Contributors](https://github.com/andimarek/graphql-java/graphs/contributors)
 
 [graphql-js License](https://github.com/graphql/graphql-js/blob/master/LICENSE)
 
