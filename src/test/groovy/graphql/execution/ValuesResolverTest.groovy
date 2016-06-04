@@ -57,9 +57,14 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
 
         when:
-        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: [name: 'a', id: 123]])
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
         then:
-        resolvedValues['variable'] == [name: 'a', id: 123]
+        resolvedValues['variable'] == outputValue
+        where:
+        inputValue              || outputValue
+        [name: 'a', id: 123]    || [name: 'a', id: 123]
+        [id: 123]               || [id: 123]
+        [name: 'x']             || [name: 'x']
     }
 
     def "getVariableValues: simple value gets resolved to a list when the type is a List"() {
@@ -222,7 +227,6 @@ class ValuesResolverTest extends Specification {
                 .defaultValue("defaultString")
                 .build())
                 .build()
-        def inputValue = [intKey: 10]
 
         def schema = TestUtil.schemaWithInputType(inputObjectType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
@@ -231,8 +235,13 @@ class ValuesResolverTest extends Specification {
         def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
 
         then:
-        resolvedValues['variable'].stringKey == 'defaultString'
-        resolvedValues['variable'].intKey == 10
+        resolvedValues['variable'] == outputValue
+
+        where:
+        inputValue                    || outputValue
+        [intKey: 10]                  || [intKey: 10, stringKey: 'defaultString']
+        [intKey: 10, stringKey: null] || [intKey: 10, stringKey: 'defaultString']
+
     }
 
     def "getVariableInput: Missing InputObject fields which are non-null cause error"() {
@@ -249,7 +258,6 @@ class ValuesResolverTest extends Specification {
                 .type(new GraphQLNonNull(GraphQLString))
                 .build())
                 .build()
-        def inputValue = [intKey: 10]
 
         def schema = TestUtil.schemaWithInputType(inputObjectType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
@@ -259,5 +267,10 @@ class ValuesResolverTest extends Specification {
 
         then:
         thrown(GraphQLException)
+
+        where:
+        inputValue                        | _
+        [intKey: 10]                      | _
+        [intKey: 10, requiredField: null] | _
     }
 }

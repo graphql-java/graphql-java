@@ -90,11 +90,17 @@ public class ValuesResolver {
     private Object coerceValueForInputObjectField(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
         for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
-            Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
-            result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
-
+            if (input.containsKey(inputField.getName()) || alwaysHasValue(inputField)) {
+                Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
+                result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
+            }
         }
         return result;
+    }
+
+    private boolean alwaysHasValue(GraphQLInputObjectField inputField) {
+        return inputField.getDefaultValue() != null
+                || inputField.getType() instanceof GraphQLNonNull;
     }
 
     private Object coerceValueForScalar(GraphQLScalarType graphQLScalarType, Object value) {
