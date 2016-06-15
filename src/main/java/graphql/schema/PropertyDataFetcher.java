@@ -27,14 +27,31 @@ public class PropertyDataFetcher implements DataFetcher {
     }
 
     private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType) {
-        String prefix = isBooleanProperty(outputType) ? "is" : "get";
+        boolean isBooleanProperty = isBooleanProperty(outputType);
+        String prefix = isBooleanProperty ? "is" : "get";
+        try {
+            return getPropertyViaGetterUsingPrefix(object, outputType, prefix);
+        } catch (NoSuchMethodException e) {
+            if (isBooleanProperty){
+                try {
+                    return getPropertyViaGetterUsingPrefix(object, outputType, "get");
+                } catch (NoSuchMethodException e1) {
+                    return getPropertyViaFieldAccess(object, outputType);
+                }
+            }else{
+                return getPropertyViaFieldAccess(object, outputType);
+            }
+        }
+    }
+
+    private Object getPropertyViaGetterUsingPrefix(Object object, GraphQLOutputType outputType, String prefix) throws NoSuchMethodException {
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         try {
             Method method = object.getClass().getMethod(getterName);
             return method.invoke(object);
 
         } catch (NoSuchMethodException e) {
-            return getFieldValue(object, outputType);
+            throw e;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
@@ -50,7 +67,7 @@ public class PropertyDataFetcher implements DataFetcher {
         return false;
     }
 
-    private Object getFieldValue(Object object, GraphQLOutputType outputType) {
+    private Object getPropertyViaFieldAccess(Object object, GraphQLOutputType outputType) {
         try {
             Field field = object.getClass().getField(propertyName);
             return field.get(object);
