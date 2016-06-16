@@ -187,7 +187,11 @@ public class Relay {
                         .name("input")
                         .type(new GraphQLNonNull(inputObjectType))
                         .build())
-                .dataFetcher(dataFetcher)
+                .dataFetcher(env -> {
+                    Map<String, Object> data = (Map<String, Object>) dataFetcher.get(env);
+                    data.put("clientMutationId", ((Map<String, Object>) env.getArguments().get("input")).get("clientMutationId"));
+                    return data;
+                })
                 .build();
     }
 
