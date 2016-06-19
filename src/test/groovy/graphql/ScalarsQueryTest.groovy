@@ -77,6 +77,25 @@ class ScalarsQueryTest extends Specification {
         resultBatched.data == expected
         resultBatched.errors.empty
     }
+
+    def 'Escaped characters are handled'() {
+        given:
+        def query = """
+        query {
+          stringInput(input: "test \\" \\/ \\b \\f \\n \\r \\t \\u12Aa")
+        }
+        """
+        def expected = [
+                stringInput: "test \" / \b \f \n \r \t \u12Aa",
+        ]
+
+        when:
+        def result = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema).execute(query)
+
+        then:
+        result.data == expected
+        result.errors.empty == true
+    }
     
     @Unroll
     def "FooBar String cannot be cast to #number"() {
