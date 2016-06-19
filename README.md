@@ -365,6 +365,28 @@ The `grapqhl-java` root Logger name is `graphql`.
 There is a very basic Relay support included. Please look at https://github.com/andimarek/todomvc-relay-java for an example
 project how to use it.
 
+Relay sends queries to the GraphQL server as JSON containing a `query` field and a `variables` field. The `query` field is a JSON string,
+and the `variables` field is a map of variable definitions. A relay-compatible server will need to parse this JSON and pass the `query`
+string to this library as the query and the `variables` map as the third argument to `execute` as shown below. This is the implementation
+from the [todomvc-relay-java](https://github.com/andimarek/todomvc-relay-java) example.
+
+```java
+@RequestMapping(value = "/graphql", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+@ResponseBody
+public Object executeOperation(@RequestBody Map body) {
+    String query = (String) body.get("query");
+    Map<String, Object> variables = (Map<String, Object>) body.get("variables");
+    ExecutionResult executionResult = graphql.execute(query, (Object) null, variables);
+    Map<String, Object> result = new LinkedHashMap<>();
+    if (executionResult.getErrors().size() > 0) {
+        result.put("errors", executionResult.getErrors());
+        log.error("Errors: {}", executionResult.getErrors());
+    }
+    result.put("data", executionResult.getData());
+    return result;
+}
+```
+
 #### Contributions
 
 Every contribution to make this project better is welcome: Thank you! 
