@@ -87,6 +87,9 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
     private void enterImpl(InlineFragment inlineFragment) {
+        if (inlineFragment.getTypeCondition() == null) {
+            return;
+        }
         GraphQLType type = schema.getType(inlineFragment.getTypeCondition().getName());
         addType((GraphQLOutputType) type);
     }
@@ -153,7 +156,9 @@ public class TraversalContext implements QueryLanguageVisitor {
         } else if (node instanceof Directive) {
             directive = null;
         } else if (node instanceof InlineFragment) {
-            outputTypeStack.remove(outputTypeStack.size() - 1);
+            if (((InlineFragment) node).getTypeCondition() != null) {
+                outputTypeStack.remove(outputTypeStack.size() - 1);
+            }
         } else if (node instanceof FragmentDefinition) {
             outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof VariableDefinition) {
