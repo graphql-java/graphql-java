@@ -3,6 +3,7 @@
 [![Join the chat at https://gitter.im/graphql-java/graphql-java](https://badges.gitter.im/graphql-java/graphql-java.svg)](https://gitter.im/graphql-java/graphql-java?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Info: This Project is currently in very low maintenance mode. 
+# We are looking for help: If you want to become a maintainer or help us in other ways, please get in touch. Thanks!   
 
 ##### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.
      
