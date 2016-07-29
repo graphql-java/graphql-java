@@ -87,11 +87,13 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
     private void enterImpl(InlineFragment inlineFragment) {
-        if (inlineFragment.getTypeCondition() == null) {
-            return;
+        if (inlineFragment.getTypeCondition() != null) {
+            GraphQLType type = schema.getType(inlineFragment.getTypeCondition().getName());
+            addType((GraphQLOutputType) type);
+        } else {
+            // Inline fragment always embedded in a selection set
+            addType((GraphQLOutputType) getParentType());
         }
-        GraphQLType type = schema.getType(inlineFragment.getTypeCondition().getName());
-        addType((GraphQLOutputType) type);
     }
 
     private void enterImpl(FragmentDefinition fragmentDefinition) {
@@ -156,9 +158,7 @@ public class TraversalContext implements QueryLanguageVisitor {
         } else if (node instanceof Directive) {
             directive = null;
         } else if (node instanceof InlineFragment) {
-            if (((InlineFragment) node).getTypeCondition() != null) {
-                outputTypeStack.remove(outputTypeStack.size() - 1);
-            }
+            outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof FragmentDefinition) {
             outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof VariableDefinition) {
