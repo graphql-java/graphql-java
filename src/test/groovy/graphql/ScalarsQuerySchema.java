@@ -69,6 +69,15 @@ public class ScalarsQuerySchema {
                             .build())
                     .dataFetcher(inputDF)
                     .build())
+            .field(newFieldDefinition()
+                    .name("stringInput")
+                    .type(Scalars.GraphQLString)
+                    .argument(newArgument()
+                            .name("input")
+                            .type(new GraphQLNonNull(Scalars.GraphQLString))
+                            .build())
+                    .dataFetcher(inputDF)
+                    .build())
             
             
             
