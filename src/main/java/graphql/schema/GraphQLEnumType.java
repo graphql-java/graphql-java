@@ -111,6 +111,11 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             return this;
         }
 
+        public Builder value(String name, Object value, String description, String deprecationReason) {
+            values.add(new GraphQLEnumValueDefinition(name, description, value, deprecationReason));
+            return this;
+        }
+
         public Builder value(String name, Object value, String description) {
             values.add(new GraphQLEnumValueDefinition(name, description, value));
             return this;
