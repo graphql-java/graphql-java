@@ -81,13 +81,13 @@ public class ValuesResolver {
         } else if (graphQLType instanceof GraphQLList) {
             return coerceValueForList((GraphQLList) graphQLType, value);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
-            return coerceValueForInputObjectField((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
+            return coerceValueForInputObjectType((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
         } else {
             throw new GraphQLException("unknown type " + graphQLType);
         }
     }
 
-    private Object coerceValueForInputObjectField(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
+    private Object coerceValueForInputObjectType(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
         Map<String, Object> result = new LinkedHashMap<String, Object>();
         for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
             Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
