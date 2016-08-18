@@ -246,7 +246,8 @@ class ValuesResolverTest extends Specification {
                 .build())
                 .field(newInputObjectField()
                 .name("requiredField")
-                .type(new GraphQLNonNull(GraphQLString))
+                .stringType()
+                .notNull()
                 .build())
                 .build()
         def inputValue = [intKey: 10]
