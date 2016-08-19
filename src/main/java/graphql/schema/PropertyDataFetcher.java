@@ -27,20 +27,18 @@ public class PropertyDataFetcher implements DataFetcher {
     }
 
     private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType) {
-        boolean isBooleanProperty = isBooleanProperty(outputType);
-        String prefix = isBooleanProperty ? "is" : "get";
         try {
-            return getPropertyViaGetterUsingPrefix(object, outputType, prefix);
-        } catch (NoSuchMethodException e) {
-            if (isBooleanProperty){
+            if (isBooleanProperty(outputType)) {
                 try {
+                    return getPropertyViaGetterUsingPrefix(object, outputType, "is");
+                } catch (NoSuchMethodException e) {
                     return getPropertyViaGetterUsingPrefix(object, outputType, "get");
-                } catch (NoSuchMethodException e1) {
-                    return getPropertyViaFieldAccess(object, outputType);
                 }
-            }else{
-                return getPropertyViaFieldAccess(object, outputType);
+            } else {
+                return getPropertyViaGetterUsingPrefix(object, outputType, "get");
             }
+        } catch (NoSuchMethodException e1) {
+            return getPropertyViaFieldAccess(object, outputType);
         }
     }
 
