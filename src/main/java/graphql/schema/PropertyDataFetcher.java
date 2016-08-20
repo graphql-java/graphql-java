@@ -48,8 +48,6 @@ public class PropertyDataFetcher implements DataFetcher {
             Method method = object.getClass().getMethod(getterName);
             return method.invoke(object);
 
-        } catch (NoSuchMethodException e) {
-            throw e;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
