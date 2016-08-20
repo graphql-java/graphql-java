@@ -30,19 +30,19 @@ public class PropertyDataFetcher implements DataFetcher {
         try {
             if (isBooleanProperty(outputType)) {
                 try {
-                    return getPropertyViaGetterUsingPrefix(object, outputType, "is");
+                    return getPropertyViaGetterUsingPrefix(object, "is");
                 } catch (NoSuchMethodException e) {
-                    return getPropertyViaGetterUsingPrefix(object, outputType, "get");
+                    return getPropertyViaGetterUsingPrefix(object, "get");
                 }
             } else {
-                return getPropertyViaGetterUsingPrefix(object, outputType, "get");
+                return getPropertyViaGetterUsingPrefix(object, "get");
             }
         } catch (NoSuchMethodException e1) {
-            return getPropertyViaFieldAccess(object, outputType);
+            return getPropertyViaFieldAccess(object);
         }
     }
 
-    private Object getPropertyViaGetterUsingPrefix(Object object, GraphQLOutputType outputType, String prefix) throws NoSuchMethodException {
+    private Object getPropertyViaGetterUsingPrefix(Object object, String prefix) throws NoSuchMethodException {
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         try {
             Method method = object.getClass().getMethod(getterName);
@@ -63,7 +63,7 @@ public class PropertyDataFetcher implements DataFetcher {
         return false;
     }
 
-    private Object getPropertyViaFieldAccess(Object object, GraphQLOutputType outputType) {
+    private Object getPropertyViaFieldAccess(Object object) {
         try {
             Field field = object.getClass().getField(propertyName);
             return field.get(object);
