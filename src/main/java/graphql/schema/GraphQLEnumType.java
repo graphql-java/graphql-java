@@ -45,8 +45,14 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     }
 
     private Object getNameByValue(Object value) {
-        for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
-            if (value.equals(valueDefinition.getValue())) return valueDefinition.getName();
+        if (value == null) {
+            for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
+                if (valueDefinition.getValue() == null) return valueDefinition.getName();
+            }
+        } else {
+            for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
+                if (value.equals(valueDefinition.getValue())) return valueDefinition.getName();
+            }
         }
         return null;
     }
@@ -102,6 +108,11 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder value(String name, Object value, String description, String deprecationReason) {
+            values.add(new GraphQLEnumValueDefinition(name, description, value, deprecationReason));
             return this;
         }
 

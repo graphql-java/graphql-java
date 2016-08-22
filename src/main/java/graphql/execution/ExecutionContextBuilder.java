@@ -32,7 +32,7 @@ public class ExecutionContextBuilder {
                 fragmentsByName.put(fragmentDefinition.getName(), fragmentDefinition);
             }
         }
-        if (operationName != null && operationsByName.size() > 1) {
+        if (operationName == null && operationsByName.size() > 1) {
             throw new GraphQLException("missing operation name");
         }
         OperationDefinition operation;

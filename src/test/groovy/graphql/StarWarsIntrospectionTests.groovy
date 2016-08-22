@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.introspection.IntrospectionQuery
 import spock.lang.Specification
 
 
@@ -31,7 +32,8 @@ class StarWarsIntrospectionTests extends Specification {
                                     [name: '__InputValue'],
                                     [name: 'Boolean'],
                                     [name: '__EnumValue'],
-                                    [name: '__Directive']]
+                                    [name: '__Directive'],
+                                    [name: '__DirectiveLocation']]
                 ]
 
         ];
@@ -384,7 +386,6 @@ class StarWarsIntrospectionTests extends Specification {
         result.data == expected
     }
 
-
     def "Allows querying the schema for documentation"() {
         given:
         def query = """
@@ -407,5 +408,24 @@ class StarWarsIntrospectionTests extends Specification {
 
         then:
         result.data == expected
+    }
+
+    def "Allow querying the schema with pre-defined full introspection query"() {
+        given:
+        def query = IntrospectionQuery.INTROSPECTION_QUERY
+
+        when:
+        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query)
+
+        then:
+        Map<String, Object> schema = (Map<String, Object>) result.data
+        schema.size() == 1
+        Map<String, Object> schemaParts = (Map<String, Map>) schema.get("__schema")
+        schemaParts.size() == 5
+        schemaParts.get('queryType').size() == 1
+        schemaParts.get('mutationType') == null
+        schemaParts.get('subscriptionType') == null
+        schemaParts.get('types').size() == 15
+        schemaParts.get('directives').size() == 2
     }
 }

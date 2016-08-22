@@ -1,6 +1,8 @@
 # graphql-java
 
-#### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.
+[![Join the chat at https://gitter.im/graphql-java/graphql-java](https://badges.gitter.im/graphql-java/graphql-java.svg)](https://gitter.im/graphql-java/graphql-java?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+##### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.
      
 
 
@@ -15,7 +17,7 @@ The versioning follows [Semantic Versioning](http://semver.org) since `2.0.0`.
 **Hint**: This README documents the latest release, but `master` contains the current development version. So please make sure 
 to checkout the appropriate tag when looking for the version documented here.
 
-[![Build Status](https://travis-ci.org/andimarek/graphql-java.svg?branch=master)](https://travis-ci.org/andimarek/graphql-java)
+[![Build Status](https://travis-ci.org/graphql-java/graphql-java.svg?branch=master)](https://travis-ci.org/graphql-java/graphql-java)
 [![Latest Release](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
 [![Latest Dev Build](https://api.bintray.com/packages/andimarek/graphql-java/graphql-java/images/download.svg)](https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion)
 
@@ -363,6 +365,28 @@ The `grapqhl-java` root Logger name is `graphql`.
 There is a very basic Relay support included. Please look at https://github.com/andimarek/todomvc-relay-java for an example
 project how to use it.
 
+Relay sends queries to the GraphQL server as JSON containing a `query` field and a `variables` field. The `query` field is a JSON string,
+and the `variables` field is a map of variable definitions. A relay-compatible server will need to parse this JSON and pass the `query`
+string to this library as the query and the `variables` map as the third argument to `execute` as shown below. This is the implementation
+from the [todomvc-relay-java](https://github.com/andimarek/todomvc-relay-java) example.
+
+```java
+@RequestMapping(value = "/graphql", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
+@ResponseBody
+public Object executeOperation(@RequestBody Map body) {
+    String query = (String) body.get("query");
+    Map<String, Object> variables = (Map<String, Object>) body.get("variables");
+    ExecutionResult executionResult = graphql.execute(query, (Object) null, variables);
+    Map<String, Object> result = new LinkedHashMap<>();
+    if (executionResult.getErrors().size() > 0) {
+        result.put("errors", executionResult.getErrors());
+        log.error("Errors: {}", executionResult.getErrors());
+    }
+    result.put("data", executionResult.getData());
+    return result;
+}
+```
+
 #### Contributions
 
 Every contribution to make this project better is welcome: Thank you! 
@@ -483,6 +507,8 @@ For example the StarWarSchema and the tests (among a lot of other things) are si
 [graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
 
 [graphql-java-annotations](https://github.com/yrashk/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
+
+[graphql-java-servlet](https://github.com/yrashk/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
 
 ### License
 

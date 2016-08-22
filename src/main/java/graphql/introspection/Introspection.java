@@ -172,7 +172,7 @@ public class Introspection {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
-            boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             if (type instanceof GraphQLFieldsContainer) {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
                 List<GraphQLFieldDefinition> fieldDefinitions = fieldsContainer.getFieldDefinitions();
@@ -216,7 +216,7 @@ public class Introspection {
         @Override
         public Object get(DataFetchingEnvironment environment) {
             Object type = environment.getSource();
-            boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             if (type instanceof GraphQLEnumType) {
                 List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
                 if (includeDeprecated) return values;
@@ -313,6 +313,26 @@ public class Introspection {
                     .build())
             .build();
 
+    public enum DirectiveLocation {
+        QUERY,
+        MUTATION,
+        FIELD,
+        FRAGMENT_DEFINITION,
+        FRAGMENT_SPREAD,
+        INLINE_FRAGMENT
+    }
+
+    public static GraphQLEnumType __DirectiveLocation = GraphQLEnumType.newEnum()
+            .name("__DirectiveLocation")
+            .description("An enum describing valid locations where a directive can be placed")
+            .value("QUERY", DirectiveLocation.QUERY, "Indicates the directive is valid on queries.")
+            .value("MUTATION", DirectiveLocation.MUTATION, "Indicates the directive is valid on mutations.")
+            .value("FIELD", DirectiveLocation.FIELD, "Indicates the directive is valid on fields.")
+            .value("FRAGMENT_DEFINITION", DirectiveLocation.FRAGMENT_DEFINITION, "Indicates the directive is valid on fragment definitions.")
+            .value("FRAGMENT_SPREAD", DirectiveLocation.FRAGMENT_SPREAD, "Indicates the directive is valid on fragment spreads.")
+            .value("INLINE_FRAGMENT", DirectiveLocation.INLINE_FRAGMENT, "Indicates the directive is valid on inline fragments.")
+            .build();
+
     public static GraphQLObjectType __Directive = newObject()
             .name("__Directive")
             .field(newFieldDefinition()
@@ -322,6 +342,10 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("description")
                     .type(GraphQLString)
+                    .build())
+            .field(newFieldDefinition()
+                    .name("locations")
+                    .type(new GraphQLList(new GraphQLNonNull(__DirectiveLocation)))
                     .build())
             .field(newFieldDefinition()
                     .name("args")
@@ -337,14 +361,17 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("onOperation")
                     .type(GraphQLBoolean)
+                    .deprecate("Use `locations`.")
                     .build())
             .field(newFieldDefinition()
                     .name("onFragment")
                     .type(GraphQLBoolean)
+                    .deprecate("Use `locations`.")
                     .build())
             .field(newFieldDefinition()
                     .name("onField")
                     .type(GraphQLBoolean)
+                    .deprecate("Use `locations`.")
                     .build())
             .build();
 

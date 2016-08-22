@@ -117,9 +117,9 @@ public class GraphQLFieldDefinition {
         }
 
         /**
-         * Get the data from a field.
+         * Get the data from a field, rather than a property.
          *
-         * @return
+         * @return this builder
          */
         public Builder fetchField() {
             this.isField = true;

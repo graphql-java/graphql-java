@@ -210,6 +210,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                   GraphQLType type) {
         for (GraphQLExecutionNodeValue value : values) {
             Object coercedValue = coerce(type, value.getValue());
+            //6.6.1 http://facebook.github.io/graphql/#sec-Field-entries
+            if (coercedValue instanceof Double && ((Double) coercedValue).isNaN()) {
+                coercedValue = null;
+            }
             value.getResultContainer().putResult(fieldName, coercedValue);
         }
     }

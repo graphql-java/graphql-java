@@ -7,13 +7,13 @@ import java.util.List;
 
 public class ExceptionWhileDataFetching implements GraphQLError {
 
-    private final Exception exception;
+    private final Throwable exception;
 
-    public ExceptionWhileDataFetching(Exception exception) {
+    public ExceptionWhileDataFetching(Throwable exception) {
         this.exception = exception;
     }
 
-    public Exception getException() {
+    public Throwable getException() {
         return exception;
     }
 

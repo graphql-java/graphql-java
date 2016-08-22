@@ -7,6 +7,7 @@ plugins {
 apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
+apply plugin: 'antlr'
 
 sourceCompatibility = 1.6
 targetCompatibility = 1.6
@@ -28,11 +29,20 @@ jar {
 dependencies {
     compile 'org.antlr:antlr4-runtime:4.5.1'
     compile 'org.slf4j:slf4j-api:1.7.12'
+    antlr "org.antlr:antlr4:4.5.1"
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
     testCompile 'org.codehaus.groovy:groovy-all:2.4.4'
     testCompile 'cglib:cglib-nodep:3.1'
     testCompile 'org.objenesis:objenesis:2.1'
+}
+
+compileJava.source file("build/generated-src"), sourceSets.main.java
+
+generateGrammarSource {
+    maxHeapSize = "64m"
+    arguments += ["-visitor"]
+    outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
 }
 
 task sourcesJar(type: Jar) {
@@ -46,12 +56,25 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-
 artifacts {
     archives sourcesJar
     archives javadocJar
 }
 
+allprojects {
+    tasks.withType(Javadoc) {
+        exclude('**/antlr/**')
+    }
+
+    tasks.withType(JavaCompile) {
+        doFirst {
+            if (sourceCompatibility == '1.6' && System.env.JDK6_HOME != null) {
+                options.bootClasspath = "$System.env.JDK6_HOME/jre/lib/rt.jar"
+            }
+        }
+    }
+
+}
 
 publishing {
     publications {
@@ -70,16 +93,16 @@ publishing {
                     resolveStrategy = Closure.DELEGATE_FIRST
                     name 'graphql-java'
                     description 'GraphqL Java'
-                    url "https://github.com/andimarek/graphql-java"
+                    url "https://github.com/graphql-java/graphql-java"
                     scm {
-                        url "https://github.com/andimarek/graphql-java"
-                        connection "https://github.com/andimarek/graphql-java"
-                        developerConnection "https://github.com/andimarek/graphql-java"
+                        url "https://github.com/graphql-java/graphql-java"
+                        connection "https://github.com/graphql-java/graphql-java"
+                        developerConnection "https://github.com/graphql-java/graphql-java"
                     }
                     licenses {
                         license {
                             name 'MIT'
-                            url 'https://github.com/andimarek/graphql-java/blob/master/LICENSE.md'
+                            url 'https://github.com/graphql-java/graphql-java/blob/master/LICENSE.md'
                             distribution 'repo'
                         }
                     }
@@ -106,8 +129,13 @@ bintray {
         name = 'graphql-java'
         desc = 'GraphQL in Java'
         licenses = ['MIT']
-        vcsUrl = 'https://github.com/andimarek/graphql-java'
+        vcsUrl = 'https://github.com/graphql-java/graphql-java'
     }
+}
+
+// all publish tasks depend on the build task
+tasks.withType(PublishToMavenRepository) {
+    dependsOn build
 }
 
 

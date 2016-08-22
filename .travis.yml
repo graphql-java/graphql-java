@@ -1,5 +1,6 @@
-language: java
-jdk:
-  - oraclejdk7
-after_success:
-  - ./gradlew bintrayUpload -x check --info
+sudo: required
+services:
+  - docker
+script:
+  - ./travis-build.sh
+

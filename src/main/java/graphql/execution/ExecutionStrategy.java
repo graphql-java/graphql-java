@@ -23,7 +23,6 @@ public abstract class ExecutionStrategy {
 
     protected ExecutionResult resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
-        if (fieldDef == null) return null;
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
         DataFetchingEnvironment environment = new DataFetchingEnvironment(
@@ -119,7 +118,12 @@ public abstract class ExecutionStrategy {
     }
 
     protected ExecutionResult completeValueForScalar(GraphQLScalarType scalarType, Object result) {
-        return new ExecutionResultImpl(scalarType.getCoercing().serialize(result), null);
+        Object serialized = scalarType.getCoercing().serialize(result);
+        //6.6.1 http://facebook.github.io/graphql/#sec-Field-entries
+        if (serialized instanceof Double && ((Double) serialized).isNaN()) {
+            serialized = null;
+        }
+        return new ExecutionResultImpl(serialized, null);
     }
 
     protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {

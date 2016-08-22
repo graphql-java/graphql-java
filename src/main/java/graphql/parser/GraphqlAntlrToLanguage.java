@@ -7,6 +7,7 @@ import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
@@ -334,7 +335,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             newNode(booleanValue, ctx);
             return booleanValue;
         } else if (ctx.StringValue() != null) {
-            StringValue stringValue = new StringValue(trimQuotes(ctx.StringValue().getText()));
+            StringValue stringValue = new StringValue(parseString(ctx.StringValue().getText()));
             newNode(stringValue, ctx);
             return stringValue;
         } else if (ctx.enumValue() != null) {
@@ -379,7 +380,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             newNode(booleanValue, ctx);
             return booleanValue;
         } else if (ctx.StringValue() != null) {
-            StringValue stringValue = new StringValue(trimQuotes(ctx.StringValue().getText()));
+            StringValue stringValue = new StringValue(parseString(ctx.StringValue().getText()));
             newNode(stringValue, ctx);
             return stringValue;
         } else if (ctx.enumValue() != null) {
@@ -406,9 +407,52 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         throw new ShouldNotHappenException();
     }
 
-
-    private String trimQuotes(String string) {
-        return string.substring(1, string.length() - 1);
+    private String parseString(String string) {
+        StringWriter writer = new StringWriter(string.length() - 2);
+        int end = string.length() - 1;
+        for (int i = 1; i < end; i++) {
+            char c = string.charAt(i);
+            if (c != '\\') {
+                writer.write(c);
+                continue;
+            }
+            char escaped = string.charAt(i + 1);
+            i += 1;
+            switch (escaped) {
+                case '"':
+                    writer.write('"');
+                    continue;
+                case '/':
+                    writer.write('/');
+                    continue;
+                case '\\':
+                    writer.write('\\');
+                    continue;
+                case 'b':
+                    writer.write('\b');
+                    continue;
+                case 'f':
+                    writer.write('\f');
+                    continue;
+                case 'n':
+                    writer.write('\n');
+                    continue;
+                case 'r':
+                    writer.write('\r');
+                    continue;
+                case 't':
+                    writer.write('\t');
+                    continue;
+                case 'u':
+                    int codepoint = Integer.parseInt(string.substring(i + 1, i + 5), 16);
+                    i += 4;
+                    writer.write(codepoint);
+                    continue;
+                default:
+                    throw new ShouldNotHappenException();
+            }
+        }
+        return writer.toString();
     }
 
     private void newNode(AbstractNode abstractNode, ParserRuleContext parserRuleContext) {
