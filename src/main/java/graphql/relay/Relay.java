@@ -49,6 +49,7 @@ public class Relay {
                 .typeResolver(typeResolver)
                 .field(newFieldDefinition()
                         .name("id")
+                        .description("The ID of an object")
                         .type(new GraphQLNonNull(GraphQLID))
                         .build())
                 .build();
@@ -192,13 +193,30 @@ public class Relay {
     }
 
     public static class ResolvedGlobalId {
+
         public ResolvedGlobalId(String type, String id) {
             this.type = type;
             this.id = id;
         }
 
+        /**
+         * @deprecated use {@link #getType()}
+         */
+        @Deprecated
         public String type;
+        /**
+         * @deprecated use {@link #getId()}
+         */
+        @Deprecated
         public String id;
+
+        public String getType() {
+            return type;
+        }
+
+        public String getId() {
+            return id;
+        }
     }
 
     public String toGlobalId(String type, String id) {
