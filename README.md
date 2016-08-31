@@ -298,15 +298,11 @@ GraphQLObjectType person = newObject()
  
 #### Data fetching
 
-The actual data comes from `DataFetcher` objects.
- 
-Every field definition has a `DataFetcher`. When no one is configured, a 
-[PropertyDataFetcher](src/main/java/graphql/schema/PropertyDataFetcher.java) is used.
-
-`PropertyDataFetcher` fetches data from `Map` and Java Beans. So when the field name matches the Map key or
-the property name of the source Object, no `DataFetcher` is needed. 
-
-
+Field source data is provided by `DataFetcher` objects. Every field definition has a `DataFetcher`.
+When none is specified, the built-in [PropertyDataFetcher](src/main/java/graphql/schema/PropertyDataFetcher.java)
+is used by default. Additionally, the built-in [FieldDataFetcher](src/main/java/graphql/schema/FieldDataFetcher.java) is 
+also available and can be used by calling `#fetchField()` on the field definition builder. The user must specify a
+custom data fetcher if neither of these built-in data fetchers are satisfactory.
 
 Example of configuring a custom `DataFetcher`:
 ```java
