@@ -28,8 +28,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         if (schema == null) {
             def objectType = newObject()
                     .name("Test")
-                    .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                    .field(newFieldDefinition().name("nickname").type(GraphQLString).build())
+                    .field(newFieldDefinition().name("name").type(GraphQLString))
+                    .field(newFieldDefinition().name("nickname").type(GraphQLString))
                     .build();
             schema = GraphQLSchema.newSchema().query(objectType).build()
         }
@@ -76,18 +76,18 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
     GraphQLSchema unionSchema() {
         def StringBox = newObject().name("StringBox")
-                .field(newFieldDefinition().name("scalar").type(GraphQLString).build())
+                .field(newFieldDefinition().name("scalar").type(GraphQLString))
                 .build()
         def IntBox = newObject().name("IntBox")
-                .field(newFieldDefinition().name("scalar").type(GraphQLInt).build())
+                .field(newFieldDefinition().name("scalar").type(GraphQLInt))
                 .build()
 
         def NonNullStringBox1 = newObject().name("NonNullStringBox1")
-                .field(newFieldDefinition().name("scalar").type(new GraphQLNonNull(GraphQLString)).build())
+                .field(newFieldDefinition().name("scalar").type(new GraphQLNonNull(GraphQLString)))
                 .build()
 
         def NonNullStringBox2 = newObject().name("NonNullStringBox2")
-                .field(newFieldDefinition().name("scalar").type(new GraphQLNonNull(GraphQLString)).build())
+                .field(newFieldDefinition().name("scalar").type(new GraphQLNonNull(GraphQLString)))
                 .build()
 
         def BoxUnion = newUnionType()
@@ -102,7 +102,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                 .build()
         def QueryRoot = newObject()
                 .name("QueryRoot")
-                .field(newFieldDefinition().name("boxUnion").type(BoxUnion).build()).build()
+                .field(newFieldDefinition().name("boxUnion").type(BoxUnion)).build()
         return GraphQLSchema.newSchema().query(QueryRoot).build()
     }
 

@@ -73,9 +73,17 @@ public class GraphQLSchema {
         private GraphQLObjectType queryType;
         private GraphQLObjectType mutationType;
 
+        public Builder query(GraphQLObjectType.Builder builder) {
+            return query(builder.build());
+        }
+
         public Builder query(GraphQLObjectType queryType) {
             this.queryType = queryType;
             return this;
+        }
+
+        public Builder mutation(GraphQLObjectType.Builder builder) {
+            return mutation(builder.build());
         }
 
         public Builder mutation(GraphQLObjectType mutationType) {

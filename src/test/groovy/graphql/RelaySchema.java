@@ -18,9 +18,7 @@ public class RelaySchema {
             .field(newFieldDefinition()
                     .name("id")
                     .type(GraphQLString)
-                    .fetchField()
-                    .build())
-
+                    .fetchField())
             .build();
 
     public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(new TypeResolver() {
@@ -41,12 +39,10 @@ public class RelaySchema {
             .field(newFieldDefinition()
                     .name("id")
                     .type(GraphQLString)
-                    .fetchField()
-                    .build())
+                    .fetchField())
             .field(newFieldDefinition()
                     .name("stuffs")
-                    .type(StuffConnectionType)
-                    .build())
+                    .type(StuffConnectionType))
             .build();
 
 
@@ -65,16 +61,14 @@ public class RelaySchema {
                     .argument(newArgument()
                             .name("id")
                             .description("id of the thing")
-                            .type(new GraphQLNonNull(GraphQLString))
-                            .build())
+                            .type(new GraphQLNonNull(GraphQLString)))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
                             //TODO: implement
                             return null;
                         }
-                    })
-                    .build())
+                    }))
             .build();
 
 

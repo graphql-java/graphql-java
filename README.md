@@ -88,8 +88,7 @@ public class HelloWorld {
                         .field(newFieldDefinition()
                                 .type(GraphQLString)
                                 .name("hello")
-                                .staticValue("world")
-                                .build())
+                                .staticValue("world"))
                         .build();
         
         GraphQLSchema schema = GraphQLSchema.newSchema()
@@ -160,13 +159,11 @@ GraphQLObjectType simpsonCharacter = newObject()
     .field(newFieldDefinition()
             .name("name")
             .description("The name of the character.")
-            .type(GraphQLString)
-            .build())
+            .type(GraphQLString))
     .field(newFieldDefinition()
             .name("mainCharacter")
             .description("One of the main Simpson characters?")
-            .type(GraphQLBoolean)
-            .build())                    
+            .type(GraphQLBoolean))
 .build();
 
 ```
@@ -181,8 +178,7 @@ GraphQLInterfaceType comicCharacter = newInterface()
     .field(newFieldDefinition()
             .name("name")
             .description("The name of the character.")
-            .type(GraphQLString)
-            .build())
+            .type(GraphQLString))
     .build();
 
 ```
@@ -234,8 +230,7 @@ GraphQLInputObjectType inputObjectType = newInputObject()
     .name("inputObjectType")
     .field(newInputObjectField()
         .name("field")
-        .type(GraphQLString)
-        .build())
+        .type(GraphQLString))
     .build()
 
 ```
@@ -289,8 +284,7 @@ GraphQLObjectType person = newObject()
     .name("Person")
     .field(newFieldDefinition()
             .name("friends")
-            .type(new GraphQLList(new GraphQLTypeReference("Person")))
-            .build())
+            .type(new GraphQLList(new GraphQLTypeReference("Person"))))
     .build();
 
 ```
@@ -325,8 +319,7 @@ GraphQLObjectType objectType = newObject()
     .field(newFieldDefinition()
             .name("someComplicatedValue")
             .type(GraphQLString)
-            .dataFetcher(calculateComplicatedValue)
-            .build())
+            .dataFetcher(calculateComplicatedValue))
     .build();
 
 ```
@@ -354,6 +347,19 @@ See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) fo
 It's recommended to use a `ExecutorService` to speed up execution.
 
 Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
+
+#### JDK8 Lambdas
+This project is built using JDK6. But if you're using JDK8 and above then you can also use lambdas.
+```java
+GraphQLObjectType queryType = newObject()
+                .name("helloWorldQuery")
+                .field(field -> field.type(GraphQLString)
+                        .name("hello")
+                        .argument(argument -> argument.name("arg")
+                                .type(GraphQLBoolean))
+                        .dataFetcher(env -> "hello"))
+                .build();
+```
 
 #### Logging
 

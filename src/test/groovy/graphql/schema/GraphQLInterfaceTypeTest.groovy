@@ -16,8 +16,8 @@ class GraphQLInterfaceTest extends Specification {
         when:
         newInterface().name("TestInterfaceType")
                 .typeResolver(new TypeResolverProxy())
-                .field(newFieldDefinition().name("NAME").type(GraphQLString).build())
-                .field(newFieldDefinition().name("NAME").type(GraphQLString).build())
+                .field(newFieldDefinition().name("NAME").type(GraphQLString))
+                .field(newFieldDefinition().name("NAME").type(GraphQLString))
                 .build();
         then:
         thrown(AssertException)

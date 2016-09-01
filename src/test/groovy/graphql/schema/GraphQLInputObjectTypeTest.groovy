@@ -15,8 +15,8 @@ class GraphQLInputObjectTypeTest extends Specification {
     def "duplicate field definition fails"() {
         when:
         newInputObject().name("TestInputObjectType")
-                .field(newInputObjectField().name("NAME").type(GraphQLString).build())
-                .field(newInputObjectField().name("NAME").type(GraphQLString).build())
+                .field(newInputObjectField().name("NAME").type(GraphQLString))
+                .field(newInputObjectField().name("NAME").type(GraphQLString))
                 .build();
         then:
         thrown(AssertException)

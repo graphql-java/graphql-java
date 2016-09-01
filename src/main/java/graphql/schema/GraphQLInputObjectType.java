@@ -75,6 +75,37 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
             return this;
         }
 
+        /**
+         * Take a field builder in a function definition and apply. Can be used in a jdk8 lambda
+         * e.g.:
+         * <pre>
+         *     {@code
+         *      field(f -> f.name("fieldName"))
+         *     }
+         * </pre>
+         *
+         * @param builderFunction a supplier for the builder impl
+         * @return this
+         */
+        public Builder field(BuilderFunction<GraphQLInputObjectField.Builder> builderFunction) {
+            assertNotNull(builderFunction, "builderFunction should not be null");
+            GraphQLInputObjectField.Builder builder = GraphQLInputObjectField.newInputObjectField();
+            builder = builderFunction.apply(builder);
+            return field(builder);
+        }
+
+        /**
+         * Same effect as the field(GraphQLFieldDefinition). Builder.build() is called
+         * from within
+         *
+         * @param builder an un-built/incomplete GraphQLFieldDefinition
+         * @return this
+         */
+        public Builder field(GraphQLInputObjectField.Builder builder) {
+            this.fields.add(builder.build());
+            return this;
+        }
+
         public Builder fields(List<GraphQLInputObjectField> fields) {
             for (GraphQLInputObjectField field : fields) {
                 field(field);

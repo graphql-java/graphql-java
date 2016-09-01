@@ -16,8 +16,7 @@ public class Directives {
             .argument(newArgument()
                     .name("if")
                     .type(new GraphQLNonNull(GraphQLBoolean))
-                    .description("Included when true.")
-                    .build())
+                    .description("Included when true."))
             .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
             .build();
 
@@ -27,8 +26,7 @@ public class Directives {
             .argument(newArgument()
                     .name("if")
                     .type(new GraphQLNonNull(GraphQLBoolean))
-                    .description("Skipped when true.")
-                    .build())
+                    .description("Skipped when true."))
             .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
             .build();
 

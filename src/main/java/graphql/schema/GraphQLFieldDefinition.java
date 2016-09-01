@@ -96,6 +96,18 @@ public class GraphQLFieldDefinition {
             return this;
         }
 
+        public Builder type(GraphQLObjectType.Builder builder) {
+            return type(builder.build());
+        }
+
+        public Builder type(GraphQLInterfaceType.Builder builder) {
+            return type(builder.build());
+        }
+
+        public Builder type(GraphQLUnionType.Builder builder) {
+            return type(builder.build());
+        }
+
         public Builder type(GraphQLOutputType type) {
             this.type = type;
             return this;
@@ -128,6 +140,36 @@ public class GraphQLFieldDefinition {
 
         public Builder argument(GraphQLArgument argument) {
             this.arguments.add(argument);
+            return this;
+        }
+
+        /**
+         * Take an argument builder in a function definition and apply. Can be used in a jdk8 lambda
+         * e.g.:
+         * <pre>
+         *     {@code
+         *      argument(a -> a.name("argumentName"))
+         *     }
+         * </pre>
+         *
+         * @param builderFunction a supplier for the builder impl
+         * @return this
+         */
+        public Builder argument(BuilderFunction<GraphQLArgument.Builder> builderFunction) {
+            GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+            builder = builderFunction.apply(builder);
+            return argument(builder);
+        }
+
+        /**
+         * Same effect as the argument(GraphQLArgument). Builder.build() is called
+         * from within
+         *
+         * @param builder an un-built/incomplete GraphQLArgument
+         * @return this
+         */
+        public Builder argument(GraphQLArgument.Builder builder) {
+            this.arguments.add(builder.build());
             return this;
         }
 

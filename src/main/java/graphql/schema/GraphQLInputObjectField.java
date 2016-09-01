@@ -60,6 +60,10 @@ public class GraphQLInputObjectField {
             return this;
         }
 
+        public Builder type(GraphQLInputObjectType.Builder type) {
+            return type(type.build());
+        }
+
         public Builder type(GraphQLInputType type) {
             this.type = type;
             return this;

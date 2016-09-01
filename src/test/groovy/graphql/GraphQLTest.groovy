@@ -19,11 +19,10 @@ class GraphQLTest extends Specification {
 
     def "simple query"() {
         given:
-        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+        GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
                 .staticValue("world")
-                .build()
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
@@ -46,19 +45,17 @@ class GraphQLTest extends Specification {
                 .field(
                 newFieldDefinition()
                         .name("id")
-                        .type(GraphQLString)
-                        .build())
+                        .type(GraphQLString))
                 .field(
                 newFieldDefinition()
                         .name("name")
-                        .type(GraphQLString)
-                        .build())
+                        .type(GraphQLString))
                 .build()
 
-        GraphQLFieldDefinition simpsonField = newFieldDefinition()
+        GraphQLFieldDefinition.Builder simpsonField = newFieldDefinition()
                 .name("simpson")
                 .type(heroType)
-                .staticValue([id: '123', name: 'homer']).build()
+                .staticValue([id: '123', name: 'homer'])
 
         GraphQLSchema graphQLSchema = newSchema().query(
                 newObject()
@@ -76,12 +73,11 @@ class GraphQLTest extends Specification {
 
     def "query with validation errors"() {
         given:
-        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+        GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
-                .argument(newArgument().name("arg").type(GraphQLString).build())
+                .argument(newArgument().name("arg").type(GraphQLString))
                 .staticValue("world")
-                .build()
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
@@ -140,9 +136,7 @@ class GraphQLTest extends Specification {
                         .type(GraphQLString)
                         .argument(newArgument()
                         .name("arg")
-                        .type(new GraphQLNonNull(GraphQLString))
-                        .build())
-                        .build())
+                        .type(new GraphQLNonNull(GraphQLString))))
                         .build()
         ).build()
 

@@ -93,6 +93,37 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
             return this;
         }
 
+        /**
+         * Take a field builder in a function definition and apply. Can be used in a jdk8 lambda
+         * e.g.:
+         * <pre>
+         *     {@code
+         *      field(f -> f.name("fieldName"))
+         *     }
+         * </pre>
+         *
+         * @param builderFunction a supplier for the builder impl
+         * @return this
+         */
+        public Builder field(BuilderFunction<GraphQLFieldDefinition.Builder> builderFunction) {
+            assertNotNull(builderFunction, "builderFunction can't be null");
+            GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
+            builder = builderFunction.apply(builder);
+            return field(builder);
+        }
+
+        /**
+         * Same effect as the field(GraphQLFieldDefinition). Builder.build() is called
+         * from within
+         *
+         * @param builder an un-built/incomplete GraphQLFieldDefinition
+         * @return this
+         */
+        public Builder field(GraphQLFieldDefinition.Builder builder) {
+            this.fields.add(builder.build());
+            return this;
+        }
+
         public Builder fields(List<GraphQLFieldDefinition> fieldDefinitions) {
             assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
             fields.addAll(fieldDefinitions);
