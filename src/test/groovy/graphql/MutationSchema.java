@@ -55,16 +55,14 @@ public class MutationSchema {
             .name("NumberHolder")
             .field(newFieldDefinition()
                     .name("theNumber")
-                    .type(GraphQLInt)
-                    .build())
+                    .type(GraphQLInt))
             .build();
 
     public static GraphQLObjectType queryType = GraphQLObjectType.newObject()
             .name("queryType")
             .field(newFieldDefinition()
                     .name("numberHolder")
-                    .type(numberHolderType)
-                    .build())
+                    .type(numberHolderType))
             .build();
 
     public static GraphQLObjectType mutationType = GraphQLObjectType.newObject()
@@ -74,8 +72,7 @@ public class MutationSchema {
                     .type(numberHolderType)
                     .argument(newArgument()
                             .name("newNumber")
-                            .type(GraphQLInt)
-                            .build())
+                            .type(GraphQLInt))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
@@ -83,15 +80,13 @@ public class MutationSchema {
                             Root root = (Root) environment.getSource();
                             return root.changeNumber(newNumber);
                         }
-                    })
-                    .build())
+                    }))
             .field(newFieldDefinition()
                     .name("failToChangeTheNumber")
                     .type(numberHolderType)
                     .argument(newArgument()
                             .name("newNumber")
-                            .type(GraphQLInt)
-                            .build())
+                            .type(GraphQLInt))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
@@ -99,8 +94,7 @@ public class MutationSchema {
                             Root root = (Root) environment.getSource();
                             return root.failToChangeTheNumber(newNumber);
                         }
-                    })
-                    .build())
+                    }))
             .build();
 
     public static GraphQLSchema schema = newSchema()

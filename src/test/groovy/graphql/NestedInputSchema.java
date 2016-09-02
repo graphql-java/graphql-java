@@ -59,13 +59,10 @@ public class NestedInputSchema {
                         .argument(GraphQLArgument.newArgument()
                                 .name("intialValue")
                                 .type(GraphQLInt)
-                                .defaultValue(5)
-                                .build())
+                                .defaultValue(5))
                         .argument(GraphQLArgument.newArgument()
                                 .name("filter")
-                                .type(filterType())
-                                .build())
-                        .build())
+                                .type(filterType())))
                 .build();
     }
 
@@ -74,12 +71,10 @@ public class NestedInputSchema {
                 .name("Filter")
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("even")
-                        .type(GraphQLBoolean)
-                        .build())
+                        .type(GraphQLBoolean))
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("range")
-                        .type(rangeType())
-                        .build())
+                        .type(rangeType()))
                 .build();
     }
 
@@ -88,12 +83,10 @@ public class NestedInputSchema {
                 .name("Range")
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("lowerBound")
-                        .type(GraphQLInt)
-                        .build())
+                        .type(GraphQLInt))
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("upperBound")
-                        .type(GraphQLInt)
-                        .build())
+                        .type(GraphQLInt))
                 .build();
     }
 }

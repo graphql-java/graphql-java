@@ -118,6 +118,36 @@ public class GraphQLDirective {
         }
 
         /**
+         * Take an argument builder in a function definition and apply. Can be used in a jdk8 lambda
+         * e.g.:
+         * <pre>
+         *     {@code
+         *      argument(a -> a.name("argumentName"))
+         *     }
+         * </pre>
+         *
+         * @param builderFunction a supplier for the builder impl
+         * @return this
+         */
+        public Builder argument(BuilderFunction<GraphQLArgument.Builder> builderFunction) {
+            GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+            builder = builderFunction.apply(builder);
+            return argument(builder);
+        }
+
+        /**
+         * Same effect as the argument(GraphQLArgument). Builder.build() is called
+         * from within
+         *
+         * @param builder an un-built/incomplete GraphQLArgument
+         * @return this
+         */
+        public Builder argument(GraphQLArgument.Builder builder) {
+            this.arguments.add(builder.build());
+            return this;
+        }
+
+        /**
          * @deprecated  Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
          * @param onOperation onOperation
          * @return this builder

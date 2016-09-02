@@ -231,30 +231,25 @@ public class FunWithStringsSchemaFactory {
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("value")
                         .type(Scalars.GraphQLString)
-                        .dataFetcher(stringObjectValueFetcher)
-                        .build())
+                        .dataFetcher(stringObjectValueFetcher))
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("nonNullValue")
                         .type(new GraphQLNonNull(Scalars.GraphQLString))
-                        .dataFetcher(stringObjectValueFetcher)
-                        .build())
+                        .dataFetcher(stringObjectValueFetcher))
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("veryNonNullValue")
                         .type(new GraphQLNonNull(new GraphQLNonNull(Scalars.GraphQLString)))
-                        .dataFetcher(stringObjectValueFetcher)
-                        .build())
+                        .dataFetcher(stringObjectValueFetcher))
 
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("shatter")
                         .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject")))))
-                        .dataFetcher(shatterFetcher)
-                        .build())
+                        .dataFetcher(shatterFetcher))
 
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("wordsAndLetters")
                         .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull( new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))))))
-                        .dataFetcher(wordsAndLettersFetcher)
-                        .build())
+                        .dataFetcher(wordsAndLettersFetcher))
 
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("split")
@@ -262,10 +257,8 @@ public class FunWithStringsSchemaFactory {
                         .type(new GraphQLList(new GraphQLTypeReference("StringObject")))
                         .argument(GraphQLArgument.newArgument()
                                 .name("regex")
-                                .type(Scalars.GraphQLString)
-                                .build())
-                        .dataFetcher(splitFetcher)
-                        .build())
+                                .type(Scalars.GraphQLString))
+                        .dataFetcher(splitFetcher))
 
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("splitNotNull")
@@ -273,10 +266,8 @@ public class FunWithStringsSchemaFactory {
                         .type(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))
                         .argument(GraphQLArgument.newArgument()
                                 .name("regex")
-                                .type(Scalars.GraphQLString)
-                                .build())
-                        .dataFetcher(splitFetcher)
-                        .build())
+                                .type(Scalars.GraphQLString))
+                        .dataFetcher(splitFetcher))
 
 
                 .field(GraphQLFieldDefinition.newFieldDefinition()
@@ -284,10 +275,8 @@ public class FunWithStringsSchemaFactory {
                         .type(new GraphQLTypeReference("StringObject"))
                         .argument(GraphQLArgument.newArgument()
                                 .name("text")
-                                .type(Scalars.GraphQLString)
-                                .build())
-                        .dataFetcher(appendFetcher)
-                        .build())
+                                .type(Scalars.GraphQLString))
+                        .dataFetcher(appendFetcher))
 
                 .build();
 
@@ -306,13 +295,11 @@ public class FunWithStringsSchemaFactory {
                         .type(stringObjectType)
                         .argument(GraphQLArgument.newArgument()
                                 .name("value")
-                                .type(Scalars.GraphQLString)
-                                .build())
+                                .type(Scalars.GraphQLString))
                         .dataFetcher(new DataFetcher() {
                             @Override
                             public Object get(DataFetchingEnvironment env) {return env.getArgument("value");}
-                        })
-                        .build())
+                        }))
                 .name("EnumQuery")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("nullEnum")
@@ -320,8 +307,7 @@ public class FunWithStringsSchemaFactory {
                         .dataFetcher(new DataFetcher() {
                            @Override
                            public Object get(DataFetchingEnvironment env) {return null;}
-                        })
-                        .build())
+                        }))
                 .build();
         return GraphQLSchema.newSchema()
                 .query(queryType)

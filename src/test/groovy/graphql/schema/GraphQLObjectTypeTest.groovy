@@ -15,8 +15,8 @@ class GraphQLObjectTypeTest extends Specification {
     def "duplicate field definition fails"() {
         when:
         newObject().name("TestObjectType")
-                .field(newFieldDefinition().name("NAME").type(GraphQLString).build())
-                .field(newFieldDefinition().name("NAME").type(GraphQLString).build())
+                .field(newFieldDefinition().name("NAME").type(GraphQLString))
+                .field(newFieldDefinition().name("NAME").type(GraphQLString))
                 .build();
         then:
         thrown(AssertException)

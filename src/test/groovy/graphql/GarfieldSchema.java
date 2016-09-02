@@ -105,8 +105,7 @@ public class GarfieldSchema {
             .name("Named")
             .field(newFieldDefinition()
                     .name("name")
-                    .type(GraphQLString)
-                    .build())
+                    .type(GraphQLString))
             .typeResolver(new TypeResolver() {
                 @Override
                 public GraphQLObjectType getType(Object object) {
@@ -128,12 +127,10 @@ public class GarfieldSchema {
             .name("Dog")
             .field(newFieldDefinition()
                     .name("name")
-                    .type(GraphQLString)
-                    .build())
+                    .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("barks")
-                    .type(GraphQLBoolean)
-                    .build())
+                    .type(GraphQLBoolean))
             .withInterface(NamedType)
             .build();
 
@@ -141,12 +138,10 @@ public class GarfieldSchema {
             .name("Cat")
             .field(newFieldDefinition()
                     .name("name")
-                    .type(GraphQLString)
-                    .build())
+                    .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("meows")
-                    .type(GraphQLBoolean)
-                    .build())
+                    .type(GraphQLBoolean))
             .withInterface(NamedType)
             .build();
 
@@ -172,16 +167,13 @@ public class GarfieldSchema {
             .name("Person")
             .field(newFieldDefinition()
                     .name("name")
-                    .type(GraphQLString)
-                    .build())
+                    .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("pets")
-                    .type(new GraphQLList(PetType))
-                    .build())
+                    .type(new GraphQLList(PetType)))
             .field(newFieldDefinition()
                     .name("friends")
-                    .type(new GraphQLList(NamedType))
-                    .build())
+                    .type(new GraphQLList(NamedType)))
             .withInterface(NamedType)
             .build();
 

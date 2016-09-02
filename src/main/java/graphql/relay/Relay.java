@@ -23,23 +23,19 @@ public class Relay {
             .field(newFieldDefinition()
                     .name("hasNextPage")
                     .type(new GraphQLNonNull(GraphQLBoolean))
-                    .description("When paginating forwards, are there more items?")
-                    .build())
+                    .description("When paginating forwards, are there more items?"))
             .field(newFieldDefinition()
                     .name("hasPreviousPage")
                     .type(new GraphQLNonNull(GraphQLBoolean))
-                    .description("When paginating backwards, are there more items?")
-                    .build())
+                    .description("When paginating backwards, are there more items?"))
             .field(newFieldDefinition()
                     .name("startCursor")
                     .type(GraphQLString)
-                    .description("When paginating backwards, the cursor to continue.")
-                    .build())
+                    .description("When paginating backwards, the cursor to continue."))
             .field(newFieldDefinition()
                     .name("endCursor")
                     .type(GraphQLString)
-                    .description("When paginating forwards, the cursor to continue.")
-                    .build())
+                    .description("When paginating forwards, the cursor to continue."))
             .build();
 
     public GraphQLInterfaceType nodeInterface(TypeResolver typeResolver) {
@@ -50,8 +46,7 @@ public class Relay {
                 .field(newFieldDefinition()
                         .name("id")
                         .description("The ID of an object")
-                        .type(new GraphQLNonNull(GraphQLID))
-                        .build())
+                        .type(new GraphQLNonNull(GraphQLID)))
                 .build();
         return node;
     }
@@ -65,8 +60,7 @@ public class Relay {
                 .argument(newArgument()
                         .name("id")
                         .description("The ID of an object")
-                        .type(new GraphQLNonNull(GraphQLID))
-                        .build())
+                        .type(new GraphQLNonNull(GraphQLID)))
                 .build();
         return fieldDefinition;
     }
@@ -129,13 +123,11 @@ public class Relay {
                 .field(newFieldDefinition()
                         .name("node")
                         .type(nodeType)
-                        .description("The item at the end of the edge")
-                        .build())
+                        .description("The item at the end of the edge"))
                 .field(newFieldDefinition()
                         .name("cursor")
                         .type(new GraphQLNonNull(GraphQLString))
-                        .description("")
-                        .build())
+                        .description(""))
                 .fields(edgeFields)
                 .build();
         return edgeType;
@@ -148,12 +140,10 @@ public class Relay {
                 .description("A connection to a list of items.")
                 .field(newFieldDefinition()
                         .name("edges")
-                        .type(new GraphQLList(edgeType))
-                        .build())
+                        .type(new GraphQLList(edgeType)))
                 .field(newFieldDefinition()
                         .name("pageInfo")
-                        .type(new GraphQLNonNull(pageInfoType))
-                        .build())
+                        .type(new GraphQLNonNull(pageInfoType)))
                 .fields(connectionFields)
                 .build();
         return connectionType;
@@ -168,16 +158,14 @@ public class Relay {
                 .name(name + "Input")
                 .field(newInputObjectField()
                         .name("clientMutationId")
-                        .type(new GraphQLNonNull(GraphQLString))
-                        .build())
+                        .type(new GraphQLNonNull(GraphQLString)))
                 .fields(inputFields)
                 .build();
         GraphQLObjectType outputType = newObject()
                 .name(name + "Payload")
                 .field(newFieldDefinition()
                         .name("clientMutationId")
-                        .type(new GraphQLNonNull(GraphQLString))
-                        .build())
+                        .type(new GraphQLNonNull(GraphQLString)))
                 .fields(outputFields)
                 .build();
 
@@ -186,8 +174,7 @@ public class Relay {
                 .type(outputType)
                 .argument(newArgument()
                         .name("input")
-                        .type(new GraphQLNonNull(inputObjectType))
-                        .build())
+                        .type(new GraphQLNonNull(inputObjectType)))
                 .dataFetcher(dataFetcher)
                 .build();
     }
