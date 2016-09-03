@@ -15,7 +15,7 @@ import java.util.Deque;
 
 public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
-    Document result;
+    private Document result;
 
     private enum ContextProperty {
         OperationDefinition,
@@ -96,6 +96,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(field);
     }
 
+    Document getResult() {
+        return result;
+    }
 
     @Override
     public Void visitDocument(GraphqlParser.DocumentContext ctx) {
@@ -407,9 +410,12 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         throw new ShouldNotHappenException();
     }
 
-    private String parseString(String string) {
+    static String parseString(String string) {
+        assert string.length() >= 2;
         StringWriter writer = new StringWriter(string.length() - 2);
         int end = string.length() - 1;
+        assert string.charAt(0) == '"' : "string did not start with '\"'";
+        assert string.charAt(end) == '"' : "string did not end with '\"'";
         for (int i = 1; i < end; i++) {
             char c = string.charAt(i);
             if (c != '\\') {

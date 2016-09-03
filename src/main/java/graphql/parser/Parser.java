@@ -14,7 +14,6 @@ public class Parser {
 
     private static final Logger log = LoggerFactory.getLogger(Parser.class);
 
-
     public Document parseDocument(String input) {
 
         GraphqlLexer lexer = new GraphqlLexer(new ANTLRInputStream(input));
@@ -30,6 +29,6 @@ public class Parser {
 
         GraphqlAntlrToLanguage antlrToLanguage = new GraphqlAntlrToLanguage();
         antlrToLanguage.visitDocument(document);
-        return antlrToLanguage.result;
+        return antlrToLanguage.getResult();
     }
 }
