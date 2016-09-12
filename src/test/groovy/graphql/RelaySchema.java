@@ -18,7 +18,7 @@ public class RelaySchema {
             .field(newFieldDefinition()
                     .name("id")
                     .type(GraphQLString)
-                    .fetchField())
+                    .dataFetcher(new FieldDataFetcher("id")))
             .build();
 
     public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(new TypeResolver() {
@@ -39,7 +39,7 @@ public class RelaySchema {
             .field(newFieldDefinition()
                     .name("id")
                     .type(GraphQLString)
-                    .fetchField())
+                    .dataFetcher(new FieldDataFetcher("id")))
             .field(newFieldDefinition()
                     .name("stuffs")
                     .type(StuffConnectionType))

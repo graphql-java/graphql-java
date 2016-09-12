@@ -3,12 +3,12 @@ package graphql;
 
 import graphql.schema.*;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public class ScalarsQuerySchema {
 
@@ -25,15 +25,15 @@ public class ScalarsQuerySchema {
             .field(newFieldDefinition()
                     .name("bigInteger")
                     .type(Scalars.GraphQLBigInteger)
-                    .staticValue(BigInteger.valueOf(9999)))
+                    .dataFetcher(new StaticDataFetcher(BigInteger.valueOf(9999))))
             .field(newFieldDefinition()
                     .name("bigDecimal")
                     .type(Scalars.GraphQLBigDecimal)
-                    .staticValue(BigDecimal.valueOf(1234.0)))
+                    .dataFetcher(new StaticDataFetcher(BigDecimal.valueOf(1234.0))))
             .field(newFieldDefinition()
                     .name("floatNaN")
                     .type(Scalars.GraphQLFloat)
-                    .staticValue(Double.NaN))
+                    .dataFetcher(new StaticDataFetcher(Double.NaN)))
             
             
             

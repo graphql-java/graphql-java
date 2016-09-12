@@ -5,6 +5,8 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.MapDataFetcher
+import graphql.schema.StaticDataFetcher
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
@@ -22,7 +24,7 @@ class GraphQLTest extends Specification {
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
-                .staticValue("world")
+                .dataFetcher(new StaticDataFetcher("world"))
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
@@ -45,17 +47,19 @@ class GraphQLTest extends Specification {
                 .field(
                 newFieldDefinition()
                         .name("id")
+                        .dataFetcher(new MapDataFetcher("id"))
                         .type(GraphQLString))
                 .field(
                 newFieldDefinition()
                         .name("name")
+                        .dataFetcher(new MapDataFetcher("name"))
                         .type(GraphQLString))
                 .build()
 
         GraphQLFieldDefinition.Builder simpsonField = newFieldDefinition()
                 .name("simpson")
                 .type(heroType)
-                .staticValue([id: '123', name: 'homer'])
+                .dataFetcher(new StaticDataFetcher([id: '123', name: 'homer']))
 
         GraphQLSchema graphQLSchema = newSchema().query(
                 newObject()
@@ -77,7 +81,7 @@ class GraphQLTest extends Specification {
                 .name("hello")
                 .type(GraphQLString)
                 .argument(newArgument().name("arg").type(GraphQLString))
-                .staticValue("world")
+                .dataFetcher(new StaticDataFetcher("world"))
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")

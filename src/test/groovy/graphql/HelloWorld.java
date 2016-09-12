@@ -3,6 +3,7 @@ package graphql;
 
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.StaticDataFetcher;
 import org.junit.Test;
 
 import java.util.Map;
@@ -20,7 +21,7 @@ public class HelloWorld {
                 .field(newFieldDefinition()
                         .type(GraphQLString)
                         .name("hello")
-                        .staticValue("world"))
+                        .dataFetcher(new StaticDataFetcher("value")))
                 .build();
 
         GraphQLSchema schema = GraphQLSchema.newSchema()
@@ -37,7 +38,7 @@ public class HelloWorld {
                 .field(newFieldDefinition()
                         .type(GraphQLString)
                         .name("hello")
-                        .staticValue("world"))
+                        .dataFetcher(new StaticDataFetcher("world")))
                 .build();
 
         GraphQLSchema schema = GraphQLSchema.newSchema()
