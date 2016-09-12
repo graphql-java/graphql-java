@@ -1,15 +1,15 @@
 package graphql.schema;
 
-import graphql.AssertException;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import graphql.AssertException;
+
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer {
 
     private final String name;
     private final String description;
@@ -52,6 +52,16 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
 
     public static Builder newInputObject() {
         return new Builder();
+    }
+
+    @Override
+    public GraphQLInputObjectField getFieldDefinition(String name) {
+        return fieldMap.get(name);
+    }
+
+    @Override
+    public List<GraphQLInputObjectField> getFieldDefinitions() {
+        return new ArrayList<GraphQLInputObjectField>(fieldMap.values());
     }
 
     public static class Builder {

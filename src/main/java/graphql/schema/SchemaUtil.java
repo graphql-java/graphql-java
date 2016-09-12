@@ -1,10 +1,14 @@
 package graphql.schema;
 
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import graphql.GraphQLException;
 import graphql.introspection.Introspection;
-
-import java.util.*;
 
 public class SchemaUtil {
 
@@ -37,9 +41,9 @@ public class SchemaUtil {
         } else if (root instanceof GraphQLList) {
             collectTypes(((GraphQLList) root).getWrappedType(), result);
         } else if (root instanceof GraphQLEnumType) {
-            result.put(((GraphQLEnumType) root).getName(), root);
+            result.put(root.getName(), root);
         } else if (root instanceof GraphQLScalarType) {
-            result.put(((GraphQLScalarType) root).getName(), root);
+            result.put(root.getName(), root);
         } else if (root instanceof GraphQLObjectType) {
             collectTypesForObjects((GraphQLObjectType) root, result);
         } else if (root instanceof GraphQLInterfaceType) {
@@ -136,11 +140,23 @@ public class SchemaUtil {
             if (type instanceof GraphQLFieldsContainer) {
                 resolveTypeReferencesForFieldsContainer((GraphQLFieldsContainer) type, typeMap);
             }
+            if (type instanceof GraphQLInputFieldsContainer) {
+                resolveTypeReferencesForInputFieldsContainer((GraphQLInputFieldsContainer) type, typeMap);
+            }
         }
     }
 
     private void resolveTypeReferencesForFieldsContainer(GraphQLFieldsContainer fieldsContainer, Map<String, GraphQLType> typeMap) {
         for (GraphQLFieldDefinition fieldDefinition : fieldsContainer.getFieldDefinitions()) {
+            fieldDefinition.replaceTypeReferences(typeMap);
+            for (GraphQLArgument argument : fieldDefinition.getArguments()) {
+                argument.replaceTypeReferences(typeMap);
+            }
+        }
+    }
+
+    private void resolveTypeReferencesForInputFieldsContainer(GraphQLInputFieldsContainer fieldsContainer, Map<String, GraphQLType> typeMap) {
+        for (GraphQLInputObjectField fieldDefinition : fieldsContainer.getFieldDefinitions()) {
             fieldDefinition.replaceTypeReferences(typeMap);
         }
     }
