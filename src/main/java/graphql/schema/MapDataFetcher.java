@@ -14,8 +14,8 @@ public class MapDataFetcher implements DataFetcher {
     }
 
     @Override
-    public Object get(DataFetchingEnvironment environment) {
-        Object source = environment.getSource();
+    public Object get(DataFetchingEnvironment env) {
+        Object source = env.getSource();
         if (source == null || !(source instanceof Map)) return null;
         return getValue(source);
     }

@@ -18,8 +18,8 @@ public class FieldDataFetcher implements DataFetcher {
     }
 
     @Override
-    public Object get(DataFetchingEnvironment environment) {
-        Object source = environment.getSource();
+    public Object get(DataFetchingEnvironment env) {
+        Object source = env.getSource();
         if (source == null) return null;
         return getField(source);
     }
