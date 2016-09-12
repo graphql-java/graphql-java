@@ -88,7 +88,7 @@ public class HelloWorld {
                         .field(newFieldDefinition()
                                 .type(GraphQLString)
                                 .name("hello")
-                                .staticValue("world"))
+                                .dataFetcher(new StaticDataFetcher("world")))
                         .build();
         
         GraphQLSchema schema = GraphQLSchema.newSchema()
@@ -159,9 +159,11 @@ GraphQLObjectType simpsonCharacter = newObject()
     .field(newFieldDefinition()
             .name("name")
             .description("The name of the character.")
+            .dataFetcher(new StaticDataFetcher("Homer"))
             .type(GraphQLString))
     .field(newFieldDefinition()
             .name("mainCharacter")
+            .dataFetcher(new StaticDataFetcher("Lisa"))
             .description("One of the main Simpson characters?")
             .type(GraphQLBoolean))
 .build();
@@ -292,37 +294,53 @@ GraphQLObjectType person = newObject()
  
 #### Data fetching
 
-The actual data comes from `DataFetcher` objects.
- 
-Every field definition has a `DataFetcher`. When no one is configured, a 
-[PropertyDataFetcher](src/main/java/graphql/schema/PropertyDataFetcher.java) is used.
+During query execution, actual field data comes from [`DataFetcher`](src/main/java/graphql/schema/DataFetcher.java)
+objects that must be specified for every field definition. graphql-java comes with five built-in data fetcher
+implemenations:
 
-`PropertyDataFetcher` fetches data from `Map` and Java Beans. So when the field name matches the Map key or
-the property name of the source Object, no `DataFetcher` is needed. 
+* [`StaticDataFetcher`](src/main/java/graphql/schema/StaticDataFetcher.java) &mdash; Resolves a field with pre-defined, static data.
+* [`MapDataFetcher`](src/main/java/graphql/schema/MapDataFetcher.java) &mdash; Dereferences a key from the surrounding source object,
+  which should be a `Map`. If the source object is not a `Map`, or if the key is not set, returns `null`.
+* [`FieldDataFetcher`](src/main/java/graphql/schema/FieldDataFetcher.java) &mdash; Gets a public field from the source object. 
+* [`PropertyDataFetcher`](src/main/java/graphql/schema/PropertyDataFetcher.java) &mdash; Gets a property from the source object.
+  If the field type is boolean, attempts using a `is`- or `get`-prefixed getter method (in that order). Otherwise, a `get`-prefixed
+  getter is used.
+* [`DefaultDataFetcher`](src/main/java/graphql/schema/DefaultDataFetcher.java) (**default**) &mdash; This is the default data fetcher if
+* none is specified. It aims to provide a simple and sensible default and combines functionality from `MapDataFetcher`, `PropertyDataFetcher`
+  and `FieldDataFetcher`. Given a source object, the fetcher first attempts to use the object as a `Map`. If the object is not
+  a `Map`, the fetcher attempts reading a property from the object using a getter method. Finally, it attempts to read a public field
+  and returns `null` if no such field exists on the source object.
 
-
-
-Example of configuring a custom `DataFetcher`:
-```java
-
-DataFetcher calculateComplicatedValue = new DataFetcher() {
-    @Override
-    Object get(DataFetchingEnvironment environment) {
-        // environment.getSource() is the value of the surrounding
-        // object. In this case described by objectType
-        Object value = ... // Perhaps getting from a DB or whatever 
-        return value;
-    }
-
-GraphQLObjectType objectType = newObject()
-    .name("ObjectType")
-    .field(newFieldDefinition()
-            .name("someComplicatedValue")
-            .type(GraphQLString)
-            .dataFetcher(calculateComplicatedValue))
-    .build();
+When the built-in data fetchers are insufficient, a custom `DataFetcher` implementation is easy to define:
 
 ```
+newFieldDefinition()
+    .name("fieldName")
+    .type(GraphQLString)
+    .dataFetcher(new DataFetcher() {
+        @Override
+        Object get(DataFetchingEnvironment env) {
+            // Return this field's value. In this example we return the surrounding
+            // source, but you can do anything (e.g. access a database).
+            return env.getSource();
+        }))
+    .build();
+```
+
+`DataFetcher#get()` receives one parameter: the `DataFetchingEnvironment`, which provides field resolution context. The
+`DataFetchingEnvironment` has the following methods:
+
+* `#getSource()` : `Object` &mdash; The surrounding parent object.
+* `#getArguments()` : `Map<String, Object>` &mdash; The user-provided arguments.
+* `#<T>getArgument(String name)` : `T` &mdash; A user-provided argument.
+* `#containsArgument(String name)` : `boolean` &mdash; Was an argument provided?
+* `#getContext()` : `Object` &mdash; The top-level context passed to `GraphQL#execute()`.
+  `#getSource()` returns this value at root fields.
+* `#getFields()` : `List<Field>` &mdash; The ASTs for this field.
+* `#getFieldType()` : `GraphQLOutputType` &mdash; The field's schema defined type.
+* `#getParentType()` :  `GraphQLType` &mdash; The parent objects schema defined type.
+* `#getGraphQLSchema()` : `GraphQLSchema` &mdash; The whole schema.
+
 
 #### Executing 
 
