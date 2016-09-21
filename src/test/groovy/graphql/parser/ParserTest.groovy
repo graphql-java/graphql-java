@@ -373,4 +373,17 @@ class ParserTest extends Specification {
 
     }
 
+    def "`'query'` can be used as field name"() {
+        given:
+        def input = "{ query }"
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        document.definitions[0] instanceof OperationDefinition
+        document.definitions[0].operation == OperationDefinition.Operation.QUERY
+        assertField(document.definitions[0] as OperationDefinition, "query")
+    }
 }
