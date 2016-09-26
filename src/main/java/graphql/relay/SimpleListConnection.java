@@ -55,7 +55,7 @@ public class SimpleListConnection implements DataFetcher {
             edges = edges.subList(0, first <= edges.size() ? first : edges.size());
         }
         if (last != null) {
-            edges = edges.subList(edges.size() - last, edges.size());
+            edges = edges.subList( last > edges.size() ? 0 : edges.size() - last, edges.size());
         }
 
         if (edges.size() == 0) {
