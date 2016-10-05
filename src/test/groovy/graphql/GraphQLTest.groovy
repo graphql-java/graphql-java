@@ -1,10 +1,7 @@
 package graphql
 
 import graphql.language.SourceLocation
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLNonNull
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
+import graphql.schema.*
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
@@ -148,5 +145,27 @@ class GraphQLTest extends Specification {
         errors[0].errorType == ErrorType.ValidationError
         errors[0].validationErrorType == ValidationErrorType.MissingFieldArgument
         errors[0].sourceLocations == [new SourceLocation(1, 3)]
+    }
+
+    def "`Iterable` can be used as a `GraphQLList` field result"() {
+        given:
+        def set = new HashSet<String>()
+        set.add("One")
+        set.add("Two")
+
+        def schema = GraphQLSchema.newSchema()
+          .query(GraphQLObjectType.newObject()
+            .name("QueryType")
+            .field(GraphQLFieldDefinition.newFieldDefinition()
+              .name("set")
+              .type(new GraphQLList(GraphQLString))
+              .dataFetcher({ set })))
+          .build()
+
+        when:
+        def data = new GraphQL(schema).execute("query { set }").data
+
+        then:
+        data == [set: ['One', 'Two']]
     }
 }
