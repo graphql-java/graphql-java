@@ -72,6 +72,7 @@ There is a mailing list (Google Group) for graphql-java: [graphql-java group](ht
 This is the famous "hello world" in graphql-java: 
 
 ```java
+import graphql.GraphQL;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
@@ -88,13 +89,14 @@ public class HelloWorld {
                         .field(newFieldDefinition()
                                 .type(GraphQLString)
                                 .name("hello")
-                                .staticValue("world"))
+                                .staticValue("world")
+                                .build())
                         .build();
         
         GraphQLSchema schema = GraphQLSchema.newSchema()
                         .query(queryType)
                         .build();
-        Map<String, Object> result = new GraphQL(schema).execute("{hello}").getData();
+        Object result = new GraphQL(schema).execute("{hello}").getData();
         
         System.out.println(result);
         // Prints: {hello=world}
