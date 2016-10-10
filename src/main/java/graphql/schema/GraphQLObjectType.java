@@ -28,11 +28,18 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-            String name = fieldDefinition.getName();
-            if (fieldDefinitionsByName.containsKey(name))
-                throw new AssertException("field " + name + " redefined");
-            fieldDefinitionsByName.put(name, fieldDefinition);
+            addField(fieldDefinition);
         }
+    }
+
+
+    public void addField(GraphQLFieldDefinition fieldDefinition) {
+        String name = fieldDefinition.getName();
+
+        if (fieldDefinitionsByName.containsKey(name))
+            throw new AssertException("field " + name + " redefined");
+
+        fieldDefinitionsByName.put(name, fieldDefinition);
     }
 
 
