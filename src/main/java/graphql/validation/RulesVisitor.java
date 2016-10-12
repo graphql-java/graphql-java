@@ -54,7 +54,7 @@ public class RulesVisitor implements QueryLanguageVisitor {
         } else if (node instanceof Directive) {
             checkDirective((Directive) node, ancestors, rulesToConsider);
         } else if (node instanceof FragmentSpread) {
-            checkFragmentSpread((FragmentSpread) node, rulesToConsider);
+            checkFragmentSpread((FragmentSpread) node, rulesToConsider, ancestors);
         } else if (node instanceof FragmentDefinition) {
             checkFragmentDefinition((FragmentDefinition) node, rulesToConsider);
         } else if (node instanceof OperationDefinition) {
@@ -105,14 +105,16 @@ public class RulesVisitor implements QueryLanguageVisitor {
         }
     }
 
-    private void checkFragmentSpread(FragmentSpread fragmentSpread, List<AbstractRule> rules) {
+    private void checkFragmentSpread(FragmentSpread fragmentSpread, List<AbstractRule> rules, List<Node> ancestors) {
         for (AbstractRule rule : rules) {
             rule.checkFragmentSpread(fragmentSpread);
         }
         List<AbstractRule> rulesVisitingFragmentSpreads = getRulesVisitingFragmentSpreads(rules);
         if (rulesVisitingFragmentSpreads.size() > 0) {
             FragmentDefinition fragment = validationContext.getFragment(fragmentSpread.getName());
-            new LanguageTraversal().traverse(fragment, new RulesVisitor(validationContext, rulesVisitingFragmentSpreads, true));
+            if(!ancestors.contains(fragment)){
+                new LanguageTraversal(ancestors).traverse(fragment, new RulesVisitor(validationContext, rulesVisitingFragmentSpreads, true));
+            }
         }
     }
 
