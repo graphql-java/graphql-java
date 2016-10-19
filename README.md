@@ -504,7 +504,7 @@ Installing in the local Maven repository:
 
 The implementation is in Java 6, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
 
-The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
+The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/antlr/Graphql.g4).
 
 The only runtime dependencies are ANTLR and Slf4J.
  
