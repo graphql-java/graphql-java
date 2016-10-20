@@ -11,7 +11,7 @@ public class StaticDataFetcher implements DataFetcher {
     }
 
     @Override
-    public Object get(DataFetchingEnvironment environment) {
+    public Object get(DataFetchingEnvironment env) {
         return value;
     }
 }

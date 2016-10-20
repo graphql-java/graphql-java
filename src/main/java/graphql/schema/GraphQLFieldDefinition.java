@@ -83,8 +83,6 @@ public class GraphQLFieldDefinition {
         private DataFetcher dataFetcher;
         private List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
         private String deprecationReason;
-        private boolean isField;
-
 
         public Builder name(String name) {
             this.name = name;
@@ -115,26 +113,6 @@ public class GraphQLFieldDefinition {
 
         public Builder dataFetcher(DataFetcher dataFetcher) {
             this.dataFetcher = dataFetcher;
-            return this;
-        }
-
-        public Builder staticValue(final Object value) {
-            this.dataFetcher = new DataFetcher() {
-                @Override
-                public Object get(DataFetchingEnvironment environment) {
-                    return value;
-                }
-            };
-            return this;
-        }
-
-        /**
-         * Get the data from a field, rather than a property.
-         *
-         * @return this builder
-         */
-        public Builder fetchField() {
-            this.isField = true;
             return this;
         }
 
@@ -185,15 +163,14 @@ public class GraphQLFieldDefinition {
 
         public GraphQLFieldDefinition build() {
             if (dataFetcher == null) {
-                if (isField) {
-                    dataFetcher = new FieldDataFetcher(name);
-                } else {
-                    dataFetcher = new PropertyDataFetcher(name);
-                }
+                dataFetcher = new DefaultDataFetcher(
+                  new MapDataFetcher(name),
+                  new PropertyDataFetcher(name, type),
+                  new FieldDataFetcher(name)
+                );
             }
             return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments, deprecationReason);
         }
-
 
     }
 }
