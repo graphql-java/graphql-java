@@ -268,7 +268,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             for (int i = 0; i < nodeData.size(); i++) {
                 values.add(null);
             }
-            log.info("Exception while fetching data", e);
+            log.warn("Exception while fetching data", e);
             executionContext.addError(new ExceptionWhileDataFetching(e));
         }
         assert nodeData.size() == values.size();

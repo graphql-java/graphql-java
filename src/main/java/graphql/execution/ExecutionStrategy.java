@@ -39,7 +39,7 @@ public abstract class ExecutionStrategy {
         try {
             resolvedValue = fieldDef.getDataFetcher().get(environment);
         } catch (Exception e) {
-            log.info("Exception while fetching data", e);
+            log.warn("Exception while fetching data", e);
             executionContext.addError(new ExceptionWhileDataFetching(e));
         }
 
