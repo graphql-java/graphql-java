@@ -57,7 +57,7 @@ public class GraphQL {
 
     public ExecutionResult execute(String requestString, String operationName, Object context, Map<String, Object> arguments) {
         assertNotNull(arguments, "arguments can't be null");
-        log.info("Executing request. operation name: {}. Request: {} ", operationName, requestString);
+        log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
         Parser parser = new Parser();
         Document document;
         try {
