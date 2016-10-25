@@ -93,7 +93,7 @@ public abstract class ExecutionStrategy {
             result = Arrays.asList((Object[]) result);
         }
 
-        return completeValueForList(executionContext, fieldType, fields, (List<Object>) result);
+        return completeValueForList(executionContext, fieldType, fields, (Iterable<Object>) result);
     }
 
     protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
@@ -126,7 +126,8 @@ public abstract class ExecutionStrategy {
         return new ExecutionResultImpl(serialized, null);
     }
 
-    protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
+    protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field>
+            fields, Iterable<Object> result) {
         List<Object> completedResults = new ArrayList<Object>();
         for (Object item : result) {
             ExecutionResult completedValue = completeValue(executionContext, fieldType.getWrappedType(), fields, item);
