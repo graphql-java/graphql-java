@@ -77,7 +77,9 @@ allprojects {
 }
 
 publishing {
+
     publications {
+
         graphqlJava(MavenPublication) {
             version version
             from components.java
@@ -89,7 +91,13 @@ publishing {
                 classifier "javadoc"
             }
             pom.withXml {
-                asNode().children().last() + {
+                Node pomNode = asNode()
+                pomNode.dependencies.'*'.findAll() {
+                    it.artifactId.text() == 'antlr4'
+                }.each() {
+                    it.parent().remove(it)
+                }
+                pomNode.children().last() + {
                     resolveStrategy = Closure.DELEGATE_FIRST
                     name 'graphql-java'
                     description 'GraphqL Java'
