@@ -118,7 +118,7 @@ NAME: [_A-Za-z][_0-9A-Za-z]* ;
 
 IntValue : Sign? IntegerPart;
 
-FloatValue : Sign? IntegerPart ('.' Digit+)? ExponentPart?;
+FloatValue : Sign? IntegerPart ('.' Digit*)? ExponentPart?;
 
 Sign : '-';
 
