@@ -275,13 +275,14 @@ class ParserTest extends Specification {
         given:
         def input = """
             query myQuery {
-              hello(arg: {intKey:1, stringKey: \"world\", subObject: {subKey:true} } ) }
+              hello(arg: {intKey:1, floatKey: 4., stringKey: \"world\", subObject: {subKey:true} } ) }
             """
 
         and: "expected query"
 
         def objectValue = new ObjectValue()
         objectValue.getObjectFields().add(new ObjectField("intKey", new IntValue(1)))
+        objectValue.getObjectFields().add(new ObjectField("floatKey", new FloatValue(4)))
         objectValue.getObjectFields().add(new ObjectField("stringKey", new StringValue("world")))
         def subObject = new ObjectValue()
         subObject.getObjectFields().add(new ObjectField("subKey", new BooleanValue(true)))
