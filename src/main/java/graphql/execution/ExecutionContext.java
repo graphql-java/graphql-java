@@ -6,7 +6,6 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -14,16 +13,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ExecutionContext {
 
     private final GraphQLSchema graphQLSchema;
-    private final ExecutionStrategy executionStrategy;
+    private final ExecutionStrategy queryStrategy;
+    private final ExecutionStrategy mutationStrategy;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final OperationDefinition operationDefinition;
     private final Map<String, Object> variables;
     private final Object root;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<GraphQLError>();
 
-    public ExecutionContext(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
+    public ExecutionContext(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
         this.graphQLSchema = graphQLSchema;
-        this.executionStrategy = executionStrategy;
+        this.queryStrategy = queryStrategy;
+        this.mutationStrategy = mutationStrategy;
         this.fragmentsByName = fragmentsByName;
         this.operationDefinition = operationDefinition;
         this.variables = variables;
@@ -62,8 +63,11 @@ public class ExecutionContext {
         return errors;
     }
 
-    public ExecutionStrategy getExecutionStrategy() {
-        return executionStrategy;
+    public ExecutionStrategy getQueryStrategy() {
+        return queryStrategy;
     }
 
+    public ExecutionStrategy getMutationStrategy() {
+        return mutationStrategy;
+    }
 }
