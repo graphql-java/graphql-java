@@ -1,5 +1,3 @@
-import java.text.SimpleDateFormat
-
 plugins {
     id "com.jfrog.bintray" version "1.2"
 }
@@ -9,10 +7,11 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'antlr'
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 def releaseVersion = System.properties.RELEASE_VERSION
-version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
+version = "2.3.0-SNAPSHOT"
+//version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
 group = 'com.graphql-java'
 
 

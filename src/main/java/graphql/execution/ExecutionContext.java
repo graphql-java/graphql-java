@@ -6,10 +6,7 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ExecutionContext {
 
@@ -20,7 +17,7 @@ public class ExecutionContext {
     private OperationDefinition operationDefinition;
     private Map<String, Object> variables = new LinkedHashMap<String, Object>();
     private Object root;
-    private List<GraphQLError> errors = new ArrayList<GraphQLError>();
+    private List<GraphQLError> errors = Collections.synchronizedList(new ArrayList<GraphQLError>());
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
