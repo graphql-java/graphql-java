@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 import static graphql.Assert.assertNotNull;
 
@@ -34,11 +35,10 @@ public class GraphQL {
         }
     };
 
-    private final GraphQLSchema graphQLSchema;
-    private final ExecutionStrategy queryStrategy;
-    private final ExecutionStrategy mutationStrategy;
-    private final ExecutionIdProvider idProvider;
-
+    protected final GraphQLSchema graphQLSchema;
+    protected final ExecutionStrategy queryStrategy;
+    protected final ExecutionStrategy mutationStrategy;
+    protected final ExecutionIdProvider idProvider;
 
     /**
      * A GraphQL object ready to execute queries

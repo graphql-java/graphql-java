@@ -3,6 +3,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.GraphQLException;
+import graphql.execution.async.AsyncExecutionStrategy;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
@@ -13,12 +14,14 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
+import java.util.stream.Stream;
 
 public class Execution {
 
-    private FieldCollector fieldCollector = new FieldCollector();
-    private ExecutionStrategy queryStrategy;
-    private ExecutionStrategy mutationStrategy;
+    protected FieldCollector fieldCollector = new FieldCollector();
+    protected ExecutionStrategy queryStrategy;
+    protected ExecutionStrategy mutationStrategy;
 
     public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
@@ -33,7 +36,7 @@ public class Execution {
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
 
-    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
+    protected GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
         if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
             return graphQLSchema.getMutationType();
 
