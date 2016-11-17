@@ -3,18 +3,20 @@ grammar Graphql;
 @header {
     package graphql.parser.antlr;
 }
-// Document
+
+// Document 
 
 document : definition+;
 
 definition:
 operationDefinition |
-fragmentDefinition
+fragmentDefinition |
+typeSystemDefinition
 ;
 
 operationDefinition:
 selectionSet |
-operationType  NAME? variableDefinitions? directives? selectionSet;
+operationType  name? variableDefinitions? directives? selectionSet;
 
 operationType : NAME;
 
@@ -22,7 +24,7 @@ variableDefinitions : '(' variableDefinition+ ')';
 
 variableDefinition : variable ':' type defaultValue?;
 
-variable : '$' NAME;
+variable : '$' name;
 
 defaultValue : '=' value;
 
@@ -35,13 +37,13 @@ field |
 fragmentSpread |
 inlineFragment;
 
-field : alias? NAME arguments? directives? selectionSet?;
+field : alias? name arguments? directives? selectionSet?;
 
-alias : NAME ':';
+alias : name ':';
 
 arguments : '(' argument+ ')';
 
-argument : NAME ':' valueWithVariable;
+argument : name ':' valueWithVariable;
 
 // Fragments
 
@@ -51,12 +53,13 @@ inlineFragment : '...' 'on' typeCondition directives? selectionSet;
 
 fragmentDefinition : 'fragment' fragmentName 'on' typeCondition directives? selectionSet;
 
-fragmentName :  NAME;
+fragmentName :  name;
 
 typeCondition : typeName;
 
 // Value
 
+name: NAME | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
 
 value :
 IntValue |
@@ -78,7 +81,7 @@ arrayValueWithVariable |
 objectValueWithVariable;
 
 
-enumValue : NAME ;
+enumValue : name ;
 
 // Array Value
 
@@ -91,30 +94,89 @@ arrayValueWithVariable: '[' valueWithVariable* ']';
 
 objectValue: '{' objectField* '}';
 objectValueWithVariable: '{' objectFieldWithVariable* '}';
-objectField : NAME ':' value;
-objectFieldWithVariable : NAME ':' valueWithVariable;
+objectField : name ':' value;
+objectFieldWithVariable : name ':' valueWithVariable;
 
 // Directives
 
 directives : directive+;
 
-directive :'@' NAME arguments?;
+directive :'@' name arguments?;
 
 // Types
 
 type : typeName | listType | nonNullType;
 
-typeName : NAME;
+typeName : name;
 listType : '[' type ']';
 nonNullType: typeName '!' | listType '!';
 
+
+// Type System
+typeSystemDefinition:
+scalarTypeDefinition |
+objectTypeDefinition |
+interfaceTypeDefinition |
+unionTypeDefinition |
+enumTypeDefinition |
+inputObjectTypeDefinition
+;
+
+namedType : name;
+
+scalarTypeDefinition : SCALAR name directives?;
+
+
+objectTypeDefinition : TYPE name implementsInterfaces? directives? '{' fieldDefinition+ '}';
+
+implementsInterfaces : IMPLEMENTS namedType+;
+
+fieldDefinition : name argumentsDefinition? ':' type directives?;
+
+argumentsDefinition : '(' inputValueDefinition+ ')';
+
+inputValueDefinition : name ':' type defaultValue? directives?;
+
+interfaceTypeDefinition : INTERFACE name directives? '{' fieldDefinition+ '}';
+
+unionTypeDefinition : UNION name directives? '=' unionMembers;
+
+unionMembers:
+namedType |
+unionMembers '|' namedType
+;
+
+enumTypeDefinition : ENUM name directives? '{' enumValueDefinition+ '}';
+
+enumValueDefinition : enumValue directives?;
+
+inputObjectTypeDefinition : INPUT name directives? '{' inputValueDefinition+ '}';
+
+typeExtensionDefinition : EXTEND objectTypeDefinition;
+
+directiveDefinition : DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
+
+directiveLocations :
+name |
+directiveLocations '|' name
+;
 
 
 // Token
 
 BooleanValue: 'true' | 'false';
 
-NAME: [_A-Za-z][_0-9A-Za-z]* ;
+SCALAR: 'scalar';
+TYPE: 'type';
+INTERFACE: 'interface';
+IMPLEMENTS: 'implements';
+ENUM: 'enum';
+UNION: 'union';
+INPUT: 'input';
+EXTEND: 'extend';
+DIRECTIVE: 'directive';
+NAME: [_A-Za-z][_0-9A-Za-z]*;
+
 
 IntValue : Sign? IntegerPart;
 
