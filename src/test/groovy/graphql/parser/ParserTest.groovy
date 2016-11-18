@@ -651,4 +651,95 @@ three: [Number] @three
         document.definitions.size() == 1
         isEqual(document.definitions[0], schema)
     }
+
+    def "toplevel schema"() {
+        given:
+        def input = """
+schema @d1 @d2 {
+    opname1: OpType1
+    opname2: OpType2
+}
+"""
+
+        and: "expected schema"
+        def schema = new SchemaDefinition()
+        schema.getDirectives().add(new Directive("d1"))
+        schema.getDirectives().add(new Directive("d2"))
+        schema.getOperationTypeDefinitions()
+            .add(new OperationTypeDefinition("opname1", new TypeName("OpType1")))
+        schema.getOperationTypeDefinitions()
+            .add(new OperationTypeDefinition("opname2", new TypeName("OpType2")))
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        isEqual(document.definitions[0], schema)
+    }
+
+    def "extend schema"() {
+        given:
+        def input = """
+extend type ExtendType implements Impl3 @extendDirective(a1:\$v1) {
+one: Int
+two: Int @second
+withArgs(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
+}
+"""
+
+        and: "expected schema"
+        def schema = new TypeExtensionDefinition("ExtendType")
+        schema.getImplements().add(new TypeName("Impl3"))
+        schema.getDirectives()
+            .add(new Directive("extendDirective", [new Argument("a1", new VariableReference("v1"))]))
+        schema.getFieldDefinitions()
+            .add(new FieldDefinition("one", new TypeName("Int")))
+        def two = new FieldDefinition("two", new TypeName("Int"))
+        two.getDirectives().add(new Directive("second"))
+        schema.getFieldDefinitions().add(two)
+
+        def withArgs = new FieldDefinition("withArgs", new TypeName("Function"))
+        withArgs.getInputValueDefinitions()
+            .add(new InputValueDefinition("arg1",
+                                          new ListType(new TypeName("Number")),
+                                          new ArrayValue([new IntValue(1)])))
+        def arg2 = new InputValueDefinition("arg2", new TypeName("String"))
+        arg2.getDirectives()
+            .add(new Directive("secondArg", [new Argument("cool", new BooleanValue(true))]))
+        withArgs.getInputValueDefinitions().add(arg2)
+        schema.getFieldDefinitions().add(withArgs)
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        isEqual(document.definitions[0], schema)
+    }
+
+    def "directive schema"() {
+        given:
+        def input = """
+directive @DirectiveName(arg1:String arg2:Int=23) on FIELD | QUERY
+"""
+
+        and: "expected schema"
+        def schema = new DirectiveDefinition("DirectiveName")
+        schema.getInputValueDefinitions()
+        .add(new InputValueDefinition("arg1", new TypeName("String")))
+        schema.getInputValueDefinitions()
+        .add(new InputValueDefinition("arg2", new TypeName("Int"), new IntValue(23)))
+        schema.getDirectiveLocations()
+        .add(new DirectiveLocation("FIELD"))
+        schema.getDirectiveLocations()
+        .add(new DirectiveLocation("QUERY"))
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        isEqual(document.definitions[0], schema)
+    }
 }

@@ -37,6 +37,10 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         EnumValueDefinition,
         FieldDefinition,
         InputValueDefinition,
+        TypeExtensionDefinition,
+        SchemaDefinition,
+        OperationTypeDefinition,
+        DirectiveDefinition,
     }
 
     static class ContextEntry {
@@ -237,6 +241,18 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
                 ((InputValueDefinition) contextEntry.value).setType(typeName);
                 break;
             }
+            if (contextEntry.contextProperty == ContextProperty.ObjectTypeDefinition) {
+                ((ObjectTypeDefinition) contextEntry.value).getImplements().add(typeName);
+                break;
+            }
+            if (contextEntry.contextProperty == ContextProperty.UnionTypeDefinition) {
+                ((UnionTypeDefinition) contextEntry.value).getMemberTypes().add(typeName);
+                break;
+            }
+            if (contextEntry.contextProperty == ContextProperty.OperationTypeDefinition) {
+                ((OperationTypeDefinition) contextEntry.value).setType(typeName);
+                break;
+            }
         }
         return super.visitTypeName(ctx);
     }
@@ -372,6 +388,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             } else if (contextEntry.contextProperty == ContextProperty.InputObjectTypeDefinition) {
                 ((InputObjectTypeDefinition) contextEntry.value).getDirectives().add(directive);
                 break;
+            } else if (contextEntry.contextProperty == ContextProperty.SchemaDefinition) {
+                ((SchemaDefinition) contextEntry.value).getDirectives().add(directive);
+                break;
             }
         }
         addContextProperty(ContextProperty.Directive, directive);
@@ -381,20 +400,30 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitNamedType(GraphqlParser.NamedTypeContext ctx) {
-        TypeName type = new TypeName(ctx.name().getText());
-        newNode(type, ctx);
+    public Void visitSchemaDefinition(GraphqlParser.SchemaDefinitionContext ctx) {
+        SchemaDefinition def = new SchemaDefinition();
+        newNode(def, ctx);
+        result.getDefinitions().add(def);
+        addContextProperty(ContextProperty.SchemaDefinition, def);
+        super.visitChildren(ctx);
+        popContext();
+        return null;
+    }
+
+    @Override
+    public Void visitOperationTypeDefinition(GraphqlParser.OperationTypeDefinitionContext ctx) {
+        OperationTypeDefinition def = new OperationTypeDefinition(ctx.operationType().getText());
+        newNode(def, ctx);
         for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == ContextProperty.ObjectTypeDefinition) {
-                ((ObjectTypeDefinition) contextEntry.value).getImplements().add(type);
-                break;
-            }
-            if (contextEntry.contextProperty == ContextProperty.UnionTypeDefinition) {
-                ((UnionTypeDefinition) contextEntry.value).getMemberTypes().add(type);
+            if (contextEntry.contextProperty == ContextProperty.SchemaDefinition) {
+                ((SchemaDefinition) contextEntry.value).getOperationTypeDefinitions().add(def);
                 break;
             }
         }
-        return super.visitChildren(ctx);
+        addContextProperty(ContextProperty.OperationTypeDefinition, def);
+        super.visitChildren(ctx);
+        popContext();
+        return null;
     }
 
     @Override
@@ -410,9 +439,19 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitObjectTypeDefinition(GraphqlParser.ObjectTypeDefinitionContext ctx) {
-        ObjectTypeDefinition def = new ObjectTypeDefinition(ctx.name().getText());
-        newNode(def, ctx);
-        result.getDefinitions().add(def);
+        ObjectTypeDefinition def = null;
+        for (ContextEntry contextEntry : contextStack) {
+            if (contextEntry.contextProperty == ContextProperty.TypeExtensionDefinition) {
+                ((TypeExtensionDefinition) contextEntry.value).setName(ctx.name().getText());
+                def = (ObjectTypeDefinition)contextEntry.value;
+                break;
+            }
+        }
+        if (null == def) {
+            def = new ObjectTypeDefinition(ctx.name().getText());
+            newNode(def, ctx);
+            result.getDefinitions().add(def);
+        }
         addContextProperty(ContextProperty.ObjectTypeDefinition, def);
         super.visitChildren(ctx);
         popContext();
@@ -453,6 +492,10 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             }
             if (contextEntry.contextProperty == ContextProperty.InputObjectTypeDefinition) {
                 ((InputObjectTypeDefinition) contextEntry.value).getInputValueDefinitions().add(def);
+                break;
+            }
+            if (contextEntry.contextProperty == ContextProperty.DirectiveDefinition) {
+                ((DirectiveDefinition) contextEntry.value).getInputValueDefinitions().add(def);
                 break;
             }
         }
@@ -519,6 +562,42 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         addContextProperty(ContextProperty.InputObjectTypeDefinition, def);
         super.visitChildren(ctx);
         popContext();
+        return null;
+    }
+
+    @Override
+    public Void visitTypeExtensionDefinition(GraphqlParser.TypeExtensionDefinitionContext ctx) {
+        TypeExtensionDefinition def = new TypeExtensionDefinition();
+        newNode(def, ctx);
+        result.getDefinitions().add(def);
+        addContextProperty(ContextProperty.TypeExtensionDefinition, def);
+        super.visitChildren(ctx);
+        popContext();
+        return null;
+    }
+
+    @Override
+    public Void visitDirectiveDefinition(GraphqlParser.DirectiveDefinitionContext ctx) {
+        DirectiveDefinition def = new DirectiveDefinition(ctx.name().getText());
+        newNode(def, ctx);
+        result.getDefinitions().add(def);
+        addContextProperty(ContextProperty.DirectiveDefinition, def);
+        super.visitChildren(ctx);
+        popContext();
+        return null;
+    }
+
+    @Override
+    public Void visitDirectiveLocation(GraphqlParser.DirectiveLocationContext ctx) {
+        DirectiveLocation def = new DirectiveLocation(ctx.name().getText());
+        newNode(def, ctx);
+        for (ContextEntry contextEntry : contextStack) {
+            if (contextEntry.contextProperty == ContextProperty.DirectiveDefinition) {
+                ((DirectiveDefinition) contextEntry.value).getDirectiveLocations().add(def);
+                break;
+            }
+        }
+        super.visitChildren(ctx);
         return null;
     }
 

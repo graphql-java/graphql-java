@@ -31,6 +31,10 @@ public class ObjectTypeDefinition extends AbstractNode implements TypeDefinition
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<Node>();

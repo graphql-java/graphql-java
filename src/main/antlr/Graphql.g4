@@ -59,7 +59,7 @@ typeCondition : typeName;
 
 // Value
 
-name: NAME | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
+name: NAME | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
 
 value :
 IntValue |
@@ -114,6 +114,17 @@ nonNullType: typeName '!' | listType '!';
 
 // Type System
 typeSystemDefinition:
+schemaDefinition |
+typeDefinition |
+typeExtensionDefinition |
+directiveDefinition
+;
+
+schemaDefinition : SCHEMA directives? '{' operationTypeDefinition+ '}';
+
+operationTypeDefinition : operationType ':' typeName;
+
+typeDefinition:
 scalarTypeDefinition |
 objectTypeDefinition |
 interfaceTypeDefinition |
@@ -122,14 +133,11 @@ enumTypeDefinition |
 inputObjectTypeDefinition
 ;
 
-namedType : name;
-
 scalarTypeDefinition : SCALAR name directives?;
-
 
 objectTypeDefinition : TYPE name implementsInterfaces? directives? '{' fieldDefinition+ '}';
 
-implementsInterfaces : IMPLEMENTS namedType+;
+implementsInterfaces : IMPLEMENTS typeName+;
 
 fieldDefinition : name argumentsDefinition? ':' type directives?;
 
@@ -142,8 +150,8 @@ interfaceTypeDefinition : INTERFACE name directives? '{' fieldDefinition+ '}';
 unionTypeDefinition : UNION name directives? '=' unionMembers;
 
 unionMembers:
-namedType |
-unionMembers '|' namedType
+typeName |
+unionMembers '|' typeName
 ;
 
 enumTypeDefinition : ENUM name directives? '{' enumValueDefinition+ '}';
@@ -156,9 +164,11 @@ typeExtensionDefinition : EXTEND objectTypeDefinition;
 
 directiveDefinition : DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
 
+directiveLocation : name;
+
 directiveLocations :
-name |
-directiveLocations '|' name
+directiveLocation |
+directiveLocations '|' directiveLocation
 ;
 
 
@@ -166,6 +176,7 @@ directiveLocations '|' name
 
 BooleanValue: 'true' | 'false';
 
+SCHEMA: 'schema';
 SCALAR: 'scalar';
 TYPE: 'type';
 INTERFACE: 'interface';
