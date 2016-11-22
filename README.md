@@ -239,7 +239,7 @@ GraphQLInputObjectType inputObjectType = newInputObject()
 
 `GraphQLList` and `GraphQLNonNull` wrap another type to declare a list or to forbid null values. 
 
-There are no builders to create now objects. Just normal constructors, because they are so simple.
+There are no builders to create new objects. Just normal constructors, because they are so simple.
 
 Example:
 
@@ -313,6 +313,7 @@ DataFetcher calculateComplicatedValue = new DataFetcher() {
         Object value = ... // Perhaps getting from a DB or whatever 
         return value;
     }
+};
 
 GraphQLObjectType objectType = newObject()
     .name("ObjectType")
@@ -332,7 +333,7 @@ The result of a Query is a `ExecutionResult` Object with the result and/or a lis
 
 Example: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
 
-Complexer examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
+More complex examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
 
 
 #### Execution strategies
