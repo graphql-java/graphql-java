@@ -32,7 +32,11 @@ public class GraphQLFieldDefinition {
 
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+        SchemaUtil schemaUtil = new SchemaUtil();
+        type = (GraphQLOutputType) schemaUtil.resolveTypeReference(type, typeMap);
+        for (GraphQLArgument argument : arguments) {
+            argument.replaceTypeReferences(typeMap);
+        }
     }
 
     public String getName() {

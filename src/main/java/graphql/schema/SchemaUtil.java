@@ -135,6 +135,8 @@ public class SchemaUtil {
         for (GraphQLType type : typeMap.values()) {
             if (type instanceof GraphQLFieldsContainer) {
                 resolveTypeReferencesForFieldsContainer((GraphQLFieldsContainer) type, typeMap);
+            } else if (type instanceof GraphQLInputObjectType) {
+                resolveTypeReferencesForInputObjectType((GraphQLInputObjectType) type, typeMap);
             }
         }
     }
@@ -142,6 +144,12 @@ public class SchemaUtil {
     private void resolveTypeReferencesForFieldsContainer(GraphQLFieldsContainer fieldsContainer, Map<String, GraphQLType> typeMap) {
         for (GraphQLFieldDefinition fieldDefinition : fieldsContainer.getFieldDefinitions()) {
             fieldDefinition.replaceTypeReferences(typeMap);
+        }
+    }
+
+    private void resolveTypeReferencesForInputObjectType(GraphQLInputObjectType container, Map<String, GraphQLType> typeMap) {
+        for (GraphQLInputObjectField field : container.getFields()) {
+            field.replaceTypeReferences(typeMap);
         }
     }
 
