@@ -87,8 +87,13 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
     private void enterImpl(InlineFragment inlineFragment) {
-        GraphQLType type = schema.getType(inlineFragment.getTypeCondition().getName());
-        addType((GraphQLOutputType) type);
+        if (inlineFragment.getTypeCondition() != null) {
+            GraphQLType type = schema.getType(inlineFragment.getTypeCondition().getName());
+            addType((GraphQLOutputType) type);
+        } else {
+            // Inline fragment always embedded in a selection set
+            addType((GraphQLOutputType) getParentType());
+        }
     }
 
     private void enterImpl(FragmentDefinition fragmentDefinition) {

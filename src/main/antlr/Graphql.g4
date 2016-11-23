@@ -47,13 +47,13 @@ argument : NAME ':' valueWithVariable;
 
 fragmentSpread : '...' fragmentName directives?;
 
-inlineFragment : '...' 'on' typeCondition directives? selectionSet;
+inlineFragment : '...' typeCondition? directives? selectionSet;
 
-fragmentDefinition : 'fragment' fragmentName 'on' typeCondition directives? selectionSet;
+fragmentDefinition : 'fragment' fragmentName typeCondition directives? selectionSet;
 
 fragmentName :  NAME;
 
-typeCondition : typeName;
+typeCondition : 'on' typeName;
 
 // Value
 
