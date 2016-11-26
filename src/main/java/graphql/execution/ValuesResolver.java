@@ -80,8 +80,10 @@ public class ValuesResolver {
             return coerceValueForEnum((GraphQLEnumType) graphQLType, value);
         } else if (graphQLType instanceof GraphQLList) {
             return coerceValueForList((GraphQLList) graphQLType, value);
-        } else if (graphQLType instanceof GraphQLInputObjectType) {
+        } else if (graphQLType instanceof GraphQLInputObjectType && value instanceof Map) {
             return coerceValueForInputObjectType((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
+        } else if (graphQLType instanceof GraphQLInputObjectType) {
+            return value;
         } else {
             throw new GraphQLException("unknown type " + graphQLType);
         }
