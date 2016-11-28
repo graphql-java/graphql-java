@@ -3,6 +3,7 @@ package graphql.schema;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.*;
 
@@ -10,7 +11,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
     private final String name;
     private final String description;
-    private List<GraphQLObjectType> types = new ArrayList<GraphQLObjectType>();
+    private final List<GraphQLObjectType> types = new ArrayList<GraphQLObjectType>();
     private final TypeResolver typeResolver;
 
 
@@ -25,6 +26,14 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         this.typeResolver = typeResolver;
     }
 
+    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
+        for (int i = 0; i < types.size(); i++) {
+            GraphQLObjectType type = types.get(i);
+            if (type instanceof TypeReference) {
+                this.types.set(i, (GraphQLObjectType) new SchemaUtil().resolveTypeReference(type, typeMap));
+            }
+        }
+    }
 
     public List<GraphQLObjectType> getTypes() {
         return new ArrayList<GraphQLObjectType>(types);
@@ -86,7 +95,5 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         public GraphQLUnionType build() {
             return new GraphQLUnionType(name, description, types, typeResolver);
         }
-
-
     }
 }

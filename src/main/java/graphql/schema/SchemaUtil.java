@@ -68,7 +68,7 @@ public class SchemaUtil {
     }
 
     private void collectTypesForInterfaces(GraphQLInterfaceType interfaceType, Map<String, GraphQLType> result) {
-        if (result.containsKey(interfaceType.getName())) return;
+        if (result.containsKey(interfaceType.getName()) && !(result.get(interfaceType.getName()) instanceof TypeReference)) return;
         result.put(interfaceType.getName(), interfaceType);
 
         for (GraphQLFieldDefinition fieldDefinition : interfaceType.getFieldDefinitions()) {
@@ -81,7 +81,7 @@ public class SchemaUtil {
 
 
     private void collectTypesForObjects(GraphQLObjectType objectType, Map<String, GraphQLType> result) {
-        if (result.containsKey(objectType.getName())) return;
+        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) return;
         result.put(objectType.getName(), objectType);
 
         for (GraphQLFieldDefinition fieldDefinition : objectType.getFieldDefinitions()) {
@@ -96,7 +96,7 @@ public class SchemaUtil {
     }
 
     private void collectTypesForInputObjects(GraphQLInputObjectType objectType, Map<String, GraphQLType> result) {
-        if (result.containsKey(objectType.getName())) return;
+        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) return;
         result.put(objectType.getName(), objectType);
 
         for (GraphQLInputObjectField fieldDefinition : objectType.getFields()) {
