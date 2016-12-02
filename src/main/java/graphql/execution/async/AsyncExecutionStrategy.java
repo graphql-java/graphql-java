@@ -63,7 +63,7 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
             if (obj1 instanceof CompletionStage) {
                 return ((CompletionStage<?>) obj1)
                   .exceptionally(e -> {
-                      logExceptionWhileFetching(e);
+                      logExceptionWhileFetching(e, fieldList.get(0));
                       executionContext.addError(new ExceptionWhileDataFetching(e));
                       return null;
                   })
@@ -72,7 +72,7 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
                 return completeValueAsync(executionContext, fieldDef, fieldList, obj1);
             }
         } catch (Exception e) {
-            logExceptionWhileFetching(e);
+            logExceptionWhileFetching(e, fieldList.get(0));
             executionContext.addError(new ExceptionWhileDataFetching(e));
             return completeValueAsync(executionContext, fieldDef, fieldList, null);
         }
@@ -90,8 +90,8 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         return ((CompletionStage<?>) completed.getData()).thenApply(data -> new ExecutionResultImpl(data, completed.getErrors()));
     }
 
-    private void logExceptionWhileFetching(Throwable e) {
-        log.warn("Exception while fetching data", e.getMessage());
+    private void logExceptionWhileFetching(Throwable e, Field field) {
+        log.debug("Exception while fetching data for field {}", field.getName(), e);
     }
 
 }
