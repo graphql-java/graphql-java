@@ -74,7 +74,7 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         } catch (Exception e) {
             logExceptionWhileFetching(e, fieldList.get(0));
             executionContext.addError(new ExceptionWhileDataFetching(e));
-            return completeValueAsync(executionContext, fieldDef, fieldList, null);
+            return completedFuture(new ExecutionResultImpl(null, null));
         }
     }
 
