@@ -4,10 +4,9 @@ import graphql.ExceptionWhileDataFetching
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionStrategy
 import graphql.language.Field
-import graphql.schema.DataFetcher
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLOutputType
+import graphql.language.SelectionSet
+import graphql.schema.*
+import spock.lang.Ignore
 import spock.lang.Specification
 import spock.util.concurrent.AsyncConditions
 
@@ -26,25 +25,43 @@ class AsyncExecutionStrategyTest extends Specification {
 
     def executionContext
 
-    def "executes"() {
+    def "produces the correct results"() {
         given:
         def strategy = AsyncExecutionStrategy.serial()
+
+        def composite = newObject()
+          .name('composite')
+          .field(field('field', GraphQLString, { env ->
+            env.getSource()['field']
+        }))
+          .build()
 
         def parentType = newObject()
           .name('object')
           .field(field('field', GraphQLString, { completedFuture('string') }))
-          .field(field('completesExceptionally', GraphQLString, { exceptionally(exception) }))
+          .field(field('listOfScalars', new GraphQLList(GraphQLString), { completedFuture(['a']) }))
+          .field(field('listOfScalars2', new GraphQLList(GraphQLString), { [completedFuture('a')] }))
+          .field(field('listOfComposite', new GraphQLList(composite), { [[field: 'value']] }))
+          .field(field('listOfFutureComposite', new GraphQLList(composite), { [completedFuture([field: 'value'])] }))
+          .field(field('completesExceptionally', GraphQLString, { exceptionallyCompletedFuture(exception) }))
           .field(field('throwsException', GraphQLString, { throw exception }))
           .build()
 
         executionContext = buildExecutionContext(strategy, parentType)
 
+//        def fields = [
+//          listOfFutureComposite: [new Field('listOfFutureComposite', new SelectionSet([new Field('field')]))],
+//        ]
+
         def fields = [
+          listOfScalars2        : [new Field('listOfScalars2')],
           field                 : [new Field('field')],
+          listOfScalars         : [new Field('listOfScalars')],
+          listOfComposite       : [new Field('listOfComposite', new SelectionSet([new Field('field')]))],
+          listOfFutureComposite : [new Field('listOfFutureComposite', new SelectionSet([new Field('field')]))],
           completesExceptionally: [new Field('completesExceptionally')],
           throwsException       : [new Field('throwsException')]
         ];
-
 
         when:
         def result = strategy.execute(executionContext, parentType, null, fields)
@@ -54,8 +71,15 @@ class AsyncExecutionStrategyTest extends Specification {
 
         result.getData().thenAccept({ data ->
             conds.evaluate {
+//                assert data == [
+//                  listOfFutureComposite: [[field: 'value']],
+//                ]
                 assert data == [
+                  listOfScalars2        : ['a'],
                   field                 : 'string',
+                  listOfScalars         : ['a'],
+                  listOfComposite       : [[field: 'value']],
+                  listOfFutureComposite : [[field: 'value']],
                   completesExceptionally: null,
                   throwsException       : null
                 ]
@@ -70,7 +94,12 @@ class AsyncExecutionStrategyTest extends Specification {
         conds.await()
     }
 
-    public <T> CompletionStage<T> exceptionally(Throwable exception) {
+    @Ignore
+    def "in the correct order"() {
+
+    }
+
+    public <T> CompletionStage<T> exceptionallyCompletedFuture(Throwable exception) {
         def future = new CompletableFuture<>();
         future.completeExceptionally(exception);
         future;

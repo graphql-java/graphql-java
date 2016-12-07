@@ -2,21 +2,24 @@ package graphql.execution.async;
 
 import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
+import graphql.GraphQLError;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
 import graphql.language.Field;
-import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLType;
+import graphql.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Supplier;
 
+import static com.spotify.futures.CompletableFutures.successfulAsList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 
@@ -40,10 +43,14 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
-        Map<String, Supplier<CompletionStage<ExecutionResult>>> resolvers = fields.entrySet().stream()
+        Map<String, Supplier<CompletionStage<ExecutionResult>>> fieldResolvers = fields.entrySet()
+          .stream()
           .collect(toMap(Map.Entry::getKey, entry -> () -> resolveFieldAsync(executionContext, parentType, source, entry.getValue())));
-        AsyncFieldsCoordinator coordinator = new AsyncFieldsCoordinator(resolvers);
-        return new ExecutionResultImpl(serial ? coordinator.executeSerially() : coordinator.executeParallelly(), executionContext.getErrors());
+
+        AsyncFieldsCoordinator coordinator = new AsyncFieldsCoordinator(fieldResolvers);
+
+        CompletionStage<Map<String, Object>> data = serial ? coordinator.executeSerially() : coordinator.executeParallelly();
+        return new ExecutionResultImpl(data, executionContext.getErrors());
     }
 
     private CompletionStage<ExecutionResult> resolveFieldAsync(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fieldList) {
@@ -80,16 +87,41 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private CompletionStage<ExecutionResult> completeValueAsync(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fieldList, Object result) {
-        ExecutionResult completed = completeValue(executionContext, fieldType, fieldList, result);
-        // Happens when the data fetcher returns null for nullable field
-        if (completed == null) {
-            return completedFuture(new ExecutionResultImpl(null, null));
+        if (fieldType instanceof GraphQLList) {
+            List<Object> collect = ((List<Object>) result);
+
+            List<CompletionStage<ExecutionResult>> collect1 = collect.stream()
+              .map(object -> {
+                  CompletionStage<Object> stage = object instanceof CompletionStage ? (CompletionStage<Object>) object : completedFuture(object);
+                  return stage
+                    .thenCompose(result5 -> completeValueAsync(executionContext, ((GraphQLList) fieldType).getWrappedType(), fieldList, result5));
+              })
+              .collect(toList());
+
+            return successfulAsList(collect1, t -> null).thenApply(results -> {
+                List<Object> list = new ArrayList<>();
+                List<GraphQLError> errors = new ArrayList<>();
+                for (ExecutionResult executionResult : results) {
+                    list.add(executionResult.getData());
+                    errors.addAll(executionResult.getErrors());
+                }
+                return new ExecutionResultImpl(list, errors);
+            });
+
+        } else {
+            ExecutionResult completed = completeValue(executionContext, fieldType, fieldList, result);
+            // Happens when the data fetcher returns null for nullable field
+            if (completed == null) {
+                return completedFuture(new ExecutionResultImpl(null, null));
+            }
+            if (!(completed.getData() instanceof CompletionStage)) {
+                return completedFuture(completed);
+            }
+            return ((CompletionStage<?>) completed.getData())
+              .thenApply(data -> new ExecutionResultImpl(data, completed.getErrors()));
         }
-        if (!(completed.getData() instanceof CompletionStage)) {
-            return completedFuture(completed);
-        }
-        return ((CompletionStage<?>) completed.getData()).thenApply(data -> new ExecutionResultImpl(data, completed.getErrors()));
     }
 
     private void logExceptionWhileFetching(Throwable e, Field field) {
