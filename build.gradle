@@ -9,8 +9,8 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'antlr'
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 def releaseVersion = System.properties.RELEASE_VERSION
 version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
 group = 'com.graphql-java'
