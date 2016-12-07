@@ -8,6 +8,7 @@ import graphql.language.Field;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +48,7 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
 
     private CompletionStage<ExecutionResult> resolveFieldAsync(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fieldList) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fieldList.get(0));
+        GraphQLOutputType fieldType = fieldDef.getType();
 
         DataFetchingEnvironment env = new DataFetchingEnvironment(
           source,
@@ -67,9 +69,9 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
                       executionContext.addError(new ExceptionWhileDataFetching(e));
                       return null;
                   })
-                  .thenCompose(obj2 -> completeValueAsync(executionContext, fieldDef, fieldList, obj2));
+                  .thenCompose(obj2 -> completeValueAsync(executionContext, fieldType, fieldList, obj2));
             } else {
-                return completeValueAsync(executionContext, fieldDef, fieldList, obj1);
+                return completeValueAsync(executionContext, fieldType, fieldList, obj1);
             }
         } catch (Exception e) {
             logExceptionWhileFetching(e, fieldList.get(0));
@@ -78,8 +80,8 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         }
     }
 
-    private CompletionStage<ExecutionResult> completeValueAsync(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef, List<Field> fieldList, Object result) {
-        ExecutionResult completed = completeValue(executionContext, fieldDef.getType(), fieldList, result);
+    private CompletionStage<ExecutionResult> completeValueAsync(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fieldList, Object result) {
+        ExecutionResult completed = completeValue(executionContext, fieldType, fieldList, result);
         // Happens when the data fetcher returns null for nullable field
         if (completed == null) {
             return completedFuture(new ExecutionResultImpl(null, null));
