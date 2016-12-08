@@ -6,20 +6,18 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ExecutionContext {
 
     private GraphQLSchema graphQLSchema;
-    private ExecutionStrategy executionStrategy;
+    private ExecutionStrategy queryStrategy;
+    private ExecutionStrategy mutationStrategy;
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
     private OperationDefinition operationDefinition;
     private Map<String, Object> variables = new LinkedHashMap<String, Object>();
     private Object root;
-    private List<GraphQLError> errors = new ArrayList<GraphQLError>();
+    private List<GraphQLError> errors = Collections.synchronizedList(new ArrayList<GraphQLError>());
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
@@ -73,11 +71,19 @@ public class ExecutionContext {
         return errors;
     }
 
-    public ExecutionStrategy getExecutionStrategy() {
-        return executionStrategy;
+    public ExecutionStrategy getQueryStrategy() {
+        return queryStrategy;
     }
 
-    public void setExecutionStrategy(ExecutionStrategy executionStrategy) {
-        this.executionStrategy = executionStrategy;
+    public void setQueryStrategy(ExecutionStrategy queryStrategy) {
+        this.queryStrategy = queryStrategy;
+    }
+
+    public ExecutionStrategy getMutationStrategy() {
+        return mutationStrategy;
+    }
+
+    public void setMutationStrategy(ExecutionStrategy mutationStrategy) {
+        this.mutationStrategy = mutationStrategy;
     }
 }
