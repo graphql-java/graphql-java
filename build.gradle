@@ -11,7 +11,7 @@ apply plugin: 'antlr'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-def releaseVersion = System.properties.RELEASE_VERSION
+def releaseVersion = '2.2.0-fderose-SNAPSHOT'
 version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
 group = 'com.graphql-java'
 
