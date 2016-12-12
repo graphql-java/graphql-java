@@ -22,7 +22,7 @@ public class SimpleListConnection implements DataFetcher {
         List<Edge> edges = new ArrayList<Edge>();
         int ix = 0;
         for (Object object : data) {
-            edges.add(new Edge(object, new DefaultConnectionCursor(createCursor(ix++))));
+            edges.add(new DefaultEdge(object, new DefaultConnectionCursor(createCursor(ix++))));
         }
         return edges;
     }

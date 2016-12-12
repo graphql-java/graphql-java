@@ -5,6 +5,9 @@ public class DefaultConnectionCursor implements ConnectionCursor {
     private final String value;
 
     public DefaultConnectionCursor(String value) {
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException("connection value cannot be null or empty");
+        }
         this.value = value;
     }
 

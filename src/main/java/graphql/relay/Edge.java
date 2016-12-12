@@ -1,29 +1,12 @@
 package graphql.relay;
 
+/**
+ * represents an edge in relay.
+ */
+public interface Edge {
 
-public class Edge {
+    Object getNode();
 
-    public Edge(Object node, DefaultConnectionCursor cursor) {
-        this.node = node;
-        this.cursor = cursor;
-    }
+    ConnectionCursor getCursor();
 
-    Object node;
-    DefaultConnectionCursor cursor;
-
-    public Object getNode() {
-        return node;
-    }
-
-    public void setNode(Object node) {
-        this.node = node;
-    }
-
-    public DefaultConnectionCursor getCursor() {
-        return cursor;
-    }
-
-    public void setCursor(DefaultConnectionCursor cursor) {
-        this.cursor = cursor;
-    }
 }
