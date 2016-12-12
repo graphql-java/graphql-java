@@ -1,41 +1,16 @@
 package graphql.relay;
 
+/**
+ * represents a page in relay.
+ */
+public interface PageInfo {
 
-public class PageInfo {
-    private ConnectionCursor startCursor;
-    private ConnectionCursor endCursor;
-    private boolean hasPreviousPage;
-    private boolean hasNextPage;
+    ConnectionCursor getStartCursor();
 
-    public ConnectionCursor getStartCursor() {
-        return startCursor;
-    }
+    ConnectionCursor getEndCursor();
 
-    public void setStartCursor(ConnectionCursor startCursor) {
-        this.startCursor = startCursor;
-    }
+    boolean isHasPreviousPage();
 
-    public ConnectionCursor getEndCursor() {
-        return endCursor;
-    }
+    boolean isHasNextPage();
 
-    public void setEndCursor(ConnectionCursor endCursor) {
-        this.endCursor = endCursor;
-    }
-
-    public boolean isHasPreviousPage() {
-        return hasPreviousPage;
-    }
-
-    public void setHasPreviousPage(boolean hasPreviousPage) {
-        this.hasPreviousPage = hasPreviousPage;
-    }
-
-    public boolean isHasNextPage() {
-        return hasNextPage;
-    }
-
-    public void setHasNextPage(boolean hasNextPage) {
-        this.hasNextPage = hasNextPage;
-    }
 }

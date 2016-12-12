@@ -3,13 +3,13 @@ package graphql.relay;
 
 public class Edge {
 
-    public Edge(Object node, ConnectionCursor cursor) {
+    public Edge(Object node, DefaultConnectionCursor cursor) {
         this.node = node;
         this.cursor = cursor;
     }
 
     Object node;
-    ConnectionCursor cursor;
+    DefaultConnectionCursor cursor;
 
     public Object getNode() {
         return node;
@@ -19,11 +19,11 @@ public class Edge {
         this.node = node;
     }
 
-    public ConnectionCursor getCursor() {
+    public DefaultConnectionCursor getCursor() {
         return cursor;
     }
 
-    public void setCursor(ConnectionCursor cursor) {
+    public void setCursor(DefaultConnectionCursor cursor) {
         this.cursor = cursor;
     }
 }
