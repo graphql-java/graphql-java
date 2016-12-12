@@ -48,8 +48,8 @@ public class SimpleListConnection implements DataFetcher {
         Integer first = environment.<Integer>getArgument("first");
         Integer last = environment.<Integer>getArgument("last");
 
-        ConnectionCursor firstPresliceCursor = edges.get(0).cursor;
-        ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).cursor;
+        ConnectionCursor firstPresliceCursor = edges.get(0).getCursor();
+        ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
 
         if (first != null) {
             edges = edges.subList(0, first <= edges.size() ? first : edges.size());
