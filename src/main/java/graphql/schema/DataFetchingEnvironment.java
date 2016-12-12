@@ -1,63 +1,25 @@
 package graphql.schema;
 
+/**
+ * environment for {@link DataFetcher data fetcher}.
+ */
+public interface DataFetchingEnvironment {
 
-import graphql.language.Field;
+    Object getSource();
 
-import java.util.List;
-import java.util.Map;
+    Map<String, Object> getArguments();
 
-public class DataFetchingEnvironment {
-    private final Object source;
-    private final Map<String, Object> arguments;
-    private final Object context;
-    private final List<Field> fields;
-    private final GraphQLOutputType fieldType;
-    private final GraphQLType parentType;
-    private final GraphQLSchema graphQLSchema;
+    boolean containsArgument(String name);
 
-    public DataFetchingEnvironment(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema) {
-        this.source = source;
-        this.arguments = arguments;
-        this.context = context;
-        this.fields = fields;
-        this.fieldType = fieldType;
-        this.parentType = parentType;
-        this.graphQLSchema = graphQLSchema;
-    }
+    <T> T getArgument(String name);
 
-    public Object getSource() {
-        return source;
-    }
+    Object getContext();
 
-    public Map<String, Object> getArguments() {
-        return arguments;
-    }
+    List<Field> getFields();
 
-    public boolean containsArgument(String name) {
-        return arguments.containsKey(name);
-    }
+    GraphQLOutputType getFieldType();
 
-    public <T> T getArgument(String name) {
-        return (T) arguments.get(name);
-    }
+    GraphQLType getParentType();
 
-    public Object getContext() {
-        return context;
-    }
-
-    public List<Field> getFields() {
-        return fields;
-    }
-
-    public GraphQLOutputType getFieldType() {
-        return fieldType;
-    }
-
-    public GraphQLType getParentType() {
-        return parentType;
-    }
-
-    public GraphQLSchema getGraphQLSchema() {
-        return graphQLSchema;
-    }
+    GraphQLSchema getGraphQLSchema();
 }
