@@ -1,5 +1,10 @@
 package graphql.schema;
 
+import graphql.language.Field;
+
+import java.util.List;
+import java.util.Map;
+
 /**
  * environment for {@link DataFetcher data fetcher}.
  */

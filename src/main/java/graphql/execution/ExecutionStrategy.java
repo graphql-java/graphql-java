@@ -25,7 +25,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
-        DataFetchingEnvironment environment = new DataFetchingEnvironment(
+        DataFetchingEnvironment environment = new DefaultDataFetchingEnvironment(
                 source,
                 argumentValues,
                 executionContext.getRoot(),

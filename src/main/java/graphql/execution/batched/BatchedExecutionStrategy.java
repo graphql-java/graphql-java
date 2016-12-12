@@ -250,7 +250,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         for (GraphQLExecutionNodeDatum n : nodeData) {
             sources.add(n.getSource());
         }
-        DataFetchingEnvironment environment = new DataFetchingEnvironment(
+        DataFetchingEnvironment environment = new DefaultDataFetchingEnvironment(
                 sources,
                 argumentValues,
                 executionContext.getRoot(),

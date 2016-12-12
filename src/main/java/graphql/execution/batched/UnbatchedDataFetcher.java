@@ -1,9 +1,8 @@
 package graphql.execution.batched;
 
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-
+import graphql.schema.DefaultDataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +27,7 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
         List<Object> sources = (List<Object>) environment.getSource();
         List<Object> results = new ArrayList<Object>();
         for (Object source : sources) {
-            DataFetchingEnvironment singleEnv = new DataFetchingEnvironment(
+            DataFetchingEnvironment singleEnv = new DefaultDataFetchingEnvironment(
                     source,
                     environment.getArguments(),
                     environment.getContext(),
