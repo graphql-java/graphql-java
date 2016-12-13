@@ -6,11 +6,11 @@ import java.util.*;
 
 import static graphql.Assert.assertNotNull;
 
-public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLInterfaceType extends GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
+    private Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
     private final TypeResolver typeResolver;
     private final Set<GraphQLObjectType> implementingTypes = new HashSet<GraphQLObjectType>();
 
@@ -21,6 +21,13 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         this.name = name;
         this.description = description;
         buildDefinitionMap(fieldDefinitions);
+        this.typeResolver = typeResolver;
+    }
+
+    public GraphQLInterfaceType(String name, String description, TypeResolver typeResolver) {
+        assertNotNull(name, "name can't be null");
+        this.name = name;
+        this.description = description;
         this.typeResolver = typeResolver;
     }
 
@@ -37,11 +44,13 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         return fieldDefinitionsByName.get(name);
     }
 
-
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
         return new ArrayList<GraphQLFieldDefinition>(fieldDefinitionsByName.values());
     }
 
+    public void setFieldDefinitions(Map<String, GraphQLFieldDefinition> fieldDefinitionsByName) {
+        this. fieldDefinitionsByName = fieldDefinitionsByName;
+    }
     public String getName() {
         return name;
     }
