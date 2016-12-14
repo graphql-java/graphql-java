@@ -61,6 +61,10 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         this. fieldDefinitionsByName = fieldDefinitionsByName;
     }
 
+    public void setInterface(GraphQLInterfaceType graphQLInterfaceType) {
+        interfaces.add(graphQLInterfaceType);
+    }
+
     public List<GraphQLInterfaceType> getInterfaces() {
         return new ArrayList<GraphQLInterfaceType>(interfaces);
     }

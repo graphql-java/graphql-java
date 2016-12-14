@@ -93,6 +93,12 @@ public class SchemaUtil {
         for (GraphQLInterfaceType interfaceType : objectType.getInterfaces()) {
             collectTypes(interfaceType, result);
         }
+
+        if (objectType instanceof GraphQLInterfaceType) {
+            for (GraphQLObjectType implementingType : ((GraphQLInterfaceType)objectType).getImplementingTypes()) {
+                collectTypes(implementingType, result);
+            }
+        }
     }
 
     private void collectTypesForInputObjects(GraphQLInputObjectType objectType, Map<String, GraphQLType> result) {

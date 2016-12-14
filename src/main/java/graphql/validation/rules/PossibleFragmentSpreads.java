@@ -73,7 +73,31 @@ public class PossibleFragmentSpreads extends AbstractRule {
             throw new ShouldNotHappenException();
         }
 
-        return !Collections.disjoint(possibleParentTypes, possibleConditionTypes);
+        if (!Collections.disjoint(possibleParentTypes, possibleConditionTypes)) {
+            return true;
+        }
 
+        if (type instanceof GraphQLObjectType) {
+          if (checkInterfaces((GraphQLObjectType)type, parent)) {
+              return true;
+          }
+        }
+
+        return false;
+
+    }
+
+    private boolean checkInterfaces(GraphQLObjectType graphQLObjectType, GraphQLCompositeType ancestor) {
+        List<GraphQLInterfaceType> interfaces = graphQLObjectType.getInterfaces();
+        if (interfaces.contains(ancestor)) {
+            return true;
+        }
+        for (GraphQLInterfaceType g : graphQLObjectType.getInterfaces()) {
+            boolean retval = checkInterfaces(g, ancestor);
+            if (retval) {
+                return true;
+            }
+        }
+        return false;
     }
 }
