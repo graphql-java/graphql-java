@@ -39,4 +39,19 @@ public class ExceptionWhileDataFetching implements GraphQLError {
                 "exception=" + exception +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ExceptionWhileDataFetching that = (ExceptionWhileDataFetching) o;
+
+        return Helper.equals(this, that);
+    }
+
+    @Override
+    public int hashCode() {
+        return Helper.hashCode(this);
+    }
 }
