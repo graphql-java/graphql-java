@@ -6,6 +6,8 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.parameters.ExecutionParameters;
+import graphql.execution.instrumentation.parameters.ValidationParameters;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.Parser;
@@ -64,12 +66,12 @@ public class GraphQL {
     }
 
     public ExecutionResult execute(String requestString, String operationName, Object context, Map<String, Object> arguments) {
-        InstrumentationContext<ExecutionResult> executionCtx = instrumentation.beginExecution(requestString, operationName, context, arguments);
+        InstrumentationContext<ExecutionResult> executionCtx = instrumentation.beginExecution(new ExecutionParameters(requestString, operationName, context, arguments));
 
         assertNotNull(arguments, "arguments can't be null");
         log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
 
-        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(requestString, operationName, context, arguments);
+        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new ExecutionParameters(requestString, operationName, context, arguments));
 
         Parser parser = new Parser();
         Document document;
@@ -87,7 +89,7 @@ public class GraphQL {
             return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
 
-        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(document);
+        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new ValidationParameters(requestString,operationName,context,arguments,document));
 
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
@@ -105,6 +107,4 @@ public class GraphQL {
 
         return result;
     }
-
-
 }

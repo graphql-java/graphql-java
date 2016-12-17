@@ -1,17 +1,17 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
-import graphql.execution.ExecutionContext;
+import graphql.execution.instrumentation.parameters.ExecutionParameters;
+import graphql.execution.instrumentation.parameters.FieldFetchParameters;
+import graphql.execution.instrumentation.parameters.FieldParameters;
+import graphql.execution.instrumentation.parameters.ValidationParameters;
 import graphql.language.Document;
-import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.GraphQLFieldDefinition;
 import graphql.validation.ValidationError;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * Nothing to see here
+ * Nothing to see or do here ;)
  */
 public final class NoOpInstrumentation implements Instrumentation {
 
@@ -21,7 +21,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecution(String requestString, String operationName, Object context, Map<String, Object> arguments) {
+    public InstrumentationContext<ExecutionResult> beginExecution(ExecutionParameters parameters) {
         return new InstrumentationContext<ExecutionResult>() {
             @Override
             public void onEnd(ExecutionResult result) {
@@ -34,7 +34,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<Document> beginParse(String requestString, String operationName, Object context, Map<String, Object> arguments) {
+    public InstrumentationContext<Document> beginParse(ExecutionParameters parameters) {
         return new InstrumentationContext<Document>() {
             @Override
             public void onEnd(Document result) {
@@ -47,7 +47,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<List<ValidationError>> beginValidation(Document document) {
+    public InstrumentationContext<List<ValidationError>> beginValidation(ValidationParameters parameters) {
         return new InstrumentationContext<List<ValidationError>>() {
             @Override
             public void onEnd(List<ValidationError> result) {
@@ -60,7 +60,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginField(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef) {
+    public InstrumentationContext<ExecutionResult> beginField(FieldParameters parameters) {
         return new InstrumentationContext<ExecutionResult>() {
             @Override
             public void onEnd(ExecutionResult result) {
@@ -73,7 +73,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<Object> beginDataFetch(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment) {
+    public InstrumentationContext<Object> beginFieldFetch(FieldFetchParameters parameters) {
         return new InstrumentationContext<Object>() {
             @Override
             public void onEnd(Object result) {

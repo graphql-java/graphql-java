@@ -6,6 +6,8 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.FieldFetchParameters;
+import graphql.execution.instrumentation.parameters.FieldParameters;
 import graphql.language.Field;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLEnumType;
@@ -55,9 +57,9 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(executionContext, fieldDef);
+        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(new FieldParameters(executionContext, fieldDef));
 
-        InstrumentationContext<Object> fetchCtx = instrumentation.beginDataFetch(executionContext, fieldDef, environment);
+        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(new FieldFetchParameters(executionContext, fieldDef, environment));
         Object resolvedValue = null;
         try {
             resolvedValue = fieldDef.getDataFetcher().get(environment);
