@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.GraphQLException;
+import graphql.execution.instrumentation.Instrumentation;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
@@ -13,10 +14,13 @@ import java.util.Map;
 public class ExecutionContextBuilder {
 
     private ValuesResolver valuesResolver;
+    private Instrumentation instrumentation;
 
-    public ExecutionContextBuilder(ValuesResolver valuesResolver) {
+    public ExecutionContextBuilder(ValuesResolver valuesResolver, Instrumentation instrumentation) {
         this.valuesResolver = valuesResolver;
+        this.instrumentation = instrumentation;
     }
+
 
     public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy, Object root, Document document, String operationName, Map<String, Object> args) {
         Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
@@ -46,7 +50,7 @@ public class ExecutionContextBuilder {
             throw new GraphQLException();
         }
 
-        ExecutionContext executionContext = new ExecutionContext();
+        ExecutionContext executionContext = new ExecutionContext(instrumentation);
         executionContext.setGraphQLSchema(graphQLSchema);
         executionContext.setExecutionStrategy(executionStrategy);
         executionContext.setOperationDefinition(operation);

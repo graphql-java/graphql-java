@@ -3,6 +3,9 @@ package graphql;
 
 import graphql.execution.Execution;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.Parser;
@@ -14,7 +17,6 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +28,7 @@ public class GraphQL {
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy executionStrategy;
+    private final Instrumentation instrumentation;
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
@@ -35,8 +38,13 @@ public class GraphQL {
 
 
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy) {
+        this(graphQLSchema, executionStrategy, NoOpInstrumentation.INSTANCE);
+    }
+
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy, Instrumentation instrumentation) {
         this.graphQLSchema = graphQLSchema;
         this.executionStrategy = executionStrategy;
+        this.instrumentation = instrumentation;
     }
 
     public ExecutionResult execute(String requestString) {
@@ -56,26 +64,46 @@ public class GraphQL {
     }
 
     public ExecutionResult execute(String requestString, String operationName, Object context, Map<String, Object> arguments) {
+        InstrumentationContext<ExecutionResult> executionCtx = instrumentation.beginExecution(requestString, operationName, context, arguments);
+
         assertNotNull(arguments, "arguments can't be null");
         log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
+
+        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(requestString, operationName, context, arguments);
+
         Parser parser = new Parser();
         Document document;
         try {
             document = parser.parseDocument(requestString);
+
+            parseCtx.onEnd(document);
+
         } catch (ParseCancellationException e) {
             RecognitionException recognitionException = (RecognitionException) e.getCause();
             SourceLocation sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
             InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
-            return new ExecutionResultImpl(Arrays.asList(invalidSyntaxError));
+
+            parseCtx.onEnd(e);
+            return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
+
+        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(document);
 
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
+
+        validationCtx.onEnd(validationErrors);
+
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
-        Execution execution = new Execution(executionStrategy);
-        return execution.execute(graphQLSchema, context, document, operationName, arguments);
+
+        Execution execution = new Execution(executionStrategy, instrumentation);
+        ExecutionResult result = execution.execute(graphQLSchema, context, document, operationName, arguments);
+
+        executionCtx.onEnd(result);
+
+        return result;
     }
 
 

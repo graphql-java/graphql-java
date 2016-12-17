@@ -2,6 +2,8 @@ package graphql.execution;
 
 
 import graphql.GraphQLError;
+import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
@@ -13,6 +15,7 @@ import java.util.Map;
 
 public class ExecutionContext {
 
+    private final Instrumentation instrumentation;
     private GraphQLSchema graphQLSchema;
     private ExecutionStrategy executionStrategy;
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
@@ -20,6 +23,18 @@ public class ExecutionContext {
     private Map<String, Object> variables = new LinkedHashMap<String, Object>();
     private Object root;
     private List<GraphQLError> errors = new ArrayList<GraphQLError>();
+
+    public ExecutionContext() {
+        this(NoOpInstrumentation.INSTANCE);
+    }
+
+    public ExecutionContext(Instrumentation instrumentation) {
+        this.instrumentation = instrumentation;
+    }
+
+    public Instrumentation getInstrumentation() {
+        return instrumentation;
+    }
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;

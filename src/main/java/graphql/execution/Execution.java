@@ -3,6 +3,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.GraphQLException;
+import graphql.execution.instrumentation.Instrumentation;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
@@ -16,19 +17,18 @@ import java.util.Map;
 
 public class Execution {
 
-    private FieldCollector fieldCollector = new FieldCollector();
-    private ExecutionStrategy strategy;
+    private final FieldCollector fieldCollector = new FieldCollector();
+    private final ExecutionStrategy strategy;
+    private final Instrumentation instrumentation;
 
-    public Execution(ExecutionStrategy strategy) {
-        this.strategy = strategy;
+    public Execution(ExecutionStrategy strategy, Instrumentation instrumentation) {
+        this.strategy = strategy == null ? new SimpleExecutionStrategy() : strategy;
+        this.instrumentation = instrumentation;
 
-        if (this.strategy == null) {
-            this.strategy = new SimpleExecutionStrategy();
-        }
     }
 
     public ExecutionResult execute(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
-        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver());
+        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver(),instrumentation);
         ExecutionContext executionContext = executionContextBuilder.build(graphQLSchema, strategy, root, document, operationName, args);
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
