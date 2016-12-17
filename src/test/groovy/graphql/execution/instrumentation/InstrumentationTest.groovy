@@ -1,12 +1,14 @@
 package graphql.execution.instrumentation
 
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
-import graphql.execution.ExecutionContext
 import graphql.execution.SimpleExecutionStrategy
+import graphql.execution.instrumentation.parameters.ExecutionParameters
+import graphql.execution.instrumentation.parameters.FieldFetchParameters
+import graphql.execution.instrumentation.parameters.FieldParameters
+import graphql.execution.instrumentation.parameters.ValidationParameters
 import graphql.language.Document
-import graphql.schema.DataFetchingEnvironment
-import graphql.schema.GraphQLFieldDefinition
 import graphql.validation.ValidationError
 import spock.lang.Specification
 
@@ -87,28 +89,28 @@ class InstrumentationTest extends Specification {
             def executionList = []
 
             @Override
-            InstrumentationContext beginExecution(String requestString, String operationName, Object context, Map<String, Object> arguments) {
+            InstrumentationContext<ExecutionResult> beginExecution(ExecutionParameters parameters) {
                 new Timer("execution", executionList)
             }
 
             @Override
-            InstrumentationContext beginParse(String requestString, String operationName, Object context, Map<String, Object> arguments) {
+            InstrumentationContext<Document> beginParse(ExecutionParameters parameters) {
                 return new Timer("parse", executionList)
             }
 
             @Override
-            InstrumentationContext<List<ValidationError>> beginValidation(Document document) {
+            InstrumentationContext<List<ValidationError>> beginValidation(ValidationParameters parameters) {
                 return new Timer("validation", executionList)
             }
 
             @Override
-            InstrumentationContext beginField(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef) {
-                return new Timer("field-$fieldDef.name", executionList)
+            InstrumentationContext<ExecutionResult> beginField(FieldParameters parameters) {
+                return new Timer("field-$parameters.field.name", executionList)
             }
 
             @Override
-            InstrumentationContext beginDataFetch(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment) {
-                return new Timer("fetch-$fieldDef.name", executionList)
+            InstrumentationContext<Object> beginFieldFetch(FieldFetchParameters parameters) {
+                return new Timer("fetch-$parameters.field.name", executionList)
             }
         }
 
