@@ -59,7 +59,7 @@ typeCondition : 'on' typeName;
 
 // Value
 
-name: NAME | QUERY | MUTATION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
+name: NAME | FRAGMENT | QUERY | MUTATION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
 
 value :
 IntValue |
@@ -176,6 +176,7 @@ directiveLocations '|' directiveLocation
 
 BooleanValue: 'true' | 'false';
 
+FRAGMENT: 'fragment';
 QUERY: 'query';
 MUTATION: 'mutation';
 SCHEMA: 'schema';
