@@ -656,8 +656,8 @@ three: [Number] @three
         given:
         def input = """
 schema @d1 @d2 {
-    opname1: OpType1
-    opname2: OpType2
+    query: OpType1
+    mutation: OpType2
 }
 """
 
@@ -666,9 +666,9 @@ schema @d1 @d2 {
         schema.getDirectives().add(new Directive("d1"))
         schema.getDirectives().add(new Directive("d2"))
         schema.getOperationTypeDefinitions()
-            .add(new OperationTypeDefinition("opname1", new TypeName("OpType1")))
+            .add(new OperationTypeDefinition("query", new TypeName("OpType1")))
         schema.getOperationTypeDefinitions()
-            .add(new OperationTypeDefinition("opname2", new TypeName("OpType2")))
+            .add(new OperationTypeDefinition("mutation", new TypeName("OpType2")))
 
         when:
         def document = new Parser().parseDocument(input)
