@@ -79,6 +79,9 @@ public class FieldCollector {
 
 
     private boolean doesFragmentConditionMatch(ExecutionContext executionContext, InlineFragment inlineFragment, GraphQLObjectType type) {
+        if (inlineFragment.getTypeCondition() == null) {
+            return true;
+        }
         GraphQLType conditionType;
         conditionType = getTypeFromAST(executionContext.getGraphQLSchema(), inlineFragment.getTypeCondition());
         return checkTypeCondition(executionContext, type, conditionType);

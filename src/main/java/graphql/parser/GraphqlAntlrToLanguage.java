@@ -182,7 +182,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         FragmentDefinition fragmentDefinition = new FragmentDefinition();
         newNode(fragmentDefinition, ctx);
         fragmentDefinition.setName(ctx.fragmentName().getText());
-        fragmentDefinition.setTypeCondition(new TypeName(ctx.typeCondition().getText()));
+        fragmentDefinition.setTypeCondition(new TypeName(ctx.typeCondition().typeName().getText()));
         addContextProperty(ContextProperty.FragmentDefinition, fragmentDefinition);
         result.getDefinitions().add(fragmentDefinition);
         super.visitFragmentDefinition(ctx);
@@ -332,7 +332,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitInlineFragment(GraphqlParser.InlineFragmentContext ctx) {
-        InlineFragment inlineFragment = new InlineFragment(new TypeName(ctx.typeCondition().getText()));
+        TypeName typeName = ctx.typeCondition() != null ? new TypeName(ctx.typeCondition().typeName().getText()) : null;
+        InlineFragment inlineFragment = new InlineFragment(typeName);
         newNode(inlineFragment, ctx);
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(inlineFragment);
         addContextProperty(ContextProperty.InlineFragment, inlineFragment);

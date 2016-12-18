@@ -215,7 +215,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
                 collectFieldsForField(fieldMap, parentType, (Field) selection);
 
             } else if (selection instanceof InlineFragment) {
-                collectFieldsForInlineFragment(fieldMap, visitedFragmentSpreads, (InlineFragment) selection);
+                collectFieldsForInlineFragment(fieldMap, visitedFragmentSpreads, parentType, (InlineFragment) selection);
 
             } else if (selection instanceof FragmentSpread) {
                 collectFieldsForFragmentSpread(fieldMap, visitedFragmentSpreads, (FragmentSpread) selection);
@@ -237,10 +237,11 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
     }
 
-    private void collectFieldsForInlineFragment(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, InlineFragment selection) {
+    private void collectFieldsForInlineFragment(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, GraphQLType parentType, InlineFragment selection) {
         InlineFragment inlineFragment = selection;
-        GraphQLOutputType graphQLType = (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(),
-                inlineFragment.getTypeCondition());
+        GraphQLType graphQLType = inlineFragment.getTypeCondition() != null
+                ? (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(), inlineFragment.getTypeCondition())
+                : parentType;
         collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
     }
 

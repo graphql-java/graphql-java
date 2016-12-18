@@ -318,7 +318,14 @@ public class Introspection {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("locations")
-                    .type(new GraphQLList(new GraphQLNonNull(__DirectiveLocation))))
+                    .type(new GraphQLList(new GraphQLNonNull(__DirectiveLocation)))
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            return new ArrayList<DirectiveLocation>(directive.validLocations());
+                        }
+                    }))
             .field(newFieldDefinition()
                     .name("args")
                     .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__InputValue))))
@@ -332,15 +339,39 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("onOperation")
                     .type(GraphQLBoolean)
-                    .deprecate("Use `locations`."))
+                    .deprecate("Use `locations`.")
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            return directive.isOnOperation();
+                        }
+                    }))
             .field(newFieldDefinition()
                     .name("onFragment")
                     .type(GraphQLBoolean)
-                    .deprecate("Use `locations`."))
+                    .deprecate("Use `locations`.")
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            return directive.isOnFragment() ||
+                                    (directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT)
+                                    && directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD));
+                        }
+                    }))
             .field(newFieldDefinition()
                     .name("onField")
                     .type(GraphQLBoolean)
-                    .deprecate("Use `locations`."))
+                    .deprecate("Use `locations`.")
+                    .dataFetcher(new DataFetcher() {
+                        @Override
+                        public Object get(DataFetchingEnvironment environment) {
+                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            return directive.isOnField() ||
+                                    directive.validLocations().contains(DirectiveLocation.FIELD);
+                        }
+                    }))
             .build();
 
     public static GraphQLObjectType __Schema = newObject()
