@@ -171,6 +171,9 @@ public class Scalars {
             if (input instanceof String) {
                 return input;
             }
+            if (input instanceof Integer) {
+                return String.valueOf(input);
+            }
 
             return null;
         }
@@ -182,8 +185,13 @@ public class Scalars {
 
         @Override
         public Object parseLiteral(Object input) {
-            if (!(input instanceof StringValue)) return null;
-            return ((StringValue) input).getValue();
+            if (input instanceof StringValue) {
+                return ((StringValue) input).getValue();
+            }
+            if (input instanceof IntValue) {
+                return ((IntValue) input).getValue().toString();
+            }
+            return null;
         }
     });
 
