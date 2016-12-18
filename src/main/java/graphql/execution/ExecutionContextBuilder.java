@@ -46,14 +46,14 @@ public class ExecutionContextBuilder {
             throw new GraphQLException();
         }
 
-        ExecutionContext executionContext = new ExecutionContext();
-        executionContext.setGraphQLSchema(graphQLSchema);
-        executionContext.setExecutionStrategy(executionStrategy);
-        executionContext.setOperationDefinition(operation);
-        executionContext.setRoot(root);
-        executionContext.setFragmentsByName(fragmentsByName);
         Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), args);
-        executionContext.setVariables(variableValues);
-        return executionContext;
+
+        return new ExecutionContext(
+                graphQLSchema,
+                executionStrategy,
+                fragmentsByName,
+                operation,
+                variableValues,
+                root);
     }
 }
