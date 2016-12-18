@@ -378,9 +378,9 @@ class ParserTest extends Specification {
 
     }
 
-    def "`'query'` can be used as field name"() {
+    def "keywords can be used as field names"() {
         given:
-        def input = "{ query }"
+        def input = "{ ${name} }"
 
         when:
         Document document = new Parser().parseDocument(input)
@@ -389,7 +389,23 @@ class ParserTest extends Specification {
         document.definitions.size() == 1
         document.definitions[0] instanceof OperationDefinition
         document.definitions[0].operation == OperationDefinition.Operation.QUERY
-        assertField(document.definitions[0] as OperationDefinition, "query")
+        assertField(document.definitions[0] as OperationDefinition, name)
+
+        where:
+        name         | _
+        'fragment'   | _
+        'query'      | _
+        'mutation'   | _
+        'schema'     | _
+        'scalar'     | _
+        'type'       | _
+        'interface'  | _
+        'implements' | _
+        'enum'       | _
+        'union'      | _
+        'input'      | _
+        'extend'     | _
+        'directive'  | _
     }
 
     def "StarWars schema"() {
