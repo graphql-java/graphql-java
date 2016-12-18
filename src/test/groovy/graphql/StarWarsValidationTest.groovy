@@ -138,4 +138,42 @@ class StarWarsValidationTest extends Specification {
         validationErrors.isEmpty()
     }
 
+    def 'Allows object fields in inline fragments on with no type'() {
+        def query = """
+        query InlineFragmentWithNoType {
+            hero {
+                name
+                ... @include(if: true) {
+                    appearsIn
+                }
+            }
+        }
+        """
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        validationErrors.isEmpty()
+    }
+
+    def 'Allows object fields in inline fragments with no type in array context'() {
+        def query = """
+        query InlineFragmentWithNoType {
+            hero {
+                name
+                friends {
+                    ... @include(if: true) {
+                        name
+                    }
+                }
+            }
+        }
+        """
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        validationErrors.isEmpty()
+    }
+
 }
