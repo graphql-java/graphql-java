@@ -168,4 +168,52 @@ class GraphQLTest extends Specification {
         then:
         data == [set: ['One', 'Two']]
     }
+
+    def "document with two operations executes specified operation"() {
+        given:
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition().name("field1").type(GraphQLString).dataFetcher(new StaticDataFetcher("value1")))
+                        .field(newFieldDefinition().name("field2").type(GraphQLString).dataFetcher(new StaticDataFetcher("value2")))
+        )
+                .build()
+
+        def query = """
+        query Query1 { field1 }
+        query Query2 { field2 }
+        """
+
+        def expected = [field2: 'value2']
+
+        when:
+        def result = new GraphQL(schema).execute(query, 'Query2', null, [:])
+
+        then:
+        result.data == expected
+        result.errors.size() == 0
+    }
+
+    def "document with two operations but no specified operation throws"() {
+        given:
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition().name("name").type(GraphQLString))
+        )
+        .build()
+
+        def query = """
+        query Query1 { name }
+        query Query2 { name }
+        """
+
+        when:
+        new GraphQL(schema).execute(query)
+
+        then:
+        thrown(GraphQLException)
+    }
 }
