@@ -5,14 +5,14 @@ import java.util.Collection;
 public class Assert {
 
 
-    public static void assertNotNull(Object object, String errorMessage) {
-        if (object != null) return;
+    public static <T> T assertNotNull(T object, String errorMessage) {
+        if (object != null) return object;
         throw new AssertException(errorMessage);
     }
 
-    public static void assertNotEmpty(Collection<?> c, String errorMessage) {
+    public static <T> Collection<T> assertNotEmpty(Collection<T> c, String errorMessage) {
         if (c == null || c.isEmpty()) throw new AssertException(errorMessage);
-        return;
+        return c;
     }
 
 }

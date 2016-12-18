@@ -3,6 +3,7 @@ package graphql;
 
 import graphql.execution.Execution;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.SimpleExecutionStrategy;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.Parser;
@@ -14,7 +15,6 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -29,14 +29,67 @@ public class GraphQL {
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema the schema to use
+     *
+     * @deprecated use the {@link #newObject(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
     public GraphQL(GraphQLSchema graphQLSchema) {
+        //noinspection deprecation
         this(graphQLSchema, null);
     }
 
 
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema     the schema to use
+     * @param executionStrategy the execution strategy to use
+     *
+     * @deprecated use the {@link #newObject(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy) {
         this.graphQLSchema = graphQLSchema;
         this.executionStrategy = executionStrategy;
+    }
+
+    /**
+     * Helps you build GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema the schema to use
+     *
+     * @return a builder of GraphQL objects
+     */
+    public static Builder newObject(GraphQLSchema graphQLSchema) {
+        return new Builder(graphQLSchema);
+    }
+
+
+    public static class Builder {
+        private GraphQLSchema graphQLSchema;
+        private ExecutionStrategy executionStrategy = new SimpleExecutionStrategy();
+
+        public Builder(GraphQLSchema graphQLSchema) {
+            this.graphQLSchema = graphQLSchema;
+        }
+
+        public Builder schema(GraphQLSchema graphQLSchema) {
+            this.graphQLSchema = assertNotNull(graphQLSchema, "GraphQLSchema must be non null");
+            return this;
+        }
+
+        public Builder executionStrategy(ExecutionStrategy executionStrategy) {
+            this.executionStrategy = assertNotNull(executionStrategy, "ExecutionStrategy must be non null");
+            return this;
+        }
+
+        public GraphQL build() {
+            //noinspection deprecation
+            return new GraphQL(graphQLSchema, executionStrategy);
+        }
     }
 
     public ExecutionResult execute(String requestString) {
@@ -66,7 +119,7 @@ public class GraphQL {
             RecognitionException recognitionException = (RecognitionException) e.getCause();
             SourceLocation sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
             InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
-            return new ExecutionResultImpl(Arrays.asList(invalidSyntaxError));
+            return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
 
         Validator validator = new Validator();
