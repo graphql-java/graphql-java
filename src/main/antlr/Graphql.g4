@@ -18,7 +18,7 @@ operationDefinition:
 selectionSet |
 operationType  name? variableDefinitions? directives? selectionSet;
 
-operationType : NAME;
+operationType : MUTATION | QUERY;
 
 variableDefinitions : '(' variableDefinition+ ')';
 
@@ -59,7 +59,7 @@ typeCondition : typeName;
 
 // Value
 
-name: NAME | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
+name: NAME | QUERY | MUTATION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
 
 value :
 IntValue |
@@ -176,6 +176,8 @@ directiveLocations '|' directiveLocation
 
 BooleanValue: 'true' | 'false';
 
+QUERY: 'query';
+MUTATION: 'mutation';
 SCHEMA: 'schema';
 SCALAR: 'scalar';
 TYPE: 'type';
