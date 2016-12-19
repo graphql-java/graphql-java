@@ -94,7 +94,7 @@ public class HelloWorld {
         GraphQLSchema schema = GraphQLSchema.newSchema()
                         .query(queryType)
                         .build();
-        Map<String, Object> result = (Map<String, Object>) new GraphQL(schema).execute("{hello}").getData();
+        Map<String, Object> result = new GraphQL(schema).execute("{hello}").getData();
 
         System.out.println(result);
         // Prints: {hello=world}
@@ -305,12 +305,12 @@ the property name of the source Object, no `DataFetcher` is needed.
 Example of configuring a custom `DataFetcher`:
 ```java
 
-DataFetcher calculateComplicatedValue = new DataFetcher() {
+DataFetcher calculateComplicatedValue = new DataFetcher<ComplicatedVal>() {
     @Override
-    Object get(DataFetchingEnvironment environment) {
+    ComplicatedVal get(DataFetchingEnvironment environment) {
         // environment.getSource() is the value of the surrounding
         // object. In this case described by objectType
-        Object value = ... // Perhaps getting from a DB or whatever 
+        ComplicatedVal value = ... // Perhaps getting from a DB or whatever 
         return value;
     }
 };
