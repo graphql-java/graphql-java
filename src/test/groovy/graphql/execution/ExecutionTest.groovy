@@ -28,7 +28,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(MutationSchema.schema, null, document, null, null)
+        execution.execute(ExecutionId.generate(), MutationSchema.schema, null, document, null, null)
 
         then:
         1 * queryStrategy.execute(*_)
@@ -47,7 +47,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(MutationSchema.schema, null, document, null, null)
+        execution.execute(ExecutionId.generate(), MutationSchema.schema, null, document, null, null)
 
         then:
         0 * queryStrategy.execute(*_)

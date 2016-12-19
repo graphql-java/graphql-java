@@ -16,7 +16,6 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +32,7 @@ public class GraphQL {
     // later PR changes will allow api consumers to provide their own id provider
     //
     // see https://github.com/graphql-java/graphql-java/pull/276 for the builder pattern
-    // needed to make this sustainable.  But for now we will use hard coded approach.
+    // needed to make this sustainable.  But for now we will use a hard coded approach.
     //
     private final ExecutionIdProvider idProvider = new ExecutionIdProvider() {
         @Override
