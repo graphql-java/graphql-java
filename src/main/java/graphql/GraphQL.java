@@ -25,18 +25,24 @@ public class GraphQL {
 
 
     private final GraphQLSchema graphQLSchema;
-    private final ExecutionStrategy executionStrategy;
+    private final ExecutionStrategy queryStrategy;
+    private final ExecutionStrategy mutationStrategy;
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
     public GraphQL(GraphQLSchema graphQLSchema) {
-        this(graphQLSchema, null);
+        this(graphQLSchema, null, null);
     }
 
 
-    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy) {
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
+        this(graphQLSchema, queryStrategy, null);
+    }
+
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
         this.graphQLSchema = graphQLSchema;
-        this.executionStrategy = executionStrategy;
+        this.queryStrategy = queryStrategy;
+        this.mutationStrategy = mutationStrategy;
     }
 
     public ExecutionResult execute(String requestString) {
@@ -74,7 +80,7 @@ public class GraphQL {
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
-        Execution execution = new Execution(executionStrategy);
+        Execution execution = new Execution(queryStrategy, mutationStrategy);
         return execution.execute(graphQLSchema, context, document, operationName, arguments);
     }
 
