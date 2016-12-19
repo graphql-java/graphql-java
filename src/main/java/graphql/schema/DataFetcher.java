@@ -1,7 +1,7 @@
 package graphql.schema;
 
 
-public interface DataFetcher {
+public interface DataFetcher<T> {
 
-    Object get(DataFetchingEnvironment environment);
+    T get(DataFetchingEnvironment environment);
 }
