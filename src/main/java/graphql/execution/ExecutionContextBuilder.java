@@ -28,10 +28,9 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy, Object root, Document document, String operationName, Map<String, Object> args) {
+    public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Object root, Document document, String operationName, Map<String, Object> args) {
         // preconditions
         assertNotNull(executionId,"You must provide a query identifier");
-
         Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
         Map<String, OperationDefinition> operationsByName = new LinkedHashMap<String, OperationDefinition>();
 
@@ -58,13 +57,13 @@ public class ExecutionContextBuilder {
         if (operation == null) {
             throw new GraphQLException();
         }
-
         Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), args);
 
         return new ExecutionContext(
                 graphQLSchema,
                 executionId,
-                executionStrategy,
+                queryStrategy,
+                mutationStrategy,
                 fragmentsByName,
                 operation,
                 variableValues,
