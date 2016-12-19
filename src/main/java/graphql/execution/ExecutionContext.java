@@ -22,7 +22,7 @@ public class ExecutionContext {
     private final Object root;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<GraphQLError>();
 
-    public ExecutionContext(GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
+    public ExecutionContext(ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.queryStrategy = queryStrategy;
@@ -33,12 +33,12 @@ public class ExecutionContext {
         this.root = root;
     }
 
-    public GraphQLSchema getGraphQLSchema() {
-        return graphQLSchema;
-    }
-
     public ExecutionId getExecutionId() {
         return executionId;
+    }
+
+    public GraphQLSchema getGraphQLSchema() {
+        return graphQLSchema;
     }
 
     public Map<String, FragmentDefinition> getFragmentsByName() {

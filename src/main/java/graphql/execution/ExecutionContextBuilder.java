@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.Assert;
 import graphql.GraphQLException;
 import graphql.language.Definition;
 import graphql.language.Document;
@@ -61,8 +60,8 @@ public class ExecutionContextBuilder {
         Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), args);
 
         return new ExecutionContext(
-                graphQLSchema,
                 executionId,
+                graphQLSchema,
                 queryStrategy,
                 mutationStrategy,
                 fragmentsByName,
