@@ -73,6 +73,10 @@ public class SchemaUtil {
                 collectTypes(fieldArgument.getType(), result);
             }
         }
+
+        for (GraphQLObjectType implementingType : interfaceType.getImplementingTypes()) {
+            collectTypes(implementingType, result);
+        }
     }
 
 

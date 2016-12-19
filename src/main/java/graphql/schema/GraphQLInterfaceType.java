@@ -2,10 +2,7 @@ package graphql.schema;
 
 import graphql.AssertException;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static graphql.Assert.assertNotNull;
 
@@ -15,6 +12,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
     private final TypeResolver typeResolver;
+    private final Set<GraphQLObjectType> implementingTypes = new HashSet<GraphQLObjectType>();
 
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
         assertNotNull(name, "name can't null");
@@ -70,6 +68,14 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         return new Builder();
     }
 
+    public GraphQLInterfaceType withImplementingType(GraphQLObjectType implementingType) {
+        this.implementingTypes.add(implementingType);
+        return this;
+    }
+
+    public Set<GraphQLObjectType> getImplementingTypes() {
+        return implementingTypes;
+    }
 
     public static class Builder {
         private String name;
