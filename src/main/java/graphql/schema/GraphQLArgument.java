@@ -1,6 +1,6 @@
 package graphql.schema;
 
-
+import java.util.Map;
 import static graphql.Assert.assertNotNull;
 
 public class GraphQLArgument {
@@ -23,6 +23,9 @@ public class GraphQLArgument {
         this(name, null, type, null);
     }
 
+    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
+        type = (GraphQLInputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+    }
 
     public String getName() {
         return name;
