@@ -13,8 +13,13 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
+    private Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
     private final List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
+
+    public GraphQLObjectType() {
+      name = null;
+      description = null;
+    }
 
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
         assertNotNull(name, "name can't be null");
@@ -26,6 +31,14 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         buildDefinitionMap(fieldDefinitions);
     }
 
+    public GraphQLObjectType(String name, String description, List<GraphQLInterfaceType> interfaces) {
+        assertNotNull(name, "name can't be null");
+        assertNotNull(interfaces, "interfaces can't be null");
+        this.name = name;
+        this.description = description;
+        this.interfaces.addAll(interfaces);
+    }
+
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
             String name = fieldDefinition.getName();
@@ -34,7 +47,6 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             fieldDefinitionsByName.put(name, fieldDefinition);
         }
     }
-
 
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
@@ -45,6 +57,9 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         return new ArrayList<GraphQLFieldDefinition>(fieldDefinitionsByName.values());
     }
 
+    public void setFieldDefinitions(Map<String, GraphQLFieldDefinition> fieldDefinitionsByName) {
+        this. fieldDefinitionsByName = fieldDefinitionsByName;
+    }
 
     public List<GraphQLInterfaceType> getInterfaces() {
         return new ArrayList<GraphQLInterfaceType>(interfaces);
@@ -148,8 +163,13 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         }
 
         public GraphQLObjectType build() {
-            return new GraphQLObjectType(name, description, fieldDefinitions, interfaces);
+            GraphQLObjectType type = new GraphQLObjectType(name, description, fieldDefinitions, interfaces);
+            for (GraphQLInterfaceType itf : interfaces) {
+                itf.withImplementingType(type);
+            }
+            return type;
         }
+
 
 
     }
