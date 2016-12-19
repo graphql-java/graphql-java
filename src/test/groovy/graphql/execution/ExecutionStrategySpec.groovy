@@ -21,7 +21,7 @@ class ExecutionStrategySpec extends Specification {
     }
 
     def buildContext() {
-        new ExecutionContext(null,executionStrategy,null,null,null,null)
+        new ExecutionContext(null, null, executionStrategy, null, null, null, null)
     }
 
     def "completes value for a java.util.List"() {

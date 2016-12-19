@@ -6,7 +6,6 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -14,6 +13,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class ExecutionContext {
 
     private final GraphQLSchema graphQLSchema;
+    private final ExecutionId executionId;
     private final ExecutionStrategy executionStrategy;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final OperationDefinition operationDefinition;
@@ -21,8 +21,9 @@ public class ExecutionContext {
     private final Object root;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<GraphQLError>();
 
-    public ExecutionContext(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
+    public ExecutionContext(GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionStrategy executionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
         this.graphQLSchema = graphQLSchema;
+        this.executionId = executionId;
         this.executionStrategy = executionStrategy;
         this.fragmentsByName = fragmentsByName;
         this.operationDefinition = operationDefinition;
@@ -32,6 +33,10 @@ public class ExecutionContext {
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
+    }
+
+    public ExecutionId getExecutionId() {
+        return executionId;
     }
 
     public Map<String, FragmentDefinition> getFragmentsByName() {

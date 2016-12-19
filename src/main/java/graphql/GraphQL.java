@@ -2,6 +2,8 @@ package graphql;
 
 
 import graphql.execution.Execution;
+import graphql.execution.ExecutionId;
+import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
@@ -26,6 +28,18 @@ public class GraphQL {
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy executionStrategy;
+    //
+    // later PR changes will allow api consumers to provide their own id provider
+    //
+    // see https://github.com/graphql-java/graphql-java/pull/276 for the builder pattern
+    // needed to make this sustainable.  But for now we will use hard coded approach.
+    //
+    private final ExecutionIdProvider idProvider = new ExecutionIdProvider() {
+        @Override
+        public ExecutionId generate(String query, String operationName, Object context) {
+            return ExecutionId.generate();
+        }
+    };
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
@@ -66,7 +80,7 @@ public class GraphQL {
             RecognitionException recognitionException = (RecognitionException) e.getCause();
             SourceLocation sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
             InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
-            return new ExecutionResultImpl(Arrays.asList(invalidSyntaxError));
+            return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
 
         Validator validator = new Validator();
@@ -74,8 +88,11 @@ public class GraphQL {
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
+
+        ExecutionId executionId = idProvider.generate(requestString, operationName, context);
+
         Execution execution = new Execution(executionStrategy);
-        return execution.execute(graphQLSchema, context, document, operationName, arguments);
+        return execution.execute(executionId, graphQLSchema, context, document, operationName, arguments);
     }
 
 

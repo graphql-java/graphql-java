@@ -16,20 +16,19 @@ import java.util.Map;
 
 public class Execution {
 
-    private FieldCollector fieldCollector = new FieldCollector();
-    private ExecutionStrategy strategy;
+    private final FieldCollector fieldCollector = new FieldCollector();
+    private final ExecutionStrategy strategy;
 
-    public Execution(ExecutionStrategy strategy) {
-        this.strategy = strategy;
-
-        if (this.strategy == null) {
-            this.strategy = new SimpleExecutionStrategy();
-        }
+    public Execution(ExecutionStrategy executionStrategy) {
+        this.strategy = executionStrategy == null ? new SimpleExecutionStrategy() : executionStrategy;
     }
 
-    public ExecutionResult execute(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
+    public ExecutionResult execute(ExecutionId executionId, GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
         ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver());
-        ExecutionContext executionContext = executionContextBuilder.build(graphQLSchema, strategy, root, document, operationName, args);
+        ExecutionContext executionContext = executionContextBuilder
+                .executionId(executionId)
+                .build(graphQLSchema, strategy, root, document, operationName, args);
+
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
 
