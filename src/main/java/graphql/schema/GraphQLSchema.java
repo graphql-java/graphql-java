@@ -1,10 +1,19 @@
 package graphql.schema;
 
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import graphql.Assert;
 import graphql.Directives;
-
-import java.util.*;
+import graphql.schema.validation.InvalidSchemaException;
+import graphql.schema.validation.ValidationError;
+import graphql.schema.validation.Validator;
 
 import static graphql.Assert.assertNotNull;
 
@@ -99,10 +108,11 @@ public class GraphQLSchema {
             Assert.assertNotNull(dictionary, "dictionary can't be null");
             GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, dictionary);
             new SchemaUtil().replaceTypeReferences(graphQLSchema);
+            Collection<ValidationError> errors = new Validator().validateSchema(graphQLSchema);
+            if (errors.size() > 0) {
+                throw new InvalidSchemaException(errors);
+            }
             return graphQLSchema;
         }
-
-
     }
-
 }
