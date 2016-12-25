@@ -29,6 +29,8 @@ public class Scalars {
                 return Integer.parseInt((String) input);
             } else if (input instanceof Integer) {
                 return input;
+            }else if (input instanceof Number) {
+                return ((Number) input).intValue();
             } else {
                 return null;
             }
@@ -60,6 +62,8 @@ public class Scalars {
                 return input;
             } else if (input instanceof Integer) {
                 return ((Integer) input).longValue();
+            } else if (input instanceof Number) {
+                return ((Number) input).longValue();
             } else {
                 return null;
             }
