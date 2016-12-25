@@ -25,8 +25,8 @@ public class DataFetchingEnvironment {
         this.graphQLSchema = graphQLSchema;
     }
 
-    public Object getSource() {
-        return source;
+    public <T> T getSource() {
+        return (T) source;
     }
 
     public Map<String, Object> getArguments() {
@@ -41,8 +41,8 @@ public class DataFetchingEnvironment {
         return (T) arguments.get(name);
     }
 
-    public Object getContext() {
-        return context;
+    public <T> T getContext() {
+        return (T) context;
     }
 
     public List<Field> getFields() {
