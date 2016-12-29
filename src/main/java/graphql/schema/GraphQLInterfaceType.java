@@ -1,11 +1,12 @@
 package graphql.schema;
 
-import graphql.AssertException;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import graphql.AssertException;
 
 import static graphql.Assert.assertNotNull;
 
@@ -70,7 +71,10 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         return new Builder();
     }
 
-
+    public static Reference reference(String name) {
+        return new Reference(name);
+    }
+    
     public static class Builder {
         private String name;
         private String description;
@@ -142,5 +146,9 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
     }
 
-
+    private static class Reference extends GraphQLInterfaceType implements TypeReference {
+        private Reference(String name) {
+            super(name, "", Collections.<GraphQLFieldDefinition>emptyList(), new TypeResolverProxy());
+        }
+    }
 }
