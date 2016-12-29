@@ -305,12 +305,12 @@ the property name of the source Object, no `DataFetcher` is needed.
 Example of configuring a custom `DataFetcher`:
 ```java
 
-DataFetcher calculateComplicatedValue = new DataFetcher<ComplicatedVal>() {
+DataFetcher<Foo> fooDataFetcher = new DataFetcher<Foo>() {
     @Override
-    ComplicatedVal get(DataFetchingEnvironment environment) {
+    Foo get(DataFetchingEnvironment environment) {
         // environment.getSource() is the value of the surrounding
         // object. In this case described by objectType
-        ComplicatedVal value = ... // Perhaps getting from a DB or whatever 
+        Foo value = ... // Perhaps getting from a DB or whatever 
         return value;
     }
 };
@@ -318,9 +318,9 @@ DataFetcher calculateComplicatedValue = new DataFetcher<ComplicatedVal>() {
 GraphQLObjectType objectType = newObject()
     .name("ObjectType")
     .field(newFieldDefinition()
-            .name("someComplicatedValue")
+            .name("foo")
             .type(GraphQLString)
-            .dataFetcher(calculateComplicatedValue))
+            .dataFetcher(fooDataFetcher))
     .build();
 
 ```
