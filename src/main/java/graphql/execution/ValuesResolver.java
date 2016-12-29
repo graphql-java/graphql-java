@@ -10,11 +10,13 @@ import java.util.*;
 public class ValuesResolver {
 
     public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> inputs) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        final Map<String, Object> result = new LinkedHashMap<String, Object>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
-            Object variableValue = getVariableValue(schema, variableDefinition, inputs.get(variableDefinition.getName()));
-            if (variableValue != null) {
-                result.put(variableDefinition.getName(), variableValue);
+            final String name = variableDefinition.getName();
+            if (inputs.containsKey(name)) {
+                // note that variable is nullable
+                Object variableValue = getVariableValue(schema, variableDefinition, inputs.get(variableDefinition.getName()));
+                result.put(name, variableValue);
             }
         }
         return result;

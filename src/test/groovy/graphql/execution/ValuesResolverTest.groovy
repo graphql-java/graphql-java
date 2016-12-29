@@ -348,4 +348,28 @@ class ValuesResolverTest extends Specification {
         [intKey: 10]                      | _
         [intKey: 10, requiredField: null] | _
     }
+
+    def "getVariableValues: semantic difference between map containing null values versus absent keys"() {
+        given:
+        def inputObjectType = newInputObject()
+                .name("Person")
+                .field(newInputObjectField().name("name").type(GraphQLString).build())
+                .field(newInputObjectField().name("age").type(GraphQLInt).build())
+                .build()
+
+        def schema = TestUtil.schemaWithInputType(inputObjectType)
+        VariableDefinition variableDefinition = new VariableDefinition("input", new TypeName("Person"))
+
+        when:
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [input: inputValue])
+
+        then:
+        resolvedValues['input'] == outputValue
+
+        where:
+        inputValue                     || outputValue
+        [name: 'Jon Snow', age: 42]    || [name: 'Jon Snow', age: 42]
+        [name: 'Jon Snow', age: null]  || [name: 'Jon Snow', age: null]
+        [name: 'Jon Snow']             || [name: 'Jon Snow']
+    }
 }
