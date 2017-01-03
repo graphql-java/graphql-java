@@ -20,6 +20,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static java.util.Objects.isNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 
@@ -27,19 +28,33 @@ import static java.util.stream.Collectors.toList;
 public final class AsyncExecutionStrategy extends ExecutionStrategy {
 
     public static AsyncExecutionStrategy serial() {
-        return new AsyncExecutionStrategy(true);
+        return new AsyncExecutionStrategy(true, null);
+    }
+
+    public static AsyncExecutionStrategy serial(final CompletableFutureFactory factory) {
+        return new AsyncExecutionStrategy(true, factory);
     }
 
     public static AsyncExecutionStrategy parallel() {
-        return new AsyncExecutionStrategy(false);
+        return new AsyncExecutionStrategy(false, null);
+    }
+
+    public static AsyncExecutionStrategy parallel(final CompletableFutureFactory factory) {
+        return new AsyncExecutionStrategy(false, factory);
     }
 
     private static final Logger log = LoggerFactory.getLogger(AsyncExecutionStrategy.class);
 
     private final boolean serial;
+    private final CompletableFutureFactory completableFutureFactory;
 
-    private AsyncExecutionStrategy(boolean serial) {
+    private AsyncExecutionStrategy(boolean serial, final CompletableFutureFactory completableFutureFactory) {
         this.serial = serial;
+        if (isNull(completableFutureFactory)) {
+            this.completableFutureFactory = DefaultCompletableFutureFactory.defaultFactory();
+        } else {
+            this.completableFutureFactory = completableFutureFactory;
+        }
     }
 
     @Override
@@ -184,7 +199,7 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
     private static final Object NULL = new Object();
 
     private <K, V> CompletionStage<Map<K, V>> executeInParallel(Map<K, Supplier<CompletionStage<V>>> resolvers) {
-        CompletableFuture<Map<K, V>> future = new CompletableFuture<>();
+        CompletableFuture<Map<K, V>> future = completableFutureFactory.future();
         Set<K> awaiting = new ConcurrentHashMap<>(new HashMap<>(resolvers)).keySet();  // `keySet()` is a view and will be modified, so copy first
         Map<K, V> results = new ConcurrentHashMap<>();
         resolvers.entrySet().forEach(entry -> {
