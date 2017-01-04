@@ -20,6 +20,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static java.util.Arrays.asList;
 import static java.util.Objects.isNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
@@ -130,7 +131,7 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
             return completedFuture(new ExecutionResultImpl(null, null));
         } else if (fieldType instanceof GraphQLList) {
             if (result.getClass().isArray()) {
-                result = Arrays.asList((Object[]) result);
+                result = asList((Object[]) result);
             }
             return completeValueForListAsync(executionContext, (GraphQLList) fieldType, fields, (Iterable<Object>) result);
         } else if (fieldType instanceof GraphQLScalarType) {
