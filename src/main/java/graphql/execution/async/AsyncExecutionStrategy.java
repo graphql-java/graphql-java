@@ -121,12 +121,12 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
     protected CompletionStage<ExecutionResult> completeValueAsync(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fields, Object result) {
         if (fieldType instanceof GraphQLNonNull) {
             return completeValueAsync(executionContext, ((GraphQLNonNull) fieldType).getWrappedType(), fields, result).thenApply(result1 -> {
-                if (result1.getData() == null) {
+                if (isNull(result1.getData())) {
                     throw new GraphQLException("Cannot return null for non-nullable type: " + fields);
                 }
                 return result1;
             });
-        } else if (result == null) {
+        } else if (isNull(result)) {
             return completedFuture(new ExecutionResultImpl(null, null));
         } else if (fieldType instanceof GraphQLList) {
             if (result.getClass().isArray()) {
@@ -151,7 +151,7 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         Map<String, List<Field>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         for (Field field : fields) {
-            if (field.getSelectionSet() == null) continue;
+            if (isNull(field.getSelectionSet())) continue;
             fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
         }
 
