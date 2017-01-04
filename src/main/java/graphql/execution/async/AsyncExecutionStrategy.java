@@ -199,6 +199,9 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         Map<K, V> results = new ConcurrentHashMap<>();
         resolvers.entrySet().forEach(entry -> {
             entry.getValue().get().thenAccept(result -> {
+                if (future.isCompletedExceptionally()) {
+                    return;
+                }
                 K key = entry.getKey();
                 if (!isNull(result)) {
                     results.put(key, result);
@@ -209,6 +212,9 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
                     resolvers.keySet().forEach(key1 -> map.put(key1, results.get(key1)));
                     future.complete(map);
                 }
+            }).exceptionally(e -> {
+                future.completeExceptionally(e);
+                return null;
             });
         });
         return future;
