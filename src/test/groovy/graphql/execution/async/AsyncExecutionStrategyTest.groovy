@@ -64,7 +64,61 @@ class AsyncExecutionStrategyTest extends Specification {
 
         then:
         actual.data == [field: [[field: 'value']]]
+    }
 
+    // http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
+    // - "Since Non-Null type fields cannot be null, field errors are propagated
+    //   to be handled by the parent field. If the parent field may be null then
+    //   it resolves to null, otherwise if it is a Non-Null type, the field error
+    //   is further propagated to it’s parent field."
+    // - "...only one error should be added to the errors list per field."
+
+    def "null non-null field results in null nullable parent"() {
+        given:
+        def type = newObject()
+          .name('ParentType')
+          .field(newFieldDefinition()
+              .name('field')
+              .type(new GraphQLNonNull(GraphQLString))
+              .dataFetcher({ null }))
+          .build()
+        def strategy = AsyncExecutionStrategy.serial()
+        def executionContext = buildExecutionContext(strategy, type)
+        def fields = [field: [new Field('field')]]
+
+        when:
+        actual = strategy.execute(executionContext, type, [:], fields)
+
+        then:
+        actual.data == null
+    }
+
+    def "null non-null fields propagate to nearest nullable parent"() {
+        given:
+        def type = newObject()
+            .name('ParentType')
+            .field(newFieldDefinition()
+                .name('nullableField')
+                .type(newObject()
+                    .name('ChildType')
+                    .field(newFieldDefinition()
+                        .name('nonNullField')
+                        .type(new GraphQLNonNull(newObject()
+                            .name('GrandChildType')
+                            .field(newFieldDefinition()
+                                .name('nonNullField')
+                                .type(new GraphQLNonNull(GraphQLString))).build()))))
+                .dataFetcher({[nonNullField: [:]]}))
+            .build()
+        def strategy = AsyncExecutionStrategy.serial()
+        def executionContext = buildExecutionContext(strategy, type)
+        def fields = [nullableField: [new Field('nullableField', new SelectionSet([new Field('nonNullField', new SelectionSet([new Field('nonNullField')]))]))]]
+
+        when:
+        actual = strategy.execute(executionContext, type, [:], fields)
+
+        then:
+        actual.data == [nullableField: null]
     }
 
     @Ignore

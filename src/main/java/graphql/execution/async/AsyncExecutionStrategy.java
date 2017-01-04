@@ -1,10 +1,7 @@
 package graphql.execution.async;
 
 import com.spotify.futures.CompletableFutures;
-import graphql.ExceptionWhileDataFetching;
-import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
-import graphql.GraphQLException;
+import graphql.*;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
 import graphql.language.Field;
@@ -78,12 +75,17 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
             LinkedHashMap::new
           ));
 
-        return executeFields(fieldsToExecute).thenApply(resultMap -> {
+        return executeFields(fieldsToExecute).<ExecutionResult>thenApply(resultMap -> {
             Map<String, Object> dataMap = new HashMap<>();
             resultMap.forEach((key, result) -> {
                 dataMap.put(key, result.getData());
             });
             return new ExecutionResultImpl(dataMap, executionContext.getErrors());
+        }).exceptionally(e -> {
+            if (e.getCause() instanceof NonNullException) {
+                return new ExecutionResultImpl(null, null);
+            }
+            throw new RuntimeException(e);
         });
     }
 
@@ -122,7 +124,7 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         if (fieldType instanceof GraphQLNonNull) {
             return completeValueAsync(executionContext, ((GraphQLNonNull) fieldType).getWrappedType(), fields, result).thenApply(result1 -> {
                 if (isNull(result1.getData())) {
-                    throw new GraphQLException("Cannot return null for non-nullable type: " + fields);
+                    throw new NonNullException("Cannot return null for non-nullable type: " + fields);
                 }
                 return result1;
             });
