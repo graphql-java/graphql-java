@@ -67,7 +67,6 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public CompletionStage<ExecutionResult> executeAsync(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
 
         Map<String, Supplier<CompletionStage<ExecutionResult>>> fieldsToExecute = fields.keySet()
