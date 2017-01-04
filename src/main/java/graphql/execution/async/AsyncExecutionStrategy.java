@@ -193,11 +193,6 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         });
     }
 
-    /**
-     * `ConcurrentHashMap`, used by `executeInParallel()`, does not allow null keys or values
-     */
-    private static final Object NULL = new Object();
-
     private <K, V> CompletionStage<Map<K, V>> executeInParallel(Map<K, Supplier<CompletionStage<V>>> resolvers) {
         CompletableFuture<Map<K, V>> future = completableFutureFactory.future();
         Set<K> awaiting = new ConcurrentHashMap<>(new HashMap<>(resolvers)).keySet();  // `keySet()` is a view and will be modified, so copy first
@@ -205,14 +200,13 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
         resolvers.entrySet().forEach(entry -> {
             entry.getValue().get().thenAccept(result -> {
                 K key = entry.getKey();
-                results.put(key, result);
+                if (!isNull(result)) {
+                    results.put(key, result);
+                }
                 awaiting.remove(key);
                 if (awaiting.isEmpty()) {
                     Map<K, V> map = new LinkedHashMap<>();
-                    resolvers.keySet().forEach(key1 -> {
-                        V value = results.get(key1);
-                        map.put(key1, value == NULL ? null : value);
-                    });
+                    resolvers.keySet().forEach(key1 -> map.put(key1, results.get(key1)));
                     future.complete(map);
                 }
             });
