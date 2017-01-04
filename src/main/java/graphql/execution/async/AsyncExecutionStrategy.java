@@ -195,7 +195,7 @@ public final class AsyncExecutionStrategy extends ExecutionStrategy {
 
     private <K, V> CompletionStage<Map<K, V>> executeInParallel(Map<K, Supplier<CompletionStage<V>>> resolvers) {
         CompletableFuture<Map<K, V>> future = completableFutureFactory.future();
-        Set<K> awaiting = new ConcurrentHashMap<>(new HashMap<>(resolvers)).keySet();  // `keySet()` is a view and will be modified, so copy first
+        Set<K> awaiting = new ConcurrentHashMap<>(resolvers).keySet();
         Map<K, V> results = new ConcurrentHashMap<>();
         resolvers.entrySet().forEach(entry -> {
             entry.getValue().get().thenAccept(result -> {
