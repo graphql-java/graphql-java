@@ -18,19 +18,18 @@ import static java.util.concurrent.CompletableFuture.completedFuture
 
 class AsyncExecutionStrategyTest extends Specification {
 
-    def strategy = AsyncExecutionStrategy.serial()
-    def fields = [field: [new Field('field')]]
-
-    def parentType, executionContext, result, actual
-
     @Unroll
     def "async field"() {
         given:
-        parentType = buildParentType(type, fetcher)
-        executionContext = buildExecutionContext(strategy, parentType)
-        actual = strategy.execute(executionContext, parentType, null, fields);
+        def strategy = AsyncExecutionStrategy.serial()
+        def parentType = buildParentType(type, fetcher)
+        def executionContext = buildExecutionContext(strategy, parentType)
+        def fields = [field: [new Field('field')]]
 
-        expect:
+        when:
+        def actual = strategy.execute(executionContext, parentType, null, fields);
+
+        then:
         actual.data.field == expected
 
         where:
@@ -51,16 +50,16 @@ class AsyncExecutionStrategyTest extends Specification {
     def "async obj"() {
         given:
         def type = new GraphQLList(newObject()
-          .name('composite')
+          .name('Composite')
           .field(field('field', GraphQLString, { 'value' }))
           .build())
-        strategy = AsyncExecutionStrategy.serial()
-        parentType = buildParentType(type, { completedFuture([[field: 'value']]) })
-        executionContext = buildExecutionContext(strategy, parentType)
-        fields = [field: [new Field('field', new SelectionSet([new Field('field')]))]]
+        def strategy = AsyncExecutionStrategy.serial()
+        def parentType = buildParentType(type, { completedFuture([[field: 'value']]) })
+        def executionContext = buildExecutionContext(strategy, parentType)
+        def fields = [field: [new Field('field', new SelectionSet([new Field('field')]))]]
 
         when:
-        actual = strategy.execute(executionContext, parentType, null, fields);
+        def actual = strategy.execute(executionContext, parentType, null, fields);
 
         then:
         actual.data == [field: [[field: 'value']]]
@@ -87,7 +86,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def fields = [field: [new Field('field')]]
 
         when:
-        actual = strategy.execute(executionContext, type, [:], fields)
+        def actual = strategy.execute(executionContext, type, [:], fields)
 
         then:
         actual.data == null
@@ -115,7 +114,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def fields = [nullableField: [new Field('nullableField', new SelectionSet([new Field('nonNullField', new SelectionSet([new Field('nonNullField')]))]))]]
 
         when:
-        actual = strategy.execute(executionContext, type, [:], fields)
+        def actual = strategy.execute(executionContext, type, [:], fields)
 
         then:
         actual.data == [nullableField: null]
