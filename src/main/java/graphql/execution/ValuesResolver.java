@@ -9,11 +9,15 @@ import java.util.*;
 
 public class ValuesResolver {
 
-
     public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> inputs) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        final Map<String, Object> result = new LinkedHashMap<String, Object>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
-            result.put(variableDefinition.getName(), getVariableValue(schema, variableDefinition, inputs.get(variableDefinition.getName())));
+            final String name = variableDefinition.getName();
+            if (inputs.containsKey(name)) {
+                // note that variable is nullable
+                Object variableValue = getVariableValue(schema, variableDefinition, inputs.get(variableDefinition.getName()));
+                result.put(name, variableValue);
+            }
         }
         return result;
     }
@@ -59,6 +63,7 @@ public class ValuesResolver {
         return coerceValue(type, inputValue);
     }
 
+    //TODO implement
     private boolean isValid(GraphQLType type, Object inputValue) {
         return true;
     }

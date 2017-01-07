@@ -9,15 +9,13 @@ import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
@@ -72,7 +70,7 @@ public class GraphQL {
             RecognitionException recognitionException = (RecognitionException) e.getCause();
             SourceLocation sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
             InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
-            return new ExecutionResultImpl(Arrays.asList(invalidSyntaxError));
+            return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
 
         Validator validator = new Validator();
