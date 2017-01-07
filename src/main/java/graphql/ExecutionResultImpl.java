@@ -42,8 +42,9 @@ public class ExecutionResultImpl implements ExecutionResult {
 
 
     @Override
-    public Object getData() {
-        return data;
+    public <T> T getData() {
+        //noinspection unchecked
+        return (T) data;
     }
 
     public void setData(Object result) {
