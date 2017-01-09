@@ -46,8 +46,8 @@ public class GraphQL {
     /**
      * A GraphQL object ready to execute queries
      *
-     * @param graphQLSchema     the schema to use
-     * @param queryStrategy the execution strategy to use
+     * @param graphQLSchema the schema to use
+     * @param queryStrategy the query execution strategy to use
      *
      * @deprecated use the {@link #newObject(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
@@ -59,11 +59,13 @@ public class GraphQL {
     /**
      * A GraphQL object ready to execute queries
      *
-     * @param graphQLSchema     the schema to use
-     * @param queryStrategy the execution strategy to use
+     * @param graphQLSchema    the schema to use
+     * @param queryStrategy    the query execution strategy to use
+     * @param mutationStrategy the mutation execution strategy to use
      *
      * @deprecated use the {@link #newObject(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
         this.graphQLSchema = graphQLSchema;
         this.queryStrategy = queryStrategy;
@@ -84,7 +86,8 @@ public class GraphQL {
 
     public static class Builder {
         private GraphQLSchema graphQLSchema;
-        private ExecutionStrategy executionStrategy = new SimpleExecutionStrategy();
+        private ExecutionStrategy queryExecutionStrategy = new SimpleExecutionStrategy();
+        private ExecutionStrategy mutationExecutionStrategy = null;
 
         public Builder(GraphQLSchema graphQLSchema) {
             this.graphQLSchema = graphQLSchema;
@@ -95,14 +98,19 @@ public class GraphQL {
             return this;
         }
 
-        public Builder executionStrategy(ExecutionStrategy executionStrategy) {
-            this.executionStrategy = assertNotNull(executionStrategy, "ExecutionStrategy must be non null");
+        public Builder queryExecutionStrategy(ExecutionStrategy executionStrategy) {
+            this.queryExecutionStrategy = assertNotNull(executionStrategy, "Query ExecutionStrategy must be non null");
+            return this;
+        }
+
+        public Builder mutationExecutionStrategy(ExecutionStrategy executionStrategy) {
+            this.mutationExecutionStrategy = assertNotNull(executionStrategy, "Mutation ExecutionStrategy must be non null");
             return this;
         }
 
         public GraphQL build() {
             //noinspection deprecation
-            return new GraphQL(graphQLSchema, executionStrategy);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy);
         }
     }
 

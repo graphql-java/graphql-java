@@ -26,9 +26,12 @@ public class HelloWorld {
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(queryType)
                 .build();
+
         GraphQL graphQL = GraphQL.newObject(schema).build();
-        Map<String, Object> result = (Map<String, Object>) graphQL.execute("{hello}").getData();
+
+        Map<String, Object> result = graphQL.execute("{hello}").getData();
         System.out.println(result);
+        // Prints: {hello=world}
     }
 
     @Test
@@ -45,7 +48,7 @@ public class HelloWorld {
                 .query(queryType)
                 .build();
         GraphQL graphQL = GraphQL.newObject(schema).build();
-        Map<String, Object> result = (Map<String, Object>) graphQL.execute("{hello}").getData();
+        Map<String, Object> result = graphQL.execute("{hello}").getData();
         assertEquals("world", result.get("hello"));
     }
 }

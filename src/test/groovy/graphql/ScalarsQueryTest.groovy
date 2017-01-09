@@ -71,7 +71,7 @@ class ScalarsQueryTest extends Specification {
         def result = GraphQL.newObject(ScalarsQuerySchema.scalarsQuerySchema)
                 .build().execute(query)
         def resultBatched = GraphQL.newObject(ScalarsQuerySchema.scalarsQuerySchema)
-                .executionStrategy(new BatchedExecutionStrategy())
+                .queryExecutionStrategy(new BatchedExecutionStrategy())
                 .build().execute(query)
 
         then:
