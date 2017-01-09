@@ -25,7 +25,8 @@ public class GraphQL {
 
 
     private final GraphQLSchema graphQLSchema;
-    private final ExecutionStrategy executionStrategy;
+    private final ExecutionStrategy queryStrategy;
+    private final ExecutionStrategy mutationStrategy;
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
@@ -38,7 +39,7 @@ public class GraphQL {
      */
     public GraphQL(GraphQLSchema graphQLSchema) {
         //noinspection deprecation
-        this(graphQLSchema, null);
+        this(graphQLSchema, null, null);
     }
 
 
@@ -46,14 +47,27 @@ public class GraphQL {
      * A GraphQL object ready to execute queries
      *
      * @param graphQLSchema     the schema to use
-     * @param executionStrategy the execution strategy to use
+     * @param queryStrategy the execution strategy to use
      *
      * @deprecated use the {@link #newObject(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy) {
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
+        //noinspection deprecation
+        this(graphQLSchema, queryStrategy, null);
+    }
+
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema     the schema to use
+     * @param queryStrategy the execution strategy to use
+     *
+     * @deprecated use the {@link #newObject(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
         this.graphQLSchema = graphQLSchema;
-        this.executionStrategy = executionStrategy;
+        this.queryStrategy = queryStrategy;
+        this.mutationStrategy = mutationStrategy;
     }
 
     /**
@@ -127,7 +141,7 @@ public class GraphQL {
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
-        Execution execution = new Execution(executionStrategy);
+        Execution execution = new Execution(queryStrategy, mutationStrategy);
         return execution.execute(graphQLSchema, context, document, operationName, arguments);
     }
 
