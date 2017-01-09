@@ -87,7 +87,7 @@ public class GraphQL {
     public static class Builder {
         private GraphQLSchema graphQLSchema;
         private ExecutionStrategy queryExecutionStrategy = new SimpleExecutionStrategy();
-        private ExecutionStrategy mutationExecutionStrategy = null;
+        private ExecutionStrategy mutationExecutionStrategy = new SimpleExecutionStrategy();
 
         public Builder(GraphQLSchema graphQLSchema) {
             this.graphQLSchema = graphQLSchema;
