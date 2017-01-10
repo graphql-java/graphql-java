@@ -114,10 +114,9 @@ public abstract class ExecutionStrategy {
             fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
         }
 
-        // Calling this from the executionContext so that you can shift from the simple execution strategy for mutations
-        // back to the desired strategy.
+        // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
 
-        return executionContext.getExecutionStrategy().execute(executionContext, resolvedType, result, subFields);
+        return executionContext.getQueryStrategy().execute(executionContext, resolvedType, result, subFields);
     }
 
     private ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, Object result) {

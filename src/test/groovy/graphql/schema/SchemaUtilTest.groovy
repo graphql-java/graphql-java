@@ -1,11 +1,18 @@
 package graphql.schema
 
 import graphql.NestedInputSchema
+import graphql.TypeReferenceSchema
 import graphql.introspection.Introspection
 import spock.lang.Specification
 
 import static graphql.Scalars.*
 import static graphql.StarWarsSchema.*
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static TypeReferenceSchema.SchemaWithReferences
 
 class SchemaUtilTest extends Specification {
 
@@ -54,4 +61,38 @@ class SchemaUtilTest extends Specification {
         types.keySet() == expected.keySet()
     }
 
+    def "using reference to input as output results in error"() {
+        given:
+        GraphQLInputObjectType PersonInputType = newInputObject()
+                .name("Person")
+                .field(newInputObjectField()
+                .name("name")
+                .type(GraphQLString))
+                .build();
+
+        GraphQLFieldDefinition field = newFieldDefinition()
+                .name("find")
+                .type(new GraphQLTypeReference("Person"))
+                .argument(newArgument()
+                .name("ssn")
+                .type(GraphQLString))
+                .build();
+
+        GraphQLObjectType PersonService = newObject()
+                .name("PersonService")
+                .field(field)
+                .build();
+        def schema = new GraphQLSchema(PersonService, null, Collections.singleton(PersonInputType))
+        when:
+        new SchemaUtil().replaceTypeReferences(schema)
+        then:
+        thrown(ClassCastException)
+    }
+    
+    def "all references are replaced"() {
+        when:
+        new SchemaUtil().replaceTypeReferences(SchemaWithReferences)
+        then:
+        SchemaWithReferences.allTypesAsList.findIndexOf{it instanceof TypeReference} == -1
+    }
 }

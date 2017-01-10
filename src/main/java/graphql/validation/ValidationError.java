@@ -61,4 +61,20 @@ public class ValidationError implements GraphQLError {
                 ", description='" + description + '\'' +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ValidationError that = (ValidationError) o;
+
+        return Helper.equals(this, that);
+    }
+
+    @Override
+    public int hashCode() {
+        return Helper.hashCode(this);
+    }
+
 }

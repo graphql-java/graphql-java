@@ -18,18 +18,21 @@ import java.util.Map;
 public class Execution {
 
     private final FieldCollector fieldCollector = new FieldCollector();
-    private final ExecutionStrategy strategy;
+    private final ExecutionStrategy queryStrategy;
+    private final ExecutionStrategy mutationStrategy;
     private final Instrumentation instrumentation;
 
-    public Execution(ExecutionStrategy strategy, Instrumentation instrumentation) {
-        this.strategy = strategy == null ? new SimpleExecutionStrategy() : strategy;
+    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Instrumentation instrumentation) {
+        this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
+        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
         this.instrumentation = instrumentation;
-
     }
 
     public ExecutionResult execute(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
         ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver(),instrumentation);
-        ExecutionContext executionContext = executionContextBuilder.build(graphQLSchema, strategy, root, document, operationName, args);
+        ExecutionContext executionContext = executionContextBuilder
+                .executionId(executionId)
+                .build(graphQLSchema, queryStrategy, mutationStrategy, root, document, operationName, args);
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
 
@@ -55,9 +58,9 @@ public class Execution {
         fieldCollector.collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<String>(), fields);
 
         if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-            return new SimpleExecutionStrategy().execute(executionContext, operationRootType, root, fields);
+            return mutationStrategy.execute(executionContext, operationRootType, root, fields);
         } else {
-            return strategy.execute(executionContext, operationRootType, root, fields);
+            return queryStrategy.execute(executionContext, operationRootType, root, fields);
         }
     }
 }

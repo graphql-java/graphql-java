@@ -2,6 +2,8 @@ package graphql;
 
 
 import graphql.execution.Execution;
+import graphql.execution.ExecutionId;
+import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -29,23 +31,42 @@ public class GraphQL {
 
 
     private final GraphQLSchema graphQLSchema;
-    private final ExecutionStrategy executionStrategy;
+    private final ExecutionStrategy queryStrategy;
+    private final ExecutionStrategy mutationStrategy;
     private final Instrumentation instrumentation;
+
+    //
+    // later PR changes will allow api consumers to provide their own id provider
+    //
+    // see https://github.com/graphql-java/graphql-java/pull/276 for the builder pattern
+    // needed to make this sustainable.  But for now we will use a hard coded approach.
+    //
+    private final ExecutionIdProvider idProvider = new ExecutionIdProvider() {
+        @Override
+        public ExecutionId provide(String query, String operationName, Object context) {
+            return ExecutionId.generate();
+        }
+    };
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
     public GraphQL(GraphQLSchema graphQLSchema) {
-        this(graphQLSchema, null);
+        this(graphQLSchema, null, null);
     }
 
 
-    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy) {
-        this(graphQLSchema, executionStrategy, NoOpInstrumentation.INSTANCE);
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
+        this(graphQLSchema, queryStrategy, null);
     }
 
-    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy, Instrumentation instrumentation) {
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
+        this(graphQLSchema,queryStrategy,mutationStrategy,NoOpInstrumentation.INSTANCE);
+    }
+
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Instrumentation instrumentation) {
         this.graphQLSchema = graphQLSchema;
-        this.executionStrategy = executionStrategy;
+        this.queryStrategy = queryStrategy;
+        this.mutationStrategy = mutationStrategy;
         this.instrumentation = instrumentation;
     }
 
@@ -71,21 +92,17 @@ public class GraphQL {
         assertNotNull(arguments, "arguments can't be null");
         log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
 
-        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new ExecutionParameters(requestString, operationName, context, arguments));
 
+        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new ExecutionParameters(requestString, operationName, context, arguments));
         Parser parser = new Parser();
         Document document;
         try {
             document = parser.parseDocument(requestString);
-
             parseCtx.onEnd(document);
-
         } catch (ParseCancellationException e) {
             RecognitionException recognitionException = (RecognitionException) e.getCause();
             SourceLocation sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
             InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
-
-            parseCtx.onEnd(e);
             return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
 
@@ -99,8 +116,9 @@ public class GraphQL {
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
+        ExecutionId executionId = idProvider.provide(requestString, operationName, context);
 
-        Execution execution = new Execution(executionStrategy, instrumentation);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, instrumentation);
         ExecutionResult result = execution.execute(graphQLSchema, context, document, operationName, arguments);
 
         executionCtx.onEnd(result);

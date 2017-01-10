@@ -20,9 +20,13 @@ class ExecutionStrategySpec extends Specification {
         }
     }
 
+    def buildContext() {
+        new ExecutionContext(null, null, executionStrategy, executionStrategy, null, null, null, null)
+    }
+
     def "completes value for a java.util.List"() {
         given:
-        ExecutionContext executionContext = new ExecutionContext();
+        ExecutionContext executionContext = buildContext()
         Field field = new Field()
         def fieldType = new GraphQLList(Scalars.GraphQLString)
         def result = Arrays.asList("test")
@@ -33,10 +37,9 @@ class ExecutionStrategySpec extends Specification {
         executionResult.data == ["test"]
     }
 
-
     def "completes value for an array"() {
         given:
-        ExecutionContext executionContext = new ExecutionContext();
+        ExecutionContext executionContext = buildContext()
         Field field = new Field()
         def fieldType = new GraphQLList(Scalars.GraphQLString)
         String[] result = ["test"]
