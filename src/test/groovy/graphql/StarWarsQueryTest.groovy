@@ -20,7 +20,7 @@ class StarWarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
         result == expected
@@ -59,7 +59,7 @@ class StarWarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
         result == expected
@@ -142,7 +142,7 @@ class StarWarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
         result == expected
@@ -166,7 +166,7 @@ class StarWarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
         result == expected
@@ -190,7 +190,7 @@ class StarWarsQueryTest extends Specification {
                 ]
         ]
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query, null, params).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query, null, params).data
 
         then:
         result == expected
@@ -212,7 +212,7 @@ class StarWarsQueryTest extends Specification {
                 human: null
         ]
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query, null, params).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query, null, params).data
 
         then:
         result == expected
@@ -235,7 +235,7 @@ class StarWarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
         result == expected
@@ -268,7 +268,7 @@ class StarWarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
         result == expected
@@ -301,7 +301,7 @@ class StarWarsQueryTest extends Specification {
         ];
 
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
         result == expected
@@ -335,7 +335,7 @@ class StarWarsQueryTest extends Specification {
                 ]
         ];
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
         result == expected
@@ -358,7 +358,7 @@ class StarWarsQueryTest extends Specification {
                 ],
         ]
         when:
-        def result = new GraphQL(StarWarsSchema.starWarsSchema).execute(query).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
         result == expected

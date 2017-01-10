@@ -18,10 +18,19 @@ import java.util.concurrent.atomic.AtomicInteger
 class GraphqlExecutionSpec extends Specification {
 
     private GraphQLSchema schema = new FunWithStringsSchemaFactory().createSchema();
-    private GraphQL graphQLSimple = new GraphQL(this.schema, new SimpleExecutionStrategy());
-    private GraphQL graphQLBatchedButUnbatched = new GraphQL(this.schema, new BatchedExecutionStrategy());
+
+    private GraphQL graphQLSimple = GraphQL.newGraphQL(schema)
+            .queryExecutionStrategy(new SimpleExecutionStrategy())
+            .build()
+
+    private GraphQL graphQLBatchedButUnbatched = GraphQL.newGraphQL(this.schema)
+            .queryExecutionStrategy(new BatchedExecutionStrategy())
+            .build()
+
     private Map<FunWithStringsSchemaFactory.CallType, AtomicInteger> countMap = new HashMap<>();
-    private GraphQL graphQLBatchedValue = new GraphQL(FunWithStringsSchemaFactory.createBatched(countMap).createSchema(), new BatchedExecutionStrategy());
+    private GraphQL graphQLBatchedValue = GraphQL.newGraphQL(FunWithStringsSchemaFactory.createBatched(countMap).createSchema())
+            .queryExecutionStrategy(new BatchedExecutionStrategy())
+            .build()
 
     private Map<String, Object> nullValueMap = new HashMap<>();
 
@@ -415,7 +424,7 @@ class GraphqlExecutionSpec extends Specification {
                 }"""
 
         expect:
-        Arrays.asList(this.graphQLSimple, this.graphQLBatchedButUnbatched,this.graphQLBatchedValue).each { GraphQL graphQL ->
+        Arrays.asList(this.graphQLSimple, this.graphQLBatchedButUnbatched, this.graphQLBatchedValue).each { GraphQL graphQL ->
             Map<String, Object> response = graphQL.execute(query).getData() as Map<String, Object>;
             Map<String, Object> values = (response.get("string") as Map<String, Object>).get("append") as Map<String, Object>;
             assert Arrays.asList("v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9") == values.keySet().toList();
