@@ -115,7 +115,7 @@ class InstrumentationTest extends Specification {
         }
 
         def strategy = new SimpleExecutionStrategy()
-        def graphQL = new GraphQL(StarWarsSchema.starWarsSchema, strategy, instrumentation)
+        def graphQL = new GraphQL(StarWarsSchema.starWarsSchema, strategy, strategy, instrumentation)
 
         graphQL.execute(query).data
 

@@ -1,6 +1,7 @@
 package graphql.execution
 
 import graphql.MutationSchema
+import graphql.execution.instrumentation.NoOpInstrumentation
 import graphql.parser.Parser
 import spock.lang.Specification
 
@@ -9,14 +10,14 @@ class ExecutionTest extends Specification {
     def parser = new Parser()
     def mutationStrategy = Mock(ExecutionStrategy)
     def queryStrategy = Mock(ExecutionStrategy)
-    def execution = new Execution(queryStrategy, mutationStrategy)
+    def execution = new Execution(queryStrategy, mutationStrategy, NoOpInstrumentation.INSTANCE)
 
     def "query strategy is used for query requests"() {
         given:
         def mutationStrategy = Mock(ExecutionStrategy)
 
         def queryStrategy = Mock(ExecutionStrategy)
-        def execution = new Execution(queryStrategy, mutationStrategy)
+        def execution = new Execution(queryStrategy, mutationStrategy, NoOpInstrumentation.INSTANCE)
 
         def query = '''
             query {

@@ -119,7 +119,7 @@ public class GraphQL {
         ExecutionId executionId = idProvider.provide(requestString, operationName, context);
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, instrumentation);
-        ExecutionResult result = execution.execute(graphQLSchema, context, document, operationName, arguments);
+        ExecutionResult result = execution.execute(executionId, graphQLSchema, context, document, operationName, arguments);
 
         executionCtx.onEnd(result);
 

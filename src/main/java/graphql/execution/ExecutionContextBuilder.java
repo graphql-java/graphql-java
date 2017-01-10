@@ -19,7 +19,7 @@ public class ExecutionContextBuilder {
     private Instrumentation instrumentation;
     private ExecutionId executionId;
 
-    public ExecutionContextBuilder(ValuesResolver valuesResolver, , Instrumentation instrumentation) {
+    public ExecutionContextBuilder(ValuesResolver valuesResolver, Instrumentation instrumentation) {
         this.valuesResolver = valuesResolver;
         this.instrumentation = instrumentation;
     }
@@ -32,7 +32,7 @@ public class ExecutionContextBuilder {
 
     public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Object root, Document document, String operationName, Map<String, Object> args) {
         // preconditions
-        assertNotNull(executionId,"You must provide a query identifier");
+        assertNotNull(executionId, "You must provide a query identifier");
 
         Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
         Map<String, OperationDefinition> operationsByName = new LinkedHashMap<String, OperationDefinition>();

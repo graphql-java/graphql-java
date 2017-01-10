@@ -42,10 +42,6 @@ public class ExecutionContext {
         return executionId;
     }
 
-    public ExecutionContext(Instrumentation instrumentation) {
-        this.instrumentation = instrumentation;
-    }
-
     public Instrumentation getInstrumentation() {
         return instrumentation;
     }
