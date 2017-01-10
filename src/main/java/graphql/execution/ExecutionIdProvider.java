@@ -11,6 +11,7 @@ public interface ExecutionIdProvider {
      * @param query         the query to be executed
      * @param operationName thr name of the operation
      * @param context       the context object passed to the query
+     *
      * @return a non null {@link ExecutionId}
      */
     ExecutionId provide(String query, String operationName, Object context);
