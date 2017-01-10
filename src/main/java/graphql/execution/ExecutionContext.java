@@ -53,8 +53,9 @@ public class ExecutionContext {
         return variables;
     }
 
-    public Object getRoot() {
-        return root;
+    public <T> T getRoot() {
+        //noinspection unchecked
+        return (T) root;
     }
 
     public FragmentDefinition getFragment(String name) {

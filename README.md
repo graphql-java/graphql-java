@@ -10,7 +10,7 @@ This is a GraphQL Java implementation based on the [specification](https://githu
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
  
 
-**Status**: Version `2.2.0` is released. 
+**Status**: Version `2.3.0` is released.
     
 The versioning follows [Semantic Versioning](http://semver.org) since `2.0.0`. 
 
@@ -94,7 +94,7 @@ public class HelloWorld {
         GraphQLSchema schema = GraphQLSchema.newSchema()
                         .query(queryType)
                         .build();
-        Map<String, Object> result = (Map<String, Object>) new GraphQL(schema).execute("{hello}").getData();
+        Map<String, Object> result = new GraphQL(schema).execute("{hello}").getData();
 
         System.out.println(result);
         // Prints: {hello=world}
@@ -118,7 +118,7 @@ Dependency:
 
 ```groovy
 dependencies {
-  compile 'com.graphql-java:graphql-java:2.2.0'
+  compile 'com.graphql-java:graphql-java:2.3.0'
 }
 
 ```
@@ -131,7 +131,7 @@ Dependency:
 <dependency>
     <groupId>com.graphql-java</groupId>
     <artifactId>graphql-java</artifactId>
-    <version>2.2.0</version>
+    <version>2.3.0</version>
 </dependency>
 
 ```
@@ -305,12 +305,12 @@ the property name of the source Object, no `DataFetcher` is needed.
 Example of configuring a custom `DataFetcher`:
 ```java
 
-DataFetcher calculateComplicatedValue = new DataFetcher() {
+DataFetcher<Foo> fooDataFetcher = new DataFetcher<Foo>() {
     @Override
-    Object get(DataFetchingEnvironment environment) {
+    Foo get(DataFetchingEnvironment environment) {
         // environment.getSource() is the value of the surrounding
         // object. In this case described by objectType
-        Object value = ... // Perhaps getting from a DB or whatever 
+        Foo value = ... // Perhaps getting from a DB or whatever 
         return value;
     }
 };
@@ -318,9 +318,9 @@ DataFetcher calculateComplicatedValue = new DataFetcher() {
 GraphQLObjectType objectType = newObject()
     .name("ObjectType")
     .field(newFieldDefinition()
-            .name("someComplicatedValue")
+            .name("foo")
             .type(GraphQLString)
-            .dataFetcher(calculateComplicatedValue))
+            .dataFetcher(fooDataFetcher))
     .build();
 
 ```
