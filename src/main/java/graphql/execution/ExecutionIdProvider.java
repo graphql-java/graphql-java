@@ -6,12 +6,12 @@ package graphql.execution;
 public interface ExecutionIdProvider {
 
     /**
-     * Allows generation of a unique identifier per query execution
+     * Allows provision of a unique identifier per query execution.
      *
      * @param query         the query to be executed
      * @param operationName thr name of the operation
      * @param context       the context object passed to the query
      * @return a non null {@link ExecutionId}
      */
-    ExecutionId generate(String query, String operationName, Object context);
+    ExecutionId provide(String query, String operationName, Object context);
 }

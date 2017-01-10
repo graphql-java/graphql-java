@@ -36,7 +36,7 @@ public class GraphQL {
     //
     private final ExecutionIdProvider idProvider = new ExecutionIdProvider() {
         @Override
-        public ExecutionId generate(String query, String operationName, Object context) {
+        public ExecutionId provide(String query, String operationName, Object context) {
             return ExecutionId.generate();
         }
     };
@@ -93,7 +93,7 @@ public class GraphQL {
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
-        ExecutionId executionId = idProvider.generate(requestString, operationName, context);
+        ExecutionId executionId = idProvider.provide(requestString, operationName, context);
 
         Execution execution = new Execution(queryStrategy, mutationStrategy);
         return execution.execute(executionId, graphQLSchema, context, document, operationName, arguments);

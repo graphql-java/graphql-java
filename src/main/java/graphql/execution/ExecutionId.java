@@ -10,8 +10,8 @@ import java.util.UUID;
 public class ExecutionId {
 
     /**
-     * Create an identifier from the given string
-     * @return a query identifier
+     * Create an unique identifier from the given string
+     * @return a query execution identifier
      */
     public static ExecutionId generate() {
         return new ExecutionId(UUID.randomUUID().toString());
@@ -22,7 +22,7 @@ public class ExecutionId {
      * @param id the string to wrap
      * @return a query identifier
      */
-    public static ExecutionId generateFrom(String id) {
+    public static ExecutionId from(String id) {
         return new ExecutionId(id);
     }
 
