@@ -5,6 +5,7 @@ import graphql.execution.Execution;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.SimpleExecutionStrategy;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.Parser;
@@ -43,19 +44,88 @@ public class GraphQL {
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema the schema to use
+     *
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
     public GraphQL(GraphQLSchema graphQLSchema) {
+        //noinspection deprecation
         this(graphQLSchema, null, null);
     }
 
 
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema the schema to use
+     * @param queryStrategy the query execution strategy to use
+     *
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
+        //noinspection deprecation
         this(graphQLSchema, queryStrategy, null);
     }
 
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema    the schema to use
+     * @param queryStrategy    the query execution strategy to use
+     * @param mutationStrategy the mutation execution strategy to use
+     *
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
         this.graphQLSchema = graphQLSchema;
         this.queryStrategy = queryStrategy;
         this.mutationStrategy = mutationStrategy;
+    }
+
+    /**
+     * Helps you build a GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema the schema to use
+     *
+     * @return a builder of GraphQL objects
+     */
+    public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
+        return new Builder(graphQLSchema);
+    }
+
+
+    public static class Builder {
+        private GraphQLSchema graphQLSchema;
+        private ExecutionStrategy queryExecutionStrategy = new SimpleExecutionStrategy();
+        private ExecutionStrategy mutationExecutionStrategy = new SimpleExecutionStrategy();
+
+        public Builder(GraphQLSchema graphQLSchema) {
+            this.graphQLSchema = graphQLSchema;
+        }
+
+        public Builder schema(GraphQLSchema graphQLSchema) {
+            this.graphQLSchema = assertNotNull(graphQLSchema, "GraphQLSchema must be non null");
+            return this;
+        }
+
+        public Builder queryExecutionStrategy(ExecutionStrategy executionStrategy) {
+            this.queryExecutionStrategy = assertNotNull(executionStrategy, "Query ExecutionStrategy must be non null");
+            return this;
+        }
+
+        public Builder mutationExecutionStrategy(ExecutionStrategy executionStrategy) {
+            this.mutationExecutionStrategy = assertNotNull(executionStrategy, "Mutation ExecutionStrategy must be non null");
+            return this;
+        }
+
+        public GraphQL build() {
+            //noinspection deprecation
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy);
+        }
     }
 
     public ExecutionResult execute(String requestString) {

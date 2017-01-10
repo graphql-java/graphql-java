@@ -74,6 +74,7 @@ This is the famous "hello world" in graphql-java:
 ```java
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import java.util.Map;
 
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -82,20 +83,21 @@ import static graphql.schema.GraphQLObjectType.newObject;
 public class HelloWorld {
 
     public static void main(String[] args) {
-    
         GraphQLObjectType queryType = newObject()
-                        .name("helloWorldQuery")
-                        .field(newFieldDefinition()
-                                .type(GraphQLString)
-                                .name("hello")
-                                .staticValue("world"))
-                        .build();
-        
-        GraphQLSchema schema = GraphQLSchema.newSchema()
-                        .query(queryType)
-                        .build();
-        Map<String, Object> result = new GraphQL(schema).execute("{hello}").getData();
+                .name("helloWorldQuery")
+                .field(newFieldDefinition()
+                        .type(GraphQLString)
+                        .name("hello")
+                        .staticValue("world"))
+                .build();
 
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .build();
+
+        GraphQL graphQL = GraphQL.newObject(schema).build();
+
+        Map<String, Object> result = graphQL.execute("{hello}").getData();
         System.out.println(result);
         // Prints: {hello=world}
     }
@@ -227,11 +229,11 @@ Example:
 
 ```java
 GraphQLInputObjectType inputObjectType = newInputObject()
-    .name("inputObjectType")
-    .field(newInputObjectField()
-        .name("field")
-        .type(GraphQLString))
-    .build()
+        .name("inputObjectType")
+        .field(newInputObjectField()
+                .name("field")
+                .type(GraphQLString))
+        .build();
 
 ```
 
@@ -307,27 +309,27 @@ Example of configuring a custom `DataFetcher`:
 
 DataFetcher<Foo> fooDataFetcher = new DataFetcher<Foo>() {
     @Override
-    Foo get(DataFetchingEnvironment environment) {
+    public Foo get(DataFetchingEnvironment environment) {
         // environment.getSource() is the value of the surrounding
         // object. In this case described by objectType
-        Foo value = ... // Perhaps getting from a DB or whatever 
+        Foo value = perhapsFromDatabase(); // Perhaps getting from a DB or whatever 
         return value;
     }
 };
 
 GraphQLObjectType objectType = newObject()
-    .name("ObjectType")
-    .field(newFieldDefinition()
-            .name("foo")
-            .type(GraphQLString)
-            .dataFetcher(fooDataFetcher))
-    .build();
+        .name("ObjectType")
+        .field(newFieldDefinition()
+                .name("foo")
+                .type(GraphQLString)
+                .dataFetcher(fooDataFetcher))
+        .build();
 
 ```
 
 #### Executing 
 
-To execute a Query/Mutation against a Schema instantiate a new `GraphQL` Object with the appropriate arguments and then call `execute()`.
+To execute a Query/Mutation against a Schema build a new `GraphQL` Object with the appropriate arguments and then call `execute()`.
  
 The result of a Query is a `ExecutionResult` Object with the result and/or a list of Errors.
 
@@ -338,14 +340,31 @@ More complex examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQu
 
 #### Execution strategies
 
-All fields in a SelectionSet are executed serially per default. 
+All fields in a SelectionSet are executed serially per default.
+ 
+You can however provide your own execution strategies, one to use while querying data and one
+to use when mutating data.
 
-`GraphQL` takes as second constructor argument an optional [ExecutorService](http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html).
+```java
+
+ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+        2, /* core pool size 2 thread */
+        2, /* max pool size 2 thread */
+        30, TimeUnit.SECONDS,
+        new LinkedBlockingQueue<Runnable>(),
+        new ThreadPoolExecutor.CallerRunsPolicy());
+
+GraphQL graphQL = GraphQL.newObject(StarWarsSchema.starWarsSchema)
+        .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
+        .mutationExecutionStrategy(new SimpleExecutionStrategy())
+        .build();
+
+
+```
+
 When provided fields will be executed parallel, except the first level of a mutation operation.
 
 See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) for details.
-
-It's recommended to use a `ExecutorService` to speed up execution.
 
 Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
 
