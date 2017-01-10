@@ -10,15 +10,27 @@ import graphql.schema.GraphQLSchema;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
+
 public class ExecutionContextBuilder {
 
     private ValuesResolver valuesResolver;
+
+    private ExecutionId executionId;
 
     public ExecutionContextBuilder(ValuesResolver valuesResolver) {
         this.valuesResolver = valuesResolver;
     }
 
+    public ExecutionContextBuilder executionId(ExecutionId executionId) {
+        this.executionId = executionId;
+        return this;
+    }
+
     public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Object root, Document document, String operationName, Map<String, Object> args) {
+        // preconditions
+        assertNotNull(executionId,"You must provide a query identifier");
+
         Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
         Map<String, OperationDefinition> operationsByName = new LinkedHashMap<String, OperationDefinition>();
 
@@ -48,6 +60,7 @@ public class ExecutionContextBuilder {
         Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), args);
 
         return new ExecutionContext(
+                executionId,
                 graphQLSchema,
                 queryStrategy,
                 mutationStrategy,
