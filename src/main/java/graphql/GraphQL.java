@@ -49,7 +49,7 @@ public class GraphQL {
      *
      * @param graphQLSchema the schema to use
      *
-     * @deprecated use the {@link #newObject(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     public GraphQL(GraphQLSchema graphQLSchema) {
         //noinspection deprecation
@@ -63,7 +63,7 @@ public class GraphQL {
      * @param graphQLSchema the schema to use
      * @param queryStrategy the query execution strategy to use
      *
-     * @deprecated use the {@link #newObject(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
         //noinspection deprecation
@@ -77,7 +77,7 @@ public class GraphQL {
      * @param queryStrategy    the query execution strategy to use
      * @param mutationStrategy the mutation execution strategy to use
      *
-     * @deprecated use the {@link #newObject(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @SuppressWarnings("DeprecatedIsStillUsed")
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
@@ -87,13 +87,13 @@ public class GraphQL {
     }
 
     /**
-     * Helps you build GraphQL object ready to execute queries
+     * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
      *
      * @return a builder of GraphQL objects
      */
-    public static Builder newObject(GraphQLSchema graphQLSchema) {
+    public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
         return new Builder(graphQLSchema);
     }
 

@@ -28,7 +28,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def result = GraphQL.newObject(schema).build().execute('{ hello }').data
+        def result = GraphQL.newGraphQL(schema).build().execute('{ hello }').data
 
         then:
         result == [hello: 'world']
@@ -62,7 +62,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def result = GraphQL.newObject(graphQLSchema).build().execute('{ simpson { id, name } }').data
+        def result = GraphQL.newGraphQL(graphQLSchema).build().execute('{ simpson { id, name } }').data
 
         then:
         result == [simpson: [id: '123', name: 'homer']]
@@ -83,7 +83,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = GraphQL.newObject(schema).build().execute('{ hello(arg:11) }').errors
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:11) }').errors
 
         then:
         errors.size() == 1
@@ -98,7 +98,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = GraphQL.newObject(schema).build().execute('{ hello(() }').errors
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(() }').errors
 
         then:
         errors.size() == 1
@@ -115,7 +115,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = GraphQL.newObject(schema).build().execute('{ hello[](() }').errors
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello[](() }').errors
 
         then:
         errors.size() == 1
@@ -138,7 +138,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = GraphQL.newObject(schema).build().execute('{ field }').errors
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ field }').errors
 
         then:
         errors.size() == 1
@@ -163,7 +163,7 @@ class GraphQLTest extends Specification {
           .build()
 
         when:
-        def data = GraphQL.newObject(schema).build().execute("query { set }").data
+        def data = GraphQL.newGraphQL(schema).build().execute("query { set }").data
 
         then:
         data == [set: ['One', 'Two']]
@@ -188,7 +188,7 @@ class GraphQLTest extends Specification {
         def expected = [field2: 'value2']
 
         when:
-        def result = GraphQL.newObject(schema).build().execute(query, 'Query2', null, [:])
+        def result = GraphQL.newGraphQL(schema).build().execute(query, 'Query2', null, [:])
 
         then:
         result.data == expected
@@ -211,7 +211,7 @@ class GraphQLTest extends Specification {
         """
 
         when:
-        GraphQL.newObject(schema).build().execute(query)
+        GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         thrown(GraphQLException)

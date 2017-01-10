@@ -19,16 +19,16 @@ class GraphqlExecutionSpec extends Specification {
 
     private GraphQLSchema schema = new FunWithStringsSchemaFactory().createSchema();
 
-    private GraphQL graphQLSimple = GraphQL.newObject(schema)
+    private GraphQL graphQLSimple = GraphQL.newGraphQL(schema)
             .queryExecutionStrategy(new SimpleExecutionStrategy())
             .build()
 
-    private GraphQL graphQLBatchedButUnbatched = GraphQL.newObject(this.schema)
+    private GraphQL graphQLBatchedButUnbatched = GraphQL.newGraphQL(this.schema)
             .queryExecutionStrategy(new BatchedExecutionStrategy())
             .build()
 
     private Map<FunWithStringsSchemaFactory.CallType, AtomicInteger> countMap = new HashMap<>();
-    private GraphQL graphQLBatchedValue = GraphQL.newObject(FunWithStringsSchemaFactory.createBatched(countMap).createSchema())
+    private GraphQL graphQLBatchedValue = GraphQL.newGraphQL(FunWithStringsSchemaFactory.createBatched(countMap).createSchema())
             .queryExecutionStrategy(new BatchedExecutionStrategy())
             .build()
 

@@ -24,7 +24,7 @@ class ScalarsQueryTest extends Specification {
         ]
 
         when:
-        def result = GraphQL.newObject(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
 
         then:
         result.data == expected
@@ -49,7 +49,7 @@ class ScalarsQueryTest extends Specification {
         ]
 
         when:
-        def result = GraphQL.newObject(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
 
         then:
         result.data == expected
@@ -68,9 +68,9 @@ class ScalarsQueryTest extends Specification {
         ]
 
         when:
-        def result = GraphQL.newObject(ScalarsQuerySchema.scalarsQuerySchema)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema)
                 .build().execute(query)
-        def resultBatched = GraphQL.newObject(ScalarsQuerySchema.scalarsQuerySchema)
+        def resultBatched = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema)
                 .queryExecutionStrategy(new BatchedExecutionStrategy())
                 .build().execute(query)
 
@@ -93,7 +93,7 @@ class ScalarsQueryTest extends Specification {
         ]
 
         when:
-        def result = GraphQL.newObject(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
 
         then:
         result.data == expected
@@ -106,7 +106,7 @@ class ScalarsQueryTest extends Specification {
         def query = "{ " + number + "String(input: \"foobar\") }"
         
         when:
-        def result = GraphQL.newObject(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
         
         then:
         //FIXME do not propagate exception, but instead raise an error.

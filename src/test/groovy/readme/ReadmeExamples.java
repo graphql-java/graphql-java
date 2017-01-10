@@ -143,7 +143,7 @@ public class ReadmeExamples {
                 new LinkedBlockingQueue<Runnable>(),
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
-        GraphQL graphQL = GraphQL.newObject(StarWarsSchema.starWarsSchema)
+        GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
                 .mutationExecutionStrategy(new SimpleExecutionStrategy())
                 .build();
