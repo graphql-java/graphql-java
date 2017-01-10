@@ -90,17 +90,7 @@ public class GraphQL {
         this(graphQLSchema,queryStrategy,mutationStrategy,NoOpInstrumentation.INSTANCE);
     }
 
-    /**
-     * A GraphQL object ready to execute queries
-     *
-     * @param graphQLSchema    the schema to use
-     * @param queryStrategy    the query execution strategy to use
-     * @param mutationStrategy the mutation execution strategy to use
-     *
-     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
-     */
-    @SuppressWarnings("DeprecatedIsStillUsed")
-    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Instrumentation instrumentation) {
+    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Instrumentation instrumentation) {
         this.graphQLSchema = graphQLSchema;
         this.queryStrategy = queryStrategy;
         this.mutationStrategy = mutationStrategy;
@@ -123,6 +113,7 @@ public class GraphQL {
         private GraphQLSchema graphQLSchema;
         private ExecutionStrategy queryExecutionStrategy = new SimpleExecutionStrategy();
         private ExecutionStrategy mutationExecutionStrategy = new SimpleExecutionStrategy();
+        private Instrumentation instrumentation = NoOpInstrumentation.INSTANCE;
 
         public Builder(GraphQLSchema graphQLSchema) {
             this.graphQLSchema = graphQLSchema;
@@ -143,9 +134,14 @@ public class GraphQL {
             return this;
         }
 
+        public Builder instrumentation(Instrumentation instrumentation) {
+            this.instrumentation = assertNotNull(instrumentation, "Instrumentation must be non null");
+            return this;
+        }
+
         public GraphQL build() {
             //noinspection deprecation
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, instrumentation);
         }
     }
 
@@ -170,7 +166,6 @@ public class GraphQL {
 
         assertNotNull(arguments, "arguments can't be null");
         log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
-
 
         InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new ExecutionParameters(requestString, operationName, context, arguments));
         Parser parser = new Parser();
