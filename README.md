@@ -27,7 +27,7 @@ to checkout the appropriate tag when looking for the version documented here.
  
 - [Overview](#overview)
 - [Code of Conduct](#code-of-conduct)
-- [Mailing List](#mailing-list)
+- [Discussion](#discussion)
 - [Hello World](#hello-world)
 - [Getting started](#getting-started)
 - [Manual](#manual)
