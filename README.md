@@ -95,7 +95,7 @@ public class HelloWorld {
                 .query(queryType)
                 .build();
 
-        GraphQL graphQL = GraphQL.newObject(schema).build();
+        GraphQL graphQL = GraphQL.newGraphQL(schema).build();
 
         Map<String, Object> result = graphQL.execute("{hello}").getData();
         System.out.println(result);
