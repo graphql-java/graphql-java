@@ -74,9 +74,9 @@ public class SchemaUtil {
             }
         }
 
-        for (GraphQLObjectType implementingType : interfaceType.getImplementingTypes()) {
-            collectTypes(implementingType, result);
-        }
+//        for (GraphQLObjectType implementingType : interfaceType.getImplementingTypes()) {
+//            collectTypes(implementingType, result);
+//        }
     }
 
 

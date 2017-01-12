@@ -168,9 +168,9 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
         public GraphQLObjectType build() {
             GraphQLObjectType type = new GraphQLObjectType(name, description, fieldDefinitions, interfaces);
-            for (GraphQLInterfaceType itf : interfaces) {
-                itf.withImplementingType(type);
-            }
+            //for (GraphQLInterfaceType itf : interfaces) {
+            //    itf.withImplementingType(type);
+            //}
             return type;
         }
 
