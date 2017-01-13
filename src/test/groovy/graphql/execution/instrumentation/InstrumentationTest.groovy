@@ -4,10 +4,7 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.SimpleExecutionStrategy
-import graphql.execution.instrumentation.parameters.ExecutionParameters
-import graphql.execution.instrumentation.parameters.FieldFetchParameters
-import graphql.execution.instrumentation.parameters.FieldParameters
-import graphql.execution.instrumentation.parameters.ValidationParameters
+import graphql.execution.instrumentation.parameters.*
 import graphql.language.Document
 import graphql.validation.ValidationError
 import spock.lang.Specification
@@ -68,6 +65,8 @@ class InstrumentationTest extends Specification {
                 "start:validation",
                 "end:validation",
 
+                "start:data-fetch",
+
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
@@ -78,6 +77,8 @@ class InstrumentationTest extends Specification {
                 "end:field-id",
 
                 "end:field-hero",
+
+                "end:data-fetch",
 
                 "end:execution",
         ]
@@ -104,6 +105,11 @@ class InstrumentationTest extends Specification {
             }
 
             @Override
+            InstrumentationContext<ExecutionResult> beginDataFetch(DataFetchParameters parameters) {
+                return new Timer("data-fetch", executionList)
+            }
+
+            @Override
             InstrumentationContext<ExecutionResult> beginField(FieldParameters parameters) {
                 return new Timer("field-$parameters.field.name", executionList)
             }
@@ -115,7 +121,11 @@ class InstrumentationTest extends Specification {
         }
 
         def strategy = new SimpleExecutionStrategy()
-        def graphQL = new GraphQL(StarWarsSchema.starWarsSchema, strategy, strategy, instrumentation)
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(strategy)
+                .instrumentation(instrumentation)
+                .build()
 
         graphQL.execute(query).data
 

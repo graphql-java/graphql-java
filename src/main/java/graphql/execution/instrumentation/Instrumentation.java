@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
+import graphql.execution.instrumentation.parameters.DataFetchParameters;
 import graphql.execution.instrumentation.parameters.ExecutionParameters;
 import graphql.execution.instrumentation.parameters.FieldFetchParameters;
 import graphql.execution.instrumentation.parameters.FieldParameters;
@@ -48,6 +49,16 @@ public interface Instrumentation {
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<List<ValidationError>> beginValidation(ValidationParameters parameters);
+
+    /**
+     * This is called just before the data fetch is started and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
+     * will be called indicating that the step has finished.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    InstrumentationContext<ExecutionResult> beginDataFetch(DataFetchParameters parameters);
 
     /**
      * This is called just before a field is resolved and when this step finishes the {@link InstrumentationContext#onEnd(Object)}

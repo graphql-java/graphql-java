@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
+import graphql.execution.instrumentation.parameters.DataFetchParameters;
 import graphql.execution.instrumentation.parameters.ExecutionParameters;
 import graphql.execution.instrumentation.parameters.FieldFetchParameters;
 import graphql.execution.instrumentation.parameters.FieldParameters;
@@ -51,6 +52,19 @@ public final class NoOpInstrumentation implements Instrumentation {
         return new InstrumentationContext<List<ValidationError>>() {
             @Override
             public void onEnd(List<ValidationError> result) {
+            }
+
+            @Override
+            public void onEnd(Exception e) {
+            }
+        };
+    }
+
+    @Override
+    public InstrumentationContext<ExecutionResult> beginDataFetch(DataFetchParameters parameters) {
+        return new InstrumentationContext<ExecutionResult>() {
+            @Override
+            public void onEnd(ExecutionResult result) {
             }
 
             @Override
