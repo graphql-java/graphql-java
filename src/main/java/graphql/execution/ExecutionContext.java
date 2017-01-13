@@ -12,6 +12,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ExecutionContext {
 
+    public static ExecutionContextBuilder newContext() {
+        return new ExecutionContextBuilder();
+    }
+
     private final GraphQLSchema graphQLSchema;
     private final ExecutionId executionId;
     private final ExecutionStrategy queryStrategy;
@@ -21,10 +25,12 @@ public class ExecutionContext {
     private final Map<String, Object> variables;
     private final Object root;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<GraphQLError>();
+    private final ExecutionConstraints executionConstraints;
 
-    public ExecutionContext(ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
-        this.graphQLSchema = graphQLSchema;
+    ExecutionContext(ExecutionId executionId, ExecutionConstraints executionConstraints, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
         this.executionId = executionId;
+        this.executionConstraints = executionConstraints;
+        this.graphQLSchema = graphQLSchema;
         this.queryStrategy = queryStrategy;
         this.mutationStrategy = mutationStrategy;
         this.fragmentsByName = fragmentsByName;
@@ -76,5 +82,9 @@ public class ExecutionContext {
 
     public ExecutionStrategy getMutationStrategy() {
         return mutationStrategy;
+    }
+
+    public ExecutionConstraints getExecutionConstraints() {
+        return executionConstraints;
     }
 }

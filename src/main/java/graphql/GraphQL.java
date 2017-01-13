@@ -2,6 +2,7 @@ package graphql;
 
 
 import graphql.execution.Execution;
+import graphql.execution.ExecutionConstraints;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.ExecutionConstraints.newConstraints;
 
 public class GraphQL {
 
@@ -41,6 +43,8 @@ public class GraphQL {
             return ExecutionId.generate();
         }
     };
+
+    private final ExecutionConstraints executionConstraints;
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
@@ -79,11 +83,15 @@ public class GraphQL {
      *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
-    @SuppressWarnings("DeprecatedIsStillUsed")
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
+        this(graphQLSchema, queryStrategy, mutationStrategy, newConstraints().build());
+    }
+
+    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionConstraints executionConstraints) {
         this.graphQLSchema = graphQLSchema;
-        this.queryStrategy = queryStrategy;
-        this.mutationStrategy = mutationStrategy;
+        this.queryStrategy = queryStrategy == null ? new SimpleExecutionStrategy() : queryStrategy;
+        this.mutationStrategy = mutationStrategy == null ? new SimpleExecutionStrategy() : mutationStrategy;
+        this.executionConstraints = executionConstraints;
     }
 
     /**
@@ -102,6 +110,7 @@ public class GraphQL {
         private GraphQLSchema graphQLSchema;
         private ExecutionStrategy queryExecutionStrategy = new SimpleExecutionStrategy();
         private ExecutionStrategy mutationExecutionStrategy = new SimpleExecutionStrategy();
+        private ExecutionConstraints.Builder constraintsBuilder = newConstraints();
 
         public Builder(GraphQLSchema graphQLSchema) {
             this.graphQLSchema = graphQLSchema;
@@ -122,9 +131,15 @@ public class GraphQL {
             return this;
         }
 
+        public Builder maxQueryDepth(int maxQueryDepth) {
+            this.constraintsBuilder.maxQueryDepth(maxQueryDepth);
+            return this;
+        }
+
         public GraphQL build() {
             //noinspection deprecation
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy);
+            ExecutionConstraints constraints = constraintsBuilder.build();
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, constraints);
         }
     }
 
@@ -165,7 +180,11 @@ public class GraphQL {
         }
         ExecutionId executionId = idProvider.provide(requestString, operationName, context);
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy);
+        Execution execution = Execution.newExecution()
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .executionConstraints(executionConstraints)
+                .build();
         return execution.execute(executionId, graphQLSchema, context, document, operationName, arguments);
     }
 

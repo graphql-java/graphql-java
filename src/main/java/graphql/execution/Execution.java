@@ -14,21 +14,58 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
+
 public class Execution {
 
-    private FieldCollector fieldCollector = new FieldCollector();
-    private ExecutionStrategy queryStrategy;
-    private ExecutionStrategy mutationStrategy;
+    private final FieldCollector fieldCollector;
+    private final ExecutionStrategy queryStrategy;
+    private final ExecutionStrategy mutationStrategy;
+    private final ExecutionConstraints executionConstraints;
 
-    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
-        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
+    private Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, FieldCollector fieldCollector, ExecutionConstraints executionConstraints) {
+        this.fieldCollector = fieldCollector;
+        this.queryStrategy = queryStrategy;
+        this.mutationStrategy = mutationStrategy;
+        this.executionConstraints = executionConstraints;
     }
 
+    public static Builder newExecution() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private final FieldCollector fieldCollector = new FieldCollector();
+        private ExecutionConstraints executionConstraints = ExecutionConstraints.newConstraints().build();
+        private ExecutionStrategy queryStrategy;
+        private ExecutionStrategy mutationStrategy;
+
+        public Builder queryStrategy(ExecutionStrategy queryStrategy) {
+            this.queryStrategy = assertNotNull(queryStrategy);
+            return this;
+        }
+
+        public Builder mutationStrategy(ExecutionStrategy mutationStrategy) {
+            this.mutationStrategy = assertNotNull(mutationStrategy);
+            return this;
+        }
+
+        public Builder executionConstraints(ExecutionConstraints executionConstraints) {
+            this.executionConstraints = executionConstraints;
+            return this;
+        }
+
+        public Execution build() {
+            return new Execution(queryStrategy, mutationStrategy, fieldCollector, executionConstraints);
+        }
+    }
+
+
     public ExecutionResult execute(ExecutionId executionId, GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
-        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver());
+        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder();
         ExecutionContext executionContext = executionContextBuilder
                 .executionId(executionId)
+                .executionConstraints(executionConstraints)
                 .build(graphQLSchema, queryStrategy, mutationStrategy, root, document, operationName, args);
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }

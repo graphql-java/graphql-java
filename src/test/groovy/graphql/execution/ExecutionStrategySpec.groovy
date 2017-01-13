@@ -2,7 +2,10 @@ package graphql.execution
 
 import graphql.ExecutionResult
 import graphql.Scalars
+import graphql.language.Document
 import graphql.language.Field
+import graphql.language.OperationDefinition
+import graphql.language.SelectionSet
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLObjectType
 import spock.lang.Specification
@@ -21,7 +24,9 @@ class ExecutionStrategySpec extends Specification {
     }
 
     def buildContext() {
-        new ExecutionContext(null, null, executionStrategy, executionStrategy, null, null, null, null)
+        def operationDefinition = new OperationDefinition("query", OperationDefinition.Operation.QUERY, Collections.emptyList(), Collections.emptyList(), new SelectionSet())
+        def document = new Document(Collections.singletonList(operationDefinition))
+        ExecutionContext.newContext().build(null, executionStrategy, executionStrategy, null, document, "query", null)
     }
 
     def "completes value for a java.util.List"() {

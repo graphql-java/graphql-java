@@ -14,12 +14,11 @@ import static graphql.Assert.assertNotNull;
 
 public class ExecutionContextBuilder {
 
-    private ValuesResolver valuesResolver;
+    private ValuesResolver valuesResolver = new ValuesResolver();
+    private ExecutionId executionId =  ExecutionId.generate();
+    private ExecutionConstraints executionConstraints = ExecutionConstraints.newConstraints().build();
 
-    private ExecutionId executionId;
-
-    public ExecutionContextBuilder(ValuesResolver valuesResolver) {
-        this.valuesResolver = valuesResolver;
+    ExecutionContextBuilder() {
     }
 
     public ExecutionContextBuilder executionId(ExecutionId executionId) {
@@ -27,9 +26,15 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    public ExecutionContextBuilder executionConstraints(ExecutionConstraints executionConstraints) {
+        this.executionConstraints = executionConstraints;
+        return this;
+    }
+
     public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Object root, Document document, String operationName, Map<String, Object> args) {
         // preconditions
-        assertNotNull(executionId,"You must provide a query identifier");
+        assertNotNull(executionId, "You must provide a query identifier");
+        assertNotNull(executionConstraints, "You must provide execution constraints");
 
         Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
         Map<String, OperationDefinition> operationsByName = new LinkedHashMap<String, OperationDefinition>();
@@ -61,6 +66,7 @@ public class ExecutionContextBuilder {
 
         return new ExecutionContext(
                 executionId,
+                executionConstraints,
                 graphQLSchema,
                 queryStrategy,
                 mutationStrategy,
