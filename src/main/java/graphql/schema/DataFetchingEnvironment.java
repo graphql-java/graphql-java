@@ -1,64 +1,72 @@
 package graphql.schema;
 
-
 import graphql.language.Field;
 
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings("unchecked")
-public class DataFetchingEnvironment {
-    private final Object source;
-    private final Map<String, Object> arguments;
-    private final Object context;
-    private final List<Field> fields;
-    private final GraphQLOutputType fieldType;
-    private final GraphQLType parentType;
-    private final GraphQLSchema graphQLSchema;
+/**
+ * A DataFetchingEnvironment instance of passed to a {@link DataFetcher} as an execution context parameter
+ */
+public interface DataFetchingEnvironment {
+    /**
+     * @param <T> you decide what type it is
+     *
+     * @return the current object being queried
+     */
+    <T> T getSource();
 
-    public DataFetchingEnvironment(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema) {
-        this.source = source;
-        this.arguments = arguments;
-        this.context = context;
-        this.fields = fields;
-        this.fieldType = fieldType;
-        this.parentType = parentType;
-        this.graphQLSchema = graphQLSchema;
-    }
+    /**
+     * @return the arguments that have been passed in via the graphql query
+     */
+    Map<String, Object> getArguments();
 
-    public <T> T getSource() {
-        return (T) source;
-    }
+    /**
+     * Returns true of the named argument is present
+     *
+     * @param name the name of the argument
+     *
+     * @return true of the named argument is present
+     */
+    boolean containsArgument(String name);
 
-    public Map<String, Object> getArguments() {
-        return arguments;
-    }
+    /**
+     * Returns the named argument
+     *
+     * @param name the name of the argument
+     * @param <T>  you decide what type it is
+     *
+     * @return the named argument or null if its not [present
+     */
+    <T> T getArgument(String name);
 
-    public boolean containsArgument(String name) {
-        return arguments.containsKey(name);
-    }
+    /**
+     * Returns a context argument that is set up when the {@link graphql.GraphQL#execute(String, Object)} method
+     * is invoked
+     *
+     * @param <T> you decide what type it is
+     *
+     * @return a context object
+     */
+    <T> T getContext();
 
-    public <T> T getArgument(String name) {
-        return (T) arguments.get(name);
-    }
+    /**
+     * @return the list of fields currently in query context
+     */
+    List<Field> getFields();
 
-    public <T> T  getContext() {
-        return (T) context;
-    }
+    /**
+     * @return graphql type of the current field
+     */
+    GraphQLOutputType getFieldType();
 
-    public List<Field> getFields() {
-        return fields;
-    }
+    /**
+     * @return the type of the parent of the current field
+     */
+    GraphQLType getParentType();
 
-    public GraphQLOutputType getFieldType() {
-        return fieldType;
-    }
-
-    public GraphQLType getParentType() {
-        return parentType;
-    }
-
-    public GraphQLSchema getGraphQLSchema() {
-        return graphQLSchema;
-    }
+    /**
+     * @return the underlying graphql schema
+     */
+    GraphQLSchema getGraphQLSchema();
 }

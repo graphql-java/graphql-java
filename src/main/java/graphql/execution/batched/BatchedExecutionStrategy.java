@@ -123,6 +123,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     }
 
+    @SuppressWarnings("UnnecessaryLocalVariable")
     private List<GraphQLExecutionNode> handleObject(ExecutionContext executionContext,
                                                     List<GraphQLExecutionNodeValue> values, String fieldName, List<Field> fields, GraphQLType fieldType) {
 
@@ -250,7 +251,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         for (GraphQLExecutionNodeDatum n : nodeData) {
             sources.add(n.getSource());
         }
-        DataFetchingEnvironment environment = new DataFetchingEnvironment(
+        DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 sources,
                 argumentValues,
                 executionContext.getRoot(),
