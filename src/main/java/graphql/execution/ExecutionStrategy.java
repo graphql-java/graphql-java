@@ -16,8 +16,8 @@ import static graphql.introspection.Introspection.*;
 public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
 
-    protected ValuesResolver valuesResolver = new ValuesResolver();
-    protected FieldCollector fieldCollector = new FieldCollector();
+    protected final ValuesResolver valuesResolver = new ValuesResolver();
+    protected final FieldCollector fieldCollector = new FieldCollector();
 
     public abstract ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields);
 
@@ -25,7 +25,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
-        DataFetchingEnvironment environment = new DataFetchingEnvironment(
+        DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 source,
                 argumentValues,
                 executionContext.getRoot(),
@@ -92,6 +92,7 @@ public abstract class ExecutionStrategy {
             result = Arrays.asList((Object[]) result);
         }
 
+        //noinspection unchecked
         return completeValueForList(executionContext, fieldType, fields, (Iterable<Object>) result);
     }
 
