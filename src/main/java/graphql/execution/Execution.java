@@ -55,9 +55,9 @@ public class Execution {
         fieldCollector.collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<String>(), fields);
 
         if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-            return mutationStrategy.execute(executionContext, operationRootType, root, fields);
+            return mutationStrategy.execute(executionContext, Path.root, operationRootType, root, fields);
         } else {
-            return queryStrategy.execute(executionContext, operationRootType, root, fields);
+            return queryStrategy.execute(executionContext, Path.root, operationRootType, root, fields);
         }
     }
 }

@@ -11,11 +11,11 @@ import java.util.Map;
 
 public class SimpleExecutionStrategy extends ExecutionStrategy {
     @Override
-    public ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
+    public ExecutionResult execute(ExecutionContext executionContext, Path currentPath, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
         Map<String, Object> results = new LinkedHashMap<String, Object>();
         for (String fieldName : fields.keySet()) {
             List<Field> fieldList = fields.get(fieldName);
-            ExecutionResult resolvedResult = resolveField(executionContext, parentType, source, fieldList);
+            ExecutionResult resolvedResult = resolveField(executionContext, currentPath.withTrailing(fieldName), parentType, source, fieldList);
 
             results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
         }

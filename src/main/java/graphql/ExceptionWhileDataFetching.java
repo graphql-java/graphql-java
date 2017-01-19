@@ -1,15 +1,22 @@
 package graphql;
 
 
+import graphql.execution.Path;
 import graphql.language.SourceLocation;
 
 import java.util.List;
 
 public class ExceptionWhileDataFetching implements GraphQLError {
 
+    private final Path path;
     private final Throwable exception;
 
     public ExceptionWhileDataFetching(Throwable exception) {
+        this(null, exception);
+    }
+
+    public ExceptionWhileDataFetching(Path path, Throwable exception) {
+        this.path = path;
         this.exception = exception;
     }
 
@@ -26,6 +33,10 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     @Override
     public List<SourceLocation> getLocations() {
         return null;
+    }
+
+    public String getPath() {
+        return path == null ? null : path.toString();
     }
 
     @Override
