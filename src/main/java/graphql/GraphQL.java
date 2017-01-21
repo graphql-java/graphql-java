@@ -2,7 +2,10 @@ package graphql;
 
 
 import graphql.execution.Execution;
+import graphql.execution.ExecutionId;
+import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.SimpleExecutionStrategy;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.Parser;
@@ -14,7 +17,6 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -25,18 +27,105 @@ public class GraphQL {
 
 
     private final GraphQLSchema graphQLSchema;
-    private final ExecutionStrategy executionStrategy;
+    private final ExecutionStrategy queryStrategy;
+    private final ExecutionStrategy mutationStrategy;
+    //
+    // later PR changes will allow api consumers to provide their own id provider
+    //
+    // see https://github.com/graphql-java/graphql-java/pull/276 for the builder pattern
+    // needed to make this sustainable.  But for now we will use a hard coded approach.
+    //
+    private final ExecutionIdProvider idProvider = new ExecutionIdProvider() {
+        @Override
+        public ExecutionId provide(String query, String operationName, Object context) {
+            return ExecutionId.generate();
+        }
+    };
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema the schema to use
+     *
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
     public GraphQL(GraphQLSchema graphQLSchema) {
-        this(graphQLSchema, null);
+        //noinspection deprecation
+        this(graphQLSchema, null, null);
     }
 
 
-    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy executionStrategy) {
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema the schema to use
+     * @param queryStrategy the query execution strategy to use
+     *
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
+        //noinspection deprecation
+        this(graphQLSchema, queryStrategy, null);
+    }
+
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema    the schema to use
+     * @param queryStrategy    the query execution strategy to use
+     * @param mutationStrategy the mutation execution strategy to use
+     *
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
+    @SuppressWarnings("DeprecatedIsStillUsed")
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
         this.graphQLSchema = graphQLSchema;
-        this.executionStrategy = executionStrategy;
+        this.queryStrategy = queryStrategy;
+        this.mutationStrategy = mutationStrategy;
+    }
+
+    /**
+     * Helps you build a GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema the schema to use
+     *
+     * @return a builder of GraphQL objects
+     */
+    public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
+        return new Builder(graphQLSchema);
+    }
+
+
+    public static class Builder {
+        private GraphQLSchema graphQLSchema;
+        private ExecutionStrategy queryExecutionStrategy = new SimpleExecutionStrategy();
+        private ExecutionStrategy mutationExecutionStrategy = new SimpleExecutionStrategy();
+
+        public Builder(GraphQLSchema graphQLSchema) {
+            this.graphQLSchema = graphQLSchema;
+        }
+
+        public Builder schema(GraphQLSchema graphQLSchema) {
+            this.graphQLSchema = assertNotNull(graphQLSchema, "GraphQLSchema must be non null");
+            return this;
+        }
+
+        public Builder queryExecutionStrategy(ExecutionStrategy executionStrategy) {
+            this.queryExecutionStrategy = assertNotNull(executionStrategy, "Query ExecutionStrategy must be non null");
+            return this;
+        }
+
+        public Builder mutationExecutionStrategy(ExecutionStrategy executionStrategy) {
+            this.mutationExecutionStrategy = assertNotNull(executionStrategy, "Mutation ExecutionStrategy must be non null");
+            return this;
+        }
+
+        public GraphQL build() {
+            //noinspection deprecation
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy);
+        }
     }
 
     public ExecutionResult execute(String requestString) {
@@ -57,7 +146,7 @@ public class GraphQL {
 
     public ExecutionResult execute(String requestString, String operationName, Object context, Map<String, Object> arguments) {
         assertNotNull(arguments, "arguments can't be null");
-        log.info("Executing request. operation name: {}. Request: {} ", operationName, requestString);
+        log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
         Parser parser = new Parser();
         Document document;
         try {
@@ -66,7 +155,7 @@ public class GraphQL {
             RecognitionException recognitionException = (RecognitionException) e.getCause();
             SourceLocation sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
             InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
-            return new ExecutionResultImpl(Arrays.asList(invalidSyntaxError));
+            return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
 
         Validator validator = new Validator();
@@ -74,8 +163,10 @@ public class GraphQL {
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
-        Execution execution = new Execution(executionStrategy);
-        return execution.execute(graphQLSchema, context, document, operationName, arguments);
+        ExecutionId executionId = idProvider.provide(requestString, operationName, context);
+
+        Execution execution = new Execution(queryStrategy, mutationStrategy);
+        return execution.execute(executionId, graphQLSchema, context, document, operationName, arguments);
     }
 
 

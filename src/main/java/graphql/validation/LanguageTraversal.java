@@ -8,9 +8,21 @@ import java.util.List;
 
 public class LanguageTraversal {
 
+    private final List<Node> path;
+
+    public LanguageTraversal() {
+        path = new ArrayList<Node>();
+    }
+
+    public LanguageTraversal(List<Node> basePath) {
+        if (basePath != null) {
+            path = basePath;
+        } else {
+            path = new ArrayList<Node>();
+        }
+    }
 
     public void traverse(Node root, QueryLanguageVisitor queryLanguageVisitor) {
-        List<Node> path = new ArrayList<Node>();
         traverseImpl(root, queryLanguageVisitor, path);
     }
 
@@ -23,7 +35,5 @@ public class LanguageTraversal {
         }
         path.remove(path.size() - 1);
         queryLanguageVisitor.leave(root, path);
-
-
     }
 }

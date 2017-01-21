@@ -212,6 +212,9 @@ public class Relay {
 
     public ResolvedGlobalId fromGlobalId(String globalId) {
         String[] split = Base64.fromBase64(globalId).split(":", 2);
+        if (split.length != 2) {
+            throw new IllegalArgumentException(String.format("expecting a valid global id, got %s", globalId));
+        }
         return new ResolvedGlobalId(split[0], split[1]);
     }
 }

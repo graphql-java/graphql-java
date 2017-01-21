@@ -16,8 +16,8 @@ import static graphql.introspection.Introspection.*;
 public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
 
-    protected ValuesResolver valuesResolver = new ValuesResolver();
-    protected FieldCollector fieldCollector = new FieldCollector();
+    protected final ValuesResolver valuesResolver = new ValuesResolver();
+    protected final FieldCollector fieldCollector = new FieldCollector();
 
     public abstract ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields);
 
@@ -25,7 +25,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
-        DataFetchingEnvironment environment = new DataFetchingEnvironment(
+        DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 source,
                 argumentValues,
                 executionContext.getRoot(),
@@ -39,7 +39,7 @@ public abstract class ExecutionStrategy {
         try {
             resolvedValue = fieldDef.getDataFetcher().get(environment);
         } catch (Exception e) {
-            log.info("Exception while fetching data", e);
+            log.warn("Exception while fetching data", e);
             executionContext.addError(new ExceptionWhileDataFetching(e));
         }
 
@@ -82,10 +82,9 @@ public abstract class ExecutionStrategy {
             fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
         }
 
-        // Calling this from the executionContext so that you can shift from the simple execution strategy for mutations
-        // back to the desired strategy.
+        // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
 
-        return executionContext.getExecutionStrategy().execute(executionContext, resolvedType, result, subFields);
+        return executionContext.getQueryStrategy().execute(executionContext, resolvedType, result, subFields);
     }
 
     private ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, Object result) {
@@ -93,7 +92,8 @@ public abstract class ExecutionStrategy {
             result = Arrays.asList((Object[]) result);
         }
 
-        return completeValueForList(executionContext, fieldType, fields, (List<Object>) result);
+        //noinspection unchecked
+        return completeValueForList(executionContext, fieldType, fields, (Iterable<Object>) result);
     }
 
     protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
@@ -126,7 +126,7 @@ public abstract class ExecutionStrategy {
         return new ExecutionResultImpl(serialized, null);
     }
 
-    protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, List<Object> result) {
+    protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, Iterable<Object> result) {
         List<Object> completedResults = new ArrayList<Object>();
         for (Object item : result) {
             ExecutionResult completedValue = completeValue(executionContext, fieldType.getWrappedType(), fields, item);

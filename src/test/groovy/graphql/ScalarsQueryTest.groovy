@@ -24,7 +24,7 @@ class ScalarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema).execute(query)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
 
         then:
         result.data == expected
@@ -49,7 +49,7 @@ class ScalarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema).execute(query)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
 
         then:
         result.data == expected
@@ -68,8 +68,11 @@ class ScalarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema).execute(query)
-        def resultBatched = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema, new BatchedExecutionStrategy()).execute(query)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema)
+                .build().execute(query)
+        def resultBatched = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema)
+                .queryExecutionStrategy(new BatchedExecutionStrategy())
+                .build().execute(query)
 
         then:
         result.data == expected
@@ -90,7 +93,7 @@ class ScalarsQueryTest extends Specification {
         ]
 
         when:
-        def result = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema).execute(query)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
 
         then:
         result.data == expected
@@ -103,7 +106,7 @@ class ScalarsQueryTest extends Specification {
         def query = "{ " + number + "String(input: \"foobar\") }"
         
         when:
-        def result = new GraphQL(ScalarsQuerySchema.scalarsQuerySchema).execute(query)
+        def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
         
         then:
         //FIXME do not propagate exception, but instead raise an error.

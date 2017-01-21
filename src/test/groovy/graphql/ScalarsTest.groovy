@@ -43,6 +43,7 @@ class ScalarsTest extends Specification {
         where:
         literal                               | result
         new StringValue("5457486ABSBHS4w646") | "5457486ABSBHS4w646"
+        new IntValue(BigInteger.ONE)          | "1"
     }
 
     @Unroll
@@ -54,6 +55,7 @@ class ScalarsTest extends Specification {
         where:
         value                | result
         "5457486ABSBHS4w646" | "5457486ABSBHS4w646"
+        1                    | "1"
         null                 | null
     }
 

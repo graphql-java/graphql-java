@@ -56,7 +56,9 @@ public class InlineFragment extends AbstractNode implements Selection {
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<Node>();
-        result.add(typeCondition);
+        if (typeCondition != null) {
+            result.add(typeCondition);
+        }
         result.addAll(directives);
         result.add(selectionSet);
         return result;

@@ -6,59 +6,56 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ExecutionContext {
 
-    private GraphQLSchema graphQLSchema;
-    private ExecutionStrategy executionStrategy;
-    private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
-    private OperationDefinition operationDefinition;
-    private Map<String, Object> variables = new LinkedHashMap<String, Object>();
-    private Object root;
-    private List<GraphQLError> errors = new ArrayList<GraphQLError>();
+    private final GraphQLSchema graphQLSchema;
+    private final ExecutionId executionId;
+    private final ExecutionStrategy queryStrategy;
+    private final ExecutionStrategy mutationStrategy;
+    private final Map<String, FragmentDefinition> fragmentsByName;
+    private final OperationDefinition operationDefinition;
+    private final Map<String, Object> variables;
+    private final Object root;
+    private final List<GraphQLError> errors = new CopyOnWriteArrayList<GraphQLError>();
+
+    public ExecutionContext(ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
+        this.graphQLSchema = graphQLSchema;
+        this.executionId = executionId;
+        this.queryStrategy = queryStrategy;
+        this.mutationStrategy = mutationStrategy;
+        this.fragmentsByName = fragmentsByName;
+        this.operationDefinition = operationDefinition;
+        this.variables = variables;
+        this.root = root;
+    }
+
+    public ExecutionId getExecutionId() {
+        return executionId;
+    }
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
-    }
-
-    public void setGraphQLSchema(GraphQLSchema graphQLSchema) {
-        this.graphQLSchema = graphQLSchema;
     }
 
     public Map<String, FragmentDefinition> getFragmentsByName() {
         return fragmentsByName;
     }
 
-    public void setFragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
-        this.fragmentsByName = fragmentsByName;
-    }
-
     public OperationDefinition getOperationDefinition() {
         return operationDefinition;
-    }
-
-    public void setOperationDefinition(OperationDefinition operationDefinition) {
-        this.operationDefinition = operationDefinition;
     }
 
     public Map<String, Object> getVariables() {
         return variables;
     }
 
-    public void setVariables(Map<String, Object> variables) {
-        this.variables = variables;
-    }
-
-    public Object getRoot() {
-        return root;
-    }
-
-    public void setRoot(Object root) {
-        this.root = root;
+    public <T> T getRoot() {
+        //noinspection unchecked
+        return (T) root;
     }
 
     public FragmentDefinition getFragment(String name) {
@@ -73,11 +70,11 @@ public class ExecutionContext {
         return errors;
     }
 
-    public ExecutionStrategy getExecutionStrategy() {
-        return executionStrategy;
+    public ExecutionStrategy getQueryStrategy() {
+        return queryStrategy;
     }
 
-    public void setExecutionStrategy(ExecutionStrategy executionStrategy) {
-        this.executionStrategy = executionStrategy;
+    public ExecutionStrategy getMutationStrategy() {
+        return mutationStrategy;
     }
 }
