@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.execution.ExecutionContext;
 import graphql.language.Field;
 
 import java.util.List;
@@ -10,13 +11,13 @@ import java.util.Map;
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
     private final Map<String, Object> arguments;
-    private final Object context;
+    private final ExecutionContext context;
     private final List<Field> fields;
     private final GraphQLOutputType fieldType;
     private final GraphQLType parentType;
     private final GraphQLSchema graphQLSchema;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema) {
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, ExecutionContext context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema) {
         this.source = source;
         this.arguments = arguments;
         this.context = context;
@@ -47,8 +48,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T  getContext() {
-        return (T) context;
+    public ExecutionContext getContext() {
+        return context;
     }
 
     @Override

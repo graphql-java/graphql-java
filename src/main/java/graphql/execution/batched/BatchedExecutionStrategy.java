@@ -254,7 +254,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 sources,
                 argumentValues,
-                executionContext.getRoot(),
+                executionContext,
                 fields,
                 fieldDef.getType(),
                 parentType,
