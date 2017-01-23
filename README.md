@@ -538,9 +538,21 @@ For example the StarWarSchema and the tests (among a lot of other things) are si
 
 [graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
 
-[graphql-java-annotations](https://github.com/yrashk/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
+[graphql-java-annotations](https://github.com/graphql-java/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
 
-[graphql-java-servlet](https://github.com/yrashk/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
+[graphql-java-servlet](https://github.com/graphql-java/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
+
+[graphql-apigen](https://github.com/Distelli/graphql-apigen): Generate Java APIs with GraphQL Schemas
+
+[graphql-spring-boot](https://github.com/oembedler/graphql-spring-boot): GraphQL and GraphiQL Spring Framework Boot Starters
+
+[spring-graphql-common](https://github.com/oembedler/spring-graphql-common): Spring Framework GraphQL Library
+
+[graphql-jpa](https://github.com/jcrygier/graphql-jpa): JPA Implementation of GraphQL (builds on graphql-java)
+
+[graphql-jpa-spring-boot-starter](https://github.com/timtebeek/graphql-jpa-spring-boot-starter): Spring Boot starter for GraphQL JPA; Expose JPA entities with GraphQL.
+
+
 
 ### License
 
