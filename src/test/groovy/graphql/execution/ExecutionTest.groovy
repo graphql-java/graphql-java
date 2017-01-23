@@ -9,14 +9,14 @@ class ExecutionTest extends Specification {
     def parser = new Parser()
     def mutationStrategy = Mock(ExecutionStrategy)
     def queryStrategy = Mock(ExecutionStrategy)
-    def execution = new Execution(queryStrategy, mutationStrategy)
+    def execution = Execution.newExecution().queryStrategy(queryStrategy).mutationStrategy(mutationStrategy).build()
 
     def "query strategy is used for query requests"() {
         given:
         def mutationStrategy = Mock(ExecutionStrategy)
 
         def queryStrategy = Mock(ExecutionStrategy)
-        def execution = new Execution(queryStrategy, mutationStrategy)
+        def execution = Execution.newExecution().queryStrategy(queryStrategy).mutationStrategy(mutationStrategy).build()
 
         def query = '''
             query {

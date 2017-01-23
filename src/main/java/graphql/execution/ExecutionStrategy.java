@@ -5,13 +5,30 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.language.Field;
-import graphql.schema.*;
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
-import static graphql.introspection.Introspection.*;
+import static graphql.introspection.Introspection.SchemaMetaFieldDef;
+import static graphql.introspection.Introspection.TypeMetaFieldDef;
+import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
@@ -21,7 +38,23 @@ public abstract class ExecutionStrategy {
 
     public abstract ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields);
 
-    protected ExecutionResult resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
+    protected ExecutionResult resolveField(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, final List<Field> fields) {
+        final ExecutionConstraints executionConstraints = executionContext.getExecutionConstraints();
+        return executionConstraints.callTrackingDepth(new Callable<ExecutionResult>() {
+            @Override
+            public ExecutionResult call() throws Exception {
+                return resolveFieldImpl(executionConstraints, executionContext, parentType, source, fields);
+            }
+        });
+    }
+
+    private ExecutionResult resolveFieldImpl(ExecutionConstraints executionConstraints, ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
+        //
+        // we return null if the max depth has been exceeded to protect against large or malicious queries
+        if (executionConstraints.hasExceededMaxDepthConstraint()) {
+            return null;
+        }
+
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
