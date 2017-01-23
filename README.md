@@ -555,6 +555,11 @@ For example the StarWarSchema and the tests (among a lot of other things) are si
 
 * [graphql-jpa-spring-boot-starter](https://github.com/timtebeek/graphql-jpa-spring-boot-starter): Spring Boot starter for GraphQL JPA; Expose JPA entities with GraphQL.
 
+* [graphkool](https://github.com/beyondeye/graphkool): GraphQl-java utilities in kotlin
+
+* [schemagen-graphql](https://github.com/bpatters/schemagen-graphql): GraphQL-Java add-on that adds support for Schema Generation & Execution for enterprise level applications.
+
+* [GraphQL-SPQR](https://github.com/leangen/GraphQL-SPQR): Java 8+ API for rapid development of GraphQL services
 
 
 ### License
