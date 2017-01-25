@@ -27,7 +27,7 @@ to checkout the appropriate tag when looking for the version documented here.
  
 - [Overview](#overview)
 - [Code of Conduct](#code-of-conduct)
-- [Mailing List](#mailing-list)
+- [Discussion](#discussion)
 - [Hello World](#hello-world)
 - [Getting started](#getting-started)
 - [Manual](#manual)
@@ -61,11 +61,12 @@ By contributing to this project (commenting or opening PR/Issues etc) you are ag
 take the time to read it. 
 
 
-### Mailing List
+### Discussion
 
 If you have a question or want to discuss anything else related to this project: 
 
-There is a mailing list (Google Group) for graphql-java: [graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
+- There is a mailing list (Google Group) for graphql-java: [graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
+- And a chat room (Gitter.im) for graphql-java: [graphql-java chat](https://gitter.im/graphql-java/graphql-java)
 
 ### Hello World
 
@@ -95,7 +96,7 @@ public class HelloWorld {
                 .query(queryType)
                 .build();
 
-        GraphQL graphQL = GraphQL.newObject(schema).build();
+        GraphQL graphQL = GraphQL.newGraphQL(schema).build();
 
         Map<String, Object> result = graphQL.execute("{hello}").getData();
         System.out.println(result);
