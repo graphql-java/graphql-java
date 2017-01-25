@@ -11,12 +11,17 @@ public class Assert {
     }
 
     public static <T> T assertNotNull(T object) {
-        return assertNotNull(object,"Must be non null");
+        return assertNotNull(object, "Must be non null");
     }
 
     public static <T> Collection<T> assertNotEmpty(Collection<T> c, String errorMessage) {
         if (c == null || c.isEmpty()) throw new AssertException(errorMessage);
         return c;
+    }
+
+    public static <T> T assertValue(T object, boolean condition, String errorMessage) {
+        if (condition) return object;
+        throw new AssertException(errorMessage);
     }
 
 }

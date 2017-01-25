@@ -85,13 +85,12 @@ class ExecutionConstraintsTest extends Specification {
         expected3
     }
 
-    def "negative maximum depth can never be exceeded"() {
+    def "unlimited maximum depth can never be exceeded"() {
 
         given:
         when:
         def constraints = ExecutionConstraints
                 .newConstraints()
-                .maxQueryDepth(-1) // notice -1 means never fail on depth
                 .build()
 
         def expected1 = false

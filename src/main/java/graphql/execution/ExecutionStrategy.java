@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
@@ -40,9 +39,9 @@ public abstract class ExecutionStrategy {
 
     protected ExecutionResult resolveField(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, final List<Field> fields) {
         final ExecutionConstraints executionConstraints = executionContext.getExecutionConstraints();
-        return executionConstraints.callTrackingDepth(new Callable<ExecutionResult>() {
+        return executionConstraints.callTrackingDepth(new ExecutionConstraints.DepthTrackedCall<ExecutionResult>() {
             @Override
-            public ExecutionResult call() throws Exception {
+            public ExecutionResult call() {
                 return resolveFieldImpl(executionConstraints, executionContext, parentType, source, fields);
             }
         });

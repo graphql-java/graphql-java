@@ -3,11 +3,18 @@ package graphql.execution;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static graphql.Assert.assertValue;
+
 /**
  * This represents constraints on the execution of queries to help protect against
  * large or malicious queries
  */
 public class ExecutionConstraints {
+    /**
+     * Use this for no constraints on queue depth
+     */
+    public static final int UNLIMITED_QUEUE_DEPTH = 0;
+
     //
     // future versions of this class could have "query complexity" etc. in it
     // but for now we just have query depth
@@ -39,6 +46,13 @@ public class ExecutionConstraints {
     }
 
     /**
+     * By having our own {@link Callable} like interface we avoid the checked Exception it mandates
+     */
+    public interface DepthTrackedCall<T> {
+        T call();
+    }
+
+    /**
      * This is for {@link ExecutionStrategy}s to call to run a query and have the query depth incremented and decremented for you safely.
      *
      * @param code the code to call
@@ -46,7 +60,7 @@ public class ExecutionConstraints {
      *
      * @return the result
      */
-    public <T> T callTrackingDepth(Callable<T> code) {
+    public <T> T callTrackingDepth(DepthTrackedCall<T> code) {
         try {
             queryDepth.incrementAndGet();
             return code.call();
@@ -74,10 +88,10 @@ public class ExecutionConstraints {
     }
 
     public static class Builder {
-        private int maxQueryDepth = -1; // by default no constraint on depth
+        private int maxQueryDepth = UNLIMITED_QUEUE_DEPTH; // by default no constraint on depth
 
         public Builder maxQueryDepth(int maxQueryDepth) {
-            this.maxQueryDepth = maxQueryDepth;
+            this.maxQueryDepth = assertValue(maxQueryDepth, maxQueryDepth > 0, "If you specify a max queue depth it must be > 0");
             return this;
         }
 
