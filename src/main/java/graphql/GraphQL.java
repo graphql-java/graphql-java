@@ -30,26 +30,21 @@ import static graphql.Assert.assertNotNull;
 
 public class GraphQL {
 
+    private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
-    private final GraphQLSchema graphQLSchema;
-    private final ExecutionStrategy queryStrategy;
-    private final ExecutionStrategy mutationStrategy;
-    private final Instrumentation instrumentation;
-
-    //
-    // later PR changes will allow api consumers to provide their own id provider
-    //
-    // see https://github.com/graphql-java/graphql-java/pull/276 for the builder pattern
-    // needed to make this sustainable.  But for now we will use a hard coded approach.
-    //
-    private final ExecutionIdProvider idProvider = new ExecutionIdProvider() {
+    private static final ExecutionIdProvider DEFAULT_EXECUTION_ID_PROVIDER = new ExecutionIdProvider() {
         @Override
         public ExecutionId provide(String query, String operationName, Object context) {
             return ExecutionId.generate();
         }
     };
 
-    private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
+    private final GraphQLSchema graphQLSchema;
+    private final ExecutionStrategy queryStrategy;
+    private final ExecutionStrategy mutationStrategy;
+    private final ExecutionIdProvider idProvider;
+    private final Instrumentation instrumentation;
+
 
     /**
      * A GraphQL object ready to execute queries
@@ -87,12 +82,13 @@ public class GraphQL {
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this(graphQLSchema,queryStrategy,mutationStrategy,NoOpInstrumentation.INSTANCE);
+        this(graphQLSchema,queryStrategy,mutationStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE);
     }
 
-    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Instrumentation instrumentation) {
-        this.graphQLSchema = graphQLSchema;
-        this.queryStrategy = queryStrategy;
+    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation) {
+        this.graphQLSchema = assertNotNull(graphQLSchema,"queryStrategy must be non null");
+        this.queryStrategy = assertNotNull(queryStrategy, "queryStrategy must be non null");
+        this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
         this.mutationStrategy = mutationStrategy;
         this.instrumentation = instrumentation;
     }
@@ -113,7 +109,9 @@ public class GraphQL {
         private GraphQLSchema graphQLSchema;
         private ExecutionStrategy queryExecutionStrategy = new SimpleExecutionStrategy();
         private ExecutionStrategy mutationExecutionStrategy = new SimpleExecutionStrategy();
+        private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = NoOpInstrumentation.INSTANCE;
+
 
         public Builder(GraphQLSchema graphQLSchema) {
             this.graphQLSchema = graphQLSchema;
@@ -139,9 +137,13 @@ public class GraphQL {
             return this;
         }
 
+        public Builder executionIdProvider(ExecutionIdProvider executionIdProvider) {
+            this.idProvider = assertNotNull(executionIdProvider, "ExecutionIdProvider must be non null");
+            return this;
+        }
+
         public GraphQL build() {
-            //noinspection deprecation
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, instrumentation);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, idProvider, instrumentation);
         }
     }
 
