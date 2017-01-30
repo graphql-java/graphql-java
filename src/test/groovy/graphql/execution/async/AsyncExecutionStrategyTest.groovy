@@ -142,6 +142,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
     ExecutionContext buildExecutionContext(ExecutionStrategy strategy, GraphQLObjectType parentType) {
         def executionContext = new ExecutionContext(
+          null,
           newSchema().query(parentType).build(),
           strategy,
           null,
