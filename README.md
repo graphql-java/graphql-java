@@ -242,8 +242,6 @@ GraphQLInputObjectType inputObjectType = newInputObject()
 
 `GraphQLList` and `GraphQLNonNull` wrap another type to declare a list or to forbid null values. 
 
-There are no builders to create new objects. Just normal constructors, because they are so simple.
-
 Example:
 
 ```java
