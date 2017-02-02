@@ -242,14 +242,17 @@ GraphQLInputObjectType inputObjectType = newInputObject()
 
 `GraphQLList` and `GraphQLNonNull` wrap another type to declare a list or to forbid null values. 
 
-There are no builders to create new objects. Just normal constructors, because they are so simple.
-
 Example:
 
 ```java
-new GraphQLList(GraphQLString); // a list of Strings
+        GraphQLList.list((GraphQLString); // a list of Strings
 
-new GraphQLNonNull(GraphQLString); // a non null String
+        GraphQLNonNull.nonNull(GraphQLString); // a non null String
+
+        // with static imports its even shorter
+        newArgument()
+                .name("example")
+                .type(nonNull(list(GraphQLString)));
 
 ```
 
