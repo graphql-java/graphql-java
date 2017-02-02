@@ -385,6 +385,35 @@ GraphQLObjectType queryType = newObject()
                 .build();
 ```
 
+#### Numerical Scalar Support
+
+By default the numerical scalar types in graphql-java are strict.  So for example given a field declared like this :
+ 
+```java
+    newFieldDefinition()
+                 .name("strict")
+                 .type(Scalars.GraphQLInt);
+     
+```
+
+it will only accept Strings and Numbers that can be strictly coerced into `java.lang.Integer` values.  
+
+If it did not then an input value such as "42.3" woul result in a loss of precision if it was coerced into an Integer as "42.0".     
+
+Some JSON frameworks, such as GSON, (by default) turn JSON input such as `{ value : 42 }` into `java.lang.Double` values such as "42.0" and hence will not be accepted by the strict
+scalar types and will be mapped to `null`.  
+
+You can opt for lenient coercion by using the `LenientNumericalScalars` types
+ 
+
+```java
+      newFieldDefinition()
+                      .name("lenient")
+                      .type(LenientNumericalScalars.GraphQLInt);
+```
+
+This will use `java.lang.Number` conversion to turn input values into the target scalar type in a more lenient fashion.
+
 #### Logging
 
 Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [Manual](http://www.slf4j.org/manual.html) for details.

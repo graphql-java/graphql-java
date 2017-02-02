@@ -11,18 +11,19 @@ import graphql.schema.GraphQLScalarType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+@SuppressWarnings("Duplicates")
 public class Scalars {
 
-    private static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
-    private static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
-    private static final BigInteger INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
-    private static final BigInteger INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
-    private static final BigInteger BYTE_MAX = BigInteger.valueOf(Byte.MAX_VALUE);
-    private static final BigInteger BYTE_MIN = BigInteger.valueOf(Byte.MIN_VALUE);
-    private static final BigInteger SHORT_MAX = BigInteger.valueOf(Short.MAX_VALUE);
-    private static final BigInteger SHORT_MIN = BigInteger.valueOf(Short.MIN_VALUE);
+    static final BigInteger LONG_MAX = BigInteger.valueOf(Long.MAX_VALUE);
+    static final BigInteger LONG_MIN = BigInteger.valueOf(Long.MIN_VALUE);
+    static final BigInteger INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
+    static final BigInteger INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
+    static final BigInteger BYTE_MAX = BigInteger.valueOf(Byte.MAX_VALUE);
+    static final BigInteger BYTE_MIN = BigInteger.valueOf(Byte.MIN_VALUE);
+    static final BigInteger SHORT_MAX = BigInteger.valueOf(Short.MAX_VALUE);
+    static final BigInteger SHORT_MIN = BigInteger.valueOf(Short.MIN_VALUE);
 
-    public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing<Integer>() {
+    static class IntegerCoercing implements Coercing<Integer> {
         @Override
         public Integer serialize(Object input) {
             if (input instanceof String) {
@@ -48,10 +49,11 @@ public class Scalars {
             }
             return value.intValue();
         }
-    });
+    }
 
+    public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new IntegerCoercing());
 
-    public static GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new Coercing<Long>() {
+    static class LongCoercing implements Coercing<Long> {
         @Override
         public Long serialize(Object input) {
             if (input instanceof String) {
@@ -84,9 +86,11 @@ public class Scalars {
             }
             return null;
         }
-    });
+    }
 
-    public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing<Double>() {
+    public static GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new LongCoercing());
+
+    static class DoubleCoercing implements Coercing<Double> {
         @Override
         public Double serialize(Object input) {
             if (input instanceof String) {
@@ -117,7 +121,9 @@ public class Scalars {
                 return null;
             }
         }
-    });
+    }
+
+    public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new DoubleCoercing());
 
     public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing<String>() {
         @Override
@@ -195,7 +201,7 @@ public class Scalars {
         }
     });
 
-    public static GraphQLScalarType GraphQLBigInteger = new GraphQLScalarType("BigInteger", "Built-in java.math.BigInteger", new Coercing<BigInteger>() {
+    static class BigIntegerCoercing implements Coercing<BigInteger> {
         @Override
         public BigInteger serialize(Object input) {
             if (input instanceof BigInteger) {
@@ -225,9 +231,11 @@ public class Scalars {
             }
             return null;
         }
-    });
+    }
 
-    public static GraphQLScalarType GraphQLBigDecimal = new GraphQLScalarType("BigDecimal", "Built-in java.math.BigDecimal", new Coercing<BigDecimal>() {
+    public static GraphQLScalarType GraphQLBigInteger = new GraphQLScalarType("BigInteger", "Built-in java.math.BigInteger", new BigIntegerCoercing());
+
+    static class BigDecimalCoercing implements Coercing<BigDecimal> {
         @Override
         public BigDecimal serialize(Object input) {
             if (input instanceof BigDecimal) {
@@ -263,9 +271,11 @@ public class Scalars {
             }
             return null;
         }
-    });
+    }
 
-    public static GraphQLScalarType GraphQLByte = new GraphQLScalarType("Byte", "Built-in Byte as Int", new Coercing<Byte>() {
+    public static GraphQLScalarType GraphQLBigDecimal = new GraphQLScalarType("BigDecimal", "Built-in java.math.BigDecimal", new BigDecimalCoercing());
+
+    static class ByteCoercing implements Coercing<Byte> {
         @Override
         public Byte serialize(Object input) {
             if (input instanceof String) {
@@ -291,9 +301,11 @@ public class Scalars {
             }
             return value.byteValue();
         }
-    });
+    }
 
-    public static GraphQLScalarType GraphQLShort = new GraphQLScalarType("Short", "Built-in Short as Int", new Coercing<Short>() {
+    public static GraphQLScalarType GraphQLByte = new GraphQLScalarType("Byte", "Built-in Byte as Int", new ByteCoercing());
+
+    static class ShortCoercing implements Coercing<Short> {
         @Override
         public Short serialize(Object input) {
             if (input instanceof String) {
@@ -319,7 +331,9 @@ public class Scalars {
             }
             return value.shortValue();
         }
-    });
+    }
+
+    public static GraphQLScalarType GraphQLShort = new GraphQLScalarType("Short", "Built-in Short as Int", new ShortCoercing());
 
     public static GraphQLScalarType GraphQLChar = new GraphQLScalarType("Char", "Built-in Char as Character", new Coercing<Character>() {
         @Override

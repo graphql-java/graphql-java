@@ -2,6 +2,8 @@ package readme;
 
 import graphql.GarfieldSchema;
 import graphql.GraphQL;
+import graphql.LenientNumericalScalars;
+import graphql.Scalars;
 import graphql.StarWarsSchema;
 import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.execution.SimpleExecutionStrategy;
@@ -177,6 +179,17 @@ public class ReadmeExamples {
                         .type(GraphQLString)
                         .dataFetcher(fooDataFetcher))
                 .build();
+
+    }
+
+    void lenientScalarSupport() {
+        newFieldDefinition()
+                        .name("strict")
+                        .type(Scalars.GraphQLInt);
+
+        newFieldDefinition()
+                        .name("lenient")
+                        .type(LenientNumericalScalars.GraphQLInt);
 
     }
 
