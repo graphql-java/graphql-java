@@ -17,10 +17,9 @@ public class ExceptionWhileDataFetching implements GraphQLError {
         return exception;
     }
 
-
     @Override
     public String getMessage() {
-        return "Exception while fetching data: " + exception.toString();
+        return exception.getMessage();
     }
 
     @Override
