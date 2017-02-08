@@ -54,7 +54,7 @@ public class Scalars {
     }
 
 
-    public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing<Integer>() {
+    public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing<Integer, Integer>() {
         @Override
         public Integer serialize(Object input) {
             if (input instanceof Integer) {
@@ -82,7 +82,7 @@ public class Scalars {
         }
     });
 
-    public static GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new Coercing<Long>() {
+    public static GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new Coercing<Long, Long>() {
         @Override
         public Long serialize(Object input) {
             if (input instanceof Long) {
@@ -115,7 +115,7 @@ public class Scalars {
         }
     });
 
-    public static GraphQLScalarType GraphQLShort = new GraphQLScalarType("Short", "Built-in Short as Int", new Coercing<Short>() {
+    public static GraphQLScalarType GraphQLShort = new GraphQLScalarType("Short", "Built-in Short as Int", new Coercing<Short, Short>() {
         @Override
         public Short serialize(Object input) {
             if (input instanceof Short) {
@@ -143,7 +143,7 @@ public class Scalars {
         }
     });
 
-    public static GraphQLScalarType GraphQLByte = new GraphQLScalarType("Byte", "Built-in Byte as Int", new Coercing<Byte>() {
+    public static GraphQLScalarType GraphQLByte = new GraphQLScalarType("Byte", "Built-in Byte as Int", new Coercing<Byte, Byte>() {
         @Override
         public Byte serialize(Object input) {
             if (input instanceof Byte) {
@@ -172,7 +172,7 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing<Double>() {
+    public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing<Double, Double>() {
         @Override
         public Double serialize(Object input) {
             if (input instanceof Double) {
@@ -201,7 +201,7 @@ public class Scalars {
         }
     });
 
-    public static GraphQLScalarType GraphQLBigInteger = new GraphQLScalarType("BigInteger", "Built-in java.math.BigInteger", new Coercing<BigInteger>() {
+    public static GraphQLScalarType GraphQLBigInteger = new GraphQLScalarType("BigInteger", "Built-in java.math.BigInteger", new Coercing<BigInteger, BigInteger>() {
         @Override
         public BigInteger serialize(Object input) {
             if (input instanceof BigInteger) {
@@ -231,7 +231,7 @@ public class Scalars {
         }
     });
 
-    public static GraphQLScalarType GraphQLBigDecimal = new GraphQLScalarType("BigDecimal", "Built-in java.math.BigDecimal", new Coercing<BigDecimal>() {
+    public static GraphQLScalarType GraphQLBigDecimal = new GraphQLScalarType("BigDecimal", "Built-in java.math.BigDecimal", new Coercing<BigDecimal, BigDecimal>() {
         @Override
         public BigDecimal serialize(Object input) {
             if (input instanceof BigDecimal) {
@@ -266,7 +266,7 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing<String>() {
+    public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing<String,String>() {
         @Override
         public String serialize(Object input) {
             return input == null ? null : input.toString();
@@ -285,7 +285,7 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing<Boolean>() {
+    public static GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing<Boolean,Boolean>() {
         @Override
         public Boolean serialize(Object input) {
             if (input instanceof Boolean) {
@@ -312,7 +312,7 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing<Object>() {
+    public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing<Object,Object>() {
         @Override
         public Object serialize(Object input) {
             if (input instanceof String) {
@@ -343,7 +343,7 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLChar = new GraphQLScalarType("Char", "Built-in Char as Character", new Coercing<Character>() {
+    public static GraphQLScalarType GraphQLChar = new GraphQLScalarType("Char", "Built-in Char as Character", new Coercing<Character,Character>() {
         @Override
         public Character serialize(Object input) {
             if (input instanceof String) {
