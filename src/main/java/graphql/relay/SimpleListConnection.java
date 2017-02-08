@@ -22,7 +22,7 @@ public class SimpleListConnection implements DataFetcher {
         List<Edge> edges = new ArrayList<Edge>();
         int ix = 0;
         for (Object object : data) {
-            edges.add(new Edge(object, new ConnectionCursor(createCursor(ix++))));
+            edges.add(new DefaultEdge(object, new DefaultConnectionCursor(createCursor(ix++))));
         }
         return edges;
     }
@@ -48,8 +48,8 @@ public class SimpleListConnection implements DataFetcher {
         Integer first = environment.<Integer>getArgument("first");
         Integer last = environment.<Integer>getArgument("last");
 
-        ConnectionCursor firstPresliceCursor = edges.get(0).cursor;
-        ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).cursor;
+        ConnectionCursor firstPresliceCursor = edges.get(0).getCursor();
+        ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
 
         if (first != null) {
             edges = edges.subList(0, first <= edges.size() ? first : edges.size());
@@ -65,13 +65,13 @@ public class SimpleListConnection implements DataFetcher {
         Edge firstEdge = edges.get(0);
         Edge lastEdge = edges.get(edges.size() - 1);
 
-        PageInfo pageInfo = new PageInfo();
+        DefaultPageInfo pageInfo = new DefaultPageInfo();
         pageInfo.setStartCursor(firstEdge.getCursor());
         pageInfo.setEndCursor(lastEdge.getCursor());
         pageInfo.setHasPreviousPage(!firstEdge.getCursor().equals(firstPresliceCursor));
         pageInfo.setHasNextPage(!lastEdge.getCursor().equals(lastPresliceCursor));
 
-        Connection connection = new Connection();
+        DefaultConnection connection = new DefaultConnection();
         connection.setEdges(edges);
         connection.setPageInfo(pageInfo);
 
@@ -79,8 +79,8 @@ public class SimpleListConnection implements DataFetcher {
     }
 
     private Connection emptyConnection() {
-        Connection connection = new Connection();
-        connection.setPageInfo(new PageInfo());
+        DefaultConnection connection = new DefaultConnection();
+        connection.setPageInfo(new DefaultPageInfo());
         return connection;
     }
 
@@ -88,7 +88,7 @@ public class SimpleListConnection implements DataFetcher {
     public ConnectionCursor cursorForObjectInConnection(Object object) {
         int index = data.indexOf(object);
         String cursor = createCursor(index);
-        return new ConnectionCursor(cursor);
+        return new DefaultConnectionCursor(cursor);
     }
 
 
