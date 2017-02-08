@@ -2,7 +2,11 @@ package graphql.validation.rules;
 
 import graphql.language.Document;
 import graphql.language.OperationDefinition;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorType;
 
 /**
  * Created by Exbeinfo on 2/7/2017.
