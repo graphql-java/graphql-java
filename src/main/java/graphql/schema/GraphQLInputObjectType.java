@@ -9,6 +9,7 @@ import java.util.Map;
 import graphql.AssertException;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer {
 
@@ -19,7 +20,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<String, GraphQLInputObjectField>();
 
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         assertNotNull(fields, "fields can't be null");
         this.name = name;
         this.description = description;

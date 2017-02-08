@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 public class GraphQLFieldDefinition {
 
@@ -18,7 +19,7 @@ public class GraphQLFieldDefinition {
 
 
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         assertNotNull(dataFetcher, "dataFetcher can't be null");
         assertNotNull(type, "type can't be null");
         assertNotNull(arguments, "arguments can't be null");

@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
 
@@ -63,7 +63,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
 
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         this.name = name;
         this.description = description;
         buildMap(values);
