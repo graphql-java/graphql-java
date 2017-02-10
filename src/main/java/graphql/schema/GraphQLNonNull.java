@@ -7,6 +7,18 @@ import static graphql.Assert.assertNotNull;
 
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
+    /**
+     * A factory method for creating non null types so that when used with static imports allows
+     * more readable code such as
+     * {@code .type(nonNull(GraphQLString)) }
+     *
+     * @param wrappedType the type to wrap as being non null
+     * @return a GraphQLNonNull of that wrapped type
+     */
+    public static GraphQLNonNull nonNull(GraphQLType wrappedType) {
+        return new GraphQLNonNull(wrappedType);
+    }
+
     private GraphQLType wrappedType;
 
     public GraphQLNonNull(GraphQLType wrappedType) {

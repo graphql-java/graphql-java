@@ -1,7 +1,25 @@
 package graphql.introspection;
 
 
-import graphql.schema.*;
+import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLEnumValueDefinition;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeReference;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.SchemaUtil;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +28,8 @@ import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 public class Introspection {
@@ -68,13 +88,13 @@ public class Introspection {
             .name("__InputValue")
             .field(newFieldDefinition()
                     .name("name")
-                    .type(new GraphQLNonNull(GraphQLString)))
+                    .type(nonNull(GraphQLString)))
             .field(newFieldDefinition()
                     .name("description")
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("type")
-                    .type(new GraphQLNonNull(new GraphQLTypeReference("__Type"))))
+                    .type(nonNull(new GraphQLTypeReference("__Type"))))
             .field(newFieldDefinition()
                     .name("defaultValue")
                     .type(GraphQLString)
@@ -82,10 +102,10 @@ public class Introspection {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
                             if (environment.getSource() instanceof GraphQLArgument) {
-                                GraphQLArgument inputField = (GraphQLArgument) environment.getSource();
+                                GraphQLArgument inputField = environment.getSource();
                                 return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
                             } else if (environment.getSource() instanceof GraphQLInputObjectField) {
-                                GraphQLInputObjectField inputField = (GraphQLInputObjectField) environment.getSource();
+                                GraphQLInputObjectField inputField = environment.getSource();
                                 return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
                             }
                             return null;
@@ -98,13 +118,13 @@ public class Introspection {
             .name("__Field")
             .field(newFieldDefinition()
                     .name("name")
-                    .type(new GraphQLNonNull(GraphQLString)))
+                    .type(nonNull(GraphQLString)))
             .field(newFieldDefinition()
                     .name("description")
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("args")
-                    .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__InputValue))))
+                    .type(nonNull(list(nonNull(__InputValue))))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
@@ -114,10 +134,10 @@ public class Introspection {
                     }))
             .field(newFieldDefinition()
                     .name("type")
-                    .type(new GraphQLNonNull(new GraphQLTypeReference("__Type"))))
+                    .type(nonNull(new GraphQLTypeReference("__Type"))))
             .field(newFieldDefinition()
                     .name("isDeprecated")
-                    .type(new GraphQLNonNull(GraphQLBoolean))
+                    .type(nonNull(GraphQLBoolean))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
@@ -135,17 +155,17 @@ public class Introspection {
             .name("__EnumValue")
             .field(newFieldDefinition()
                     .name("name")
-                    .type(new GraphQLNonNull(GraphQLString)))
+                    .type(nonNull(GraphQLString)))
             .field(newFieldDefinition()
                     .name("description")
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("isDeprecated")
-                    .type(new GraphQLNonNull(GraphQLBoolean))
+                    .type(nonNull(GraphQLBoolean))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLEnumValueDefinition enumValue = (GraphQLEnumValueDefinition) environment.getSource();
+                            GraphQLEnumValueDefinition enumValue = environment.getSource();
                             return enumValue.isDeprecated();
                         }
                     }))
@@ -246,7 +266,7 @@ public class Introspection {
             .name("__Type")
             .field(newFieldDefinition()
                     .name("kind")
-                    .type(new GraphQLNonNull(__TypeKind))
+                    .type(nonNull(__TypeKind))
                     .dataFetcher(kindDataFetcher))
             .field(newFieldDefinition()
                     .name("name")
@@ -256,7 +276,7 @@ public class Introspection {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("fields")
-                    .type(new GraphQLList(new GraphQLNonNull(__Field)))
+                    .type(list(nonNull(__Field)))
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
@@ -264,15 +284,15 @@ public class Introspection {
                     .dataFetcher(fieldsFetcher))
             .field(newFieldDefinition()
                     .name("interfaces")
-                    .type(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("__Type"))))
+                    .type(list(nonNull(new GraphQLTypeReference("__Type"))))
                     .dataFetcher(interfacesFetcher))
             .field(newFieldDefinition()
                     .name("possibleTypes")
-                    .type(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("__Type"))))
+                    .type(list(nonNull(new GraphQLTypeReference("__Type"))))
                     .dataFetcher(possibleTypesFetcher))
             .field(newFieldDefinition()
                     .name("enumValues")
-                    .type(new GraphQLList(new GraphQLNonNull(__EnumValue)))
+                    .type(list(nonNull(__EnumValue)))
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
@@ -280,7 +300,7 @@ public class Introspection {
                     .dataFetcher(enumValuesTypesFetcher))
             .field(newFieldDefinition()
                     .name("inputFields")
-                    .type(new GraphQLList(new GraphQLNonNull(__InputValue)))
+                    .type(list(nonNull(__InputValue)))
                     .dataFetcher(inputFieldsFetcher))
             .field(newFieldDefinition()
                     .name("ofType")
@@ -318,21 +338,21 @@ public class Introspection {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("locations")
-                    .type(new GraphQLList(new GraphQLNonNull(__DirectiveLocation)))
+                    .type(list(nonNull(__DirectiveLocation)))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            GraphQLDirective directive = environment.getSource();
                             return new ArrayList<DirectiveLocation>(directive.validLocations());
                         }
                     }))
             .field(newFieldDefinition()
                     .name("args")
-                    .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__InputValue))))
+                    .type(nonNull(list(nonNull(__InputValue))))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            GraphQLDirective directive = environment.getSource();
                             return directive.getArguments();
                         }
                     }))
@@ -343,7 +363,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            GraphQLDirective directive = environment.getSource();
                             return directive.isOnOperation();
                         }
                     }))
@@ -354,10 +374,10 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            GraphQLDirective directive = environment.getSource();
                             return directive.isOnFragment() ||
                                     (directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT)
-                                    && directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD));
+                                            && directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD));
                         }
                     }))
             .field(newFieldDefinition()
@@ -367,7 +387,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = (GraphQLDirective) environment.getSource();
+                            GraphQLDirective directive = environment.getSource();
                             return directive.isOnField() ||
                                     directive.validLocations().contains(DirectiveLocation.FIELD);
                         }
@@ -382,22 +402,22 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("types")
                     .description("A list of all types supported by this server.")
-                    .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__Type))))
+                    .type(nonNull(list(nonNull(__Type))))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLSchema schema = (GraphQLSchema) environment.getSource();
+                            GraphQLSchema schema = environment.getSource();
                             return schema.getAllTypesAsList();
                         }
                     }))
             .field(newFieldDefinition()
                     .name("queryType")
                     .description("The type that query operations will be rooted at.")
-                    .type(new GraphQLNonNull(__Type))
+                    .type(nonNull(__Type))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLSchema schema = (GraphQLSchema) environment.getSource();
+                            GraphQLSchema schema = environment.getSource();
                             return schema.getQueryType();
                         }
                     }))
@@ -408,14 +428,14 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLSchema schema = (GraphQLSchema) environment.getSource();
+                            GraphQLSchema schema = environment.getSource();
                             return schema.getMutationType();
                         }
                     }))
             .field(newFieldDefinition()
                     .name("directives")
                     .description("'A list of all directives supported by this server.")
-                    .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(__Directive))))
+                    .type(nonNull(list(nonNull(__Directive))))
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
@@ -438,7 +458,7 @@ public class Introspection {
 
     public static GraphQLFieldDefinition SchemaMetaFieldDef = newFieldDefinition()
             .name("__schema")
-            .type(new GraphQLNonNull(__Schema))
+            .type(nonNull(__Schema))
             .description("Access the current type schema of this server.")
             .dataFetcher(new DataFetcher() {
                 @Override
@@ -453,7 +473,7 @@ public class Introspection {
             .description("Request the type information of a single type.")
             .argument(newArgument()
                     .name("name")
-                    .type(new GraphQLNonNull(GraphQLString)))
+                    .type(nonNull(GraphQLString)))
             .dataFetcher(new DataFetcher() {
                 @Override
                 public Object get(DataFetchingEnvironment environment) {
@@ -464,7 +484,7 @@ public class Introspection {
 
     public static GraphQLFieldDefinition TypeNameMetaFieldDef = newFieldDefinition()
             .name("__typename")
-            .type(new GraphQLNonNull(GraphQLString))
+            .type(nonNull(GraphQLString))
             .description("The name of the current Object type at runtime.")
             .dataFetcher(new DataFetcher() {
                 @Override

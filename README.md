@@ -242,14 +242,17 @@ GraphQLInputObjectType inputObjectType = newInputObject()
 
 `GraphQLList` and `GraphQLNonNull` wrap another type to declare a list or to forbid null values. 
 
-There are no builders to create new objects. Just normal constructors, because they are so simple.
-
 Example:
 
 ```java
-new GraphQLList(GraphQLString); // a list of Strings
+        GraphQLList.list((GraphQLString); // a list of Strings
 
-new GraphQLNonNull(GraphQLString); // a non null String
+        GraphQLNonNull.nonNull(GraphQLString); // a non null String
+
+        // with static imports its even shorter
+        newArgument()
+                .name("example")
+                .type(nonNull(list(GraphQLString)));
 
 ```
 
@@ -396,7 +399,7 @@ project how to use it.
 Relay sends queries to the GraphQL server as JSON containing a `query` field and a `variables` field. The `query` field is a JSON string,
 and the `variables` field is a map of variable definitions. A relay-compatible server will need to parse this JSON and pass the `query`
 string to this library as the query and the `variables` map as the third argument to `execute` as shown below. This is the implementation
-from the [todomvc-relay-java](https://github.com/andimarek/todomvc-relay-java) example.
+from the [todomvc-relay-java](https://github.com/graphql-java/todomvc-relay-java) example.
 
 ```java
 @RequestMapping(value = "/graphql", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -535,18 +538,38 @@ This implementation is based on the [js reference implementation](https://github
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
 
 ### Related projects
+* [todomvc-relay-java](https://github.com/graphql-java/todomvc-relay-java): Port of the Relay TodoMVC example to a java backend
 
-[graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
+* [graphql-java-type-generator](https://github.com/graphql-java/graphql-java-type-generator): This library will autogenerate GraphQL types for usage in com.graphql-java:graphql-java Edit
 
-[graphql-java-annotations](https://github.com/yrashk/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
+* [graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
 
-[graphql-java-servlet](https://github.com/yrashk/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
+* [graphql-java-annotations](https://github.com/graphql-java/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
+
+* [graphql-java-servlet](https://github.com/graphql-java/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
+
+* [graphql-apigen](https://github.com/Distelli/graphql-apigen): Generate Java APIs with GraphQL Schemas
+
+* [graphql-spring-boot](https://github.com/oembedler/graphql-spring-boot): GraphQL and GraphiQL Spring Framework Boot Starters
+
+* [spring-graphql-common](https://github.com/oembedler/spring-graphql-common): Spring Framework GraphQL Library
+
+* [graphql-jpa](https://github.com/jcrygier/graphql-jpa): JPA Implementation of GraphQL (builds on graphql-java)
+
+* [graphql-jpa-spring-boot-starter](https://github.com/timtebeek/graphql-jpa-spring-boot-starter): Spring Boot starter for GraphQL JPA; Expose JPA entities with GraphQL.
+
+* [graphkool](https://github.com/beyondeye/graphkool): GraphQl-java utilities in kotlin
+
+* [schemagen-graphql](https://github.com/bpatters/schemagen-graphql): GraphQL-Java add-on that adds support for Schema Generation & Execution for enterprise level applications.
+
+* [GraphQL-SPQR](https://github.com/leangen/GraphQL-SPQR): Java 8+ API for rapid development of GraphQL services
+
 
 ### License
 
 graphql-java is licensed under the MIT License. See [LICENSE](LICENSE.md) for details.
 
-Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/andimarek/graphql-java/graphs/contributors)
+Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/graphql-java/graphql-java/graphs/contributors)
 
 [graphql-js License](https://github.com/graphql/graphql-js/blob/master/LICENSE)
 
