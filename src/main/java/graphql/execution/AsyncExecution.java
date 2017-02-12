@@ -22,7 +22,9 @@ public class AsyncExecution extends Execution {
 
     public CompletionStage<ExecutionResult> executeAsync(GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
         ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver());
-        ExecutionContext executionContext = executionContextBuilder.build(graphQLSchema, queryStrategy, mutationStrategy, root, document, operationName, args);
+        ExecutionContext executionContext = executionContextBuilder
+          .executionId(ExecutionId.generate())
+          .build(graphQLSchema, queryStrategy, mutationStrategy, root, document, operationName, args);
         return executeOperationAsync(executionContext, root, executionContext.getOperationDefinition());
     }
 
