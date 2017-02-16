@@ -11,6 +11,8 @@ import java.util.Map;
 public interface DataFetchingEnvironment {
     /**
      * @param <T> you decide what type it is
+     * @param type you decide what type it is
+     *           this argument is for safe casting
      *
      * @return the current object being queried
      */
@@ -35,7 +37,8 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     *
+     * @param type you decide what type it is
+     *           this argument is for safe casting
      * @return the named argument or null if its not [present
      */
     <T> T getArgument(String name, Class<T> type);
@@ -45,6 +48,8 @@ public interface DataFetchingEnvironment {
      * is invoked
      *
      * @param <T> you decide what type it is
+     * @param type you decide what type it is
+     *           this argument is for safe casting
      *
      * @return a context object
      */
