@@ -11,9 +11,11 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeReference;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FunWithStringsSchemaFactory {
@@ -41,7 +43,7 @@ public class FunWithStringsSchemaFactory {
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.VALUE);
                 List<String> retVal = new ArrayList<String>();
-                for (String s: (List<String>) environment.getSource()) {
+                for (String s : (List<String>) environment.getSource(Object.class)) {
                     retVal.add("null".equals(s) ? null : s);
                 }
                 return retVal;
@@ -55,8 +57,8 @@ public class FunWithStringsSchemaFactory {
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.APPEND);
                 List<String> retVal = new ArrayList<String>();
-                for (String s: (List<String>) environment.getSource()) {
-                    retVal.add(s + environment.getArgument("text"));
+                for (String s : (List<String>) environment.getSource(List.class)) {
+                    retVal.add(s + environment.getArgument("text", String.class));
                 }
                 return retVal;
             }
@@ -68,7 +70,7 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.WORDS_AND_LETTERS);
-                List<String> sources = (List<String>) environment.getSource();
+                List<String> sources = environment.getSource(List.class);
                 List<List<List<String>>> retVal = new ArrayList<List<List<String>>>();
                 for (String source : sources) {
                     List<List<String>> sentence = new ArrayList<List<String>>();
@@ -91,18 +93,18 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.SPLIT);
-                String regex = environment.getArgument("regex");
-                List<String> sources = (List<String>) environment.getSource();
+                String regex = environment.getArgument("regex", String.class);
+                List<String> sources = environment.getSource(List.class);
                 List<List<String>> retVal = new ArrayList<List<String>>();
                 if (regex == null) {
-                    for (String source: sources) {
+                    for (String source : sources) {
                         retVal.add(null);
                     }
                     return retVal;
                 }
-                for (String source: sources) {
+                for (String source : sources) {
                     List<String> retItem = new ArrayList<String>();
-                    for (String str: source.split(regex)) {
+                    for (String str : source.split(regex)) {
                         if (str.isEmpty()) {
                             retItem.add(null);
                         } else {
@@ -121,11 +123,11 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.SHATTER);
-                List<String> sources = (List<String>) environment.getSource();
+                List<String> sources = environment.getSource(List.class);
                 List<List<String>> retVal = new ArrayList<List<String>>();
-                for (String source: sources) {
+                for (String source : sources) {
                     List<String> retItem = new ArrayList<String>();
-                    for (char c: source.toCharArray()) {
+                    for (char c : source.toCharArray()) {
                         retItem.add(Character.toString(c));
                     }
                     retVal.add(retItem);
@@ -142,19 +144,19 @@ public class FunWithStringsSchemaFactory {
     private DataFetcher stringObjectValueFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment e) {
-            return "null".equals(e.getSource()) ? null : e.getSource();
+            return "null".equals(e.getSource(String.class)) ? null : e.getSource(String.class);
         }
     };
 
     private DataFetcher shatterFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment e) {
-            String source = (String) e.getSource();
-            if(source.isEmpty()) {
+            String source = e.getSource(String.class);
+            if (source.isEmpty()) {
                 return null; // trigger error
             }
             List<String> retVal = new ArrayList<String>();
-            for (char c: source.toCharArray()) {
+            for (char c : source.toCharArray()) {
                 retVal.add(Character.toString(c));
             }
             return retVal;
@@ -164,11 +166,11 @@ public class FunWithStringsSchemaFactory {
     public DataFetcher wordsAndLettersFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment e) {
-            String source = (String) e.getSource();
+            String source = e.getSource(String.class);
             List<List<String>> retVal = new ArrayList<List<String>>();
-            for (String word: source.split(" ")) {
+            for (String word : source.split(" ")) {
                 List<String> retItem = new ArrayList<String>();
-                for (char c: word.toCharArray()) {
+                for (char c : word.toCharArray()) {
                     retItem.add(Character.toString(c));
                 }
                 retVal.add(retItem);
@@ -180,13 +182,13 @@ public class FunWithStringsSchemaFactory {
     public DataFetcher splitFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment e) {
-            String regex = e.getArgument("regex");
-            if (regex == null ) {
+            String regex = e.getArgument("regex", String.class);
+            if (regex == null) {
                 return null;
             }
-            String source = (String) e.getSource();
+            String source = e.getSource(String.class);
             List<String> retVal = new ArrayList<String>();
-            for (String str: source.split(regex)) {
+            for (String str : source.split(regex)) {
                 if (str.isEmpty()) {
                     retVal.add(null);
                 } else {
@@ -200,7 +202,7 @@ public class FunWithStringsSchemaFactory {
     public DataFetcher appendFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment e) {
-            return ((String)e.getSource()) + e.getArgument("text");
+            return ( e.getSource(String.class)) + e.getArgument("text", String.class);
         }
     };
 
@@ -248,7 +250,7 @@ public class FunWithStringsSchemaFactory {
 
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("wordsAndLetters")
-                        .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull( new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))))))
+                        .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))))))
                         .dataFetcher(wordsAndLettersFetcher))
 
                 .field(GraphQLFieldDefinition.newFieldDefinition()
@@ -298,15 +300,19 @@ public class FunWithStringsSchemaFactory {
                                 .type(Scalars.GraphQLString))
                         .dataFetcher(new DataFetcher() {
                             @Override
-                            public Object get(DataFetchingEnvironment env) {return env.getArgument("value");}
+                            public Object get(DataFetchingEnvironment env) {
+                                return env.getArgument("value", Object.class);
+                            }
                         }))
                 .name("EnumQuery")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("nullEnum")
                         .type(enumDayType)
                         .dataFetcher(new DataFetcher() {
-                           @Override
-                           public Object get(DataFetchingEnvironment env) {return null;}
+                            @Override
+                            public Object get(DataFetchingEnvironment env) {
+                                return null;
+                            }
                         }))
                 .build();
         return GraphQLSchema.newSchema()
