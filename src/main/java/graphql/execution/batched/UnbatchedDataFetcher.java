@@ -25,13 +25,14 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
-        List<Object> sources = environment.getSource();
+        @SuppressWarnings("unchecked")
+        List<Object> sources = environment.getSource(List.class);
         List<Object> results = new ArrayList<Object>();
         for (Object source : sources) {
             DataFetchingEnvironment singleEnv = new DataFetchingEnvironmentImpl(
                     source,
                     environment.getArguments(),
-                    environment.getContext(),
+                    environment.getContext(Object.class),
                     environment.getFields(),
                     environment.getFieldType(),
                     environment.getParentType(),

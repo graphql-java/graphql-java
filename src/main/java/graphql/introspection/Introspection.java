@@ -61,7 +61,7 @@ public class Introspection {
     public static DataFetcher kindDataFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            Object type = environment.getSource();
+            Object type = environment.getSource(Object.class);
             if (type instanceof GraphQLScalarType) {
                 return TypeKind.SCALAR;
             } else if (type instanceof GraphQLObjectType) {
@@ -101,11 +101,11 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            if (environment.getSource() instanceof GraphQLArgument) {
-                                GraphQLArgument inputField = environment.getSource();
+                            if (environment.getSource(Object.class) instanceof GraphQLArgument) {
+                                GraphQLArgument inputField = environment.getSource(GraphQLArgument.class);
                                 return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
-                            } else if (environment.getSource() instanceof GraphQLInputObjectField) {
-                                GraphQLInputObjectField inputField = environment.getSource();
+                            } else if (environment.getSource(Object.class) instanceof GraphQLInputObjectField) {
+                                GraphQLInputObjectField inputField = environment.getSource(GraphQLInputObjectField.class);
                                 return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
                             }
                             return null;
@@ -128,7 +128,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            Object type = environment.getSource();
+                            Object type = environment.getSource(Object.class);
                             return ((GraphQLFieldDefinition) type).getArguments();
                         }
                     }))
@@ -141,7 +141,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            Object type = environment.getSource();
+                            Object type = environment.getSource(Object.class);
                             return ((GraphQLFieldDefinition) type).isDeprecated();
                         }
                     }))
@@ -165,7 +165,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLEnumValueDefinition enumValue = environment.getSource();
+                            GraphQLEnumValueDefinition enumValue = environment.getSource(GraphQLEnumValueDefinition.class);
                             return enumValue.isDeprecated();
                         }
                     }))
@@ -177,8 +177,8 @@ public class Introspection {
     public static DataFetcher fieldsFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            Object type = environment.getSource();
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            Object type = environment.getSource(Object.class);
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated", Boolean.class);
             if (type instanceof GraphQLFieldsContainer) {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
                 List<GraphQLFieldDefinition> fieldDefinitions = fieldsContainer.getFieldDefinitions();
@@ -196,7 +196,7 @@ public class Introspection {
     public static DataFetcher interfacesFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            Object type = environment.getSource();
+            Object type = environment.getSource(Object.class);
             if (type instanceof GraphQLObjectType) {
                 return ((GraphQLObjectType) type).getInterfaces();
             }
@@ -207,7 +207,7 @@ public class Introspection {
     public static DataFetcher possibleTypesFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            Object type = environment.getSource();
+            Object type = environment.getSource(Object.class);
             if (type instanceof GraphQLInterfaceType) {
                 return new SchemaUtil().findImplementations(environment.getGraphQLSchema(), (GraphQLInterfaceType) type);
             }
@@ -221,8 +221,8 @@ public class Introspection {
     public static DataFetcher enumValuesTypesFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            Object type = environment.getSource();
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            Object type = environment.getSource(Object.class);
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated", Boolean.class);
             if (type instanceof GraphQLEnumType) {
                 List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
                 if (includeDeprecated) return values;
@@ -239,7 +239,7 @@ public class Introspection {
     public static DataFetcher inputFieldsFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            Object type = environment.getSource();
+            Object type = environment.getSource(Object.class);
             if (type instanceof GraphQLInputObjectType) {
                 return ((GraphQLInputObjectType) type).getFields();
             }
@@ -250,7 +250,7 @@ public class Introspection {
     public static DataFetcher OfTypeFetcher = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            Object type = environment.getSource();
+            Object type = environment.getSource(Object.class);
             if (type instanceof GraphQLList) {
                 return ((GraphQLList) type).getWrappedType();
             }
@@ -342,7 +342,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = environment.getSource();
+                            GraphQLDirective directive = environment.getSource(GraphQLDirective.class);
                             return new ArrayList<DirectiveLocation>(directive.validLocations());
                         }
                     }))
@@ -352,7 +352,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = environment.getSource();
+                            GraphQLDirective directive = environment.getSource(GraphQLDirective.class);
                             return directive.getArguments();
                         }
                     }))
@@ -363,7 +363,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = environment.getSource();
+                            GraphQLDirective directive = environment.getSource(GraphQLDirective.class);
                             return directive.isOnOperation();
                         }
                     }))
@@ -374,7 +374,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = environment.getSource();
+                            GraphQLDirective directive = environment.getSource(GraphQLDirective.class);
                             return directive.isOnFragment() ||
                                     (directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT)
                                             && directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD));
@@ -387,7 +387,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLDirective directive = environment.getSource();
+                            GraphQLDirective directive = environment.getSource(GraphQLDirective.class);
                             return directive.isOnField() ||
                                     directive.validLocations().contains(DirectiveLocation.FIELD);
                         }
@@ -406,7 +406,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLSchema schema = environment.getSource();
+                            GraphQLSchema schema = environment.getSource(GraphQLSchema.class);
                             return schema.getAllTypesAsList();
                         }
                     }))
@@ -417,7 +417,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLSchema schema = environment.getSource();
+                            GraphQLSchema schema = environment.getSource(GraphQLSchema.class);
                             return schema.getQueryType();
                         }
                     }))
@@ -428,7 +428,7 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            GraphQLSchema schema = environment.getSource();
+                            GraphQLSchema schema = environment.getSource(GraphQLSchema.class);
                             return schema.getMutationType();
                         }
                     }))
@@ -477,7 +477,7 @@ public class Introspection {
             .dataFetcher(new DataFetcher() {
                 @Override
                 public Object get(DataFetchingEnvironment environment) {
-                    String name = environment.getArgument("name");
+                    String name = environment.getArgument("name", String.class);
                     return environment.getGraphQLSchema().getType(name);
                 }
             }).build();

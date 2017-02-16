@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
  * situations, such as when a {@link graphql.schema.DataFetcher} must make a network or file system request.
  * </p>
  * <p>
- * When a {@link graphql.schema.DataFetcher} is batched, the {@link DataFetchingEnvironment#getSource()} method is
+ * When a {@link graphql.schema.DataFetcher} is batched, the {@link DataFetchingEnvironment#getSource(Class type)} method is
  * guaranteed to return a {@link java.util.List}.  The {@link graphql.schema.DataFetcher#get(DataFetchingEnvironment)}
  * method MUST return a parallel {@link java.util.List} which is equivalent to running a {@link graphql.schema.DataFetcher}
  * over each input element individually.
