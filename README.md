@@ -36,7 +36,7 @@ to checkout the appropriate tag when looking for the version documented here.
     - [Executing](#executing)
     - [Execution strategies](#execution-strategies)
     - [Logging](#logging)
-    - [Relay Support](#relay-support)
+    - [Relay and Apollo Support](#relay-and-apollo-support)
 - [Contributions](#contributions)
 - [Build it](#build-it)
 - [Development Build](#development-build)
@@ -391,12 +391,12 @@ Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [
 The `grapqhl-java` root Logger name is `graphql`.
 
 
-#### Relay Support
+#### Relay and Apollo Support
 
-There is a very basic Relay support included. Please look at https://github.com/andimarek/todomvc-relay-java for an example
+There is a very basic support for [Relay](https://github.com/facebook/relay) and [Apollo](https://github.com/apollographql/apollo-client) included. Apollo will work with any schema, but Relay requires that your schema follows the Relay specification. Please look at https://github.com/andimarek/todomvc-relay-java for an example
 project how to use it.
 
-Relay sends queries to the GraphQL server as JSON containing a `query` field and a `variables` field. The `query` field is a JSON string,
+Relay and Apollo send queries to the GraphQL server as JSON containing a `query` field and a `variables` field. The `query` field is a JSON string,
 and the `variables` field is a map of variable definitions. A relay-compatible server will need to parse this JSON and pass the `query`
 string to this library as the query and the `variables` map as the third argument to `execute` as shown below. This is the implementation
 from the [todomvc-relay-java](https://github.com/graphql-java/todomvc-relay-java) example.
