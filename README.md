@@ -393,7 +393,7 @@ The `grapqhl-java` root Logger name is `graphql`.
 
 #### Relay and Apollo Support
 
-There is a very basic support for [Relay](https://github.com/facebook/relay) and [Apollo](https://github.com/apollographql/apollo-client) included. Apollo will work with any schema, but Relay requires that your schema follows the Relay specification. Please look at https://github.com/andimarek/todomvc-relay-java for an example
+Very basic support for [Relay](https://github.com/facebook/relay) and [Apollo](https://github.com/apollographql/apollo-client) is included. While Apollo works with any schema, your schema will have to follow the Relay specification in order to work with Relay. Please look at https://github.com/andimarek/todomvc-relay-java for an example
 project how to use it.
 
 Relay and Apollo send queries to the GraphQL server as JSON containing a `query` field and a `variables` field. The `query` field is a JSON string,
