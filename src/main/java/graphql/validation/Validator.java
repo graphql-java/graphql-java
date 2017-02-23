@@ -68,6 +68,9 @@ public class Validator {
         rules.add(variablesAreInputTypes);
         VariableTypesMatchRule variableTypesMatchRule = new VariableTypesMatchRule(validationContext, validationErrorCollector);
         rules.add(variableTypesMatchRule);
+
+        LoneAnonymousOperation loneAnonymousOperation = new LoneAnonymousOperation(validationContext, validationErrorCollector);
+        rules.add(loneAnonymousOperation);
         
         return rules;
     }

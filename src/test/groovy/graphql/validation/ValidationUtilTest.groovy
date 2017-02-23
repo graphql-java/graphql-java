@@ -6,6 +6,8 @@ import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class ValidationUtilTest extends Specification {
 
@@ -34,12 +36,12 @@ class ValidationUtilTest extends Specification {
 
     def "null and NonNull is invalid"() {
         expect:
-        !validationUtil.isValidLiteralValue(null, new GraphQLNonNull(GraphQLString))
+        !validationUtil.isValidLiteralValue(null, nonNull(GraphQLString))
     }
 
     def "a nonNull value for a NonNull type is valid"() {
         expect:
-        validationUtil.isValidLiteralValue(new StringValue("string"), new GraphQLNonNull(GraphQLString))
+        validationUtil.isValidLiteralValue(new StringValue("string"), nonNull(GraphQLString))
     }
 
     def "null is valid when type is NonNull"() {
@@ -55,7 +57,7 @@ class ValidationUtilTest extends Specification {
     def "ArrayValue and ListType is invalid when one entry is invalid"() {
         given:
         def arrayValue = new ArrayValue([new BooleanValue(true)])
-        def type = new GraphQLList(GraphQLString)
+        def type = list(GraphQLString)
 
         expect:
         !validationUtil.isValidLiteralValue(arrayValue, type)
@@ -64,7 +66,7 @@ class ValidationUtilTest extends Specification {
     def "One value is a single element List"() {
         given:
         def singleValue = new BooleanValue(true)
-        def type = new GraphQLList(GraphQLBoolean)
+        def type = list(GraphQLBoolean)
         expect:
         validationUtil.isValidLiteralValue(singleValue, type)
     }
@@ -72,7 +74,7 @@ class ValidationUtilTest extends Specification {
     def "a valid array"() {
         given:
         def arrayValue = new ArrayValue([new StringValue("hello")])
-        def type = new GraphQLList(GraphQLString)
+        def type = list(GraphQLString)
 
         expect:
         validationUtil.isValidLiteralValue(arrayValue, type)
@@ -148,7 +150,7 @@ class ValidationUtilTest extends Specification {
                 .name("inputObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField()
                 .name("hello")
-                .type(new GraphQLNonNull(GraphQLString)))
+                .type(nonNull(GraphQLString)))
                 .build()
         def objectValue = new ObjectValue()
 

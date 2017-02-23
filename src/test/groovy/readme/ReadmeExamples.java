@@ -28,11 +28,14 @@ import static graphql.MutationSchema.mutationType;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.StarWarsSchema.queryType;
+import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLEnumType.newEnum;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 import static graphql.schema.GraphQLInputObjectType.newInputObject;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLUnionType.newUnionType;
 
@@ -53,9 +56,14 @@ public class ReadmeExamples {
     }
 
     void listsAndNonNullLists() {
-        new GraphQLList(GraphQLString); // a list of Strings
+        GraphQLList.list(GraphQLString); // a list of Strings
 
-        new GraphQLNonNull(GraphQLString); // a non null String
+        GraphQLNonNull.nonNull(GraphQLString); // a non null String
+
+        // with static imports its even shorter
+        newArgument()
+                .name("example")
+                .type(nonNull(list(GraphQLString)));
     }
 
     void newType() {
