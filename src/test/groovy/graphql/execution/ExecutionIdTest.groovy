@@ -13,9 +13,9 @@ class ExecutionIdTest extends Specification {
         ExecutionId executionId = null
 
         @Override
-        ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
+        ExecutionResult execute(ExecutionContext executionContext, Path currentPath, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
             executionId = executionContext.executionId
-            return super.execute(executionContext, parentType, source, fields)
+            return super.execute(executionContext, currentPath, parentType, source, fields)
         }
     }
 

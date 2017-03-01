@@ -14,7 +14,7 @@ class ExecutionStrategySpec extends Specification {
     def setup() {
         executionStrategy = new ExecutionStrategy() {
             @Override
-            ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
+            ExecutionResult execute(ExecutionContext executionContext, Path currentPath, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
                 return null
             }
         }
@@ -31,7 +31,7 @@ class ExecutionStrategySpec extends Specification {
         def fieldType = new GraphQLList(Scalars.GraphQLString)
         def result = Arrays.asList("test")
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, fieldType, [field], result)
+        def executionResult = executionStrategy.completeValue(executionContext, Path.root, fieldType, [field], result)
 
         then:
         executionResult.data == ["test"]
@@ -44,7 +44,7 @@ class ExecutionStrategySpec extends Specification {
         def fieldType = new GraphQLList(Scalars.GraphQLString)
         String[] result = ["test"]
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, fieldType, [field], result)
+        def executionResult = executionStrategy.completeValue(executionContext, Path.root, fieldType, [field], result)
 
         then:
         executionResult.data == ["test"]

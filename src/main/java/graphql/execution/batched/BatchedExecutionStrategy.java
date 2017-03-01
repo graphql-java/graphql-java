@@ -6,6 +6,7 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.Path;
 import graphql.language.Field;
 import graphql.schema.*;
 import org.slf4j.Logger;
@@ -32,13 +33,13 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private final BatchedDataFetcherFactory batchingFactory = new BatchedDataFetcherFactory();
 
     @Override
-    public ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
+    public ExecutionResult execute(ExecutionContext executionContext, Path currentPath, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
         GraphQLExecutionNodeDatum data = new GraphQLExecutionNodeDatum(new LinkedHashMap<String, Object>(), source);
         GraphQLExecutionNode root = new GraphQLExecutionNode(parentType, fields, singletonList(data));
-        return execute(executionContext, root);
+        return execute(executionContext, currentPath, root);
     }
 
-    private ExecutionResult execute(ExecutionContext executionContext, GraphQLExecutionNode root) {
+    private ExecutionResult execute(ExecutionContext executionContext, Path currentPath, GraphQLExecutionNode root) {
 
         Queue<GraphQLExecutionNode> nodes = new ArrayDeque<GraphQLExecutionNode>();
         nodes.add(root);
@@ -49,7 +50,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
             for (String fieldName : node.getFields().keySet()) {
                 List<Field> fieldList = node.getFields().get(fieldName);
-                List<GraphQLExecutionNode> childNodes = resolveField(executionContext, node.getParentType(),
+                List<GraphQLExecutionNode> childNodes = resolveField(executionContext, currentPath.withTrailing(fieldName), node.getParentType(),
                         node.getData(), fieldName, fieldList);
                 nodes.addAll(childNodes);
             }
@@ -66,14 +67,14 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     // Use the data.parentResult objects to put values into.  These are either primitives or empty maps
     // If they were empty maps, we need that list of nodes to process
 
-    private List<GraphQLExecutionNode> resolveField(ExecutionContext executionContext, GraphQLObjectType parentType,
+    private List<GraphQLExecutionNode> resolveField(ExecutionContext executionContext, Path currentPath, GraphQLObjectType parentType,
                                                     List<GraphQLExecutionNodeDatum> nodeData, String fieldName, List<Field> fields) {
 
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
         if (fieldDef == null) {
             return Collections.emptyList();
         }
-        List<GraphQLExecutionNodeValue> values = fetchData(executionContext, parentType, nodeData, fields, fieldDef);
+        List<GraphQLExecutionNodeValue> values = fetchData(executionContext, currentPath, parentType, nodeData, fields, fieldDef);
 
         return completeValues(executionContext, parentType, values, fieldName, fields, fieldDef.getType());
     }
@@ -242,7 +243,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     @SuppressWarnings("unchecked")
-    private List<GraphQLExecutionNodeValue> fetchData(ExecutionContext executionContext, GraphQLObjectType parentType,
+    private List<GraphQLExecutionNodeValue> fetchData(ExecutionContext executionContext, Path currentPath, GraphQLObjectType parentType,
                                                       List<GraphQLExecutionNodeDatum> nodeData, List<Field> fields, GraphQLFieldDefinition fieldDef) {
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
@@ -270,7 +271,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 values.add(null);
             }
             log.warn("Exception while fetching data", e);
-            executionContext.addError(new ExceptionWhileDataFetching(e));
+            executionContext.addError(new ExceptionWhileDataFetching(currentPath, e));
         }
         assert nodeData.size() == values.size();
 
