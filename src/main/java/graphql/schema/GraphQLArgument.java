@@ -4,6 +4,7 @@ package graphql.schema;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 public class GraphQLArgument {
 
@@ -13,7 +14,7 @@ public class GraphQLArgument {
     private final Object defaultValue;
 
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         assertNotNull(type, "type can't be null");
         this.name = name;
         this.description = description;

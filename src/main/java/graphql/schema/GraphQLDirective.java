@@ -6,6 +6,7 @@ import java.util.EnumSet;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 import static graphql.introspection.Introspection.DirectiveLocation;
 
 public class GraphQLDirective {
@@ -20,7 +21,7 @@ public class GraphQLDirective {
 
     public GraphQLDirective(String name, String description, EnumSet<DirectiveLocation> locations,
                             List<GraphQLArgument> arguments, boolean onOperation, boolean onFragment, boolean onField) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         assertNotNull(arguments, "arguments can't be null");
         this.name = name;
         this.description = description;

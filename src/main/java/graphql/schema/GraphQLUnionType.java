@@ -16,7 +16,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
 
     public GraphQLUnionType(String name, String description, List<GraphQLObjectType> types, TypeResolver typeResolver) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         assertNotNull(types, "types can't be null");
         assertNotEmpty(types, "A Union type must define one or more member types.");
         assertNotNull(typeResolver, "typeResolver can't be null");
