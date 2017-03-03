@@ -2,6 +2,8 @@ package graphql.execution;
 
 
 import graphql.GraphQLError;
+import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
@@ -21,8 +23,9 @@ public class ExecutionContext {
     private final Map<String, Object> variables;
     private final Object root;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<GraphQLError>();
+    private final Instrumentation instrumentation;
 
-    public ExecutionContext(ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
+    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.queryStrategy = queryStrategy;
@@ -31,10 +34,16 @@ public class ExecutionContext {
         this.operationDefinition = operationDefinition;
         this.variables = variables;
         this.root = root;
+        this.instrumentation = instrumentation;
     }
+
 
     public ExecutionId getExecutionId() {
         return executionId;
+    }
+
+    public Instrumentation getInstrumentation() {
+        return instrumentation;
     }
 
     public GraphQLSchema getGraphQLSchema() {

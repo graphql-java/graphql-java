@@ -4,14 +4,35 @@ import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
+import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.FieldFetchParameters;
+import graphql.execution.instrumentation.parameters.FieldParameters;
 import graphql.language.Field;
-import graphql.schema.*;
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.DataFetchingEnvironmentImpl;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-import static graphql.introspection.Introspection.*;
+import static graphql.introspection.Introspection.SchemaMetaFieldDef;
+import static graphql.introspection.Introspection.TypeMetaFieldDef;
+import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
@@ -35,15 +56,27 @@ public abstract class ExecutionStrategy {
                 executionContext.getGraphQLSchema()
         );
 
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+
+        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(new FieldParameters(executionContext, fieldDef));
+
+        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(new FieldFetchParameters(executionContext, fieldDef, environment));
         Object resolvedValue = null;
         try {
             resolvedValue = fieldDef.getDataFetcher().get(environment);
+
+            fetchCtx.onEnd(resolvedValue);
         } catch (Exception e) {
             log.warn("Exception while fetching data", e);
             executionContext.addError(new ExceptionWhileDataFetching(e));
+
+            fetchCtx.onEnd(e);
         }
 
-        return completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
+        ExecutionResult result = completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
+
+        fieldCtx.onEnd(result);
+        return result;
     }
 
     protected ExecutionResult completeValue(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fields, Object result) {
