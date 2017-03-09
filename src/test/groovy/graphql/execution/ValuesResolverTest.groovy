@@ -38,7 +38,7 @@ class ValuesResolverTest extends Specification {
 
     }
 
-    def "getVariableValues: object as variable input"() {
+    def "getVariableValues: map object as variable input"() {
         given:
         def nameField = newInputObjectField()
                 .name("name")
@@ -63,6 +63,41 @@ class ValuesResolverTest extends Specification {
         [name: 'a', id: 123]    || [name: 'a', id: 123]
         [id: 123]               || [id: 123]
         [name: 'x']             || [name: 'x']
+    }
+
+
+    class Person {
+        def name = ""
+        def id = 0
+
+        Person(name, id) {
+            this.name = name
+            this.id = id
+        }
+
+    }
+    
+    def "getVariableValues: object as variable input"() {
+        given:
+        def nameField = newInputObjectField()
+                .name("name")
+                .type(GraphQLString)
+        def idField = newInputObjectField()
+                .name("id")
+                .type(GraphQLInt)
+        def inputType = newInputObject()
+                .name("Person")
+                .field(nameField)
+                .field(idField)
+                .build()
+        def schema = TestUtil.schemaWithInputType(inputType)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
+
+        when:
+        def obj = new Person('a', 123)
+        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: obj])
+        then:
+        resolvedValues['variable'] == obj
     }
 
     def "getVariableValues: simple value gets resolved to a list when the type is a List"() {
