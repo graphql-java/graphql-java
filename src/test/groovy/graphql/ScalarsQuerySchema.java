@@ -15,7 +15,7 @@ public class ScalarsQuerySchema {
     public static final DataFetcher inputDF = new DataFetcher() {
         @Override
         public Object get(DataFetchingEnvironment environment) {
-            return environment.getArgument("input");
+            return environment.getArgument("input", Object.class);
         }
     };
 

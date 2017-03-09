@@ -27,8 +27,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T getSource() {
-        return (T) source;
+    public <T> T getSource(Class<T> type) {
+        return type.cast(source);
     }
 
     @Override
@@ -42,13 +42,13 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T getArgument(String name) {
-        return (T) arguments.get(name);
+    public <T> T getArgument(String name, Class<T> type) {
+        return type.cast(arguments.get(name));
     }
 
     @Override
-    public <T> T  getContext() {
-        return (T) context;
+    public <T> T getContext(Class<T> type) {
+        return type.cast(context);
     }
 
     @Override

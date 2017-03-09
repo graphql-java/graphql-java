@@ -18,7 +18,7 @@ public class PropertyDataFetcher implements DataFetcher {
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
-        Object source = environment.getSource();
+        Object source = environment.getSource(Object.class);
         if (source == null) return null;
         if (source instanceof Map) {
             return ((Map<?, ?>) source).get(propertyName);

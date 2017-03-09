@@ -35,8 +35,8 @@ public class NestedInputSchema {
                         .dataFetcher(new DataFetcher() {
                             @Override
                             public Object get(DataFetchingEnvironment environment) {
-                                Integer initialValue = environment.getArgument("initialValue");
-                                Map<String, Object> filter = environment.getArgument("filter");
+                                Integer initialValue = environment.getArgument("initialValue", Integer.class);
+                                Map<String, Object> filter = environment.getArgument("filter", Map.class);
                                 if (filter != null) {
                                     if (filter.containsKey("even")) {
                                         Boolean even = (Boolean) filter.get("even");

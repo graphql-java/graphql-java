@@ -11,10 +11,12 @@ import java.util.Map;
 public interface DataFetchingEnvironment {
     /**
      * @param <T> you decide what type it is
+     * @param type you decide what type it is
+     *           this argument is for safe casting
      *
      * @return the current object being queried
      */
-    <T> T getSource();
+    <T> T getSource(Class<T> type);
 
     /**
      * @return the arguments that have been passed in via the graphql query
@@ -35,20 +37,23 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     *
+     * @param type you decide what type it is
+     *           this argument is for safe casting
      * @return the named argument or null if its not [present
      */
-    <T> T getArgument(String name);
+    <T> T getArgument(String name, Class<T> type);
 
     /**
      * Returns a context argument that is set up when the {@link graphql.GraphQL#execute(String, Object)} method
      * is invoked
      *
      * @param <T> you decide what type it is
+     * @param type you decide what type it is
+     *           this argument is for safe casting
      *
      * @return a context object
      */
-    <T> T getContext();
+    <T> T getContext(Class<T> type);
 
     /**
      * @return the list of fields currently in query context

@@ -76,8 +76,8 @@ public class MutationSchema {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            Integer newNumber = environment.getArgument("newNumber");
-                            Root root = (Root) environment.getSource();
+                            Integer newNumber = environment.getArgument("newNumber", Integer.class);
+                            Root root = environment.getSource(Root.class);
                             return root.changeNumber(newNumber);
                         }
                     }))
@@ -90,8 +90,8 @@ public class MutationSchema {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            Integer newNumber = environment.getArgument("newNumber");
-                            Root root = (Root) environment.getSource();
+                            Integer newNumber = environment.getArgument("newNumber", Integer.class);
+                            Root root = environment.getSource(Root.class);
                             return root.failToChangeTheNumber(newNumber);
                         }
                     }))
