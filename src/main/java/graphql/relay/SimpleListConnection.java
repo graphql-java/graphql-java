@@ -1,6 +1,5 @@
 package graphql.relay;
 
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -10,12 +9,19 @@ import java.util.List;
 public class SimpleListConnection implements DataFetcher {
 
     private static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
-    private List<?> data = new ArrayList<Object>();
+    private final String prefix;
+    private final List<?> data;
 
+    public SimpleListConnection(List<?> data, String prefix) {
+        if (prefix == null || prefix.length() == 0) {
+            throw new IllegalArgumentException("prefix cannot be null or empty");
+        }
+        this.prefix = prefix;
+        this.data = data;
+    }
 
     public SimpleListConnection(List<?> data) {
-        this.data = data;
-
+        this(data, DUMMY_CURSOR_PREFIX);
     }
 
     private List<Edge> buildEdges() {
@@ -27,12 +33,10 @@ public class SimpleListConnection implements DataFetcher {
         return edges;
     }
 
-
     @Override
     public Object get(DataFetchingEnvironment environment) {
 
         List<Edge> edges = buildEdges();
-
 
         int afterOffset = getOffsetFromCursor(environment.<String>getArgument("after"), -1);
         int begin = Math.max(afterOffset, -1) + 1;
@@ -44,7 +48,6 @@ public class SimpleListConnection implements DataFetcher {
             return emptyConnection();
         }
 
-
         Integer first = environment.<Integer>getArgument("first");
         Integer last = environment.<Integer>getArgument("last");
 
@@ -55,7 +58,7 @@ public class SimpleListConnection implements DataFetcher {
             edges = edges.subList(0, first <= edges.size() ? first : edges.size());
         }
         if (last != null) {
-            edges = edges.subList( last > edges.size() ? 0 : edges.size() - last, edges.size());
+            edges = edges.subList(last > edges.size() ? 0 : edges.size() - last, edges.size());
         }
 
         if (edges.size() == 0) {
@@ -84,24 +87,20 @@ public class SimpleListConnection implements DataFetcher {
         return connection;
     }
 
-
     public ConnectionCursor cursorForObjectInConnection(Object object) {
         int index = data.indexOf(object);
         String cursor = createCursor(index);
         return new DefaultConnectionCursor(cursor);
     }
 
-
     private int getOffsetFromCursor(String cursor, int defaultValue) {
         if (cursor == null) return defaultValue;
         String string = Base64.fromBase64(cursor);
-        return Integer.parseInt(string.substring(DUMMY_CURSOR_PREFIX.length()));
+        return Integer.parseInt(string.substring(prefix.length()));
     }
 
     private String createCursor(int offset) {
-        String string = Base64.toBase64(DUMMY_CURSOR_PREFIX + Integer.toString(offset));
+        String string = Base64.toBase64(prefix + Integer.toString(offset));
         return string;
     }
-
-
 }
