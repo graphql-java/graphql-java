@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * Fetches data directly from a field.
  */
-public class FieldDataFetcher implements DataFetcher {
+public class FieldDataFetcher<T> implements DataFetcher<T> {
 
     /**
      * The name of the field.
@@ -23,14 +23,15 @@ public class FieldDataFetcher implements DataFetcher {
         this.fieldName = fieldName;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object get(DataFetchingEnvironment environment) {
+    public T get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();
         if (source == null) return null;
         if (source instanceof Map) {
-            return ((Map<?, ?>) source).get(fieldName);
+            return (T) ((Map<?, ?>) source).get(fieldName);
         }
-        return getFieldValue(source, environment.getFieldType());
+        return (T) getFieldValue(source, environment.getFieldType());
     }
 
     /**

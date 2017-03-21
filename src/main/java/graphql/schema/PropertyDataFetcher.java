@@ -9,7 +9,7 @@ import java.util.Map;
 
 import static graphql.Scalars.GraphQLBoolean;
 
-public class PropertyDataFetcher implements DataFetcher {
+public class PropertyDataFetcher<T> implements DataFetcher<T> {
 
     private final String propertyName;
 
@@ -17,14 +17,15 @@ public class PropertyDataFetcher implements DataFetcher {
         this.propertyName = propertyName;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object get(DataFetchingEnvironment environment) {
+    public T get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();
         if (source == null) return null;
         if (source instanceof Map) {
-            return ((Map<?, ?>) source).get(propertyName);
+            return (T) ((Map<?, ?>) source).get(propertyName);
         }
-        return getPropertyViaGetter(source, environment.getFieldType());
+        return (T) getPropertyViaGetter(source, environment.getFieldType());
     }
 
     /**
