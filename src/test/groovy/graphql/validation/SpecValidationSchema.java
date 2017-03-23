@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import graphql.Scalars;
+import graphql.TypeResolutionEnvironment;
 import graphql.schema.FieldDataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
@@ -47,9 +48,9 @@ public class SpecValidationSchema {
                     "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
             .typeResolver(new TypeResolver() {
             @Override
-            public GraphQLObjectType getType(Object object) {
-                if (object instanceof Human) return human;
-                if (object instanceof Alien) return alien;
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                if (env.getObject() instanceof Human) return human;
+                if (env.getObject() instanceof Alien) return alien;
                 return null;
             }})
             .build();
@@ -60,9 +61,9 @@ public class SpecValidationSchema {
                     "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
             .typeResolver(new TypeResolver() {
             @Override
-            public GraphQLObjectType getType(Object object) {
-                if (object instanceof Dog) return dog;
-                if (object instanceof Cat) return cat;
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                if (env.getObject() instanceof Dog) return dog;
+                if (env.getObject() instanceof Cat) return cat;
                 return null;
             }})
             .build();
@@ -136,9 +137,9 @@ public class SpecValidationSchema {
             .possibleTypes(cat, dog)
             .typeResolver(new TypeResolver() {
             @Override
-            public GraphQLObjectType getType(Object object) {
-                if (object instanceof Cat) return cat;
-                if (object instanceof Dog) return dog;
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                if (env.getObject() instanceof Cat) return cat;
+                if (env.getObject() instanceof Dog) return dog;
                 return null;
             }})
             .build();
@@ -148,9 +149,9 @@ public class SpecValidationSchema {
             .possibleTypes(dog, human)
             .typeResolver(new TypeResolver() {
             @Override
-            public GraphQLObjectType getType(Object object) {
-                if (object instanceof Human) return human;
-                if (object instanceof Dog) return dog;
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                if (env.getObject() instanceof Human) return human;
+                if (env.getObject() instanceof Dog) return dog;
                 return null;
             }})
             .build();
@@ -160,9 +161,9 @@ public class SpecValidationSchema {
             .possibleTypes(human, alien)
             .typeResolver(new TypeResolver() {
             @Override
-            public GraphQLObjectType getType(Object object) {
-                if (object instanceof Human) return human;
-                if (object instanceof Alien) return alien;
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                if (env.getObject() instanceof Human) return human;
+                if (env.getObject() instanceof Alien) return alien;
                 return null;
             }})
             .build();

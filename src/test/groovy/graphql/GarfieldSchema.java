@@ -1,12 +1,17 @@
 package graphql;
 
 
-import graphql.schema.*;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.TypeResolver;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
@@ -108,14 +113,14 @@ public class GarfieldSchema {
                     .type(GraphQLString))
             .typeResolver(new TypeResolver() {
                 @Override
-                public GraphQLObjectType getType(Object object) {
-                    if (object instanceof Dog) {
+                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                    if (env.getObject() instanceof Dog) {
                         return DogType;
                     }
-                    if (object instanceof Person) {
+                    if (env.getObject() instanceof Person) {
                         return PersonType;
                     }
-                    if (object instanceof Cat) {
+                    if (env.getObject() instanceof Cat) {
                         return CatType;
                     }
                     return null;
@@ -151,11 +156,11 @@ public class GarfieldSchema {
             .possibleType(DogType)
             .typeResolver(new TypeResolver() {
                 @Override
-                public GraphQLObjectType getType(Object object) {
-                    if (object instanceof Cat) {
+                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                    if (env.getObject() instanceof Cat) {
                         return CatType;
                     }
-                    if (object instanceof Dog) {
+                    if (env.getObject() instanceof Dog) {
                         return DogType;
                     }
                     return null;

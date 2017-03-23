@@ -1,9 +1,16 @@
 package graphql;
 
-import graphql.relay.Relay;
-import graphql.schema.*;
-
 import java.util.ArrayList;
+
+import graphql.relay.Relay;
+import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.TypeResolver;
 
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -23,8 +30,8 @@ public class RelaySchema {
 
     public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(new TypeResolver() {
         @Override
-        public GraphQLObjectType getType(Object object) {
-            Relay.ResolvedGlobalId resolvedGlobalId = relay.fromGlobalId((String) object);
+        public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+            Relay.ResolvedGlobalId resolvedGlobalId = relay.fromGlobalId((String) env.getObject());
             //TODO: implement
             return null;
         }
