@@ -1,16 +1,9 @@
 package graphql;
 
-import java.util.ArrayList;
-
 import graphql.relay.Relay;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.TypeResolver;
+import graphql.schema.*;
+
+import java.util.ArrayList;
 
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;

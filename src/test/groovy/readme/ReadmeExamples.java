@@ -1,9 +1,5 @@
 package readme;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
 import graphql.GarfieldSchema;
 import graphql.GraphQL;
 import graphql.StarWarsSchema;
@@ -22,6 +18,10 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.TypeResolver;
+
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static graphql.GarfieldSchema.CatType;
 import static graphql.GarfieldSchema.DogType;

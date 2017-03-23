@@ -1,17 +1,12 @@
 package graphql;
 
 
+import graphql.schema.*;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLUnionType;
-import graphql.schema.TypeResolver;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;

@@ -1,18 +1,9 @@
 package graphql.validation.rules;
 
 import graphql.TypeResolutionEnvironment;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeReference;
-import graphql.schema.GraphQLUnionType;
-import graphql.schema.TypeResolver;
+import graphql.schema.*;
 
-import static graphql.Scalars.GraphQLBoolean;
-import static graphql.Scalars.GraphQLInt;
-import static graphql.Scalars.GraphQLString;
+import static graphql.Scalars.*;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLEnumType.newEnum;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
