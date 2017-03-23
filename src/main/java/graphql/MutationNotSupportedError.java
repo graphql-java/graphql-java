@@ -5,22 +5,17 @@ import graphql.language.SourceLocation;
 
 import java.util.List;
 
-public class ExceptionWhileDataFetching implements GraphQLError {
-
-    private final Throwable exception;
-
-    public ExceptionWhileDataFetching(Throwable exception) {
-        this.exception = exception;
-    }
-
-    public Throwable getException() {
-        return exception;
-    }
-
+/**
+ * The graphql spec says that mutations are optional but it does not specify how to respond
+ * when it is not supported.  This error is returned in this case.
+ *
+ * http://facebook.github.io/graphql/#sec-Initial-types
+ */
+public class MutationNotSupportedError implements GraphQLError {
 
     @Override
     public String getMessage() {
-        return "Exception while fetching data: " + exception.toString();
+        return "Mutations are not supported onm this schema";
     }
 
     @Override
@@ -30,14 +25,12 @@ public class ExceptionWhileDataFetching implements GraphQLError {
 
     @Override
     public ErrorType getErrorType() {
-        return ErrorType.DataFetchingException;
+        return ErrorType.MutationsNoSupported;
     }
 
     @Override
     public String toString() {
-        return "ExceptionWhileDataFetching{" +
-                "exception=" + exception +
-                '}';
+        return "MutationNotSupportedError";
     }
 
     @Override
