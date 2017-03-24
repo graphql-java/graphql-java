@@ -25,7 +25,7 @@ public class MutationNotSupportedError implements GraphQLError {
 
     @Override
     public ErrorType getErrorType() {
-        return ErrorType.MutationsNoSupported;
+        return ErrorType.MutationNotSupported;
     }
 
     @Override
