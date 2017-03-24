@@ -6,6 +6,6 @@ public enum ErrorType {
     InvalidSyntax,
     ValidationError,
     DataFetchingException,
-    MutationsNoSupported
+    MutationNotSupported
 
 }
