@@ -6,6 +6,7 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.TypeResolutionParameters;
 import graphql.language.Field;
 import graphql.schema.*;
 import org.slf4j.Logger;
@@ -200,9 +201,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private GraphQLObjectType getGraphQLObjectType(ExecutionContext executionContext, Field field, GraphQLType fieldType, Object value, Map<String, Object> argumentValues) {
         GraphQLObjectType resolvedType = null;
         if (fieldType instanceof GraphQLInterfaceType) {
-            resolvedType = resolveType(field, (GraphQLInterfaceType) fieldType, value, argumentValues, executionContext.getGraphQLSchema());
+            resolvedType = resolveTypeForInterface(TypeResolutionParameters.newParameters().graphQLInterfaceType((GraphQLInterfaceType) fieldType)
+                    .field(field).value(value).argumentValues(argumentValues).schema(executionContext.getGraphQLSchema()).build());
         } else if (fieldType instanceof GraphQLUnionType) {
-            resolvedType = resolveType(field, (GraphQLUnionType) fieldType, value, argumentValues, executionContext.getGraphQLSchema());
+            resolvedType = resolveTypeForUnion(TypeResolutionParameters.newParameters().graphQLUnionType((GraphQLUnionType) fieldType)
+                    .field(field).value(value).argumentValues(argumentValues).schema(executionContext.getGraphQLSchema()).build());
         } else if (fieldType instanceof GraphQLObjectType) {
             resolvedType = (GraphQLObjectType) fieldType;
         }
