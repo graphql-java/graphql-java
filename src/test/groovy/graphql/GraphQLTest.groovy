@@ -154,13 +154,13 @@ class GraphQLTest extends Specification {
         set.add("Two")
 
         def schema = GraphQLSchema.newSchema()
-          .query(GraphQLObjectType.newObject()
-            .name("QueryType")
-            .field(GraphQLFieldDefinition.newFieldDefinition()
-              .name("set")
-              .type(new GraphQLList(GraphQLString))
-              .dataFetcher({ set })))
-          .build()
+                .query(GraphQLObjectType.newObject()
+                .name("QueryType")
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .name("set")
+                .type(new GraphQLList(GraphQLString))
+                .dataFetcher({ set })))
+                .build()
 
         when:
         def data = GraphQL.newGraphQL(schema).build().execute("query { set }").data
@@ -203,7 +203,7 @@ class GraphQLTest extends Specification {
                         .name("RootQueryType")
                         .field(newFieldDefinition().name("name").type(GraphQLString))
         )
-        .build()
+                .build()
 
         def query = """
         query Query1 { name }
@@ -215,5 +215,22 @@ class GraphQLTest extends Specification {
 
         then:
         thrown(GraphQLException)
+    }
+
+    def "null mutation type does not throw an npe re: #345 but returns and error"() {
+        given:
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("Query")
+        )
+                .build()
+
+        when:
+        def result = new GraphQL(schema).execute("mutation { doesNotExist }");
+
+        then:
+        result.errors.size() == 1
+        result.errors[0].class == MutationNotSupportedError
     }
 }

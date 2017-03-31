@@ -87,9 +87,9 @@ public class GraphQL {
 
     private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation) {
         this.graphQLSchema = assertNotNull(graphQLSchema,"queryStrategy must be non null");
-        this.queryStrategy = assertNotNull(queryStrategy, "queryStrategy must be non null");
+        this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
+        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
-        this.mutationStrategy = mutationStrategy;
         this.instrumentation = instrumentation;
     }
 
@@ -143,6 +143,9 @@ public class GraphQL {
         }
 
         public GraphQL build() {
+            assertNotNull(graphQLSchema,"queryStrategy must be non null");
+            assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
+            assertNotNull(idProvider, "idProvider must be non null");
             return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, idProvider, instrumentation);
         }
     }

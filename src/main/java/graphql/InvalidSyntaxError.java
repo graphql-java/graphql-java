@@ -46,12 +46,7 @@ public class InvalidSyntaxError implements GraphQLError {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        InvalidSyntaxError that = (InvalidSyntaxError) o;
-
-        return Helper.equals(this,that);
+        return Helper.equals(this, o);
     }
 
     @Override

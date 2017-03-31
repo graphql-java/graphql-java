@@ -64,12 +64,7 @@ public class ValidationError implements GraphQLError {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ValidationError that = (ValidationError) o;
-
-        return Helper.equals(this, that);
+        return Helper.equals(this, o);
     }
 
     @Override

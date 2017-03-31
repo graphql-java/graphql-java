@@ -28,10 +28,14 @@ public interface GraphQLError {
             return result;
         }
 
-        public static boolean equals(GraphQLError dis, GraphQLError dat) {
-            if (dis == dat) {
+        public static boolean equals(GraphQLError dis, Object o) {
+            if (dis == o) {
                 return true;
             }
+            if (o == null || dis.getClass() != o.getClass()) return false;
+
+            GraphQLError dat = (GraphQLError) o;
+
             if (dis.getMessage() != null ? !dis.getMessage().equals(dat.getMessage()) : dat.getMessage() != null)
                 return false;
             if (dis.getLocations() != null ? !dis.getLocations().equals(dat.getLocations()) : dat.getLocations() != null)
