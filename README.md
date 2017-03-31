@@ -566,6 +566,7 @@ For example the StarWarSchema and the tests (among a lot of other things) are si
 
 * [GraphQL-SPQR](https://github.com/leangen/GraphQL-SPQR): Java 8+ API for rapid development of GraphQL services
 
+* [Light Java GraphQL](https://github.com/networknt/light-java-graphql): A lightweight, fast microservices framework with all other cross-cutting concerns addressed that is ready to plug in GraphQL schema. 
 
 ### License
 
