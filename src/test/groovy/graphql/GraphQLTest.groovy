@@ -218,6 +218,24 @@ class GraphQLTest extends Specification {
         thrown(GraphQLException)
     }
 
+    def "null mutation type does not throw an npe re: #345 but returns and error"() {
+        given:
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("Query")
+        )
+                .build()
+
+        when:
+        def result = new GraphQL(schema).execute("mutation { doesNotExist }");
+
+        then:
+        result.errors.size() == 1
+        result.errors[0].class == MutationNotSupportedError
+    }
+
+
     class ParentTypeImplementation {
         String nullChild = null
         String nonNullChild = "not null"
