@@ -260,56 +260,6 @@ class GraphqlExecutionSpec extends Specification {
 
     }
 
-    def "Illegal null value for primitives"() {
-
-        given:
-        String query =
-                "{ " +
-                        "string(value: \"Shxnull\") {" +
-                        "split(regex: \"x\") {" +
-                        "nonNullValue " +
-                        "} " +
-                        "} " +
-                        "}";
-
-        expect:
-        runTestExpectError(query, "non-null");
-    }
-
-
-    def "Illegal null value for objects"() {
-        given:
-        String query =
-                "{ " +
-                        "string(value: \"\") {" +
-                        "shatter { " +
-                        "value " +
-                        "} " +
-                        "} " +
-                        "}";
-
-        expect:
-        runTestExpectError(query, "non-null");
-
-    }
-
-
-    def "Illegal null value for nested non-null field"() {
-        given:
-        String query =
-                "{ " +
-                        "string(value: \"Shxnull\") {" +
-                        "split(regex: \"x\") {" +
-                        "veryNonNullValue " +
-                        "} " +
-                        "} " +
-                        "}";
-
-        expect:
-        runTestExpectError(query, "non-null");
-    }
-
-
     def "Illegal null value for an object in a list"() {
         given:
         String query =

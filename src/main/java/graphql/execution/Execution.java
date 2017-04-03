@@ -2,6 +2,7 @@ package graphql.execution;
 
 
 import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -16,6 +17,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static graphql.execution.ExecutionParameters.newParameters;
+import static graphql.execution.TypeInfo.newTypeInfo;
 
 public class Execution {
 
@@ -62,11 +66,29 @@ public class Execution {
         Map<String, List<Field>> fields = new LinkedHashMap<String, List<Field>>();
         fieldCollector.collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<String>(), fields);
 
+
+        ExecutionParameters parameters = newParameters()
+                .typeInfo(newTypeInfo().type(operationRootType))
+                .source(root)
+                .fields(fields)
+                .build();
+
         ExecutionResult result;
-        if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-            result = mutationStrategy.execute(executionContext, operationRootType, root, fields);
-        } else {
-            result = queryStrategy.execute(executionContext, operationRootType, root, fields);
+        try {
+            if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+                result = mutationStrategy.execute(executionContext, parameters);
+            } else {
+                result = queryStrategy.execute(executionContext, parameters);
+            }
+        } catch (NonNullableFieldWasNullException e) {
+            // this means it was non null types all the way from an offending non null type
+            // up to the root object type and there was a a null value some where.
+            //
+            // The spec says we should return null for the data in this case
+            //
+            // http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
+            //
+            result = new ExecutionResultImpl(null, executionContext.getErrors());
         }
 
         dataFetchCtx.onEnd(result);

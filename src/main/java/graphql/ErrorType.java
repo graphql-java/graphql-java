@@ -6,5 +6,4 @@ public enum ErrorType {
     InvalidSyntax,
     ValidationError,
     DataFetchingException
-
 }

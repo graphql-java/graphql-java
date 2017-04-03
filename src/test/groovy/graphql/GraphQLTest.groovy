@@ -8,6 +8,7 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 
@@ -154,13 +155,13 @@ class GraphQLTest extends Specification {
         set.add("Two")
 
         def schema = GraphQLSchema.newSchema()
-          .query(GraphQLObjectType.newObject()
-            .name("QueryType")
-            .field(GraphQLFieldDefinition.newFieldDefinition()
-              .name("set")
-              .type(new GraphQLList(GraphQLString))
-              .dataFetcher({ set })))
-          .build()
+                .query(GraphQLObjectType.newObject()
+                .name("QueryType")
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .name("set")
+                .type(new GraphQLList(GraphQLString))
+                .dataFetcher({ set })))
+                .build()
 
         when:
         def data = GraphQL.newGraphQL(schema).build().execute("query { set }").data
@@ -203,7 +204,7 @@ class GraphQLTest extends Specification {
                         .name("RootQueryType")
                         .field(newFieldDefinition().name("name").type(GraphQLString))
         )
-        .build()
+                .build()
 
         def query = """
         query Query1 { name }
@@ -216,4 +217,99 @@ class GraphQLTest extends Specification {
         then:
         thrown(GraphQLException)
     }
+
+    class ParentTypeImplementation {
+        String nullChild = null
+        String nonNullChild = "not null"
+    }
+
+    def "#268 - null child field values are allowed in nullable parent type"() {
+
+        // see https://github.com/graphql-java/graphql-java/issues/268
+
+        given:
+
+
+        GraphQLOutputType parentType = newObject()
+                .name("currentType")
+                .field(newFieldDefinition().name("nullChild")
+                .type(nonNull(GraphQLString)))
+                .field(newFieldDefinition().name("nonNullChild")
+                .type(nonNull(GraphQLString)))
+                .build()
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition()
+                        .name("parent")
+                        .type(parentType) // nullable parent
+                        .dataFetcher({ env -> new ParentTypeImplementation() })
+
+                ))
+                .build()
+
+        def query = """
+        query { 
+            parent {
+                nonNullChild
+                nullChild
+            }
+        }
+        """
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+
+        result.errors.size() == 1
+        result.data["parent"] == null
+    }
+
+    def "#268 - null child field values are NOT allowed in non nullable parent types"() {
+
+        // see https://github.com/graphql-java/graphql-java/issues/268
+
+        given:
+
+
+        GraphQLOutputType parentType = newObject()
+                .name("currentType")
+                .field(newFieldDefinition().name("nullChild")
+                .type(nonNull(GraphQLString)))
+                .field(newFieldDefinition().name("nonNullChild")
+                .type(nonNull(GraphQLString)))
+                .build()
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                    .name("RootQueryType")
+                    .field(
+                    newFieldDefinition()
+                        .name("parent")
+                        .type(nonNull(parentType)) // non nullable parent
+                        .dataFetcher({ env -> new ParentTypeImplementation() })
+
+                ))
+                .build()
+
+        def query = """
+        query { 
+            parent {
+                nonNullChild
+                nullChild
+            }
+        }
+        """
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+
+        result.errors.size() == 1
+        result.data == null
+    }
+
 }

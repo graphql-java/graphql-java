@@ -17,7 +17,7 @@ import java.util.concurrent.Future;
 /**
  * <p>ExecutorServiceExecutionStrategy uses an {@link ExecutorService} to parallelize the resolve.</p>
  * 
- * Due to the nature of {@link #execute(ExecutionContext, GraphQLObjectType, Object, Map)} implementation, {@link ExecutorService}
+ * Due to the nature of {@link #execute(ExecutionContext, ExecutionParameters)}  implementation, {@link ExecutorService}
  * MUST have the following 2 characteristics:
  * <ul>
  * <li>1. The underlying {@link java.util.concurrent.ThreadPoolExecutor} MUST have a reasonable {@code maximumPoolSize}
@@ -37,17 +37,18 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
     }
 
     @Override
-    public ExecutionResult execute(final ExecutionContext executionContext, final GraphQLObjectType parentType, final Object source, final Map<String, List<Field>> fields) {
+    public ExecutionResult execute(final ExecutionContext executionContext, final ExecutionParameters parameters) {
         if (executorService == null)
-            return new SimpleExecutionStrategy().execute(executionContext, parentType, source, fields);
+            return new SimpleExecutionStrategy().execute(executionContext,parameters);
 
+        Map<String, List<Field>> fields = parameters.fields();
         Map<String, Future<ExecutionResult>> futures = new LinkedHashMap<String, Future<ExecutionResult>>();
         for (String fieldName : fields.keySet()) {
             final List<Field> fieldList = fields.get(fieldName);
             Callable<ExecutionResult> resolveField = new Callable<ExecutionResult>() {
                 @Override
                 public ExecutionResult call() throws Exception {
-                    return resolveField(executionContext, parentType, source, fieldList);
+                    return resolveField(executionContext, parameters, fieldList);
 
                 }
             };
