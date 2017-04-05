@@ -449,8 +449,8 @@ public class Introspection {
                     .dataFetcher(new DataFetcher() {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
-                            // Not yet supported
-                            return null;
+                            GraphQLSchema schema = environment.getSource();
+                            return schema.getSubscriptionType();
                         }
                     }))
             .build();

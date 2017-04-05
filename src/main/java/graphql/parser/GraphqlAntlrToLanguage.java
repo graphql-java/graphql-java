@@ -143,6 +143,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             return OperationDefinition.Operation.QUERY;
         } else if (operationTypeContext.getText().equals("mutation")) {
             return OperationDefinition.Operation.MUTATION;
+        } else if (operationTypeContext.getText().equals("subscription")) {
+            return OperationDefinition.Operation.SUBSCRIPTION;
         } else {
             throw new RuntimeException("InternalError: unknown operationTypeContext="+operationTypeContext.getText());
         }

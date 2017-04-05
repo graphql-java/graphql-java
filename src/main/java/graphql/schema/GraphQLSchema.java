@@ -21,6 +21,7 @@ public class GraphQLSchema {
 
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
+    private final GraphQLObjectType subscriptionType;
     private final Map<String, GraphQLType> typeMap;
     private Set<GraphQLType> dictionary;
 
@@ -33,10 +34,15 @@ public class GraphQLSchema {
     }
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> dictionary) {
+        this(queryType, mutationType, null, dictionary);
+    }
+
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary) {
         assertNotNull(dictionary, "dictionary can't be null");
         assertNotNull(queryType, "queryType can't be null");
         this.queryType = queryType;
         this.mutationType = mutationType;
+        this.subscriptionType = subscriptionType;
         this.dictionary = dictionary;
         typeMap = new SchemaUtil().allTypes(this, dictionary);
     }
@@ -53,9 +59,12 @@ public class GraphQLSchema {
         return queryType;
     }
 
-
     public GraphQLObjectType getMutationType() {
         return mutationType;
+    }
+
+    public GraphQLObjectType getSubscriptionType() {
+        return subscriptionType;
     }
 
     public List<GraphQLDirective> getDirectives() {
@@ -69,7 +78,6 @@ public class GraphQLSchema {
         return null;
     }
 
-
     public boolean isSupportingMutations() {
         return mutationType != null;
     }
@@ -81,6 +89,7 @@ public class GraphQLSchema {
     public static class Builder {
         private GraphQLObjectType queryType;
         private GraphQLObjectType mutationType;
+        private GraphQLObjectType subscriptionType;
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -100,13 +109,22 @@ public class GraphQLSchema {
             return this;
         }
 
+        public Builder subscription(GraphQLObjectType.Builder builder) {
+            return subscription(builder.build());
+        }
+
+        public Builder subscription(GraphQLObjectType subscriptionType) {
+            this.subscriptionType = subscriptionType;
+            return this;
+        }
+
         public GraphQLSchema build() {
             return build(Collections.<GraphQLType>emptySet());
         }
 
         public GraphQLSchema build(Set<GraphQLType> dictionary) {
             Assert.assertNotNull(dictionary, "dictionary can't be null");
-            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, dictionary);
+            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, dictionary);
             new SchemaUtil().replaceTypeReferences(graphQLSchema);
             Collection<ValidationError> errors = new Validator().validateSchema(graphQLSchema);
             if (errors.size() > 0) {

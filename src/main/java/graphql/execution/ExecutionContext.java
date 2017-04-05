@@ -18,6 +18,7 @@ public class ExecutionContext {
     private final ExecutionId executionId;
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
+    private final ExecutionStrategy subscriptionStrategy;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final OperationDefinition operationDefinition;
     private final Map<String, Object> variables;
@@ -25,11 +26,12 @@ public class ExecutionContext {
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<GraphQLError>();
     private final Instrumentation instrumentation;
 
-    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
+    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.queryStrategy = queryStrategy;
         this.mutationStrategy = mutationStrategy;
+        this.subscriptionStrategy = subscriptionStrategy;
         this.fragmentsByName = fragmentsByName;
         this.operationDefinition = operationDefinition;
         this.variables = variables;
@@ -85,5 +87,9 @@ public class ExecutionContext {
 
     public ExecutionStrategy getMutationStrategy() {
         return mutationStrategy;
+    }
+
+    public ExecutionStrategy getSubscriptionStrategy() {
+        return subscriptionStrategy;
     }
 }

@@ -154,6 +154,7 @@ public class ReadmeExamples {
         GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
                 .mutationExecutionStrategy(new SimpleExecutionStrategy())
+                .subscriptionExecutionStrategy(new SimpleExecutionStrategy())
                 .build();
 
     }
