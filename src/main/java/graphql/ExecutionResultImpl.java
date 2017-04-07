@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class ExecutionResultImpl implements ExecutionResult {
 
-    private final List<GraphQLError> errors = new ArrayList<GraphQLError>();
+    private final List<GraphQLError> errors = new ArrayList<>();
     private Object data;
     private Map<Object,Object> extensions = null;
 
@@ -28,7 +28,7 @@ public class ExecutionResultImpl implements ExecutionResult {
         }
 
         if (extensions != null && !extensions.isEmpty()) {
-            this.extensions = new HashMap<Object,Object>(extensions);
+            this.extensions = new HashMap<>(extensions);
         }
     }
 
@@ -53,11 +53,11 @@ public class ExecutionResultImpl implements ExecutionResult {
 
     @Override
     public List<GraphQLError> getErrors() {
-        return new ArrayList<GraphQLError>(errors);
+        return new ArrayList<>(errors);
     }
 
     @Override
     public Map<Object, Object> getExtensions() {
-        return extensions == null ? null : new HashMap<Object,Object>(extensions);
+        return extensions == null ? null : new HashMap<>(extensions);
     }
 }

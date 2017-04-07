@@ -15,8 +15,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
-    private final List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
+    private final List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
                              List<GraphQLInterfaceType> interfaces) {
@@ -54,12 +54,12 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
 
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
-        return new ArrayList<GraphQLFieldDefinition>(fieldDefinitionsByName.values());
+        return new ArrayList<>(fieldDefinitionsByName.values());
     }
 
 
     public List<GraphQLInterfaceType> getInterfaces() {
-        return new ArrayList<GraphQLInterfaceType>(interfaces);
+        return new ArrayList<>(interfaces);
     }
 
     public String getDescription() {
@@ -93,8 +93,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<GraphQLFieldDefinition>();
-        private List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
+        private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
+        private List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;

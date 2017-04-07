@@ -12,11 +12,11 @@ import graphql.schema.GraphQLSchema;
 
 public class Validator {
 
-    private final Set<GraphQLOutputType> processed = new HashSet<GraphQLOutputType>();
+    private final Set<GraphQLOutputType> processed = new HashSet<>();
     
     public Set<ValidationError> validateSchema(GraphQLSchema schema) {
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();
-        List<ValidationRule> rules = new ArrayList<ValidationRule>();
+        List<ValidationRule> rules = new ArrayList<>();
         rules.add(new NoUnbrokenInputCycles());
         
         traverse(schema.getQueryType(), rules, validationErrorCollector);

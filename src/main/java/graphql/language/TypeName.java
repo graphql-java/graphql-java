@@ -22,7 +22,7 @@ public class TypeName extends AbstractNode implements Type {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<Node>();
+        return new ArrayList<>();
     }
 
     @Override
