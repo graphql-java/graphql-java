@@ -1,29 +1,42 @@
 package graphql.schema;
 
-import graphql.AssertException;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import graphql.AssertException;
+
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
-    private final List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
+    private final List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
-    public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, List<GraphQLInterfaceType> interfaces) {
-        assertNotNull(name, "name can't be null");
+    public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
+                             List<GraphQLInterfaceType> interfaces) {
+    	assertValidName(name);
         assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
         assertNotNull(interfaces, "interfaces can't be null");
+        assertNotNull(interfaces, "unresolvedInterfaces can't be null");
         this.name = name;
         this.description = description;
         this.interfaces.addAll(interfaces);
         buildDefinitionMap(fieldDefinitions);
+    }
+
+    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
+        for (int i = 0; i < interfaces.size(); i++) {
+            GraphQLInterfaceType inter = interfaces.get(i);
+            if (inter instanceof TypeReference) {
+                this.interfaces.set(i, (GraphQLInterfaceType) new SchemaUtil().resolveTypeReference(inter, typeMap));
+            }
+        }
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
@@ -35,19 +48,18 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         }
     }
 
-
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }
 
 
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
-        return new ArrayList<GraphQLFieldDefinition>(fieldDefinitionsByName.values());
+        return new ArrayList<>(fieldDefinitionsByName.values());
     }
 
 
     public List<GraphQLInterfaceType> getInterfaces() {
-        return new ArrayList<GraphQLInterfaceType>(interfaces);
+        return new ArrayList<>(interfaces);
     }
 
     public String getDescription() {
@@ -74,12 +86,15 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         return new Builder();
     }
 
-
+    public static Reference reference(String name) {
+        return new Reference(name);
+    }
+    
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<GraphQLFieldDefinition>();
-        private List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
+        private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
+        private List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -151,6 +166,11 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             return new GraphQLObjectType(name, description, fieldDefinitions, interfaces);
         }
 
+    }
 
+    private static class Reference extends GraphQLObjectType implements TypeReference {
+        private Reference(String name) {
+            super(name, "", Collections.<GraphQLFieldDefinition>emptyList(), Collections.<GraphQLInterfaceType>emptyList());
+        }
     }
 }

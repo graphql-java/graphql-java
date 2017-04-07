@@ -8,6 +8,8 @@ import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLEnumType.newEnum;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 public class StarWarsSchema {
@@ -28,7 +30,7 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("id")
                     .description("The id of the character.")
-                    .type(new GraphQLNonNull(GraphQLString)))
+                    .type(nonNull(GraphQLString)))
             .field(newFieldDefinition()
                     .name("name")
                     .description("The name of the character.")
@@ -36,11 +38,11 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("friends")
                     .description("The friends of the character, or an empty list if they have none.")
-                    .type(new GraphQLList(new GraphQLTypeReference("Character"))))
+                    .type(list(new GraphQLTypeReference("Character"))))
             .field(newFieldDefinition()
                     .name("appearsIn")
                     .description("Which movies they appear in.")
-                    .type(new GraphQLList(episodeEnum)))
+                    .type(list(episodeEnum)))
             .typeResolver(StarWarsData.getCharacterTypeResolver())
             .build();
 
@@ -51,7 +53,7 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("id")
                     .description("The id of the human.")
-                    .type(new GraphQLNonNull(GraphQLString)))
+                    .type(nonNull(GraphQLString)))
             .field(newFieldDefinition()
                     .name("name")
                     .description("The name of the human.")
@@ -59,12 +61,12 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("friends")
                     .description("The friends of the human, or an empty list if they have none.")
-                    .type(new GraphQLList(characterInterface))
+                    .type(list(characterInterface))
                     .dataFetcher(StarWarsData.getFriendsDataFetcher()))
             .field(newFieldDefinition()
                     .name("appearsIn")
                     .description("Which movies they appear in.")
-                    .type(new GraphQLList(episodeEnum)))
+                    .type(list(episodeEnum)))
             .field(newFieldDefinition()
                     .name("homePlanet")
                     .description("The home planet of the human, or null if unknown.")
@@ -78,7 +80,7 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("id")
                     .description("The id of the droid.")
-                    .type(new GraphQLNonNull(GraphQLString)))
+                    .type(nonNull(GraphQLString)))
             .field(newFieldDefinition()
                     .name("name")
                     .description("The name of the droid.")
@@ -86,12 +88,12 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("friends")
                     .description("The friends of the droid, or an empty list if they have none.")
-                    .type(new GraphQLList(characterInterface))
+                    .type(list(characterInterface))
                     .dataFetcher(StarWarsData.getFriendsDataFetcher()))
             .field(newFieldDefinition()
                     .name("appearsIn")
                     .description("Which movies they appear in.")
-                    .type(new GraphQLList(episodeEnum)))
+                    .type(list(episodeEnum)))
             .field(newFieldDefinition()
                     .name("primaryFunction")
                     .description("The primary function of the droid.")
@@ -115,7 +117,7 @@ public class StarWarsSchema {
                     .argument(newArgument()
                             .name("id")
                             .description("id of the human")
-                            .type(new GraphQLNonNull(GraphQLString)))
+                            .type(nonNull(GraphQLString)))
                     .dataFetcher(StarWarsData.getHumanDataFetcher()))
             .field(newFieldDefinition()
                     .name("droid")
@@ -123,7 +125,7 @@ public class StarWarsSchema {
                     .argument(newArgument()
                             .name("id")
                             .description("id of the droid")
-                            .type(new GraphQLNonNull(GraphQLString)))
+                            .type(nonNull(GraphQLString)))
                     .dataFetcher(StarWarsData.getDroidDataFetcher()))
             .build();
 

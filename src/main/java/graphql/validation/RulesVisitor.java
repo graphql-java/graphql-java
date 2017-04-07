@@ -7,12 +7,12 @@ import java.util.*;
 
 public class RulesVisitor implements QueryLanguageVisitor {
 
-    private final List<AbstractRule> rules = new ArrayList<AbstractRule>();
+    private final List<AbstractRule> rules = new ArrayList<>();
     private ValidationContext validationContext;
     private boolean subVisitor;
-    private List<AbstractRule> rulesVisitingFragmentSpreads = new ArrayList<AbstractRule>();
-    private Map<Node, List<AbstractRule>> rulesToSkipByUntilNode = new IdentityHashMap<Node, List<AbstractRule>>();
-    private Set<AbstractRule> rulesToSkip = new LinkedHashSet<AbstractRule>();
+    private List<AbstractRule> rulesVisitingFragmentSpreads = new ArrayList<>();
+    private Map<Node, List<AbstractRule>> rulesToSkipByUntilNode = new IdentityHashMap<>();
+    private Set<AbstractRule> rulesToSkip = new LinkedHashSet<>();
 
     public RulesVisitor(ValidationContext validationContext, List<AbstractRule> rules) {
         this(validationContext, rules, false);
@@ -38,9 +38,9 @@ public class RulesVisitor implements QueryLanguageVisitor {
     public void enter(Node node, List<Node> ancestors) {
 //        System.out.println("enter: " + node);
         validationContext.getTraversalContext().enter(node, ancestors);
-        Set<AbstractRule> tmpRulesSet = new LinkedHashSet<AbstractRule>(this.rules);
+        Set<AbstractRule> tmpRulesSet = new LinkedHashSet<>(this.rules);
         tmpRulesSet.removeAll(rulesToSkip);
-        List<AbstractRule> rulesToConsider = new ArrayList<AbstractRule>(tmpRulesSet);
+        List<AbstractRule> rulesToConsider = new ArrayList<>(tmpRulesSet);
         if (node instanceof Argument) {
             checkArgument((Argument) node, rulesToConsider);
         } else if (node instanceof TypeName) {
@@ -54,7 +54,7 @@ public class RulesVisitor implements QueryLanguageVisitor {
         } else if (node instanceof Directive) {
             checkDirective((Directive) node, ancestors, rulesToConsider);
         } else if (node instanceof FragmentSpread) {
-            checkFragmentSpread((FragmentSpread) node, rulesToConsider);
+            checkFragmentSpread((FragmentSpread) node, rulesToConsider, ancestors);
         } else if (node instanceof FragmentDefinition) {
             checkFragmentDefinition((FragmentDefinition) node, rulesToConsider);
         } else if (node instanceof OperationDefinition) {
@@ -105,19 +105,21 @@ public class RulesVisitor implements QueryLanguageVisitor {
         }
     }
 
-    private void checkFragmentSpread(FragmentSpread fragmentSpread, List<AbstractRule> rules) {
+    private void checkFragmentSpread(FragmentSpread fragmentSpread, List<AbstractRule> rules, List<Node> ancestors) {
         for (AbstractRule rule : rules) {
             rule.checkFragmentSpread(fragmentSpread);
         }
         List<AbstractRule> rulesVisitingFragmentSpreads = getRulesVisitingFragmentSpreads(rules);
         if (rulesVisitingFragmentSpreads.size() > 0) {
             FragmentDefinition fragment = validationContext.getFragment(fragmentSpread.getName());
-            new LanguageTraversal().traverse(fragment, new RulesVisitor(validationContext, rulesVisitingFragmentSpreads, true));
+            if(!ancestors.contains(fragment)){
+                new LanguageTraversal(ancestors).traverse(fragment, new RulesVisitor(validationContext, rulesVisitingFragmentSpreads, true));
+            }
         }
     }
 
     private List<AbstractRule> getRulesVisitingFragmentSpreads(List<AbstractRule> rules) {
-        List<AbstractRule> result = new ArrayList<AbstractRule>();
+        List<AbstractRule> result = new ArrayList<>();
         for (AbstractRule rule : rules) {
             if (rule.isVisitFragmentSpreads()) result.add(rule);
         }
@@ -127,7 +129,7 @@ public class RulesVisitor implements QueryLanguageVisitor {
 
     private void checkFragmentDefinition(FragmentDefinition fragmentDefinition, List<AbstractRule> rules) {
         if (!subVisitor) {
-            rulesToSkipByUntilNode.put(fragmentDefinition, new ArrayList<AbstractRule>(rulesVisitingFragmentSpreads));
+            rulesToSkipByUntilNode.put(fragmentDefinition, new ArrayList<>(rulesVisitingFragmentSpreads));
             rulesToSkip.addAll(rulesVisitingFragmentSpreads);
         }
 

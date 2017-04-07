@@ -10,7 +10,7 @@ This is a GraphQL Java implementation based on the [specification](https://githu
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
  
 
-**Status**: Version `2.1.0` is released. 
+**Status**: Version `2.4.0` is released.
     
 The versioning follows [Semantic Versioning](http://semver.org) since `2.0.0`. 
 
@@ -27,7 +27,7 @@ to checkout the appropriate tag when looking for the version documented here.
  
 - [Overview](#overview)
 - [Code of Conduct](#code-of-conduct)
-- [Mailing List](#mailing-list)
+- [Discussion](#discussion)
 - [Hello World](#hello-world)
 - [Getting started](#getting-started)
 - [Manual](#manual)
@@ -36,7 +36,7 @@ to checkout the appropriate tag when looking for the version documented here.
     - [Executing](#executing)
     - [Execution strategies](#execution-strategies)
     - [Logging](#logging)
-    - [Relay Support](#relay-support)
+    - [Relay and Apollo Support](#relay-and-apollo-support)
 - [Contributions](#contributions)
 - [Build it](#build-it)
 - [Development Build](#development-build)
@@ -61,11 +61,12 @@ By contributing to this project (commenting or opening PR/Issues etc) you are ag
 take the time to read it. 
 
 
-### Mailing List
+### Discussion
 
 If you have a question or want to discuss anything else related to this project: 
 
-There is a mailing list (Google Group) for graphql-java: [graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
+- There is a mailing list (Google Group) for graphql-java: [graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
+- And a chat room (Gitter.im) for graphql-java: [graphql-java chat](https://gitter.im/graphql-java/graphql-java)
 
 ### Hello World
 
@@ -74,6 +75,7 @@ This is the famous "hello world" in graphql-java:
 ```java
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import java.util.Map;
 
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -82,20 +84,21 @@ import static graphql.schema.GraphQLObjectType.newObject;
 public class HelloWorld {
 
     public static void main(String[] args) {
-    
         GraphQLObjectType queryType = newObject()
-                        .name("helloWorldQuery")
-                        .field(newFieldDefinition()
-                                .type(GraphQLString)
-                                .name("hello")
-                                .staticValue("world"))
-                        .build();
-        
+                .name("helloWorldQuery")
+                .field(newFieldDefinition()
+                        .type(GraphQLString)
+                        .name("hello")
+                        .staticValue("world"))
+                .build();
+
         GraphQLSchema schema = GraphQLSchema.newSchema()
-                        .query(queryType)
-                        .build();
-        Map<String, Object> result = new GraphQL(schema).execute("{hello}").getData();
-        
+                .query(queryType)
+                .build();
+
+        GraphQL graphQL = GraphQL.newGraphQL(schema).build();
+
+        Map<String, Object> result = graphQL.execute("{hello}").getData();
         System.out.println(result);
         // Prints: {hello=world}
     }
@@ -118,7 +121,7 @@ Dependency:
 
 ```groovy
 dependencies {
-  compile 'com.graphql-java:graphql-java:2.1.0'
+  compile 'com.graphql-java:graphql-java:2.4.0'
 }
 
 ```
@@ -131,7 +134,7 @@ Dependency:
 <dependency>
     <groupId>com.graphql-java</groupId>
     <artifactId>graphql-java</artifactId>
-    <version>2.1.0</version>
+    <version>2.4.0</version>
 </dependency>
 
 ```
@@ -227,11 +230,11 @@ Example:
 
 ```java
 GraphQLInputObjectType inputObjectType = newInputObject()
-    .name("inputObjectType")
-    .field(newInputObjectField()
-        .name("field")
-        .type(GraphQLString))
-    .build()
+        .name("inputObjectType")
+        .field(newInputObjectField()
+                .name("field")
+                .type(GraphQLString))
+        .build();
 
 ```
 
@@ -239,14 +242,17 @@ GraphQLInputObjectType inputObjectType = newInputObject()
 
 `GraphQLList` and `GraphQLNonNull` wrap another type to declare a list or to forbid null values. 
 
-There are no builders to create now objects. Just normal constructors, because they are so simple.
-
 Example:
 
 ```java
-new GraphQLList(GraphQLString); // a list of Strings
+        GraphQLList.list((GraphQLString); // a list of Strings
 
-new GraphQLNonNull(GraphQLString); // a non null String
+        GraphQLNonNull.nonNull(GraphQLString); // a non null String
+
+        // with static imports its even shorter
+        newArgument()
+                .name("example")
+                .type(nonNull(list(GraphQLString)));
 
 ```
 
@@ -305,46 +311,64 @@ the property name of the source Object, no `DataFetcher` is needed.
 Example of configuring a custom `DataFetcher`:
 ```java
 
-DataFetcher calculateComplicatedValue = new DataFetcher() {
+DataFetcher<Foo> fooDataFetcher = new DataFetcher<Foo>() {
     @Override
-    Object get(DataFetchingEnvironment environment) {
+    public Foo get(DataFetchingEnvironment environment) {
         // environment.getSource() is the value of the surrounding
         // object. In this case described by objectType
-        Object value = ... // Perhaps getting from a DB or whatever 
+        Foo value = perhapsFromDatabase(); // Perhaps getting from a DB or whatever 
         return value;
     }
+};
 
 GraphQLObjectType objectType = newObject()
-    .name("ObjectType")
-    .field(newFieldDefinition()
-            .name("someComplicatedValue")
-            .type(GraphQLString)
-            .dataFetcher(calculateComplicatedValue))
-    .build();
+        .name("ObjectType")
+        .field(newFieldDefinition()
+                .name("foo")
+                .type(GraphQLString)
+                .dataFetcher(fooDataFetcher))
+        .build();
 
 ```
 
 #### Executing 
 
-To execute a Query/Mutation against a Schema instantiate a new `GraphQL` Object with the appropriate arguments and then call `execute()`.
+To execute a Query/Mutation against a Schema build a new `GraphQL` Object with the appropriate arguments and then call `execute()`.
  
 The result of a Query is a `ExecutionResult` Object with the result and/or a list of Errors.
 
 Example: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
 
-Complexer examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
+More complex examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
 
 
 #### Execution strategies
 
-All fields in a SelectionSet are executed serially per default. 
+All fields in a SelectionSet are executed serially per default.
+ 
+You can however provide your own execution strategies, one to use while querying data and one
+to use when mutating data.
 
-`GraphQL` takes as second constructor argument an optional [ExecutorService](http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ExecutorService.html).
+```java
+
+ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
+        2, /* core pool size 2 thread */
+        2, /* max pool size 2 thread */
+        30, TimeUnit.SECONDS,
+        new LinkedBlockingQueue<Runnable>(),
+        new ThreadPoolExecutor.CallerRunsPolicy());
+
+GraphQL graphQL = GraphQL.newObject(StarWarsSchema.starWarsSchema)
+        .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
+        .mutationExecutionStrategy(new SimpleExecutionStrategy())
+        .build();
+
+
+```
+
 When provided fields will be executed parallel, except the first level of a mutation operation.
 
 See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) for details.
-
-It's recommended to use a `ExecutorService` to speed up execution.
 
 Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
 
@@ -367,15 +391,15 @@ Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [
 The `grapqhl-java` root Logger name is `graphql`.
 
 
-#### Relay Support
+#### Relay and Apollo Support
 
-There is a very basic Relay support included. Please look at https://github.com/andimarek/todomvc-relay-java for an example
+Very basic support for [Relay](https://github.com/facebook/relay) and [Apollo](https://github.com/apollographql/apollo-client) is included. While Apollo works with any schema, your schema will have to follow the Relay specification in order to work with Relay. Please look at https://github.com/andimarek/todomvc-relay-java for an example
 project how to use it.
 
-Relay sends queries to the GraphQL server as JSON containing a `query` field and a `variables` field. The `query` field is a JSON string,
+Relay and Apollo send queries to the GraphQL server as JSON containing a `query` field and a `variables` field. The `query` field is a JSON string,
 and the `variables` field is a map of variable definitions. A relay-compatible server will need to parse this JSON and pass the `query`
 string to this library as the query and the `variables` map as the third argument to `execute` as shown below. This is the implementation
-from the [todomvc-relay-java](https://github.com/andimarek/todomvc-relay-java) example.
+from the [todomvc-relay-java](https://github.com/graphql-java/todomvc-relay-java) example.
 
 ```java
 @RequestMapping(value = "/graphql", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -504,7 +528,7 @@ Installing in the local Maven repository:
 
 The implementation is in Java 6, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
 
-The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/grammar/Graphql.g4).
+The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/antlr/Graphql.g4).
 
 The only runtime dependencies are ANTLR and Slf4J.
  
@@ -514,18 +538,41 @@ This implementation is based on the [js reference implementation](https://github
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
 
 ### Related projects
+* [todomvc-relay-java](https://github.com/graphql-java/todomvc-relay-java): Port of the Relay TodoMVC example to a java backend
 
-[graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
+* [graphql-java-type-generator](https://github.com/graphql-java/graphql-java-type-generator): This library will autogenerate GraphQL types for usage in com.graphql-java:graphql-java Edit
 
-[graphql-java-annotations](https://github.com/yrashk/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
+* [graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
 
-[graphql-java-servlet](https://github.com/yrashk/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
+* [graphql-java-reactive](https://github.com/bsideup/graphql-java-reactive): An execution strategy which is based on Reactive Streams. Project is evolving.
+
+* [graphql-java-annotations](https://github.com/graphql-java/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
+
+* [graphql-java-servlet](https://github.com/graphql-java/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
+
+* [graphql-apigen](https://github.com/Distelli/graphql-apigen): Generate Java APIs with GraphQL Schemas
+
+* [graphql-spring-boot](https://github.com/oembedler/graphql-spring-boot): GraphQL and GraphiQL Spring Framework Boot Starters
+
+* [spring-graphql-common](https://github.com/oembedler/spring-graphql-common): Spring Framework GraphQL Library
+
+* [graphql-jpa](https://github.com/jcrygier/graphql-jpa): JPA Implementation of GraphQL (builds on graphql-java)
+
+* [graphql-jpa-spring-boot-starter](https://github.com/timtebeek/graphql-jpa-spring-boot-starter): Spring Boot starter for GraphQL JPA; Expose JPA entities with GraphQL.
+
+* [graphkool](https://github.com/beyondeye/graphkool): GraphQl-java utilities in kotlin
+
+* [schemagen-graphql](https://github.com/bpatters/schemagen-graphql): GraphQL-Java add-on that adds support for Schema Generation & Execution for enterprise level applications.
+
+* [GraphQL-SPQR](https://github.com/leangen/GraphQL-SPQR): Java 8+ API for rapid development of GraphQL services
+
+* [Light Java GraphQL](https://github.com/networknt/light-java-graphql): A lightweight, fast microservices framework with all other cross-cutting concerns addressed that is ready to plug in GraphQL schema. 
 
 ### License
 
 graphql-java is licensed under the MIT License. See [LICENSE](LICENSE.md) for details.
 
-Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/andimarek/graphql-java/graphs/contributors)
+Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/graphql-java/graphql-java/graphs/contributors)
 
 [graphql-js License](https://github.com/graphql/graphql-js/blob/master/LICENSE)
 

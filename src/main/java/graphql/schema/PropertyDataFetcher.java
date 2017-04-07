@@ -4,11 +4,12 @@ package graphql.schema;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 
 import static graphql.Scalars.GraphQLBoolean;
 
-public class PropertyDataFetcher implements DataFetcher {
+public class PropertyDataFetcher<T> implements DataFetcher<T> {
 
     private final String propertyName;
 
@@ -16,14 +17,37 @@ public class PropertyDataFetcher implements DataFetcher {
         this.propertyName = propertyName;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object get(DataFetchingEnvironment environment) {
+    public T get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();
         if (source == null) return null;
         if (source instanceof Map) {
-            return ((Map<?, ?>) source).get(propertyName);
+            return (T) ((Map<?, ?>) source).get(propertyName);
         }
-        return getPropertyViaGetter(source, environment.getFieldType());
+        return (T) getPropertyViaGetter(source, environment.getFieldType());
+    }
+
+    /**
+     * Invoking public methods on package-protected classes via reflection
+     * causes exceptions. This method searches a class's hierarchy for
+     * public visibility parent classes with the desired getter. This
+     * particular case is required to support AutoValue style data classes,
+     * which have abstract public interfaces implemented by package-protected
+     * (generated) subclasses.
+     */
+    private Method findAccessibleMethod(Class root, String methodName) throws NoSuchMethodException {
+        Class cur = root;
+        while(cur != null) {
+            if(Modifier.isPublic(cur.getModifiers())){
+                Method m = cur.getMethod(methodName);
+                if (Modifier.isPublic(m.getModifiers())) {
+                    return m;
+                }
+            }
+            cur = cur.getSuperclass();
+        }
+        return root.getMethod(methodName);
     }
 
     private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType) {
@@ -45,12 +69,10 @@ public class PropertyDataFetcher implements DataFetcher {
     private Object getPropertyViaGetterUsingPrefix(Object object, String prefix) throws NoSuchMethodException {
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         try {
-            Method method = object.getClass().getMethod(getterName);
+            Method method = findAccessibleMethod(object.getClass(), getterName);
             return method.invoke(object);
 
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }

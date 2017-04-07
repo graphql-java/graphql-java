@@ -1,7 +1,10 @@
 package graphql.schema;
 
 
+import java.util.Map;
+
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 public class GraphQLArgument {
 
@@ -11,7 +14,7 @@ public class GraphQLArgument {
     private final Object defaultValue;
 
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         assertNotNull(type, "type can't be null");
         this.name = name;
         this.description = description;
@@ -23,6 +26,10 @@ public class GraphQLArgument {
         this(name, null, type, null);
     }
 
+
+    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
+        type = (GraphQLInputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+    }
 
     public String getName() {
         return name;

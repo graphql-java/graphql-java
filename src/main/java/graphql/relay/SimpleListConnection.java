@@ -1,6 +1,5 @@
 package graphql.relay;
 
-
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -10,29 +9,34 @@ import java.util.List;
 public class SimpleListConnection implements DataFetcher {
 
     private static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
-    private List<?> data = new ArrayList<Object>();
+    private final String prefix;
+    private final List<?> data;
 
+    public SimpleListConnection(List<?> data, String prefix) {
+        if (prefix == null || prefix.length() == 0) {
+            throw new IllegalArgumentException("prefix cannot be null or empty");
+        }
+        this.prefix = prefix;
+        this.data = data;
+    }
 
     public SimpleListConnection(List<?> data) {
-        this.data = data;
-
+        this(data, DUMMY_CURSOR_PREFIX);
     }
 
     private List<Edge> buildEdges() {
-        List<Edge> edges = new ArrayList<Edge>();
+        List<Edge> edges = new ArrayList<>();
         int ix = 0;
         for (Object object : data) {
-            edges.add(new Edge(object, new ConnectionCursor(createCursor(ix++))));
+            edges.add(new DefaultEdge(object, new DefaultConnectionCursor(createCursor(ix++))));
         }
         return edges;
     }
-
 
     @Override
     public Object get(DataFetchingEnvironment environment) {
 
         List<Edge> edges = buildEdges();
-
 
         int afterOffset = getOffsetFromCursor(environment.<String>getArgument("after"), -1);
         int begin = Math.max(afterOffset, -1) + 1;
@@ -44,18 +48,17 @@ public class SimpleListConnection implements DataFetcher {
             return emptyConnection();
         }
 
-
         Integer first = environment.<Integer>getArgument("first");
         Integer last = environment.<Integer>getArgument("last");
 
-        ConnectionCursor firstPresliceCursor = edges.get(0).cursor;
-        ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).cursor;
+        ConnectionCursor firstPresliceCursor = edges.get(0).getCursor();
+        ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
 
         if (first != null) {
             edges = edges.subList(0, first <= edges.size() ? first : edges.size());
         }
         if (last != null) {
-            edges = edges.subList(edges.size() - last, edges.size());
+            edges = edges.subList(last > edges.size() ? 0 : edges.size() - last, edges.size());
         }
 
         if (edges.size() == 0) {
@@ -65,13 +68,13 @@ public class SimpleListConnection implements DataFetcher {
         Edge firstEdge = edges.get(0);
         Edge lastEdge = edges.get(edges.size() - 1);
 
-        PageInfo pageInfo = new PageInfo();
+        DefaultPageInfo pageInfo = new DefaultPageInfo();
         pageInfo.setStartCursor(firstEdge.getCursor());
         pageInfo.setEndCursor(lastEdge.getCursor());
         pageInfo.setHasPreviousPage(!firstEdge.getCursor().equals(firstPresliceCursor));
         pageInfo.setHasNextPage(!lastEdge.getCursor().equals(lastPresliceCursor));
 
-        Connection connection = new Connection();
+        DefaultConnection connection = new DefaultConnection();
         connection.setEdges(edges);
         connection.setPageInfo(pageInfo);
 
@@ -79,29 +82,25 @@ public class SimpleListConnection implements DataFetcher {
     }
 
     private Connection emptyConnection() {
-        Connection connection = new Connection();
-        connection.setPageInfo(new PageInfo());
+        DefaultConnection connection = new DefaultConnection();
+        connection.setPageInfo(new DefaultPageInfo());
         return connection;
     }
-
 
     public ConnectionCursor cursorForObjectInConnection(Object object) {
         int index = data.indexOf(object);
         String cursor = createCursor(index);
-        return new ConnectionCursor(cursor);
+        return new DefaultConnectionCursor(cursor);
     }
-
 
     private int getOffsetFromCursor(String cursor, int defaultValue) {
         if (cursor == null) return defaultValue;
         String string = Base64.fromBase64(cursor);
-        return Integer.parseInt(string.substring(DUMMY_CURSOR_PREFIX.length()));
+        return Integer.parseInt(string.substring(prefix.length()));
     }
 
     private String createCursor(int offset) {
-        String string = Base64.toBase64(DUMMY_CURSOR_PREFIX + Integer.toString(offset));
+        String string = Base64.toBase64(prefix + Integer.toString(offset));
         return string;
     }
-
-
 }

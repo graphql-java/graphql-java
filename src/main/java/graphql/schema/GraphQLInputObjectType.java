@@ -1,24 +1,26 @@
 package graphql.schema;
 
-import graphql.AssertException;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Assert.assertNotNull;
+import graphql.AssertException;
 
-public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType {
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
+
+public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer {
 
     private final String name;
     private final String description;
 
 
-    private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<String, GraphQLInputObjectField>();
+    private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
 
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         assertNotNull(fields, "fields can't be null");
         this.name = name;
         this.description = description;
@@ -43,7 +45,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     }
 
     public List<GraphQLInputObjectField> getFields() {
-        return new ArrayList<GraphQLInputObjectField>(fieldMap.values());
+        return new ArrayList<>(fieldMap.values());
     }
 
     public GraphQLInputObjectField getField(String name) {
@@ -54,10 +56,24 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         return new Builder();
     }
 
+    public static Reference reference(String name) {
+        return new Reference(name);
+    }
+    
+    @Override
+    public GraphQLInputObjectField getFieldDefinition(String name) {
+        return fieldMap.get(name);
+    }
+
+    @Override
+    public List<GraphQLInputObjectField> getFieldDefinitions() {
+        return new ArrayList<>(fieldMap.values());
+    }
+
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLInputObjectField> fields = new ArrayList<GraphQLInputObjectField>();
+        private List<GraphQLInputObjectField> fields = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -117,5 +133,11 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
             return new GraphQLInputObjectType(name, description, fields);
         }
 
+    }
+
+    private static class Reference extends GraphQLInputObjectType implements TypeReference {
+        private Reference(String name) {
+            super(name, "", Collections.<GraphQLInputObjectField>emptyList());
+        }
     }
 }

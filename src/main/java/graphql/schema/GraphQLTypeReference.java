@@ -2,17 +2,18 @@ package graphql.schema;
 
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 /**
  * A special type to allow a object/interface types to reference itself. It's replaced with the real type
  * object when the schema is build.
  */
-public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType {
+public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType, GraphQLInputType, TypeReference {
 
     private final String name;
 
     public GraphQLTypeReference(String name) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         this.name = name;
     }
 

@@ -66,7 +66,7 @@ public class Relay {
     }
 
     public List<GraphQLArgument> getConnectionFieldArguments() {
-        List<GraphQLArgument> args = new ArrayList<GraphQLArgument>();
+        List<GraphQLArgument> args = new ArrayList<>();
 
         args.add(newArgument()
                 .name("before")
@@ -88,7 +88,7 @@ public class Relay {
     }
 
     public List<GraphQLArgument> getBackwardPaginationConnectionFieldArguments() {
-        List<GraphQLArgument> args = new ArrayList<GraphQLArgument>();
+        List<GraphQLArgument> args = new ArrayList<>();
 
         args.add(newArgument()
                 .name("before")
@@ -102,7 +102,7 @@ public class Relay {
     }
 
     public List<GraphQLArgument> getForwardPaginationConnectionFieldArguments() {
-        List<GraphQLArgument> args = new ArrayList<GraphQLArgument>();
+        List<GraphQLArgument> args = new ArrayList<>();
 
         args.add(newArgument()
                 .name("after")
@@ -212,6 +212,9 @@ public class Relay {
 
     public ResolvedGlobalId fromGlobalId(String globalId) {
         String[] split = Base64.fromBase64(globalId).split(":", 2);
+        if (split.length != 2) {
+            throw new IllegalArgumentException(String.format("expecting a valid global id, got %s", globalId));
+        }
         return new ResolvedGlobalId(split[0], split[1]);
     }
 }

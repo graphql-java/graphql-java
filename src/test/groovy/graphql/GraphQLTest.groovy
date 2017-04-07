@@ -1,10 +1,7 @@
 package graphql
 
 import graphql.language.SourceLocation
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLNonNull
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
+import graphql.schema.*
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
@@ -31,7 +28,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def result = new GraphQL(schema).execute('{ hello }').data
+        def result = GraphQL.newGraphQL(schema).build().execute('{ hello }').data
 
         then:
         result == [hello: 'world']
@@ -62,10 +59,10 @@ class GraphQLTest extends Specification {
                         .name("RootQueryType")
                         .field(simpsonField)
                         .build()
-        ).build();
+        ).build()
 
         when:
-        def result = new GraphQL(graphQLSchema).execute('{ simpson { id, name } }').data
+        def result = GraphQL.newGraphQL(graphQLSchema).build().execute('{ simpson { id, name } }').data
 
         then:
         result == [simpson: [id: '123', name: 'homer']]
@@ -86,7 +83,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = new GraphQL(schema).execute('{ hello(arg:11) }').errors
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:11) }').errors
 
         then:
         errors.size() == 1
@@ -101,7 +98,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = new GraphQL(schema).execute('{ hello(() }').errors
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(() }').errors
 
         then:
         errors.size() == 1
@@ -118,7 +115,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = new GraphQL(schema).execute('{ hello[](() }').errors
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello[](() }').errors
 
         then:
         errors.size() == 1
@@ -141,12 +138,99 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = new GraphQL(schema).execute('{ field }').errors
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ field }').errors
 
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.ValidationError
         errors[0].validationErrorType == ValidationErrorType.MissingFieldArgument
         errors[0].sourceLocations == [new SourceLocation(1, 3)]
+    }
+
+    def "`Iterable` can be used as a `GraphQLList` field result"() {
+        given:
+        def set = new HashSet<String>()
+        set.add("One")
+        set.add("Two")
+
+        def schema = GraphQLSchema.newSchema()
+                .query(GraphQLObjectType.newObject()
+                .name("QueryType")
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .name("set")
+                .type(new GraphQLList(GraphQLString))
+                .dataFetcher({ set })))
+                .build()
+
+        when:
+        def data = GraphQL.newGraphQL(schema).build().execute("query { set }").data
+
+        then:
+        data == [set: ['One', 'Two']]
+    }
+
+    def "document with two operations executes specified operation"() {
+        given:
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition().name("field1").type(GraphQLString).dataFetcher(new StaticDataFetcher("value1")))
+                        .field(newFieldDefinition().name("field2").type(GraphQLString).dataFetcher(new StaticDataFetcher("value2")))
+        )
+                .build()
+
+        def query = """
+        query Query1 { field1 }
+        query Query2 { field2 }
+        """
+
+        def expected = [field2: 'value2']
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query, 'Query2', null, [:])
+
+        then:
+        result.data == expected
+        result.errors.size() == 0
+    }
+
+    def "document with two operations but no specified operation throws"() {
+        given:
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition().name("name").type(GraphQLString))
+        )
+                .build()
+
+        def query = """
+        query Query1 { name }
+        query Query2 { name }
+        """
+
+        when:
+        GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+        thrown(GraphQLException)
+    }
+
+    def "null mutation type does not throw an npe re: #345 but returns and error"() {
+        given:
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("Query")
+        )
+                .build()
+
+        when:
+        def result = new GraphQL(schema).execute("mutation { doesNotExist }");
+
+        then:
+        result.errors.size() == 1
+        result.errors[0].class == MutationNotSupportedError
     }
 }

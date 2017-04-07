@@ -23,7 +23,7 @@ public class Validator {
     }
 
     private List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
-        List<AbstractRule> rules = new ArrayList<AbstractRule>();
+        List<AbstractRule> rules = new ArrayList<>();
         
         ArgumentsOfCorrectType argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, validationErrorCollector);
         rules.add(argumentsOfCorrectType);
@@ -68,6 +68,9 @@ public class Validator {
         rules.add(variablesAreInputTypes);
         VariableTypesMatchRule variableTypesMatchRule = new VariableTypesMatchRule(validationContext, validationErrorCollector);
         rules.add(variableTypesMatchRule);
+
+        LoneAnonymousOperation loneAnonymousOperation = new LoneAnonymousOperation(validationContext, validationErrorCollector);
+        rules.add(loneAnonymousOperation);
         
         return rules;
     }

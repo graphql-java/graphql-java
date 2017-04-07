@@ -12,7 +12,7 @@ public class ValidationError implements GraphQLError {
 
 
     private final ValidationErrorType validationErrorType;
-    private final List<SourceLocation> sourceLocations = new ArrayList<SourceLocation>();
+    private final List<SourceLocation> sourceLocations = new ArrayList<>();
     private final String description;
 
     public ValidationError(ValidationErrorType validationErrorType) {
@@ -61,4 +61,15 @@ public class ValidationError implements GraphQLError {
                 ", description='" + description + '\'' +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        return Helper.equals(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return Helper.hashCode(this);
+    }
+
 }

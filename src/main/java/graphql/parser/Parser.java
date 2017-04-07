@@ -12,8 +12,6 @@ import org.slf4j.LoggerFactory;
 
 public class Parser {
 
-    private static final Logger log = LoggerFactory.getLogger(Parser.class);
-
     public Document parseDocument(String input) {
 
         GraphqlLexer lexer = new GraphqlLexer(new ANTLRInputStream(input));
@@ -25,7 +23,6 @@ public class Parser {
         parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
         parser.setErrorHandler(new BailErrorStrategy());
         GraphqlParser.DocumentContext document = parser.document();
-
 
         GraphqlAntlrToLanguage antlrToLanguage = new GraphqlAntlrToLanguage();
         antlrToLanguage.visitDocument(document);

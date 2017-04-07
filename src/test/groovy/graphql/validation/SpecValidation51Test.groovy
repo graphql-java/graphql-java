@@ -1,11 +1,6 @@
 package graphql.validation
 
-import graphql.validation.SpecValidationSchema
-import graphql.parser.Parser
-import graphql.validation.ValidationError
-import graphql.validation.Validator
 import spock.lang.Requires
-import spock.lang.Specification
 
 /**
  * validation examples used in the spec in given section
@@ -101,8 +96,7 @@ mutation dogOperation {
         validationErrors.empty
     }
     
-    
-    @Requires({SpecValidationBase.enableStrictValidation})
+
     def '5.1.2.1 Lone Anonymous Operation Not Valid'() {
         def query = """
 {
@@ -118,6 +112,55 @@ query getName {
     }
   }
 }
+"""
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+    }
+
+    def '5.1.2.1 Lone Anonymous Operation Not Valid (reverse order) '() {
+        def query = """
+
+query getName {
+  dog {
+    owner {
+      name
+    }
+  }
+}
+
+{
+  dog {
+    name
+  }
+}
+
+"""
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+    }
+
+    def '5.1.2.1 Lone Anonymous Operation Not Valid (not really alone)'() {
+        def query = """
+{
+  dog {
+    owner {
+      name
+    }
+  }
+}
+  
+{
+  dog {
+    name
+  }
+}
+
 """
         when:
         def validationErrors = validate(query)

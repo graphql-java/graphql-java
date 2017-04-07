@@ -8,9 +8,10 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'antlr'
+apply plugin: 'jacoco'
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 def releaseVersion = System.properties.RELEASE_VERSION
 version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
 group = 'com.graphql-java'
@@ -28,7 +29,7 @@ jar {
 
 dependencies {
     compile 'org.antlr:antlr4-runtime:4.5.1'
-    compile 'org.slf4j:slf4j-api:1.7.12'
+    compile 'org.slf4j:slf4j-api:1.7.22'
     antlr "org.antlr:antlr4:4.5.1"
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
@@ -66,18 +67,13 @@ allprojects {
         exclude('**/antlr/**')
     }
 
-    tasks.withType(JavaCompile) {
-        doFirst {
-            if (sourceCompatibility == '1.6' && System.env.JDK6_HOME != null) {
-                options.bootClasspath = "$System.env.JDK6_HOME/jre/lib/rt.jar"
-            }
-        }
-    }
 
 }
 
 publishing {
+
     publications {
+
         graphqlJava(MavenPublication) {
             version version
             from components.java
@@ -89,7 +85,16 @@ publishing {
                 classifier "javadoc"
             }
             pom.withXml {
-                asNode().children().last() + {
+                // The ANTLR-related code below--introdcued in `1ac98bf`--addresses an issue with
+                // the Gradle ANTLR plugin. `1ac98bf` can be reverted and this comment removed once
+                // that issue is fixed and Gradle upgraded. See https://goo.gl/L92KiF and https://goo.gl/FY0PVR.
+                Node pomNode = asNode()
+                pomNode.dependencies.'*'.findAll() {
+                    it.artifactId.text() == 'antlr4'
+                }.each() {
+                    it.parent().remove(it)
+                }
+                pomNode.children().last() + {
                     resolveStrategy = Closure.DELEGATE_FIRST
                     name 'graphql-java'
                     description 'GraphqL Java'
@@ -140,6 +145,6 @@ tasks.withType(PublishToMavenRepository) {
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '3.0'
+    gradleVersion = '3.4'
     distributionUrl = "http://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
 }

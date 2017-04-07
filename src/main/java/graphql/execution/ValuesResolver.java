@@ -11,7 +11,7 @@ public class ValuesResolver {
 
 
     public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> inputs) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
             result.put(variableDefinition.getName(), getVariableValue(schema, variableDefinition, inputs.get(variableDefinition.getName())));
         }
@@ -20,7 +20,7 @@ public class ValuesResolver {
 
 
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         Map<String, Argument> argumentMap = argumentMap(arguments);
         for (GraphQLArgument fieldArgument : argumentTypes) {
             Argument argument = argumentMap.get(fieldArgument.getName());
@@ -37,7 +37,7 @@ public class ValuesResolver {
 
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<String, Argument>();
+        Map<String, Argument> result = new LinkedHashMap<>();
         for (Argument argument : arguments) {
             result.put(argument.getName(), argument);
         }
@@ -80,21 +80,29 @@ public class ValuesResolver {
             return coerceValueForEnum((GraphQLEnumType) graphQLType, value);
         } else if (graphQLType instanceof GraphQLList) {
             return coerceValueForList((GraphQLList) graphQLType, value);
-        } else if (graphQLType instanceof GraphQLInputObjectType) {
+        } else if (graphQLType instanceof GraphQLInputObjectType && value instanceof Map) {
             return coerceValueForInputObjectType((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
+        } else if (graphQLType instanceof GraphQLInputObjectType) {
+            return value;
         } else {
             throw new GraphQLException("unknown type " + graphQLType);
         }
     }
 
     private Object coerceValueForInputObjectType(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
-            Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
-            result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
-
+            if (input.containsKey(inputField.getName()) || alwaysHasValue(inputField)) {
+                Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
+                result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
+            }
         }
         return result;
+    }
+
+    private boolean alwaysHasValue(GraphQLInputObjectField inputField) {
+        return inputField.getDefaultValue() != null
+                || inputField.getType() instanceof GraphQLNonNull;
     }
 
     private Object coerceValueForScalar(GraphQLScalarType graphQLScalarType, Object value) {
@@ -107,7 +115,7 @@ public class ValuesResolver {
 
     private List coerceValueForList(GraphQLList graphQLList, Object value) {
         if (value instanceof Iterable) {
-            List<Object> result = new ArrayList<Object>();
+            List<Object> result = new ArrayList<>();
             for (Object val : (Iterable) value) {
                 result.add(coerceValue(graphQLList.getWrappedType(), val));
             }
@@ -142,7 +150,7 @@ public class ValuesResolver {
     private Object coerceValueAstForList(GraphQLList graphQLList, Value value, Map<String, Object> variables) {
         if (value instanceof ArrayValue) {
             ArrayValue arrayValue = (ArrayValue) value;
-            List<Object> result = new ArrayList<Object>();
+            List<Object> result = new ArrayList<>();
             for (Value singleValue : arrayValue.getValues()) {
                 result.add(coerceValueAst(graphQLList.getWrappedType(), singleValue, variables));
             }
@@ -153,20 +161,34 @@ public class ValuesResolver {
     }
 
     private Object coerceValueAstForInputObject(GraphQLInputObjectType type, ObjectValue inputValue, Map<String, Object> variables) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
 
-        for (ObjectField objectField : inputValue.getObjectFields()) {
-            GraphQLInputObjectField inputObjectField = type.getField(objectField.getName());
-            // illegal field ... no corresponding key in the schema
-            if (inputObjectField == null) continue;
-            Object fieldValue = coerceValueAst(inputObjectField.getType(), objectField.getValue(), variables);
-            if (fieldValue == null) {
-                fieldValue = inputObjectField.getDefaultValue();
+        Map<String, ObjectField> inputValueFieldsByName = mapObjectValueFieldsByName(inputValue);
+
+        for (GraphQLInputObjectField inputTypeField : type.getFields()) {
+            if (inputValueFieldsByName.containsKey(inputTypeField.getName())) {
+                ObjectField field = inputValueFieldsByName.get(inputTypeField.getName());
+                Object fieldValue = coerceValueAst(inputTypeField.getType(), field.getValue(), variables);
+                if (fieldValue == null) {
+                    fieldValue = inputTypeField.getDefaultValue();
+                }
+                result.put(field.getName(), fieldValue);
+            } else if (inputTypeField.getDefaultValue() != null) {
+                result.put(inputTypeField.getName(), inputTypeField.getDefaultValue());
+            } else if (inputTypeField.getType() instanceof GraphQLNonNull) {
+                // Possibly overkill; an object literal with a missing non null field shouldn't pass validation
+                throw new GraphQLException("Null value for NonNull type " + inputTypeField.getType());
             }
-            result.put(objectField.getName(), fieldValue);
         }
         return result;
     }
 
+    private Map<String, ObjectField> mapObjectValueFieldsByName(ObjectValue inputValue) {
+        Map<String, ObjectField> inputValueFieldsByName = new LinkedHashMap<>();
+        for (ObjectField objectField : inputValue.getObjectFields()) {
+            inputValueFieldsByName.put(objectField.getName(), objectField);
+        }
+        return inputValueFieldsByName;
+    }
 
 }

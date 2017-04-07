@@ -7,6 +7,19 @@ import static graphql.Assert.assertNotNull;
 
 public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
 
+    /**
+     * A factory method for creating list types so that when used with static imports allows
+     * more readable code such as
+     * {@code .type(list(GraphQLString)) }
+     *
+     * @param wrappedType the type to wrap as being a list
+     *
+     * @return a GraphQLList of that wrapped type
+     */
+    public static GraphQLList list(GraphQLType wrappedType) {
+        return new GraphQLList(wrappedType);
+    }
+
     private GraphQLType wrappedType;
 
     public GraphQLList(GraphQLType wrappedType) {

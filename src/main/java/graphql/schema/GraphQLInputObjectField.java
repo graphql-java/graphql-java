@@ -1,7 +1,10 @@
 package graphql.schema;
 
 
+import java.util.Map;
+
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 public class GraphQLInputObjectField {
 
@@ -15,7 +18,7 @@ public class GraphQLInputObjectField {
     }
 
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         assertNotNull(type, "type can't be null");
         this.name = name;
         this.type = type;
@@ -23,6 +26,9 @@ public class GraphQLInputObjectField {
         this.description = description;
     }
 
+    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
+        type = (GraphQLInputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+    }
 
     public String getName() {
         return name;

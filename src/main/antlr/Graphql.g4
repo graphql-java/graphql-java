@@ -3,26 +3,28 @@ grammar Graphql;
 @header {
     package graphql.parser.antlr;
 }
-// Document
+
+// Document 
 
 document : definition+;
 
 definition:
 operationDefinition |
-fragmentDefinition
+fragmentDefinition |
+typeSystemDefinition
 ;
 
 operationDefinition:
 selectionSet |
-operationType  NAME? variableDefinitions? directives? selectionSet;
+operationType  name? variableDefinitions? directives? selectionSet;
 
-operationType : 'query' | 'mutation';
+operationType : MUTATION | QUERY;
 
 variableDefinitions : '(' variableDefinition+ ')';
 
 variableDefinition : variable ':' type defaultValue?;
 
-variable : '$' NAME;
+variable : '$' name;
 
 defaultValue : '=' value;
 
@@ -35,28 +37,29 @@ field |
 fragmentSpread |
 inlineFragment;
 
-field : alias? NAME arguments? directives? selectionSet?;
+field : alias? name arguments? directives? selectionSet?;
 
-alias : NAME ':';
+alias : name ':';
 
 arguments : '(' argument+ ')';
 
-argument : NAME ':' valueWithVariable;
+argument : name ':' valueWithVariable;
 
 // Fragments
 
 fragmentSpread : '...' fragmentName directives?;
 
-inlineFragment : '...' 'on' typeCondition directives? selectionSet;
+inlineFragment : '...' typeCondition? directives? selectionSet;
 
-fragmentDefinition : 'fragment' fragmentName 'on' typeCondition directives? selectionSet;
+fragmentDefinition : 'fragment' fragmentName typeCondition directives? selectionSet;
 
-fragmentName :  NAME;
+fragmentName :  name;
 
-typeCondition : typeName;
+typeCondition : 'on' typeName;
 
 // Value
 
+name: NAME | FRAGMENT | QUERY | MUTATION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
 
 value :
 IntValue |
@@ -78,7 +81,7 @@ arrayValueWithVariable |
 objectValueWithVariable;
 
 
-enumValue : NAME ;
+enumValue : name ;
 
 // Array Value
 
@@ -91,34 +94,107 @@ arrayValueWithVariable: '[' valueWithVariable* ']';
 
 objectValue: '{' objectField* '}';
 objectValueWithVariable: '{' objectFieldWithVariable* '}';
-objectField : NAME ':' value;
-objectFieldWithVariable : NAME ':' valueWithVariable;
+objectField : name ':' value;
+objectFieldWithVariable : name ':' valueWithVariable;
 
 // Directives
 
 directives : directive+;
 
-directive :'@' NAME arguments?;
+directive :'@' name arguments?;
 
 // Types
 
 type : typeName | listType | nonNullType;
 
-typeName : NAME;
+typeName : name;
 listType : '[' type ']';
 nonNullType: typeName '!' | listType '!';
 
+
+// Type System
+typeSystemDefinition:
+schemaDefinition |
+typeDefinition |
+typeExtensionDefinition |
+directiveDefinition
+;
+
+schemaDefinition : SCHEMA directives? '{' operationTypeDefinition+ '}';
+
+operationTypeDefinition : operationType ':' typeName;
+
+typeDefinition:
+scalarTypeDefinition |
+objectTypeDefinition |
+interfaceTypeDefinition |
+unionTypeDefinition |
+enumTypeDefinition |
+inputObjectTypeDefinition
+;
+
+scalarTypeDefinition : SCALAR name directives?;
+
+objectTypeDefinition : TYPE name implementsInterfaces? directives? '{' fieldDefinition+ '}';
+
+implementsInterfaces : IMPLEMENTS typeName+;
+
+fieldDefinition : name argumentsDefinition? ':' type directives?;
+
+argumentsDefinition : '(' inputValueDefinition+ ')';
+
+inputValueDefinition : name ':' type defaultValue? directives?;
+
+interfaceTypeDefinition : INTERFACE name directives? '{' fieldDefinition+ '}';
+
+unionTypeDefinition : UNION name directives? '=' unionMembers;
+
+unionMembers:
+typeName |
+unionMembers '|' typeName
+;
+
+enumTypeDefinition : ENUM name directives? '{' enumValueDefinition+ '}';
+
+enumValueDefinition : enumValue directives?;
+
+inputObjectTypeDefinition : INPUT name directives? '{' inputValueDefinition+ '}';
+
+typeExtensionDefinition : EXTEND objectTypeDefinition;
+
+directiveDefinition : DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
+
+directiveLocation : name;
+
+directiveLocations :
+directiveLocation |
+directiveLocations '|' directiveLocation
+;
 
 
 // Token
 
 BooleanValue: 'true' | 'false';
 
-NAME: [_A-Za-z][_0-9A-Za-z]* ;
+FRAGMENT: 'fragment';
+QUERY: 'query';
+MUTATION: 'mutation';
+SCHEMA: 'schema';
+SCALAR: 'scalar';
+TYPE: 'type';
+INTERFACE: 'interface';
+IMPLEMENTS: 'implements';
+ENUM: 'enum';
+UNION: 'union';
+INPUT: 'input';
+EXTEND: 'extend';
+DIRECTIVE: 'directive';
+NAME: [_A-Za-z][_0-9A-Za-z]*;
+
 
 IntValue : Sign? IntegerPart;
 
-FloatValue : Sign? IntegerPart ('.' Digit+)? ExponentPart?;
+FloatValue : Sign? IntegerPart ('.' Digit*)? ExponentPart?;
 
 Sign : '-';
 

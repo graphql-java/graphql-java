@@ -9,13 +9,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<String, GraphQLEnumValueDefinition>();
+    private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
 
     private final Coercing coercing = new Coercing() {
         @Override
@@ -58,12 +58,12 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
-        return new ArrayList<GraphQLEnumValueDefinition>(valueDefinitionMap.values());
+        return new ArrayList<>(valueDefinitionMap.values());
     }
 
 
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
-        assertNotNull(name, "name can't be null");
+    	assertValidName(name);
         this.name = name;
         this.description = description;
         buildMap(values);
@@ -99,7 +99,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
         private String name;
         private String description;
-        private final List<GraphQLEnumValueDefinition> values = new ArrayList<GraphQLEnumValueDefinition>();
+        private final List<GraphQLEnumValueDefinition> values = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;

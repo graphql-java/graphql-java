@@ -16,6 +16,9 @@ public class FragmentsOnCompositeType extends AbstractRule {
 
     @Override
     public void checkInlineFragment(InlineFragment inlineFragment) {
+        if (inlineFragment.getTypeCondition() == null) {
+            return;
+        }
         GraphQLType type = getValidationContext().getSchema().getType(inlineFragment.getTypeCondition().getName());
         if (type == null) return;
         if (!(type instanceof GraphQLCompositeType)) {

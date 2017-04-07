@@ -13,10 +13,10 @@ import static graphql.introspection.Introspection.*;
 
 public class TraversalContext implements QueryLanguageVisitor {
     GraphQLSchema schema;
-    List<GraphQLOutputType> outputTypeStack = new ArrayList<GraphQLOutputType>();
-    List<GraphQLCompositeType> parentTypeStack = new ArrayList<GraphQLCompositeType>();
-    List<GraphQLInputType> inputTypeStack = new ArrayList<GraphQLInputType>();
-    List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<GraphQLFieldDefinition>();
+    List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
+    List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
+    List<GraphQLInputType> inputTypeStack = new ArrayList<>();
+    List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
     GraphQLDirective directive;
     GraphQLArgument argument;
 
@@ -87,8 +87,14 @@ public class TraversalContext implements QueryLanguageVisitor {
     }
 
     private void enterImpl(InlineFragment inlineFragment) {
-        GraphQLType type = schema.getType(inlineFragment.getTypeCondition().getName());
-        addType((GraphQLOutputType) type);
+        TypeName typeCondition = inlineFragment.getTypeCondition();
+        GraphQLOutputType type;
+        if (typeCondition != null) {
+            type = (GraphQLOutputType) schema.getType(typeCondition.getName());
+        } else {
+            type = (GraphQLOutputType) getParentType();
+        }
+        addType(type);
     }
 
     private void enterImpl(FragmentDefinition fragmentDefinition) {

@@ -1,23 +1,25 @@
 package graphql.schema;
 
-import graphql.AssertException;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import graphql.AssertException;
+
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 
 public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private final TypeResolver typeResolver;
 
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
-        assertNotNull(name, "name can't null");
+    	assertValidName(name);
         assertNotNull(typeResolver, "typeResolver can't null");
         assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
         this.name = name;
@@ -41,7 +43,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
 
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
-        return new ArrayList<GraphQLFieldDefinition>(fieldDefinitionsByName.values());
+        return new ArrayList<>(fieldDefinitionsByName.values());
     }
 
     public String getName() {
@@ -70,11 +72,14 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         return new Builder();
     }
 
-
+    public static Reference reference(String name) {
+        return new Reference(name);
+    }
+    
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLFieldDefinition> fields = new ArrayList<GraphQLFieldDefinition>();
+        private List<GraphQLFieldDefinition> fields = new ArrayList<>();
         private TypeResolver typeResolver;
 
 
@@ -142,5 +147,9 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
     }
 
-
+    private static class Reference extends GraphQLInterfaceType implements TypeReference {
+        private Reference(String name) {
+            super(name, "", Collections.<GraphQLFieldDefinition>emptyList(), new TypeResolverProxy());
+        }
+    }
 }
