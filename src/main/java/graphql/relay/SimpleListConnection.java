@@ -25,10 +25,10 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
     }
 
     private List<Edge<T>> buildEdges() {
-        List<Edge<T>> edges = new ArrayList<Edge<T>>();
+        List<Edge<T>> edges = new ArrayList<>();
         int ix = 0;
         for (T object : data) {
-            edges.add(new DefaultEdge<T>(object, new DefaultConnectionCursor(createCursor(ix++))));
+            edges.add(new DefaultEdge<>(object, new DefaultConnectionCursor(createCursor(ix++))));
         }
         return edges;
     }
@@ -83,7 +83,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
 
     private Connection<T> emptyConnection() {
         PageInfo pageInfo = new DefaultPageInfo(null, null, false, false);
-        return new DefaultConnection<T>(Collections.<Edge<T>>emptyList(), pageInfo);
+        return new DefaultConnection<>(Collections.emptyList(), pageInfo);
     }
 
     /**

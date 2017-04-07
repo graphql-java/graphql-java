@@ -6,7 +6,7 @@ import java.util.List;
 
 public class DefaultConnection<T> implements Connection<T> {
 
-    private List<Edge<T>> edges = new ArrayList<Edge<T>>();
+    private List<Edge<T>> edges = new ArrayList<>();
 
     private PageInfo pageInfo;
 
