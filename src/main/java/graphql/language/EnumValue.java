@@ -23,7 +23,7 @@ public class EnumValue extends AbstractNode implements Value {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<Node>();
+        return new ArrayList<>();
     }
 
     @Override

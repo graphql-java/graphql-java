@@ -6,7 +6,7 @@ import java.util.List;
 
 public class InlineFragment extends AbstractNode implements Selection {
     private TypeName typeCondition;
-    private List<Directive> directives = new ArrayList<Directive>();
+    private List<Directive> directives = new ArrayList<>();
     private SelectionSet selectionSet;
 
     public InlineFragment() {
@@ -55,7 +55,7 @@ public class InlineFragment extends AbstractNode implements Selection {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         if (typeCondition != null) {
             result.add(typeCondition);
         }

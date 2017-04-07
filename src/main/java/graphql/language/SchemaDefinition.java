@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SchemaDefinition extends AbstractNode implements Definition {
-    private List<Directive> directives = new ArrayList<Directive>();
-    private List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<OperationTypeDefinition>();
+    private List<Directive> directives = new ArrayList<>();
+    private List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
 
     public SchemaDefinition() {
     }
@@ -21,7 +21,7 @@ public class SchemaDefinition extends AbstractNode implements Definition {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(directives);
         result.addAll(operationTypeDefinitions);
         return result;

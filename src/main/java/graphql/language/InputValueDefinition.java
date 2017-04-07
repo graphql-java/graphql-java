@@ -8,7 +8,7 @@ public class InputValueDefinition extends AbstractNode {
     private String name;
     private Type type;
     private Value defaultValue;
-    private List<Directive> directives = new ArrayList<Directive>();
+    private List<Directive> directives = new ArrayList<>();
 
     public InputValueDefinition(String name) {
         this(name, null);
@@ -49,7 +49,7 @@ public class InputValueDefinition extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.add(type);
         result.add(defaultValue);
         result.addAll(directives);

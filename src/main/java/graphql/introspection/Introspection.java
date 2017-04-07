@@ -183,7 +183,7 @@ public class Introspection {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
                 List<GraphQLFieldDefinition> fieldDefinitions = fieldsContainer.getFieldDefinitions();
                 if (includeDeprecated) return fieldDefinitions;
-                List<GraphQLFieldDefinition> filtered = new ArrayList<GraphQLFieldDefinition>(fieldDefinitions);
+                List<GraphQLFieldDefinition> filtered = new ArrayList<>(fieldDefinitions);
                 for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
                     if (fieldDefinition.isDeprecated()) filtered.remove(fieldDefinition);
                 }
@@ -226,7 +226,7 @@ public class Introspection {
             if (type instanceof GraphQLEnumType) {
                 List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
                 if (includeDeprecated) return values;
-                List<GraphQLEnumValueDefinition> filtered = new ArrayList<GraphQLEnumValueDefinition>(values);
+                List<GraphQLEnumValueDefinition> filtered = new ArrayList<>(values);
                 for (GraphQLEnumValueDefinition valueDefinition : values) {
                     if (valueDefinition.isDeprecated()) filtered.remove(valueDefinition);
                 }
@@ -343,7 +343,7 @@ public class Introspection {
                         @Override
                         public Object get(DataFetchingEnvironment environment) {
                             GraphQLDirective directive = environment.getSource();
-                            return new ArrayList<DirectiveLocation>(directive.validLocations());
+                            return new ArrayList<>(directive.validLocations());
                         }
                     }))
             .field(newFieldDefinition()
