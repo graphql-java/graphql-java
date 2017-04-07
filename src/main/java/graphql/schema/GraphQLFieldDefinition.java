@@ -57,7 +57,7 @@ public class GraphQLFieldDefinition {
     }
 
     public List<GraphQLArgument> getArguments() {
-        return new ArrayList<GraphQLArgument>(arguments);
+        return new ArrayList<>(arguments);
     }
 
     public String getDescription() {
@@ -82,7 +82,7 @@ public class GraphQLFieldDefinition {
         private String description;
         private GraphQLOutputType type;
         private DataFetcher dataFetcher;
-        private List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
+        private List<GraphQLArgument> arguments = new ArrayList<>();
         private String deprecationReason;
         private boolean isField;
 

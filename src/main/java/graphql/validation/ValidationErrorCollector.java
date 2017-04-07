@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ValidationErrorCollector {
 
-    private final List<ValidationError> errors = new ArrayList<ValidationError>();
+    private final List<ValidationError> errors = new ArrayList<>();
 
     public void addError(ValidationError validationError) {
         this.errors.add(validationError);

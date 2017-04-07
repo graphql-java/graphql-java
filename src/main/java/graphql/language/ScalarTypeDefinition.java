@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ScalarTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
-    private List<Directive> directives = new ArrayList<Directive>();
+    private List<Directive> directives = new ArrayList<>();
 
     public ScalarTypeDefinition(String name) {
         this.name = name;
@@ -23,7 +23,7 @@ public class ScalarTypeDefinition extends AbstractNode implements TypeDefinition
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(directives);
         return result;
     }

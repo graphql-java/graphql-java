@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class NoUndefinedVariables extends AbstractRule {
 
-    private Set<String> variableNames = new LinkedHashSet<String>();
+    private Set<String> variableNames = new LinkedHashSet<>();
 
     public NoUndefinedVariables(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);

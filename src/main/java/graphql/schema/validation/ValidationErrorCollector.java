@@ -5,7 +5,7 @@ import java.util.Set;
 
 public class ValidationErrorCollector {
 
-    private final LinkedHashSet<ValidationError> errors = new LinkedHashSet<ValidationError>();
+    private final LinkedHashSet<ValidationError> errors = new LinkedHashSet<>();
 
     public void addError(ValidationError validationError) {
         this.errors.add(validationError);

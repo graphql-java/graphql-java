@@ -17,7 +17,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     private final String description;
 
 
-    private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<String, GraphQLInputObjectField>();
+    private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
 
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
     	assertValidName(name);
@@ -45,7 +45,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     }
 
     public List<GraphQLInputObjectField> getFields() {
-        return new ArrayList<GraphQLInputObjectField>(fieldMap.values());
+        return new ArrayList<>(fieldMap.values());
     }
 
     public GraphQLInputObjectField getField(String name) {
@@ -67,13 +67,13 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
 
     @Override
     public List<GraphQLInputObjectField> getFieldDefinitions() {
-        return new ArrayList<GraphQLInputObjectField>(fieldMap.values());
+        return new ArrayList<>(fieldMap.values());
     }
 
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLInputObjectField> fields = new ArrayList<GraphQLInputObjectField>();
+        private List<GraphQLInputObjectField> fields = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;

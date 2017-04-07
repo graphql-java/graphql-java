@@ -6,9 +6,9 @@ import java.util.List;
 
 public class ObjectTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
-    private List<Type> implementz = new ArrayList<Type>();
-    private List<Directive> directives = new ArrayList<Directive>();
-    private List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
+    private List<Type> implementz = new ArrayList<>();
+    private List<Directive> directives = new ArrayList<>();
+    private List<FieldDefinition> fieldDefinitions = new ArrayList<>();
 
     public ObjectTypeDefinition(String name) {
         this.name = name;
@@ -37,7 +37,7 @@ public class ObjectTypeDefinition extends AbstractNode implements TypeDefinition
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(implementz);
         result.addAll(directives);
         result.addAll(fieldDefinitions);

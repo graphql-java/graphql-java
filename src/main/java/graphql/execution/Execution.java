@@ -75,8 +75,8 @@ public class Execution {
             return new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError()));
         }
 
-        Map<String, List<Field>> fields = new LinkedHashMap<String, List<Field>>();
-        fieldCollector.collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<String>(), fields);
+        Map<String, List<Field>> fields = new LinkedHashMap<>();
+        fieldCollector.collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<>(), fields);
 
         ExecutionResult result;
         if (operation == MUTATION) {

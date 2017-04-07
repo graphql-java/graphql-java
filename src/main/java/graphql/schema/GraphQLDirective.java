@@ -14,7 +14,7 @@ public class GraphQLDirective {
     private final String name;
     private final String description;
     private final EnumSet<DirectiveLocation> locations;
-    private final List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
+    private final List<GraphQLArgument> arguments = new ArrayList<>();
     private final boolean onOperation;
     private final boolean onFragment;
     private final boolean onField;
@@ -37,7 +37,7 @@ public class GraphQLDirective {
     }
 
     public List<GraphQLArgument> getArguments() {
-        return new ArrayList<GraphQLArgument>(arguments);
+        return new ArrayList<>(arguments);
     }
 
     public GraphQLArgument getArgument(String name) {
@@ -90,7 +90,7 @@ public class GraphQLDirective {
 
         private String name;
         private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
-        private final List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
+        private final List<GraphQLArgument> arguments = new ArrayList<>();
         private String description;
         private boolean onOperation;
         private boolean onFragment;

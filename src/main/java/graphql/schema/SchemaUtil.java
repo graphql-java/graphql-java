@@ -176,7 +176,7 @@ public class SchemaUtil {
     }
 
     List<GraphQLType> resolveTypeReferences(List<GraphQLType> types, Map<String, GraphQLType> typeMap) {
-        List<GraphQLType> resolvedTypes = new ArrayList<GraphQLType>();
+        List<GraphQLType> resolvedTypes = new ArrayList<>();
         for (GraphQLType type : types) {
             resolvedTypes.add(resolveTypeReference(type, typeMap));
         }

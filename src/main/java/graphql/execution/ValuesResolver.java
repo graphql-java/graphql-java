@@ -11,7 +11,7 @@ public class ValuesResolver {
 
 
     public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> inputs) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
             result.put(variableDefinition.getName(), getVariableValue(schema, variableDefinition, inputs.get(variableDefinition.getName())));
         }
@@ -20,7 +20,7 @@ public class ValuesResolver {
 
 
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         Map<String, Argument> argumentMap = argumentMap(arguments);
         for (GraphQLArgument fieldArgument : argumentTypes) {
             Argument argument = argumentMap.get(fieldArgument.getName());
@@ -37,7 +37,7 @@ public class ValuesResolver {
 
 
     private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<String, Argument>();
+        Map<String, Argument> result = new LinkedHashMap<>();
         for (Argument argument : arguments) {
             result.put(argument.getName(), argument);
         }
@@ -90,7 +90,7 @@ public class ValuesResolver {
     }
 
     private Object coerceValueForInputObjectType(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
         for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
             if (input.containsKey(inputField.getName()) || alwaysHasValue(inputField)) {
                 Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
@@ -115,7 +115,7 @@ public class ValuesResolver {
 
     private List coerceValueForList(GraphQLList graphQLList, Object value) {
         if (value instanceof Iterable) {
-            List<Object> result = new ArrayList<Object>();
+            List<Object> result = new ArrayList<>();
             for (Object val : (Iterable) value) {
                 result.add(coerceValue(graphQLList.getWrappedType(), val));
             }
@@ -150,7 +150,7 @@ public class ValuesResolver {
     private Object coerceValueAstForList(GraphQLList graphQLList, Value value, Map<String, Object> variables) {
         if (value instanceof ArrayValue) {
             ArrayValue arrayValue = (ArrayValue) value;
-            List<Object> result = new ArrayList<Object>();
+            List<Object> result = new ArrayList<>();
             for (Value singleValue : arrayValue.getValues()) {
                 result.add(coerceValueAst(graphQLList.getWrappedType(), singleValue, variables));
             }
@@ -161,7 +161,7 @@ public class ValuesResolver {
     }
 
     private Object coerceValueAstForInputObject(GraphQLInputObjectType type, ObjectValue inputValue, Map<String, Object> variables) {
-        Map<String, Object> result = new LinkedHashMap<String, Object>();
+        Map<String, Object> result = new LinkedHashMap<>();
 
         Map<String, ObjectField> inputValueFieldsByName = mapObjectValueFieldsByName(inputValue);
 
@@ -184,7 +184,7 @@ public class ValuesResolver {
     }
 
     private Map<String, ObjectField> mapObjectValueFieldsByName(ObjectValue inputValue) {
-        Map<String, ObjectField> inputValueFieldsByName = new LinkedHashMap<String, ObjectField>();
+        Map<String, ObjectField> inputValueFieldsByName = new LinkedHashMap<>();
         for (ObjectField objectField : inputValue.getObjectFields()) {
             inputValueFieldsByName.put(objectField.getName(), objectField);
         }

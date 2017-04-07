@@ -64,7 +64,7 @@ public class FieldCollector {
         }
         String name = getFieldEntryKey(field);
         if (!fields.containsKey(name)) {
-            fields.put(name, new ArrayList<Field>());
+            fields.put(name, new ArrayList<>());
         }
         fields.get(name).add(field);
     }

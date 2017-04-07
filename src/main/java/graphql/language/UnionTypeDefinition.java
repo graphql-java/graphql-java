@@ -6,8 +6,8 @@ import java.util.List;
 
 public class UnionTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
-    private List<Directive> directives = new ArrayList<Directive>();
-    private List<Type> memberTypes = new ArrayList<Type>();
+    private List<Directive> directives = new ArrayList<>();
+    private List<Type> memberTypes = new ArrayList<>();
 
     public UnionTypeDefinition(String name) {
         this.name = name;
@@ -28,7 +28,7 @@ public class UnionTypeDefinition extends AbstractNode implements TypeDefinition 
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(directives);
         result.addAll(memberTypes);
         return result;
