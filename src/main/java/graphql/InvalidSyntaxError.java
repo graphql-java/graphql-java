@@ -8,7 +8,7 @@ import java.util.List;
 
 public class InvalidSyntaxError implements GraphQLError {
 
-    private final List<SourceLocation> sourceLocations = new ArrayList<SourceLocation>();
+    private final List<SourceLocation> sourceLocations = new ArrayList<>();
 
     public InvalidSyntaxError(SourceLocation sourceLocation) {
         if (sourceLocation != null)

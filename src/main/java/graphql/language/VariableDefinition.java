@@ -52,7 +52,7 @@ public class VariableDefinition extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.add(type);
         if (defaultValue != null) result.add(defaultValue);
         return result;

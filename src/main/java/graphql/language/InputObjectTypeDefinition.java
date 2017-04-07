@@ -6,8 +6,8 @@ import java.util.List;
 
 public class InputObjectTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
-    private List<Directive> directives = new ArrayList<Directive>();
-    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<InputValueDefinition>();
+    private List<Directive> directives = new ArrayList<>();
+    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
 
     public InputObjectTypeDefinition(String name) {
         this.name = name;
@@ -28,7 +28,7 @@ public class InputObjectTypeDefinition extends AbstractNode implements TypeDefin
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(directives);
         result.addAll(inputValueDefinitions);
         return result;

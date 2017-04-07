@@ -53,7 +53,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         }
     }
 
-    private Deque<ContextEntry> contextStack = new ArrayDeque<ContextEntry>();
+    private Deque<ContextEntry> contextStack = new ArrayDeque<>();
 
 
     private void addContextProperty(ContextProperty contextProperty, Object value) {

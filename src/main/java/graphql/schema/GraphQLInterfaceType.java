@@ -15,7 +15,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private final TypeResolver typeResolver;
 
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
@@ -43,7 +43,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
 
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
-        return new ArrayList<GraphQLFieldDefinition>(fieldDefinitionsByName.values());
+        return new ArrayList<>(fieldDefinitionsByName.values());
     }
 
     public String getName() {
@@ -79,7 +79,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLFieldDefinition> fields = new ArrayList<GraphQLFieldDefinition>();
+        private List<GraphQLFieldDefinition> fields = new ArrayList<>();
         private TypeResolver typeResolver;
 
 

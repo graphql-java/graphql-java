@@ -15,8 +15,8 @@ public class EnumTypeDefinition extends AbstractNode implements TypeDefinition {
 
     public EnumTypeDefinition(String name, List<Directive> directives) {
         this.name = name;
-        this.directives = ( null == directives ) ? new ArrayList<Directive>() : directives;
-        this.enumValueDefinitions = new ArrayList<EnumValueDefinition>();
+        this.directives = ( null == directives ) ? new ArrayList<>() : directives;
+        this.enumValueDefinitions = new ArrayList<>();
     }
 
     public List<EnumValueDefinition> getEnumValueDefinitions() {
@@ -34,7 +34,7 @@ public class EnumTypeDefinition extends AbstractNode implements TypeDefinition {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(enumValueDefinitions);
         result.addAll(directives);
         return result;

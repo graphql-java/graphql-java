@@ -9,8 +9,8 @@ public class Field extends AbstractNode implements Selection {
     private String name;
     private String alias;
 
-    private List<Argument> arguments = new ArrayList<Argument>();
-    private List<Directive> directives = new ArrayList<Directive>();
+    private List<Argument> arguments = new ArrayList<>();
+    private List<Directive> directives = new ArrayList<>();
     private SelectionSet selectionSet;
 
     public Field() {
@@ -47,7 +47,7 @@ public class Field extends AbstractNode implements Selection {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(arguments);
         result.addAll(directives);
         if (selectionSet != null) result.add(selectionSet);

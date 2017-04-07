@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Directive extends AbstractNode {
     private String name;
-    private final List<Argument> arguments = new ArrayList<Argument>();
+    private final List<Argument> arguments = new ArrayList<>();
 
     public Directive() {
 
@@ -36,7 +36,7 @@ public class Directive extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<Node>(arguments);
+        return new ArrayList<>(arguments);
     }
 
     @Override
