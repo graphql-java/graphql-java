@@ -1,41 +1,42 @@
 package graphql.schema;
 
-
+import graphql.GraphQLException;
+import graphql.introspection.Introspection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import graphql.GraphQLException;
-import graphql.introspection.Introspection;
-
 public class SchemaUtil {
 
-    public boolean isLeafType(GraphQLType type) {
+    private SchemaUtil() {
+    }
+
+    public static boolean isLeafType(GraphQLType type) {
         GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(type);
         return
-                unmodifiedType instanceof GraphQLScalarType
-                        || unmodifiedType instanceof GraphQLEnumType;
+            unmodifiedType instanceof GraphQLScalarType
+                || unmodifiedType instanceof GraphQLEnumType;
     }
 
-    public boolean isInputType(GraphQLType graphQLType) {
+    public static boolean isInputType(GraphQLType graphQLType) {
         GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(graphQLType);
         return
-                unmodifiedType instanceof GraphQLScalarType
-                        || unmodifiedType instanceof GraphQLEnumType
-                        || unmodifiedType instanceof GraphQLInputObjectType;
+            unmodifiedType instanceof GraphQLScalarType
+                || unmodifiedType instanceof GraphQLEnumType
+                || unmodifiedType instanceof GraphQLInputObjectType;
     }
 
-    public GraphQLUnmodifiedType getUnmodifiedType(GraphQLType graphQLType) {
+    public static GraphQLUnmodifiedType getUnmodifiedType(GraphQLType graphQLType) {
         if (graphQLType instanceof GraphQLModifiedType) {
             return getUnmodifiedType(((GraphQLModifiedType) graphQLType).getWrappedType());
         }
         return (GraphQLUnmodifiedType) graphQLType;
     }
 
-
-    private void collectTypes(GraphQLType root, Map<String, GraphQLType> result) {
+    private static void collectTypes(GraphQLType root, Map<String, GraphQLType> result) {
         if (root instanceof GraphQLNonNull) {
             collectTypes(((GraphQLNonNull) root).getWrappedType(), result);
         } else if (root instanceof GraphQLList) {
@@ -59,15 +60,14 @@ public class SchemaUtil {
         }
     }
 
-    private void collectTypesForUnions(GraphQLUnionType unionType, Map<String, GraphQLType> result) {
+    private static void collectTypesForUnions(GraphQLUnionType unionType, Map<String, GraphQLType> result) {
         result.put(unionType.getName(), unionType);
         for (GraphQLType type : unionType.getTypes()) {
             collectTypes(type, result);
         }
-
     }
 
-    private void collectTypesForInterfaces(GraphQLInterfaceType interfaceType, Map<String, GraphQLType> result) {
+    private static void collectTypesForInterfaces(GraphQLInterfaceType interfaceType, Map<String, GraphQLType> result) {
         if (result.containsKey(interfaceType.getName()) && !(result.get(interfaceType.getName()) instanceof TypeReference)) return;
         result.put(interfaceType.getName(), interfaceType);
 
@@ -79,8 +79,7 @@ public class SchemaUtil {
         }
     }
 
-
-    private void collectTypesForObjects(GraphQLObjectType objectType, Map<String, GraphQLType> result) {
+    private static void collectTypesForObjects(GraphQLObjectType objectType, Map<String, GraphQLType> result) {
         if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) return;
         result.put(objectType.getName(), objectType);
 
@@ -95,7 +94,7 @@ public class SchemaUtil {
         }
     }
 
-    private void collectTypesForInputObjects(GraphQLInputObjectType objectType, Map<String, GraphQLType> result) {
+    private static void collectTypesForInputObjects(GraphQLInputObjectType objectType, Map<String, GraphQLType> result) {
         if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) return;
         result.put(objectType.getName(), objectType);
 
@@ -104,9 +103,8 @@ public class SchemaUtil {
         }
     }
 
-
-    public Map<String, GraphQLType> allTypes(GraphQLSchema schema, Set<GraphQLType> dictionary) {
-        Map<String, GraphQLType> typesByName = new LinkedHashMap<String, GraphQLType>();
+    public static Map<String, GraphQLType> allTypes(GraphQLSchema schema, Set<GraphQLType> dictionary) {
+        Map<String, GraphQLType> typesByName = new LinkedHashMap<>();
         collectTypes(schema.getQueryType(), typesByName);
         if (schema.isSupportingMutations()) {
             collectTypes(schema.getMutationType(), typesByName);
@@ -117,12 +115,12 @@ public class SchemaUtil {
             }
         }
         collectTypes(Introspection.__Schema, typesByName);
-        return typesByName;
+        return Collections.unmodifiableMap(typesByName);
     }
 
-    public List<GraphQLObjectType> findImplementations(GraphQLSchema schema, GraphQLInterfaceType interfaceType) {
+    public static List<GraphQLObjectType> findImplementations(GraphQLSchema schema, GraphQLInterfaceType interfaceType) {
         Map<String, GraphQLType> allTypes = allTypes(schema, schema.getDictionary());
-        List<GraphQLObjectType> result = new ArrayList<GraphQLObjectType>();
+        List<GraphQLObjectType> result = new ArrayList<>();
         for (GraphQLType type : allTypes.values()) {
             if (!(type instanceof GraphQLObjectType)) {
                 continue;
@@ -130,11 +128,10 @@ public class SchemaUtil {
             GraphQLObjectType objectType = (GraphQLObjectType) type;
             if ((objectType).getInterfaces().contains(interfaceType)) result.add(objectType);
         }
-        return result;
+        return Collections.unmodifiableList(result);
     }
 
-
-    void replaceTypeReferences(GraphQLSchema schema) {
+    static void replaceTypeReferences(GraphQLSchema schema) {
         Map<String, GraphQLType> typeMap = allTypes(schema, schema.getDictionary());
         for (GraphQLType type : typeMap.values()) {
             if (type instanceof GraphQLFieldsContainer) {
@@ -146,7 +143,7 @@ public class SchemaUtil {
         }
     }
 
-    private void resolveTypeReferencesForFieldsContainer(GraphQLFieldsContainer fieldsContainer, Map<String, GraphQLType> typeMap) {
+    private static void resolveTypeReferencesForFieldsContainer(GraphQLFieldsContainer fieldsContainer, Map<String, GraphQLType> typeMap) {
         for (GraphQLFieldDefinition fieldDefinition : fieldsContainer.getFieldDefinitions()) {
             fieldDefinition.replaceTypeReferences(typeMap);
             for (GraphQLArgument argument : fieldDefinition.getArguments()) {
@@ -155,13 +152,13 @@ public class SchemaUtil {
         }
     }
 
-    private void resolveTypeReferencesForInputFieldsContainer(GraphQLInputFieldsContainer fieldsContainer, Map<String, GraphQLType> typeMap) {
+    private static void resolveTypeReferencesForInputFieldsContainer(GraphQLInputFieldsContainer fieldsContainer, Map<String, GraphQLType> typeMap) {
         for (GraphQLInputObjectField fieldDefinition : fieldsContainer.getFieldDefinitions()) {
             fieldDefinition.replaceTypeReferences(typeMap);
         }
     }
 
-    GraphQLType resolveTypeReference(GraphQLType type, Map<String, GraphQLType> typeMap) {
+    static GraphQLType resolveTypeReference(GraphQLType type, Map<String, GraphQLType> typeMap) {
         if (type instanceof GraphQLTypeReference || typeMap.containsKey(type.getName())) {
             GraphQLType resolvedType = typeMap.get(type.getName());
             if (resolvedType == null) {

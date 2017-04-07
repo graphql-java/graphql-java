@@ -16,8 +16,6 @@ public class NestedInputSchema {
 
 
     public static GraphQLSchema createSchema() {
-
-
         GraphQLObjectType root = rootType();
 
         return GraphQLSchema.newSchema()
@@ -47,6 +45,7 @@ public class NestedInputSchema {
                                         }
                                     }
                                     if (filter.containsKey("range")) {
+                                        @SuppressWarnings("unchecked")
                                         Map<String, Integer> range = (Map<String, Integer>) filter.get("range");
                                         if (initialValue < range.get("lowerBound") ||
                                                 initialValue > range.get("upperBound")) {

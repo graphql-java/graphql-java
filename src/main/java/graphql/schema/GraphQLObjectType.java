@@ -15,8 +15,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<String, GraphQLFieldDefinition>();
-    private final List<GraphQLInterfaceType> interfaces = new ArrayList<GraphQLInterfaceType>();
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
+    private final List<GraphQLInterfaceType> interfaces = new ArrayList<>();
 
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
                              List<GraphQLInterfaceType> interfaces) {
@@ -34,7 +34,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         for (int i = 0; i < interfaces.size(); i++) {
             GraphQLInterfaceType inter = interfaces.get(i);
             if (inter instanceof TypeReference) {
-                this.interfaces.set(i, (GraphQLInterfaceType) new SchemaUtil().resolveTypeReference(inter, typeMap));
+                this.interfaces.set(i, (GraphQLInterfaceType) SchemaUtil.resolveTypeReference(inter, typeMap));
             }
         }
     }
@@ -54,12 +54,12 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
 
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
-        return new ArrayList<GraphQLFieldDefinition>(fieldDefinitionsByName.values());
+        return new ArrayList<>(fieldDefinitionsByName.values());
     }
 
 
     public List<GraphQLInterfaceType> getInterfaces() {
-        return new ArrayList<GraphQLInterfaceType>(interfaces);
+        return new ArrayList<>(interfaces);
     }
 
     public String getDescription() {
@@ -170,7 +170,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     private static class Reference extends GraphQLObjectType implements TypeReference {
         private Reference(String name) {
-            super(name, "", Collections.<GraphQLFieldDefinition>emptyList(), Collections.<GraphQLInterfaceType>emptyList());
+            super(name, "", Collections.emptyList(), Collections.emptyList());
         }
     }
 }

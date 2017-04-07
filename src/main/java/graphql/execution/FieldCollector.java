@@ -14,12 +14,9 @@ public class FieldCollector {
 
     private ConditionalNodes conditionalNodes;
 
-    private SchemaUtil schemaUtil = new SchemaUtil();
-
     public FieldCollector() {
         conditionalNodes = new ConditionalNodes();
     }
-
 
     public void collectFields(ExecutionContext executionContext, GraphQLObjectType type, SelectionSet selectionSet, List<String> visitedFragments, Map<String, List<Field>> fields) {
 
@@ -99,7 +96,7 @@ public class FieldCollector {
         }
 
         if (conditionType instanceof GraphQLInterfaceType) {
-            List<GraphQLObjectType> implementations = schemaUtil.findImplementations(executionContext.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
+            List<GraphQLObjectType> implementations = SchemaUtil.findImplementations(executionContext.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
             return implementations.contains(type);
         } else if (conditionType instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) conditionType).getTypes().contains(type);

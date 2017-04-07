@@ -16,16 +16,17 @@ import graphql.schema.validation.ValidationError;
 import graphql.schema.validation.Validator;
 
 import static graphql.Assert.assertNotNull;
+import static java.util.Collections.emptySet;
 
 public class GraphQLSchema {
 
     private final GraphQLObjectType queryType;
     private final GraphQLObjectType mutationType;
     private final Map<String, GraphQLType> typeMap;
-    private Set<GraphQLType> dictionary;
+    private final Set<GraphQLType> dictionary;
 
     public GraphQLSchema(GraphQLObjectType queryType) {
-        this(queryType, null, Collections.<GraphQLType>emptySet());
+        this(queryType, null, Collections.emptySet());
     }
 
     public Set<GraphQLType> getDictionary() {
@@ -38,7 +39,7 @@ public class GraphQLSchema {
         this.queryType = queryType;
         this.mutationType = mutationType;
         this.dictionary = dictionary;
-        typeMap = new SchemaUtil().allTypes(this, dictionary);
+        typeMap = SchemaUtil.allTypes(this, dictionary);
     }
 
     public GraphQLType getType(String typeName) {
@@ -46,7 +47,7 @@ public class GraphQLSchema {
     }
 
     public List<GraphQLType> getAllTypesAsList() {
-        return new ArrayList<GraphQLType>(typeMap.values());
+        return new ArrayList<>(typeMap.values());
     }
 
     public GraphQLObjectType getQueryType() {
@@ -101,15 +102,15 @@ public class GraphQLSchema {
         }
 
         public GraphQLSchema build() {
-            return build(Collections.<GraphQLType>emptySet());
+            return build(emptySet());
         }
 
         public GraphQLSchema build(Set<GraphQLType> dictionary) {
             Assert.assertNotNull(dictionary, "dictionary can't be null");
             GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, dictionary);
-            new SchemaUtil().replaceTypeReferences(graphQLSchema);
+            SchemaUtil.replaceTypeReferences(graphQLSchema);
             Collection<ValidationError> errors = new Validator().validateSchema(graphQLSchema);
-            if (errors.size() > 0) {
+            if (!errors.isEmpty()) {
                 throw new InvalidSchemaException(errors);
             }
             return graphQLSchema;

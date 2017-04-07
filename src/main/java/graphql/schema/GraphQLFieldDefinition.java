@@ -15,7 +15,7 @@ public class GraphQLFieldDefinition {
     private GraphQLOutputType type;
     private final DataFetcher dataFetcher;
     private final String deprecationReason;
-    private final List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
+    private final List<GraphQLArgument> arguments = new ArrayList<>();
 
 
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
@@ -33,7 +33,7 @@ public class GraphQLFieldDefinition {
 
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+        type = (GraphQLOutputType) SchemaUtil.resolveTypeReference(type, typeMap);
     }
 
     public String getName() {
@@ -120,12 +120,7 @@ public class GraphQLFieldDefinition {
         }
 
         public Builder staticValue(final Object value) {
-            this.dataFetcher = new DataFetcher() {
-                @Override
-                public Object get(DataFetchingEnvironment environment) {
-                    return value;
-                }
-            };
+            this.dataFetcher = environment -> value;
             return this;
         }
 
