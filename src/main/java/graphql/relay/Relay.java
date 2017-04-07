@@ -11,7 +11,7 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.TypeResolver;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -218,16 +218,15 @@ public class Relay {
         }
     }
 
-    private static final Charset UTF8 = Charset.forName("UTF-8");
     private static final java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
     private static final java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
 
     public String toGlobalId(String type, String id) {
-        return encoder.encodeToString((type + ":" + id).getBytes(UTF8));
+        return encoder.encodeToString((type + ":" + id).getBytes(StandardCharsets.UTF_8));
     }
 
     public ResolvedGlobalId fromGlobalId(String globalId) {
-        String[] split = new String(decoder.decode(globalId), UTF8).split(":", 2);
+        String[] split = new String(decoder.decode(globalId), StandardCharsets.UTF_8).split(":", 2);
         if (split.length != 2) {
             throw new IllegalArgumentException(String.format("expecting a valid global id, got %s", globalId));
         }
