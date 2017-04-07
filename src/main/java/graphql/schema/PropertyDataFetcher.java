@@ -72,9 +72,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
             Method method = findAccessibleMethod(object.getClass(), getterName);
             return method.invoke(object);
 
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
     }
