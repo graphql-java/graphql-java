@@ -1,12 +1,24 @@
 package graphql.relay;
 
-
-import graphql.schema.*;
-
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.TypeResolver;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.Scalars.*;
+import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLID;
+import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
@@ -206,12 +218,15 @@ public class Relay {
         }
     }
 
+    private static final java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
+    private static final java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
+
     public String toGlobalId(String type, String id) {
-        return Base64.toBase64(type + ":" + id);
+        return encoder.encodeToString((type + ":" + id).getBytes(StandardCharsets.UTF_8));
     }
 
     public ResolvedGlobalId fromGlobalId(String globalId) {
-        String[] split = Base64.fromBase64(globalId).split(":", 2);
+        String[] split = new String(decoder.decode(globalId), StandardCharsets.UTF_8).split(":", 2);
         if (split.length != 2) {
             throw new IllegalArgumentException(String.format("expecting a valid global id, got %s", globalId));
         }
