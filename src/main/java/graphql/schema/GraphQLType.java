@@ -5,5 +5,4 @@ public interface GraphQLType {
 
     String getName();
 
-
 }

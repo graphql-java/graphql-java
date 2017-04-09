@@ -28,7 +28,7 @@ public class GraphQLArgument {
 
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        type = (GraphQLInputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+        type = (GraphQLInputType) SchemaUtil.resolveTypeReference(type, typeMap);
     }
 
     public String getName() {

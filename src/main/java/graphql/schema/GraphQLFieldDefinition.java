@@ -33,7 +33,7 @@ public class GraphQLFieldDefinition {
 
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+        type = (GraphQLOutputType) SchemaUtil.resolveTypeReference(type, typeMap);
     }
 
     public String getName() {
@@ -120,12 +120,7 @@ public class GraphQLFieldDefinition {
         }
 
         public Builder staticValue(final Object value) {
-            this.dataFetcher = new DataFetcher() {
-                @Override
-                public Object get(DataFetchingEnvironment environment) {
-                    return value;
-                }
-            };
+            this.dataFetcher = environment -> value;
             return this;
         }
 

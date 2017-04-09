@@ -14,7 +14,6 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     private final List<GraphQLObjectType> types = new ArrayList<>();
     private final TypeResolver typeResolver;
 
-
     public GraphQLUnionType(String name, String description, List<GraphQLObjectType> types, TypeResolver typeResolver) {
     	assertValidName(name);
         assertNotNull(types, "types can't be null");
@@ -30,7 +29,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         for (int i = 0; i < types.size(); i++) {
             GraphQLObjectType type = types.get(i);
             if (type instanceof TypeReference) {
-                this.types.set(i, (GraphQLObjectType) new SchemaUtil().resolveTypeReference(type, typeMap));
+                this.types.set(i, (GraphQLObjectType) SchemaUtil.resolveTypeReference(type, typeMap));
             }
         }
     }

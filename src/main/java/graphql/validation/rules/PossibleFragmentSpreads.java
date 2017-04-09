@@ -18,7 +18,6 @@ public class PossibleFragmentSpreads extends AbstractRule {
         super(validationContext, validationErrorCollector);
     }
 
-
     @Override
     public void checkInlineFragment(InlineFragment inlineFragment) {
         GraphQLOutputType fragType = getValidationContext().getOutputType();
@@ -56,7 +55,7 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (parent instanceof GraphQLObjectType) {
             possibleParentTypes = Collections.<GraphQLType>singletonList(parent);
         } else if (parent instanceof GraphQLInterfaceType) {
-            possibleParentTypes = new SchemaUtil().findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) parent);
+            possibleParentTypes = SchemaUtil.findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) parent);
         } else if (parent instanceof GraphQLUnionType) {
             possibleParentTypes = ((GraphQLUnionType) parent).getTypes();
         } else {
@@ -66,7 +65,7 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (type instanceof GraphQLObjectType) {
             possibleConditionTypes = Collections.singletonList(type);
         } else if (type instanceof GraphQLInterfaceType) {
-            possibleConditionTypes = new SchemaUtil().findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) type);
+            possibleConditionTypes = SchemaUtil.findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) type);
         } else if (type instanceof GraphQLUnionType) {
             possibleConditionTypes = ((GraphQLUnionType) type).getTypes();
         } else {

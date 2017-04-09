@@ -34,7 +34,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         for (int i = 0; i < interfaces.size(); i++) {
             GraphQLInterfaceType inter = interfaces.get(i);
             if (inter instanceof TypeReference) {
-                this.interfaces.set(i, (GraphQLInterfaceType) new SchemaUtil().resolveTypeReference(inter, typeMap));
+                this.interfaces.set(i, (GraphQLInterfaceType) SchemaUtil.resolveTypeReference(inter, typeMap));
             }
         }
     }
@@ -170,7 +170,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     private static class Reference extends GraphQLObjectType implements TypeReference {
         private Reference(String name) {
-            super(name, "", Collections.<GraphQLFieldDefinition>emptyList(), Collections.<GraphQLInterfaceType>emptyList());
+            super(name, "", Collections.emptyList(), Collections.emptyList());
         }
     }
 }
