@@ -364,4 +364,101 @@ directive @DirectiveName(arg1:String arg2:Int=23) on FIELD | QUERY
         document.definitions.size() == 1
         isEqual(document.definitions[0], schema)
     }
+
+    def "comment support on definitions"() {
+        given:
+        def input = """
+
+#schema comment 1
+#       schema comment 2 with leading spaces
+schema {
+    # schema operation comment query
+    query: Query
+    # schema operation comment mutation
+    mutation: Mutation
+}
+
+# type query comment 1
+# type query comment 2
+type Query {
+    # query field 'hero' comment
+    hero(episode: Episode): Character
+    # query field 'droid' comment
+    droid(id: ID!): Droid
+    
+    #comment after fields that doesnt count for anything
+}
+
+# enum Episode comment 1
+# enum Episode comment 2
+enum Episode { NEWHOPE, EMPIRE, JEDI }
+
+# interface Character comment 1
+# interface Character comment 2
+interface Character {
+    id: String!,
+    name: String,
+    friends: [Character],
+    appearsIn: [Episode],
+}
+
+# union type Humanoid comment 1
+union Humanoid = Human | Droid
+
+type Mutation {
+    shoot (
+        # arg 'id'
+        id: String!
+        # arg 'with'
+        with : Gun
+    ): Query
+}
+
+# input type Gun comment 1
+input Gun {
+    # gun 'name' input value comment
+    name : String
+    # gun 'caliber' input value comment
+    caliber : Int
+}
+ 
+
+# down here just hanging out wont be counted as anything
+
+"""
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        SchemaDefinition schemaDef = document.definitions[0] as SchemaDefinition
+        schemaDef.comments == ["schema comment 1", "       schema comment 2 with leading spaces"]
+        schemaDef.operationTypeDefinitions[0].comments == [" schema operation comment query"]
+        schemaDef.operationTypeDefinitions[1].comments == [" schema operation comment mutation"]
+
+        ObjectTypeDefinition typeDef = document.definitions[1] as ObjectTypeDefinition
+        typeDef.comments == [" type query comment 1", " type query comment 2"]
+        typeDef.fieldDefinitions[0].comments == [" query field 'hero' comment"]
+        typeDef.fieldDefinitions[1].comments == [" query field 'droid' comment"]
+
+        EnumTypeDefinition enumTypeDef = document.definitions[2] as EnumTypeDefinition
+        enumTypeDef.comments == [" enum Episode comment 1", " enum Episode comment 2"]
+
+        InterfaceTypeDefinition interfaceTypeDef = document.definitions[3] as InterfaceTypeDefinition
+        interfaceTypeDef.comments == [" interface Character comment 1", " interface Character comment 2"]
+
+        UnionTypeDefinition unionTypeDef = document.definitions[4] as UnionTypeDefinition
+        unionTypeDef.comments == [" union type Humanoid comment 1"]
+
+        ObjectTypeDefinition mutationTypeDef = document.definitions[5] as ObjectTypeDefinition
+        mutationTypeDef.fieldDefinitions[0].inputValueDefinitions[0].comments == [" arg 'id'"]
+        mutationTypeDef.fieldDefinitions[0].inputValueDefinitions[1].comments == [" arg 'with'"]
+
+        InputObjectTypeDefinition inputTypeDef = document.definitions[6] as InputObjectTypeDefinition
+        inputTypeDef.comments == [" input type Gun comment 1"]
+        inputTypeDef.inputValueDefinitions[0].comments == [" gun 'name' input value comment"]
+        inputTypeDef.inputValueDefinitions[1].comments == [" gun 'caliber' input value comment"]
+
+    }
+
 }

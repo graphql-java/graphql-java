@@ -307,7 +307,7 @@ class ParserTest extends Specification {
     def "parse complex string value and comment"() {
         given:
         def input = """
-            { # this is some comment, which should be igored
+            { # this is some comment, which should be captured
                hello(arg: "hello, world" ) }
             """
 
@@ -317,6 +317,7 @@ class ParserTest extends Specification {
 
         then:
         isEqual(helloField, new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
+        helloField.comments == [" this is some comment, which should be captured"]
     }
 
     @Unroll
