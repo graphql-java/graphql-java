@@ -100,8 +100,8 @@ class StarWarsData {
 
     static TypeResolver characterTypeResolver = new TypeResolver() {
         @Override
-        GraphQLObjectType getType(Object object) {
-            def id = object.id
+        GraphQLObjectType getType(TypeResolutionEnvironment env) {
+            def id = env.getObject().id
             if (humanData[id] != null)
                 return StarWarsSchema.humanType
             if (droidData[id] != null)

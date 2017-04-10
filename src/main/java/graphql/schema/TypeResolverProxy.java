@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.TypeResolutionEnvironment;
+
 public class TypeResolverProxy implements TypeResolver {
 
     private TypeResolver typeResolver;
@@ -14,7 +16,7 @@ public class TypeResolverProxy implements TypeResolver {
     }
 
     @Override
-    public GraphQLObjectType getType(Object object) {
-        return typeResolver != null ? typeResolver.getType(object) : null;
+    public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+        return typeResolver != null ? typeResolver.getType(env) : null;
     }
 }
