@@ -24,7 +24,7 @@ public class ObjectField extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.add(value);
         return result;
     }

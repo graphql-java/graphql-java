@@ -34,7 +34,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public ExecutionResult execute(ExecutionContext executionContext, ExecutionParameters parameters) {
-        GraphQLExecutionNodeDatum data = new GraphQLExecutionNodeDatum(new LinkedHashMap<String, Object>(), parameters.source());
+        GraphQLExecutionNodeDatum data = new GraphQLExecutionNodeDatum(new LinkedHashMap<>(), parameters.source());
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLExecutionNode root = new GraphQLExecutionNode(type, parameters.fields(), singletonList(data));
         return execute(executionContext, root);
@@ -42,7 +42,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private ExecutionResult execute(ExecutionContext executionContext, GraphQLExecutionNode root) {
 
-        Queue<GraphQLExecutionNode> nodes = new ArrayDeque<GraphQLExecutionNode>();
+        Queue<GraphQLExecutionNode> nodes = new ArrayDeque<>();
         nodes.add(root);
 
         while (!nodes.isEmpty()) {
@@ -106,7 +106,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                                   List<GraphQLExecutionNodeValue> values, String fieldName, List<Field> fields,
                                                   GraphQLObjectType parentType, GraphQLList listType) {
 
-        List<GraphQLExecutionNodeValue> flattenedNodeValues = new ArrayList<GraphQLExecutionNodeValue>();
+        List<GraphQLExecutionNodeValue> flattenedNodeValues = new ArrayList<>();
 
         for (GraphQLExecutionNodeValue value : values) {
             if (value.getValue() == null) {
@@ -140,7 +140,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private List<GraphQLExecutionNode> createChildNodes(ExecutionContext executionContext, List<Field> fields,
                                                         ChildDataCollector collector) {
 
-        List<GraphQLExecutionNode> childNodes = new ArrayList<GraphQLExecutionNode>();
+        List<GraphQLExecutionNode> childNodes = new ArrayList<>();
 
         for (ChildDataCollector.Entry entry : collector.getEntries()) {
             Map<String, List<Field>> childFields = getChildFields(executionContext, entry.getObjectType(), fields);
@@ -188,8 +188,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private Map<String, List<Field>> getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
                                                     List<Field> fields) {
 
-        Map<String, List<Field>> subFields = new LinkedHashMap<String, List<Field>>();
-        List<String> visitedFragments = new ArrayList<String>();
+        Map<String, List<Field>> subFields = new LinkedHashMap<>();
+        List<String> visitedFragments = new ArrayList<>();
         for (Field field : fields) {
             if (field.getSelectionSet() == null) continue;
             fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
@@ -249,7 +249,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
                 fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
-        List<Object> sources = new ArrayList<Object>();
+        List<Object> sources = new ArrayList<>();
         for (GraphQLExecutionNodeDatum n : nodeData) {
             sources.add(n.getSource());
         }
@@ -267,7 +267,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         try {
             values = (List<Object>) getDataFetcher(fieldDef).get(environment);
         } catch (Exception e) {
-            values = new ArrayList<Object>();
+            values = new ArrayList<>();
             for (int i = 0; i < nodeData.size(); i++) {
                 values.add(null);
             }
@@ -276,7 +276,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
         assert nodeData.size() == values.size();
 
-        List<GraphQLExecutionNodeValue> retVal = new ArrayList<GraphQLExecutionNodeValue>();
+        List<GraphQLExecutionNodeValue> retVal = new ArrayList<>();
         for (int i = 0; i < nodeData.size(); i++) {
             retVal.add(new GraphQLExecutionNodeValue(nodeData.get(i), values.get(i)));
         }

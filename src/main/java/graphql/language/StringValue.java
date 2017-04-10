@@ -22,7 +22,7 @@ public class StringValue extends AbstractNode implements Value {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         return result;
     }
 

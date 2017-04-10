@@ -74,7 +74,7 @@ public class ValidationUtil {
     }
 
     private Map<String, ObjectField> fieldMap(ObjectValue objectValue) {
-        Map<String, ObjectField> result = new LinkedHashMap<String, ObjectField>();
+        Map<String, ObjectField> result = new LinkedHashMap<>();
         for (ObjectField objectField : objectValue.getObjectFields()) {
             result.put(objectField.getName(), objectField);
         }

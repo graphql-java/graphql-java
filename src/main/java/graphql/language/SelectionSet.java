@@ -6,7 +6,7 @@ import java.util.List;
 
 public class SelectionSet extends AbstractNode {
 
-    private final List<Selection> selections = new ArrayList<Selection>();
+    private final List<Selection> selections = new ArrayList<>();
 
     public List<Selection> getSelections() {
         return selections;
@@ -21,7 +21,7 @@ public class SelectionSet extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(selections);
         return result;
     }

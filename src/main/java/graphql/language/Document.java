@@ -6,7 +6,7 @@ import java.util.List;
 
 public class Document extends AbstractNode {
 
-    private List<Definition> definitions = new ArrayList<Definition>();
+    private List<Definition> definitions = new ArrayList<>();
 
     public Document() {
 
@@ -27,7 +27,7 @@ public class Document extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<Node>(definitions);
+        return new ArrayList<>(definitions);
     }
 
 

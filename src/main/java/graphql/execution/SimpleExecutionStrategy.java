@@ -12,7 +12,7 @@ public class SimpleExecutionStrategy extends ExecutionStrategy {
     @Override
     public ExecutionResult execute(ExecutionContext executionContext, ExecutionParameters parameters) throws NonNullableFieldWasNullException {
         Map<String, List<Field>> fields = parameters.fields();
-        Map<String, Object> results = new LinkedHashMap<String, Object>();
+        Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
             List<Field> fieldList = fields.get(fieldName);
             try {

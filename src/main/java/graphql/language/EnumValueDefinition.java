@@ -14,7 +14,7 @@ public class EnumValueDefinition extends AbstractNode {
 
     public EnumValueDefinition(String name, List<Directive> directives) {
         this.name = name;
-        this.directives = (null == directives) ? new ArrayList<Directive>() : directives;
+        this.directives = (null == directives) ? new ArrayList<>() : directives;
     }
 
     public String getName() {
@@ -27,7 +27,7 @@ public class EnumValueDefinition extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(directives);
         return result;
     }

@@ -6,8 +6,8 @@ import java.util.List;
 
 public class InterfaceTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
-    private List<FieldDefinition> definitions = new ArrayList<FieldDefinition>();
-    private List<Directive> directives = new ArrayList<Directive>();
+    private List<FieldDefinition> definitions = new ArrayList<>();
+    private List<Directive> directives = new ArrayList<>();
 
     public InterfaceTypeDefinition(String name) {
         this.name = name;
@@ -28,7 +28,7 @@ public class InterfaceTypeDefinition extends AbstractNode implements TypeDefinit
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(definitions);
         result.addAll(directives);
         return result;

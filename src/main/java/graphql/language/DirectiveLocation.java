@@ -21,7 +21,7 @@ public class DirectiveLocation extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         return result;
     }
 

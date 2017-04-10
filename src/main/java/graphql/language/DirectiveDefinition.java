@@ -6,8 +6,8 @@ import java.util.List;
 
 public class DirectiveDefinition extends AbstractNode implements Definition {
     private String name;
-    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<InputValueDefinition>();
-    private List<DirectiveLocation> directiveLocations = new ArrayList<DirectiveLocation>();
+    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+    private List<DirectiveLocation> directiveLocations = new ArrayList<>();
 
     public DirectiveDefinition(String name) {
         this.name = name;
@@ -23,7 +23,7 @@ public class DirectiveDefinition extends AbstractNode implements Definition {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(inputValueDefinitions);
         result.addAll(directiveLocations);
         return result;
