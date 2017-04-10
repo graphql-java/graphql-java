@@ -4,6 +4,8 @@ package graphql.language;
 import java.util.Collections;
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+
 public abstract class AbstractNode implements Node {
 
     private SourceLocation sourceLocation;
@@ -24,6 +26,7 @@ public abstract class AbstractNode implements Node {
     }
 
     public void setComments(List<String> comments) {
-        this.comments = comments == null ? Collections.emptyList() : comments;
+        assertNotNull(comments, "You must provide non null comments");
+        this.comments = comments;
     }
 }

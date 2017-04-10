@@ -10,7 +10,7 @@ public interface Node {
     SourceLocation getSourceLocation();
 
     /**
-     * Nodes can have comments made on them
+     * Nodes can have comments made on them, the following is one comment per line before a node.
      *
      * @return the list of comments or an empty list of there are none
      */
