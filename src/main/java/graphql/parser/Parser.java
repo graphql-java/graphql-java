@@ -24,9 +24,8 @@ public class Parser {
         parser.setErrorHandler(new BailErrorStrategy());
         GraphqlParser.DocumentContext document = parser.document();
 
-
         GraphqlAntlrToLanguage antlrToLanguage = new GraphqlAntlrToLanguage();
         antlrToLanguage.visitDocument(document);
-        return antlrToLanguage.result;
+        return antlrToLanguage.getResult();
     }
 }
