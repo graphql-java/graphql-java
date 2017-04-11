@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.language.ScalarTypeDefinition;
+
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
@@ -9,14 +11,19 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
     private final String name;
     private final String description;
     private final Coercing coercing;
-
+    private final ScalarTypeDefinition definition;
 
     public GraphQLScalarType(String name, String description, Coercing coercing) {
-    	assertValidName(name);
+        this(name,description,coercing,null);
+    }
+
+    public GraphQLScalarType(String name, String description, Coercing coercing, ScalarTypeDefinition definition) {
+        assertValidName(name);
         assertNotNull(coercing, "coercing can't be null");
         this.name = name;
         this.description = description;
         this.coercing = coercing;
+        this.definition = definition;
     }
 
     public String getName() {
@@ -31,6 +38,10 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
 
     public Coercing getCoercing() {
         return coercing;
+    }
+
+    public ScalarTypeDefinition getDefinition() {
+        return definition;
     }
 
     @Override

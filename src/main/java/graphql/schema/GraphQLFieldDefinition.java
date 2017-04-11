@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.language.FieldDefinition;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,10 +18,15 @@ public class GraphQLFieldDefinition {
     private final DataFetcher dataFetcher;
     private final String deprecationReason;
     private final List<GraphQLArgument> arguments = new ArrayList<>();
+    private final FieldDefinition definition;
 
 
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
-    	assertValidName(name);
+        this(name,description,type, dataFetcher,arguments,deprecationReason,null);
+    }
+
+    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason, FieldDefinition definition) {
+        assertValidName(name);
         assertNotNull(dataFetcher, "dataFetcher can't be null");
         assertNotNull(type, "type can't be null");
         assertNotNull(arguments, "arguments can't be null");
@@ -29,6 +36,7 @@ public class GraphQLFieldDefinition {
         this.dataFetcher = dataFetcher;
         this.arguments.addAll(arguments);
         this.deprecationReason = deprecationReason;
+        this.definition = definition;
     }
 
 
@@ -64,6 +72,10 @@ public class GraphQLFieldDefinition {
         return description;
     }
 
+    public FieldDefinition getDefinition() {
+        return definition;
+    }
+
     public String getDeprecationReason() {
         return deprecationReason;
     }
@@ -85,10 +97,16 @@ public class GraphQLFieldDefinition {
         private List<GraphQLArgument> arguments = new ArrayList<>();
         private String deprecationReason;
         private boolean isField;
+        private FieldDefinition definition;
 
 
         public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        public Builder definition(FieldDefinition definition) {
+            this.definition = definition;
             return this;
         }
 
@@ -120,12 +138,7 @@ public class GraphQLFieldDefinition {
         }
 
         public Builder staticValue(final Object value) {
-            this.dataFetcher = new DataFetcher() {
-                @Override
-                public Object get(DataFetchingEnvironment environment) {
-                    return value;
-                }
-            };
+            this.dataFetcher = environment -> value;
             return this;
         }
 
@@ -192,7 +205,7 @@ public class GraphQLFieldDefinition {
                     dataFetcher = new PropertyDataFetcher(name);
                 }
             }
-            return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments, deprecationReason);
+            return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments, deprecationReason, definition);
         }
 
 
