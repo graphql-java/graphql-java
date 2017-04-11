@@ -3,6 +3,8 @@ package graphql.parser
 import graphql.language.*
 import spock.lang.Specification
 
+import java.util.stream.Collectors
+
 class IDLParserTest extends Specification {
 
     boolean isEqual(Node node1, Node node2) {
@@ -365,7 +367,14 @@ directive @DirectiveName(arg1:String arg2:Int=23) on FIELD | QUERY
         isEqual(document.definitions[0], schema)
     }
 
+
+    List<String> commentContent(List<Comment> comments) {
+        comments.stream().map {c -> c.content}.collect(Collectors.toList())
+    }
+
     def "comment support on definitions"() {
+
+
         given:
         def input = """
 
@@ -432,32 +441,32 @@ input Gun {
 
         then:
         SchemaDefinition schemaDef = document.definitions[0] as SchemaDefinition
-        schemaDef.comments == ["schema comment 1", "       schema comment 2 with leading spaces"]
-        schemaDef.operationTypeDefinitions[0].comments == [" schema operation comment query"]
-        schemaDef.operationTypeDefinitions[1].comments == [" schema operation comment mutation"]
+        commentContent(schemaDef.comments) == ["schema comment 1", "       schema comment 2 with leading spaces"]
+        commentContent(schemaDef.operationTypeDefinitions[0].comments) == [" schema operation comment query"]
+        commentContent(schemaDef.operationTypeDefinitions[1].comments) == [" schema operation comment mutation"]
 
         ObjectTypeDefinition typeDef = document.definitions[1] as ObjectTypeDefinition
-        typeDef.comments == [" type query comment 1", " type query comment 2"]
-        typeDef.fieldDefinitions[0].comments == [" query field 'hero' comment"]
-        typeDef.fieldDefinitions[1].comments == [" query field 'droid' comment"]
+        commentContent(typeDef.comments) == [" type query comment 1", " type query comment 2"]
+        commentContent(typeDef.fieldDefinitions[0].comments) == [" query field 'hero' comment"]
+        commentContent(typeDef.fieldDefinitions[1].comments) == [" query field 'droid' comment"]
 
         EnumTypeDefinition enumTypeDef = document.definitions[2] as EnumTypeDefinition
-        enumTypeDef.comments == [" enum Episode comment 1", " enum Episode comment 2"]
+        commentContent(enumTypeDef.comments) == [" enum Episode comment 1", " enum Episode comment 2"]
 
         InterfaceTypeDefinition interfaceTypeDef = document.definitions[3] as InterfaceTypeDefinition
-        interfaceTypeDef.comments == [" interface Character comment 1", " interface Character comment 2"]
+        commentContent(interfaceTypeDef.comments) == [" interface Character comment 1", " interface Character comment 2"]
 
         UnionTypeDefinition unionTypeDef = document.definitions[4] as UnionTypeDefinition
-        unionTypeDef.comments == [" union type Humanoid comment 1"]
+        commentContent(unionTypeDef.comments) == [" union type Humanoid comment 1"]
 
         ObjectTypeDefinition mutationTypeDef = document.definitions[5] as ObjectTypeDefinition
-        mutationTypeDef.fieldDefinitions[0].inputValueDefinitions[0].comments == [" arg 'id'"]
-        mutationTypeDef.fieldDefinitions[0].inputValueDefinitions[1].comments == [" arg 'with'"]
+        commentContent(mutationTypeDef.fieldDefinitions[0].inputValueDefinitions[0].comments) == [" arg 'id'"]
+        commentContent(mutationTypeDef.fieldDefinitions[0].inputValueDefinitions[1].comments) == [" arg 'with'"]
 
         InputObjectTypeDefinition inputTypeDef = document.definitions[6] as InputObjectTypeDefinition
-        inputTypeDef.comments == [" input type Gun comment 1"]
-        inputTypeDef.inputValueDefinitions[0].comments == [" gun 'name' input value comment"]
-        inputTypeDef.inputValueDefinitions[1].comments == [" gun 'caliber' input value comment"]
+        commentContent(inputTypeDef.comments) == [" input type Gun comment 1"]
+        commentContent(inputTypeDef.inputValueDefinitions[0].comments) == [" gun 'name' input value comment"]
+        commentContent(inputTypeDef.inputValueDefinitions[1].comments) == [" gun 'caliber' input value comment"]
 
     }
 

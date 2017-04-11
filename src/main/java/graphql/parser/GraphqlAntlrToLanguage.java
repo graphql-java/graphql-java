@@ -6,6 +6,7 @@ import graphql.language.AbstractNode;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
+import graphql.language.Comment;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
 import graphql.language.DirectiveLocation;
@@ -785,7 +786,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     private void newNode(AbstractNode abstractNode, ParserRuleContext parserRuleContext) {
-        List<String> comments = getComments(parserRuleContext);
+        List<Comment> comments = getComments(parserRuleContext);
         if (!comments.isEmpty()) {
             abstractNode.setComments(comments);
         }
@@ -797,7 +798,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return new SourceLocation(parserRuleContext.getStart().getLine(), parserRuleContext.getStart().getCharPositionInLine() + 1);
     }
 
-    private List<String> getComments(ParserRuleContext ctx) {
+    private List<Comment> getComments(ParserRuleContext ctx) {
         Token start = ctx.getStart();
         if (start != null) {
             int tokPos = start.getTokenIndex();
@@ -810,8 +811,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
 
-    private List<String> getCommentOnChannel(List<Token> refChannel) {
-        List<String> comments = new ArrayList<>();
+    private List<Comment> getCommentOnChannel(List<Token> refChannel) {
+        List<Comment> comments = new ArrayList<>();
         for (Token refTok : refChannel) {
             String text = refTok.getText();
             // we strip the leading hash # character but we don't trim because we don't
@@ -820,7 +821,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             text = (text == null) ? "" : text;
             text = text.replaceFirst("^#", "");
             if (text.length() > 0) {
-                comments.add(text);
+                comments.add(new Comment(text, new SourceLocation(refTok.getLine(), refTok.getCharPositionInLine())));
             }
         }
         return comments;

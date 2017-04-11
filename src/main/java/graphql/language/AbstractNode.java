@@ -9,7 +9,7 @@ import static graphql.Assert.assertNotNull;
 public abstract class AbstractNode implements Node {
 
     private SourceLocation sourceLocation;
-    private List<String> comments = Collections.emptyList();
+    private List<Comment> comments = Collections.emptyList();
 
 
     public void setSourceLocation(SourceLocation sourceLocation) {
@@ -21,11 +21,11 @@ public abstract class AbstractNode implements Node {
         return sourceLocation;
     }
 
-    public List<String> getComments() {
+    public List<Comment> getComments() {
         return comments;
     }
 
-    public void setComments(List<String> comments) {
+    public void setComments(List<Comment> comments) {
         assertNotNull(comments, "You must provide non null comments");
         this.comments = comments;
     }

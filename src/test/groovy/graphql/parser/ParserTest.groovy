@@ -317,7 +317,7 @@ class ParserTest extends Specification {
 
         then:
         isEqual(helloField, new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
-        helloField.comments == [" this is some comment, which should be captured"]
+        helloField.comments.collect { c-> c.content } == [" this is some comment, which should be captured"]
     }
 
     @Unroll

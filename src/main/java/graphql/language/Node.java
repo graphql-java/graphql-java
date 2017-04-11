@@ -14,7 +14,7 @@ public interface Node {
      *
      * @return the list of comments or an empty list of there are none
      */
-    List<String> getComments();
+    List<Comment> getComments();
 
     /**
      * Compares just the content and not the children.
