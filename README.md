@@ -73,6 +73,7 @@ If you have a question or want to discuss anything else related to this project:
 This is the famous "hello world" in graphql-java: 
 
 ```java
+import graphql.GraphQL;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import java.util.Map;
