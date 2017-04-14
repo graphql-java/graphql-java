@@ -6,6 +6,7 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.TypeResolutionParameters;
 import graphql.language.Field;
 import graphql.schema.*;
 import org.slf4j.Logger;
@@ -75,7 +76,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
         List<GraphQLExecutionNodeValue> values = fetchData(executionContext, parentType, nodeData, fields, fieldDef);
 
-        return completeValues(executionContext, parentType, values, fieldName, fields, fieldDef.getType());
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
+                fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+        return completeValues(executionContext, parentType, values, fieldName, fields, fieldDef.getType(), argumentValues);
     }
 
     /**
@@ -83,7 +86,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
      */
     private List<GraphQLExecutionNode> completeValues(ExecutionContext executionContext, GraphQLObjectType parentType,
                                                       List<GraphQLExecutionNodeValue> values, String fieldName, List<Field> fields,
-                                                      GraphQLOutputType outputType) {
+                                                      GraphQLOutputType outputType, Map<String, Object> argumentValues) {
 
         GraphQLType fieldType = handleNonNullType(outputType, values, parentType, fields);
 
@@ -91,16 +94,16 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             handlePrimitives(values, fieldName, fieldType);
             return Collections.emptyList();
         } else if (isObject(fieldType)) {
-            return handleObject(executionContext, values, fieldName, fields, fieldType);
+            return handleObject(executionContext, argumentValues, values, fieldName, fields, fieldType);
         } else if (isList(fieldType)) {
-            return handleList(executionContext, values, fieldName, fields, parentType, (GraphQLList) fieldType);
+            return handleList(executionContext, argumentValues, values, fieldName, fields, parentType, (GraphQLList) fieldType);
         } else {
             throw new IllegalArgumentException("Unrecognized type: " + fieldType);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private List<GraphQLExecutionNode> handleList(ExecutionContext executionContext,
+    private List<GraphQLExecutionNode> handleList(ExecutionContext executionContext, Map<String, Object> argumentValues,
                                                   List<GraphQLExecutionNodeValue> values, String fieldName, List<Field> fields,
                                                   GraphQLObjectType parentType, GraphQLList listType) {
 
@@ -119,15 +122,15 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
 
         GraphQLOutputType subType = (GraphQLOutputType) listType.getWrappedType();
-        return completeValues(executionContext, parentType, flattenedNodeValues, fieldName, fields, subType);
+        return completeValues(executionContext, parentType, flattenedNodeValues, fieldName, fields, subType, argumentValues);
 
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
-    private List<GraphQLExecutionNode> handleObject(ExecutionContext executionContext,
+    private List<GraphQLExecutionNode> handleObject(ExecutionContext executionContext, Map<String, Object> argumentValues,
                                                     List<GraphQLExecutionNodeValue> values, String fieldName, List<Field> fields, GraphQLType fieldType) {
 
-        ChildDataCollector collector = createAndPopulateChildData(values, fieldName, fieldType);
+        ChildDataCollector collector = createAndPopulateChildData(executionContext, fields.get(0), values, fieldName, fieldType, argumentValues);
 
         List<GraphQLExecutionNode> childNodes =
                 createChildNodes(executionContext, fields, collector);
@@ -147,8 +150,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return childNodes;
     }
 
-    private ChildDataCollector createAndPopulateChildData(List<GraphQLExecutionNodeValue> values, String fieldName,
-                                                          GraphQLType fieldType) {
+    private ChildDataCollector createAndPopulateChildData(ExecutionContext executionContext, Field field, List<GraphQLExecutionNodeValue> values, String fieldName,
+                                                          GraphQLType fieldType, Map<String, Object> argumentValues) {
         ChildDataCollector collector = new ChildDataCollector();
         for (GraphQLExecutionNodeValue value : values) {
             if (value.getValue() == null) {
@@ -156,7 +159,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 value.getResultContainer().putResult(fieldName, null);
             } else {
                 GraphQLExecutionNodeDatum childDatum = value.getResultContainer().createAndPutChildDatum(fieldName, value.getValue());
-                GraphQLObjectType graphQLObjectType = getGraphQLObjectType(fieldType, value.getValue());
+                GraphQLObjectType graphQLObjectType = getGraphQLObjectType(executionContext, field, fieldType, value.getValue(), argumentValues);
                 collector.putChildData(graphQLObjectType, childDatum);
             }
         }
@@ -195,12 +198,24 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return subFields;
     }
 
-    private GraphQLObjectType getGraphQLObjectType(GraphQLType fieldType, Object value) {
+    private GraphQLObjectType getGraphQLObjectType(ExecutionContext executionContext, Field field, GraphQLType fieldType, Object value, Map<String, Object> argumentValues) {
         GraphQLObjectType resolvedType = null;
         if (fieldType instanceof GraphQLInterfaceType) {
-            resolvedType = resolveType((GraphQLInterfaceType) fieldType, value);
+            resolvedType = resolveTypeForInterface(TypeResolutionParameters.newParameters()
+                    .graphQLInterfaceType((GraphQLInterfaceType) fieldType)
+                    .field(field)
+                    .value(value)
+                    .argumentValues(argumentValues)
+                    .schema(executionContext.getGraphQLSchema())
+                    .build());
         } else if (fieldType instanceof GraphQLUnionType) {
-            resolvedType = resolveType((GraphQLUnionType) fieldType, value);
+            resolvedType = resolveTypeForUnion(TypeResolutionParameters.newParameters()
+                    .graphQLUnionType((GraphQLUnionType) fieldType)
+                    .field(field)
+                    .value(value)
+                    .argumentValues(argumentValues)
+                    .schema(executionContext.getGraphQLSchema())
+                    .build());
         } else if (fieldType instanceof GraphQLObjectType) {
             resolvedType = (GraphQLObjectType) fieldType;
         }

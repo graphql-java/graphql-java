@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.TypeResolutionEnvironment;
 import graphql.schema.*;
 
 import static graphql.Scalars.*;
@@ -16,7 +17,7 @@ public class Harness {
 
     private static TypeResolver dummyTypeResolve = new TypeResolver() {
         @Override
-        public GraphQLObjectType getType(Object object) {
+        public GraphQLObjectType getType(TypeResolutionEnvironment env) {
             return null;
         }
     };
@@ -119,7 +120,7 @@ public class Harness {
             .possibleTypes(Dog, Cat)
             .typeResolver(new TypeResolver() {
                 @Override
-                public GraphQLObjectType getType(Object object) {
+                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
                     return null;
                 }
             })

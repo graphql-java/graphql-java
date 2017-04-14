@@ -80,7 +80,7 @@ public class GarfieldSchema {
         }
 
         public List<Object> getPets() {
-            List<Object> pets = new ArrayList<Object>();
+            List<Object> pets = new ArrayList<>();
             pets.addAll(cats);
             pets.addAll(dogs);
             return pets;
@@ -108,14 +108,14 @@ public class GarfieldSchema {
                     .type(GraphQLString))
             .typeResolver(new TypeResolver() {
                 @Override
-                public GraphQLObjectType getType(Object object) {
-                    if (object instanceof Dog) {
+                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                    if (env.getObject() instanceof Dog) {
                         return DogType;
                     }
-                    if (object instanceof Person) {
+                    if (env.getObject() instanceof Person) {
                         return PersonType;
                     }
-                    if (object instanceof Cat) {
+                    if (env.getObject() instanceof Cat) {
                         return CatType;
                     }
                     return null;
@@ -151,11 +151,11 @@ public class GarfieldSchema {
             .possibleType(DogType)
             .typeResolver(new TypeResolver() {
                 @Override
-                public GraphQLObjectType getType(Object object) {
-                    if (object instanceof Cat) {
+                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                    if (env.getObject() instanceof Cat) {
                         return CatType;
                     }
-                    if (object instanceof Dog) {
+                    if (env.getObject() instanceof Dog) {
                         return DogType;
                     }
                     return null;
