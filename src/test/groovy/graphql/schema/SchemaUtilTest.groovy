@@ -90,9 +90,14 @@ class SchemaUtilTest extends Specification {
     }
     
     def "all references are replaced"() {
+        given:
+        GraphQLUnionType pet =  ((GraphQLUnionType)SchemaWithReferences.getType("Pet"));
+        GraphQLObjectType person =  ((GraphQLObjectType)SchemaWithReferences.getType("Person"));
         when:
         new SchemaUtil().replaceTypeReferences(SchemaWithReferences)
         then:
-        SchemaWithReferences.allTypesAsList.findIndexOf{it instanceof TypeReference} == -1
+        SchemaWithReferences.allTypesAsList.findIndexOf{it instanceof TypeReference} == -1;
+        pet.types.findIndexOf{it instanceof TypeReference} == -1;
+        person.interfaces.findIndexOf{it instanceof TypeReference} == -1;
     }
 }

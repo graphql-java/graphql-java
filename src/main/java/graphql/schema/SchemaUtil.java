@@ -143,6 +143,12 @@ public class SchemaUtil {
             if (type instanceof GraphQLInputFieldsContainer) {
                 resolveTypeReferencesForInputFieldsContainer((GraphQLInputFieldsContainer) type, typeMap);
             }
+            if (type instanceof GraphQLObjectType) {
+                ((GraphQLObjectType) type).replaceTypeReferences(typeMap);
+            }
+            if (type instanceof GraphQLUnionType) {
+                ((GraphQLUnionType) type).replaceTypeReferences(typeMap);
+            }
         }
     }
 

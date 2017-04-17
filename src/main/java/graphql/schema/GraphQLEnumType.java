@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
 import graphql.AssertException;
 
@@ -16,6 +17,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     private final String name;
     private final String description;
     private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
+    private final EnumTypeDefinition definition;
 
     private final Coercing coercing = new Coercing() {
         @Override
@@ -39,7 +41,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     };
 
     private Object getValueByName(Object value) {
-        GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value);
+        GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
         if (enumValueDefinition != null) return enumValueDefinition.getValue();
         return null;
     }
@@ -63,9 +65,14 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
 
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
-    	assertValidName(name);
+        this(name,description,values,null);
+    }
+
+    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, EnumTypeDefinition definition) {
+        assertValidName(name);
         this.name = name;
         this.description = description;
+        this.definition = definition;
         buildMap(values);
     }
 
@@ -90,6 +97,9 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         return coercing;
     }
 
+    public EnumTypeDefinition getDefinition() {
+        return definition;
+    }
 
     public static Builder newEnum() {
         return new Builder();
@@ -99,6 +109,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
         private String name;
         private String description;
+        private EnumTypeDefinition definition;
         private final List<GraphQLEnumValueDefinition> values = new ArrayList<>();
 
         public Builder name(String name) {
@@ -108,6 +119,11 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder definition(EnumTypeDefinition definition) {
+            this.definition = definition;
             return this;
         }
 
@@ -133,7 +149,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
 
         public GraphQLEnumType build() {
-            return new GraphQLEnumType(name, description, values);
+            return new GraphQLEnumType(name, description, values, definition);
         }
 
     }

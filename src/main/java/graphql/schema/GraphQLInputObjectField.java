@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.language.InputValueDefinition;
+
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -12,18 +14,24 @@ public class GraphQLInputObjectField {
     private final String description;
     private GraphQLInputType type;
     private final Object defaultValue;
+    private final InputValueDefinition definition;
 
     public GraphQLInputObjectField(String name, GraphQLInputType type) {
-        this(name, null, type, null);
+        this(name, null, type, null, null);
     }
 
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue) {
-    	assertValidName(name);
+        this(name,description,type,defaultValue,null);
+    }
+
+    public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
+        assertValidName(name);
         assertNotNull(type, "type can't be null");
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
         this.description = description;
+        this.definition = definition;
     }
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
@@ -46,6 +54,10 @@ public class GraphQLInputObjectField {
         return description;
     }
 
+    public InputValueDefinition getDefinition() {
+        return definition;
+    }
+
     public static Builder newInputObjectField() {
         return new Builder();
     }
@@ -55,6 +67,7 @@ public class GraphQLInputObjectField {
         private String description;
         private Object defaultValue;
         private GraphQLInputType type;
+        private InputValueDefinition definition;
 
         public Builder name(String name) {
             this.name = name;
@@ -63,6 +76,11 @@ public class GraphQLInputObjectField {
 
         public Builder description(String description) {
             this.description = description;
+            return this;
+        }
+
+        public Builder definition(InputValueDefinition definition) {
+            this.definition = definition;
             return this;
         }
 
@@ -81,7 +99,7 @@ public class GraphQLInputObjectField {
         }
 
         public GraphQLInputObjectField build() {
-            return new GraphQLInputObjectField(name, description, type, defaultValue);
+            return new GraphQLInputObjectField(name, description, type, defaultValue, definition);
         }
     }
 }

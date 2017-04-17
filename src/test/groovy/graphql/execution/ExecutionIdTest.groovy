@@ -3,8 +3,6 @@ package graphql.execution
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
-import graphql.language.Field
-import graphql.schema.GraphQLObjectType
 import spock.lang.Specification
 
 class ExecutionIdTest extends Specification {
@@ -13,9 +11,9 @@ class ExecutionIdTest extends Specification {
         ExecutionId executionId = null
 
         @Override
-        ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields) {
+        ExecutionResult execute(ExecutionContext executionContext, ExecutionParameters parameters) {
             executionId = executionContext.executionId
-            return super.execute(executionContext, parentType, source, fields)
+            return super.execute(executionContext, parameters)
         }
     }
 

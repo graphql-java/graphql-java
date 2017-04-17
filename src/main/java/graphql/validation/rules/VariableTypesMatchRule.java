@@ -16,12 +16,12 @@ public class VariableTypesMatchRule extends AbstractRule {
 
     VariablesTypesMatcher variablesTypesMatcher = new VariablesTypesMatcher();
 
+    private Map<String, VariableDefinition> variableDefinitionMap;
+
     public VariableTypesMatchRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
         setVisitFragmentSpreads(true);
     }
-
-    private Map<String, VariableDefinition> variableDefinitionMap;
 
     @Override
     public void checkOperationDefinition(OperationDefinition operationDefinition) {

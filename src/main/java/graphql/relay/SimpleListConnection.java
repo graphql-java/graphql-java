@@ -2,9 +2,14 @@ package graphql.relay;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static java.util.Base64.getDecoder;
+import static java.util.Base64.getEncoder;
 
 public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
 
@@ -102,11 +107,12 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
         if (cursor == null) {
             return defaultValue;
         }
-        String string = Base64.fromBase64(cursor);
+        String string = new String(getDecoder().decode(cursor), StandardCharsets.UTF_8);
         return Integer.parseInt(string.substring(prefix.length()));
     }
 
     private String createCursor(int offset) {
-        return Base64.toBase64(prefix + Integer.toString(offset));
+        byte[] bytes = (prefix + Integer.toString(offset)).getBytes(StandardCharsets.UTF_8);
+        return getEncoder().encodeToString(bytes);
     }
 }
