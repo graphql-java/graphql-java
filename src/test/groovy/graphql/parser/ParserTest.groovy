@@ -317,7 +317,7 @@ class ParserTest extends Specification {
 
         then:
         isEqual(helloField, new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
-        helloField.comments.collect { c-> c.content } == [" this is some comment, which should be captured"]
+        helloField.comments.collect { c -> c.content } == [" this is some comment, which should be captured"]
     }
 
     @Unroll
@@ -407,5 +407,40 @@ class ParserTest extends Specification {
         'input'      | _
         'extend'     | _
         'directive'  | _
+    }
+
+    def "#352 - incorrect parentheses are detected"() {
+        given:
+        def input = "{profile(id:117) {firstNames, lastNames, frontDegree}}}"
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def exception = thrown(ParseCancellationException)
+        exception != null
+    }
+
+    def "#352 - lots of incorrect parentheses are detected"() {
+        given:
+        def input = "{profile(id:117) {firstNames, lastNames, frontDegree}}}}}}}}"
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def exception = thrown(ParseCancellationException)
+        exception != null
+    }
+
+    def "#352 - comments don't count as unused"() {
+        given:
+        def input = "{profile(id:117) {firstNames, lastNames, frontDegree}} #trailing comments don't count"
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        noExceptionThrown()
     }
 }
