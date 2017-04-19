@@ -32,30 +32,28 @@ public class NestedInputSchema {
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("value")
                         .type(GraphQLInt)
-                        .dataFetcher(new DataFetcher() {
-                            @Override
-                            public Object get(DataFetchingEnvironment environment) {
-                                Integer initialValue = environment.getArgument("initialValue");
-                                Map<String, Object> filter = environment.getArgument("filter");
-                                if (filter != null) {
-                                    if (filter.containsKey("even")) {
-                                        Boolean even = (Boolean) filter.get("even");
-                                        if (even && (initialValue%2 != 0)) {
-                                            return 0;
-                                        } else if (!even && (initialValue%2 == 0)) {
-                                            return 0;
-                                        }
-                                    }
-                                    if (filter.containsKey("range")) {
-                                        Map<String, Integer> range = (Map<String, Integer>) filter.get("range");
-                                        if (initialValue < range.get("lowerBound") ||
-                                                initialValue > range.get("upperBound")) {
-                                            return 0;
-                                        }
+                        .dataFetcher(environment -> {
+                            Integer initialValue = environment.getArgument("initialValue");
+                            Map<String, Object> filter = environment.getArgument("filter");
+                            if (filter != null) {
+                                if (filter.containsKey("even")) {
+                                    Boolean even = (Boolean) filter.get("even");
+                                    if (even && (initialValue%2 != 0)) {
+                                        return 0;
+                                    } else if (!even && (initialValue%2 == 0)) {
+                                        return 0;
                                     }
                                 }
-                                return initialValue;
-                            }})
+                                if (filter.containsKey("range")) {
+                                    Map<String, Integer> range = (Map<String, Integer>) filter.get("range");
+                                    if (initialValue < range.get("lowerBound") ||
+                                            initialValue > range.get("upperBound")) {
+                                        return 0;
+                                    }
+                                }
+                            }
+                            return initialValue;
+                        })
                         .argument(GraphQLArgument.newArgument()
                                 .name("intialValue")
                                 .type(GraphQLInt)

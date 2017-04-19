@@ -32,12 +32,7 @@ public class GraphQL {
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
-    private static final ExecutionIdProvider DEFAULT_EXECUTION_ID_PROVIDER = new ExecutionIdProvider() {
-        @Override
-        public ExecutionId provide(String query, String operationName, Object context) {
-            return ExecutionId.generate();
-        }
-    };
+    private static final ExecutionIdProvider DEFAULT_EXECUTION_ID_PROVIDER = (query, operationName, context) -> ExecutionId.generate();
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;

@@ -116,17 +116,14 @@ public class ReadmeExamples {
                 .name("Pet")
                 .possibleType(CatType)
                 .possibleType(DogType)
-                .typeResolver(new TypeResolver() {
-                    @Override
-                    public GraphQLObjectType getType(Object object) {
-                        if (object instanceof GarfieldSchema.Cat) {
-                            return CatType;
-                        }
-                        if (object instanceof GarfieldSchema.Dog) {
-                            return DogType;
-                        }
-                        return null;
+                .typeResolver(object -> {
+                    if (object instanceof GarfieldSchema.Cat) {
+                        return CatType;
                     }
+                    if (object instanceof GarfieldSchema.Dog) {
+                        return DogType;
+                    }
+                    return null;
                 })
                 .build();
     }
@@ -160,14 +157,11 @@ public class ReadmeExamples {
 
     void dataFetching() {
 
-        DataFetcher<Foo> fooDataFetcher = new DataFetcher<Foo>() {
-            @Override
-            public Foo get(DataFetchingEnvironment environment) {
-                // environment.getSource() is the value of the surrounding
-                // object. In this case described by objectType
-                Foo value = perhapsFromDatabase(); // Perhaps getting from a DB or whatever
-                return value;
-            }
+        DataFetcher<Foo> fooDataFetcher = environment -> {
+            // environment.getSource() is the value of the surrounding
+            // object. In this case described by objectType
+            Foo value = perhapsFromDatabase(); // Perhaps getting from a DB or whatever
+            return value;
         };
 
         GraphQLObjectType objectType = newObject()
