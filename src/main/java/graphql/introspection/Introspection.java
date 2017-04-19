@@ -395,7 +395,7 @@ public class Introspection {
             .name("__schema")
             .type(nonNull(__Schema))
             .description("Access the current type schema of this server.")
-            .dataFetcher(environment -> environment.getGraphQLSchema()).build();
+            .dataFetcher(DataFetchingEnvironment::getGraphQLSchema).build();
 
     public static GraphQLFieldDefinition TypeMetaFieldDef = newFieldDefinition()
             .name("__type")
