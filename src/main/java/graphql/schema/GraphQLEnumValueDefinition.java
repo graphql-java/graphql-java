@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
 public class GraphQLEnumValueDefinition {
