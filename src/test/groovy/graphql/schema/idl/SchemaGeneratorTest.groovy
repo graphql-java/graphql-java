@@ -34,6 +34,55 @@ class SchemaGeneratorTest extends Specification {
         type
     }
 
+    void commonSchemaAsserts(schema) {
+        assert schema.getQueryType().name == "Query"
+        assert schema.getMutationType().name == "Mutation"
+
+        //        type Query {
+        //            posts: [Post]
+        //            author(id: Int!): Author
+        //        }
+
+        def postField = schema.getQueryType().getFieldDefinition("posts")
+        assert postField.type instanceof GraphQLList
+        assert unwrap(postField.type).name == "Post"
+
+
+        def authorField = schema.getQueryType().getFieldDefinition("author")
+        assert authorField.type.name == "Author"
+        assert authorField.description == "author query must receive an id as argument"
+        assert authorField.arguments.get(0).name == "id"
+        assert authorField.arguments.get(0).type instanceof GraphQLNonNull
+        assert unwrap(authorField.arguments.get(0).type).name == "Int"
+
+        //
+        // input PostUpVote {
+        //        postId: ID
+        //        votes : Int
+        // }
+
+        // type Mutation {
+        //        upvotePost (
+        //                upvoteArgs : PostUpVote!
+        //        ) : Post
+        // }
+
+        def upvotePostField = schema.getMutationType().getFieldDefinition("upvotePost")
+        def upvotePostFieldArg = upvotePostField.arguments.get(0)
+        assert upvotePostFieldArg.name == "upvoteArgs"
+
+        assert upvotePostFieldArg.type instanceof GraphQLNonNull
+        assert unwrap(upvotePostFieldArg.type).name == "PostUpVote"
+
+        assert (unwrap(upvotePostFieldArg.type) as GraphQLInputObjectType).getField("postId").type.name == "ID"
+        assert (unwrap(upvotePostFieldArg.type) as GraphQLInputObjectType).getField("votes").type.name == "Int"
+
+        def queryType = schema.getQueryType()
+        assert queryType.description == "the schema allows the following query\nto be made"
+
+    }
+
+
 
     def "test simple schema generate"() {
 
@@ -87,55 +136,80 @@ class SchemaGeneratorTest extends Specification {
 
         expect:
 
+        commonSchemaAsserts(schema)
+    }
 
-        schema.getQueryType().name == "Query"
-        schema.getMutationType().name == "Mutation"
+    def "schema can come from multiple sources and be bound together"() {
+        def schemaSpec1 = """
+            type Author {
+                # the ! means that every author object _must_ have an id
+              id: Int! 
+              firstName: String
+              lastName: String
+              # the list of Posts by this author
+              posts: [Post] 
+            }
+            """
+        def schemaSpec2 = """
+            
+            type Post {
+              id: Int!
+              title: String
+              votes: Int
+              author: Author
+            }
+        """
 
-        //        type Query {
-        //            posts: [Post]
-        //            author(id: Int!): Author
-        //        }
+        def schemaSpec3 = """
 
-        def postField = schema.getQueryType().getFieldDefinition("posts")
-        postField.type instanceof GraphQLList
-        unwrap(postField.type).name == "Post"
+            # the schema allows the following query
+            # to be made
+            type Query {
+                posts:
+                [Post]
+                # author query must receive an id as argument
+                author(id: Int !): Author
+            }
+    
+            input PostUpVote {
+                postId:
+                ID
+                votes:
+                Int
+            }
+    
+            # this schema allows the following mutation:
+                    type Mutation {
+                upvotePost(
+                        upvoteArgs: PostUpVote !
+                ): Post
+            }
+    
+            # we need to tell the server which types represent the root query
+            # and root mutation types.We call them RootQuery and RootMutation by convention.
+            schema {
+                query:
+                Query
+                mutation:
+                Mutation
+            }
+        """
 
+        def typeRegistry1 = new SchemaCompiler().compile(schemaSpec1)
+        def typeRegistry2 = new SchemaCompiler().compile(schemaSpec2)
+        def typeRegistry3 = new SchemaCompiler().compile(schemaSpec3)
 
-        def authorField = schema.getQueryType().getFieldDefinition("author")
-        authorField.type.name == "Author"
-        authorField.description == "author query must receive an id as argument"
-        authorField.arguments.get(0).name == "id"
-        authorField.arguments.get(0).type instanceof GraphQLNonNull
-        unwrap(authorField.arguments.get(0).type).name == "Int"
+        typeRegistry1.merge(typeRegistry2).merge(typeRegistry3)
 
-        //
-        // input PostUpVote {
-        //        postId: ID
-        //        votes : Int
-        // }
+        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry1, RuntimeWiring.newRuntimeWiring().build())
 
-        // type Mutation {
-        //        upvotePost (
-        //                upvoteArgs : PostUpVote!
-        //        ) : Post
-        // }
+        expect:
 
-        def upvotePostField = schema.getMutationType().getFieldDefinition("upvotePost")
-        def upvotePostFieldArg = upvotePostField.arguments.get(0)
-        upvotePostFieldArg.name == "upvoteArgs"
+        commonSchemaAsserts(schema)
 
-        upvotePostFieldArg.type instanceof GraphQLNonNull
-        unwrap(upvotePostFieldArg.type).name == "PostUpVote"
-
-        (unwrap(upvotePostFieldArg.type) as GraphQLInputObjectType).getField("postId").type.name == "ID"
-        (unwrap(upvotePostFieldArg.type) as GraphQLInputObjectType).getField("votes").type.name == "Int"
-
-        def queryType = schema.getQueryType()
-        queryType.description == "the schema allows the following query\nto be made"
 
 
     }
-
 
     def "enum types are handled"() {
 

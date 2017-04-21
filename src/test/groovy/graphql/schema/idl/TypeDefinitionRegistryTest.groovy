@@ -1,6 +1,7 @@
 package graphql.schema.idl
 
 import graphql.language.SchemaDefinition
+import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.idl.errors.SchemaRedefinitionError
 import spock.lang.Specification
 
@@ -39,7 +40,7 @@ class TypeDefinitionRegistryTest extends Specification {
         def result2 = registry.add(new SchemaDefinition())
 
         expect:
-        ! result1.isPresent()
+        !result1.isPresent()
         result2.get() instanceof SchemaRedefinitionError
     }
 
@@ -63,12 +64,12 @@ class TypeDefinitionRegistryTest extends Specification {
         def result1 = compile(spec1)
         def result2 = compile(spec2)
 
-        def errors = result1.merge(result2)
+        when:
+            result1.merge(result2)
 
-        expect:
-
-        errors.isPresent()
-        errors.get().get(0) instanceof SchemaRedefinitionError
+        then:
+        SchemaProblem e = thrown(SchemaProblem)
+        e.getErrors().get(0) instanceof SchemaRedefinitionError
     }
 
     def "test merge of object types"() {
@@ -92,12 +93,13 @@ class TypeDefinitionRegistryTest extends Specification {
         def result1 = compile(spec1)
         def result2 = compile(spec2)
 
-        def errors = result1.merge(result2)
+        when:
+        result1.merge(result2)
 
-        expect:
+        then:
 
-        errors.isPresent()
-        errors.get().get(0).getMessage().contains("tried to redefine existing 'Post'")
+        SchemaProblem e = thrown(SchemaProblem)
+        e.getErrors().get(0).getMessage().contains("tried to redefine existing 'Post'")
     }
 
 
@@ -126,12 +128,13 @@ class TypeDefinitionRegistryTest extends Specification {
         def result1 = compile(spec1)
         def result2 = compile(spec2)
 
-        def errors = result1.merge(result2)
+        when:
+        result1.merge(result2)
 
-        expect:
+        then:
 
-        errors.isPresent()
-        errors.get().get(0).getMessage().contains("tried to redefine existing 'Url'")
+        SchemaProblem e = thrown(SchemaProblem)
+        e.getErrors().get(0).getMessage().contains("tried to redefine existing 'Url'")
     }
 
     def "test successful merge of types"() {
@@ -149,6 +152,8 @@ class TypeDefinitionRegistryTest extends Specification {
           type Author {
               id: Int!
               name: String
+              title : String
+              posts : [Post]
             }
 
         """
@@ -156,11 +161,12 @@ class TypeDefinitionRegistryTest extends Specification {
         def result1 = compile(spec1)
         def result2 = compile(spec2)
 
-        def errors = result1.merge(result2)
+        when:
+        result1.merge(result2)
 
-        expect:
+        then:
 
-        ! errors.isPresent()
+        noExceptionThrown()
 
         def post = result1.types().get("Post")
         def author = result1.types().get("Author")
@@ -169,7 +175,7 @@ class TypeDefinitionRegistryTest extends Specification {
         post.getChildren().size() == 3
 
         author.name == "Author"
-        author.getChildren().size() == 2
+        author.getChildren().size() == 4
     }
 
 

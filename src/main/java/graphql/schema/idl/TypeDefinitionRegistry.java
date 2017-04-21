@@ -8,6 +8,7 @@ import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeExtensionDefinition;
 import graphql.language.TypeName;
+import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
 
@@ -30,6 +31,51 @@ public class TypeDefinitionRegistry {
     private final Map<String, TypeDefinition> types = new LinkedHashMap<>();
     private SchemaDefinition schema;
 
+    /**
+     * This will merge these type registries together and return this one
+     *
+     * @param typeRegistry the registry to be merged into this one
+     *
+     * @return this registry
+     *
+     * @throws SchemaProblem if there are problems merging the types such as redefinitions
+     */
+    public TypeDefinitionRegistry merge(TypeDefinitionRegistry typeRegistry) throws SchemaProblem {
+        List<GraphQLError> errors = new ArrayList<>();
+
+        Map<String, TypeDefinition> tempTypes = new LinkedHashMap<>();
+        typeRegistry.types.values().forEach(newEntry -> define(this.types, tempTypes, newEntry).ifPresent(errors::add));
+
+        Map<String, ScalarTypeDefinition> tempScalarTypes = new LinkedHashMap<>();
+        typeRegistry.scalarTypes.values().forEach(newEntry -> define(this.scalarTypes, tempScalarTypes, newEntry).ifPresent(errors::add));
+
+        Map<String, TypeExtensionDefinition> tempTypeExtensions = new LinkedHashMap<>();
+        typeRegistry.typeExtensions.values().forEach(newEntry -> define(this.typeExtensions, tempTypeExtensions, newEntry).ifPresent(errors::add));
+
+        if (typeRegistry.schema != null && this.schema != null) {
+            errors.add(new SchemaRedefinitionError(this.schema, typeRegistry.schema));
+        }
+
+        if (!errors.isEmpty()) {
+            throw new SchemaProblem(errors);
+        }
+
+        // ok commit to the merge
+        this.schema = typeRegistry.schema;
+        this.types.putAll(tempTypes);
+        this.typeExtensions.putAll(tempTypeExtensions);
+        this.scalarTypes.putAll(tempScalarTypes);
+
+        return this;
+    }
+
+    /**
+     * Adds a definition to the registry
+     *
+     * @param definition the definition to add
+     *
+     * @return an optional error
+     */
     public Optional<GraphQLError> add(Definition definition) {
         if (definition instanceof TypeExtensionDefinition) {
             TypeExtensionDefinition newEntry = (TypeExtensionDefinition) definition;
@@ -60,35 +106,6 @@ public class TypeDefinitionRegistry {
         } else {
             target.put(name, newEntry);
         }
-        return Optional.empty();
-    }
-
-    public Optional<List<GraphQLError>> merge(TypeDefinitionRegistry typeRegistry) {
-        List<GraphQLError> errors = new ArrayList<>();
-
-        Map<String, TypeDefinition> tempTypes = new LinkedHashMap<>();
-        typeRegistry.types.values().forEach(newEntry -> define(this.types, tempTypes, newEntry).ifPresent(errors::add));
-
-        Map<String, ScalarTypeDefinition> tempScalarTypes = new LinkedHashMap<>();
-        typeRegistry.scalarTypes.values().forEach(newEntry -> define(this.scalarTypes, tempScalarTypes, newEntry).ifPresent(errors::add));
-
-        Map<String, TypeExtensionDefinition> tempTypeExtensions = new LinkedHashMap<>();
-        typeRegistry.typeExtensions.values().forEach(newEntry -> define(this.typeExtensions, tempTypeExtensions, newEntry).ifPresent(errors::add));
-
-        if (typeRegistry.schema != null && this.schema != null) {
-            errors.add(new SchemaRedefinitionError(this.schema, typeRegistry.schema));
-        }
-
-        if (!errors.isEmpty()) {
-            return Optional.of(errors);
-        }
-
-        // ok commit to the merge
-        this.schema = typeRegistry.schema;
-        this.types.putAll(tempTypes);
-        this.typeExtensions.putAll(tempTypeExtensions);
-        this.scalarTypes.putAll(tempScalarTypes);
-
         return Optional.empty();
     }
 

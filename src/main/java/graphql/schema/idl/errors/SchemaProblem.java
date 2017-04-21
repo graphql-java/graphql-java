@@ -4,6 +4,7 @@ import graphql.GraphQLError;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * A number of problems can occur when using the schema tools like {@link graphql.schema.idl.SchemaCompiler}
@@ -12,13 +13,13 @@ import java.util.Collection;
  */
 public class SchemaProblem extends RuntimeException {
 
-    private final Collection<GraphQLError> errors;
+    private final List<GraphQLError> errors;
 
-    public SchemaProblem(Collection<GraphQLError> errors) {
+    public SchemaProblem(List<GraphQLError> errors) {
         this.errors = new ArrayList<>(errors);
     }
 
-    public Collection<GraphQLError> getErrors() {
+    public List<GraphQLError> getErrors() {
         return errors;
     }
 }
