@@ -134,37 +134,31 @@ public class SpecValidationSchema {
     public static final GraphQLUnionType catOrDog = GraphQLUnionType.newUnionType()
             .name("CatOrDog")
             .possibleTypes(cat, dog)
-            .typeResolver(new TypeResolver() {
-            @Override
-            public GraphQLObjectType getType(Object object) {
+            .typeResolver(object -> {
                 if (object instanceof Cat) return cat;
                 if (object instanceof Dog) return dog;
                 return null;
-            }})
+            })
             .build();
             
     public static final GraphQLUnionType dogOrHuman = GraphQLUnionType.newUnionType()
             .name("DogOrHuman")
             .possibleTypes(dog, human)
-            .typeResolver(new TypeResolver() {
-            @Override
-            public GraphQLObjectType getType(Object object) {
+            .typeResolver(object -> {
                 if (object instanceof Human) return human;
                 if (object instanceof Dog) return dog;
                 return null;
-            }})
+            })
             .build();
             
     public static final GraphQLUnionType humanOrAlien = GraphQLUnionType.newUnionType()
             .name("HumanOrAlien")
             .possibleTypes(human, alien)
-            .typeResolver(new TypeResolver() {
-            @Override
-            public GraphQLObjectType getType(Object object) {
+            .typeResolver(object -> {
                 if (object instanceof Human) return human;
                 if (object instanceof Alien) return alien;
                 return null;
-            }})
+            })
             .build();
     
     public static final GraphQLObjectType queryRoot = GraphQLObjectType.newObject()

@@ -73,13 +73,10 @@ public class MutationSchema {
                     .argument(newArgument()
                             .name("newNumber")
                             .type(GraphQLInt))
-                    .dataFetcher(new DataFetcher() {
-                        @Override
-                        public Object get(DataFetchingEnvironment environment) {
-                            Integer newNumber = environment.getArgument("newNumber");
-                            Root root = (Root) environment.getSource();
-                            return root.changeNumber(newNumber);
-                        }
+                    .dataFetcher(environment -> {
+                        Integer newNumber = environment.getArgument("newNumber");
+                        Root root = (Root) environment.getSource();
+                        return root.changeNumber(newNumber);
                     }))
             .field(newFieldDefinition()
                     .name("failToChangeTheNumber")
@@ -87,13 +84,10 @@ public class MutationSchema {
                     .argument(newArgument()
                             .name("newNumber")
                             .type(GraphQLInt))
-                    .dataFetcher(new DataFetcher() {
-                        @Override
-                        public Object get(DataFetchingEnvironment environment) {
-                            Integer newNumber = environment.getArgument("newNumber");
-                            Root root = (Root) environment.getSource();
-                            return root.failToChangeTheNumber(newNumber);
-                        }
+                    .dataFetcher(environment -> {
+                        Integer newNumber = environment.getArgument("newNumber");
+                        Root root = (Root) environment.getSource();
+                        return root.failToChangeTheNumber(newNumber);
                     }))
             .build();
 
