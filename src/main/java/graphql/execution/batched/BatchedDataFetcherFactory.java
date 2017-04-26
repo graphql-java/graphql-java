@@ -23,12 +23,7 @@ public class BatchedDataFetcherFactory {
             Method getMethod = supplied.getClass().getMethod("get", DataFetchingEnvironment.class);
             Batched batched = getMethod.getAnnotation(Batched.class);
             if (batched != null) {
-                return new BatchedDataFetcher() {
-                    @Override
-                    public Object get(DataFetchingEnvironment environment) {
-                        return supplied.get(environment);
-                    }
-                };
+                return (BatchedDataFetcher) supplied::get;
             }
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException(e);

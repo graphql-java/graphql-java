@@ -5,9 +5,9 @@ import java.util.List;
 /**
  * represents a connection in relay.
  */
-public interface Connection {
+public interface Connection<T> {
 
-    List<Edge> getEdges();
+    List<Edge<T>> getEdges();
 
     PageInfo getPageInfo();
 

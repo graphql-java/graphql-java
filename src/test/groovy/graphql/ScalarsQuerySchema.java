@@ -12,12 +12,7 @@ import java.math.BigInteger;
 
 public class ScalarsQuerySchema {
 
-    public static final DataFetcher inputDF = new DataFetcher() {
-        @Override
-        public Object get(DataFetchingEnvironment environment) {
-            return environment.getArgument("input");
-        }
-    };
+    public static final DataFetcher inputDF = environment -> environment.getArgument("input");
 
     public static final GraphQLObjectType queryType = newObject()
             .name("QueryType")
