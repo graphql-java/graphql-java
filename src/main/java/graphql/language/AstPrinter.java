@@ -89,14 +89,12 @@ public class AstPrinter {
     }
 
     private static NodePrinter<EnumTypeDefinition> enumTypeDefinition() {
-        return (out, node) -> {
-            out.printf("%s", spaced(
-                    "enum",
-                    node.getName(),
-                    directives(node.getDirectives()),
-                    block(node.getEnumValueDefinitions())
-            ));
-        };
+        return (out, node) -> out.printf("%s", spaced(
+                "enum",
+                node.getName(),
+                directives(node.getDirectives()),
+                block(node.getEnumValueDefinitions())
+        ));
     }
 
     private static NodePrinter<EnumValue> enumValue() {
@@ -311,14 +309,13 @@ public class AstPrinter {
                     "union",
                     node.getName(),
                     directives(node.getDirectives()),
-                    "= ",
-                    join(node.getMemberTypes(), " | ")
+                    "= " + join(node.getMemberTypes(), " | ")
             ));
         };
     }
 
     private static NodePrinter<VariableDefinition> variableDefinition() {
-        return (out, node) -> out.printf("%s: %s%s",
+        return (out, node) -> out.printf("$%s: %s%s",
                 node.getName(),
                 type(node.getType()),
                 wrap(" = ", node.getDefaultValue(), "")
@@ -376,7 +373,7 @@ public class AstPrinter {
         } else if (value instanceof FloatValue) {
             return valueOf(((FloatValue) value).getValue());
         } else if (value instanceof StringValue) {
-            return wrap("'", valueOf(((StringValue) value).getValue()), "'");
+            return wrap("\"", valueOf(((StringValue) value).getValue()), "\"");
         } else if (value instanceof EnumValue) {
             return valueOf(((EnumValue) value).getName());
         } else if (value instanceof BooleanValue) {
@@ -385,10 +382,10 @@ public class AstPrinter {
             return "[" + join(((ArrayValue) value).getValues(), ", ") + "]";
         } else if (value instanceof ObjectValue) {
             return "{" + join(((ObjectValue) value).getObjectFields(), ", ") + "}";
+        } else if (value instanceof VariableReference) {
+            return "$" + ((VariableReference) value).getName();
         }
-        // VariableReference?
         return "";
-
     }
 
     static private String comments(Node node) {

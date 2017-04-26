@@ -62,10 +62,12 @@ type Droid implements Character {
     primaryFunction: String
 }
 
+union SearchResult = Human | Droid | Starship
+
 """
 
     //-------------------------------------------------
-    def "test schema printing a complete schema"() {
+    def "ast printing a complete schema"() {
         String output = printAst(starWarsSchema)
 
         expect:
@@ -113,11 +115,13 @@ type Droid implements Character {
   appearsIn: [Episode]!
   primaryFunction: String
 }
+
+union SearchResult = Human | Droid | Starship
 """
     }
 
     //-------------------------------------------------
-    def "test schema printing specific schema node"() {
+    def "ast printing specific schema node"() {
         def document = parse(starWarsSchema)
         String output = printAst(document.getDefinitions().get(0))
 
@@ -129,7 +133,7 @@ schema {
 }"""
     }
 
-    def "test schema printing specific type node"() {
+    def "ast printing specific type node"() {
         def document = parse(starWarsSchema)
         String output = printAst(document.getDefinitions().get(1))
 
@@ -211,4 +215,112 @@ fragment comparisonFields on Character {
 }
 """
     }
+
+//-------------------------------------------------
+    def "ast printing of variables"() {
+        def query = '''
+query HeroNameAndFriends($episode: Episode) {
+  hero(episode: $episode) {
+    name
+  }
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''query HeroNameAndFriends($episode: Episode) {
+  hero(episode: $episode) {
+    name
+  }
+}
+'''
+    }
+
+//-------------------------------------------------
+    def "ast printing of directives"() {
+        def query = '''
+query Hero($episode: Episode, $withFriends: Boolean!) {
+  hero ( episode: $episode) {
+    name
+    friends @include (if : $withFriends) {
+      name
+    }
+  }
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''query Hero($episode: Episode, $withFriends: Boolean!) {
+  hero(episode: $episode) {
+    name
+    friends @include(if: $withFriends) {
+      name
+    }
+  }
+}
+'''
+    }
+
+//-------------------------------------------------
+    def "ast printing of inline fragments"() {
+        def query = '''
+query HeroForEpisode($ep: Episode!) {
+  hero(episode: $ep) {
+    name
+       ... on Droid {
+        primaryFunction
+     }
+         ... on Human {
+      height
+    }
+  }
+}'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''query HeroForEpisode($ep: Episode!) {
+  hero(episode: $ep) {
+    name
+    ... on Droid {
+      primaryFunction
+    }
+    ... on Human {
+      height
+    }
+  }
+}
+'''
+    }
+
+//-------------------------------------------------
+    def "ast printing of default variables"() {
+        def query = '''
+query HeroNameAndFriends($episode: Episode = "JEDI") {
+  hero(episode: $episode) {
+    name
+    friends {
+      name
+    }
+  }
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''query HeroNameAndFriends($episode: Episode = "JEDI") {
+  hero(episode: $episode) {
+    name
+    friends {
+      name
+    }
+  }
+}
+'''
+    }
+
 }
