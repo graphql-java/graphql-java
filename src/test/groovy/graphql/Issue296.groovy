@@ -12,7 +12,7 @@ import static graphql.schema.GraphQLSchema.newSchema
 
 class Issue296 extends Specification {
 
-    def "test introspection for #296"() {
+    def "test introspection for #296 with map"() {
 
         def graphql = GraphQL.newGraphQL(newSchema()
                 .query(newObject()
@@ -28,14 +28,57 @@ class Issue296 extends Specification {
                 .name("inputField")
                 .type(GraphQLString))
                 .build())
-                .defaultValue([field1:'value1']))))
+                .defaultValue([inputField: 'value1']))))
                 .build())
                 .build()
 
         def query = '{ __type(name: "Query") { fields { args { defaultValue } } } }'
 
-        // Instead of `'{field: "value"}'` you get '{field1=value1}' (#toString())
         expect:
-        graphql.execute(query).data == [ __type: [ fields: [ [ args: [ [ defaultValue: '{field: "value"}' ] ] ] ] ] ]
+        // converts the default object value to AST, then graphql pretty prints that as the value
+        graphql.execute(query).data ==
+                [__type: [fields: [[args: [[defaultValue: '{inputField : "value1"}']]]]]]
+    }
+
+    class FooBar {
+        final String inputField = "foo"
+        final String bar = "bar"
+
+        String getInputField() {
+            return inputField
+        }
+
+        String getBar() {
+            return bar
+        }
+    }
+
+    def "test introspection for #296 with some object"() {
+
+        def graphql = GraphQL.newGraphQL(newSchema()
+                .query(newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                .name("field")
+                .type(GraphQLString)
+                .argument(newArgument()
+                .name("argument")
+                .type(newInputObject()
+                .name("InputObjectType")
+                .field(newInputObjectField()
+                .name("inputField")
+                .type(GraphQLString))
+                .build())
+                .defaultValue(new FooBar()))))
+                .build())
+                .build()
+
+        def query = '{ __type(name: "Query") { fields { args { defaultValue } } } }'
+
+        expect:
+        // converts the default object value to AST, then graphql pretty prints that as the value
+        graphql.execute(query).data ==
+                [__type: [fields: [[args: [[defaultValue: '{inputField : "foo"}']]]]]]
     }
 }
+

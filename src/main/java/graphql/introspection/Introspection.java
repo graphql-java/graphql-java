@@ -1,6 +1,8 @@
 package graphql.introspection;
 
 
+import graphql.language.AstHelper;
+import graphql.language.AstPrinter;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
@@ -11,6 +13,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
@@ -103,15 +106,19 @@ public class Introspection {
                         public Object get(DataFetchingEnvironment environment) {
                             if (environment.getSource() instanceof GraphQLArgument) {
                                 GraphQLArgument inputField = environment.getSource();
-                                return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
+                                return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
                             } else if (environment.getSource() instanceof GraphQLInputObjectField) {
                                 GraphQLInputObjectField inputField = environment.getSource();
-                                return inputField.getDefaultValue() != null ? inputField.getDefaultValue().toString() : null;
+                                return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
                             }
                             return null;
                         }
                     }))
             .build();
+
+    private static String print(Object value, GraphQLInputType type) {
+        return new AstPrinter().printAst(AstHelper.astFromValue(value, type));
+    }
 
 
     public static GraphQLObjectType __Field = newObject()
