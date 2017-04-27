@@ -69,7 +69,7 @@ public abstract class ExecutionStrategy {
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 parameters.source(),
                 argumentValues,
-                executionContext.getRoot(),
+                executionContext,
                 fields,
                 fieldDef.getType(),
                 type,

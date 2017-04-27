@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.execution.ExecutionContext;
 import graphql.language.Field;
 
 import java.util.List;
@@ -44,11 +45,9 @@ public interface DataFetchingEnvironment {
      * Returns a context argument that is set up when the {@link graphql.GraphQL#execute(String, Object)} method
      * is invoked
      *
-     * @param <T> you decide what type it is
-     *
      * @return a context object
      */
-    <T> T getContext();
+    ExecutionContext getContext();
 
     /**
      * @return the list of fields currently in query context
