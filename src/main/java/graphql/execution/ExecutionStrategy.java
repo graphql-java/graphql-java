@@ -43,6 +43,24 @@ public abstract class ExecutionStrategy {
 
     public abstract ExecutionResult execute(ExecutionContext executionContext, ExecutionParameters parameters) throws NonNullableFieldWasNullException;
 
+    /**
+     * Handle exceptions which occur during data fetching. By default, add all exceptions to the execution context's
+     * error's. Subclasses may specify custom handling, e.g. of different behavior with different exception types (e.g.
+     * re-throwing certain exceptions).
+     * @param executionContext
+     * @param fieldDef
+     * @param argumentValues
+     * @param e
+     */
+    protected void handleDataFetchingException(
+            ExecutionContext executionContext,
+            GraphQLFieldDefinition fieldDef,
+            Map<String, Object> argumentValues,
+            Exception e) {
+        executionContext.addError(new ExceptionWhileDataFetching(e));
+    }
+
+
     protected ExecutionResult resolveField(ExecutionContext executionContext, ExecutionParameters parameters, List<Field> fields) {
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), type, fields.get(0));
@@ -70,8 +88,7 @@ public abstract class ExecutionStrategy {
             fetchCtx.onEnd(resolvedValue);
         } catch (Exception e) {
             log.warn("Exception while fetching data", e);
-            executionContext.addError(new ExceptionWhileDataFetching(e));
-
+            handleDataFetchingException(executionContext, fieldDef, argumentValues, e);
             fetchCtx.onEnd(e);
         }
 
