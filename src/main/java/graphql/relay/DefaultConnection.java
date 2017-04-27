@@ -41,6 +41,7 @@ public class DefaultConnection<T> implements Connection<T> {
 
     /**
      * @deprecated prefer {@link #DefaultConnection(List, PageInfo)} and avoid mutation
+     * @param edges edges
      */
     @Deprecated
     public void setEdges(List<Edge<T>> edges) {
@@ -57,6 +58,7 @@ public class DefaultConnection<T> implements Connection<T> {
 
     /**
      * @deprecated prefer {@link #DefaultConnection(List, PageInfo)} and avoid mutation
+     * @param pageInfo page info
      */
     @Deprecated
     public void setPageInfo(PageInfo pageInfo) {
