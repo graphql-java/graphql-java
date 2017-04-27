@@ -3,7 +3,6 @@ package graphql.validation
 import graphql.TestUtil
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.rules.NoFragmentCycles
 import graphql.validation.rules.NoUnusedVariables
 import spock.lang.Specification
 

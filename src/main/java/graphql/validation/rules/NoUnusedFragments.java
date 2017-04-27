@@ -67,6 +67,9 @@ public class NoUnusedFragments extends AbstractRule {
         if (result.contains(fragmentName)) return;
         result.add(fragmentName);
         List<String> spreadList = spreadsInDefinition.get(fragmentName);
+        if (spreadList == null) {
+            return;
+        }
         for (String fragment : spreadList) {
             collectUsedFragmentsInDefinition(result, fragment);
         }
