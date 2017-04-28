@@ -27,6 +27,8 @@ public class DefaultPageInfo implements PageInfo {
     }
 
     /**
+     * @param startCursor startCursor
+     *
      * @deprecated prefer {@link #DefaultPageInfo(ConnectionCursor, ConnectionCursor, boolean, boolean)} and avoid mutation
      */
     @Deprecated
@@ -40,6 +42,8 @@ public class DefaultPageInfo implements PageInfo {
     }
 
     /**
+     * @param endCursor endCursor
+     *
      * @deprecated prefer {@link #DefaultPageInfo(ConnectionCursor, ConnectionCursor, boolean, boolean)} and avoid mutation
      */
     @Deprecated
@@ -53,6 +57,8 @@ public class DefaultPageInfo implements PageInfo {
     }
 
     /**
+     * @param hasPreviousPage previous page
+     *
      * @deprecated prefer {@link #DefaultPageInfo(ConnectionCursor, ConnectionCursor, boolean, boolean)} and avoid mutation
      */
     @Deprecated
@@ -66,6 +72,8 @@ public class DefaultPageInfo implements PageInfo {
     }
 
     /**
+     * @param hasNextPage has next page
+     *
      * @deprecated prefer {@link #DefaultPageInfo(ConnectionCursor, ConnectionCursor, boolean, boolean)}
      */
     @Deprecated

@@ -93,6 +93,8 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
 
     /**
      * find the object's cursor, or null if the object is not in this connection.
+     * @param object the object in play
+     * @return a connection cursor
      */
     public ConnectionCursor cursorForObjectInConnection(T object) {
         int index = data.indexOf(object);
