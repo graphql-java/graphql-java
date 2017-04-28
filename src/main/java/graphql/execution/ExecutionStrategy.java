@@ -70,11 +70,10 @@ public abstract class ExecutionStrategy {
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 parameters.source(),
                 argumentValues,
-                executionContext.getRoot(),
                 fields,
                 fieldDef.getType(),
                 type,
-                executionContext.getGraphQLSchema()
+                executionContext
         );
 
         Instrumentation instrumentation = executionContext.getInstrumentation();

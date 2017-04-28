@@ -1,6 +1,8 @@
 package graphql.schema;
 
+import graphql.execution.ExecutionId;
 import graphql.language.Field;
+import graphql.language.FragmentDefinition;
 
 import java.util.List;
 import java.util.Map;
@@ -69,4 +71,14 @@ public interface DataFetchingEnvironment {
      * @return the underlying graphql schema
      */
     GraphQLSchema getGraphQLSchema();
+
+    /**
+     * @return the {@link FragmentDefinition} map for the current operation
+     */
+    Map<String, FragmentDefinition> getFragmentsByName();
+
+    /**
+     * @return the {@link ExecutionId} for the current operation
+     */
+    ExecutionId getExecutionId();
 }
