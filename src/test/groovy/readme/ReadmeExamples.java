@@ -3,6 +3,7 @@ package readme;
 import graphql.GarfieldSchema;
 import graphql.GraphQL;
 import graphql.StarWarsSchema;
+import graphql.TypeResolutionEnvironment;
 import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.execution.SimpleExecutionStrategy;
 import graphql.schema.DataFetcher;
@@ -118,11 +119,11 @@ public class ReadmeExamples {
                 .possibleType(DogType)
                 .typeResolver(new TypeResolver() {
                     @Override
-                    public GraphQLObjectType getType(Object object) {
-                        if (object instanceof GarfieldSchema.Cat) {
+                    public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                        if (env.getObject() instanceof GarfieldSchema.Cat) {
                             return CatType;
                         }
-                        if (object instanceof GarfieldSchema.Dog) {
+                        if (env.getObject() instanceof GarfieldSchema.Dog) {
                             return DogType;
                         }
                         return null;
@@ -148,7 +149,7 @@ public class ReadmeExamples {
                 2, /* core pool size 2 thread */
                 2, /* max pool size 2 thread */
                 30, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(),
+                new LinkedBlockingQueue<>(),
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
         GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)

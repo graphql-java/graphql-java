@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.TypeResolutionEnvironment
 import graphql.language.Document
 import graphql.language.SourceLocation
 import graphql.parser.Parser
@@ -95,7 +96,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                 .possibleTypes(StringBox, IntBox, NonNullStringBox1, NonNullStringBox2)
                 .typeResolver(new TypeResolver() {
             @Override
-            GraphQLObjectType getType(Object object) {
+            GraphQLObjectType getType(TypeResolutionEnvironment env) {
                 return null
             }
         })

@@ -4,6 +4,7 @@ import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
+import graphql.TypeResolutionEnvironment;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.FieldFetchParameters;
@@ -132,19 +133,31 @@ public abstract class ExecutionStrategy {
 
 
         GraphQLObjectType resolvedType;
-        if (fieldType instanceof GraphQLInterfaceType) {
-            resolvedType = resolveType((GraphQLInterfaceType) fieldType, result);
-        } else if (fieldType instanceof GraphQLUnionType) {
-            resolvedType = resolveType((GraphQLUnionType) fieldType, result);
+        if (params.getFieldType() instanceof GraphQLInterfaceType) {
+            TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
+                    .graphQLInterfaceType(params.getFieldType())
+                    .field(params.getFields().get(0))
+                    .value(params.getResult())
+                    .argumentValues(params.getArgumentValues())
+                    .schema(params.getExecutionContext().getGraphQLSchema()).build();
+            resolvedType = resolveTypeForInterface(resolutionParams);
+        } else if (params.getFieldType() instanceof GraphQLUnionType) {
+            TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
+                    .graphQLUnionType(params.getFieldType())
+                    .field(params.getFields().get(0))
+                    .value(params.getResult())
+                    .argumentValues(params.getArgumentValues())
+                    .schema(params.getExecutionContext().getGraphQLSchema()).build();
+            resolvedType = resolveTypeForUnion(resolutionParams);
         } else {
-            resolvedType = (GraphQLObjectType) fieldType;
+            resolvedType = params.getFieldType();
         }
 
         Map<String, List<Field>> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
-        for (Field field : fields) {
+        for (Field field : params.getFields()) {
             if (field.getSelectionSet() == null) continue;
-            fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
+            fieldCollector.collectFields(params.getExecutionContext(), resolvedType, field.getSelectionSet(), visitedFragments, subFields);
         }
 
         ExecutionParameters newParameters = ExecutionParameters.newParameters()
@@ -165,18 +178,36 @@ public abstract class ExecutionStrategy {
         return (Iterable<Object>) result;
     }
 
+    /**
+     * @deprecated Use {@link #resolveTypeForInterface(TypeResolutionParameters)}
+     */
+    @Deprecated
     protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
-        GraphQLObjectType result = graphQLInterfaceType.getTypeResolver().getType(value);
+        return resolveTypeForInterface(TypeResolutionParameters.newParameters().graphQLInterfaceType(graphQLInterfaceType).value(value).build());
+    }
+
+    protected GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema());
+        GraphQLObjectType result = params.getGraphQLInterfaceType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("could not determine type");
+            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLInterfaceType().getName());
         }
         return result;
     }
 
+    /**
+     * @deprecated Use {@link #resolveTypeForUnion(TypeResolutionParameters)}
+     */
+    @Deprecated
     protected GraphQLObjectType resolveType(GraphQLUnionType graphQLUnionType, Object value) {
-        GraphQLObjectType result = graphQLUnionType.getTypeResolver().getType(value);
+        return resolveTypeForUnion(TypeResolutionParameters.newParameters().graphQLUnionType(graphQLUnionType).value(value).build());
+    }
+
+    protected GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema());
+        GraphQLObjectType result = params.getGraphQLUnionType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("could not determine type");
+            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLUnionType().getName());
         }
         return result;
     }
@@ -226,10 +257,19 @@ public abstract class ExecutionStrategy {
 
         GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());
         if (fieldDefinition == null) {
-            throw new GraphQLException("unknown field " + field.getName());
+            throw new GraphQLException("Unknown field " + field.getName());
         }
         return fieldDefinition;
     }
 
-
+    private ValueCompletionParameters createCompletionParams(ExecutionContext executionContext, GraphQLType fieldType,
+                                                             List<Field> fields, Object result, Map<String, Object> argumentValues) {
+        return ValueCompletionParameters.newParameters()
+                .executionContext(executionContext)
+                .fieldType(fieldType)
+                .fields(fields)
+                .result(result)
+                .argumentValues(argumentValues)
+                .build();
+    }
 }

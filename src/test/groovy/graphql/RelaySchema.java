@@ -21,15 +21,18 @@ public class RelaySchema {
                     .fetchField())
             .build();
 
-    public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(object -> {
-        Relay.ResolvedGlobalId resolvedGlobalId = relay.fromGlobalId((String) object);
-        //TODO: implement
-        return null;
+    public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(new TypeResolver() {
+        @Override
+        public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+            Relay.ResolvedGlobalId resolvedGlobalId = relay.fromGlobalId((String) env.getObject());
+            //TODO: implement
+            return null;
+        }
     });
 
-    public static GraphQLObjectType StuffEdgeType = relay.edgeType("Stuff", StuffType, NodeInterface, new ArrayList<GraphQLFieldDefinition>());
+    public static GraphQLObjectType StuffEdgeType = relay.edgeType("Stuff", StuffType, NodeInterface, new ArrayList<>());
 
-    public static GraphQLObjectType StuffConnectionType = relay.connectionType("Stuff", StuffEdgeType, new ArrayList<GraphQLFieldDefinition>());
+    public static GraphQLObjectType StuffConnectionType = relay.connectionType("Stuff", StuffEdgeType, new ArrayList<>());
 
     public static GraphQLObjectType ThingType = newObject()
             .name("Thing")
