@@ -131,7 +131,6 @@ public class ReadmeExamples {
                 .build();
     }
 
-
     void recursiveTypes() {
 
         GraphQLObjectType person = newObject()
@@ -139,6 +138,31 @@ public class ReadmeExamples {
                 .field(newFieldDefinition()
                         .name("friends")
                         .type(new GraphQLList(new GraphQLTypeReference("Person"))))
+                .build();
+    }
+
+    void recursiveTypesSpecifically() {
+
+        GraphQLObjectType objectReference = GraphQLObjectType.reference("ObjectReference");
+        GraphQLInterfaceType interfaceReference = GraphQLInterfaceType.reference("InterfaceReference");
+        GraphQLInputObjectType inputObjectReference = GraphQLInputObjectType.reference("InputObjectReference");
+
+        GraphQLUnionType PetType = newUnionType()
+                .name("Pet")
+                .possibleType(GraphQLObjectType.reference("Cat"))
+                .possibleType(DogType)
+                .typeResolver(new TypeResolver() {
+                    @Override
+                    public GraphQLObjectType getType(Object object) {
+                        if (object instanceof GarfieldSchema.Cat) {
+                            return CatType;
+                        }
+                        if (object instanceof GarfieldSchema.Dog) {
+                            return DogType;
+                        }
+                        return null;
+                    }
+                })
                 .build();
     }
 

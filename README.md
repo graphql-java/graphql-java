@@ -295,7 +295,43 @@ GraphQLObjectType person = newObject()
     .build();
 
 ```
- 
+
+##### Specific Recursive Types
+
+Certain situations require specific type classes as input.  For example the possible union types inside a `GraphQLUnionType` are required
+  to be `GraphQLObjectType` objects.  You can't use a `GraphQLTypeReference` in this case as it is not specifically that type.
+
+You can use a `reference` method on each specific type to create a reference to that type.   
+
+```java
+GraphQLObjectType objectReference = GraphQLObjectType.reference("ObjectReference");
+GraphQLInterfaceType interfaceReference = GraphQLInterfaceType.reference("InterfaceReference");
+GraphQLInputObjectType inputObjectReference = GraphQLInputObjectType.reference("InputObjectReference");
+
+```
+
+you would use this say like this :
+
+```java
+GraphQLUnionType PetType = newUnionType()
+        .name("Pet")
+        .possibleType(GraphQLObjectType.reference("Cat"))
+        .possibleType(DogType)
+        .typeResolver(new TypeResolver() {
+            @Override
+            public GraphQLObjectType getType(Object object) {
+                if (object instanceof GarfieldSchema.Cat) {
+                    return CatType;
+                }
+                if (object instanceof GarfieldSchema.Dog) {
+                    return DogType;
+                }
+                return null;
+            }
+        })
+        .build();
+
+```
  
 #### Data fetching
 
