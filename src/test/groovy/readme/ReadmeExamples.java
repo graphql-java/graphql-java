@@ -2,6 +2,7 @@ package readme;
 
 import graphql.GarfieldSchema;
 import graphql.GraphQL;
+import graphql.Scalars;
 import graphql.StarWarsSchema;
 import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.execution.SimpleExecutionStrategy;
@@ -18,6 +19,8 @@ import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.TypeResolver;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +46,13 @@ import static graphql.schema.GraphQLUnionType.newUnionType;
  * This class holds readme examples so they stay correct and can be compiled.  If this
  * does not compile, chances are the readme examples are now wrong.
  */
+@SuppressWarnings({"unused", "Convert2Lambda", "UnnecessaryLocalVariable"})
 public class ReadmeExamples {
+
+
+    public Map<String, Object> getInputFromJSON() {
+        return new HashMap<>();
+    }
 
     class Foo {
     }
@@ -178,6 +187,99 @@ public class ReadmeExamples {
                         .dataFetcher(fooDataFetcher))
                 .build();
 
+    }
+
+    class Review {
+
+    }
+
+    class Episode {
+
+    }
+
+    class ReviewInput {
+
+    }
+
+    class ReviewStore {
+        Review update(Episode episode, ReviewInput reviewInput) {
+            return null;
+        }
+    }
+
+    private ReviewStore reviewStore() {
+        return new ReviewStore();
+    }
+
+    void mutationExample() {
+
+        GraphQLInputObjectType episodeType = GraphQLInputObjectType.newInputObject()
+                .name("Episode")
+                .field(newInputObjectField()
+                        .name("episodeNumber")
+                        .type(Scalars.GraphQLInt))
+                .build();
+
+        GraphQLInputObjectType reviewInputType = GraphQLInputObjectType.newInputObject()
+                .name("ReviewInput")
+                .field(newInputObjectField()
+                        .name("stars")
+                        .type(Scalars.GraphQLString)
+                        .name("commentary")
+                        .type(Scalars.GraphQLString))
+                .build();
+
+        GraphQLObjectType reviewType = newObject()
+                .name("Review")
+                .field(newFieldDefinition()
+                        .name("stars")
+                        .type(GraphQLString))
+                .field(newFieldDefinition()
+                        .name("commentary")
+                        .type(GraphQLString))
+                .build();
+
+        GraphQLObjectType createReviewForEpisodeMutation = newObject()
+                .name("CreateReviewForEpisodeMutation")
+                .field(newFieldDefinition()
+                        .name("createReview")
+                        .type(reviewType)
+                        .argument(newArgument()
+                                .name("episode")
+                                .type(episodeType)
+                        )
+                        .argument(newArgument()
+                                .name("review")
+                                .type(reviewInputType)
+                        )
+                        .dataFetcher(mutationDataFetcher())
+                )
+                .build();
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .mutation(createReviewForEpisodeMutation)
+                .build();
+    }
+
+    private DataFetcher mutationDataFetcher() {
+        return new DataFetcher() {
+            @Override
+            public Review get(DataFetchingEnvironment environment) {
+                Episode episode = environment.getArgument("episode");
+                ReviewInput review = environment.getArgument("review");
+
+                // make a call to your store to mutate your database
+                Review updatedReview = reviewStore().update(episode, review);
+
+                // this returns a new view of the data
+                return updatedReview;
+            }
+        };
+    }
+
+    private Object context() {
+        return null;
     }
 
     private Foo perhapsFromDatabase() {
