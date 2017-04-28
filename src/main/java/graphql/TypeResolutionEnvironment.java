@@ -1,11 +1,14 @@
 package graphql;
 
-import java.util.Map;
-
 import graphql.language.Field;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
+import java.util.Map;
+
+/**
+ * See {@link graphql.schema.TypeResolver#getType(TypeResolutionEnvironment)} for how this is used
+ */
 public class TypeResolutionEnvironment {
 
     private final Object object;

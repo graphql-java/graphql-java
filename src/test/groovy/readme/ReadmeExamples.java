@@ -23,6 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static graphql.GarfieldSchema.*;
 import static graphql.GarfieldSchema.CatType;
 import static graphql.GarfieldSchema.DogType;
 import static graphql.MutationSchema.mutationType;
@@ -44,6 +45,7 @@ import static graphql.schema.GraphQLUnionType.newUnionType;
  * This class holds readme examples so they stay correct and can be compiled.  If this
  * does not compile, chances are the readme examples are now wrong.
  */
+@SuppressWarnings("Convert2Lambda")
 public class ReadmeExamples {
 
     class Foo {
@@ -120,10 +122,10 @@ public class ReadmeExamples {
                 .typeResolver(new TypeResolver() {
                     @Override
                     public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                        if (env.getObject() instanceof GarfieldSchema.Cat) {
+                        if (env.getObject() instanceof Cat) {
                             return CatType;
                         }
-                        if (env.getObject() instanceof GarfieldSchema.Dog) {
+                        if (env.getObject() instanceof Dog) {
                             return DogType;
                         }
                         return null;

@@ -21,13 +21,10 @@ public class RelaySchema {
                     .fetchField())
             .build();
 
-    public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(new TypeResolver() {
-        @Override
-        public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-            Relay.ResolvedGlobalId resolvedGlobalId = relay.fromGlobalId((String) env.getObject());
-            //TODO: implement
-            return null;
-        }
+    public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(env -> {
+        Relay.ResolvedGlobalId resolvedGlobalId = relay.fromGlobalId((String) env.getObject());
+        //TODO: implement
+        return null;
     });
 
     public static GraphQLObjectType StuffEdgeType = relay.edgeType("Stuff", StuffType, NodeInterface, new ArrayList<>());

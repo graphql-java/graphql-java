@@ -15,12 +15,7 @@ import static graphql.schema.GraphQLUnionType.newUnionType;
 
 public class Harness {
 
-    private static TypeResolver dummyTypeResolve = new TypeResolver() {
-        @Override
-        public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-            return null;
-        }
-    };
+    private static TypeResolver dummyTypeResolve = env -> null;
 
 
     public static GraphQLInterfaceType Being = newInterface()
@@ -118,12 +113,7 @@ public class Harness {
     public static GraphQLUnionType CatOrDog = newUnionType()
             .name("CatOrDog")
             .possibleTypes(Dog, Cat)
-            .typeResolver(new TypeResolver() {
-                @Override
-                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    return null;
-                }
-            })
+            .typeResolver(env -> null)
             .build();
 
     public static GraphQLInterfaceType Intelligent = newInterface()

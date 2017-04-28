@@ -135,37 +135,31 @@ public class SpecValidationSchema {
     public static final GraphQLUnionType catOrDog = GraphQLUnionType.newUnionType()
             .name("CatOrDog")
             .possibleTypes(cat, dog)
-            .typeResolver(new TypeResolver() {
-                @Override
-                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    if (env.getObject() instanceof Cat) return cat;
-                    if (env.getObject() instanceof Dog) return dog;
-                    return null;
-                }})
+            .typeResolver(env -> {
+                if (env.getObject() instanceof Cat) return cat;
+                if (env.getObject() instanceof Dog) return dog;
+                return null;
+            })
             .build();
 
     public static final GraphQLUnionType dogOrHuman = GraphQLUnionType.newUnionType()
             .name("DogOrHuman")
             .possibleTypes(dog, human)
-            .typeResolver(new TypeResolver() {
-                @Override
-                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    if (env.getObject() instanceof Human) return human;
-                    if (env.getObject() instanceof Dog) return dog;
-                    return null;
-                }})
+            .typeResolver(env -> {
+                if (env.getObject() instanceof Human) return human;
+                if (env.getObject() instanceof Dog) return dog;
+                return null;
+            })
             .build();
 
     public static final GraphQLUnionType humanOrAlien = GraphQLUnionType.newUnionType()
             .name("HumanOrAlien")
             .possibleTypes(human, alien)
-            .typeResolver(new TypeResolver() {
-                @Override
-                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    if (env.getObject() instanceof Human) return human;
-                    if (env.getObject() instanceof Alien) return alien;
-                    return null;
-                }})
+            .typeResolver(env -> {
+                if (env.getObject() instanceof Human) return human;
+                if (env.getObject() instanceof Alien) return alien;
+                return null;
+            })
             .build();
 
     public static final GraphQLObjectType queryRoot = GraphQLObjectType.newObject()

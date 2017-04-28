@@ -13,12 +13,14 @@ import static graphql.Assert.assertNotNull;
 public class ExecutionParameters {
     private final TypeInfo typeInfo;
     private final Object source;
+    private final Map<String, Object> arguments;
     private final Map<String, List<Field>> fields;
 
-    private ExecutionParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields) {
+    private ExecutionParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments) {
         this.typeInfo = assertNotNull(typeInfo, "");
         this.fields = assertNotNull(fields, "");
         this.source = source;
+        this.arguments = arguments;
     }
 
     public TypeInfo typeInfo() {
@@ -31,6 +33,10 @@ public class ExecutionParameters {
 
     public Map<String, List<Field>> fields() {
         return fields;
+    }
+
+    public Map<String, Object> arguments() {
+        return arguments;
     }
 
     public static Builder newParameters() {
@@ -47,6 +53,7 @@ public class ExecutionParameters {
         TypeInfo typeInfo;
         Object source;
         Map<String, List<Field>> fields;
+        Map<String, Object> arguments;
 
         public Builder typeInfo(TypeInfo type) {
             this.typeInfo = type;
@@ -68,8 +75,13 @@ public class ExecutionParameters {
             return this;
         }
 
+        public Builder arguments(Map<String, Object> arguments) {
+            this.arguments = arguments;
+            return this;
+        }
+
         public ExecutionParameters build() {
-            return new ExecutionParameters(typeInfo, source, fields);
+            return new ExecutionParameters(typeInfo, source, fields, arguments);
         }
     }
 }

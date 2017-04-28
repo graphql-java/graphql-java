@@ -149,17 +149,14 @@ public class GarfieldSchema {
             .name("Pet")
             .possibleType(CatType)
             .possibleType(DogType)
-            .typeResolver(new TypeResolver() {
-                @Override
-                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    if (env.getObject() instanceof Cat) {
-                        return CatType;
-                    }
-                    if (env.getObject() instanceof Dog) {
-                        return DogType;
-                    }
-                    return null;
+            .typeResolver(env -> {
+                if (env.getObject() instanceof Cat) {
+                    return CatType;
                 }
+                if (env.getObject() instanceof Dog) {
+                    return DogType;
+                }
+                return null;
             })
             .build();
 
