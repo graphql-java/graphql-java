@@ -146,14 +146,14 @@ public class SchemaUtil {
     }
 
 
-    public Map<String, GraphQLType> allTypes(GraphQLSchema schema, Set<GraphQLType> dictionary) {
+    public Map<String, GraphQLType> allTypes(GraphQLSchema schema, Set<GraphQLType> additionalTypes) {
         Map<String, GraphQLType> typesByName = new LinkedHashMap<>();
         collectTypes(schema.getQueryType(), typesByName);
         if (schema.isSupportingMutations()) {
             collectTypes(schema.getMutationType(), typesByName);
         }
-        if (dictionary != null) {
-            for (GraphQLType type : dictionary) {
+        if (additionalTypes != null) {
+            for (GraphQLType type : additionalTypes) {
                 collectTypes(type, typesByName);
             }
         }
@@ -162,7 +162,7 @@ public class SchemaUtil {
     }
 
     public List<GraphQLObjectType> findImplementations(GraphQLSchema schema, GraphQLInterfaceType interfaceType) {
-        Map<String, GraphQLType> allTypes = allTypes(schema, schema.getDictionary());
+        Map<String, GraphQLType> allTypes = allTypes(schema, schema.getAdditionalTypes());
         List<GraphQLObjectType> result = new ArrayList<>();
         for (GraphQLType type : allTypes.values()) {
             if (!(type instanceof GraphQLObjectType)) {
@@ -176,7 +176,7 @@ public class SchemaUtil {
 
 
     void replaceTypeReferences(GraphQLSchema schema) {
-        Map<String, GraphQLType> typeMap = allTypes(schema, schema.getDictionary());
+        Map<String, GraphQLType> typeMap = allTypes(schema, schema.getAdditionalTypes());
         for (GraphQLType type : typeMap.values()) {
             if (type instanceof GraphQLFieldsContainer) {
                 resolveTypeReferencesForFieldsContainer((GraphQLFieldsContainer) type, typeMap);
