@@ -74,9 +74,9 @@ public class SchemaDecompiler {
         public Options includeScalarTypes(boolean flag) {
             return new Options(this.includeIntrospectionTypes, flag);
         }
-
     }
 
+    private final Map<Class, TypePrinter<?>> printers = new LinkedHashMap<>();
     private final Options options;
 
     public SchemaDecompiler() {
@@ -85,6 +85,13 @@ public class SchemaDecompiler {
 
     public SchemaDecompiler(Options options) {
         this.options = options;
+        printers.put(GraphQLSchema.class, schemaPrinter());
+        printers.put(GraphQLObjectType.class, objectPrinter());
+        printers.put(GraphQLEnumType.class, enumPrinter());
+        printers.put(GraphQLScalarType.class, scalarPrinter());
+        printers.put(GraphQLInterfaceType.class, interfacePrinter());
+        printers.put(GraphQLUnionType.class, unionPrinter());
+        printers.put(GraphQLInputObjectType.class, inputObjectPrinter());
     }
 
     /**
@@ -112,23 +119,9 @@ public class SchemaDecompiler {
 
         return sw.toString();
     }
-
     private interface TypePrinter<T> {
+
         void print(PrintWriter out, T type);
-
-    }
-
-    Map<Class, TypePrinter<?>> printers = new LinkedHashMap<>();
-
-
-    {
-        printers.put(GraphQLSchema.class, schemaPrinter());
-        printers.put(GraphQLObjectType.class, objectPrinter());
-        printers.put(GraphQLEnumType.class, enumPrinter());
-        printers.put(GraphQLScalarType.class, scalarPrinter());
-        printers.put(GraphQLInterfaceType.class, interfacePrinter());
-        printers.put(GraphQLUnionType.class, unionPrinter());
-        printers.put(GraphQLInputObjectType.class, inputObjectPrinter());
 
     }
 

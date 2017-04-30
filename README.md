@@ -525,6 +525,9 @@ You wire this together using this builder pattern
 
 ```
 
+NOTE: IDL is not currently part of the [formal graphql spec](https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document).  
+The implementation in this library is based off the [reference implementation](https://github.com/graphql/graphql-js).  However plenty of 
+code out there is based on this IDL syntax and hence you can be fairly confident that you are building on solid technology ground.   
 
 
 #### Contributions

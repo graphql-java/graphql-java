@@ -6,7 +6,7 @@ import graphql.schema.GraphQLSchema
 import graphql.schema.StaticDataFetcher
 import spock.lang.Specification
 
-import static graphql.schema.idl.RuntimeWiring.TypeRuntimeWiring.newTypeWiring
+import static TypeRuntimeWiring.newTypeWiring
 
 /**
   This reruns some of the tests in graphql.StarWarsQueryTest but with the schema being

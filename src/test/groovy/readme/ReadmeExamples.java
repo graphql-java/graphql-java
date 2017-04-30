@@ -47,13 +47,13 @@ import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLUnionType.newUnionType;
-import static graphql.schema.idl.RuntimeWiring.TypeRuntimeWiring.newTypeWiring;
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
 /**
  * This class holds readme examples so they stay correct and can be compiled.  If this
  * does not compile, chances are the readme examples are now wrong.
  */
-@SuppressWarnings({"unused", "Convert2Lambda", "ConstantConditions", "Anonymous2MethodRef"})
+@SuppressWarnings({"unused", "Convert2Lambda", "ConstantConditions", "Anonymous2MethodRef", "UnnecessaryLocalVariable"})
 public class ReadmeExamples {
 
     class Foo {

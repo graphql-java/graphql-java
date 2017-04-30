@@ -2,13 +2,14 @@ package graphql.schema.idl.errors;
 
 import graphql.ErrorType;
 import graphql.GraphQLError;
+import graphql.GraphQLException;
 import graphql.language.Node;
 import graphql.language.SourceLocation;
 
 import java.util.Collections;
 import java.util.List;
 
-class BaseError extends RuntimeException implements GraphQLError {
+class BaseError extends GraphQLException implements GraphQLError {
     protected static final SourceLocation NO_WHERE = new SourceLocation(-1, -1);
 
     private Node node;
