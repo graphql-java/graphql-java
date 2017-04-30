@@ -42,8 +42,6 @@ import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
-import graphql.parser.antlr.GraphqlBaseVisitor;
-import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;

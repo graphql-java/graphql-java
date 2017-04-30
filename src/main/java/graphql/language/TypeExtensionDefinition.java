@@ -1,9 +1,5 @@
 package graphql.language;
 
-
-import java.util.ArrayList;
-import java.util.List;
-
 public class TypeExtensionDefinition extends ObjectTypeDefinition {
     public TypeExtensionDefinition() {
         super(null);
