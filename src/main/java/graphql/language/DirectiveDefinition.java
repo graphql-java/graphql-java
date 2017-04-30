@@ -13,6 +13,10 @@ public class DirectiveDefinition extends AbstractNode implements Definition {
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
+
     public List<InputValueDefinition> getInputValueDefinitions() {
         return inputValueDefinitions;
     }
@@ -36,9 +40,9 @@ public class DirectiveDefinition extends AbstractNode implements Definition {
 
         DirectiveDefinition that = (DirectiveDefinition) o;
 
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
+        if (null == name) {
+            if (null != that.name) return false;
+        } else if (!name.equals(that.name)) {
             return false;
         }
         return true;

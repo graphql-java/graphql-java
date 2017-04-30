@@ -2,10 +2,12 @@ package readme;
 
 import graphql.GarfieldSchema;
 import graphql.GraphQL;
+import graphql.StarWarsData;
 import graphql.Scalars;
 import graphql.StarWarsSchema;
 import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.execution.SimpleExecutionStrategy;
+import graphql.schema.Coercing;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLEnumType;
@@ -14,11 +16,18 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.StaticDataFetcher;
 import graphql.schema.TypeResolver;
+import graphql.schema.idl.RuntimeWiring;
+import graphql.schema.idl.SchemaCompiler;
+import graphql.schema.idl.SchemaGenerator;
+import graphql.schema.idl.TypeDefinitionRegistry;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -41,6 +50,7 @@ import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLUnionType.newUnionType;
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
 /**
  * This class holds readme examples so they stay correct and can be compiled.  If this
@@ -157,7 +167,7 @@ public class ReadmeExamples {
                 2, /* core pool size 2 thread */
                 2, /* max pool size 2 thread */
                 30, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>(),
+                new LinkedBlockingQueue<>(),
                 new ThreadPoolExecutor.CallerRunsPolicy());
 
         GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
@@ -284,6 +294,65 @@ public class ReadmeExamples {
 
     private Foo perhapsFromDatabase() {
         return new Foo();
+    }
+
+    void compiledSchemaExample() {
+
+        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+
+        File schemaFile = loadSchema("starWarsSchema.graphqls");
+
+        TypeDefinitionRegistry typeRegistry = schemaCompiler.compile(schemaFile);
+        RuntimeWiring wiring = buildRuntimeWiring();
+        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
+    }
+
+    RuntimeWiring buildRuntimeWiring() {
+        return RuntimeWiring.newRuntimeWiring()
+                .scalar(CustomScalar)
+                // this uses builder function lambda syntax
+                .type(typeWiring -> typeWiring.typeName("QueryType")
+                        .dataFetcher("hero", new StaticDataFetcher(StarWarsData.getArtoo()))
+                        .dataFetcher("human", StarWarsData.getHumanDataFetcher())
+                        .dataFetcher("droid", StarWarsData.getDroidDataFetcher())
+                )
+                .type(typeWiring -> typeWiring.typeName("Human")
+                        .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
+                )
+                // you can use builder syntax if you don't like the lambda syntax
+                .type(typeWiring -> typeWiring.typeName("Droid")
+                        .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
+                )
+                // or full builder syntax if that takes your fancy
+                .type(
+                        newTypeWiring("Character")
+                                .typeResolver(StarWarsData.getCharacterTypeResolver())
+                                .build()
+                )
+                .build();
+    }
+
+
+    public static GraphQLScalarType CustomScalar = new GraphQLScalarType("Custom", "Custom Scalar", new Coercing<Integer, Integer>() {
+        @Override
+        public Integer serialize(Object input) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Integer parseValue(Object input) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+
+        @Override
+        public Integer parseLiteral(Object input) {
+            throw new UnsupportedOperationException("Not implemented");
+        }
+    });
+
+    private File loadSchema(String s) {
+        return null;
     }
 
 }

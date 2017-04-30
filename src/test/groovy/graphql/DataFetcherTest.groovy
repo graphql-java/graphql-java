@@ -2,6 +2,8 @@ package graphql
 
 import graphql.schema.DataFetchingEnvironmentImpl
 import graphql.schema.FieldDataFetcher
+import graphql.schema.GraphQLOutputType
+import graphql.schema.GraphQLScalarType
 import graphql.schema.PropertyDataFetcher
 import spock.lang.Specification
 
@@ -53,9 +55,13 @@ class DataFetcherTest extends Specification {
         dataHolder.setBooleanFieldWithGet(false)
     }
 
+    private def env(GraphQLOutputType type) {
+        new DataFetchingEnvironmentImpl(dataHolder, null, null, null, type, null, null, null, null)
+    }
+
     def "get field value"() {
         given:
-        def environment = new DataFetchingEnvironmentImpl(dataHolder, null, null, null, GraphQLString, null, null)
+        def environment = env(GraphQLString)
         when:
         def result = new FieldDataFetcher("publicField").get(environment)
         then:
@@ -64,7 +70,7 @@ class DataFetcherTest extends Specification {
 
     def "get property value"() {
         given:
-        def environment = new DataFetchingEnvironmentImpl(dataHolder, null, null, null, GraphQLString, null, null)
+        def environment = env(GraphQLString)
         when:
         def result = new PropertyDataFetcher("property").get(environment)
         then:
@@ -73,7 +79,7 @@ class DataFetcherTest extends Specification {
 
     def "get Boolean property value"() {
         given:
-        def environment = new DataFetchingEnvironmentImpl(dataHolder, null, null, null, GraphQLBoolean, null, null)
+        def environment = env(GraphQLBoolean)
         when:
         def result = new PropertyDataFetcher("booleanField").get(environment)
         then:
@@ -82,7 +88,7 @@ class DataFetcherTest extends Specification {
 
     def "get Boolean property value with get"() {
         given:
-        def environment = new DataFetchingEnvironmentImpl(dataHolder, null, null, null, GraphQLBoolean, null, null)
+        def environment = env(GraphQLBoolean)
         when:
         def result = new PropertyDataFetcher("booleanFieldWithGet").get(environment)
         then:
@@ -91,7 +97,7 @@ class DataFetcherTest extends Specification {
 
     def "get field value as property"() {
         given:
-        def environment = new DataFetchingEnvironmentImpl(dataHolder, null, null, null, GraphQLString, null, null)
+        def environment = env(GraphQLString)
         when:
         def result = new PropertyDataFetcher("publicField").get(environment)
         then:
