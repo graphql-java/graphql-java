@@ -112,7 +112,7 @@ public class RulesVisitor implements QueryLanguageVisitor {
         List<AbstractRule> rulesVisitingFragmentSpreads = getRulesVisitingFragmentSpreads(rules);
         if (rulesVisitingFragmentSpreads.size() > 0) {
             FragmentDefinition fragment = validationContext.getFragment(fragmentSpread.getName());
-            if(!ancestors.contains(fragment)){
+            if (fragment != null && !ancestors.contains(fragment)) {
                 new LanguageTraversal(ancestors).traverse(fragment, new RulesVisitor(validationContext, rulesVisitingFragmentSpreads, true));
             }
         }
