@@ -12,11 +12,11 @@ class AstPrinterTest extends Specification {
     String printAst(String input) {
         Document document = parse(input)
 
-        new AstPrinter().printAst(document)
+       AstPrinter.printAst(document)
     }
 
     String printAst(Node node) {
-        new AstPrinter().printAst(node)
+        AstPrinter.printAst(node)
     }
 
     def starWarsSchema = """

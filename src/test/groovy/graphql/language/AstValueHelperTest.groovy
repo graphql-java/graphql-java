@@ -7,9 +7,9 @@ import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
 import static graphql.Scalars.*
-import static graphql.language.AstHelper.astFromValue
+import static AstValueHelper.astFromValue
 
-class AstHelperTest extends Specification {
+class AstValueHelperTest extends Specification {
 
     def 'converts boolean values to ASTs'() {
         expect:

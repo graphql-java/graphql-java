@@ -464,7 +464,7 @@ public class AstPrinter {
      *
      * @return the printed node in graphql language format
      */
-    public String printAst(Node node) {
+    public static String printAst(Node node) {
         StringWriter sw = new StringWriter();
         printAst(sw, node);
         return sw.toString();
@@ -476,7 +476,7 @@ public class AstPrinter {
      * @param writer the place to put the output
      * @param node   the AST node to print
      */
-    public void printAst(Writer writer, Node node) {
+    public static void printAst(Writer writer, Node node) {
         NodePrinter<Node> printer = _findPrinter(node);
         printer.print(new PrintWriter(writer), node);
     }

@@ -1,7 +1,7 @@
 package graphql.introspection;
 
 
-import graphql.language.AstHelper;
+import graphql.language.AstValueHelper;
 import graphql.language.AstPrinter;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -111,7 +111,7 @@ public class Introspection {
             .build();
 
     private static String print(Object value, GraphQLInputType type) {
-        return new AstPrinter().printAst(AstHelper.astFromValue(value, type));
+        return AstPrinter.printAst(AstValueHelper.astFromValue(value, type));
     }
 
 
