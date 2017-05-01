@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 import graphql.AssertException;
 import graphql.language.InterfaceTypeDefinition;
@@ -127,7 +128,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
          * @param builderFunction a supplier for the builder impl
          * @return this
          */
-        public Builder field(BuilderFunction<GraphQLFieldDefinition.Builder> builderFunction) {
+        public Builder field(UnaryOperator<GraphQLFieldDefinition.Builder> builderFunction) {
             assertNotNull(builderFunction, "builderFunction can't be null");
             GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
             builder = builderFunction.apply(builder);

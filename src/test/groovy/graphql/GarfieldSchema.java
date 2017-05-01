@@ -69,7 +69,7 @@ public class GarfieldSchema {
         private List<Named> friends;
 
         public Person(String name) {
-            this(name, Collections.<Cat>emptyList(), Collections.<Dog>emptyList(), Collections.<Named>emptyList());
+            this(name, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
         }
 
         public Person(String name, List<Cat> cats, List<Dog> dogs, List<Named> friends) {
