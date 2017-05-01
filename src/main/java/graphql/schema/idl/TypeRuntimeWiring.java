@@ -1,13 +1,13 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
-import graphql.schema.BuilderFunction;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 /**
  * A type runtime wiring is a specification of the data fetchers and possible type resolver for a given type name.
@@ -64,7 +64,7 @@ public class TypeRuntimeWiring {
      *
      * @return the same builder back please
      */
-    public static TypeRuntimeWiring newTypeWiring(BuilderFunction<Builder> builderFunction) {
+    public static TypeRuntimeWiring newTypeWiring(UnaryOperator<Builder> builderFunction) {
         return builderFunction.apply(newTypeWiring()).build();
     }
 

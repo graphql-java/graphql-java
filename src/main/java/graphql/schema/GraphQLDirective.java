@@ -4,6 +4,7 @@ package graphql.schema;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -130,7 +131,7 @@ public class GraphQLDirective {
          * @param builderFunction a supplier for the builder impl
          * @return this
          */
-        public Builder argument(BuilderFunction<GraphQLArgument.Builder> builderFunction) {
+        public Builder argument(UnaryOperator<GraphQLArgument.Builder> builderFunction) {
             GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
             builder = builderFunction.apply(builder);
             return argument(builder);
