@@ -6,7 +6,6 @@ import graphql.language.FieldDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -43,7 +42,7 @@ public class GraphQLFieldDefinition {
 
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+        this.type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(this.type, typeMap);
     }
 
     public String getName() {

@@ -97,9 +97,9 @@ class SchemaUtilTest extends Specification {
         when:
         new SchemaUtil().replaceTypeReferences(SchemaWithReferences)
         then:
-        SchemaWithReferences.allTypesAsList.findIndexOf { it instanceof TypeReference } == -1;
-        pet.types.findIndexOf { it instanceof TypeReference } == -1;
-        person.interfaces.findIndexOf { it instanceof TypeReference } == -1;
+        SchemaWithReferences.allTypesAsList.findIndexOf { it instanceof GraphQLTypeReference } == -1;
+        pet.types.findIndexOf { it instanceof GraphQLTypeReference } == -1;
+        person.interfaces.findIndexOf { it instanceof GraphQLTypeReference } == -1;
     }
 
     def "redefined types are caught"() {
