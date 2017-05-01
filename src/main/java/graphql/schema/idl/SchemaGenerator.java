@@ -98,10 +98,18 @@ public class SchemaGenerator {
 
         void put(GraphQLOutputType outputType) {
             outputGTypes.put(outputType.getName(), outputType);
+            // certain types can be both input and output types, for example enums
+            if (outputType instanceof GraphQLInputType) {
+                inputGTypes.put(outputType.getName(), (GraphQLInputType) outputType);
+            }
         }
 
         void put(GraphQLInputType inputType) {
             inputGTypes.put(inputType.getName(), inputType);
+            // certain types can be both input and output types, for example enums
+            if (inputType instanceof GraphQLOutputType) {
+                outputGTypes.put(inputType.getName(), (GraphQLOutputType) inputType);
+            }
         }
 
         RuntimeWiring getWiring() {
@@ -182,12 +190,12 @@ public class SchemaGenerator {
     private <T extends GraphQLOutputType> T buildOutputType(BuildContext buildCtx, Type rawType) {
 
         TypeDefinition typeDefinition = buildCtx.getTypeDefinition(rawType);
+        TypeInfo typeInfo = TypeInfo.typeInfo(rawType);
 
         GraphQLOutputType outputType = buildCtx.hasOutputType(typeDefinition);
         if (outputType != null) {
-            return (T) outputType;
+            return typeInfo.decorate(outputType);
         }
-        TypeInfo typeInfo = TypeInfo.typeInfo(rawType);
 
         if (buildCtx.stackContains(typeInfo)) {
             // we have circled around so put in a type reference and fix it up later
@@ -217,12 +225,12 @@ public class SchemaGenerator {
     private GraphQLInputType buildInputType(BuildContext buildCtx, Type rawType) {
 
         TypeDefinition typeDefinition = buildCtx.getTypeDefinition(rawType);
+        TypeInfo typeInfo = TypeInfo.typeInfo(rawType);
 
         GraphQLInputType inputType = buildCtx.hasInputType(typeDefinition);
         if (inputType != null) {
-            return inputType;
+            return typeInfo.decorate(inputType);
         }
-        TypeInfo typeInfo = TypeInfo.typeInfo(rawType);
 
         if (buildCtx.stackContains(typeInfo)) {
             // we have circled around so put in a type reference and fix it later

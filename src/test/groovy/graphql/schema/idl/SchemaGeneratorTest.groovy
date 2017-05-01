@@ -34,7 +34,7 @@ class SchemaGeneratorTest extends Specification {
         type
     }
 
-    void commonSchemaAsserts(schema) {
+    void commonSchemaAsserts(GraphQLSchema schema) {
         assert schema.getQueryType().name == "Query"
         assert schema.getMutationType().name == "Mutation"
 
@@ -54,6 +54,37 @@ class SchemaGeneratorTest extends Specification {
         assert authorField.arguments.get(0).name == "id"
         assert authorField.arguments.get(0).type instanceof GraphQLNonNull
         assert unwrap(authorField.arguments.get(0).type).name == "Int"
+
+
+        //type Post {
+        //    id: Int!
+        //            title: String
+        //    votes: Int
+        //    author: Author!
+        //}
+        GraphQLObjectType postType = schema.getType("Post") as GraphQLObjectType
+        assert postType.name == "Post"
+        //
+        // make sure that wrapped non null fields stay that way. we had a bug where decorated types lost their decoration
+        assert postType.getFieldDefinition("author").type instanceof GraphQLNonNull
+        assert (postType.getFieldDefinition("author").type as GraphQLNonNull).wrappedType.name == "Author"
+
+        //type Author {
+        //    # the ! means that every author object _must_ have an id
+        //    id: Int!
+        //            firstName: String
+        //    lastName: String
+        //    # the list of Posts by this author
+        //    posts: [Post]!
+        //}
+        GraphQLObjectType authorType = schema.getType("Author") as GraphQLObjectType
+        assert authorType.name == "Author"
+        //
+        // make sure that wrapped list fields stay that way. we had a bug where decorated types lost their decoration
+        assert authorType.getFieldDefinition("posts").type instanceof GraphQLNonNull
+        def wrappedList = (authorType.getFieldDefinition("posts").type as GraphQLNonNull).wrappedType
+        assert wrappedList instanceof GraphQLList
+        assert (wrappedList as GraphQLList).wrappedType.name == "Post"
 
         //
         // input PostUpVote {
@@ -93,14 +124,14 @@ class SchemaGeneratorTest extends Specification {
               firstName: String
               lastName: String
               # the list of Posts by this author
-              posts: [Post] 
+              posts: [Post]! 
             }
             
             type Post {
               id: Int!
               title: String
               votes: Int
-              author: Author
+              author: Author!
             }
             
             # the schema allows the following query
@@ -147,7 +178,7 @@ class SchemaGeneratorTest extends Specification {
               firstName: String
               lastName: String
               # the list of Posts by this author
-              posts: [Post] 
+              posts: [Post]! 
             }
             """
         def schemaSpec2 = """
@@ -156,7 +187,7 @@ class SchemaGeneratorTest extends Specification {
               id: Int!
               title: String
               votes: Int
-              author: Author
+              author: Author!
             }
         """
 
