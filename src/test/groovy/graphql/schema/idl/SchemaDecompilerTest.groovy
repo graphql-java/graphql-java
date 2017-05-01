@@ -1,6 +1,7 @@
 package graphql.schema.idl
 
 import graphql.Scalars
+import graphql.TypeResolutionEnvironment
 import graphql.schema.*
 import spock.lang.Specification
 
@@ -42,8 +43,9 @@ class SchemaDecompilerTest extends Specification {
     })
 
     def resolver = new TypeResolver() {
+
         @Override
-        GraphQLObjectType getType(Object object) {
+        GraphQLObjectType getType(TypeResolutionEnvironment env) {
             throw new UnsupportedOperationException("Not implemented")
         }
     }

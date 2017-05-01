@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.TypeResolutionEnvironment
 import graphql.schema.*
 import spock.lang.Specification
 
@@ -43,7 +44,7 @@ class RuntimeWiringTest extends Specification {
         }
 
         @Override
-        GraphQLObjectType getType(Object object) {
+        GraphQLObjectType getType(TypeResolutionEnvironment env) {
             throw new UnsupportedOperationException("Not implemented")
         }
     }
