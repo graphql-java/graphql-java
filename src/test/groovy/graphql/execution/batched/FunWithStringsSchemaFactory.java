@@ -1,16 +1,8 @@
 package graphql.execution.batched;
 
 import graphql.Scalars;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeReference;
+import graphql.schema.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +32,7 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.VALUE);
-                List<String> retVal = new ArrayList<String>();
+                List<String> retVal = new ArrayList<>();
                 for (String s: (List<String>) environment.getSource()) {
                     retVal.add("null".equals(s) ? null : s);
                 }
@@ -54,7 +46,7 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.APPEND);
-                List<String> retVal = new ArrayList<String>();
+                List<String> retVal = new ArrayList<>();
                 for (String s: (List<String>) environment.getSource()) {
                     retVal.add(s + environment.getArgument("text"));
                 }
@@ -68,12 +60,12 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.WORDS_AND_LETTERS);
-                List<String> sources = (List<String>) environment.getSource();
-                List<List<List<String>>> retVal = new ArrayList<List<List<String>>>();
+                List<String> sources = environment.getSource();
+                List<List<List<String>>> retVal = new ArrayList<>();
                 for (String source : sources) {
-                    List<List<String>> sentence = new ArrayList<List<String>>();
+                    List<List<String>> sentence = new ArrayList<>();
                     for (String word : source.split(" ")) {
-                        List<String> letters = new ArrayList<String>();
+                        List<String> letters = new ArrayList<>();
                         for (char c : word.toCharArray()) {
                             letters.add(Character.toString(c));
                         }
@@ -92,8 +84,8 @@ public class FunWithStringsSchemaFactory {
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.SPLIT);
                 String regex = environment.getArgument("regex");
-                List<String> sources = (List<String>) environment.getSource();
-                List<List<String>> retVal = new ArrayList<List<String>>();
+                List<String> sources = environment.getSource();
+                List<List<String>> retVal = new ArrayList<>();
                 if (regex == null) {
                     for (String source: sources) {
                         retVal.add(null);
@@ -101,7 +93,7 @@ public class FunWithStringsSchemaFactory {
                     return retVal;
                 }
                 for (String source: sources) {
-                    List<String> retItem = new ArrayList<String>();
+                    List<String> retItem = new ArrayList<>();
                     for (String str: source.split(regex)) {
                         if (str.isEmpty()) {
                             retItem.add(null);
@@ -121,10 +113,10 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.SHATTER);
-                List<String> sources = (List<String>) environment.getSource();
-                List<List<String>> retVal = new ArrayList<List<String>>();
+                List<String> sources = environment.getSource();
+                List<List<String>> retVal = new ArrayList<>();
                 for (String source: sources) {
-                    List<String> retItem = new ArrayList<String>();
+                    List<String> retItem = new ArrayList<>();
                     for (char c: source.toCharArray()) {
                         retItem.add(Character.toString(c));
                     }
@@ -142,11 +134,11 @@ public class FunWithStringsSchemaFactory {
     private DataFetcher stringObjectValueFetcher = e -> "null".equals(e.getSource()) ? null : e.getSource();
 
     private DataFetcher shatterFetcher = e -> {
-        String source = (String) e.getSource();
+        String source = e.getSource();
         if(source.isEmpty()) {
             return null; // trigger error
         }
-        List<String> retVal = new ArrayList<String>();
+        List<String> retVal = new ArrayList<>();
         for (char c: source.toCharArray()) {
             retVal.add(Character.toString(c));
         }
@@ -154,10 +146,10 @@ public class FunWithStringsSchemaFactory {
     };
 
     public DataFetcher wordsAndLettersFetcher = e -> {
-        String source = (String) e.getSource();
-        List<List<String>> retVal = new ArrayList<List<String>>();
+        String source = e.getSource();
+        List<List<String>> retVal = new ArrayList<>();
         for (String word: source.split(" ")) {
-            List<String> retItem = new ArrayList<String>();
+            List<String> retItem = new ArrayList<>();
             for (char c: word.toCharArray()) {
                 retItem.add(Character.toString(c));
             }
@@ -171,8 +163,8 @@ public class FunWithStringsSchemaFactory {
         if (regex == null ) {
             return null;
         }
-        String source = (String) e.getSource();
-        List<String> retVal = new ArrayList<String>();
+        String source = e.getSource();
+        List<String> retVal = new ArrayList<>();
         for (String str: source.split(regex)) {
             if (str.isEmpty()) {
                 retVal.add(null);

@@ -1,8 +1,6 @@
 package graphql;
 
 
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
@@ -75,7 +73,7 @@ public class MutationSchema {
                             .type(GraphQLInt))
                     .dataFetcher(environment -> {
                         Integer newNumber = environment.getArgument("newNumber");
-                        Root root = (Root) environment.getSource();
+                        Root root = environment.getSource();
                         return root.changeNumber(newNumber);
                     }))
             .field(newFieldDefinition()
@@ -86,7 +84,7 @@ public class MutationSchema {
                             .type(GraphQLInt))
                     .dataFetcher(environment -> {
                         Integer newNumber = environment.getArgument("newNumber");
-                        Root root = (Root) environment.getSource();
+                        Root root = environment.getSource();
                         return root.failToChangeTheNumber(newNumber);
                     }))
             .build();

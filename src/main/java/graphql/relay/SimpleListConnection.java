@@ -80,9 +80,9 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
             !lastEdge.getCursor().equals(lastPresliceCursor)
         );
 
-        return new DefaultConnection<T>(
-            edges,
-            pageInfo
+        return new DefaultConnection<>(
+                edges,
+                pageInfo
         );
     }
 
