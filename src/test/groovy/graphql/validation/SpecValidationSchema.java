@@ -1,26 +1,16 @@
 package graphql.validation;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 import graphql.Scalars;
-import graphql.schema.FieldDataFetcher;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
-import graphql.schema.TypeResolver;
+import graphql.schema.*;
 import graphql.validation.SpecValidationSchemaPojos.Alien;
 import graphql.validation.SpecValidationSchemaPojos.Cat;
 import graphql.validation.SpecValidationSchemaPojos.Dog;
 import graphql.validation.SpecValidationSchemaPojos.Human;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Sample schema used in the spec for validation examples
@@ -44,7 +34,7 @@ public class SpecValidationSchema {
     public static final GraphQLInterfaceType sentient = GraphQLInterfaceType.newInterface()
             .name("Sentient")
             .field(new GraphQLFieldDefinition(
-                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
+                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.emptyList(), null))
             .typeResolver(new TypeResolver() {
             @Override
             public GraphQLObjectType getType(Object object) {
@@ -57,7 +47,7 @@ public class SpecValidationSchema {
     public static final GraphQLInterfaceType pet = GraphQLInterfaceType.newInterface()
             .name("Pet")
             .field(new GraphQLFieldDefinition(
-                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
+                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.emptyList(), null))
             .typeResolver(new TypeResolver() {
             @Override
             public GraphQLObjectType getType(Object object) {
@@ -70,16 +60,16 @@ public class SpecValidationSchema {
     public static final GraphQLObjectType human = GraphQLObjectType.newObject()
             .name("Human")
             .field(new GraphQLFieldDefinition(
-                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
+                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.emptyList(), null))
             .withInterface(SpecValidationSchema.sentient)
             .build();
             
     public static final GraphQLObjectType alien = GraphQLObjectType.newObject()
             .name("Alien")
             .field(new GraphQLFieldDefinition(
-                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
+                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.emptyList(), null))
             .field(new GraphQLFieldDefinition(
-                    "homePlanet", null, Scalars.GraphQLString, new FieldDataFetcher("homePlanet"), Collections.<GraphQLArgument>emptyList(), null))
+                    "homePlanet", null, Scalars.GraphQLString, new FieldDataFetcher("homePlanet"), Collections.emptyList(), null))
             .withInterface(SpecValidationSchema.sentient)
             .build();
             
@@ -101,11 +91,11 @@ public class SpecValidationSchema {
     public static final GraphQLObjectType dog = GraphQLObjectType.newObject()
             .name("Dog")
             .field(new GraphQLFieldDefinition(
-                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
+                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.emptyList(), null))
             .field(new GraphQLFieldDefinition(
-                    "nickname", null, Scalars.GraphQLString, new FieldDataFetcher("nickname"), Collections.<GraphQLArgument>emptyList(), null))
+                    "nickname", null, Scalars.GraphQLString, new FieldDataFetcher("nickname"), Collections.emptyList(), null))
             .field(new GraphQLFieldDefinition(
-                    "barkVolume", null, Scalars.GraphQLInt, new FieldDataFetcher("barkVolume"), Collections.<GraphQLArgument>emptyList(), null))
+                    "barkVolume", null, Scalars.GraphQLInt, new FieldDataFetcher("barkVolume"), Collections.emptyList(), null))
             .field(new GraphQLFieldDefinition(
                     "doesKnowCommand", null, new GraphQLNonNull(Scalars.GraphQLBoolean), new FieldDataFetcher("doesKnowCommand"),
                     Arrays.asList(dogCommandArg), null))
@@ -113,18 +103,18 @@ public class SpecValidationSchema {
                     "isHousetrained", null, Scalars.GraphQLBoolean, new FieldDataFetcher("isHousetrained"),
                     Arrays.asList(atOtherHomesArg), null))
             .field(new GraphQLFieldDefinition(
-                    "owner", null, human, new FieldDataFetcher("owner"), Collections.<GraphQLArgument>emptyList(), null))
+                    "owner", null, human, new FieldDataFetcher("owner"), Collections.emptyList(), null))
             .withInterface(SpecValidationSchema.pet)
             .build();
             
     public static final GraphQLObjectType cat = GraphQLObjectType.newObject()
             .name("Cat")
             .field(new GraphQLFieldDefinition(
-                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.<GraphQLArgument>emptyList(), null))
+                    "name", null, new GraphQLNonNull(Scalars.GraphQLString), new FieldDataFetcher("name"), Collections.emptyList(), null))
             .field(new GraphQLFieldDefinition(
-                    "nickname", null, Scalars.GraphQLString, new FieldDataFetcher("nickname"), Collections.<GraphQLArgument>emptyList(), null))
+                    "nickname", null, Scalars.GraphQLString, new FieldDataFetcher("nickname"), Collections.emptyList(), null))
             .field(new GraphQLFieldDefinition(
-                    "meowVolume", null, Scalars.GraphQLInt, new FieldDataFetcher("meowVolume"), Collections.<GraphQLArgument>emptyList(), null))
+                    "meowVolume", null, Scalars.GraphQLInt, new FieldDataFetcher("meowVolume"), Collections.emptyList(), null))
             .field(new GraphQLFieldDefinition(
                     "doesKnowCommand", null, new GraphQLNonNull(Scalars.GraphQLBoolean), new FieldDataFetcher("doesKnowCommand"),
                     Arrays.asList(catCommandArg), null))
@@ -164,7 +154,7 @@ public class SpecValidationSchema {
     public static final GraphQLObjectType queryRoot = GraphQLObjectType.newObject()
             .name("QueryRoot")
             .field(new GraphQLFieldDefinition(
-                    "dog", null, dog, new FieldDataFetcher("dog"), Collections.<GraphQLArgument>emptyList(), null))
+                    "dog", null, dog, new FieldDataFetcher("dog"), Collections.emptyList(), null))
             .build();
             
     @SuppressWarnings("serial")

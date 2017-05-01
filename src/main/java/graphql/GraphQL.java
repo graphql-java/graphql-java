@@ -1,11 +1,7 @@
 package graphql;
 
 
-import graphql.execution.Execution;
-import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionIdProvider;
-import graphql.execution.ExecutionStrategy;
-import graphql.execution.SimpleExecutionStrategy;
+import graphql.execution.*;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.NoOpInstrumentation;
@@ -150,11 +146,11 @@ public class GraphQL {
     }
 
     public ExecutionResult execute(String requestString, Object context) {
-        return execute(requestString, context, Collections.<String, Object>emptyMap());
+        return execute(requestString, context, Collections.emptyMap());
     }
 
     public ExecutionResult execute(String requestString, String operationName, Object context) {
-        return execute(requestString, operationName, context, Collections.<String, Object>emptyMap());
+        return execute(requestString, operationName, context, Collections.emptyMap());
     }
 
     public ExecutionResult execute(String requestString, Object context, Map<String, Object> arguments) {
