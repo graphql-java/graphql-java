@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 import graphql.AssertException;
 import graphql.language.InputObjectTypeDefinition;
@@ -117,7 +118,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
          * @param builderFunction a supplier for the builder impl
          * @return this
          */
-        public Builder field(BuilderFunction<GraphQLInputObjectField.Builder> builderFunction) {
+        public Builder field(UnaryOperator<GraphQLInputObjectField.Builder> builderFunction) {
             assertNotNull(builderFunction, "builderFunction should not be null");
             GraphQLInputObjectField.Builder builder = GraphQLInputObjectField.newInputObjectField();
             builder = builderFunction.apply(builder);
