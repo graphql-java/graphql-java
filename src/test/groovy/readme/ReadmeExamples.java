@@ -5,6 +5,7 @@ import graphql.GraphQL;
 import graphql.StarWarsData;
 import graphql.Scalars;
 import graphql.StarWarsSchema;
+import graphql.TypeResolutionEnvironment;
 import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.execution.SimpleExecutionStrategy;
 import graphql.schema.Coercing;
@@ -34,6 +35,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static graphql.GarfieldSchema.*;
 import static graphql.GarfieldSchema.CatType;
 import static graphql.GarfieldSchema.DogType;
 import static graphql.MutationSchema.mutationType;
@@ -137,11 +139,11 @@ public class ReadmeExamples {
                 .possibleType(DogType)
                 .typeResolver(new TypeResolver() {
                     @Override
-                    public GraphQLObjectType getType(Object object) {
-                        if (object instanceof GarfieldSchema.Cat) {
+                    public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                        if (env.getObject() instanceof Cat) {
                             return CatType;
                         }
-                        if (object instanceof GarfieldSchema.Dog) {
+                        if (env.getObject() instanceof Dog) {
                             return DogType;
                         }
                         return null;

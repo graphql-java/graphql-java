@@ -189,25 +189,26 @@ GraphQLInterfaceType comicCharacter = newInterface()
 
 ##### Creating a new Union Type
 
-Example: (a snippet from [here](src/test/groovy/graphql/GarfieldSchema.java))
+Example:
+Example:
 ```java
 GraphQLUnionType PetType = newUnionType()
-    .name("Pet")
-    .possibleType(CatType)
-    .possibleType(DogType)
-    .typeResolver(new TypeResolver() {
-        @Override
-        public GraphQLObjectType getType(Object object) {
-            if (object instanceof Cat) {
-                return CatType;
+        .name("Pet")
+        .possibleType(CatType)
+        .possibleType(DogType)
+        .typeResolver(new TypeResolver() {
+            @Override
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                if (env.getObject() instanceof Cat) {
+                    return CatType;
+                }
+                if (env.getObject() instanceof Dog) {
+                    return DogType;
+                }
+                return null;
             }
-            if (object instanceof Dog) {
-                return DogType;
-            }
-            return null;
-        }
-    })
-    .build();
+        })
+        .build();
     
 ```
 
