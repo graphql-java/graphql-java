@@ -48,10 +48,11 @@ public abstract class ExecutionStrategy {
      * Handle exceptions which occur during data fetching. By default, add all exceptions to the execution context's
      * error's. Subclasses may specify custom handling, e.g. of different behavior with different exception types (e.g.
      * re-throwing certain exceptions).
-     * @param executionContext
-     * @param fieldDef
-     * @param argumentValues
-     * @param e
+     *
+     * @param executionContext the execution context in play
+     * @param fieldDef         the field definition
+     * @param argumentValues   the map of arguments
+     * @param e                the exception that occurred
      */
     protected void handleDataFetchingException(
             ExecutionContext executionContext,
@@ -70,11 +71,10 @@ public abstract class ExecutionStrategy {
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 parameters.source(),
                 argumentValues,
-                executionContext.getRoot(),
                 fields,
                 fieldDef.getType(),
                 type,
-                executionContext.getGraphQLSchema()
+                executionContext
         );
 
         Instrumentation instrumentation = executionContext.getInstrumentation();

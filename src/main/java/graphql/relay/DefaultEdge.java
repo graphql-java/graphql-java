@@ -30,6 +30,7 @@ public class DefaultEdge<T> implements Edge<T> {
 
     /**
      * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)} and avoid mutation.
+     * @param  node node
      */
     @Deprecated
     public void setNode(T node) {
@@ -43,6 +44,7 @@ public class DefaultEdge<T> implements Edge<T> {
 
     /**
      * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)} and avoid mutation.
+     * @param cursor cursor
      */
     @Deprecated
     public void setCursor(ConnectionCursor cursor) {

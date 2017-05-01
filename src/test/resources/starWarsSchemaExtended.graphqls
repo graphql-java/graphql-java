@@ -1,0 +1,46 @@
+schema {
+    query: Query
+}
+
+type Query {
+    hero(episode: Episode): Character
+    droid(id: ID!): Droid
+}
+
+
+enum Episode {
+    NEWHOPE
+    EMPIRE
+    JEDI
+}
+
+interface Character {
+    id: ID!
+    name: String!
+    friends: [Character]
+    appearsIn: [Episode]!
+}
+
+type Human implements Character {
+    id: ID!
+    name: String!
+    friends: [Character]
+    appearsIn: [Episode]!
+    homePlanet: String
+}
+
+type Droid implements Character {
+    id: ID!
+    name: String!
+    friends: [Character]
+    appearsIn: [Episode]!
+    primaryFunction: String
+    madeOn: Planet
+}
+
+type Planet {
+    name : String
+    hitBy : Asteroid
+}
+
+scalar Asteroid

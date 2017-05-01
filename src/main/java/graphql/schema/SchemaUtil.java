@@ -1,14 +1,17 @@
 package graphql.schema;
 
 
+import graphql.AssertException;
+import graphql.GraphQLException;
+import graphql.introspection.Introspection;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import graphql.GraphQLException;
-import graphql.introspection.Introspection;
+import static java.lang.String.format;
 
 public class SchemaUtil {
 
@@ -35,14 +38,17 @@ public class SchemaUtil {
     }
 
 
+    @SuppressWarnings("StatementWithEmptyBody")
     private void collectTypes(GraphQLType root, Map<String, GraphQLType> result) {
         if (root instanceof GraphQLNonNull) {
             collectTypes(((GraphQLNonNull) root).getWrappedType(), result);
         } else if (root instanceof GraphQLList) {
             collectTypes(((GraphQLList) root).getWrappedType(), result);
         } else if (root instanceof GraphQLEnumType) {
+            assertTypeUniqueness(root, result);
             result.put(root.getName(), root);
         } else if (root instanceof GraphQLScalarType) {
+            assertTypeUniqueness(root, result);
             result.put(root.getName(), root);
         } else if (root instanceof GraphQLObjectType) {
             collectTypesForObjects((GraphQLObjectType) root, result);
@@ -59,7 +65,33 @@ public class SchemaUtil {
         }
     }
 
+    /*
+        From http://facebook.github.io/graphql/#sec-Type-System
+
+           All types within a GraphQL schema must have unique names. No two provided types may have the same name.
+           No provided type may have a name which conflicts with any built in types (including Scalar and Introspection types).
+
+        Enforcing this helps avoid problems later down the track fo example https://github.com/graphql-java/graphql-java/issues/373
+     */
+    private void assertTypeUniqueness(GraphQLType type, Map<String, GraphQLType> result) {
+        GraphQLType existingType = result.get(type.getName());
+        // do we have an existing definition
+        if (existingType != null) {
+            // type references are ok
+            if (!(existingType instanceof TypeReference || type instanceof TypeReference))
+                // object comparison here is deliberate
+                if (existingType != type) {
+                    throw new AssertException(format("All types within a GraphQL schema must have unique names. No two provided types may have the same name.\n" +
+                                    "No provided type may have a name which conflicts with any built in types (including Scalar and Introspection types).\n" +
+                                    "You have redefined the type '%s' from being a '%s' to a '%s'",
+                            type.getName(), existingType.getClass().getSimpleName(), type.getClass().getSimpleName()));
+                }
+        }
+    }
+
     private void collectTypesForUnions(GraphQLUnionType unionType, Map<String, GraphQLType> result) {
+        assertTypeUniqueness(unionType, result);
+
         result.put(unionType.getName(), unionType);
         for (GraphQLType type : unionType.getTypes()) {
             collectTypes(type, result);
@@ -68,7 +100,10 @@ public class SchemaUtil {
     }
 
     private void collectTypesForInterfaces(GraphQLInterfaceType interfaceType, Map<String, GraphQLType> result) {
-        if (result.containsKey(interfaceType.getName()) && !(result.get(interfaceType.getName()) instanceof TypeReference)) return;
+        if (result.containsKey(interfaceType.getName()) && !(result.get(interfaceType.getName()) instanceof TypeReference)) {
+            assertTypeUniqueness(interfaceType, result);
+            return;
+        }
         result.put(interfaceType.getName(), interfaceType);
 
         for (GraphQLFieldDefinition fieldDefinition : interfaceType.getFieldDefinitions()) {
@@ -81,7 +116,10 @@ public class SchemaUtil {
 
 
     private void collectTypesForObjects(GraphQLObjectType objectType, Map<String, GraphQLType> result) {
-        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) return;
+        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) {
+            assertTypeUniqueness(objectType, result);
+            return;
+        }
         result.put(objectType.getName(), objectType);
 
         for (GraphQLFieldDefinition fieldDefinition : objectType.getFieldDefinitions()) {
@@ -96,7 +134,10 @@ public class SchemaUtil {
     }
 
     private void collectTypesForInputObjects(GraphQLInputObjectType objectType, Map<String, GraphQLType> result) {
-        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) return;
+        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) {
+            assertTypeUniqueness(objectType, result);
+            return;
+        }
         result.put(objectType.getName(), objectType);
 
         for (GraphQLInputObjectField fieldDefinition : objectType.getFields()) {
@@ -105,14 +146,14 @@ public class SchemaUtil {
     }
 
 
-    public Map<String, GraphQLType> allTypes(GraphQLSchema schema, Set<GraphQLType> dictionary) {
+    public Map<String, GraphQLType> allTypes(GraphQLSchema schema, Set<GraphQLType> additionalTypes) {
         Map<String, GraphQLType> typesByName = new LinkedHashMap<>();
         collectTypes(schema.getQueryType(), typesByName);
         if (schema.isSupportingMutations()) {
             collectTypes(schema.getMutationType(), typesByName);
         }
-        if (dictionary != null) {
-            for (GraphQLType type : dictionary) {
+        if (additionalTypes != null) {
+            for (GraphQLType type : additionalTypes) {
                 collectTypes(type, typesByName);
             }
         }
@@ -121,7 +162,7 @@ public class SchemaUtil {
     }
 
     public List<GraphQLObjectType> findImplementations(GraphQLSchema schema, GraphQLInterfaceType interfaceType) {
-        Map<String, GraphQLType> allTypes = allTypes(schema, schema.getDictionary());
+        Map<String, GraphQLType> allTypes = allTypes(schema, schema.getAdditionalTypes());
         List<GraphQLObjectType> result = new ArrayList<>();
         for (GraphQLType type : allTypes.values()) {
             if (!(type instanceof GraphQLObjectType)) {
@@ -135,7 +176,7 @@ public class SchemaUtil {
 
 
     void replaceTypeReferences(GraphQLSchema schema) {
-        Map<String, GraphQLType> typeMap = allTypes(schema, schema.getDictionary());
+        Map<String, GraphQLType> typeMap = allTypes(schema, schema.getAdditionalTypes());
         for (GraphQLType type : typeMap.values()) {
             if (type instanceof GraphQLFieldsContainer) {
                 resolveTypeReferencesForFieldsContainer((GraphQLFieldsContainer) type, typeMap);
@@ -182,13 +223,5 @@ public class SchemaUtil {
             ((GraphQLNonNull) type).replaceTypeReferences(typeMap);
         }
         return type;
-    }
-
-    List<GraphQLType> resolveTypeReferences(List<GraphQLType> types, Map<String, GraphQLType> typeMap) {
-        List<GraphQLType> resolvedTypes = new ArrayList<>();
-        for (GraphQLType type : types) {
-            resolvedTypes.add(resolveTypeReference(type, typeMap));
-        }
-        return resolvedTypes;
     }
 }

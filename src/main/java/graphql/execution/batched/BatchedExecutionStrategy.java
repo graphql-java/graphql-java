@@ -270,11 +270,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 sources,
                 argumentValues,
-                executionContext.getRoot(),
                 fields,
                 fieldDef.getType(),
                 parentType,
-                executionContext.getGraphQLSchema()
+                executionContext
         );
 
         List<Object> values;
