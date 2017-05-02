@@ -33,7 +33,6 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         assertValidName(name);
         assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
         assertNotNull(interfaces, "interfaces can't be null");
-        assertNotNull(interfaces, "unresolvedInterfaces can't be null");
         this.name = name;
         this.description = description;
         this.interfaces = interfaces;
