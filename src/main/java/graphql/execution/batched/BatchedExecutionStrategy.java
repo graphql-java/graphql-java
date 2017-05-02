@@ -187,13 +187,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private Map<String, List<Field>> getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
                                                     List<Field> fields) {
 
-        Map<String, List<Field>> subFields = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
-        for (Field field : fields) {
-            if (field.getSelectionSet() == null) continue;
-            fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
-        }
-        return subFields;
+        return fieldCollector.collectFields(executionContext,resolvedType,fields);
     }
 
     private GraphQLObjectType getGraphQLObjectType(GraphQLType fieldType, Object value) {

@@ -140,12 +140,7 @@ public abstract class ExecutionStrategy {
             resolvedType = (GraphQLObjectType) fieldType;
         }
 
-        Map<String, List<Field>> subFields = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
-        for (Field field : fields) {
-            if (field.getSelectionSet() == null) continue;
-            fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
-        }
+        Map<String, List<Field>> subFields = fieldCollector.collectFields(executionContext,resolvedType,fields);
 
         ExecutionParameters newParameters = ExecutionParameters.newParameters()
                 .typeInfo(typeInfo.asType(resolvedType))

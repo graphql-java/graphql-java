@@ -18,23 +18,21 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLOutputType fieldType;
     private final GraphQLType parentType;
     private final GraphQLSchema graphQLSchema;
-    private Map<String, FragmentDefinition> fragmentsByName;
-    private ExecutionId executionId;
+    private final Map<String, FragmentDefinition> fragmentsByName;
+    private final ExecutionId executionId;
+    private final ExecutionContext executionContext;
 
     public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, ExecutionContext executionContext) {
-        this(source, arguments, executionContext.getRoot(), fields, fieldType, parentType, executionContext.getGraphQLSchema(), executionContext.getFragmentsByName(), executionContext.getExecutionId());
-    }
-
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId) {
         this.source = source;
         this.arguments = arguments;
-        this.context = context;
+        this.context = executionContext.getRoot();
         this.fields = fields;
         this.fieldType = fieldType;
         this.parentType = parentType;
-        this.graphQLSchema = graphQLSchema;
-        this.fragmentsByName = fragmentsByName;
-        this.executionId = executionId;
+        this.graphQLSchema = executionContext.getGraphQLSchema();
+        this.fragmentsByName = executionContext.getFragmentsByName();
+        this.executionId = executionContext.getExecutionId();
+        this.executionContext = executionContext;
     }
 
     @Override
@@ -58,7 +56,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T  getContext() {
+    public <T> T getContext() {
         return (T) context;
     }
 
@@ -90,5 +88,10 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public ExecutionId getExecutionId() {
         return executionId;
+    }
+
+    @Override
+    public ExecutionContext getExecutionContext() {
+        return executionContext;
     }
 }

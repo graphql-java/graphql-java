@@ -1,15 +1,29 @@
 package graphql.execution;
 
 
-import graphql.language.*;
-import graphql.schema.*;
+import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.Selection;
+import graphql.language.SelectionSet;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.SchemaUtil;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.execution.TypeFromAST.getTypeFromAST;
 
+/**
+ * A field collector can iterate over field selection sets and build out the sub fields that have been selected,
+ * expanding named and inline fragments as it goes.s
+ */
 public class FieldCollector {
 
     private ConditionalNodes conditionalNodes;
@@ -21,7 +35,45 @@ public class FieldCollector {
     }
 
 
-    public void collectFields(ExecutionContext executionContext, GraphQLObjectType type, SelectionSet selectionSet, List<String> visitedFragments, Map<String, List<Field>> fields) {
+    /**
+     * Given a list of fields this will collect the sub-field selections and return it as a map
+     *
+     * @param executionContext the {@link ExecutionContext} in play
+     * @param objectType       the graphql object type in context
+     * @param fields           the list of fields to collect for
+     *
+     * @return a map of the sub field selections
+     */
+    public Map<String, List<Field>> collectFields(ExecutionContext executionContext, GraphQLObjectType objectType, List<Field> fields) {
+        Map<String, List<Field>> subFields = new LinkedHashMap<>();
+        List<String> visitedFragments = new ArrayList<>();
+        for (Field field : fields) {
+            if (field.getSelectionSet() == null) {
+                continue;
+            }
+            this.collectFields(executionContext, objectType, field.getSelectionSet(), visitedFragments, subFields);
+        }
+        return subFields;
+    }
+
+    /**
+     * Given a selection set this will collect the sub-field selections and return it as a map
+     *
+     * @param executionContext the {@link ExecutionContext} in play
+     * @param objectType       the graphql object type in context
+     * @param selectionSet     the selection set to collect on
+     *
+     * @return a map of the sub field selections
+     */
+    public Map<String, List<Field>> collectFields(ExecutionContext executionContext, GraphQLObjectType objectType, SelectionSet selectionSet) {
+        Map<String, List<Field>> subFields = new LinkedHashMap<>();
+        List<String> visitedFragments = new ArrayList<>();
+        this.collectFields(executionContext, objectType, selectionSet, visitedFragments, subFields);
+        return subFields;
+    }
+
+
+    private void collectFields(ExecutionContext executionContext, GraphQLObjectType type, SelectionSet selectionSet, List<String> visitedFragments, Map<String, List<Field>> fields) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {

@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -81,4 +82,9 @@ public interface DataFetchingEnvironment {
      * @return the {@link ExecutionId} for the current operation
      */
     ExecutionId getExecutionId();
+
+    /**
+     * @return the {@link ExecutionContext} for the current operation
+     */
+    ExecutionContext getExecutionContext();
 }

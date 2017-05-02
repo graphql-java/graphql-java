@@ -78,9 +78,7 @@ public class Execution {
             return new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError()));
         }
 
-        Map<String, List<Field>> fields = new LinkedHashMap<>();
-        fieldCollector.collectFields(executionContext, operationRootType, operationDefinition.getSelectionSet(), new ArrayList<>(), fields);
-
+        Map<String, List<Field>> fields = fieldCollector.collectFields(executionContext,operationRootType,operationDefinition.getSelectionSet());
 
         ExecutionParameters parameters = newParameters()
                 .typeInfo(newTypeInfo().type(operationRootType))
