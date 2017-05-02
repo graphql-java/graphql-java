@@ -20,32 +20,30 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
-    private final List<TypeOrReference<GraphQLInterfaceType>> tmpInterfaces = new ArrayList<>();
-    private List<GraphQLInterfaceType> interfaces;
+    private List<GraphQLOutputType> interfaces = new ArrayList<>();
     private final ObjectTypeDefinition definition;
 
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
-                             List<TypeOrReference<GraphQLInterfaceType>> tmpInterfaces) {
-        this(name, description, fieldDefinitions, tmpInterfaces, null);
+                             List<GraphQLOutputType> interfaces) {
+        this(name, description, fieldDefinitions, interfaces, null);
     }
 
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
-                             List<TypeOrReference<GraphQLInterfaceType>> tmpInterfaces, ObjectTypeDefinition definition) {
+                             List<GraphQLOutputType> interfaces, ObjectTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
-        assertNotNull(tmpInterfaces, "interfaces can't be null");
-        assertNotNull(tmpInterfaces, "unresolvedInterfaces can't be null");
+        assertNotNull(interfaces, "interfaces can't be null");
+        assertNotNull(interfaces, "unresolvedInterfaces can't be null");
         this.name = name;
         this.description = description;
-        this.tmpInterfaces.addAll(tmpInterfaces);
+        this.interfaces = interfaces;
         this.definition = definition;
         buildDefinitionMap(fieldDefinitions);
     }
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        this.interfaces = this.tmpInterfaces.stream()
-                .map(TypeOrReference::getTypeOrReference)
-                .map(type -> (GraphQLInterfaceType) new SchemaUtil().resolveTypeReference(type, typeMap))
+        this.interfaces = this.interfaces.stream()
+                .map(type -> (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap))
                 .collect(Collectors.toList());
     }
 
@@ -68,14 +66,12 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     }
 
 
-    public List<GraphQLInterfaceType> getInterfaces() {
-        if (this.interfaces == null) {
-            return this.tmpInterfaces
-                    .stream()
-                    .filter(TypeOrReference::isType)
-                    .map(TypeOrReference::getType)
-                    .collect(Collectors.toList());
-        }
+    /**
+     * @return This returns GraphQLInterface or GraphQLTypeReference instances, if the type
+     * references are not resolved yet. After they are resolved it contains only GraphQLInterface.
+     * Reference resolving happens when a full schema is built.
+     */
+    public List<GraphQLOutputType> getInterfaces() {
         return new ArrayList<>(interfaces);
     }
 
@@ -110,7 +106,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         private String name;
         private String description;
         private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
-        private List<TypeOrReference<GraphQLInterfaceType>> interfaces = new ArrayList<>();
+        private List<GraphQLOutputType> interfaces = new ArrayList<>();
         private ObjectTypeDefinition definition;
 
         public Builder name(String name) {
@@ -173,13 +169,13 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
         public Builder withInterface(GraphQLInterfaceType interfaceType) {
             assertNotNull(interfaceType, "interfaceType can't be null");
-            this.interfaces.add(new TypeOrReference<>(interfaceType));
+            this.interfaces.add(interfaceType);
             return this;
         }
 
         public Builder withInterface(GraphQLTypeReference reference) {
             assertNotNull(reference, "reference can't be null");
-            this.interfaces.add(new TypeOrReference<>(reference));
+            this.interfaces.add(reference);
             return this;
         }
 

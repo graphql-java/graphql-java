@@ -5,7 +5,11 @@ import graphql.AssertException;
 import graphql.GraphQLException;
 import graphql.introspection.Introspection;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static java.lang.String.format;
 
@@ -124,7 +128,7 @@ public class SchemaUtil {
                 collectTypes(fieldArgument.getType(), result);
             }
         }
-        for (GraphQLInterfaceType interfaceType : objectType.getInterfaces()) {
+        for (GraphQLOutputType interfaceType : objectType.getInterfaces()) {
             collectTypes(interfaceType, result);
         }
     }
