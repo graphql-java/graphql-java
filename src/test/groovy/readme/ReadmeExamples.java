@@ -1,9 +1,8 @@
 package readme;
 
-import graphql.GarfieldSchema;
 import graphql.GraphQL;
-import graphql.StarWarsData;
 import graphql.Scalars;
+import graphql.StarWarsData;
 import graphql.StarWarsSchema;
 import graphql.TypeResolutionEnvironment;
 import graphql.execution.ExecutorServiceExecutionStrategy;
@@ -35,8 +34,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static graphql.GarfieldSchema.*;
+import static graphql.GarfieldSchema.Cat;
 import static graphql.GarfieldSchema.CatType;
+import static graphql.GarfieldSchema.Dog;
 import static graphql.GarfieldSchema.DogType;
 import static graphql.MutationSchema.mutationType;
 import static graphql.Scalars.GraphQLBoolean;
@@ -314,19 +314,19 @@ public class ReadmeExamples {
         return RuntimeWiring.newRuntimeWiring()
                 .scalar(CustomScalar)
                 // this uses builder function lambda syntax
-                .type(typeWiring -> typeWiring.typeName("QueryType")
+                .type("QueryType", typeWiring -> typeWiring
                         .dataFetcher("hero", new StaticDataFetcher(StarWarsData.getArtoo()))
                         .dataFetcher("human", StarWarsData.getHumanDataFetcher())
                         .dataFetcher("droid", StarWarsData.getDroidDataFetcher())
                 )
-                .type(typeWiring -> typeWiring.typeName("Human")
+                .type("Human", typeWiring -> typeWiring
                         .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
                 )
                 // you can use builder syntax if you don't like the lambda syntax
-                .type(typeWiring -> typeWiring.typeName("Droid")
+                .type(newTypeWiring("Droid")
                         .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
                 )
-                // or full builder syntax if that takes your fancy
+                // or full builder syntax if that takes your fancy where you call .build()
                 .type(
                         newTypeWiring("Character")
                                 .typeResolver(StarWarsData.getCharacterTypeResolver())

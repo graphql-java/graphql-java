@@ -83,12 +83,13 @@ public class RuntimeWiring {
         /**
          * This form allows a lambda to be used as the builder of a type wiring
          *
+         * @param typeName the name of the type to wire
          * @param builderFunction a function that will be given the builder to use
          *
          * @return the runtime wiring builder
          */
-        public Builder type(UnaryOperator<TypeRuntimeWiring.Builder> builderFunction) {
-            TypeRuntimeWiring.Builder builder = builderFunction.apply(TypeRuntimeWiring.newTypeWiring());
+        public Builder type(String typeName, UnaryOperator<TypeRuntimeWiring.Builder> builderFunction) {
+            TypeRuntimeWiring.Builder builder = builderFunction.apply(TypeRuntimeWiring.newTypeWiring(typeName));
             return type(builder.build());
         }
 

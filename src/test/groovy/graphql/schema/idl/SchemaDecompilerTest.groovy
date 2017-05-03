@@ -17,7 +17,7 @@ class SchemaDecompilerTest extends Specification {
 
     GraphQLSchema starWarsSchema() {
         def wiring =  RuntimeWiring.newRuntimeWiring()
-                .type({ type -> type.typeName("Character").typeResolver(resolver)})
+                .type("Character", { type -> type.typeResolver(resolver)})
                 .scalar(ASTEROID)
                 .build()
         GraphQLSchema schema = load("starWarsSchemaExtended.graphqls", wiring)
