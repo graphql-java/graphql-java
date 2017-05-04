@@ -57,6 +57,9 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 /**
  * This class holds readme examples so they stay correct and can be compiled.  If this
  * does not compile, chances are the readme examples are now wrong.
+ *
+ * You should place these examples into the README.next.md and NOT the main README.md.  This allows
+ * 'master' to progress yet shows consumers the released information about the project.
  */
 @SuppressWarnings({"unused", "Convert2Lambda", "UnnecessaryLocalVariable"})
 public class ReadmeExamples {
