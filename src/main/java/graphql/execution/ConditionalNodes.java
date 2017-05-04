@@ -17,18 +17,18 @@ public class ConditionalNodes {
         valuesResolver = new ValuesResolver();
     }
 
-    public boolean shouldInclude(ExecutionContext executionContext, List<Directive> directives) {
+    public boolean shouldInclude(Map<String, Object> variables, List<Directive> directives) {
 
         Directive skipDirective = findDirective(directives, SkipDirective.getName());
         if (skipDirective != null) {
-            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), skipDirective.getArguments(), executionContext.getVariables());
+            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), skipDirective.getArguments(), variables);
             return !(Boolean) argumentValues.get("if");
         }
 
 
         Directive includeDirective = findDirective(directives, IncludeDirective.getName());
         if (includeDirective != null) {
-            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(IncludeDirective.getArguments(), includeDirective.getArguments(), executionContext.getVariables());
+            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(IncludeDirective.getArguments(), includeDirective.getArguments(), variables);
             return (Boolean) argumentValues.get("if");
         }
 

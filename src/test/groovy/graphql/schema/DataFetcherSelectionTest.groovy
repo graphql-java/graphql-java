@@ -3,6 +3,7 @@ package graphql.schema
 import graphql.GraphQL
 import graphql.StarWarsData
 import graphql.execution.FieldCollector
+import graphql.execution.FieldCollectorParameters
 import graphql.language.AstPrinter
 import graphql.language.Field
 import graphql.schema.idl.RuntimeWiring
@@ -48,7 +49,13 @@ class DataFetcherSelectionTest extends Specification {
             // if one was so included
             //
             def objectType = environment.getFieldType() as GraphQLObjectType
-            def collectionResult = fieldCollector.collectFields(environment.executionContext, objectType, environment.fields)
+            FieldCollectorParameters collectorParameters = FieldCollectorParameters.
+                    newParameters(environment.graphQLSchema, objectType)
+                    .fragments(environment.getFragmentsByName())
+                    .variables(environment.getVariables())
+                    .build();
+
+            def collectionResult = fieldCollector.collectFields(collectorParameters, environment.fields)
 
             String subselection = captureSubSelection(collectionResult)
             captureList.add(subselection)

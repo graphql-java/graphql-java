@@ -25,10 +25,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
@@ -70,10 +70,14 @@ public abstract class ExecutionStrategy {
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 parameters.source(),
                 argumentValues,
+                executionContext.getRoot(),
                 fields,
                 fieldDef.getType(),
                 type,
-                executionContext
+                executionContext.getGraphQLSchema(),
+                executionContext.getFragmentsByName(),
+                executionContext.getExecutionId(),
+                executionContext.getVariables()
         );
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -140,7 +144,12 @@ public abstract class ExecutionStrategy {
             resolvedType = (GraphQLObjectType) fieldType;
         }
 
-        Map<String, List<Field>> subFields = fieldCollector.collectFields(executionContext,resolvedType,fields);
+        FieldCollectorParameters collectorParameters = newParameters(executionContext.getGraphQLSchema(), resolvedType)
+                .fragments(executionContext.getFragmentsByName())
+                .variables(executionContext.getVariables())
+                .build();
+
+        Map<String, List<Field>> subFields = fieldCollector.collectFields(collectorParameters, fields);
 
         ExecutionParameters newParameters = ExecutionParameters.newParameters()
                 .typeInfo(typeInfo.asType(resolvedType))

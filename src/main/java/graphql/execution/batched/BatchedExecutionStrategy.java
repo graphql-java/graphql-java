@@ -6,13 +6,33 @@ import graphql.GraphQLException;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionParameters;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.FieldCollectorParameters;
 import graphql.language.Field;
-import graphql.schema.*;
+import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.DataFetchingEnvironmentImpl;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 
+import static graphql.execution.FieldCollectorParameters.newParameters;
 import static java.util.Collections.singletonList;
 
 /**
@@ -187,7 +207,12 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private Map<String, List<Field>> getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
                                                     List<Field> fields) {
 
-        return fieldCollector.collectFields(executionContext,resolvedType,fields);
+        FieldCollectorParameters collectorParameters = newParameters(executionContext.getGraphQLSchema(), resolvedType)
+                .fragments(executionContext.getFragmentsByName())
+                .variables(executionContext.getVariables())
+                .build();
+
+        return fieldCollector.collectFields(collectorParameters, fields);
     }
 
     private GraphQLObjectType getGraphQLObjectType(GraphQLType fieldType, Object value) {
@@ -249,10 +274,14 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 sources,
                 argumentValues,
+                executionContext.getRoot(),
                 fields,
                 fieldDef.getType(),
                 parentType,
-                executionContext
+                executionContext.getGraphQLSchema(),
+                executionContext.getFragmentsByName(),
+                executionContext.getExecutionId(),
+                executionContext.getVariables()
         );
 
         List<Object> values;

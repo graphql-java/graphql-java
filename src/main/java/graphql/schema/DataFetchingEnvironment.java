@@ -84,7 +84,7 @@ public interface DataFetchingEnvironment {
     ExecutionId getExecutionId();
 
     /**
-     * @return the {@link ExecutionContext} for the current operation
+     * @return the variables that where passed into this query
      */
-    ExecutionContext getExecutionContext();
+    Map<String, Object> getVariables();
 }

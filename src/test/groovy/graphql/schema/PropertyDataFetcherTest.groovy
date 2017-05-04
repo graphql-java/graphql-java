@@ -14,7 +14,11 @@ class PropertyDataFetcherTest extends Specification {
                 Collections.emptyList(),
                 null,
                 null,
-                new ExecutionContext(null,null,null,null,null,null,null,null,null)
+                null,
+                null,
+                Collections.emptyMap(),
+                null,
+                Collections.emptyMap()
         )
     }
 

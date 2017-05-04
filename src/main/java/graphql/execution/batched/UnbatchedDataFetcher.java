@@ -31,10 +31,14 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
             DataFetchingEnvironment singleEnv = new DataFetchingEnvironmentImpl(
                     source,
                     environment.getArguments(),
+                    environment.getContext(),
                     environment.getFields(),
                     environment.getFieldType(),
                     environment.getParentType(),
-                    environment.getExecutionContext());
+                    environment.getGraphQLSchema(),
+                    environment.getFragmentsByName(),
+                    environment.getExecutionId(),
+                    environment.getVariables());
             results.add(delegate.get(singleEnv));
         }
         return results;

@@ -20,19 +20,19 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLSchema graphQLSchema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
-    private final ExecutionContext executionContext;
+    private final Map<String, Object> variables;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, ExecutionContext executionContext) {
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, Map<String, Object> variables) {
         this.source = source;
         this.arguments = arguments;
-        this.context = executionContext.getRoot();
+        this.context = context;
         this.fields = fields;
         this.fieldType = fieldType;
         this.parentType = parentType;
-        this.graphQLSchema = executionContext.getGraphQLSchema();
-        this.fragmentsByName = executionContext.getFragmentsByName();
-        this.executionId = executionContext.getExecutionId();
-        this.executionContext = executionContext;
+        this.graphQLSchema = graphQLSchema;
+        this.fragmentsByName = fragmentsByName;
+        this.executionId = executionId;
+        this.variables = variables;
     }
 
     @Override
@@ -91,7 +91,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public ExecutionContext getExecutionContext() {
-        return executionContext;
+    public Map<String, Object> getVariables() {
+        return variables;
     }
 }

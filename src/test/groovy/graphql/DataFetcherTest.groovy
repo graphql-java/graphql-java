@@ -1,6 +1,5 @@
 package graphql
 
-import graphql.execution.ExecutionContext
 import graphql.schema.DataFetchingEnvironmentImpl
 import graphql.schema.FieldDataFetcher
 import graphql.schema.GraphQLOutputType
@@ -56,7 +55,19 @@ class DataFetcherTest extends Specification {
     }
 
     def env(GraphQLOutputType type) {
-        new DataFetchingEnvironmentImpl(dataHolder, null, null, type, null, new ExecutionContext(null, null, null, null, null, null, null, null, null))
+        new DataFetchingEnvironmentImpl(
+                dataHolder,
+                Collections.emptyMap(),
+                null,
+                Collections.emptyList(),
+                type,
+                null,
+                null,
+                Collections.emptyMap(),
+                null,
+                Collections.emptyMap()
+        )
+
     }
 
     def "get field value"() {

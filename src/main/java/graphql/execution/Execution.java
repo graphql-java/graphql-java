@@ -14,15 +14,12 @@ import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.execution.ExecutionParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
-
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 
@@ -78,7 +75,12 @@ public class Execution {
             return new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError()));
         }
 
-        Map<String, List<Field>> fields = fieldCollector.collectFields(executionContext,operationRootType,operationDefinition.getSelectionSet());
+        FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters(executionContext.getGraphQLSchema(), operationRootType)
+                .fragments(executionContext.getFragmentsByName())
+                .variables(executionContext.getVariables())
+                .build();
+
+        Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
         ExecutionParameters parameters = newParameters()
                 .typeInfo(newTypeInfo().type(operationRootType))
