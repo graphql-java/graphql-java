@@ -51,16 +51,14 @@ class RuntimeWiringTest extends Specification {
 
     def "basic call structure"() {
         def wiring = RuntimeWiring.newRuntimeWiring()
-                .type({ type ->
-            type.typeName("Query")
+                .type("Query",{ type -> type
                     .dataFetcher("fieldX", new NamedDF("fieldX"))
                     .dataFetcher("fieldY", new NamedDF("fieldY"))
                     .dataFetcher("fieldZ", new NamedDF("fieldZ"))
                     .typeResolver(new NamedTR("typeResolver4Query"))
         })
 
-                .type({ type ->
-            type.typeName("Mutation")
+                .type("Mutation",{ type -> type
                     .dataFetcher("fieldX", new NamedDF("mfieldX"))
                     .dataFetcher("fieldY", new NamedDF("mfieldY"))
                     .dataFetcher("fieldZ", new NamedDF("mfieldZ"))
