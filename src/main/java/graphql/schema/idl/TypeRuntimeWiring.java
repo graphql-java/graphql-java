@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.Assert;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
@@ -8,6 +7,8 @@ import graphql.schema.TypeResolver;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.UnaryOperator;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * A type runtime wiring is a specification of the data fetchers and possible type resolver for a given type name.
@@ -45,27 +46,20 @@ public class TypeRuntimeWiring {
      * @return the builder
      */
     public static Builder newTypeWiring(String typeName) {
+        assertNotNull(typeName, "You must provide a type name");
         return new Builder().typeName(typeName);
-    }
-
-    /**
-     * Creates a new type wiring builder
-     *
-     * @return the builder
-     */
-    public static Builder newTypeWiring() {
-        return new Builder();
     }
 
     /**
      * This form allows a lambda to be used as the builder
      *
+     * @param typeName        the name of the type to wire
      * @param builderFunction a function that will be given the builder to use
      *
      * @return the same builder back please
      */
-    public static TypeRuntimeWiring newTypeWiring(UnaryOperator<Builder> builderFunction) {
-        return builderFunction.apply(newTypeWiring()).build();
+    public static TypeRuntimeWiring newTypeWiring(String typeName, UnaryOperator<Builder> builderFunction) {
+        return builderFunction.apply(newTypeWiring(typeName)).build();
     }
 
     public static class Builder {
@@ -94,8 +88,8 @@ public class TypeRuntimeWiring {
          * @return the current type wiring
          */
         public Builder dataFetcher(String fieldName, DataFetcher dataFetcher) {
-            Assert.assertNotNull(dataFetcher, "you must provide a data fetcher");
-            Assert.assertNotNull(fieldName, "you must tell us what field");
+            assertNotNull(dataFetcher, "you must provide a data fetcher");
+            assertNotNull(fieldName, "you must tell us what field");
             fieldDataFetchers.put(fieldName, dataFetcher);
             return this;
         }
@@ -108,7 +102,7 @@ public class TypeRuntimeWiring {
          * @return the current type wiring
          */
         public Builder dataFetchers(Map<String, DataFetcher> dataFetchersMap) {
-            Assert.assertNotNull(dataFetchersMap, "you must provide a data fetchers map");
+            assertNotNull(dataFetchersMap, "you must provide a data fetchers map");
             fieldDataFetchers.putAll(dataFetchersMap);
             return this;
         }
@@ -122,7 +116,7 @@ public class TypeRuntimeWiring {
          * @return the current type wiring
          */
         public Builder typeResolver(TypeResolver typeResolver) {
-            Assert.assertNotNull(typeResolver, "you must provide a type resolver");
+            assertNotNull(typeResolver, "you must provide a type resolver");
             this.typeResolver = typeResolver;
             return this;
         }
@@ -131,7 +125,7 @@ public class TypeRuntimeWiring {
          * @return the built type wiring
          */
         public TypeRuntimeWiring build() {
-            Assert.assertNotNull(typeName, "you must provide a type name");
+            assertNotNull(typeName, "you must provide a type name");
             return new TypeRuntimeWiring(typeName, fieldDataFetchers, typeResolver);
         }
     }

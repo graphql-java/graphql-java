@@ -4,6 +4,7 @@ import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
+import graphql.TypeResolutionEnvironment;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.FieldFetchParameters;
@@ -105,6 +106,7 @@ public abstract class ExecutionStrategy {
         ExecutionParameters newParameters = ExecutionParameters.newParameters()
                 .typeInfo(fieldType)
                 .fields(parameters.fields())
+                .arguments(argumentValues)
                 .source(resolvedValue).build();
 
         ExecutionResult result = completeValue(executionContext, newParameters, fields);
@@ -137,9 +139,22 @@ public abstract class ExecutionStrategy {
 
         GraphQLObjectType resolvedType;
         if (fieldType instanceof GraphQLInterfaceType) {
-            resolvedType = resolveType((GraphQLInterfaceType) fieldType, result);
+            TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
+                    .graphQLInterfaceType((GraphQLInterfaceType) fieldType)
+                    .field(fields.get(0))
+                    .value(parameters.source())
+                    .argumentValues(parameters.arguments())
+                    .schema(executionContext.getGraphQLSchema()).build();
+            resolvedType = resolveTypeForInterface(resolutionParams);
+
         } else if (fieldType instanceof GraphQLUnionType) {
-            resolvedType = resolveType((GraphQLUnionType) fieldType, result);
+            TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
+                    .graphQLUnionType((GraphQLUnionType) fieldType)
+                    .field(fields.get(0))
+                    .value(parameters.source())
+                    .argumentValues(parameters.arguments())
+                    .schema(executionContext.getGraphQLSchema()).build();
+            resolvedType = resolveTypeForUnion(resolutionParams);
         } else {
             resolvedType = (GraphQLObjectType) fieldType;
         }
@@ -169,18 +184,20 @@ public abstract class ExecutionStrategy {
         return (Iterable<Object>) result;
     }
 
-    protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
-        GraphQLObjectType result = graphQLInterfaceType.getTypeResolver().getType(value);
+    protected GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema());
+        GraphQLObjectType result = params.getGraphQLInterfaceType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("could not determine type");
+            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLInterfaceType().getName());
         }
         return result;
     }
 
-    protected GraphQLObjectType resolveType(GraphQLUnionType graphQLUnionType, Object value) {
-        GraphQLObjectType result = graphQLUnionType.getTypeResolver().getType(value);
+    protected GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema());
+        GraphQLObjectType result = params.getGraphQLUnionType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("could not determine type");
+            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLUnionType().getName());
         }
         return result;
     }
@@ -230,10 +247,8 @@ public abstract class ExecutionStrategy {
 
         GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());
         if (fieldDefinition == null) {
-            throw new GraphQLException("unknown field " + field.getName());
+            throw new GraphQLException("Unknown field " + field.getName());
         }
         return fieldDefinition;
     }
-
-
 }

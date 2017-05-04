@@ -1,10 +1,10 @@
 package readme;
 
-import graphql.GarfieldSchema;
 import graphql.GraphQL;
-import graphql.StarWarsData;
 import graphql.Scalars;
+import graphql.StarWarsData;
 import graphql.StarWarsSchema;
+import graphql.TypeResolutionEnvironment;
 import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.execution.SimpleExecutionStrategy;
 import graphql.schema.Coercing;
@@ -34,7 +34,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import static graphql.GarfieldSchema.Cat;
 import static graphql.GarfieldSchema.CatType;
+import static graphql.GarfieldSchema.Dog;
 import static graphql.GarfieldSchema.DogType;
 import static graphql.MutationSchema.mutationType;
 import static graphql.Scalars.GraphQLBoolean;
@@ -55,6 +57,9 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 /**
  * This class holds readme examples so they stay correct and can be compiled.  If this
  * does not compile, chances are the readme examples are now wrong.
+ *
+ * You should place these examples into the README.next.md and NOT the main README.md.  This allows
+ * 'master' to progress yet shows consumers the released information about the project.
  */
 @SuppressWarnings({"unused", "Convert2Lambda", "UnnecessaryLocalVariable"})
 public class ReadmeExamples {
@@ -137,11 +142,11 @@ public class ReadmeExamples {
                 .possibleType(DogType)
                 .typeResolver(new TypeResolver() {
                     @Override
-                    public GraphQLObjectType getType(Object object) {
-                        if (object instanceof GarfieldSchema.Cat) {
+                    public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                        if (env.getObject() instanceof Cat) {
                             return CatType;
                         }
-                        if (object instanceof GarfieldSchema.Dog) {
+                        if (env.getObject() instanceof Dog) {
                             return DogType;
                         }
                         return null;
@@ -312,19 +317,19 @@ public class ReadmeExamples {
         return RuntimeWiring.newRuntimeWiring()
                 .scalar(CustomScalar)
                 // this uses builder function lambda syntax
-                .type(typeWiring -> typeWiring.typeName("QueryType")
+                .type("QueryType", typeWiring -> typeWiring
                         .dataFetcher("hero", new StaticDataFetcher(StarWarsData.getArtoo()))
                         .dataFetcher("human", StarWarsData.getHumanDataFetcher())
                         .dataFetcher("droid", StarWarsData.getDroidDataFetcher())
                 )
-                .type(typeWiring -> typeWiring.typeName("Human")
+                .type("Human", typeWiring -> typeWiring
                         .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
                 )
                 // you can use builder syntax if you don't like the lambda syntax
-                .type(typeWiring -> typeWiring.typeName("Droid")
+                .type(newTypeWiring("Droid")
                         .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
                 )
-                // or full builder syntax if that takes your fancy
+                // or full builder syntax if that takes your fancy where you call .build()
                 .type(
                         newTypeWiring("Character")
                                 .typeResolver(StarWarsData.getCharacterTypeResolver())

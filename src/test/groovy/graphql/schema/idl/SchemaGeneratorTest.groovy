@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.TypeResolutionEnvironment
 import graphql.schema.*
 import spock.lang.Specification
 
@@ -298,14 +299,15 @@ class SchemaGeneratorTest extends Specification {
         """
 
         def resolver = new TypeResolver() {
+
             @Override
-            GraphQLObjectType getType(Object object) {
+            GraphQLObjectType getType(TypeResolutionEnvironment env) {
                 throw new UnsupportedOperationException("Not implemented")
             }
         }
         def wiring = RuntimeWiring.newRuntimeWiring()
-                .type({ type -> type.typeName("Foo").typeResolver(resolver) })
-                .type({ type -> type.typeName("Goo").typeResolver(resolver) })
+                .type("Foo",{ type -> type.typeResolver(resolver) })
+                .type("Goo", { type -> type.typeResolver(resolver) })
                 .build()
 
         def schema = generateSchema(spec, wiring)

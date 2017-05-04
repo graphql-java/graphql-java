@@ -1,6 +1,7 @@
 package graphql.schema.idl
 
 import graphql.Scalars
+import graphql.TypeResolutionEnvironment
 import graphql.schema.*
 import spock.lang.Specification
 
@@ -16,7 +17,7 @@ class SchemaDecompilerTest extends Specification {
 
     GraphQLSchema starWarsSchema() {
         def wiring =  RuntimeWiring.newRuntimeWiring()
-                .type({ type -> type.typeName("Character").typeResolver(resolver)})
+                .type("Character", { type -> type.typeResolver(resolver)})
                 .scalar(ASTEROID)
                 .build()
         GraphQLSchema schema = load("starWarsSchemaExtended.graphqls", wiring)
@@ -42,8 +43,9 @@ class SchemaDecompilerTest extends Specification {
     })
 
     def resolver = new TypeResolver() {
+
         @Override
-        GraphQLObjectType getType(Object object) {
+        GraphQLObjectType getType(TypeResolutionEnvironment env) {
             throw new UnsupportedOperationException("Not implemented")
         }
     }
