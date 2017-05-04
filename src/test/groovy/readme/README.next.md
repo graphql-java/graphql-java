@@ -189,25 +189,26 @@ GraphQLInterfaceType comicCharacter = newInterface()
 
 ##### Creating a new Union Type
 
-Example: (a snippet from [here](src/test/groovy/graphql/GarfieldSchema.java))
+Example:
+Example:
 ```java
 GraphQLUnionType PetType = newUnionType()
-    .name("Pet")
-    .possibleType(CatType)
-    .possibleType(DogType)
-    .typeResolver(new TypeResolver() {
-        @Override
-        public GraphQLObjectType getType(Object object) {
-            if (object instanceof Cat) {
-                return CatType;
+        .name("Pet")
+        .possibleType(CatType)
+        .possibleType(DogType)
+        .typeResolver(new TypeResolver() {
+            @Override
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                if (env.getObject() instanceof Cat) {
+                    return CatType;
+                }
+                if (env.getObject() instanceof Dog) {
+                    return DogType;
+                }
+                return null;
             }
-            if (object instanceof Dog) {
-                return DogType;
-            }
-            return null;
-        }
-    })
-    .build();
+        })
+        .build();
     
 ```
 
@@ -518,6 +519,117 @@ public Object executeOperation(@RequestBody Map body) {
 }
 ```
 
+### Schema IDL support
+
+This library allows for "schema driven" development of graphql applications.
+
+It allows you to compile a set of schema files into a executable `GraphqlSchema`.
+ 
+ 
+So given a graphql schema input file like :
+
+```graphql
+
+schema {
+    query: QueryType
+}
+
+type QueryType {
+    hero(episode: Episode): Character
+    human(id : String) : Human
+    droid(id: ID!): Droid
+}
+
+
+enum Episode {
+    NEWHOPE
+    EMPIRE
+    JEDI
+}
+
+interface Character {
+    id: ID!
+    name: String!
+    friends: [Character]
+    appearsIn: [Episode]!
+}
+
+type Human implements Character {
+    id: ID!
+    name: String!
+    friends: [Character]
+    appearsIn: [Episode]!
+    homePlanet: String
+}
+
+type Droid implements Character {
+    id: ID!
+    name: String!
+    friends: [Character]
+    appearsIn: [Episode]!
+    primaryFunction: String
+}
+
+
+```
+
+You could compile and generate an executable schema via
+
+```java
+        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+
+        File schemaFile = loadSchema("starWarsSchema.graphqls");
+
+        TypeDefinitionRegistry typeRegistry = schemaCompiler.compile(schemaFile);
+        RuntimeWiring wiring = buildRuntimeWiring();
+        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
+
+```
+
+The static schema definition file has the field and type definitions but you need a runtime wiring to make
+it a truly executable schema.
+
+The runtime wiring contains `DataFetchers`, `TypeResolvers` and custom `Scalars` that are needed to make a fully
+executable schema.  
+
+You wire this together using this builder pattern
+
+```java
+
+    RuntimeWiring buildRuntimeWiring() {
+        return RuntimeWiring.newRuntimeWiring()
+                .scalar(CustomScalar)
+                // this uses builder function lambda syntax
+                .type(typeWiring -> typeWiring.typeName("QueryType")
+                        .dataFetcher("hero", new StaticDataFetcher(StarWarsData.getArtoo()))
+                        .dataFetcher("human", StarWarsData.getHumanDataFetcher())
+                        .dataFetcher("droid", StarWarsData.getDroidDataFetcher())
+                )
+                .type(typeWiring -> typeWiring.typeName("Human")
+                        .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
+                )
+                // you can use builder syntax if you don't like the lambda syntax
+                .type(typeWiring -> typeWiring.typeName("Droid")
+                        .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
+                )
+                // or full builder syntax if that takes your fancy
+                .type(
+                        newTypeWiring("Character")
+                                .typeResolver(StarWarsData.getCharacterTypeResolver())
+                                .build()
+                )
+                .build();
+    }
+
+
+```
+
+NOTE: IDL is not currently part of the [formal graphql spec](https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document).  
+The implementation in this library is based off the [reference implementation](https://github.com/graphql/graphql-js).  However plenty of 
+code out there is based on this IDL syntax and hence you can be fairly confident that you are building on solid technology ground.   
+
+
 #### Contributions
 
 Every contribution to make this project better is welcome: Thank you! 
@@ -634,6 +746,7 @@ The only runtime dependencies are ANTLR and Slf4J.
 
 This readme shows information on the latest released version of the library.  The 'master' branch however contains the
 code for the upcoming version.  The readme for that upcoming version can be found [here](src/test/groovy/readme/README.next.md)
+
  
 ### Acknowledgment
 
