@@ -65,7 +65,7 @@ class TypeDefinitionRegistryTest extends Specification {
         def result2 = compile(spec2)
 
         when:
-            result1.merge(result2)
+        result1.merge(result2)
 
         then:
         SchemaProblem e = thrown(SchemaProblem)
@@ -146,6 +146,10 @@ class TypeDefinitionRegistryTest extends Specification {
               votes: Int
             }
 
+            extend type Post {
+                placeOfPost : String
+            }
+
         """
 
         def spec2 = """ 
@@ -155,6 +159,10 @@ class TypeDefinitionRegistryTest extends Specification {
               title : String
               posts : [Post]
             }
+            
+            extend type Post {
+                timeOfPost : Int
+            }
 
         """
 
@@ -162,6 +170,7 @@ class TypeDefinitionRegistryTest extends Specification {
         def result2 = compile(spec2)
 
         when:
+
         result1.merge(result2)
 
         then:
@@ -176,7 +185,8 @@ class TypeDefinitionRegistryTest extends Specification {
 
         author.name == "Author"
         author.getChildren().size() == 4
+
+        def typeExtensions = result1.typeExtensions().get("Post")
+        typeExtensions.size() == 2
     }
-
-
 }

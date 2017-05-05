@@ -21,6 +21,7 @@ import graphql.language.SchemaDefinition;
 import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
+import graphql.language.TypeExtensionDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.DataFetcher;
@@ -42,6 +43,7 @@ import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.SchemaProblem;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -257,11 +259,64 @@ public class SchemaGenerator {
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
-        typeDefinition.getFieldDefinitions().forEach(fieldDef ->
-                builder.field(buildField(buildCtx, typeDefinition, fieldDef)));
+        //
+        // fields
+        Map<String, GraphQLFieldDefinition> fieldDefinitions = new LinkedHashMap<>();
 
-        typeDefinition.getImplements().forEach(type -> builder.withInterface(buildOutputType(buildCtx, type)));
+        typeDefinition.getFieldDefinitions().forEach(fieldDef -> {
+            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
+            fieldDefinitions.put(newFieldDefinition.getName(), newFieldDefinition);
+        });
+
+        //
+        // type extensions feed into the fields of an object type
+        List<TypeExtensionDefinition> typeExtensions = getTypeExtensionsOf(typeDefinition, buildCtx);
+
+
+        typeExtensions.forEach(typeExt -> typeExt.getFieldDefinitions().forEach(fieldDef -> {
+            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
+            //
+            // de-dupe here - pre-flight checks ensure all dupes are of the same type
+            if (!fieldDefinitions.containsKey(newFieldDefinition.getName())) {
+                fieldDefinitions.put(newFieldDefinition.getName(), newFieldDefinition);
+            }
+        }));
+
+        // combine all the fields together
+        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions.values()) {
+            builder.field(fieldDefinition);
+        }
+
+        //
+        // interfaces
+        Map<String, GraphQLInterfaceType> interfaces = new LinkedHashMap<>();
+        typeDefinition.getImplements().forEach(type -> {
+            GraphQLInterfaceType newInterfaceType = buildOutputType(buildCtx, type);
+            interfaces.put(newInterfaceType.getName(), newInterfaceType);
+        });
+
+        //
+        // type extensions feed interfaces into an object type
+        typeExtensions.forEach(typeExt -> typeExt.getImplements().forEach(type -> {
+            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            //
+            // de-dupe here - pre-flight checks ensure all dupes are of the same type
+            if (!interfaces.containsKey(interfaceType.getName())) {
+                interfaces.put(interfaceType.getName(), interfaceType);
+            }
+        }));
+
+        // combine all the interfaces together
+        for (GraphQLInterfaceType anInterface : interfaces.values()) {
+            builder.withInterface(anInterface);
+        }
+
         return builder.build();
+    }
+
+    private List<TypeExtensionDefinition> getTypeExtensionsOf(ObjectTypeDefinition objectTypeDefinition, BuildContext buildCtx) {
+        List<TypeExtensionDefinition> typeExtensionDefinitions = buildCtx.typeRegistry.typeExtensions().get(objectTypeDefinition.getName());
+        return typeExtensionDefinitions == null ? Collections.emptyList() : typeExtensionDefinitions;
     }
 
     private GraphQLInterfaceType buildInterfaceType(BuildContext buildCtx, InterfaceTypeDefinition typeDefinition) {

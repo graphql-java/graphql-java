@@ -1,6 +1,9 @@
 package graphql.schema.idl
 
 import graphql.GraphQLError
+import graphql.TypeResolutionEnvironment
+import graphql.schema.GraphQLObjectType
+import graphql.schema.TypeResolver
 import graphql.schema.idl.errors.SchemaMissingError
 import spock.lang.Specification
 
@@ -13,7 +16,15 @@ class SchemaTypeCheckerTest extends Specification {
     List<GraphQLError> check(String spec) {
         def types = compile(spec)
 
-        def wiring = RuntimeWiring.newRuntimeWiring().build()
+        def resolver = new TypeResolver() {
+            @Override
+            GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                throw new UnsupportedOperationException("Not implemented")
+            }
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring().
+                type(TypeRuntimeWiring.newTypeWiring("InterfaceType").typeResolver(resolver))
+                .build()
         return new SchemaTypeChecker().checkTypeRegistry(types, wiring)
     }
 
@@ -162,4 +173,277 @@ class SchemaTypeCheckerTest extends Specification {
         result.get(0).getMessage().contains("The operation type 'query' MUST have a object type as its definition")
     }
 
+    def "test ext type redefines fields in their base type"() {
+
+        def spec = """                       
+
+            type BaseType {
+                fieldA : String
+            }
+            
+            extend type BaseType {
+                fieldB : String
+                fieldA : Int
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("tried to redefine field 'fieldA'")
+    }
+
+    def "test ext type redefines fields in their base type with null semantics"() {
+
+        def spec = """                       
+
+            type BaseType {
+                fieldA : String
+            }
+            
+            extend type BaseType {
+                fieldB : String
+                fieldA : String!
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("tried to redefine field 'fieldA'")
+    }
+
+    def "test ext type redefines fields in their base type with list semantics"() {
+
+        def spec = """                       
+
+            type BaseType {
+                fieldA : String
+            }
+            
+            extend type BaseType {
+                fieldB : String
+                fieldA : [String]
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("tried to redefine field 'fieldA'")
+    }
+
+    def "test ext type can redefine fields in their base type of the same type"() {
+
+        def spec = """                       
+
+            type BaseType {
+                fieldA : String
+            }
+            
+            extend type BaseType {
+                fieldB : String
+                fieldA : String
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.isEmpty()
+    }
+
+    def "test ext type redefines fields in their peer types"() {
+
+        def spec = """                       
+
+            type BaseType {
+                fieldA : String
+            }
+            
+            extend type BaseType {
+                fieldB : String
+            }
+
+            extend type BaseType {
+                fieldB : Int
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("tried to redefine field 'fieldB'")
+    }
+
+    def "test ext type redefines fields in their peer types of the same type is ok"() {
+
+        def spec = """                       
+
+            type BaseType {
+                fieldA : String
+            }
+            
+            extend type BaseType {
+                fieldB : String
+            }
+
+            extend type BaseType {
+                fieldB : String
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.isEmpty()
+    }
+
+    def "test ext type is missing the base type"() {
+
+        def spec = """                       
+
+            extend type BaseType {
+                fieldB : String
+                fieldA : Int
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("is missing its base object type")
+    }
+
+    def "test object interface is missing"() {
+
+        def spec = """                       
+
+            type BaseType implements Missing {
+                fieldA : Int
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("The interface type 'Missing' is not present when resolving type 'BaseType'")
+    }
+
+    def "test ext type interface is missing"() {
+
+        def spec = """                       
+
+            type BaseType {
+                fieldA : Int
+            }
+
+            extend type BaseType implements Missing {
+                fieldB : Int
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("The interface type 'Missing' is not present when resolving type 'BaseType'")
+    }
+
+
+    def "test object interface is missing because its the wrong type"() {
+
+        def spec = """                        
+            
+            type IsNotAnInterface {
+                field : String 
+            }
+
+            type BaseType implements IsNotAnInterface {
+                fieldA : Int
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("The interface type 'IsNotAnInterface' is not present when resolving type 'BaseType'")
+    }
+
+    def "test object interface is all ok"() {
+
+        def spec = """                        
+            
+            interface InterfaceType {
+                field : String 
+            }
+
+            type BaseType implements InterfaceType {
+                fieldA : Int
+            }
+
+            extend type BaseType implements InterfaceType {
+                fieldB : Int
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.isEmpty()
+    }
 }

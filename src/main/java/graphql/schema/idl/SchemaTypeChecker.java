@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.GraphQLError;
+import graphql.language.AstPrinter;
 import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
@@ -13,6 +14,7 @@ import graphql.language.TypeDefinition;
 import graphql.language.TypeExtensionDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.schema.idl.errors.MissingInterfaceTypeError;
 import graphql.schema.idl.errors.MissingScalarImplementationError;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.MissingTypeResolverError;
@@ -20,6 +22,8 @@ import graphql.schema.idl.errors.OperationTypesMustBeObjects;
 import graphql.schema.idl.errors.QueryOperationMissingError;
 import graphql.schema.idl.errors.SchemaMissingError;
 import graphql.schema.idl.errors.SchemaProblem;
+import graphql.schema.idl.errors.TypeExtensionFieldRedefinitionError;
+import graphql.schema.idl.errors.TypeExtensionMissingBaseTypeError;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -39,13 +44,16 @@ public class SchemaTypeChecker {
     public List<GraphQLError> checkTypeRegistry(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
         List<GraphQLError> errors = new ArrayList<>();
         checkForMissingTypes(errors, typeRegistry);
+
+        checkTypeExtensionsHaveCorrespondingType(errors, typeRegistry);
+        checkTypeExtensionsFieldRedefinition(errors, typeRegistry);
+
         checkSchemaInvariants(errors, typeRegistry);
 
         checkScalarImplementationsArePresent(errors, typeRegistry, wiring);
         checkTypeResolversArePresent(errors, typeRegistry, wiring);
 
         return errors;
-
     }
 
     private void checkSchemaInvariants(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
@@ -73,11 +81,11 @@ public class SchemaTypeChecker {
 
     private void checkForMissingTypes(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         // type extensions
-        Collection<TypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values();
+        List<TypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         typeExtensions.forEach(typeExtension -> {
 
             List<Type> implementsTypes = typeExtension.getImplements();
-            implementsTypes.forEach(checkTypeExists("type extension", typeRegistry, errors, typeExtension));
+            implementsTypes.forEach(checkInterfaceTypeExists(typeRegistry, errors, typeExtension));
 
             checkFieldTypesPresent(typeRegistry, errors, typeExtension, typeExtension.getFieldDefinitions());
 
@@ -91,7 +99,7 @@ public class SchemaTypeChecker {
         objectTypes.forEach(objectType -> {
 
             List<Type> implementsTypes = objectType.getImplements();
-            implementsTypes.forEach(checkTypeExists("object", typeRegistry, errors, objectType));
+            implementsTypes.forEach(checkInterfaceTypeExists(typeRegistry, errors, objectType));
 
             checkFieldTypesPresent(typeRegistry, errors, objectType, objectType.getFieldDefinitions());
 
@@ -127,6 +135,7 @@ public class SchemaTypeChecker {
 
         });
     }
+
 
     private void checkScalarImplementationsArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
         typeRegistry.scalars().keySet().forEach(scalarName -> {
@@ -174,6 +183,88 @@ public class SchemaTypeChecker {
             }
         };
     }
+
+    private Consumer<? super Type> checkInterfaceTypeExists(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, TypeDefinition typeDefinition) {
+        return t -> {
+            TypeInfo typeInfo = TypeInfo.typeInfo(t);
+            TypeName unwrapped = typeInfo.getTypeName();
+            Optional<TypeDefinition> type = typeRegistry.getType(unwrapped);
+            if (!type.isPresent()) {
+                errors.add(new MissingInterfaceTypeError("interface", typeDefinition, unwrapped));
+            } else if (!(type.get() instanceof InterfaceTypeDefinition)) {
+                errors.add(new MissingInterfaceTypeError("interface", typeDefinition, unwrapped));
+            }
+        };
+    }
+
+    /*
+    A type can re-define a field if its actual the same type, but if they make 'fieldA : String' into
+    'fieldA : Int' then we cant handle that.  Even 'fieldA : String' to 'fieldA: String!' is tough to handle
+    so we don't
+    */
+    private void checkTypeExtensionsFieldRedefinition(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+        Map<String, List<TypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
+        typeExtensions.values().forEach(extList -> extList.forEach(typeExtension -> {
+            //
+            // first check for field re-defs within a type ext
+            for (TypeExtensionDefinition otherTypeExt : extList) {
+                if (otherTypeExt == typeExtension) {
+                    continue;
+                }
+                // its the children that matter - the fields cannot be redefined
+                checkForFieldRedefinition(errors, otherTypeExt, otherTypeExt.getFieldDefinitions(), typeExtension.getFieldDefinitions());
+            }
+            //
+            // then check for field re-defs from the base type
+            Optional<TypeDefinition> type = typeRegistry.getType(typeExtension.getName());
+            if (type.isPresent() && type.get() instanceof ObjectTypeDefinition) {
+                ObjectTypeDefinition baseType = (ObjectTypeDefinition) type.get();
+
+                checkForFieldRedefinition(errors, typeExtension, typeExtension.getFieldDefinitions(), baseType.getFieldDefinitions());
+            }
+
+        }));
+
+    }
+
+    private void checkForFieldRedefinition(List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions, List<FieldDefinition> referenceFieldDefinitions) {
+        Map<String, FieldDefinition> referenceFields = referenceFieldDefinitions.stream()
+                .collect(Collectors.toMap(
+                        FieldDefinition::getName, Function.identity()
+                ));
+
+        fieldDefinitions.forEach(fld -> {
+            FieldDefinition referenceField = referenceFields.get(fld.getName());
+            if (referenceFields.containsKey(fld.getName())) {
+                // ok they have the same field but is it the same type
+                if (!isSameType(fld.getType(), referenceField.getType())) {
+                    errors.add(new TypeExtensionFieldRedefinitionError(typeDefinition, fld));
+                }
+            }
+        });
+    }
+
+    private boolean isSameType(Type type1, Type type2) {
+        String s1 = AstPrinter.printAst(type1);
+        String s2 = AstPrinter.printAst(type2);
+        return s1.equals(s2);
+    }
+
+    private void checkTypeExtensionsHaveCorrespondingType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+        Map<String, List<TypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
+        typeExtensions.forEach((name, extTypeList) -> {
+            TypeExtensionDefinition extensionDefinition = extTypeList.get(0);
+            Optional<TypeDefinition> typeDefinition = typeRegistry.getType(new TypeName(name));
+            if (!typeDefinition.isPresent()) {
+                errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
+            } else {
+                if (!(typeDefinition.get() instanceof ObjectTypeDefinition)) {
+                    errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
+                }
+            }
+        });
+    }
+
 
     private Consumer<OperationTypeDefinition> checkOperationTypesExist(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors) {
         return op -> {
