@@ -2,6 +2,7 @@ package graphql;
 
 import java.util.Collection;
 
+@InternalApi
 public class Assert {
 
     public static <T> T assertNotNull(T object, String errorMessage) {

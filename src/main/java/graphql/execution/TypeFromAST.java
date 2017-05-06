@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.InternalApi;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.Type;
@@ -10,6 +11,7 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
+@InternalApi
 public class TypeFromAST {
 
 

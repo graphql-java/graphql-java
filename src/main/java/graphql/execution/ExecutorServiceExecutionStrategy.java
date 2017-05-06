@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
+import graphql.PublicApi;
 import graphql.language.Field;
 import graphql.schema.GraphQLObjectType;
 
@@ -28,6 +29,7 @@ import java.util.concurrent.Future;
  * 
  * See {@code graphql.execution.ExecutorServiceExecutionStrategyTest} for example usage.
  */
+@PublicApi
 public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
     ExecutorService executorService;

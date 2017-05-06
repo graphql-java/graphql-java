@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.InternalApi;
 import graphql.language.*;
 import graphql.schema.*;
 
@@ -10,6 +11,7 @@ import java.util.Map;
 
 import static graphql.execution.TypeFromAST.getTypeFromAST;
 
+@InternalApi
 public class FieldCollector {
 
     private ConditionalNodes conditionalNodes;

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@InternalApi
 public class ExecutionResultImpl implements ExecutionResult {
 
     private final List<GraphQLError> errors = new ArrayList<>();
