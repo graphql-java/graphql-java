@@ -426,4 +426,58 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
+    def "read me type example makes sense"() {
+
+        def spec = """             
+
+            schema {
+              query: Human
+            }
+
+            type Episode {
+                name : String
+            }
+            
+            interface Character {
+                name: String!
+            }
+                
+            type Human {
+                id: ID!
+                name: String!
+            }
+
+            extend type Human implements Character {
+                friends: [Character]
+            }
+
+            extend type Human {
+                appearsIn: [Episode]!
+                homePlanet: String
+            }
+        """
+
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Character", buildResolver())
+                .build()
+
+        def schema = generateSchema(spec, wiring)
+
+        expect:
+
+        GraphQLObjectType type = schema.getQueryType()
+
+        type.name == "Human"
+        type.fieldDefinitions[0].name == "id"
+        type.fieldDefinitions[1].name == "name"
+        type.fieldDefinitions[2].name == "friends"
+        type.fieldDefinitions[3].name == "appearsIn"
+        type.fieldDefinitions[4].name == "homePlanet"
+
+        type.interfaces.size() == 1
+        type.interfaces[0].name == "Character"
+
+
+
+    }
 }
