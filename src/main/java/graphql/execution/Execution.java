@@ -4,7 +4,6 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
-import graphql.InternalApi;
 import graphql.MutationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -23,12 +22,10 @@ import java.util.Map;
 
 import static graphql.execution.ExecutionParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
-
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 
-@InternalApi
 public class Execution {
 
     private final FieldCollector fieldCollector = new FieldCollector();

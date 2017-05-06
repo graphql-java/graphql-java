@@ -1,8 +1,6 @@
 package graphql.schema;
 
 import graphql.AssertException;
-import graphql.InternalApi;
-import graphql.PublicApi;
 import graphql.language.InterfaceTypeDefinition;
 
 import java.util.ArrayList;
@@ -14,7 +12,6 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
-@PublicApi
 public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
@@ -23,12 +20,10 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
 
-    @InternalApi
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
         this(name, description, fieldDefinitions, typeResolver, null);
     }
 
-    @InternalApi
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, InterfaceTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(typeResolver, "typeResolver can't null");
@@ -89,7 +84,6 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     }
 
 
-    @PublicApi
     public static class Builder {
         private String name;
         private String description;

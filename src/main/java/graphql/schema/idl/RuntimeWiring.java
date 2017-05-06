@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
@@ -14,7 +13,6 @@ import java.util.function.UnaryOperator;
  * A runtime wiring is a specification of data fetchers, type resolves and custom scalars that are needed
  * to wire together a functional {@link GraphQLSchema}
  */
-@PublicApi
 public class RuntimeWiring {
 
     private final Map<String, Map<String, DataFetcher>> dataFetchers;
@@ -50,7 +48,6 @@ public class RuntimeWiring {
         return new Builder();
     }
 
-    @PublicApi
     public static class Builder {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
         private final Map<String, GraphQLScalarType> scalars = new LinkedHashMap<>();

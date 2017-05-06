@@ -1,8 +1,6 @@
 package graphql.schema;
 
 import graphql.AssertException;
-import graphql.InternalApi;
-import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
 
 import java.util.ArrayList;
@@ -16,7 +14,6 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
 
-@PublicApi
 public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
 
@@ -26,13 +23,11 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     private List<GraphQLOutputType> interfaces = new ArrayList<>();
     private final ObjectTypeDefinition definition;
 
-    @InternalApi
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
                              List<GraphQLOutputType> interfaces) {
         this(name, description, fieldDefinitions, interfaces, null);
     }
 
-    @InternalApi
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
                              List<GraphQLOutputType> interfaces, ObjectTypeDefinition definition) {
         assertValidName(name);
@@ -106,7 +101,6 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         return new Builder();
     }
 
-    @PublicApi
     public static class Builder {
         private String name;
         private String description;
