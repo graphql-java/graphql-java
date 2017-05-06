@@ -65,18 +65,18 @@ class SubscriptionTest extends Specification {
                 ]
         ]
 
-        def root = new MutationSchema.Root(6)
-        def subRoot = new MutationSchema.SubscriptionRoot(root)
+        def subRoot = new MutationSchema.SubscriptionRoot(6)
 
         when:
-        def execute1 = GraphQL.newGraphQL(MutationSchema.schema).build().execute(subscription1, subRoot)
-        GraphQL.newGraphQL(MutationSchema.schema).build().execute(mutation, root)
-        def execute2 = GraphQL.newGraphQL(MutationSchema.schema).build().execute(subscription2, subRoot)
-        GraphQL.newGraphQL(MutationSchema.schema).build().execute(mutation, root)
+        def graphql = GraphQL.newGraphQL(MutationSchema.schema).build()
+        def execute1 = graphql.execute(subscription1, subRoot)
+        graphql.execute(mutation, subRoot)
+        def execute2 = graphql.execute(subscription2, subRoot)
+        graphql.execute(mutation, subRoot)
 
         then:
         execute1.data == executionResult1
         execute2.data == executionResult2
-        MutationSchema.SubscriptionRoot.result == expectedResult
+        subRoot.result == expectedResult
     }
 }

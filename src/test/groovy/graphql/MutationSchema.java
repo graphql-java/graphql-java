@@ -1,12 +1,11 @@
 package graphql;
 
 
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static graphql.Scalars.GraphQLInt;
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -31,16 +30,28 @@ public class MutationSchema {
         }
     }
 
-    public static class Root {
+    public static class SubscriptionRoot {
+        List<String> result = new ArrayList<String>();
+        List<Integer> subscribers = new ArrayList<Integer>();
         NumberHolder numberHolder;
 
-        public Root(int number) {
-            this.numberHolder = new NumberHolder(number);
+        public SubscriptionRoot(int initalNumber) {
+            this.numberHolder = new NumberHolder(initalNumber);
+        }
+
+        public void subscribeToNumberChanges(int clientId) {
+            subscribers.add(clientId);
+        }
+
+        public void informSubscribers(int newNumber) {
+            for (Integer subscriber : subscribers) {
+                result.add("Alert client [" + subscriber + "] that number is now [" + newNumber + "]");
+            }
         }
 
         public NumberHolder changeNumber(int newNumber) {
             this.numberHolder.theNumber = newNumber;
-            SubscriptionRoot.numberChanged(newNumber);
+            informSubscribers(newNumber);
             return this.numberHolder;
         }
 
@@ -51,34 +62,8 @@ public class MutationSchema {
         public NumberHolder getNumberHolder() {
             return numberHolder;
         }
-    }
 
-    public static class SubscriptionRoot {
-        private Root root;
-        static List<String> result = new ArrayList<String>();
-        static List<Integer> subscribers = new ArrayList<Integer>();
-
-        public SubscriptionRoot(Root root) {
-            this.root = root;
-        }
-
-        public void changeNumberSubscribe(int clientId) {
-            subscribers.add(clientId);
-        }
-
-        public static void numberChanged(int newNumber) {
-            for (Integer subscriber : subscribers) {
-                // for test purposes only, a true implementation of a subscription mechanism needs to consider
-                // the format in which subscribers have requested their response and tailor it accordingly
-                result.add("Alert client [" + subscriber + "] that number is now [" + newNumber + "]");
-            }
-        }
-
-        public Root getRoot() {
-            return root;
-        }
-
-        public static List<String> getResult() {
+        public List<String> getResult() {
             return result;
         }
     }
@@ -107,7 +92,7 @@ public class MutationSchema {
                             .type(GraphQLInt))
                     .dataFetcher(environment -> {
                         Integer newNumber = environment.getArgument("newNumber");
-                        Root root = environment.getSource();
+                        SubscriptionRoot root = environment.getSource();
                         return root.changeNumber(newNumber);
                     }))
             .field(newFieldDefinition()
@@ -118,7 +103,7 @@ public class MutationSchema {
                             .type(GraphQLInt))
                     .dataFetcher(environment -> {
                         Integer newNumber = environment.getArgument("newNumber");
-                        Root root = environment.getSource();
+                        SubscriptionRoot root = environment.getSource();
                         return root.failToChangeTheNumber(newNumber);
                     }))
             .build();
@@ -134,8 +119,8 @@ public class MutationSchema {
                     .dataFetcher(environment -> {
                         Integer clientId = environment.getArgument("clientId");
                         SubscriptionRoot subscriptionRoot = environment.getSource();
-                        subscriptionRoot.changeNumberSubscribe(clientId);
-                        return subscriptionRoot.getRoot().getNumberHolder();
+                        subscriptionRoot.subscribeToNumberChanges(clientId);
+                        return subscriptionRoot.getNumberHolder();
                     }))
             .build();
 
