@@ -473,19 +473,6 @@ See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) fo
 
 Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
 
-#### JDK8 Lambdas
-This project is built using JDK6. But if you're using JDK8 and above then you can also use lambdas.
-```java
-GraphQLObjectType queryType = newObject()
-                .name("helloWorldQuery")
-                .field(field -> field.type(GraphQLString)
-                        .name("hello")
-                        .argument(argument -> argument.name("arg")
-                                .type(GraphQLBoolean))
-                        .dataFetcher(env -> "hello"))
-                .build();
-```
-
 #### Logging
 
 Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [Manual](http://www.slf4j.org/manual.html) for details.
