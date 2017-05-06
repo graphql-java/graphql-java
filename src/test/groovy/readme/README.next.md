@@ -630,6 +630,21 @@ The implementation in this library is based off the [reference implementation](h
 code out there is based on this IDL syntax and hence you can be fairly confident that you are building on solid technology ground.   
 
 
+#### Subscription Support
+
+Subscriptions are not officially specified yet: `graphql-java` supports currently a very basic implementation where you can define a subscription in the schema
+with `GraphQLSchema.Builder.subscription(...)`. This enables you to handle a subscription request:
+
+```
+subscription foo {
+    // normal graphql query
+}
+```
+*NOTE:* `graphql-java` does not handle or support any transportation related features: it just calling your `DataFetchers`. 
+Look at [SubscriptionTest](/src/test/groovy/graphql/SubscriptionTest.groovy) for a full example.
+
+*WARNING:* The subscription API will very probably look different later, don't expect the current API to be stable.
+
 #### Contributions
 
 Every contribution to make this project better is welcome: Thank you! 

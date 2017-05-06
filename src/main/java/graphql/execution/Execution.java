@@ -25,17 +25,20 @@ import static graphql.execution.TypeInfo.newTypeInfo;
 
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
+import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 
 public class Execution {
 
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
+    private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
 
-    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Instrumentation instrumentation) {
+    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
+        this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SimpleExecutionStrategy();
         this.instrumentation = instrumentation;
     }
 
@@ -43,7 +46,7 @@ public class Execution {
         ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver(), instrumentation);
         ExecutionContext executionContext = executionContextBuilder
                 .executionId(executionId)
-                .build(graphQLSchema, queryStrategy, mutationStrategy, root, document, operationName, args);
+                .build(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, root, document, operationName, args);
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
 
@@ -53,6 +56,9 @@ public class Execution {
 
         } else if (operation == QUERY) {
             return graphQLSchema.getQueryType();
+
+        }  else if (operation == SUBSCRIPTION) {
+            return graphQLSchema.getSubscriptionType();
 
         } else {
             throw new GraphQLException("Unhandled case.  An extra operation enum has been added without code support");
@@ -92,6 +98,8 @@ public class Execution {
         try {
             if (operation == OperationDefinition.Operation.MUTATION) {
                 result = mutationStrategy.execute(executionContext, parameters);
+            } else if (operation == SUBSCRIPTION) {
+                result = subscriptionStrategy.execute(executionContext, parameters);
             } else {
                 result = queryStrategy.execute(executionContext, parameters);
             }

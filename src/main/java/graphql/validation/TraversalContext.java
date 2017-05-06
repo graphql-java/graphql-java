@@ -81,6 +81,8 @@ public class TraversalContext implements QueryLanguageVisitor {
             addType(schema.getMutationType());
         } else if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
             addType(schema.getQueryType());
+        } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
+            addType(schema.getSubscriptionType());
         } else {
             throw new ShouldNotHappenException();
         }

@@ -23,7 +23,7 @@ class ExecutionStrategySpec extends Specification {
     }
 
     def buildContext() {
-        new ExecutionContext(null, null, null, executionStrategy, executionStrategy, null, null, null, null)
+        new ExecutionContext(null, null, null, executionStrategy, executionStrategy, executionStrategy, null, null, null, null)
     }
 
 
