@@ -277,7 +277,7 @@ Another schema example, including union types: [GarfieldSchema](src/test/groovy/
 
 
 
-##### Recursive Type References
+##### Type References
 
 GraphQL supports recursive Types: For example a `Person` can contain a list of friends of the same Type.
  
