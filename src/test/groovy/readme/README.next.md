@@ -622,7 +622,7 @@ code out there is based on this IDL syntax and hence you can be fairly confident
 Subscriptions are not officially specified yet: `graphql-java` supports currently a very basic implementation where you can define a subscription in the schema
 with `GraphQLSchema.Builder.subscription(...)`. This enables you to handle a subscription request:
 
-```
+```graphql
 subscription foo {
     // normal graphql query
 }
