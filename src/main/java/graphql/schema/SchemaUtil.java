@@ -78,7 +78,7 @@ public class SchemaUtil {
         // do we have an existing definition
         if (existingType != null) {
             // type references are ok
-            if (!(existingType instanceof TypeReference || type instanceof TypeReference))
+            if (!(existingType instanceof GraphQLTypeReference || type instanceof GraphQLTypeReference))
                 // object comparison here is deliberate
                 if (existingType != type) {
                     throw new AssertException(format("All types within a GraphQL schema must have unique names. No two provided types may have the same name.\n" +
@@ -100,7 +100,7 @@ public class SchemaUtil {
     }
 
     private void collectTypesForInterfaces(GraphQLInterfaceType interfaceType, Map<String, GraphQLType> result) {
-        if (result.containsKey(interfaceType.getName()) && !(result.get(interfaceType.getName()) instanceof TypeReference)) {
+        if (result.containsKey(interfaceType.getName()) && !(result.get(interfaceType.getName()) instanceof GraphQLTypeReference)) {
             assertTypeUniqueness(interfaceType, result);
             return;
         }
@@ -116,7 +116,7 @@ public class SchemaUtil {
 
 
     private void collectTypesForObjects(GraphQLObjectType objectType, Map<String, GraphQLType> result) {
-        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) {
+        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof GraphQLTypeReference)) {
             assertTypeUniqueness(objectType, result);
             return;
         }
@@ -128,13 +128,13 @@ public class SchemaUtil {
                 collectTypes(fieldArgument.getType(), result);
             }
         }
-        for (GraphQLInterfaceType interfaceType : objectType.getInterfaces()) {
+        for (GraphQLOutputType interfaceType : objectType.getInterfaces()) {
             collectTypes(interfaceType, result);
         }
     }
 
     private void collectTypesForInputObjects(GraphQLInputObjectType objectType, Map<String, GraphQLType> result) {
-        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof TypeReference)) {
+        if (result.containsKey(objectType.getName()) && !(result.get(objectType.getName()) instanceof GraphQLTypeReference)) {
             assertTypeUniqueness(objectType, result);
             return;
         }

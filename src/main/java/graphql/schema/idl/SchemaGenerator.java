@@ -1,53 +1,11 @@
 package graphql.schema.idl;
 
 import graphql.GraphQLError;
-import graphql.language.ArrayValue;
-import graphql.language.BooleanValue;
-import graphql.language.Comment;
-import graphql.language.EnumTypeDefinition;
-import graphql.language.EnumValue;
-import graphql.language.FieldDefinition;
-import graphql.language.FloatValue;
-import graphql.language.InputObjectTypeDefinition;
-import graphql.language.InputValueDefinition;
-import graphql.language.IntValue;
-import graphql.language.InterfaceTypeDefinition;
-import graphql.language.Node;
-import graphql.language.ObjectTypeDefinition;
-import graphql.language.ObjectValue;
-import graphql.language.OperationTypeDefinition;
-import graphql.language.ScalarTypeDefinition;
-import graphql.language.SchemaDefinition;
-import graphql.language.StringValue;
-import graphql.language.Type;
-import graphql.language.TypeDefinition;
-import graphql.language.UnionTypeDefinition;
-import graphql.language.Value;
-import graphql.schema.DataFetcher;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInputObjectField;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeReference;
-import graphql.schema.GraphQLUnionType;
-import graphql.schema.PropertyDataFetcher;
-import graphql.schema.TypeResolver;
-import graphql.schema.TypeResolverProxy;
+import graphql.language.*;
+import graphql.schema.*;
 import graphql.schema.idl.errors.SchemaProblem;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Stack;
+import java.util.*;
 
 /**
  * This can generate a working runtime schema from a compiled type registry and runtime wiring
@@ -260,7 +218,7 @@ public class SchemaGenerator {
         typeDefinition.getFieldDefinitions().forEach(fieldDef ->
                 builder.field(buildField(buildCtx, typeDefinition, fieldDef)));
 
-        typeDefinition.getImplements().forEach(type -> builder.withInterface(buildOutputType(buildCtx, type)));
+        typeDefinition.getImplements().forEach(type -> builder.withInterface((GraphQLInterfaceType) buildOutputType(buildCtx, type)));
         return builder.build();
     }
 
