@@ -519,7 +519,7 @@ public Object executeOperation(@RequestBody Map body) {
 }
 ```
 
-### Schema IDL support
+#### Schema IDL support
 
 This library allows for "schema driven" development of graphql applications.
 
