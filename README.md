@@ -10,7 +10,7 @@ This is a GraphQL Java implementation based on the [specification](https://githu
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
  
 
-**Status**: Version `2.3.0` is released.
+**Status**: Version `2.4.0` is released.
     
 The versioning follows [Semantic Versioning](http://semver.org) since `2.0.0`. 
 
@@ -73,6 +73,7 @@ If you have a question or want to discuss anything else related to this project:
 This is the famous "hello world" in graphql-java: 
 
 ```java
+import graphql.GraphQL;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import java.util.Map;
@@ -121,7 +122,7 @@ Dependency:
 
 ```groovy
 dependencies {
-  compile 'com.graphql-java:graphql-java:2.3.0'
+  compile 'com.graphql-java:graphql-java:2.4.0'
 }
 
 ```
@@ -134,7 +135,7 @@ Dependency:
 <dependency>
     <groupId>com.graphql-java</groupId>
     <artifactId>graphql-java</artifactId>
-    <version>2.3.0</version>
+    <version>2.4.0</version>
 </dependency>
 
 ```
@@ -342,6 +343,105 @@ Example: [GraphQL Test](src/test/groovy/graphql/GraphQLTest.groovy)
 More complex examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
 
 
+#### Causing mutation during execution
+
+A good starting point to learn more about mutating data in graphql is [http://graphql.org/learn/queries/#mutations](http://graphql.org/learn/queries/#mutations)
+
+In essence you need to define a `GraphQLObjectType` that takes arguments as input.  Those arguments are what you can use to mutate your data store
+via the data fetcher invoked.
+
+The mutation is invoked via a query like :
+
+```graphql
+mutation CreateReviewForEpisode($ep: Episode!, $review: ReviewInput!) {
+  createReview(episode: $ep, review: $review) {
+    stars
+    commentary
+  }
+}
+```
+
+You need to send in arguments during that mutation operation, in this case for the variables for `$ep` and `$review`
+
+You would create types like this to handle this mutation :
+
+```java
+GraphQLInputObjectType episodeType = GraphQLInputObjectType.newInputObject()
+        .name("Episode")
+        .field(newInputObjectField()
+                .name("episodeNumber")
+                .type(Scalars.GraphQLInt))
+        .build();
+
+GraphQLInputObjectType reviewInputType = GraphQLInputObjectType.newInputObject()
+        .name("ReviewInput")
+        .field(newInputObjectField()
+                .name("stars")
+                .type(Scalars.GraphQLString)
+                .name("commentary")
+                .type(Scalars.GraphQLString))
+        .build();
+
+GraphQLObjectType reviewType = newObject()
+        .name("Review")
+        .field(newFieldDefinition()
+                .name("stars")
+                .type(GraphQLString))
+        .field(newFieldDefinition()
+                .name("commentary")
+                .type(GraphQLString))
+        .build();
+
+GraphQLObjectType createReviewForEpisodeMutation = newObject()
+        .name("CreateReviewForEpisodeMutation")
+        .field(newFieldDefinition()
+                .name("createReview")
+                .type(reviewType)
+                .argument(newArgument()
+                        .name("episode")
+                        .type(episodeType)
+                )
+                .argument(newArgument()
+                        .name("review")
+                        .type(reviewInputType)
+                )
+                .dataFetcher(mutationDataFetcher())
+        )
+        .build();
+
+GraphQLSchema schema = GraphQLSchema.newSchema()
+        .query(queryType)
+        .mutation(createReviewForEpisodeMutation)
+        .build();
+
+```
+
+Notice that the input arguments are of type `GraphQLInputObjectType`.  This is important.  Input arguments can ONLY be of that type
+and you cannot use output types such as `GraphQLObjectType`.  Scalars types are consider both input and output types. 
+
+The data fetcher here is responsible for executing the mutation and returning some sensible output values.
+
+```java
+private DataFetcher mutationDataFetcher() {
+    return new DataFetcher() {
+        @Override
+        public Review get(DataFetchingEnvironment environment) {
+            Episode episode = environment.getArgument("episode");
+            ReviewInput review = environment.getArgument("review");
+
+            // make a call to your store to mutate your database
+            Review updatedReview = reviewStore().update(episode, review);
+
+            // this returns a new view of the data
+            return updatedReview;
+        }
+    };
+}
+```
+
+Notice how it calls a data store to mutate the backing database and then returns a `Review` object that can be used as the output values
+to the caller.
+
 #### Execution strategies
 
 All fields in a SelectionSet are executed serially per default.
@@ -526,11 +626,14 @@ Installing in the local Maven repository:
 
 ### Details
 
-The implementation is in Java 6, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
+The implementation is in Java 8, but the tests are in Groovy and [Spock](https://github.com/spockframework/spock).
 
 The query parsing is done with [ANTLR](http://www.antlr.org). The grammar is [here](src/main/antlr/Graphql.g4).
 
 The only runtime dependencies are ANTLR and Slf4J.
+
+This readme shows information on the latest released version of the library.  The 'master' branch however contains the
+code for the upcoming version.  The readme for that upcoming version can be found [here](src/test/groovy/readme/README.next.md)
  
 ### Acknowledgment
 

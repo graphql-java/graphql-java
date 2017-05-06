@@ -69,7 +69,7 @@ public class GarfieldSchema {
         private List<Named> friends;
 
         public Person(String name) {
-            this(name, Collections.<Cat>emptyList(), Collections.<Dog>emptyList(), Collections.<Named>emptyList());
+            this(name, Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
         }
 
         public Person(String name, List<Cat> cats, List<Dog> dogs, List<Named> friends) {
@@ -80,7 +80,7 @@ public class GarfieldSchema {
         }
 
         public List<Object> getPets() {
-            List<Object> pets = new ArrayList<Object>();
+            List<Object> pets = new ArrayList<>();
             pets.addAll(cats);
             pets.addAll(dogs);
             return pets;
@@ -108,14 +108,14 @@ public class GarfieldSchema {
                     .type(GraphQLString))
             .typeResolver(new TypeResolver() {
                 @Override
-                public GraphQLObjectType getType(Object object) {
-                    if (object instanceof Dog) {
+                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                    if (env.getObject() instanceof Dog) {
                         return DogType;
                     }
-                    if (object instanceof Person) {
+                    if (env.getObject() instanceof Person) {
                         return PersonType;
                     }
-                    if (object instanceof Cat) {
+                    if (env.getObject() instanceof Cat) {
                         return CatType;
                     }
                     return null;
@@ -149,17 +149,14 @@ public class GarfieldSchema {
             .name("Pet")
             .possibleType(CatType)
             .possibleType(DogType)
-            .typeResolver(new TypeResolver() {
-                @Override
-                public GraphQLObjectType getType(Object object) {
-                    if (object instanceof Cat) {
-                        return CatType;
-                    }
-                    if (object instanceof Dog) {
-                        return DogType;
-                    }
-                    return null;
+            .typeResolver(env -> {
+                if (env.getObject() instanceof Cat) {
+                    return CatType;
                 }
+                if (env.getObject() instanceof Dog) {
+                    return DogType;
+                }
+                return null;
             })
             .build();
 

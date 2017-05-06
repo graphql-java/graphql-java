@@ -105,13 +105,10 @@ public class MutationSchema {
                     .argument(newArgument()
                             .name("newNumber")
                             .type(GraphQLInt))
-                    .dataFetcher(new DataFetcher() {
-                        @Override
-                        public Object get(DataFetchingEnvironment environment) {
-                            Integer newNumber = environment.getArgument("newNumber");
-                            Root root = (Root) environment.getSource();
-                            return root.changeNumber(newNumber);
-                        }
+                    .dataFetcher(environment -> {
+                        Integer newNumber = environment.getArgument("newNumber");
+                        Root root = environment.getSource();
+                        return root.changeNumber(newNumber);
                     }))
             .field(newFieldDefinition()
                     .name("failToChangeTheNumber")
@@ -119,13 +116,10 @@ public class MutationSchema {
                     .argument(newArgument()
                             .name("newNumber")
                             .type(GraphQLInt))
-                    .dataFetcher(new DataFetcher() {
-                        @Override
-                        public Object get(DataFetchingEnvironment environment) {
-                            Integer newNumber = environment.getArgument("newNumber");
-                            Root root = (Root) environment.getSource();
-                            return root.failToChangeTheNumber(newNumber);
-                        }
+                    .dataFetcher(environment -> {
+                        Integer newNumber = environment.getArgument("newNumber");
+                        Root root = environment.getSource();
+                        return root.failToChangeTheNumber(newNumber);
                     }))
             .build();
 
@@ -137,14 +131,11 @@ public class MutationSchema {
                     .argument(newArgument()
                             .name("clientId")
                             .type(GraphQLInt))
-                    .dataFetcher(new DataFetcher() {
-                        @Override
-                        public Object get(DataFetchingEnvironment environment) {
-                            Integer clientId = environment.getArgument("clientId");
-                            SubscriptionRoot subscriptionRoot = (SubscriptionRoot) environment.getSource();
-                            subscriptionRoot.changeNumberSubscribe(clientId);
-                            return subscriptionRoot.getRoot().getNumberHolder();
-                        }
+                    .dataFetcher(environment -> {
+                        Integer clientId = environment.getArgument("clientId");
+                        SubscriptionRoot subscriptionRoot = environment.getSource();
+                        subscriptionRoot.changeNumberSubscribe(clientId);
+                        return subscriptionRoot.getRoot().getNumberHolder();
                     }))
             .build();
 

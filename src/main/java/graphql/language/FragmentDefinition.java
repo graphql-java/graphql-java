@@ -8,7 +8,7 @@ public class FragmentDefinition extends AbstractNode implements Definition {
 
     private String name;
     private TypeName typeCondition;
-    private List<Directive> directives = new ArrayList<Directive>();
+    private List<Directive> directives = new ArrayList<>();
     private SelectionSet selectionSet;
 
     public FragmentDefinition() {
@@ -61,7 +61,7 @@ public class FragmentDefinition extends AbstractNode implements Definition {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.add(typeCondition);
         result.addAll(directives);
         result.add(selectionSet);

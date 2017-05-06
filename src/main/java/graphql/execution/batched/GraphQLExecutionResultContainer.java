@@ -14,13 +14,13 @@ public abstract class GraphQLExecutionResultContainer {
      * @return datum
      */
     public GraphQLExecutionNodeDatum createAndPutChildDatum(String fieldName, Object value) {
-        Map<String, Object> map = new LinkedHashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<>();
         putResult(fieldName, map);
         return new GraphQLExecutionNodeDatum(map, value);
     }
 
     public GraphQLExecutionResultList createAndPutEmptyChildList(String fieldName) {
-        List<Object> resultList = new ArrayList<Object>();
+        List<Object> resultList = new ArrayList<>();
         putResult(fieldName, resultList);
         return new GraphQLExecutionResultList(resultList);
     }

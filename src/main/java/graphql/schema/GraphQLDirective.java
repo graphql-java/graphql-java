@@ -4,6 +4,7 @@ package graphql.schema;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -14,7 +15,7 @@ public class GraphQLDirective {
     private final String name;
     private final String description;
     private final EnumSet<DirectiveLocation> locations;
-    private final List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
+    private final List<GraphQLArgument> arguments = new ArrayList<>();
     private final boolean onOperation;
     private final boolean onFragment;
     private final boolean onField;
@@ -37,7 +38,7 @@ public class GraphQLDirective {
     }
 
     public List<GraphQLArgument> getArguments() {
-        return new ArrayList<GraphQLArgument>(arguments);
+        return new ArrayList<>(arguments);
     }
 
     public GraphQLArgument getArgument(String name) {
@@ -90,7 +91,7 @@ public class GraphQLDirective {
 
         private String name;
         private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
-        private final List<GraphQLArgument> arguments = new ArrayList<GraphQLArgument>();
+        private final List<GraphQLArgument> arguments = new ArrayList<>();
         private String description;
         private boolean onOperation;
         private boolean onFragment;
@@ -130,7 +131,7 @@ public class GraphQLDirective {
          * @param builderFunction a supplier for the builder impl
          * @return this
          */
-        public Builder argument(BuilderFunction<GraphQLArgument.Builder> builderFunction) {
+        public Builder argument(UnaryOperator<GraphQLArgument.Builder> builderFunction) {
             GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
             builder = builderFunction.apply(builder);
             return argument(builder);

@@ -1,7 +1,10 @@
 package graphql.schema;
 
 
+import graphql.execution.ExecutionContext;
+import graphql.execution.ExecutionId;
 import graphql.language.Field;
+import graphql.language.FragmentDefinition;
 
 import java.util.List;
 import java.util.Map;
@@ -15,8 +18,14 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLOutputType fieldType;
     private final GraphQLType parentType;
     private final GraphQLSchema graphQLSchema;
+    private Map<String, FragmentDefinition> fragmentsByName;
+    private ExecutionId executionId;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema) {
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, ExecutionContext executionContext) {
+        this(source, arguments, executionContext.getRoot(), fields, fieldType, parentType, executionContext.getGraphQLSchema(), executionContext.getFragmentsByName(), executionContext.getExecutionId());
+    }
+
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId) {
         this.source = source;
         this.arguments = arguments;
         this.context = context;
@@ -24,6 +33,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.fieldType = fieldType;
         this.parentType = parentType;
         this.graphQLSchema = graphQLSchema;
+        this.fragmentsByName = fragmentsByName;
+        this.executionId = executionId;
     }
 
     @Override
@@ -69,5 +80,15 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
+    }
+
+    @Override
+    public Map<String, FragmentDefinition> getFragmentsByName() {
+        return fragmentsByName;
+    }
+
+    @Override
+    public ExecutionId getExecutionId() {
+        return executionId;
     }
 }

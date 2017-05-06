@@ -25,9 +25,9 @@ public class NoUnbrokenInputCycles implements ValidationRule {
         for (GraphQLArgument argument : fieldDef.getArguments()) {
             GraphQLInputType argumentType = argument.getType();
             if (argumentType instanceof GraphQLInputObjectType) {
-                List<String> path = new ArrayList<String>();
+                List<String> path = new ArrayList<>();
                 path.add(argumentType.getName());
-                check((GraphQLInputObjectType) argumentType, new HashSet<GraphQLType>(), path, validationErrorCollector);
+                check((GraphQLInputObjectType) argumentType, new HashSet<>(), path, validationErrorCollector);
             }
         }
     }
@@ -43,9 +43,9 @@ public class NoUnbrokenInputCycles implements ValidationRule {
             if (field.getType() instanceof GraphQLNonNull) {
                 GraphQLType unwrapped = unwrapNonNull((GraphQLNonNull) field.getType());
                 if (unwrapped instanceof GraphQLInputObjectType) {
-                    path = new ArrayList<String>(path);
+                    path = new ArrayList<>(path);
                     path.add(field.getName() + "!");
-                    check((GraphQLInputObjectType) unwrapped, new HashSet<GraphQLType>(seen), path, validationErrorCollector);
+                    check((GraphQLInputObjectType) unwrapped, new HashSet<>(seen), path, validationErrorCollector);
                 }
             }
         }

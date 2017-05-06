@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.TypeResolutionEnvironment
 import graphql.language.Document
 import graphql.language.SourceLocation
 import graphql.parser.Parser
@@ -30,16 +31,16 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                     .name("Test")
                     .field(newFieldDefinition().name("name").type(GraphQLString))
                     .field(newFieldDefinition().name("nickname").type(GraphQLString))
-                    .build();
+                    .build()
             schema = GraphQLSchema.newSchema().query(objectType).build()
         }
 
         Document document = new Parser().parseDocument(query)
         ValidationContext validationContext = new ValidationContext(schema, document)
         OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, errorCollector)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
+        LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [overlappingFieldsCanBeMerged]));
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [overlappingFieldsCanBeMerged]))
     }
 
     def "identical fields are ok"() {
@@ -94,11 +95,11 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                 .name("BoxUnion")
                 .possibleTypes(StringBox, IntBox, NonNullStringBox1, NonNullStringBox2)
                 .typeResolver(new TypeResolver() {
-            @Override
-            GraphQLObjectType getType(Object object) {
-                return null
-            }
-        })
+                    @Override
+                    GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                        return null
+                    }
+                })
                 .build()
         def QueryRoot = newObject()
                 .name("QueryRoot")

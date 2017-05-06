@@ -21,18 +21,15 @@ public class RelaySchema {
                     .fetchField())
             .build();
 
-    public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(new TypeResolver() {
-        @Override
-        public GraphQLObjectType getType(Object object) {
-            Relay.ResolvedGlobalId resolvedGlobalId = relay.fromGlobalId((String) object);
-            //TODO: implement
-            return null;
-        }
+    public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(env -> {
+        Relay.ResolvedGlobalId resolvedGlobalId = relay.fromGlobalId((String) env.getObject());
+        //TODO: implement
+        return null;
     });
 
-    public static GraphQLObjectType StuffEdgeType = relay.edgeType("Stuff", StuffType, NodeInterface, new ArrayList<GraphQLFieldDefinition>());
+    public static GraphQLObjectType StuffEdgeType = relay.edgeType("Stuff", StuffType, NodeInterface, new ArrayList<>());
 
-    public static GraphQLObjectType StuffConnectionType = relay.connectionType("Stuff", StuffEdgeType, new ArrayList<GraphQLFieldDefinition>());
+    public static GraphQLObjectType StuffConnectionType = relay.connectionType("Stuff", StuffEdgeType, new ArrayList<>());
 
     public static GraphQLObjectType ThingType = newObject()
             .name("Thing")
@@ -48,12 +45,9 @@ public class RelaySchema {
 
     public static GraphQLObjectType RelayQueryType = newObject()
             .name("RelayQuery")
-            .field(relay.nodeField(NodeInterface, new DataFetcher() {
-                @Override
-                public Object get(DataFetchingEnvironment environment) {
-                    //TODO: implement
-                    return null;
-                }
+            .field(relay.nodeField(NodeInterface, environment -> {
+                //TODO: implement
+                return null;
             }))
             .field(newFieldDefinition()
                     .name("thing")
@@ -62,12 +56,9 @@ public class RelaySchema {
                             .name("id")
                             .description("id of the thing")
                             .type(new GraphQLNonNull(GraphQLString)))
-                    .dataFetcher(new DataFetcher() {
-                        @Override
-                        public Object get(DataFetchingEnvironment environment) {
-                            //TODO: implement
-                            return null;
-                        }
+                    .dataFetcher(environment -> {
+                        //TODO: implement
+                        return null;
                     }))
             .build();
 

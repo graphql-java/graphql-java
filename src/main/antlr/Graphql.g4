@@ -210,13 +210,13 @@ Digit : '0'..'9';
 
 StringValue: '"' (~(["\\\n\r\u2028\u2029])|EscapedChar)* '"';
 
+Comment: '#' ~[\n\r\u2028\u2029]* -> channel(2);
+
+Ignored: (Whitespace|Comma|LineTerminator) -> skip;
+
 fragment EscapedChar :   '\\' (["\\/bfnrt] | Unicode) ;
 fragment Unicode : 'u' Hex Hex Hex Hex ;
 fragment Hex : [0-9a-fA-F] ;
-
-Ignored: (Whitespace|Comma|LineTerminator|Comment) -> skip;
-
-fragment Comment: '#' ~[\n\r\u2028\u2029]*;
 
 fragment LineTerminator: [\n\r\u2028\u2029];
 

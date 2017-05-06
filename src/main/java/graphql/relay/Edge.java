@@ -3,9 +3,9 @@ package graphql.relay;
 /**
  * represents an edge in relay.
  */
-public interface Edge {
+public interface Edge<T> {
 
-    Object getNode();
+    T getNode();
 
     ConnectionCursor getCursor();
 

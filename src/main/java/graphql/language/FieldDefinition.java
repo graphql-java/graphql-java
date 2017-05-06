@@ -7,8 +7,8 @@ import java.util.List;
 public class FieldDefinition extends AbstractNode {
     private String name;
     private Type type;
-    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<InputValueDefinition>();
-    private List<Directive> directives = new ArrayList<Directive>();
+    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+    private List<Directive> directives = new ArrayList<>();
 
     public FieldDefinition(String name) {
         this.name = name;
@@ -41,7 +41,7 @@ public class FieldDefinition extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.add(type);
         result.addAll(inputValueDefinitions);
         result.addAll(directives);

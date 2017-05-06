@@ -13,8 +13,8 @@ public class OperationDefinition extends AbstractNode implements Definition {
     private String name;
 
     private Operation operation;
-    private List<VariableDefinition> variableDefinitions = new ArrayList<VariableDefinition>();
-    private List<Directive> directives = new ArrayList<Directive>();
+    private List<VariableDefinition> variableDefinitions = new ArrayList<>();
+    private List<Directive> directives = new ArrayList<>();
     private SelectionSet selectionSet;
 
     public OperationDefinition() {
@@ -44,7 +44,7 @@ public class OperationDefinition extends AbstractNode implements Definition {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         result.addAll(variableDefinitions);
         result.addAll(directives);
         result.add(selectionSet);

@@ -34,8 +34,8 @@ public class ExecutionContextBuilder {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
 
-        Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<String, FragmentDefinition>();
-        Map<String, OperationDefinition> operationsByName = new LinkedHashMap<String, OperationDefinition>();
+        Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+        Map<String, OperationDefinition> operationsByName = new LinkedHashMap<>();
 
         for (Definition definition : document.getDefinitions()) {
             if (definition instanceof OperationDefinition) {

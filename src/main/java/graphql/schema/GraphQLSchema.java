@@ -1,6 +1,11 @@
 package graphql.schema;
 
 
+import graphql.Directives;
+import graphql.schema.validation.InvalidSchemaException;
+import graphql.schema.validation.ValidationError;
+import graphql.schema.validation.Validator;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,12 +13,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import graphql.Assert;
-import graphql.Directives;
-import graphql.schema.validation.InvalidSchemaException;
-import graphql.schema.validation.ValidationError;
-import graphql.schema.validation.Validator;
 
 import static graphql.Assert.assertNotNull;
 
@@ -23,18 +22,14 @@ public class GraphQLSchema {
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
     private final Map<String, GraphQLType> typeMap;
-    private Set<GraphQLType> dictionary;
+    private Set<GraphQLType> additionalTypes;
 
     public GraphQLSchema(GraphQLObjectType queryType) {
-        this(queryType, null, Collections.<GraphQLType>emptySet());
+        this(queryType, null, Collections.emptySet());
     }
 
-    public Set<GraphQLType> getDictionary() {
-        return dictionary;
-    }
-
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> dictionary) {
-        this(queryType, mutationType, null, dictionary);
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> additionalTypes) {
+        this(queryType, mutationType, null, additionalTypes);
     }
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary) {
@@ -43,8 +38,12 @@ public class GraphQLSchema {
         this.queryType = queryType;
         this.mutationType = mutationType;
         this.subscriptionType = subscriptionType;
-        this.dictionary = dictionary;
+        this.additionalTypes = dictionary;
         typeMap = new SchemaUtil().allTypes(this, dictionary);
+    }
+
+    public Set<GraphQLType> getAdditionalTypes() {
+        return additionalTypes;
     }
 
     public GraphQLType getType(String typeName) {
@@ -52,7 +51,7 @@ public class GraphQLSchema {
     }
 
     public List<GraphQLType> getAllTypesAsList() {
-        return new ArrayList<GraphQLType>(typeMap.values());
+        return new ArrayList<>(typeMap.values());
     }
 
     public GraphQLObjectType getQueryType() {
@@ -119,12 +118,12 @@ public class GraphQLSchema {
         }
 
         public GraphQLSchema build() {
-            return build(Collections.<GraphQLType>emptySet());
+            return build(Collections.emptySet());
         }
 
-        public GraphQLSchema build(Set<GraphQLType> dictionary) {
-            Assert.assertNotNull(dictionary, "dictionary can't be null");
-            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, dictionary);
+        public GraphQLSchema build(Set<GraphQLType> additionalTypes) {
+            assertNotNull(additionalTypes, "additionalTypes can't be null");
+            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes);
             new SchemaUtil().replaceTypeReferences(graphQLSchema);
             Collection<ValidationError> errors = new Validator().validateSchema(graphQLSchema);
             if (errors.size() > 0) {

@@ -6,7 +6,7 @@ import java.util.List;
 
 public class ArrayValue extends AbstractNode implements Value {
 
-    private List<Value> values = new ArrayList<Value>();
+    private List<Value> values = new ArrayList<>();
 
     public ArrayValue() {
     }
@@ -26,7 +26,7 @@ public class ArrayValue extends AbstractNode implements Value {
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<Node>(values);
+        return new ArrayList<>(values);
     }
 
     @Override

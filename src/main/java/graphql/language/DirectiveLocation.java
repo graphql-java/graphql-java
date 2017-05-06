@@ -19,9 +19,13 @@ public class DirectiveLocation extends AbstractNode {
         this.name = name;
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<Node>();
+        List<Node> result = new ArrayList<>();
         return result;
     }
 

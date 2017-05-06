@@ -1,12 +1,24 @@
 package graphql.relay;
 
-
-import graphql.schema.*;
-
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.TypeResolver;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.Scalars.*;
+import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLID;
+import static graphql.Scalars.GraphQLInt;
+import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
@@ -17,6 +29,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
 public class Relay {
 
     public static final String NODE = "Node";
+
     private GraphQLObjectType pageInfoType = newObject()
             .name("PageInfo")
             .description("Information about pagination in a connection.")
@@ -39,7 +52,7 @@ public class Relay {
             .build();
 
     public GraphQLInterfaceType nodeInterface(TypeResolver typeResolver) {
-        GraphQLInterfaceType node = newInterface()
+        return newInterface()
                 .name(NODE)
                 .description("An object with an ID")
                 .typeResolver(typeResolver)
@@ -48,11 +61,10 @@ public class Relay {
                         .description("The ID of an object")
                         .type(new GraphQLNonNull(GraphQLID)))
                 .build();
-        return node;
     }
 
     public GraphQLFieldDefinition nodeField(GraphQLInterfaceType nodeInterface, DataFetcher nodeDataFetcher) {
-        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+        return newFieldDefinition()
                 .name("node")
                 .description("Fetches an object given its ID")
                 .type(nodeInterface)
@@ -62,64 +74,67 @@ public class Relay {
                         .description("The ID of an object")
                         .type(new GraphQLNonNull(GraphQLID)))
                 .build();
-        return fieldDefinition;
     }
 
     public List<GraphQLArgument> getConnectionFieldArguments() {
-        List<GraphQLArgument> args = new ArrayList<GraphQLArgument>();
-
+        List<GraphQLArgument> args = new ArrayList<>();
         args.add(newArgument()
                 .name("before")
+                .description("fetching only nodes before this node (exclusive)")
                 .type(GraphQLString)
                 .build());
         args.add(newArgument()
                 .name("after")
+                .description("fetching only nodes after this node (exclusive)")
                 .type(GraphQLString)
                 .build());
         args.add(newArgument()
                 .name("first")
+                .description("fetching only the first certain number of nodes")
                 .type(GraphQLInt)
                 .build());
         args.add(newArgument()
                 .name("last")
+                .description("fetching only the last certain number of nodes")
                 .type(GraphQLInt)
                 .build());
         return args;
     }
 
     public List<GraphQLArgument> getBackwardPaginationConnectionFieldArguments() {
-        List<GraphQLArgument> args = new ArrayList<GraphQLArgument>();
-
+        List<GraphQLArgument> args = new ArrayList<>();
         args.add(newArgument()
                 .name("before")
+                .description("fetching only nodes before this node (exclusive)")
                 .type(GraphQLString)
                 .build());
         args.add(newArgument()
                 .name("last")
+                .description("fetching only the last certain number of nodes")
                 .type(GraphQLInt)
                 .build());
         return args;
     }
 
     public List<GraphQLArgument> getForwardPaginationConnectionFieldArguments() {
-        List<GraphQLArgument> args = new ArrayList<GraphQLArgument>();
-
+        List<GraphQLArgument> args = new ArrayList<>();
         args.add(newArgument()
                 .name("after")
+                .description("fetching only nodes after this node (exclusive)")
                 .type(GraphQLString)
                 .build());
         args.add(newArgument()
                 .name("first")
+                .description("fetching only the first certain number of nodes")
                 .type(GraphQLInt)
                 .build());
         return args;
     }
 
     public GraphQLObjectType edgeType(String name, GraphQLOutputType nodeType, GraphQLInterfaceType nodeInterface, List<GraphQLFieldDefinition> edgeFields) {
-
-        GraphQLObjectType edgeType = newObject()
+        return newObject()
                 .name(name + "Edge")
-                .description("An edge in a connection.")
+                .description("An edge in a connection")
                 .field(newFieldDefinition()
                         .name("node")
                         .type(nodeType)
@@ -127,26 +142,25 @@ public class Relay {
                 .field(newFieldDefinition()
                         .name("cursor")
                         .type(new GraphQLNonNull(GraphQLString))
-                        .description(""))
+                        .description("cursor marks a unique position or index into the connection"))
                 .fields(edgeFields)
                 .build();
-        return edgeType;
     }
 
     public GraphQLObjectType connectionType(String name, GraphQLObjectType edgeType, List<GraphQLFieldDefinition> connectionFields) {
-
-        GraphQLObjectType connectionType = newObject()
+        return newObject()
                 .name(name + "Connection")
                 .description("A connection to a list of items.")
                 .field(newFieldDefinition()
                         .name("edges")
+                        .description("a list of edges")
                         .type(new GraphQLList(edgeType)))
                 .field(newFieldDefinition()
                         .name("pageInfo")
+                        .description("details about this specific page")
                         .type(new GraphQLNonNull(pageInfoType)))
                 .fields(connectionFields)
                 .build();
-        return connectionType;
     }
 
 
@@ -206,12 +220,15 @@ public class Relay {
         }
     }
 
+    private static final java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
+    private static final java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
+
     public String toGlobalId(String type, String id) {
-        return Base64.toBase64(type + ":" + id);
+        return encoder.encodeToString((type + ":" + id).getBytes(StandardCharsets.UTF_8));
     }
 
     public ResolvedGlobalId fromGlobalId(String globalId) {
-        String[] split = Base64.fromBase64(globalId).split(":", 2);
+        String[] split = new String(decoder.decode(globalId), StandardCharsets.UTF_8).split(":", 2);
         if (split.length != 2) {
             throw new IllegalArgumentException(String.format("expecting a valid global id, got %s", globalId));
         }

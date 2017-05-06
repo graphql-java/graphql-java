@@ -2,4 +2,6 @@
 .idea
 .gradle
 build
+classes
 _site
+generated-src/

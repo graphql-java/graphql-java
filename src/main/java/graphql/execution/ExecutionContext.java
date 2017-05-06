@@ -23,7 +23,7 @@ public class ExecutionContext {
     private final OperationDefinition operationDefinition;
     private final Map<String, Object> variables;
     private final Object root;
-    private final List<GraphQLError> errors = new CopyOnWriteArrayList<GraphQLError>();
+    private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final Instrumentation instrumentation;
 
     public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {

@@ -4,6 +4,7 @@ import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
+import graphql.TypeResolutionEnvironment;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.FieldFetchParameters;
@@ -15,7 +16,6 @@ import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
@@ -30,30 +30,51 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 public abstract class ExecutionStrategy {
+
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
 
     protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
 
-    public abstract ExecutionResult execute(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, Map<String, List<Field>> fields);
+    public abstract ExecutionResult execute(ExecutionContext executionContext, ExecutionParameters parameters) throws NonNullableFieldWasNullException;
 
-    protected ExecutionResult resolveField(ExecutionContext executionContext, GraphQLObjectType parentType, Object source, List<Field> fields) {
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
+    /**
+     * Handle exceptions which occur during data fetching. By default, add all exceptions to the execution context's
+     * error's. Subclasses may specify custom handling, e.g. of different behavior with different exception types (e.g.
+     * re-throwing certain exceptions).
+     *
+     * @param executionContext the execution context in play
+     * @param fieldDef         the field definition
+     * @param argumentValues   the map of arguments
+     * @param e                the exception that occurred
+     */
+    protected void handleDataFetchingException(
+            ExecutionContext executionContext,
+            GraphQLFieldDefinition fieldDef,
+            Map<String, Object> argumentValues,
+            Exception e) {
+        executionContext.addError(new ExceptionWhileDataFetching(e));
+    }
+
+
+    protected ExecutionResult resolveField(ExecutionContext executionContext, ExecutionParameters parameters, List<Field> fields) {
+        GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), type, fields.get(0));
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
-                source,
+                parameters.source(),
                 argumentValues,
-                executionContext.getRoot(),
                 fields,
                 fieldDef.getType(),
-                parentType,
-                executionContext.getGraphQLSchema()
+                type,
+                executionContext
         );
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -68,30 +89,43 @@ public abstract class ExecutionStrategy {
             fetchCtx.onEnd(resolvedValue);
         } catch (Exception e) {
             log.warn("Exception while fetching data", e);
-            executionContext.addError(new ExceptionWhileDataFetching(e));
-
+            handleDataFetchingException(executionContext, fieldDef, argumentValues, e);
             fetchCtx.onEnd(e);
         }
 
-        ExecutionResult result = completeValue(executionContext, fieldDef.getType(), fields, resolvedValue);
+        TypeInfo fieldType = newTypeInfo()
+                .type(fieldDef.getType())
+                .parentInfo(parameters.typeInfo())
+                .build();
+
+
+        ExecutionParameters newParameters = ExecutionParameters.newParameters()
+                .typeInfo(fieldType)
+                .fields(parameters.fields())
+                .arguments(argumentValues)
+                .source(resolvedValue).build();
+
+        ExecutionResult result = completeValue(executionContext, newParameters, fields);
 
         fieldCtx.onEnd(result);
         return result;
     }
 
-    protected ExecutionResult completeValue(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fields, Object result) {
-        if (fieldType instanceof GraphQLNonNull) {
-            GraphQLNonNull graphQLNonNull = (GraphQLNonNull) fieldType;
-            ExecutionResult completed = completeValue(executionContext, graphQLNonNull.getWrappedType(), fields, result);
-            if (completed == null) {
-                throw new GraphQLException("Cannot return null for non-nullable type: " + fields);
-            }
-            return completed;
+    protected ExecutionResult completeValue(ExecutionContext executionContext, ExecutionParameters parameters, List<Field> fields) {
+        TypeInfo typeInfo = parameters.typeInfo();
+        Object result = parameters.source();
+        GraphQLType fieldType = parameters.typeInfo().type();
 
-        } else if (result == null) {
+        if (result == null) {
+            if (typeInfo.typeIsNonNull()) {
+                // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
+                NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(typeInfo);
+                executionContext.addError(nonNullException);
+                throw nonNullException;
+            }
             return null;
         } else if (fieldType instanceof GraphQLList) {
-            return completeValueForList(executionContext, (GraphQLList) fieldType, fields, result);
+            return completeValueForList(executionContext, parameters, fields, toIterable(result));
         } else if (fieldType instanceof GraphQLScalarType) {
             return completeValueForScalar((GraphQLScalarType) fieldType, result);
         } else if (fieldType instanceof GraphQLEnumType) {
@@ -101,50 +135,68 @@ public abstract class ExecutionStrategy {
 
         GraphQLObjectType resolvedType;
         if (fieldType instanceof GraphQLInterfaceType) {
-            resolvedType = resolveType((GraphQLInterfaceType) fieldType, result);
+            TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
+                    .graphQLInterfaceType((GraphQLInterfaceType) fieldType)
+                    .field(fields.get(0))
+                    .value(parameters.source())
+                    .argumentValues(parameters.arguments())
+                    .schema(executionContext.getGraphQLSchema()).build();
+            resolvedType = resolveTypeForInterface(resolutionParams);
+
         } else if (fieldType instanceof GraphQLUnionType) {
-            resolvedType = resolveType((GraphQLUnionType) fieldType, result);
+            TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
+                    .graphQLUnionType((GraphQLUnionType) fieldType)
+                    .field(fields.get(0))
+                    .value(parameters.source())
+                    .argumentValues(parameters.arguments())
+                    .schema(executionContext.getGraphQLSchema()).build();
+            resolvedType = resolveTypeForUnion(resolutionParams);
         } else {
             resolvedType = (GraphQLObjectType) fieldType;
         }
 
-        Map<String, List<Field>> subFields = new LinkedHashMap<String, List<Field>>();
-        List<String> visitedFragments = new ArrayList<String>();
+        Map<String, List<Field>> subFields = new LinkedHashMap<>();
+        List<String> visitedFragments = new ArrayList<>();
         for (Field field : fields) {
             if (field.getSelectionSet() == null) continue;
             fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
         }
 
+        ExecutionParameters newParameters = ExecutionParameters.newParameters()
+                .typeInfo(typeInfo.asType(resolvedType))
+                .fields(subFields)
+                .source(result).build();
+
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
 
-        return executionContext.getQueryStrategy().execute(executionContext, resolvedType, result, subFields);
+        return executionContext.getQueryStrategy().execute(executionContext, newParameters);
     }
 
-    private ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, Object result) {
+    private Iterable<Object> toIterable(Object result) {
         if (result.getClass().isArray()) {
             result = Arrays.asList((Object[]) result);
         }
-
         //noinspection unchecked
-        return completeValueForList(executionContext, fieldType, fields, (Iterable<Object>) result);
+        return (Iterable<Object>) result;
     }
 
-    protected GraphQLObjectType resolveType(GraphQLInterfaceType graphQLInterfaceType, Object value) {
-        GraphQLObjectType result = graphQLInterfaceType.getTypeResolver().getType(value);
+    protected GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema());
+        GraphQLObjectType result = params.getGraphQLInterfaceType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("could not determine type");
+            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLInterfaceType().getName());
         }
         return result;
     }
 
-    protected GraphQLObjectType resolveType(GraphQLUnionType graphQLUnionType, Object value) {
-        GraphQLObjectType result = graphQLUnionType.getTypeResolver().getType(value);
+    protected GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema());
+        GraphQLObjectType result = params.getGraphQLUnionType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("could not determine type");
+            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLUnionType().getName());
         }
         return result;
     }
-
 
     protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, Object result) {
         return new ExecutionResultImpl(enumType.getCoercing().serialize(result), null);
@@ -159,10 +211,18 @@ public abstract class ExecutionStrategy {
         return new ExecutionResultImpl(serialized, null);
     }
 
-    protected ExecutionResult completeValueForList(ExecutionContext executionContext, GraphQLList fieldType, List<Field> fields, Iterable<Object> result) {
-        List<Object> completedResults = new ArrayList<Object>();
+    protected ExecutionResult completeValueForList(ExecutionContext executionContext, ExecutionParameters parameters, List<Field> fields, Iterable<Object> result) {
+        List<Object> completedResults = new ArrayList<>();
+        TypeInfo typeInfo = parameters.typeInfo();
+        GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
         for (Object item : result) {
-            ExecutionResult completedValue = completeValue(executionContext, fieldType.getWrappedType(), fields, item);
+
+            ExecutionParameters newParameters = ExecutionParameters.newParameters()
+                    .typeInfo(typeInfo.asType(fieldType.getWrappedType()))
+                    .fields(parameters.fields())
+                    .source(item).build();
+
+            ExecutionResult completedValue = completeValue(executionContext, newParameters, fields);
             completedResults.add(completedValue != null ? completedValue.getData() : null);
         }
         return new ExecutionResultImpl(completedResults, null);
@@ -183,10 +243,8 @@ public abstract class ExecutionStrategy {
 
         GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());
         if (fieldDefinition == null) {
-            throw new GraphQLException("unknown field " + field.getName());
+            throw new GraphQLException("Unknown field " + field.getName());
         }
         return fieldDefinition;
     }
-
-
 }

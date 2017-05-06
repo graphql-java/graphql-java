@@ -1,21 +1,39 @@
 package graphql.relay;
 
-public class DefaultEdge implements Edge {
+public class DefaultEdge<T> implements Edge<T> {
 
-    public DefaultEdge(Object node, DefaultConnectionCursor cursor) {
+    public DefaultEdge(T node, ConnectionCursor cursor) {
+        if (node == null) {
+            throw new IllegalArgumentException("node cannot be null");
+        }
+        if (cursor == null) {
+            throw new IllegalArgumentException("cursor cannot be null");
+        }
         this.node = node;
         this.cursor = cursor;
     }
 
-    private Object node;
+    /**
+     * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)}
+     */
+    @Deprecated
+    public DefaultEdge() {
+    }
+
+    private T node;
     private ConnectionCursor cursor;
 
     @Override
-    public Object getNode() {
+    public T getNode() {
         return node;
     }
 
-    public void setNode(Object node) {
+    /**
+     * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)} and avoid mutation.
+     * @param  node node
+     */
+    @Deprecated
+    public void setNode(T node) {
         this.node = node;
     }
 
@@ -24,6 +42,11 @@ public class DefaultEdge implements Edge {
         return cursor;
     }
 
+    /**
+     * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)} and avoid mutation.
+     * @param cursor cursor
+     */
+    @Deprecated
     public void setCursor(ConnectionCursor cursor) {
         this.cursor = cursor;
     }

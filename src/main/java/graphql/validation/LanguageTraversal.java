@@ -11,14 +11,14 @@ public class LanguageTraversal {
     private final List<Node> path;
 
     public LanguageTraversal() {
-        path = new ArrayList<Node>();
+        path = new ArrayList<>();
     }
 
     public LanguageTraversal(List<Node> basePath) {
         if (basePath != null) {
             path = basePath;
         } else {
-            path = new ArrayList<Node>();
+            path = new ArrayList<>();
         }
     }
 

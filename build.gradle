@@ -10,8 +10,8 @@ apply plugin: 'maven-publish'
 apply plugin: 'antlr'
 apply plugin: 'jacoco'
 
-sourceCompatibility = 1.6
-targetCompatibility = 1.6
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 def releaseVersion = System.properties.RELEASE_VERSION
 version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
 group = 'com.graphql-java'
@@ -33,7 +33,7 @@ dependencies {
     antlr "org.antlr:antlr4:4.5.1"
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
-    testCompile 'org.codehaus.groovy:groovy-all:2.4.4'
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.10'
     testCompile 'cglib:cglib-nodep:3.1'
     testCompile 'org.objenesis:objenesis:2.1'
 }
@@ -67,13 +67,6 @@ allprojects {
         exclude('**/antlr/**')
     }
 
-    tasks.withType(JavaCompile) {
-        doFirst {
-            if (sourceCompatibility == '1.6' && System.env.JDK6_HOME != null) {
-                options.bootClasspath = "$System.env.JDK6_HOME/jre/lib/rt.jar"
-            }
-        }
-    }
 
 }
 
@@ -152,6 +145,6 @@ tasks.withType(PublishToMavenRepository) {
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '3.2'
+    gradleVersion = '3.4'
     distributionUrl = "http://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
 }

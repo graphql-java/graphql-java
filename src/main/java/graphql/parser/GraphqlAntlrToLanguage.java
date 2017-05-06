@@ -2,20 +2,69 @@ package graphql.parser;
 
 
 import graphql.ShouldNotHappenException;
-import graphql.language.*;
+import graphql.language.AbstractNode;
+import graphql.language.Argument;
+import graphql.language.ArrayValue;
+import graphql.language.BooleanValue;
+import graphql.language.Comment;
+import graphql.language.Directive;
+import graphql.language.DirectiveDefinition;
+import graphql.language.DirectiveLocation;
+import graphql.language.Document;
+import graphql.language.EnumTypeDefinition;
+import graphql.language.EnumValue;
+import graphql.language.EnumValueDefinition;
+import graphql.language.Field;
+import graphql.language.FieldDefinition;
+import graphql.language.FloatValue;
+import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.InputObjectTypeDefinition;
+import graphql.language.InputValueDefinition;
+import graphql.language.IntValue;
+import graphql.language.InterfaceTypeDefinition;
+import graphql.language.ListType;
+import graphql.language.NonNullType;
+import graphql.language.ObjectField;
+import graphql.language.ObjectTypeDefinition;
+import graphql.language.ObjectValue;
+import graphql.language.OperationDefinition;
+import graphql.language.OperationTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
+import graphql.language.SchemaDefinition;
+import graphql.language.SelectionSet;
+import graphql.language.SourceLocation;
+import graphql.language.StringValue;
+import graphql.language.TypeExtensionDefinition;
+import graphql.language.TypeName;
+import graphql.language.UnionTypeDefinition;
+import graphql.language.Value;
+import graphql.language.VariableDefinition;
+import graphql.language.VariableReference;
 import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.List;
 
 public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
+    private final CommonTokenStream tokens;
     Document result;
+
+    GraphqlAntlrToLanguage(CommonTokenStream tokens) {
+        this.tokens = tokens;
+    }
 
     private enum ContextProperty {
         OperationDefinition,
@@ -53,7 +102,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         }
     }
 
-    private Deque<ContextEntry> contextStack = new ArrayDeque<ContextEntry>();
+    private Deque<ContextEntry> contextStack = new ArrayDeque<>();
 
 
     private void addContextProperty(ContextProperty contextProperty, Object value) {
@@ -146,7 +195,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         } else if (operationTypeContext.getText().equals("subscription")) {
             return OperationDefinition.Operation.SUBSCRIPTION;
         } else {
-            throw new RuntimeException("InternalError: unknown operationTypeContext="+operationTypeContext.getText());
+            throw new RuntimeException("InternalError: unknown operationTypeContext=" + operationTypeContext.getText());
         }
     }
 
@@ -446,7 +495,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.contextProperty == ContextProperty.TypeExtensionDefinition) {
                 ((TypeExtensionDefinition) contextEntry.value).setName(ctx.name().getText());
-                def = (ObjectTypeDefinition)contextEntry.value;
+                def = (ObjectTypeDefinition) contextEntry.value;
                 break;
             }
         }
@@ -739,6 +788,11 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     private void newNode(AbstractNode abstractNode, ParserRuleContext parserRuleContext) {
+        List<Comment> comments = getComments(parserRuleContext);
+        if (!comments.isEmpty()) {
+            abstractNode.setComments(comments);
+        }
+
         abstractNode.setSourceLocation(getSourceLocation(parserRuleContext));
     }
 
@@ -746,4 +800,32 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return new SourceLocation(parserRuleContext.getStart().getLine(), parserRuleContext.getStart().getCharPositionInLine() + 1);
     }
 
+    private List<Comment> getComments(ParserRuleContext ctx) {
+        Token start = ctx.getStart();
+        if (start != null) {
+            int tokPos = start.getTokenIndex();
+            List<Token> refChannel = tokens.getHiddenTokensToLeft(tokPos, 2);
+            if (refChannel != null) {
+                return getCommentOnChannel(refChannel);
+            }
+        }
+        return Collections.emptyList();
+    }
+
+
+    private List<Comment> getCommentOnChannel(List<Token> refChannel) {
+        List<Comment> comments = new ArrayList<>();
+        for (Token refTok : refChannel) {
+            String text = refTok.getText();
+            // we strip the leading hash # character but we don't trim because we don't
+            // know the "comment markup".  Maybe its space sensitive, maybe its not.  So
+            // consumers can decide that
+            text = (text == null) ? "" : text;
+            text = text.replaceFirst("^#", "");
+            if (text.length() > 0) {
+                comments.add(new Comment(text, new SourceLocation(refTok.getLine(), refTok.getCharPositionInLine())));
+            }
+        }
+        return comments;
+    }
 }
