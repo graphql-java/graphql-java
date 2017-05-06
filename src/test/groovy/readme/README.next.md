@@ -641,7 +641,7 @@ subscription foo {
 }
 ```
 *NOTE:* `graphql-java` does not handle or support any transportation related features: it just calling your `DataFetchers`. 
-Look at [SubscriptionTest](/src/test/groovy/graphql/SubscriptionTest.java) for a full example.
+Look at [SubscriptionTest](/src/test/groovy/graphql/SubscriptionTest.groovy) for a full example.
 
 *WARNING:* The subscription API will very probably look different later, don't expect the current API to be stable.
 
