@@ -614,8 +614,106 @@ You wire this together using this builder pattern
 
 NOTE: IDL is not currently part of the [formal graphql spec](https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document).  
 The implementation in this library is based off the [reference implementation](https://github.com/graphql/graphql-js).  However plenty of 
-code out there is based on this IDL syntax and hence you can be fairly confident that you are building on solid technology ground.   
+code out there is based on this IDL syntax and hence you can be fairly confident that you are building on solid technology ground.
+   
+# Modularising the Schema IDL
 
+Having one one large schema file is not always viable.  You can modularise you schema using two techniques.
+
+The first technique is to merge multiple Schema IDL files into one logic unit.  In the case below the schema as 
+been split into multiple files and merged all together just before schema generation.
+
+   ```java
+        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+
+        File schemaFile1 = loadSchema("starWarsSchemaPart1.graphqls");
+        File schemaFile2 = loadSchema("starWarsSchemaPart2.graphqls");
+        File schemaFile3 = loadSchema("starWarsSchemaPart3.graphqls");
+
+        TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
+
+        // each compiled registry is merged into the main registry
+        typeRegistry.merge(schemaCompiler.compile(schemaFile1));
+        typeRegistry.merge(schemaCompiler.compile(schemaFile2));
+        typeRegistry.merge(schemaCompiler.compile(schemaFile3));
+
+        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
+   ```
+
+The Graphql IDL type system has another construct for modularising your schema.  You can use `type extensions` to add
+extra fields and interfaces to a type.
+
+Imagine you start with a type like this in one schema file.
+
+```graphql
+type Human {
+    id: ID!
+    name: String!
+}
+```
+
+Another part of your system can extend this type to add more shape to it. 
+
+```graphql
+extend type Human implements Character {
+    friends: [Character]
+}
+```
+
+You can have as many extensions as you think sensible.  They will be combined in the order
+in which they are encountered.
+
+```graphql
+extend type Human {
+    appearsIn: [Episode]!
+    homePlanet: String
+}
+```
+
+
+With all these type extensions in place the `Human` type now looks like this at runtime.
+
+```graphql
+type Human implements Character {
+    id: ID!
+    name: String!
+    friends: [Character]
+    appearsIn: [Episode]!
+    homePlanet: String
+}
+```
+
+This is especially useful at the top level.  You can use extension types to add new fields to the
+top level schema "query".  Teams could contribute "sections" on what is being offered as the total
+graphql query.
+
+
+```graphql
+schema {
+  query: CombinedQueryFromMultipleTeams
+}
+
+type CombinedQueryFromMultipleTeams {
+    createdTimestamp : String
+}
+
+# maybe the invoicing system team puts in this set of attributes
+extend type CombinedQueryFromMultipleTeams {
+    invoicing : Invoicing
+}
+
+# and the billing system team puts in this set of attributes
+extend type CombinedQueryFromMultipleTeams {
+    billing : Billing
+}
+
+# and so and so forth
+extend type CombinedQueryFromMultipleTeams {
+    auditing : Auditing
+}
+
+```
 
 #### Subscription Support
 

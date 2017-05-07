@@ -27,7 +27,7 @@ import static java.util.Optional.ofNullable;
 public class TypeDefinitionRegistry {
 
     private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
-    private final Map<String, TypeExtensionDefinition> typeExtensions = new LinkedHashMap<>();
+    private final Map<String, List<TypeExtensionDefinition>> typeExtensions = new LinkedHashMap<>();
     private final Map<String, TypeDefinition> types = new LinkedHashMap<>();
     private SchemaDefinition schema;
 
@@ -49,9 +49,6 @@ public class TypeDefinitionRegistry {
         Map<String, ScalarTypeDefinition> tempScalarTypes = new LinkedHashMap<>();
         typeRegistry.scalarTypes.values().forEach(newEntry -> define(this.scalarTypes, tempScalarTypes, newEntry).ifPresent(errors::add));
 
-        Map<String, TypeExtensionDefinition> tempTypeExtensions = new LinkedHashMap<>();
-        typeRegistry.typeExtensions.values().forEach(newEntry -> define(this.typeExtensions, tempTypeExtensions, newEntry).ifPresent(errors::add));
-
         if (typeRegistry.schema != null && this.schema != null) {
             errors.add(new SchemaRedefinitionError(this.schema, typeRegistry.schema));
         }
@@ -63,8 +60,14 @@ public class TypeDefinitionRegistry {
         // ok commit to the merge
         this.schema = typeRegistry.schema;
         this.types.putAll(tempTypes);
-        this.typeExtensions.putAll(tempTypeExtensions);
         this.scalarTypes.putAll(tempScalarTypes);
+        //
+        // merge type extensions since they can be redefined by design
+        typeRegistry.typeExtensions.entrySet().forEach(newEntry -> {
+            List<TypeExtensionDefinition> currentList = this.typeExtensions
+                    .computeIfAbsent(newEntry.getKey(), k -> new ArrayList<>());
+            currentList.addAll(newEntry.getValue());
+        });
 
         return this;
     }
@@ -79,7 +82,7 @@ public class TypeDefinitionRegistry {
     public Optional<GraphQLError> add(Definition definition) {
         if (definition instanceof TypeExtensionDefinition) {
             TypeExtensionDefinition newEntry = (TypeExtensionDefinition) definition;
-            return define(typeExtensions, typeExtensions, newEntry);
+            return defineExt(typeExtensions, newEntry);
         } else if (definition instanceof ScalarTypeDefinition) {
             ScalarTypeDefinition newEntry = (ScalarTypeDefinition) definition;
             return define(scalarTypes, scalarTypes, newEntry);
@@ -109,6 +112,11 @@ public class TypeDefinitionRegistry {
         return Optional.empty();
     }
 
+    private Optional<GraphQLError> defineExt(Map<String, List<TypeExtensionDefinition>> typeExtensions, TypeExtensionDefinition newEntry) {
+        List<TypeExtensionDefinition> currentList = typeExtensions.computeIfAbsent(newEntry.getName(), k -> new ArrayList<>());
+        currentList.add(newEntry);
+        return Optional.empty();
+    }
 
     public Map<String, TypeDefinition> types() {
         return new LinkedHashMap<>(types);
@@ -120,7 +128,7 @@ public class TypeDefinitionRegistry {
         return scalars;
     }
 
-    public Map<String, TypeExtensionDefinition> typeExtensions() {
+    public Map<String, List<TypeExtensionDefinition>> typeExtensions() {
         return new LinkedHashMap<>(typeExtensions);
     }
 
@@ -139,6 +147,10 @@ public class TypeDefinitionRegistry {
 
     public Optional<TypeDefinition> getType(Type type) {
         String typeName = TypeInfo.typeInfo(type).getName();
+        return getType(typeName);
+    }
+
+    public Optional<TypeDefinition> getType(String typeName) {
         TypeDefinition typeDefinition = types.get(typeName);
         if (typeDefinition != null) {
             return Optional.of(typeDefinition);

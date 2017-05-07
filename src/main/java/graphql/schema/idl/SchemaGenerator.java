@@ -1,11 +1,55 @@
 package graphql.schema.idl;
 
 import graphql.GraphQLError;
-import graphql.language.*;
-import graphql.schema.*;
+import graphql.language.ArrayValue;
+import graphql.language.BooleanValue;
+import graphql.language.Comment;
+import graphql.language.EnumTypeDefinition;
+import graphql.language.EnumValue;
+import graphql.language.FieldDefinition;
+import graphql.language.FloatValue;
+import graphql.language.InputObjectTypeDefinition;
+import graphql.language.InputValueDefinition;
+import graphql.language.IntValue;
+import graphql.language.InterfaceTypeDefinition;
+import graphql.language.Node;
+import graphql.language.ObjectTypeDefinition;
+import graphql.language.ObjectValue;
+import graphql.language.OperationTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
+import graphql.language.SchemaDefinition;
+import graphql.language.StringValue;
+import graphql.language.Type;
+import graphql.language.TypeDefinition;
+import graphql.language.TypeExtensionDefinition;
+import graphql.language.UnionTypeDefinition;
+import graphql.language.Value;
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeReference;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.PropertyDataFetcher;
+import graphql.schema.TypeResolver;
+import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.SchemaProblem;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Stack;
 
 /**
  * This can generate a working runtime schema from a compiled type registry and runtime wiring
@@ -215,11 +259,59 @@ public class SchemaGenerator {
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
-        typeDefinition.getFieldDefinitions().forEach(fieldDef ->
-                builder.field(buildField(buildCtx, typeDefinition, fieldDef)));
+        List<TypeExtensionDefinition> typeExtensions = getTypeExtensionsOf(typeDefinition, buildCtx);
 
-        typeDefinition.getImplements().forEach(type -> builder.withInterface((GraphQLInterfaceType) buildOutputType(buildCtx, type)));
+        buildObjectTypeFields(buildCtx, typeDefinition, builder, typeExtensions);
+
+        buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, typeExtensions);
+
         return builder.build();
+    }
+
+    private void buildObjectTypeFields(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<TypeExtensionDefinition> typeExtensions) {
+        Map<String, GraphQLFieldDefinition> fieldDefinitions = new LinkedHashMap<>();
+
+        typeDefinition.getFieldDefinitions().forEach(fieldDef -> {
+            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
+            fieldDefinitions.put(newFieldDefinition.getName(), newFieldDefinition);
+        });
+
+        // an object consists of the fields it gets from its definition AND its type extensions
+        typeExtensions.forEach(typeExt -> typeExt.getFieldDefinitions().forEach(fieldDef -> {
+            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
+            //
+            // de-dupe here - pre-flight checks ensure all dupes are of the same type
+            if (!fieldDefinitions.containsKey(newFieldDefinition.getName())) {
+                fieldDefinitions.put(newFieldDefinition.getName(), newFieldDefinition);
+            }
+        }));
+
+        fieldDefinitions.values().forEach(builder::field);
+    }
+
+    private void buildObjectTypeInterfaces(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<TypeExtensionDefinition> typeExtensions) {
+        Map<String, GraphQLInterfaceType> interfaces = new LinkedHashMap<>();
+        typeDefinition.getImplements().forEach(type -> {
+            GraphQLInterfaceType newInterfaceType = buildOutputType(buildCtx, type);
+            interfaces.put(newInterfaceType.getName(), newInterfaceType);
+        });
+
+        // an object consists of the interfaces it gets from its definition AND its type extensions
+        typeExtensions.forEach(typeExt -> typeExt.getImplements().forEach(type -> {
+            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            //
+            // de-dupe here - pre-flight checks ensure all dupes are of the same type
+            if (!interfaces.containsKey(interfaceType.getName())) {
+                interfaces.put(interfaceType.getName(), interfaceType);
+            }
+        }));
+
+        interfaces.values().forEach(builder::withInterface);
+    }
+
+    private List<TypeExtensionDefinition> getTypeExtensionsOf(ObjectTypeDefinition objectTypeDefinition, BuildContext buildCtx) {
+        List<TypeExtensionDefinition> typeExtensionDefinitions = buildCtx.typeRegistry.typeExtensions().get(objectTypeDefinition.getName());
+        return typeExtensionDefinitions == null ? Collections.emptyList() : typeExtensionDefinitions;
     }
 
     private GraphQLInterfaceType buildInterfaceType(BuildContext buildCtx, InterfaceTypeDefinition typeDefinition) {
