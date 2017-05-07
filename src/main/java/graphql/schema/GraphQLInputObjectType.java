@@ -1,14 +1,13 @@
 package graphql.schema;
 
+import graphql.AssertException;
+import graphql.language.InputObjectTypeDefinition;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
-
-import graphql.AssertException;
-import graphql.language.InputObjectTypeDefinition;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -61,10 +60,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         return new Builder();
     }
 
-    public static Reference reference(String name) {
-        return new Reference(name);
-    }
-    
+
     @Override
     public GraphQLInputObjectField getFieldDefinition(String name) {
         return fieldMap.get(name);
@@ -148,11 +144,5 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
             return new GraphQLInputObjectType(name, description, fields, definition);
         }
 
-    }
-
-    private static class Reference extends GraphQLInputObjectType implements TypeReference {
-        private Reference(String name) {
-            super(name, "", Collections.emptyList());
-        }
     }
 }

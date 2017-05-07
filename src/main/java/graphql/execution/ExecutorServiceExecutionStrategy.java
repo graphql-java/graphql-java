@@ -4,7 +4,6 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.language.Field;
-import graphql.schema.GraphQLObjectType;
 
 import java.util.LinkedHashMap;
 import java.util.List;

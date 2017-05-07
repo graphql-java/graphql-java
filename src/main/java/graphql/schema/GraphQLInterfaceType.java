@@ -1,14 +1,13 @@
 package graphql.schema;
 
+import graphql.AssertException;
+import graphql.language.InterfaceTypeDefinition;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
-
-import graphql.AssertException;
-import graphql.language.InterfaceTypeDefinition;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -22,7 +21,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     private final InterfaceTypeDefinition definition;
 
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
-        this(name,description,fieldDefinitions,typeResolver,null);
+        this(name, description, fieldDefinitions, typeResolver, null);
     }
 
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, InterfaceTypeDefinition definition) {
@@ -84,10 +83,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         return new Builder();
     }
 
-    public static Reference reference(String name) {
-        return new Reference(name);
-    }
-    
+
     public static class Builder {
         private String name;
         private String description;
@@ -161,13 +157,6 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         public GraphQLInterfaceType build() {
             return new GraphQLInterfaceType(name, description, fields, typeResolver, definition);
         }
-
-
     }
 
-    private static class Reference extends GraphQLInterfaceType implements TypeReference {
-        private Reference(String name) {
-            super(name, "", Collections.emptyList(), new TypeResolverProxy());
-        }
-    }
 }

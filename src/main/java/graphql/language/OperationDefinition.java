@@ -7,7 +7,7 @@ import java.util.List;
 public class OperationDefinition extends AbstractNode implements Definition {
 
     public enum Operation {
-        QUERY, MUTATION
+        QUERY, MUTATION, SUBSCRIPTION
     }
 
     private String name;

@@ -392,8 +392,8 @@ public class Introspection {
                     .description("'If this server support subscription, the type that subscription operations will be rooted at.")
                     .type(__Type)
                     .dataFetcher(environment -> {
-                        // Not yet supported
-                        return null;
+                        GraphQLSchema schema = environment.getSource();
+                        return schema.getSubscriptionType();
                     }))
             .build();
 

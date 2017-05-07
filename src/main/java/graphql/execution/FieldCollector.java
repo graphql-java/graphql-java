@@ -1,8 +1,17 @@
 package graphql.execution;
 
 
-import graphql.language.*;
-import graphql.schema.*;
+import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.Selection;
+import graphql.language.SelectionSet;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.SchemaUtil;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -277,7 +277,7 @@ Another schema example, including union types: [GarfieldSchema](src/test/groovy/
 
 
 
-##### Recursive Type References
+##### Type References
 
 GraphQL supports recursive Types: For example a `Person` can contain a list of friends of the same Type.
  
@@ -473,19 +473,6 @@ See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) fo
 
 Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
 
-#### JDK8 Lambdas
-This project is built using JDK6. But if you're using JDK8 and above then you can also use lambdas.
-```java
-GraphQLObjectType queryType = newObject()
-                .name("helloWorldQuery")
-                .field(field -> field.type(GraphQLString)
-                        .name("hello")
-                        .argument(argument -> argument.name("arg")
-                                .type(GraphQLBoolean))
-                        .dataFetcher(env -> "hello"))
-                .build();
-```
-
 #### Logging
 
 Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [Manual](http://www.slf4j.org/manual.html) for details.
@@ -519,7 +506,7 @@ public Object executeOperation(@RequestBody Map body) {
 }
 ```
 
-### Schema IDL support
+#### Schema IDL support
 
 This library allows for "schema driven" development of graphql applications.
 
@@ -727,6 +714,21 @@ extend type CombinedQueryFromMultipleTeams {
 }
 
 ```
+
+#### Subscription Support
+
+Subscriptions are not officially specified yet: `graphql-java` supports currently a very basic implementation where you can define a subscription in the schema
+with `GraphQLSchema.Builder.subscription(...)`. This enables you to handle a subscription request:
+
+```graphql
+subscription foo {
+    // normal graphql query
+}
+```
+*NOTE:* `graphql-java` does not handle or support any transportation related features: it just calling your `DataFetchers`. 
+Look at [SubscriptionTest](/src/test/groovy/graphql/SubscriptionTest.groovy) for a full example.
+
+*WARNING:* The subscription API will very probably look different later, don't expect the current API to be stable.
 
 #### Contributions
 
