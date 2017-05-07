@@ -3,7 +3,6 @@ package graphql.schema
 import graphql.GraphQL
 import graphql.StarWarsData
 import graphql.execution.FieldCollector
-import graphql.execution.FieldCollectorParameters
 import graphql.language.AstPrinter
 import graphql.language.Field
 import graphql.schema.idl.RuntimeWiring
@@ -48,17 +47,12 @@ class DataFetcherSelectionTest extends Specification {
             // this would allow proxying or really fine grained controlled object retrieval
             // if one was so included
             //
-            def objectType = environment.getFieldType() as GraphQLObjectType
-            FieldCollectorParameters collectorParameters = FieldCollectorParameters.
-                    newParameters(environment.graphQLSchema, objectType)
-                    .fragments(environment.getFragmentsByName())
-                    .variables(environment.getVariables())
-                    .build();
+            def selectionSet = environment.getSelectionSet().get()
 
-            def collectionResult = fieldCollector.collectFields(collectorParameters, environment.fields)
-
-            String subselection = captureSubSelection(collectionResult)
-            captureList.add(subselection)
+            if (! selectionSet.isEmpty()) {
+                String subSelection = captureSubSelection(selectionSet)
+                captureList.add(subSelection)
+            }
 
             return delegate.get(environment)
         }
@@ -163,7 +157,8 @@ class DataFetcherSelectionTest extends Specification {
                         "friends {\n" +
                         "  name\n" +
                         "}\n" +
-                        "appearsIn"]
+                        "appearsIn"
+        ]
 
     }
 }

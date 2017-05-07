@@ -12,6 +12,8 @@ import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironmentImpl;
+import graphql.schema.DataFetchingFieldSelectionSet;
+import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
@@ -286,6 +288,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         for (GraphQLExecutionNodeDatum n : nodeData) {
             sources.add(n.getSource());
         }
+
+        GraphQLOutputType fieldType = fieldDef.getType();
+        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
+
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 sources,
                 argumentValues,
@@ -296,8 +302,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 executionContext.getGraphQLSchema(),
                 executionContext.getFragmentsByName(),
                 executionContext.getExecutionId(),
-                executionContext.getVariables()
-        );
+                fieldCollector);
 
         List<Object> values;
         try {

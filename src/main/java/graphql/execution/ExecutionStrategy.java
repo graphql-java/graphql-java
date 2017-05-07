@@ -12,11 +12,14 @@ import graphql.execution.instrumentation.parameters.FieldParameters;
 import graphql.language.Field;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironmentImpl;
+import graphql.schema.DataFetchingFieldSelectionSet;
+import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -68,18 +71,21 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), type, fields.get(0));
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+
+        GraphQLOutputType fieldType = fieldDef.getType();
+        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
+
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 parameters.source(),
                 argumentValues,
                 executionContext.getRoot(),
                 fields,
-                fieldDef.getType(),
+                fieldType,
                 type,
                 executionContext.getGraphQLSchema(),
                 executionContext.getFragmentsByName(),
                 executionContext.getExecutionId(),
-                executionContext.getVariables()
-        );
+                fieldCollector);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
@@ -97,14 +103,14 @@ public abstract class ExecutionStrategy {
             fetchCtx.onEnd(e);
         }
 
-        TypeInfo fieldType = newTypeInfo()
-                .type(fieldDef.getType())
+        TypeInfo fieldTypeInfo = newTypeInfo()
+                .type(fieldType)
                 .parentInfo(parameters.typeInfo())
                 .build();
 
 
         ExecutionParameters newParameters = ExecutionParameters.newParameters()
-                .typeInfo(fieldType)
+                .typeInfo(fieldTypeInfo)
                 .fields(parameters.fields())
                 .arguments(argumentValues)
                 .source(resolvedValue).build();

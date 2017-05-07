@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -20,9 +19,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLSchema graphQLSchema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
-    private final Map<String, Object> variables;
+    private final DataFetchingFieldSelectionSet selectionSet;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, Map<String, Object> variables) {
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, DataFetchingFieldSelectionSet selectionSet) {
         this.source = source;
         this.arguments = arguments;
         this.context = context;
@@ -32,7 +31,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.graphQLSchema = graphQLSchema;
         this.fragmentsByName = fragmentsByName;
         this.executionId = executionId;
-        this.variables = variables;
+        this.selectionSet = selectionSet;
     }
 
     @Override
@@ -91,7 +90,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public Map<String, Object> getVariables() {
-        return variables;
+    public DataFetchingFieldSelectionSet getSelectionSet() {
+        return selectionSet;
     }
 }

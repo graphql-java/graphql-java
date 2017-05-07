@@ -1,6 +1,5 @@
 package graphql.schema;
 
-import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -84,7 +83,7 @@ public interface DataFetchingEnvironment {
     ExecutionId getExecutionId();
 
     /**
-     * @return the variables that where passed into this query
+     * @return the {@link DataFetchingFieldSelectionSet} for the current operation
      */
-    Map<String, Object> getVariables();
+    DataFetchingFieldSelectionSet getSelectionSet();
 }
