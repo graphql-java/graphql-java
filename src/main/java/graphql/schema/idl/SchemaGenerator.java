@@ -259,8 +259,16 @@ public class SchemaGenerator {
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
-        //
-        // fields
+        List<TypeExtensionDefinition> typeExtensions = getTypeExtensionsOf(typeDefinition, buildCtx);
+
+        buildObjectTypeFields(buildCtx, typeDefinition, builder, typeExtensions);
+
+        buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, typeExtensions);
+
+        return builder.build();
+    }
+
+    private void buildObjectTypeFields(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<TypeExtensionDefinition> typeExtensions) {
         Map<String, GraphQLFieldDefinition> fieldDefinitions = new LinkedHashMap<>();
 
         typeDefinition.getFieldDefinitions().forEach(fieldDef -> {
@@ -268,11 +276,7 @@ public class SchemaGenerator {
             fieldDefinitions.put(newFieldDefinition.getName(), newFieldDefinition);
         });
 
-        //
-        // type extensions feed into the fields of an object type
-        List<TypeExtensionDefinition> typeExtensions = getTypeExtensionsOf(typeDefinition, buildCtx);
-
-
+        // an object consists of the fields it gets from its definition AND its type extensions
         typeExtensions.forEach(typeExt -> typeExt.getFieldDefinitions().forEach(fieldDef -> {
             GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
             //
@@ -282,21 +286,17 @@ public class SchemaGenerator {
             }
         }));
 
-        // combine all the fields together
-        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions.values()) {
-            builder.field(fieldDefinition);
-        }
+        fieldDefinitions.values().forEach(builder::field);
+    }
 
-        //
-        // interfaces
+    private void buildObjectTypeInterfaces(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<TypeExtensionDefinition> typeExtensions) {
         Map<String, GraphQLInterfaceType> interfaces = new LinkedHashMap<>();
         typeDefinition.getImplements().forEach(type -> {
             GraphQLInterfaceType newInterfaceType = buildOutputType(buildCtx, type);
             interfaces.put(newInterfaceType.getName(), newInterfaceType);
         });
 
-        //
-        // type extensions feed interfaces into an object type
+        // an object consists of the interfaces it gets from its definition AND its type extensions
         typeExtensions.forEach(typeExt -> typeExt.getImplements().forEach(type -> {
             GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
             //
@@ -306,12 +306,7 @@ public class SchemaGenerator {
             }
         }));
 
-        // combine all the interfaces together
-        for (GraphQLInterfaceType anInterface : interfaces.values()) {
-            builder.withInterface(anInterface);
-        }
-
-        return builder.build();
+        interfaces.values().forEach(builder::withInterface);
     }
 
     private List<TypeExtensionDefinition> getTypeExtensionsOf(ObjectTypeDefinition objectTypeDefinition, BuildContext buildCtx) {
