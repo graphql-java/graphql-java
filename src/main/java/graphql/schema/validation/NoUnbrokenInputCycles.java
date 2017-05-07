@@ -1,10 +1,5 @@
 package graphql.schema.validation;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
@@ -15,12 +10,22 @@ import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Schema validation rule ensuring no input type forms an unbroken non-nullable recursion,
  * as such a type would be impossible to satisfy
  */
 public class NoUnbrokenInputCycles implements ValidationRule {
 
+    @Override
+    public void check(GraphQLType type, ValidationErrorCollector validationErrorCollector) {
+    }
+
+    @Override
     public void check(GraphQLFieldDefinition fieldDef, ValidationErrorCollector validationErrorCollector) {
         for (GraphQLArgument argument : fieldDef.getArguments()) {
             GraphQLInputType argumentType = argument.getType();
@@ -70,11 +75,11 @@ public class NoUnbrokenInputCycles implements ValidationRule {
         }
         return type;
     }
-    
+
     private String getErrorMessage(List<String> path) {
         StringBuilder message = new StringBuilder();
         message.append("[");
-        for (int i  = 0; i < path.size(); i++) {
+        for (int i = 0; i < path.size(); i++) {
             if (i != 0) {
                 message.append(".");
             }
