@@ -8,6 +8,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 
 import java.util.List;
+import java.util.Objects;
 
 import static graphql.schema.GraphQLTypeUtil.getUnwrappedTypeName;
 import static graphql.schema.validation.SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces;
@@ -84,16 +85,25 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
                 String interfaceArgStr = makeArgStr(interfaceArg);
                 String objectArgStr = makeArgStr(objectArg);
 
+                boolean same = true;
                 if (!interfaceArgStr.equals(objectArgStr)) {
+                    same = false;
+                }
+                if (!Objects.equals(interfaceArg.getDefaultValue(), objectArg.getDefaultValue())) {
+                    same = false;
+                }
+                if (!same) {
                     validationErrorCollector.addError(
                             error(format("object type '%s' does not implement interface '%s' because field '%s' argument '%s' is defined differently",
                                     objectTyoe.getName(), interfaceType.getName(), interfaceFieldDef.getName(), interfaceArg.getName())));
                 }
+
             }
         }
     }
 
     private String makeArgStr(GraphQLArgument argument) {
+        // we don't do default value checking because toString of getDefaultValue is not guaranteed to be stable
         return argument.getName() +
                 ":" +
                 getUnwrappedTypeName(argument.getType());

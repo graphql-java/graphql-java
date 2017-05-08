@@ -35,6 +35,7 @@ class ObjectsImplementInterfacesTest extends Specification {
             .argument(newArgument().name("arg1").type(GraphQLString))
             .argument(newArgument().name("arg2").type(GraphQLInt))
             .argument(newArgument().name("arg3").type(GraphQLBoolean))
+            .argument(newArgument().name("arg4").type(GraphQLString).defaultValue("ABC"))
     )
 
             .field(newFieldDefinition().name("argField2").type(GraphQLString)
@@ -61,6 +62,7 @@ class ObjectsImplementInterfacesTest extends Specification {
                 .argument(newArgument().name("arg1").type(GraphQLInt))
                 .argument(newArgument().name("arg2").type(GraphQLInt))
                 .argument(newArgument().name("arg3").type(GraphQLInt))
+                .argument(newArgument().name("arg4").type(GraphQLString).defaultValue("XYZ"))
         )
 
                 .field(newFieldDefinition().name("argField2").type(GraphQLString)
@@ -76,7 +78,7 @@ class ObjectsImplementInterfacesTest extends Specification {
 
         errorCollector.containsValidationError(ObjectDoesNotImplementItsInterfaces)
         def errors = errorCollector.getErrors()
-        errors.size() == 6
+        errors.size() == 7
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'friends' is missing"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
@@ -85,6 +87,8 @@ class ObjectsImplementInterfacesTest extends Specification {
                 "object type 'obj' does not implement interface 'Interface' because field 'address' is defined as '[String!]' type and not as '[String]' type"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'address' is defined as '[String!]' type and not as '[String]' type"))
+        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+                "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg1' is defined differently"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg1' is defined differently"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
