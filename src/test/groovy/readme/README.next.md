@@ -857,35 +857,8 @@ This implementation is based on the [js reference implementation](https://github
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
 
 ### Related projects
-* [todomvc-relay-java](https://github.com/graphql-java/todomvc-relay-java): Port of the Relay TodoMVC example to a java backend
 
-* [graphql-java-type-generator](https://github.com/graphql-java/graphql-java-type-generator): This library will autogenerate GraphQL types for usage in com.graphql-java:graphql-java Edit
-
-* [graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
-
-* [graphql-java-reactive](https://github.com/bsideup/graphql-java-reactive): An execution strategy which is based on Reactive Streams. Project is evolving.
-
-* [graphql-java-annotations](https://github.com/graphql-java/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
-
-* [graphql-java-servlet](https://github.com/graphql-java/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
-
-* [graphql-apigen](https://github.com/Distelli/graphql-apigen): Generate Java APIs with GraphQL Schemas
-
-* [graphql-spring-boot](https://github.com/oembedler/graphql-spring-boot): GraphQL and GraphiQL Spring Framework Boot Starters
-
-* [spring-graphql-common](https://github.com/oembedler/spring-graphql-common): Spring Framework GraphQL Library
-
-* [graphql-jpa](https://github.com/jcrygier/graphql-jpa): JPA Implementation of GraphQL (builds on graphql-java)
-
-* [graphql-jpa-spring-boot-starter](https://github.com/timtebeek/graphql-jpa-spring-boot-starter): Spring Boot starter for GraphQL JPA; Expose JPA entities with GraphQL.
-
-* [graphkool](https://github.com/beyondeye/graphkool): GraphQl-java utilities in kotlin
-
-* [schemagen-graphql](https://github.com/bpatters/schemagen-graphql): GraphQL-Java add-on that adds support for Schema Generation & Execution for enterprise level applications.
-
-* [GraphQL-SPQR](https://github.com/leangen/GraphQL-SPQR): Java 8+ API for rapid development of GraphQL services
-
-* [Light Java GraphQL](https://github.com/networknt/light-java-graphql): A lightweight, fast microservices framework with all other cross-cutting concerns addressed that is ready to plug in GraphQL schema. 
+Please have a look at the [awesome-graphql-java](https://github.com/graphql-java/awesome-graphql-java) list.
 
 ### License
 

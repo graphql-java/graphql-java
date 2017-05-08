@@ -3,8 +3,8 @@ package graphql.schema;
 
 import graphql.Directives;
 import graphql.schema.validation.InvalidSchemaException;
-import graphql.schema.validation.ValidationError;
-import graphql.schema.validation.Validator;
+import graphql.schema.validation.SchemaValidationError;
+import graphql.schema.validation.SchemaValidator;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -125,7 +125,7 @@ public class GraphQLSchema {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes);
             new SchemaUtil().replaceTypeReferences(graphQLSchema);
-            Collection<ValidationError> errors = new Validator().validateSchema(graphQLSchema);
+            Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
             if (errors.size() > 0) {
                 throw new InvalidSchemaException(errors);
             }
