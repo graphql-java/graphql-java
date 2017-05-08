@@ -334,7 +334,7 @@ class SchemaGeneratorTest extends Specification {
         def spec = """
 
             interface Interface1 {
-               baseField : String
+               extraField1 : String
             }     
 
             interface Interface2 {
@@ -356,10 +356,12 @@ class SchemaGeneratorTest extends Specification {
             }
 
             extend type BaseType implements Interface2 {
-               extraField2 : Int
+               extraField1 : String
+               extraField2 : ID
             }
 
             extend type BaseType implements Interface3 {
+               extraField1 : String
                extraField3 : ID
             }
 
@@ -376,7 +378,7 @@ class SchemaGeneratorTest extends Specification {
             # they will be de-duped since the effect is the same
             #
             extend type BaseType implements Interface1 {
-               baseField : String
+               extraField1 : String
             }
             
             schema {
@@ -406,7 +408,7 @@ class SchemaGeneratorTest extends Specification {
         type.fieldDefinitions[1].type.name == "String"
 
         type.fieldDefinitions[2].name == "extraField2"
-        type.fieldDefinitions[2].type.name == "Int"
+        type.fieldDefinitions[2].type.name == "ID"
 
         type.fieldDefinitions[3].name == "extraField3"
         type.fieldDefinitions[3].type.name == "ID"
@@ -448,6 +450,7 @@ class SchemaGeneratorTest extends Specification {
             }
 
             extend type Human implements Character {
+                name: String!
                 friends: [Character]
             }
 

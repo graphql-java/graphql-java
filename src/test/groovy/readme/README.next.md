@@ -657,16 +657,19 @@ Another part of your system can extend this type to add more shape to it.
 
 ```graphql
 extend type Human implements Character {
+    id: ID!
+    name: String!
     friends: [Character]
+    appearsIn: [Episode]!
 }
 ```
 
 You can have as many extensions as you think sensible.  They will be combined in the order
-in which they are encountered.
+in which they are encountered.  Duplicate fields will be merged as one (however field re-definitions
+into new types are not allowed).
 
 ```graphql
 extend type Human {
-    appearsIn: [Episode]!
     homePlanet: String
 }
 ```
