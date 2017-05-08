@@ -32,6 +32,9 @@ public class SchemaValidator {
         if (schema.isSupportingMutations()) {
             traverse(schema.getMutationType(), rules, validationErrorCollector);
         }
+        if (schema.isSupportingSubscriptions()) {
+            traverse(schema.getSubscriptionType(), rules, validationErrorCollector);
+        }
         return validationErrorCollector.getErrors();
     }
 

@@ -81,6 +81,10 @@ public class GraphQLSchema {
         return mutationType != null;
     }
 
+    public boolean isSupportingSubscriptions() {
+        return subscriptionType != null;
+    }
+
     public static Builder newSchema() {
         return new Builder();
     }
