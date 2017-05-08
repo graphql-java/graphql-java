@@ -357,7 +357,7 @@ class SchemaGeneratorTest extends Specification {
 
             extend type BaseType implements Interface2 {
                extraField1 : String
-               extraField2 : ID
+               extraField2 : Int
             }
 
             extend type BaseType implements Interface3 {
@@ -408,7 +408,7 @@ class SchemaGeneratorTest extends Specification {
         type.fieldDefinitions[1].type.name == "String"
 
         type.fieldDefinitions[2].name == "extraField2"
-        type.fieldDefinitions[2].type.name == "ID"
+        type.fieldDefinitions[2].type.name == "Int"
 
         type.fieldDefinitions[3].name == "extraField3"
         type.fieldDefinitions[3].type.name == "ID"
