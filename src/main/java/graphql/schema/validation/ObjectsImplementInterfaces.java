@@ -9,28 +9,28 @@ import graphql.schema.GraphQLType;
 import java.util.List;
 
 import static graphql.schema.GraphQLTypeUtil.getUnwrappedTypeName;
-import static graphql.schema.validation.ValidationErrorType.ObjectDoesNotImplementItsInterfaces;
+import static graphql.schema.validation.SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces;
 import static java.lang.String.format;
 
 /**
  * Schema validation rule ensuring object types have all the fields that they need to implement the interfaces
  * they say they implement
  */
-public class ObjectsImplementInterfaces implements ValidationRule {
+public class ObjectsImplementInterfaces implements SchemaValidationRule {
 
     @Override
-    public void check(GraphQLFieldDefinition fieldDef, ValidationErrorCollector validationErrorCollector) {
+    public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
     }
 
     @Override
-    public void check(GraphQLType type, ValidationErrorCollector validationErrorCollector) {
+    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
         if (type instanceof GraphQLObjectType) {
             check((GraphQLObjectType) type, validationErrorCollector);
         }
     }
 
     // visible for testing
-    private void check(GraphQLObjectType objectTyoe, ValidationErrorCollector validationErrorCollector) {
+    private void check(GraphQLObjectType objectTyoe, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLOutputType> interfaces = objectTyoe.getInterfaces();
         interfaces.forEach(interfaceType -> {
             // we have resolved the interfaces at this point and hence the cast is ok
@@ -39,7 +39,7 @@ public class ObjectsImplementInterfaces implements ValidationRule {
 
     }
 
-    private void checkObjectImplementsInterface(GraphQLObjectType objectTyoe, GraphQLInterfaceType interfaceType, ValidationErrorCollector validationErrorCollector) {
+    private void checkObjectImplementsInterface(GraphQLObjectType objectTyoe, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLFieldDefinition> fieldDefinitions = interfaceType.getFieldDefinitions();
         for (GraphQLFieldDefinition interfaceFieldDef : fieldDefinitions) {
             GraphQLFieldDefinition objectFieldDef = objectTyoe.getFieldDefinition(interfaceFieldDef.getName());
@@ -53,7 +53,7 @@ public class ObjectsImplementInterfaces implements ValidationRule {
         }
     }
 
-    private void checkFieldTypeEquivalence(GraphQLObjectType objectTyoe, GraphQLInterfaceType interfaceType, ValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
+    private void checkFieldTypeEquivalence(GraphQLObjectType objectTyoe, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
         // the reference implementation has a full but complicated abstract type equivalence check
         // this is not that but we can add that later.  It does cover the major cases however
         String interfaceFieldDefStr = getUnwrappedTypeName(interfaceFieldDef.getType());
@@ -66,8 +66,8 @@ public class ObjectsImplementInterfaces implements ValidationRule {
         }
     }
 
-    private ValidationError error(String msg) {
-        return new ValidationError(ObjectDoesNotImplementItsInterfaces, msg);
+    private SchemaValidationError error(String msg) {
+        return new SchemaValidationError(ObjectDoesNotImplementItsInterfaces, msg);
     }
 
 }

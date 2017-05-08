@@ -1,6 +1,6 @@
 package graphql.schema.validation;
 
-public enum ValidationErrorType {
+public enum SchemaValidationErrorType {
     
     UnbrokenInputCycle,
     ObjectDoesNotImplementItsInterfaces

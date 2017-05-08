@@ -12,7 +12,7 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
-import static graphql.schema.validation.ValidationErrorType.ObjectDoesNotImplementItsInterfaces
+import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
 
 class ObjectsImplementInterfacesTest extends Specification {
 
@@ -36,7 +36,7 @@ class ObjectsImplementInterfacesTest extends Specification {
     def "objects implement interfaces"() {
         given:
 
-        ValidationErrorCollector errorCollector = new ValidationErrorCollector()
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
         GraphQLObjectType objType = GraphQLObjectType.newObject()
                 .name("obj")
                 .withInterface(InterfaceType)
@@ -54,11 +54,11 @@ class ObjectsImplementInterfacesTest extends Specification {
         errorCollector.containsValidationError(ObjectDoesNotImplementItsInterfaces)
         def errors = errorCollector.getErrors()
         errors.size() == 3
-        errors.contains(new ValidationError(ObjectDoesNotImplementItsInterfaces,
+        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'friends' is missing"))
-        errors.contains(new ValidationError(ObjectDoesNotImplementItsInterfaces,
+        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'age' is defined as 'String' type and not as 'Int' type"))
-        errors.contains(new ValidationError(ObjectDoesNotImplementItsInterfaces,
+        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'address' is defined as '[String!]' type and not as '[String]' type"))
     }
 }
