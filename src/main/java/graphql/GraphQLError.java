@@ -5,6 +5,7 @@ import graphql.language.SourceLocation;
 
 import java.util.List;
 
+@PublicApi
 public interface GraphQLError {
 
     String getMessage();

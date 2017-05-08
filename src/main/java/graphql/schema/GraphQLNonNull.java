@@ -1,10 +1,13 @@
 package graphql.schema;
 
 
+import graphql.PublicApi;
+
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
+@PublicApi
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
     /**

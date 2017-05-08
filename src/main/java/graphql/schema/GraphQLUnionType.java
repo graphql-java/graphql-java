@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.Internal;
+import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
 
 import java.util.ArrayList;
@@ -12,6 +14,7 @@ import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+@PublicApi
 public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
@@ -21,10 +24,12 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     private final UnionTypeDefinition definition;
 
 
+    @Internal
     public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver) {
         this(name, description, types, typeResolver, null);
     }
 
+    @Internal
     public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver, UnionTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(types, "types can't be null");
@@ -73,6 +78,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         return new Builder();
     }
 
+    @PublicApi
     public static class Builder {
         private String name;
         private String description;
