@@ -3,6 +3,7 @@ package graphql.schema;
 
 import graphql.AssertException;
 import graphql.GraphQLException;
+import graphql.Internal;
 import graphql.introspection.Introspection;
 
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.Set;
 
 import static java.lang.String.format;
 
+@Internal
 public class SchemaUtil {
 
     public boolean isLeafType(GraphQLType type) {

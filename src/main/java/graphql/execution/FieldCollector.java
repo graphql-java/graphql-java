@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.Internal;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -19,6 +20,7 @@ import java.util.Map;
 
 import static graphql.execution.TypeFromAST.getTypeFromAST;
 
+@Internal
 public class FieldCollector {
 
     private ConditionalNodes conditionalNodes;
