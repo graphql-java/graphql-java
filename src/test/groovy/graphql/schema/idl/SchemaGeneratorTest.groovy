@@ -339,7 +339,7 @@ class SchemaGeneratorTest extends Specification {
 
             interface Interface2 {
                extraField1 : String
-               extraField2 : ID
+               extraField2 : Int
             }     
 
             interface Interface3 {
