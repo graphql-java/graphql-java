@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
@@ -63,7 +64,40 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
             validationErrorCollector.addError(
                     error(format("object type '%s' does not implement interface '%s' because field '%s' is defined as '%s' type and not as '%s' type",
                             objectTyoe.getName(), interfaceType.getName(), interfaceFieldDef.getName(), objectFieldDefStr, interfaceFieldDefStr)));
+        } else {
+            checkFieldArgumentEquivalence(objectTyoe, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
         }
+    }
+
+    private void checkFieldArgumentEquivalence(GraphQLObjectType objectTyoe, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
+        List<GraphQLArgument> interfaceArgs = interfaceFieldDef.getArguments();
+        List<GraphQLArgument> objectArgs = objectFieldDef.getArguments();
+        if (interfaceArgs.size() != objectArgs.size()) {
+            validationErrorCollector.addError(
+                    error(format("object type '%s' does not implement interface '%s' because field '%s' has a different number of arguments",
+                            objectTyoe.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
+        } else {
+            for (int i = 0; i < interfaceArgs.size(); i++) {
+                GraphQLArgument interfaceArg = interfaceArgs.get(i);
+                GraphQLArgument objectArg = objectArgs.get(i);
+
+                String interfaceArgStr = makeArgStr(interfaceArg);
+                String objectArgStr = makeArgStr(objectArg);
+
+                if (!interfaceArgStr.equals(objectArgStr)) {
+                    validationErrorCollector.addError(
+                            error(format("object type '%s' does not implement interface '%s' because field '%s' argument '%s' is defined differently",
+                                    objectTyoe.getName(), interfaceType.getName(), interfaceFieldDef.getName(), interfaceArg.getName())));
+                }
+            }
+        }
+    }
+
+    private String makeArgStr(GraphQLArgument argument) {
+        return argument.getName() +
+                ":" +
+                getUnwrappedTypeName(argument.getType());
+
     }
 
     private SchemaValidationError error(String msg) {

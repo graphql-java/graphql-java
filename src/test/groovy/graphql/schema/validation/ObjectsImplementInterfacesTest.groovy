@@ -6,13 +6,13 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
-import static graphql.Scalars.GraphQLInt
-import static graphql.Scalars.GraphQLString
+import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
+import static graphql.Scalars.*
+import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
-import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
 
 class ObjectsImplementInterfacesTest extends Specification {
 
@@ -30,6 +30,18 @@ class ObjectsImplementInterfacesTest extends Specification {
             .field(newFieldDefinition().name("friends").type(list(GraphQLString)))
             .field(newFieldDefinition().name("age").type(GraphQLInt))
             .field(newFieldDefinition().name("address").type(list(GraphQLString)))
+
+            .field(newFieldDefinition().name("argField1").type(GraphQLString)
+            .argument(newArgument().name("arg1").type(GraphQLString))
+            .argument(newArgument().name("arg2").type(GraphQLInt))
+            .argument(newArgument().name("arg3").type(GraphQLBoolean))
+    )
+
+            .field(newFieldDefinition().name("argField2").type(GraphQLString)
+            .argument(newArgument().name("arg1").type(GraphQLString))
+            .argument(newArgument().name("arg2").type(GraphQLInt))
+            .argument(newArgument().name("arg3").type(GraphQLBoolean))
+    )
             .typeResolver(typeResolver)
             .build()
 
@@ -44,6 +56,17 @@ class ObjectsImplementInterfacesTest extends Specification {
                 .field(newFieldDefinition().name("missing").type(list(GraphQLString)))
                 .field(newFieldDefinition().name("age").type(GraphQLString))
                 .field(newFieldDefinition().name("address").type(list(nonNull(GraphQLString))))
+
+                .field(newFieldDefinition().name("argField1").type(GraphQLString)
+                .argument(newArgument().name("arg1").type(GraphQLInt))
+                .argument(newArgument().name("arg2").type(GraphQLInt))
+                .argument(newArgument().name("arg3").type(GraphQLInt))
+        )
+
+                .field(newFieldDefinition().name("argField2").type(GraphQLString)
+                .argument(newArgument().name("arg1").type(GraphQLString))
+        )
+
                 .build()
 
         when:
@@ -53,12 +76,18 @@ class ObjectsImplementInterfacesTest extends Specification {
 
         errorCollector.containsValidationError(ObjectDoesNotImplementItsInterfaces)
         def errors = errorCollector.getErrors()
-        errors.size() == 3
+        errors.size() == 6
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'friends' is missing"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'age' is defined as 'String' type and not as 'Int' type"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'address' is defined as '[String!]' type and not as '[String]' type"))
+        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+                "object type 'obj' does not implement interface 'Interface' because field 'address' is defined as '[String!]' type and not as '[String]' type"))
+        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+                "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg1' is defined differently"))
+        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+                "object type 'obj' does not implement interface 'Interface' because field 'argField2' has a different number of arguments"))
     }
 }
