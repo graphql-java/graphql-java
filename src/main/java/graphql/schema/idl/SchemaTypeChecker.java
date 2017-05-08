@@ -14,6 +14,10 @@ import graphql.language.TypeDefinition;
 import graphql.language.TypeExtensionDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError;
+import graphql.schema.idl.errors.InterfaceFieldRedefinitionError;
+import graphql.schema.idl.errors.MissingInterfaceFieldArgumentsError;
+import graphql.schema.idl.errors.MissingInterfaceFieldError;
 import graphql.schema.idl.errors.MissingInterfaceTypeError;
 import graphql.schema.idl.errors.MissingScalarImplementationError;
 import graphql.schema.idl.errors.MissingTypeError;
@@ -47,6 +51,8 @@ public class SchemaTypeChecker {
 
         checkTypeExtensionsHaveCorrespondingType(errors, typeRegistry);
         checkTypeExtensionsFieldRedefinition(errors, typeRegistry);
+
+        checkInterfacesAreImplemented(errors, typeRegistry);
 
         checkSchemaInvariants(errors, typeRegistry);
 
@@ -136,7 +142,6 @@ public class SchemaTypeChecker {
         });
     }
 
-
     private void checkScalarImplementationsArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
         typeRegistry.scalars().keySet().forEach(scalarName -> {
             if (!wiring.getScalars().containsKey(scalarName)) {
@@ -144,6 +149,7 @@ public class SchemaTypeChecker {
             }
         });
     }
+
 
     private void checkTypeResolversArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
 
@@ -159,7 +165,6 @@ public class SchemaTypeChecker {
 
     }
 
-
     private void checkFieldTypesPresent(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fields) {
         List<Type> fieldTypes = fields.stream().map(FieldDefinition::getType).collect(Collectors.toList());
         fieldTypes.forEach(checkTypeExists("field", typeRegistry, errors, typeDefinition));
@@ -174,6 +179,7 @@ public class SchemaTypeChecker {
 
         fieldInputValues.forEach(checkTypeExists("field input", typeRegistry, errors, typeDefinition));
     }
+
 
     private Consumer<Type> checkTypeExists(String typeOfType, TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, TypeDefinition typeDefinition) {
         return t -> {
@@ -195,6 +201,76 @@ public class SchemaTypeChecker {
                 errors.add(new MissingInterfaceTypeError("interface", typeDefinition, unwrapped));
             }
         };
+    }
+
+    private void checkInterfacesAreImplemented(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+        Map<String, TypeDefinition> typesMap = typeRegistry.types();
+
+        // objects
+        List<ObjectTypeDefinition> objectTypes = filterTo(typesMap, ObjectTypeDefinition.class);
+        objectTypes.forEach(objectType -> {
+            List<Type> implementsTypes = objectType.getImplements();
+            implementsTypes.forEach(checkInterfaceIsImplemented("object", typeRegistry, errors, objectType));
+        });
+
+        Map<String, List<TypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
+        typeExtensions.values().forEach(extList -> extList.forEach(typeExtension -> {
+            List<Type> implementsTypes = typeExtension.getImplements();
+            implementsTypes.forEach(checkInterfaceIsImplemented("extension", typeRegistry, errors, typeExtension));
+        }));
+    }
+
+    private Consumer<? super Type> checkInterfaceIsImplemented(String typeOfType, TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, ObjectTypeDefinition objectTypeDef) {
+        return t -> {
+            TypeInfo typeInfo = TypeInfo.typeInfo(t);
+            TypeName unwrapped = typeInfo.getTypeName();
+            Optional<TypeDefinition> type = typeRegistry.getType(unwrapped);
+            // previous checks handle the missing case and wrong type case
+            if (type.isPresent() && type.get() instanceof InterfaceTypeDefinition) {
+                InterfaceTypeDefinition interfaceTypeDef = (InterfaceTypeDefinition) type.get();
+
+                Map<String, FieldDefinition> objectFields = objectTypeDef.getFieldDefinitions().stream()
+                        .collect(Collectors.toMap(
+                                FieldDefinition::getName, Function.identity()
+                        ));
+
+                interfaceTypeDef.getFieldDefinitions().forEach(interfaceFieldDef -> {
+                    FieldDefinition objectFieldDef = objectFields.get(interfaceFieldDef.getName());
+                    if (objectFieldDef == null) {
+                        errors.add(new MissingInterfaceFieldError(typeOfType, objectTypeDef, interfaceTypeDef, interfaceFieldDef));
+                    } else {
+                        String interfaceFieldType = AstPrinter.printAst(interfaceFieldDef.getType());
+                        String objectFieldType = AstPrinter.printAst(objectFieldDef.getType());
+                        if (!interfaceFieldType.equals(objectFieldType)) {
+                            errors.add(new InterfaceFieldRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectFieldType, interfaceFieldType));
+                        }
+
+                        // look at arguments
+                        List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
+                        List<InputValueDefinition> interfaceArgs = interfaceFieldDef.getInputValueDefinitions();
+                        if (objectArgs.size() != interfaceArgs.size()) {
+                            errors.add(new MissingInterfaceFieldArgumentsError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef));
+                        } else {
+                            checkArgumentConsistency(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, interfaceFieldDef, errors);
+                        }
+                    }
+                });
+            }
+        };
+    }
+
+    private void checkArgumentConsistency(String typeOfType, ObjectTypeDefinition objectTypeDef, InterfaceTypeDefinition interfaceTypeDef, FieldDefinition objectFieldDef, FieldDefinition interfaceFieldDef, List<GraphQLError> errors) {
+        List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
+        List<InputValueDefinition> interfaceArgs = interfaceFieldDef.getInputValueDefinitions();
+        for (int i = 0; i < interfaceArgs.size(); i++) {
+            InputValueDefinition interfaceArg = interfaceArgs.get(i);
+            InputValueDefinition objectArg = objectArgs.get(i);
+            String interfaceArgStr = AstPrinter.printAst(interfaceArg);
+            String objectArgStr = AstPrinter.printAst(objectArg);
+            if (!interfaceArgStr.equals(objectArgStr)) {
+                errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
+            }
+        }
     }
 
     /*

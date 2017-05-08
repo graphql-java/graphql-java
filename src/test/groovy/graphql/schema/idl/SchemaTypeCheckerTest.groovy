@@ -22,8 +22,10 @@ class SchemaTypeCheckerTest extends Specification {
                 throw new UnsupportedOperationException("Not implemented")
             }
         }
-        def wiring = RuntimeWiring.newRuntimeWiring().
-                type(TypeRuntimeWiring.newTypeWiring("InterfaceType").typeResolver(resolver))
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type(TypeRuntimeWiring.newTypeWiring("InterfaceType").typeResolver(resolver))
+                .type(TypeRuntimeWiring.newTypeWiring("InterfaceType1").typeResolver(resolver))
+                .type(TypeRuntimeWiring.newTypeWiring("InterfaceType2").typeResolver(resolver))
                 .build()
         return new SchemaTypeChecker().checkTypeRegistry(types, wiring)
     }
@@ -419,19 +421,217 @@ class SchemaTypeCheckerTest extends Specification {
         result.get(0).getMessage().contains("The interface type 'IsNotAnInterface' is not present when resolving type 'BaseType'")
     }
 
-    def "test object interface is all ok"() {
+    def "test object when redefining interface field"() {
 
         def spec = """                        
             
             interface InterfaceType {
-                field : String 
+                fieldA : String 
             }
 
             type BaseType implements InterfaceType {
                 fieldA : Int
             }
 
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("has tried to redefine field 'fieldA' defined via interface 'InterfaceType'")
+    }
+
+    def "test type extension when redefining interface field"() {
+
+        def spec = """                        
+            
+            interface InterfaceType {
+                fieldA : String 
+            }
+
+            type BaseType {
+                fieldX : Int
+            }
+
             extend type BaseType implements InterfaceType {
+                fieldA : Int
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("has tried to redefine field 'fieldA' defined via interface 'InterfaceType'")
+    }
+
+    def "test object when missing interface field"() {
+
+        def spec = """                        
+            
+            interface InterfaceType {
+                fieldA : String 
+            }
+
+            type BaseType implements InterfaceType {
+                fieldX : Int
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("does not have a field 'fieldA' required via interface 'InterfaceType'")
+    }
+
+    def "test type extension when missing interface field"() {
+
+        def spec = """                        
+            
+            interface InterfaceType {
+                fieldA : String 
+            }
+
+            type BaseType {
+                fieldX : Int
+            }
+
+            extend type BaseType implements InterfaceType {
+                fieldY : String
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("does not have a field 'fieldA' required via interface 'InterfaceType'")
+    }
+
+    def "test field arguments on object must match the interface"() {
+        def spec = """    
+            interface InterfaceType {
+                fieldA(arg1 : Int) : Int 
+                fieldB(arg1 : String = "defaultVal", arg2 : String, arg3 : Int) : String 
+            }
+
+            type BaseType {
+                fieldX : Int
+            }
+
+            extend type BaseType implements InterfaceType {
+                fieldA : Int
+                fieldB(arg1 : String = "defaultValX", arg2 : String!, arg3 : String) : String 
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType'")
+        result.get(1).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+        result.get(2).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+        result.get(3).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+
+    }
+
+    def "test field arguments on objects must match the interface"() {
+        def spec = """    
+            interface InterfaceType {
+                fieldA(arg1 : Int) : Int 
+                fieldB(arg1 : String = "defaultVal", arg2 : String, arg3 : Int) : String 
+            }
+
+            type BaseType implements InterfaceType {
+                fieldA : Int
+                fieldB(arg1 : String = "defaultValX", arg2 : String!, arg3 : String) : String 
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType'")
+        result.get(1).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+        result.get(2).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+        result.get(3).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+    }
+
+    def "test field arguments on object type extensions must match the interface"() {
+        def spec = """    
+            interface InterfaceType {
+                fieldA(arg1 : Int) : Int 
+                fieldB(arg1 : String = "defaultVal", arg2 : String, arg3 : Int) : String 
+            }
+
+            type BaseType {
+                fieldX : Int
+            }
+
+            extend type BaseType implements InterfaceType {
+                fieldA : Int
+                fieldB(arg1 : String = "defaultValX", arg2 : String!, arg3 : String) : String 
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0).getMessage().contains("field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType'")
+        result.get(1).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+        result.get(2).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+        result.get(3).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+    }
+
+    def "test object interface is all ok"() {
+
+        def spec = """                        
+            
+            interface InterfaceType1 {
+                fieldA : String 
+            }
+
+            interface InterfaceType2 {
+                fieldB : Int 
+            }
+
+            type BaseType implements InterfaceType1 {
+                fieldA : String
+            }
+
+            extend type BaseType implements InterfaceType2 {
                 fieldB : Int
             }
 
