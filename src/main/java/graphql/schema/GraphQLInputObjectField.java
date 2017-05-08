@@ -1,6 +1,8 @@
 package graphql.schema;
 
 
+import graphql.Internal;
+import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 
 import java.util.Map;
@@ -8,6 +10,7 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+@PublicApi
 public class GraphQLInputObjectField {
 
     private final String name;
@@ -16,14 +19,17 @@ public class GraphQLInputObjectField {
     private final Object defaultValue;
     private final InputValueDefinition definition;
 
+    @Internal
     public GraphQLInputObjectField(String name, GraphQLInputType type) {
         this(name, null, type, null, null);
     }
 
+    @Internal
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue) {
         this(name,description,type,defaultValue,null);
     }
 
+    @Internal
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
@@ -42,8 +48,7 @@ public class GraphQLInputObjectField {
         return name;
     }
 
-    public GraphQLInputType getType() {
-        return type;
+    public GraphQLInputType getType() { return type;
     }
 
     public Object getDefaultValue() {
@@ -62,6 +67,7 @@ public class GraphQLInputObjectField {
         return new Builder();
     }
 
+    @PublicApi
     public static class Builder {
         private String name;
         private String description;

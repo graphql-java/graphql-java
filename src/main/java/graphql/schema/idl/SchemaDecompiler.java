@@ -9,6 +9,7 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -172,9 +173,9 @@ public class SchemaDecompiler {
                 return;
             }
             out.format("union %s = ", type.getName());
-            List<GraphQLObjectType> types = type.getTypes();
+            List<GraphQLOutputType> types = type.getTypes();
             for (int i = 0; i < types.size(); i++) {
-                GraphQLObjectType objectType = types.get(i);
+                GraphQLOutputType objectType = types.get(i);
                 if (i > 0) {
                     out.format(" | ");
                 }

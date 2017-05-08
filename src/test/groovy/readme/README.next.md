@@ -277,7 +277,7 @@ Another schema example, including union types: [GarfieldSchema](src/test/groovy/
 
 
 
-##### Recursive Type References
+##### Type References
 
 GraphQL supports recursive Types: For example a `Person` can contain a list of friends of the same Type.
  
@@ -473,19 +473,6 @@ See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) fo
 
 Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
 
-#### JDK8 Lambdas
-This project is built using JDK6. But if you're using JDK8 and above then you can also use lambdas.
-```java
-GraphQLObjectType queryType = newObject()
-                .name("helloWorldQuery")
-                .field(field -> field.type(GraphQLString)
-                        .name("hello")
-                        .argument(argument -> argument.name("arg")
-                                .type(GraphQLBoolean))
-                        .dataFetcher(env -> "hello"))
-                .build();
-```
-
 #### Logging
 
 Logging is done with [SLF4J](http://www.slf4j.org/). Please have a look at the [Manual](http://www.slf4j.org/manual.html) for details.
@@ -519,7 +506,7 @@ public Object executeOperation(@RequestBody Map body) {
 }
 ```
 
-### Schema IDL support
+#### Schema IDL support
 
 This library allows for "schema driven" development of graphql applications.
 
@@ -627,8 +614,124 @@ You wire this together using this builder pattern
 
 NOTE: IDL is not currently part of the [formal graphql spec](https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document).  
 The implementation in this library is based off the [reference implementation](https://github.com/graphql/graphql-js).  However plenty of 
-code out there is based on this IDL syntax and hence you can be fairly confident that you are building on solid technology ground.   
+code out there is based on this IDL syntax and hence you can be fairly confident that you are building on solid technology ground.
+   
+# Modularising the Schema IDL
 
+Having one one large schema file is not always viable.  You can modularise you schema using two techniques.
+
+The first technique is to merge multiple Schema IDL files into one logic unit.  In the case below the schema as 
+been split into multiple files and merged all together just before schema generation.
+
+   ```java
+        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+
+        File schemaFile1 = loadSchema("starWarsSchemaPart1.graphqls");
+        File schemaFile2 = loadSchema("starWarsSchemaPart2.graphqls");
+        File schemaFile3 = loadSchema("starWarsSchemaPart3.graphqls");
+
+        TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
+
+        // each compiled registry is merged into the main registry
+        typeRegistry.merge(schemaCompiler.compile(schemaFile1));
+        typeRegistry.merge(schemaCompiler.compile(schemaFile2));
+        typeRegistry.merge(schemaCompiler.compile(schemaFile3));
+
+        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
+   ```
+
+The Graphql IDL type system has another construct for modularising your schema.  You can use `type extensions` to add
+extra fields and interfaces to a type.
+
+Imagine you start with a type like this in one schema file.
+
+```graphql
+type Human {
+    id: ID!
+    name: String!
+}
+```
+
+Another part of your system can extend this type to add more shape to it. 
+
+```graphql
+extend type Human implements Character {
+    id: ID!
+    name: String!
+    friends: [Character]
+    appearsIn: [Episode]!
+}
+```
+
+You can have as many extensions as you think sensible.  They will be combined in the order
+in which they are encountered.  Duplicate fields will be merged as one (however field re-definitions
+into new types are not allowed).
+
+```graphql
+extend type Human {
+    homePlanet: String
+}
+```
+
+
+With all these type extensions in place the `Human` type now looks like this at runtime.
+
+```graphql
+type Human implements Character {
+    id: ID!
+    name: String!
+    friends: [Character]
+    appearsIn: [Episode]!
+    homePlanet: String
+}
+```
+
+This is especially useful at the top level.  You can use extension types to add new fields to the
+top level schema "query".  Teams could contribute "sections" on what is being offered as the total
+graphql query.
+
+
+```graphql
+schema {
+  query: CombinedQueryFromMultipleTeams
+}
+
+type CombinedQueryFromMultipleTeams {
+    createdTimestamp : String
+}
+
+# maybe the invoicing system team puts in this set of attributes
+extend type CombinedQueryFromMultipleTeams {
+    invoicing : Invoicing
+}
+
+# and the billing system team puts in this set of attributes
+extend type CombinedQueryFromMultipleTeams {
+    billing : Billing
+}
+
+# and so and so forth
+extend type CombinedQueryFromMultipleTeams {
+    auditing : Auditing
+}
+
+```
+
+#### Subscription Support
+
+Subscriptions are not officially specified yet: `graphql-java` supports currently a very basic implementation where you can define a subscription in the schema
+with `GraphQLSchema.Builder.subscription(...)`. This enables you to handle a subscription request:
+
+```graphql
+subscription foo {
+    // normal graphql query
+}
+```
+*NOTE:* `graphql-java` does not handle or support any transportation related features: it just calling your `DataFetchers`. 
+Look at [SubscriptionTest](/src/test/groovy/graphql/SubscriptionTest.groovy) for a full example.
+
+*WARNING:* The subscription API will very probably look different later, don't expect the current API to be stable.
 
 #### Contributions
 
@@ -754,35 +857,8 @@ This implementation is based on the [js reference implementation](https://github
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
 
 ### Related projects
-* [todomvc-relay-java](https://github.com/graphql-java/todomvc-relay-java): Port of the Relay TodoMVC example to a java backend
 
-* [graphql-java-type-generator](https://github.com/graphql-java/graphql-java-type-generator): This library will autogenerate GraphQL types for usage in com.graphql-java:graphql-java Edit
-
-* [graphql-rxjava](https://github.com/nfl/graphql-rxjava): An execution strategy that makes it easier to use rxjava's Observable
-
-* [graphql-java-reactive](https://github.com/bsideup/graphql-java-reactive): An execution strategy which is based on Reactive Streams. Project is evolving.
-
-* [graphql-java-annotations](https://github.com/graphql-java/graphql-java-annotations): Annotations-based syntax for GraphQL schema definition.
-
-* [graphql-java-servlet](https://github.com/graphql-java/graphql-java-servlet): Servlet that automatically exposes a schema dynamically built from GraphQL queries and mutations.
-
-* [graphql-apigen](https://github.com/Distelli/graphql-apigen): Generate Java APIs with GraphQL Schemas
-
-* [graphql-spring-boot](https://github.com/oembedler/graphql-spring-boot): GraphQL and GraphiQL Spring Framework Boot Starters
-
-* [spring-graphql-common](https://github.com/oembedler/spring-graphql-common): Spring Framework GraphQL Library
-
-* [graphql-jpa](https://github.com/jcrygier/graphql-jpa): JPA Implementation of GraphQL (builds on graphql-java)
-
-* [graphql-jpa-spring-boot-starter](https://github.com/timtebeek/graphql-jpa-spring-boot-starter): Spring Boot starter for GraphQL JPA; Expose JPA entities with GraphQL.
-
-* [graphkool](https://github.com/beyondeye/graphkool): GraphQl-java utilities in kotlin
-
-* [schemagen-graphql](https://github.com/bpatters/schemagen-graphql): GraphQL-Java add-on that adds support for Schema Generation & Execution for enterprise level applications.
-
-* [GraphQL-SPQR](https://github.com/leangen/GraphQL-SPQR): Java 8+ API for rapid development of GraphQL services
-
-* [Light Java GraphQL](https://github.com/networknt/light-java-graphql): A lightweight, fast microservices framework with all other cross-cutting concerns addressed that is ready to plug in GraphQL schema. 
+Please have a look at the [awesome-graphql-java](https://github.com/graphql-java/awesome-graphql-java) list.
 
 ### License
 

@@ -5,6 +5,7 @@ import graphql.language.SourceLocation;
 
 import java.util.List;
 
+@PublicApi
 public class ExceptionWhileDataFetching implements GraphQLError {
 
     private final Throwable exception;

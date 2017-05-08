@@ -45,6 +45,29 @@ class TypeDefinitionRegistryTest extends Specification {
     }
 
 
+    def "merging multiple type registries does not overwrite schema definition"() {
+
+        def spec1 = """ 
+            schema {
+                query: Query
+            }
+        """
+
+        def spec2 = """ 
+            type Post { id: Int! }
+        """
+
+        def result1 = compile(spec1)
+        def result2 = compile(spec2)
+
+        def registry = result1.merge(result2)
+
+        expect:
+        result1.schemaDefinition().isPresent()
+        registry.schemaDefinition().get().isEqualTo(result1.schemaDefinition().get())
+
+    }
+
     def "test merge of schema types"() {
 
         def spec1 = """ 
@@ -65,7 +88,7 @@ class TypeDefinitionRegistryTest extends Specification {
         def result2 = compile(spec2)
 
         when:
-            result1.merge(result2)
+        result1.merge(result2)
 
         then:
         SchemaProblem e = thrown(SchemaProblem)
@@ -146,6 +169,10 @@ class TypeDefinitionRegistryTest extends Specification {
               votes: Int
             }
 
+            extend type Post {
+                placeOfPost : String
+            }
+
         """
 
         def spec2 = """ 
@@ -155,6 +182,10 @@ class TypeDefinitionRegistryTest extends Specification {
               title : String
               posts : [Post]
             }
+            
+            extend type Post {
+                timeOfPost : Int
+            }
 
         """
 
@@ -162,6 +193,7 @@ class TypeDefinitionRegistryTest extends Specification {
         def result2 = compile(spec2)
 
         when:
+
         result1.merge(result2)
 
         then:
@@ -176,7 +208,8 @@ class TypeDefinitionRegistryTest extends Specification {
 
         author.name == "Author"
         author.getChildren().size() == 4
+
+        def typeExtensions = result1.typeExtensions().get("Post")
+        typeExtensions.size() == 2
     }
-
-
 }

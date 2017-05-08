@@ -1,18 +1,20 @@
 package graphql.schema;
 
+import graphql.AssertException;
+import graphql.Internal;
+import graphql.PublicApi;
+import graphql.language.InputObjectTypeDefinition;
+
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
-import graphql.AssertException;
-import graphql.language.InputObjectTypeDefinition;
-
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+@PublicApi
 public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer {
 
     private final String name;
@@ -20,9 +22,12 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
     private final InputObjectTypeDefinition definition;
 
+    @Internal
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
         this(name,description,fields,null);
     }
+
+    @Internal
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields, InputObjectTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(fields, "fields can't be null");
@@ -61,10 +66,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         return new Builder();
     }
 
-    public static Reference reference(String name) {
-        return new Reference(name);
-    }
-    
+
     @Override
     public GraphQLInputObjectField getFieldDefinition(String name) {
         return fieldMap.get(name);
@@ -79,6 +81,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         return definition;
     }
 
+    @PublicApi
     public static class Builder {
         private String name;
         private String description;
@@ -148,11 +151,5 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
             return new GraphQLInputObjectType(name, description, fields, definition);
         }
 
-    }
-
-    private static class Reference extends GraphQLInputObjectType implements TypeReference {
-        private Reference(String name) {
-            super(name, "", Collections.emptyList());
-        }
     }
 }

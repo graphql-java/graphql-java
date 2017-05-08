@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.Internal;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -24,6 +25,7 @@ import static graphql.execution.TypeFromAST.getTypeFromAST;
  * A field collector can iterate over field selection sets and build out the sub fields that have been selected,
  * expanding named and inline fragments as it goes.s
  */
+@Internal
 public class FieldCollector {
 
     private ConditionalNodes conditionalNodes;

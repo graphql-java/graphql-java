@@ -4,7 +4,21 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.*
 import spock.lang.Specification
 
+import java.util.function.UnaryOperator
+
 class SchemaGeneratorTest extends Specification {
+
+    def resolver = new TypeResolver() {
+
+        @Override
+        GraphQLObjectType getType(TypeResolutionEnvironment env) {
+            throw new UnsupportedOperationException("Not implemented")
+        }
+    }
+
+    private UnaryOperator<TypeRuntimeWiring.Builder> buildResolver() {
+        { builder -> builder.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>
+    }
 
 
     GraphQLSchema generateSchema(String schemaSpec, RuntimeWiring wiring) {
@@ -298,16 +312,9 @@ class SchemaGeneratorTest extends Specification {
 
         """
 
-        def resolver = new TypeResolver() {
-
-            @Override
-            GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                throw new UnsupportedOperationException("Not implemented")
-            }
-        }
         def wiring = RuntimeWiring.newRuntimeWiring()
-                .type("Foo",{ type -> type.typeResolver(resolver) })
-                .type("Goo", { type -> type.typeResolver(resolver) })
+                .type("Foo", buildResolver())
+                .type("Goo", buildResolver())
                 .build()
 
         def schema = generateSchema(spec, wiring)
@@ -322,4 +329,158 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
+    def "type extensions can be specified multiple times #406"() {
+
+        def spec = """
+
+            interface Interface1 {
+               extraField1 : String
+            }     
+
+            interface Interface2 {
+               extraField1 : String
+               extraField2 : Int
+            }     
+
+            interface Interface3 {
+               extraField1 : String
+               extraField3 : ID
+            }     
+
+            type BaseType {
+               baseField : String
+            }
+            
+            extend type BaseType implements Interface1 {
+               extraField1 : String
+            }
+
+            extend type BaseType implements Interface2 {
+               extraField1 : String
+               extraField2 : Int
+            }
+
+            extend type BaseType implements Interface3 {
+               extraField1 : String
+               extraField3 : ID
+            }
+
+            extend type BaseType {
+               extraField4 : Boolean
+            }
+
+            extend type BaseType {
+               extraField5 : Boolean!
+            }
+
+            #
+            # if we repeat a definition, that's ok as long as its the same types as before
+            # they will be de-duped since the effect is the same
+            #
+            extend type BaseType implements Interface1 {
+               extraField1 : String
+            }
+            
+            schema {
+              query: BaseType
+            }
+
+        """
+
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Interface1", buildResolver())
+                .type("Interface2", buildResolver())
+                .type("Interface3", buildResolver())
+                .build()
+
+        def schema = generateSchema(spec, wiring)
+
+        expect:
+
+        GraphQLObjectType type = schema.getType("BaseType") as GraphQLObjectType
+
+        type.fieldDefinitions.size() == 6
+
+        type.fieldDefinitions[0].name == "baseField"
+        type.fieldDefinitions[0].type.name == "String"
+
+        type.fieldDefinitions[1].name == "extraField1"
+        type.fieldDefinitions[1].type.name == "String"
+
+        type.fieldDefinitions[2].name == "extraField2"
+        type.fieldDefinitions[2].type.name == "Int"
+
+        type.fieldDefinitions[3].name == "extraField3"
+        type.fieldDefinitions[3].type.name == "ID"
+
+        type.fieldDefinitions[4].name == "extraField4"
+        type.fieldDefinitions[4].type.name == "Boolean"
+
+        type.fieldDefinitions[5].name == "extraField5"
+        type.fieldDefinitions[5].type instanceof GraphQLNonNull
+
+        def interfaces = type.getInterfaces()
+
+        interfaces.size() == 3
+        interfaces[0].name == "Interface1"
+        interfaces[1].name == "Interface2"
+        interfaces[2].name == "Interface3"
+
+    }
+
+    def "read me type example makes sense"() {
+
+        def spec = """             
+
+            schema {
+              query: Human
+            }
+
+            type Episode {
+                name : String
+            }
+            
+            interface Character {
+                name: String!
+            }
+                
+            type Human {
+                id: ID!
+                name: String!
+            }
+
+            extend type Human implements Character {
+                name: String!
+                friends: [Character]
+            }
+
+            extend type Human {
+                appearsIn: [Episode]!
+                homePlanet: String
+            }
+        """
+
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Character", buildResolver())
+                .build()
+
+        def schema = generateSchema(spec, wiring)
+
+        expect:
+
+        GraphQLObjectType type = schema.getQueryType()
+
+        type.name == "Human"
+        type.fieldDefinitions[0].name == "id"
+        type.fieldDefinitions[1].name == "name"
+        type.fieldDefinitions[2].name == "friends"
+        type.fieldDefinitions[3].name == "appearsIn"
+        type.fieldDefinitions[4].name == "homePlanet"
+
+        type.interfaces.size() == 1
+        type.interfaces[0].name == "Character"
+
+
+
+    }
 }

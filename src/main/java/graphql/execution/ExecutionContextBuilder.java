@@ -30,7 +30,7 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, Object root, Document document, String operationName, Map<String, Object> args) {
+    public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Object root, Document document, String operationName, Map<String, Object> args) {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
 
@@ -68,6 +68,7 @@ public class ExecutionContextBuilder {
                 graphQLSchema,
                 queryStrategy,
                 mutationStrategy,
+                subscriptionStrategy,
                 fragmentsByName,
                 operation,
                 variableValues,

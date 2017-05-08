@@ -1,7 +1,10 @@
 package graphql;
 
-
-import graphql.execution.*;
+import graphql.execution.Execution;
+import graphql.execution.ExecutionId;
+import graphql.execution.ExecutionIdProvider;
+import graphql.execution.ExecutionStrategy;
+import graphql.execution.SimpleExecutionStrategy;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.NoOpInstrumentation;
@@ -24,6 +27,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
+@PublicApi
 public class GraphQL {
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
@@ -33,6 +37,7 @@ public class GraphQL {
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
+    private final ExecutionStrategy subscriptionStrategy;
     private final ExecutionIdProvider idProvider;
     private final Instrumentation instrumentation;
 
@@ -44,11 +49,11 @@ public class GraphQL {
      *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
+    @Internal
     public GraphQL(GraphQLSchema graphQLSchema) {
         //noinspection deprecation
         this(graphQLSchema, null, null);
     }
-
 
     /**
      * A GraphQL object ready to execute queries
@@ -58,6 +63,7 @@ public class GraphQL {
      *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
+    @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
         //noinspection deprecation
         this(graphQLSchema, queryStrategy, null);
@@ -72,14 +78,31 @@ public class GraphQL {
      *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
+    @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this(graphQLSchema,queryStrategy,mutationStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE);
     }
 
-    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation) {
+    /**
+     * A GraphQL object ready to execute queries
+     *
+     * @param graphQLSchema        the schema to use
+     * @param queryStrategy        the query execution strategy to use
+     * @param mutationStrategy     the mutation execution strategy to use
+     * @param subscriptionStrategy the subscription execution strategy to use
+     *
+     * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
+     */
+    @Internal
+    public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy) {
+        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE);
+    }
+
+    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy,  ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation) {
         this.graphQLSchema = assertNotNull(graphQLSchema,"queryStrategy must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
+        this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SimpleExecutionStrategy();
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
         this.instrumentation = instrumentation;
     }
@@ -96,10 +119,12 @@ public class GraphQL {
     }
 
 
+    @PublicApi
     public static class Builder {
         private GraphQLSchema graphQLSchema;
         private ExecutionStrategy queryExecutionStrategy = new SimpleExecutionStrategy();
         private ExecutionStrategy mutationExecutionStrategy = new SimpleExecutionStrategy();
+        private ExecutionStrategy subscriptionExecutionStrategy = new SimpleExecutionStrategy();
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = NoOpInstrumentation.INSTANCE;
 
@@ -123,6 +148,11 @@ public class GraphQL {
             return this;
         }
 
+        public Builder subscriptionExecutionStrategy(ExecutionStrategy executionStrategy) {
+            this.subscriptionExecutionStrategy = assertNotNull(executionStrategy, "Subscription ExecutionStrategy must be non null");
+            return this;
+        }
+
         public Builder instrumentation(Instrumentation instrumentation) {
             this.instrumentation = assertNotNull(instrumentation, "Instrumentation must be non null");
             return this;
@@ -137,7 +167,7 @@ public class GraphQL {
             assertNotNull(graphQLSchema,"queryStrategy must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, idProvider, instrumentation);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation);
         }
     }
 
@@ -188,7 +218,7 @@ public class GraphQL {
         }
         ExecutionId executionId = idProvider.provide(requestString, operationName, context);
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy, instrumentation);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
         ExecutionResult result = execution.execute(executionId, graphQLSchema, context, document, operationName, arguments);
 
         executionCtx.onEnd(result);

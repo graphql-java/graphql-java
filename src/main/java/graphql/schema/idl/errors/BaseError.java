@@ -36,9 +36,6 @@ class BaseError extends GraphQLException implements GraphQLError {
 
     @Override
     public String toString() {
-        return "BaseError{" +
-                "msg='" + getMessage() + '\'' +
-                ", node=" + node +
-                '}';
+        return getMessage();
     }
 }

@@ -4,6 +4,7 @@ import graphql.language.EnumTypeDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.ObjectTypeDefinition
 import graphql.language.ScalarTypeDefinition
+import graphql.language.TypeExtensionDefinition
 import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
 
@@ -76,6 +77,10 @@ class SchemaCompilerTest extends Specification {
               ): Post
             }
             
+            extend type Query {
+                occurredWhen : String
+            }
+            
             # we need to tell the server which types represent the root query
             # and root mutation types. We call them RootQuery and RootMutation by convention.
             schema @java(package:"com.company.package", directive2:123) {
@@ -95,6 +100,7 @@ class SchemaCompilerTest extends Specification {
         def parsedTypes = typeRegistry.types()
         def scalarTypes = typeRegistry.scalars()
         def schemaDef = typeRegistry.schemaDefinition()
+        def typeExtensions = typeRegistry.typeExtensions()
 
         expect:
 
@@ -104,6 +110,9 @@ class SchemaCompilerTest extends Specification {
         parsedTypes.get("Query") instanceof ObjectTypeDefinition
         parsedTypes.get("Foo") instanceof InterfaceTypeDefinition
         parsedTypes.get("USER_STATE") instanceof EnumTypeDefinition
+
+        typeExtensions.size() == 1
+        typeExtensions.get("Query") != null
 
         scalarTypes.size() == 11 // includes standard scalars
         scalarTypes.get("Url") instanceof ScalarTypeDefinition

@@ -1,17 +1,19 @@
 package graphql.schema;
 
 
+import graphql.Internal;
+import graphql.PublicApi;
 import graphql.language.FieldDefinition;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+@PublicApi
 public class GraphQLFieldDefinition {
 
     private final String name;
@@ -23,10 +25,12 @@ public class GraphQLFieldDefinition {
     private final FieldDefinition definition;
 
 
+    @Internal
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
         this(name,description,type, dataFetcher,arguments,deprecationReason,null);
     }
 
+    @Internal
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason, FieldDefinition definition) {
         assertValidName(name);
         assertNotNull(dataFetcher, "dataFetcher can't be null");
@@ -43,7 +47,7 @@ public class GraphQLFieldDefinition {
 
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+        this.type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(this.type, typeMap);
     }
 
     public String getName() {
@@ -90,6 +94,7 @@ public class GraphQLFieldDefinition {
         return new Builder();
     }
 
+    @PublicApi
     public static class Builder {
 
         private String name;

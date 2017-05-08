@@ -9,7 +9,7 @@ import static graphql.schema.GraphQLInputObjectType.newInputObject
 
 class NoUnbrokenInputCyclesTest extends Specification {
 
-    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
+    SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
 
     def "infinitely recursive input type results in error"() {
         given:
@@ -19,7 +19,7 @@ class NoUnbrokenInputCyclesTest extends Specification {
                 .name("friend")
                 .type(new GraphQLTypeReference("Person"))
                 .build())
-                .build();
+                .build()
 
         GraphQLFieldDefinition field = newFieldDefinition()
                 .name("exists")
@@ -27,12 +27,12 @@ class NoUnbrokenInputCyclesTest extends Specification {
                 .argument(GraphQLArgument.newArgument()
                 .name("person")
                 .type(PersonInputType))
-                .build();
+                .build()
 
-        PersonInputType.getFieldDefinition("friend").type = new GraphQLNonNull(PersonInputType);
+        PersonInputType.getFieldDefinition("friend").type = new GraphQLNonNull(PersonInputType)
         when:
         new NoUnbrokenInputCycles().check(field, errorCollector)
         then:
-        errorCollector.containsValidationError(ValidationErrorType.UnbrokenInputCycle)
+        errorCollector.containsValidationError(SchemaValidationErrorType.UnbrokenInputCycle)
     }
 }

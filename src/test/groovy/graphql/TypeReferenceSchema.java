@@ -18,8 +18,8 @@ public class TypeReferenceSchema {
 
     public static GraphQLUnionType PetType = newUnionType()
             .name("Pet")
-            .possibleType(GraphQLObjectType.reference(CatType.getName()))
-            .possibleType(GraphQLObjectType.reference(DogType.getName()))
+            .possibleType(new GraphQLTypeReference(CatType.getName()))
+            .possibleType(new GraphQLTypeReference(DogType.getName()))
             .typeResolver(new TypeResolverProxy())
             .build();
     
@@ -38,7 +38,7 @@ public class TypeReferenceSchema {
             .field(newFieldDefinition()
                     .name("pet")
                     .type(new GraphQLTypeReference(PetType.getName())))
-            .withInterface(GraphQLInterfaceType.reference(NamedType.getName()))
+            .withInterface(new GraphQLTypeReference(NamedType.getName()))
             .build();
 
     public static GraphQLFieldDefinition exists = newFieldDefinition()

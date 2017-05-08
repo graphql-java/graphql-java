@@ -2,19 +2,19 @@ package graphql.schema.validation;
 
 import static graphql.Assert.assertNotNull;
 
-public class ValidationError {
+public class SchemaValidationError {
 
-    private final ValidationErrorType errorType;
+    private final SchemaValidationErrorType errorType;
     private final String description;
 
-    public ValidationError(ValidationErrorType errorType, String description) {
+    public SchemaValidationError(SchemaValidationErrorType errorType, String description) {
         assertNotNull(errorType, "error type can not be null");
         assertNotNull(description, "error description can not be null");
         this.errorType = errorType;
         this.description = description;
     }
 
-    public ValidationErrorType getErrorType() {
+    public SchemaValidationErrorType getErrorType() {
         return errorType;
     }
 
@@ -32,10 +32,10 @@ public class ValidationError {
         if (this == other) {
             return true;
         }
-        if (!(other instanceof ValidationError)) {
+        if (!(other instanceof SchemaValidationError)) {
             return false;
         }
-        ValidationError that = (ValidationError) other;
+        SchemaValidationError that = (SchemaValidationError) other;
         return this.errorType.equals(that.errorType) && this.description.equals(that.description);
     }
 }

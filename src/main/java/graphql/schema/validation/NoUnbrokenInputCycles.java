@@ -1,10 +1,5 @@
 package graphql.schema.validation;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
@@ -15,13 +10,23 @@ import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Schema validation rule ensuring no input type forms an unbroken non-nullable recursion,
  * as such a type would be impossible to satisfy
  */
-public class NoUnbrokenInputCycles implements ValidationRule {
+public class NoUnbrokenInputCycles implements SchemaValidationRule {
 
-    public void check(GraphQLFieldDefinition fieldDef, ValidationErrorCollector validationErrorCollector) {
+    @Override
+    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
+    }
+
+    @Override
+    public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
         for (GraphQLArgument argument : fieldDef.getArguments()) {
             GraphQLInputType argumentType = argument.getType();
             if (argumentType instanceof GraphQLInputObjectType) {
@@ -32,9 +37,9 @@ public class NoUnbrokenInputCycles implements ValidationRule {
         }
     }
 
-    private void check(GraphQLInputObjectType type, Set<GraphQLType> seen, List<String> path, ValidationErrorCollector validationErrorCollector) {
+    private void check(GraphQLInputObjectType type, Set<GraphQLType> seen, List<String> path, SchemaValidationErrorCollector validationErrorCollector) {
         if (seen.contains(type)) {
-            validationErrorCollector.addError(new ValidationError(ValidationErrorType.UnbrokenInputCycle, getErrorMessage(path)));
+            validationErrorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.UnbrokenInputCycle, getErrorMessage(path)));
             return;
         }
         seen.add(type);
@@ -70,11 +75,11 @@ public class NoUnbrokenInputCycles implements ValidationRule {
         }
         return type;
     }
-    
+
     private String getErrorMessage(List<String> path) {
         StringBuilder message = new StringBuilder();
         message.append("[");
-        for (int i  = 0; i < path.size(); i++) {
+        for (int i = 0; i < path.size(); i++) {
             if (i != 0) {
                 message.append(".");
             }

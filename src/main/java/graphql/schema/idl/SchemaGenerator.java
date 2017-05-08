@@ -21,6 +21,7 @@ import graphql.language.SchemaDefinition;
 import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
+import graphql.language.TypeExtensionDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.DataFetcher;
@@ -42,6 +43,7 @@ import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.SchemaProblem;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -257,11 +259,59 @@ public class SchemaGenerator {
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
-        typeDefinition.getFieldDefinitions().forEach(fieldDef ->
-                builder.field(buildField(buildCtx, typeDefinition, fieldDef)));
+        List<TypeExtensionDefinition> typeExtensions = getTypeExtensionsOf(typeDefinition, buildCtx);
 
-        typeDefinition.getImplements().forEach(type -> builder.withInterface(buildOutputType(buildCtx, type)));
+        buildObjectTypeFields(buildCtx, typeDefinition, builder, typeExtensions);
+
+        buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, typeExtensions);
+
         return builder.build();
+    }
+
+    private void buildObjectTypeFields(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<TypeExtensionDefinition> typeExtensions) {
+        Map<String, GraphQLFieldDefinition> fieldDefinitions = new LinkedHashMap<>();
+
+        typeDefinition.getFieldDefinitions().forEach(fieldDef -> {
+            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
+            fieldDefinitions.put(newFieldDefinition.getName(), newFieldDefinition);
+        });
+
+        // an object consists of the fields it gets from its definition AND its type extensions
+        typeExtensions.forEach(typeExt -> typeExt.getFieldDefinitions().forEach(fieldDef -> {
+            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
+            //
+            // de-dupe here - pre-flight checks ensure all dupes are of the same type
+            if (!fieldDefinitions.containsKey(newFieldDefinition.getName())) {
+                fieldDefinitions.put(newFieldDefinition.getName(), newFieldDefinition);
+            }
+        }));
+
+        fieldDefinitions.values().forEach(builder::field);
+    }
+
+    private void buildObjectTypeInterfaces(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<TypeExtensionDefinition> typeExtensions) {
+        Map<String, GraphQLInterfaceType> interfaces = new LinkedHashMap<>();
+        typeDefinition.getImplements().forEach(type -> {
+            GraphQLInterfaceType newInterfaceType = buildOutputType(buildCtx, type);
+            interfaces.put(newInterfaceType.getName(), newInterfaceType);
+        });
+
+        // an object consists of the interfaces it gets from its definition AND its type extensions
+        typeExtensions.forEach(typeExt -> typeExt.getImplements().forEach(type -> {
+            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            //
+            // de-dupe here - pre-flight checks ensure all dupes are of the same type
+            if (!interfaces.containsKey(interfaceType.getName())) {
+                interfaces.put(interfaceType.getName(), interfaceType);
+            }
+        }));
+
+        interfaces.values().forEach(builder::withInterface);
+    }
+
+    private List<TypeExtensionDefinition> getTypeExtensionsOf(ObjectTypeDefinition objectTypeDefinition, BuildContext buildCtx) {
+        List<TypeExtensionDefinition> typeExtensionDefinitions = buildCtx.typeRegistry.typeExtensions().get(objectTypeDefinition.getName());
+        return typeExtensionDefinitions == null ? Collections.emptyList() : typeExtensionDefinitions;
     }
 
     private GraphQLInterfaceType buildInterfaceType(BuildContext buildCtx, InterfaceTypeDefinition typeDefinition) {

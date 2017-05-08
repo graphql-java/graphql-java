@@ -70,7 +70,6 @@ class ParserTest extends Specification {
         Document document = new Parser().parseDocument(input)
         then:
         isEqual(document, expectedResult)
-
     }
 
     def "parse mutation"() {
@@ -82,6 +81,17 @@ class ParserTest extends Specification {
 
         then:
         document.definitions[0].operation == OperationDefinition.Operation.MUTATION
+    }
+
+    def "parse subscription"() {
+        given:
+        def input = 'subscription setName { setName(name: "Homer") { newName } }'
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions[0].operation == OperationDefinition.Operation.SUBSCRIPTION
     }
 
     def "parse field arguments"() {
@@ -376,6 +386,17 @@ class ParserTest extends Specification {
         def document = new Parser().parseDocument(input)
         then:
         document.definitions[0].operation == OperationDefinition.Operation.MUTATION
+    }
+
+    def "subscription without a name"(){
+        given:
+        def input="""
+        subscription { s }
+        """
+        when:
+        def document = new Parser().parseDocument(input)
+        then:
+        document.definitions[0].operation == OperationDefinition.Operation.SUBSCRIPTION
 
     }
 
@@ -393,20 +414,21 @@ class ParserTest extends Specification {
         assertField(document.definitions[0] as OperationDefinition, name)
 
         where:
-        name         | _
-        'fragment'   | _
-        'query'      | _
-        'mutation'   | _
-        'schema'     | _
-        'scalar'     | _
-        'type'       | _
-        'interface'  | _
-        'implements' | _
-        'enum'       | _
-        'union'      | _
-        'input'      | _
-        'extend'     | _
-        'directive'  | _
+        name           | _
+        'fragment'     | _
+        'query'        | _
+        'mutation'     | _
+        'subscription' | _
+        'schema'       | _
+        'scalar'       | _
+        'type'         | _
+        'interface'    | _
+        'implements'   | _
+        'enum'         | _
+        'union'        | _
+        'input'        | _
+        'extend'       | _
+        'directive'    | _
     }
 
     def "#352 - incorrect parentheses are detected"() {

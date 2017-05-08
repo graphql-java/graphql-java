@@ -61,7 +61,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
  * You should place these examples into the README.next.md and NOT the main README.md.  This allows
  * 'master' to progress yet shows consumers the released information about the project.
  */
-@SuppressWarnings({"unused", "Convert2Lambda", "UnnecessaryLocalVariable"})
+@SuppressWarnings({"unused", "Convert2Lambda", "UnnecessaryLocalVariable", "ConstantConditions"})
 public class ReadmeExamples {
 
 
@@ -178,6 +178,7 @@ public class ReadmeExamples {
         GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
                 .mutationExecutionStrategy(new SimpleExecutionStrategy())
+                .subscriptionExecutionStrategy(new SimpleExecutionStrategy())
                 .build();
 
     }
@@ -312,6 +313,26 @@ public class ReadmeExamples {
         RuntimeWiring wiring = buildRuntimeWiring();
         GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
     }
+
+    void compiledSplitSchemaExample() {
+
+        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+
+        File schemaFile1 = loadSchema("starWarsSchemaPart1.graphqls");
+        File schemaFile2 = loadSchema("starWarsSchemaPart2.graphqls");
+        File schemaFile3 = loadSchema("starWarsSchemaPart3.graphqls");
+
+        TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
+
+        // each compiled registry is merged into the main registry
+        typeRegistry.merge(schemaCompiler.compile(schemaFile1));
+        typeRegistry.merge(schemaCompiler.compile(schemaFile2));
+        typeRegistry.merge(schemaCompiler.compile(schemaFile3));
+
+        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
+    }
+
 
     RuntimeWiring buildRuntimeWiring() {
         return RuntimeWiring.newRuntimeWiring()
