@@ -60,8 +60,12 @@ public class TypeDefinitionRegistry {
             throw new SchemaProblem(errors);
         }
 
+        if (this.schema == null) {
+            // ensure schema is not overwritten by merge
+            this.schema = typeRegistry.schema;
+        }
+
         // ok commit to the merge
-        this.schema = typeRegistry.schema;
         this.types.putAll(tempTypes);
         this.typeExtensions.putAll(tempTypeExtensions);
         this.scalarTypes.putAll(tempScalarTypes);

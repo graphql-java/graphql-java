@@ -45,6 +45,29 @@ class TypeDefinitionRegistryTest extends Specification {
     }
 
 
+    def "merging multiple type registries does not overwrite schema definition"() {
+
+        def spec1 = """ 
+            schema {
+                query: Query
+            }
+        """
+
+        def spec2 = """ 
+            type Post { id: Int! }
+        """
+
+        def result1 = compile(spec1)
+        def result2 = compile(spec2)
+
+        def registry = result1.merge(result2)
+
+        expect:
+        result1.schemaDefinition().isPresent()
+        registry.schemaDefinition().get().isEqualTo(result1.schemaDefinition().get())
+
+    }
+
     def "test merge of schema types"() {
 
         def spec1 = """ 
