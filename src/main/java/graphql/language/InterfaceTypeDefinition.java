@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class InterfaceTypeDefinition extends AbstractNode implements TypeDefinition {
+public class InterfaceTypeDefinition extends AbstractNode implements TypeDefinition, ResolvedTypeDefinition {
     private String name;
     private List<FieldDefinition> definitions = new ArrayList<>();
     private List<Directive> directives = new ArrayList<>();

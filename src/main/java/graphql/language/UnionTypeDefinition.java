@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UnionTypeDefinition extends AbstractNode implements TypeDefinition {
+public class UnionTypeDefinition extends AbstractNode implements TypeDefinition, ResolvedTypeDefinition {
     private String name;
     private List<Directive> directives = new ArrayList<>();
     private List<Type> memberTypes = new ArrayList<>();

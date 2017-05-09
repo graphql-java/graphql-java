@@ -8,6 +8,7 @@ import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.OperationTypeDefinition;
+import graphql.language.ResolvedTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
@@ -153,14 +154,19 @@ public class SchemaTypeChecker {
 
     private void checkTypeResolversArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
 
-        Consumer<TypeDefinition> checkForResolver = typeDef -> {
-            if (!wiring.getTypeResolvers().containsKey(typeDef.getName())) {
+        Consumer<ResolvedTypeDefinition> checkForResolver = typeDef -> {
+            boolean hasTypeResolver = wiring.getWiringFactory().providesTypeResolver(typeRegistry,typeDef);
+            if (! hasTypeResolver) {
+                hasTypeResolver = wiring.getTypeResolvers().containsKey(typeDef.getName());
+            }
+            if (! hasTypeResolver) {
                 errors.add(new MissingTypeResolverError(typeDef));
             }
         };
 
         typeRegistry.types().values().stream()
-                .filter(typeDef -> typeDef instanceof InterfaceTypeDefinition || typeDef instanceof UnionTypeDefinition)
+                .filter(typeDef -> typeDef instanceof ResolvedTypeDefinition)
+                .map(ResolvedTypeDefinition.class::cast)
                 .forEach(checkForResolver);
 
     }
