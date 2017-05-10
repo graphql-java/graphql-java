@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -18,14 +17,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLOutputType fieldType;
     private final GraphQLType parentType;
     private final GraphQLSchema graphQLSchema;
-    private Map<String, FragmentDefinition> fragmentsByName;
-    private ExecutionId executionId;
+    private final Map<String, FragmentDefinition> fragmentsByName;
+    private final ExecutionId executionId;
+    private final DataFetchingFieldSelectionSet selectionSet;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, ExecutionContext executionContext) {
-        this(source, arguments, executionContext.getRoot(), fields, fieldType, parentType, executionContext.getGraphQLSchema(), executionContext.getFragmentsByName(), executionContext.getExecutionId());
-    }
-
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId) {
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, DataFetchingFieldSelectionSet selectionSet) {
         this.source = source;
         this.arguments = arguments;
         this.context = context;
@@ -35,6 +31,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.graphQLSchema = graphQLSchema;
         this.fragmentsByName = fragmentsByName;
         this.executionId = executionId;
+        this.selectionSet = selectionSet;
     }
 
     @Override
@@ -58,7 +55,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T  getContext() {
+    public <T> T getContext() {
         return (T) context;
     }
 
@@ -90,5 +87,10 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public ExecutionId getExecutionId() {
         return executionId;
+    }
+
+    @Override
+    public DataFetchingFieldSelectionSet getSelectionSet() {
+        return selectionSet;
     }
 }

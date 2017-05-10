@@ -81,4 +81,9 @@ public interface DataFetchingEnvironment {
      * @return the {@link ExecutionId} for the current operation
      */
     ExecutionId getExecutionId();
+
+    /**
+     * @return the {@link DataFetchingFieldSelectionSet} for the current operation
+     */
+    DataFetchingFieldSelectionSet getSelectionSet();
 }

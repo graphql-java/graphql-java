@@ -13,11 +13,14 @@ import graphql.execution.instrumentation.parameters.FieldParameters;
 import graphql.language.Field;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironmentImpl;
+import graphql.schema.DataFetchingFieldSelectionSet;
+import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -27,10 +30,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
@@ -70,14 +73,21 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), type, fields.get(0));
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+
+        GraphQLOutputType fieldType = fieldDef.getType();
+        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
+
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 parameters.source(),
                 argumentValues,
+                executionContext.getRoot(),
                 fields,
-                fieldDef.getType(),
+                fieldType,
                 type,
-                executionContext
-        );
+                executionContext.getGraphQLSchema(),
+                executionContext.getFragmentsByName(),
+                executionContext.getExecutionId(),
+                fieldCollector);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
@@ -95,14 +105,14 @@ public abstract class ExecutionStrategy {
             fetchCtx.onEnd(e);
         }
 
-        TypeInfo fieldType = newTypeInfo()
-                .type(fieldDef.getType())
+        TypeInfo fieldTypeInfo = newTypeInfo()
+                .type(fieldType)
                 .parentInfo(parameters.typeInfo())
                 .build();
 
 
         ExecutionParameters newParameters = ExecutionParameters.newParameters()
-                .typeInfo(fieldType)
+                .typeInfo(fieldTypeInfo)
                 .fields(parameters.fields())
                 .arguments(argumentValues)
                 .source(resolvedValue).build();
@@ -157,12 +167,12 @@ public abstract class ExecutionStrategy {
             resolvedType = (GraphQLObjectType) fieldType;
         }
 
-        Map<String, List<Field>> subFields = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
-        for (Field field : fields) {
-            if (field.getSelectionSet() == null) continue;
-            fieldCollector.collectFields(executionContext, resolvedType, field.getSelectionSet(), visitedFragments, subFields);
-        }
+        FieldCollectorParameters collectorParameters = newParameters(executionContext.getGraphQLSchema(), resolvedType)
+                .fragments(executionContext.getFragmentsByName())
+                .variables(executionContext.getVariables())
+                .build();
+
+        Map<String, List<Field>> subFields = fieldCollector.collectFields(collectorParameters, fields);
 
         ExecutionParameters newParameters = ExecutionParameters.newParameters()
                 .typeInfo(typeInfo.asType(resolvedType))

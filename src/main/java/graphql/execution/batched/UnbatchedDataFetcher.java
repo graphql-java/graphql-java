@@ -37,7 +37,8 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
                     environment.getParentType(),
                     environment.getGraphQLSchema(),
                     environment.getFragmentsByName(),
-                    environment.getExecutionId());
+                    environment.getExecutionId(),
+                    environment.getSelectionSet());
             results.add(delegate.get(singleEnv));
         }
         return results;

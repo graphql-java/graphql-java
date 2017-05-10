@@ -3,7 +3,6 @@ package graphql
 import graphql.schema.DataFetchingEnvironmentImpl
 import graphql.schema.FieldDataFetcher
 import graphql.schema.GraphQLOutputType
-import graphql.schema.GraphQLScalarType
 import graphql.schema.PropertyDataFetcher
 import spock.lang.Specification
 
@@ -55,8 +54,20 @@ class DataFetcherTest extends Specification {
         dataHolder.setBooleanFieldWithGet(false)
     }
 
-    private def env(GraphQLOutputType type) {
-        new DataFetchingEnvironmentImpl(dataHolder, null, null, null, type, null, null, null, null)
+    def env(GraphQLOutputType type) {
+        new DataFetchingEnvironmentImpl(
+                dataHolder,
+                Collections.emptyMap(),
+                null,
+                Collections.emptyList(),
+                type,
+                null,
+                null,
+                Collections.emptyMap(),
+                null,
+                null
+        )
+
     }
 
     def "get field value"() {
