@@ -508,7 +508,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnInputTypeError.class)
-        err.message == "The CharacterInput type is used as an InputType, but is not declared as one"
+        err.message == "expected InputType, but found CharacterInput type"
     }
 
     def "InputType used as type should throw appropriate error #425"() {
@@ -536,6 +536,6 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnOutputTypeError.class)
-        err.message == "The CharacterInput type is used as an OutputType, but is not declared as one"
+        err.message == "expected OutputType, but found CharacterInput type"
     }
 }
