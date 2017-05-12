@@ -22,7 +22,6 @@ import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeExtensionDefinition;
-import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.DataFetcher;
@@ -42,6 +41,8 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
+import graphql.schema.idl.errors.NotAnInputTypeError;
+import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
 
 import java.util.Collections;
@@ -135,7 +136,9 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaCompiler#compile(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -184,6 +187,7 @@ public class SchemaGenerator {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
+     *
      * @return an output type
      */
     @SuppressWarnings("unchecked")
@@ -213,8 +217,11 @@ public class SchemaGenerator {
             outputType = buildUnionType(buildCtx, (UnionTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof EnumTypeDefinition) {
             outputType = buildEnumType((EnumTypeDefinition) typeDefinition);
-        } else {
+        } else if (typeDefinition instanceof ScalarTypeDefinition){
             outputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
+        } else {
+            // typeDefinition is not a valid output type
+            throw new NotAnOutputTypeError(typeDefinition);
         }
 
         buildCtx.put(outputType);
@@ -243,8 +250,11 @@ public class SchemaGenerator {
             inputType = buildInputObjectType(buildCtx, (InputObjectTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof EnumTypeDefinition) {
             inputType = buildEnumType((EnumTypeDefinition) typeDefinition);
-        } else {
+        } else if (typeDefinition instanceof ScalarTypeDefinition){
             inputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
+        } else {
+            // typeDefinition is not a valid InputType
+            throw new NotAnInputTypeError(typeDefinition);
         }
 
         buildCtx.put(inputType);
@@ -331,7 +341,9 @@ public class SchemaGenerator {
         builder.typeResolver(getTypeResolver(buildCtx, typeDefinition.getName()));
 
         typeDefinition.getMemberTypes().forEach(mt -> {
-            builder.possibleType(new GraphQLTypeReference(((TypeName) mt).getName()));
+            TypeDefinition memberTypeDef = buildCtx.getTypeDefinition(mt);
+            GraphQLObjectType objectType = buildObjectType(buildCtx, (ObjectTypeDefinition) memberTypeDef);
+            builder.possibleType(objectType);
         });
         return builder.build();
     }
