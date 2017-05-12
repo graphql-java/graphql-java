@@ -72,7 +72,6 @@ class SchemaGeneratorTest extends Specification {
         assert authorField.arguments.get(0).type instanceof GraphQLNonNull
         assert unwrap(authorField.arguments.get(0).type).name == "Int"
 
-
         //type Post {
         //    id: Int!
         //            title: String
@@ -131,7 +130,6 @@ class SchemaGeneratorTest extends Specification {
     }
 
 
-
     def "test simple schema generate"() {
 
         def schemaSpec = """
@@ -186,6 +184,7 @@ class SchemaGeneratorTest extends Specification {
 
         commonSchemaAsserts(schema)
     }
+
 
     def "schema can come from multiple sources and be bound together"() {
         def schemaSpec1 = """
@@ -256,6 +255,123 @@ class SchemaGeneratorTest extends Specification {
         commonSchemaAsserts(schema)
 
 
+    }
+
+    def "union type: union member used two times "() {
+        def spec = """     
+
+            type Query {
+                foobar: FooOrBar
+                foo: Foo
+            }
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            union FooOrBar = Foo | Bar
+            
+            schema {
+              query: Query
+            }
+
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0].name == "Foo"
+        types[1].name == "Bar"
+
+    }
+
+    def "union type: union members only used once"() {
+        def spec = """     
+
+            type Query {
+                foobar: FooOrBar
+            }
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            union FooOrBar = Foo | Bar
+            
+            schema {
+              query: Query
+            }
+
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0].name == "Foo"
+        types[1].name == "Bar"
+
+    }
+
+    def "union type: union declared before members"() {
+        def spec = """     
+
+            union FooOrBar = Foo | Bar
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            type Query {
+                foobar: FooOrBar
+            }
+            
+            schema {
+              query: Query
+            }
+
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0].name == "Foo"
+        types[1].name == "Bar"
 
     }
 
