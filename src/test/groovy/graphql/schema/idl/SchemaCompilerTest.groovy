@@ -4,7 +4,6 @@ import graphql.language.EnumTypeDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.ObjectTypeDefinition
 import graphql.language.ScalarTypeDefinition
-import graphql.language.TypeExtensionDefinition
 import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
 
@@ -139,6 +138,34 @@ class SchemaCompilerTest extends Specification {
         then:
 
         thrown(SchemaProblem)
+    }
+
+    def "schema with union"() {
+        def schema = """     
+
+            type Query {
+                foobar: FooOrBar
+            }
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            union FooOrBar = Foo | Bar
+            
+            schema {
+              query: Query
+            }
+
+        """
+        when:
+        TypeDefinitionRegistry typeRegistry = new SchemaCompiler().compile(schema)
+        then:
+        typeRegistry.types().size() == 4
     }
 
 }
