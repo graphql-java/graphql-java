@@ -22,6 +22,7 @@ import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeExtensionDefinition;
+import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.DataFetcher;
@@ -134,9 +135,7 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaCompiler#compile(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -185,7 +184,6 @@ public class SchemaGenerator {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
-     *
      * @return an output type
      */
     @SuppressWarnings("unchecked")
@@ -333,9 +331,7 @@ public class SchemaGenerator {
         builder.typeResolver(getTypeResolver(buildCtx, typeDefinition.getName()));
 
         typeDefinition.getMemberTypes().forEach(mt -> {
-            TypeDefinition memberTypeDef = buildCtx.getTypeDefinition(mt);
-            GraphQLObjectType objectType = buildObjectType(buildCtx, (ObjectTypeDefinition) memberTypeDef);
-            builder.possibleType(objectType);
+            builder.possibleType(new GraphQLTypeReference(((TypeName) mt).getName()));
         });
         return builder.build();
     }
