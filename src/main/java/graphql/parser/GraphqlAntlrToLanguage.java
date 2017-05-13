@@ -26,6 +26,7 @@ import graphql.language.IntValue;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
+import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectValue;
@@ -56,6 +57,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+
+import static graphql.language.NullValue.*;
 
 public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
@@ -666,6 +669,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
             newNode(booleanValue, ctx);
             return booleanValue;
+        } else if (ctx.NullValue() != null) {
+            newNode(Null, ctx);
+            return Null;
         } else if (ctx.StringValue() != null) {
             StringValue stringValue = new StringValue(parseString(ctx.StringValue().getText()));
             newNode(stringValue, ctx);
@@ -711,6 +717,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
             newNode(booleanValue, ctx);
             return booleanValue;
+        } else if (ctx.NullValue() != null) {
+            newNode(Null, ctx);
+            return Null;
         } else if (ctx.StringValue() != null) {
             StringValue stringValue = new StringValue(parseString(ctx.StringValue().getText()));
             newNode(stringValue, ctx);
