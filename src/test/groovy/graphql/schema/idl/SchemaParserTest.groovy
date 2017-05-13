@@ -11,7 +11,7 @@ import spock.lang.Specification
  * We don't want to retest the base GraphQL parser since it has its own testing
  * but we do want to test our aspects of it
  */
-class SchemaCompilerTest extends Specification {
+class SchemaParserTest extends Specification {
 
     static ALL_DEFINED_TYPES = """
 
@@ -90,10 +90,10 @@ class SchemaCompilerTest extends Specification {
           """
 
     TypeDefinitionRegistry read(String types) {
-        new SchemaCompiler().compile(types)
+        new SchemaParser().parse(types)
     }
 
-    def "test full schema compile"() {
+    def "test full schema parsing"() {
 
         def typeRegistry = read(ALL_DEFINED_TYPES)
         def parsedTypes = typeRegistry.types()
@@ -163,7 +163,7 @@ class SchemaCompilerTest extends Specification {
 
         """
         when:
-        TypeDefinitionRegistry typeRegistry = new SchemaCompiler().compile(schema)
+        TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(schema)
         then:
         typeRegistry.types().size() == 4
     }

@@ -17,7 +17,7 @@ class ExecutableStarWarsSchemaTest extends Specification {
     GraphQLSchema load(String fileName, RuntimeWiring wiring) {
         def stream = getClass().getClassLoader().getResourceAsStream(fileName)
 
-        def typeRegistry = new SchemaCompiler().compile(new InputStreamReader(stream))
+        def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
         def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
         schema
     }

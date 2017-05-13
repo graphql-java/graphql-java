@@ -54,7 +54,7 @@ import java.util.Optional;
 import java.util.Stack;
 
 /**
- * This can generate a working runtime schema from a compiled type registry and runtime wiring
+ * This can generate a working runtime schema from a type registry and runtime wiring
  */
 public class SchemaGenerator {
 
@@ -134,7 +134,7 @@ public class SchemaGenerator {
     /**
      * This will take a {@link TypeDefinitionRegistry} and a {@link RuntimeWiring} and put them together to create a executable schema
      *
-     * @param typeRegistry this can be obtained via {@link SchemaCompiler#compile(String)}
+     * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
      * @return an executable schema
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined

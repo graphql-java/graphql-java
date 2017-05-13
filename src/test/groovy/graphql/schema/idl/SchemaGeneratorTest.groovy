@@ -24,7 +24,7 @@ class SchemaGeneratorTest extends Specification {
 
 
     GraphQLSchema generateSchema(String schemaSpec, RuntimeWiring wiring) {
-        def typeRegistry = new SchemaCompiler().compile(schemaSpec)
+        def typeRegistry = new SchemaParser().parse(schemaSpec)
         def result = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
         result
     }
@@ -242,9 +242,9 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def typeRegistry1 = new SchemaCompiler().compile(schemaSpec1)
-        def typeRegistry2 = new SchemaCompiler().compile(schemaSpec2)
-        def typeRegistry3 = new SchemaCompiler().compile(schemaSpec3)
+        def typeRegistry1 = new SchemaParser().parse(schemaSpec1)
+        def typeRegistry2 = new SchemaParser().parse(schemaSpec2)
+        def typeRegistry3 = new SchemaParser().parse(schemaSpec3)
 
         typeRegistry1.merge(typeRegistry2).merge(typeRegistry3)
 

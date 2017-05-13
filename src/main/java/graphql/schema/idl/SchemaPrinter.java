@@ -25,12 +25,12 @@ import java.util.Map;
 import java.util.Stack;
 
 /**
- * This can decompile an in memory GraphQL schema back to a logical schema definition
+ * This can print an in memory GraphQL schema back to a logical schema definition
  */
-public class SchemaDecompiler {
+public class SchemaPrinter {
 
     /**
-     * Options to use when decompiling a schema
+     * Options to use when printing a schema
      */
     public static class Options {
         private final boolean includeIntrospectionTypes;
@@ -80,11 +80,11 @@ public class SchemaDecompiler {
     private final Map<Class, TypePrinter<?>> printers = new LinkedHashMap<>();
     private final Options options;
 
-    public SchemaDecompiler() {
+    public SchemaPrinter() {
         this(Options.defaultOptions());
     }
 
-    public SchemaDecompiler(Options options) {
+    public SchemaPrinter(Options options) {
         this.options = options;
         printers.put(GraphQLSchema.class, schemaPrinter());
         printers.put(GraphQLObjectType.class, objectPrinter());
@@ -96,13 +96,13 @@ public class SchemaDecompiler {
     }
 
     /**
-     * This can decompile an in memory GraphQL schema back to a logical schema definition
+     * This can print an in memory GraphQL schema back to a logical schema definition
      *
      * @param schema the schema in play
      *
      * @return the logical schema definition
      */
-    public String decompile(GraphQLSchema schema) {
+    public String print(GraphQLSchema schema) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
@@ -288,7 +288,7 @@ public class SchemaDecompiler {
         return (TypePrinter<T>) typePrinter;
     }
 
-    public String decompile(GraphQLType type) {
+    public String print(GraphQLType type) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 

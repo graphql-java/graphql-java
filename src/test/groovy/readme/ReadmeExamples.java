@@ -23,8 +23,8 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.StaticDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.idl.RuntimeWiring;
-import graphql.schema.idl.SchemaCompiler;
 import graphql.schema.idl.SchemaGenerator;
+import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 
 import java.io.File;
@@ -56,7 +56,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
 /**
  * This class holds readme examples so they stay correct and can be compiled.  If this
- * does not compile, chances are the readme examples are now wrong.
+ * does not parse, chances are the readme examples are now wrong.
  *
  * You should place these examples into the README.next.md and NOT the main README.md.  This allows
  * 'master' to progress yet shows consumers the released information about the project.
@@ -302,21 +302,21 @@ public class ReadmeExamples {
         return new Foo();
     }
 
-    void compiledSchemaExample() {
+    void parsedSchemaExample() {
 
-        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaParser schemaParser = new SchemaParser();
         SchemaGenerator schemaGenerator = new SchemaGenerator();
 
         File schemaFile = loadSchema("starWarsSchema.graphqls");
 
-        TypeDefinitionRegistry typeRegistry = schemaCompiler.compile(schemaFile);
+        TypeDefinitionRegistry typeRegistry = schemaParser.parse(schemaFile);
         RuntimeWiring wiring = buildRuntimeWiring();
         GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
     }
 
-    void compiledSplitSchemaExample() {
+    void parsedSplitSchemaExample() {
 
-        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaParser schemaParser = new SchemaParser();
         SchemaGenerator schemaGenerator = new SchemaGenerator();
 
         File schemaFile1 = loadSchema("starWarsSchemaPart1.graphqls");
@@ -326,9 +326,9 @@ public class ReadmeExamples {
         TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
 
         // each compiled registry is merged into the main registry
-        typeRegistry.merge(schemaCompiler.compile(schemaFile1));
-        typeRegistry.merge(schemaCompiler.compile(schemaFile2));
-        typeRegistry.merge(schemaCompiler.compile(schemaFile3));
+        typeRegistry.merge(schemaParser.parse(schemaFile1));
+        typeRegistry.merge(schemaParser.parse(schemaFile2));
+        typeRegistry.merge(schemaParser.parse(schemaFile3));
 
         GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
     }
