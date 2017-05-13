@@ -41,6 +41,8 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
+import graphql.schema.idl.errors.NotAnInputTypeError;
+import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
 
 import java.util.Collections;
@@ -212,8 +214,11 @@ public class SchemaGenerator {
             outputType = buildUnionType(buildCtx, (UnionTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof EnumTypeDefinition) {
             outputType = buildEnumType((EnumTypeDefinition) typeDefinition);
-        } else {
+        } else if (typeDefinition instanceof ScalarTypeDefinition){
             outputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
+        } else {
+            // typeDefinition is not a valid output type
+            throw new NotAnOutputTypeError(typeDefinition);
         }
 
         buildCtx.put(outputType);
@@ -242,8 +247,11 @@ public class SchemaGenerator {
             inputType = buildInputObjectType(buildCtx, (InputObjectTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof EnumTypeDefinition) {
             inputType = buildEnumType((EnumTypeDefinition) typeDefinition);
-        } else {
+        } else if (typeDefinition instanceof ScalarTypeDefinition){
             inputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
+        } else {
+            // typeDefinition is not a valid InputType
+            throw new NotAnInputTypeError(typeDefinition);
         }
 
         buildCtx.put(inputType);

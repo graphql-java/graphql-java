@@ -2,6 +2,8 @@ package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
 import graphql.schema.*
+import graphql.schema.idl.errors.NotAnInputTypeError
+import graphql.schema.idl.errors.NotAnOutputTypeError
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -595,7 +597,61 @@ class SchemaGeneratorTest extends Specification {
 
         type.interfaces.size() == 1
         type.interfaces[0].name == "Character"
+    }
 
+    def "Type used as inputType should throw appropriate error #425"() {
+        when:
+        def spec = """
+            schema {
+                query: Query
+            }
+            
+            type Query {
+                findCharacter(character: CharacterInput!): Boolean
+            }
+            
+            # CharacterInput must be an input, but is a type
+            type CharacterInput {
+                firstName: String
+                lastName: String
+                family: Boolean
+            }
+        """
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
 
+        generateSchema(spec, wiring)
+
+        then:
+        def err = thrown(NotAnInputTypeError.class)
+        err.message == "expected InputType, but found CharacterInput type"
+    }
+
+    def "InputType used as type should throw appropriate error #425"() {
+        when:
+        def spec = """
+            schema {
+                query: Query
+            }
+            
+            type Query {
+                findCharacter: CharacterInput
+            }
+            
+            # CharacterInput must be an input, but is a type
+            input CharacterInput {
+                firstName: String
+                lastName: String
+                family: Boolean
+            }
+        """
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+
+        generateSchema(spec, wiring)
+
+        then:
+        def err = thrown(NotAnOutputTypeError.class)
+        err.message == "expected OutputType, but found CharacterInput type"
     }
 }
