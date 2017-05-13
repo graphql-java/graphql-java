@@ -40,7 +40,6 @@ to checkout the appropriate tag when looking for the version documented here.
 - [Contributions](#contributions)
 - [Build it](#build-it)
 - [Development Build](#development-build)
-- [Javadocs](#javadocs)
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
 - [Related Projects](#related-projects)
@@ -754,10 +753,6 @@ The latest development build is available on Bintray.
 
 Please look at [Latest Build](https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion) for the 
 latest version value.
-
-#### Javadocs
-
-See the [project page](http://graphql-java.github.io/graphql-java/) for the javadocs associated with each release.
 
 
 #### How to use the latest build with Gradle
