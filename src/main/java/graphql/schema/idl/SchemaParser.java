@@ -21,55 +21,55 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * This can take a graphql schema definition and compile it into a {@link TypeDefinitionRegistry} of
+ * This can take a graphql schema definition and parse it into a {@link TypeDefinitionRegistry} of
  * definitions ready to be placed into {@link SchemaGenerator} say
  */
-public class SchemaCompiler {
+public class SchemaParser {
 
     /**
-     * Compiles a file of schema definitions into a {@link TypeDefinitionRegistry}
+     * Parse a file of schema definitions and create a {@link TypeDefinitionRegistry}
      *
-     * @param file the file to compile
+     * @param file the file to parse
      *
-     * @return the registry of compiled type definitions
+     * @return registry of type definitions
      *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
-    public TypeDefinitionRegistry compile(File file) throws SchemaProblem {
+    public TypeDefinitionRegistry parse(File file) throws SchemaProblem {
         try {
-            return compile(new FileReader(file));
+            return parse(new FileReader(file));
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * Compiles a reader of schema definitions into a {@link TypeDefinitionRegistry}
+     * Parse a reader of schema definitions and create a {@link TypeDefinitionRegistry}
      *
-     * @param reader the reader to compile
+     * @param reader the reader to parse
      *
-     * @return the registry of compiled type definitions
+     * @return registry of type definitions
      *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
-    public TypeDefinitionRegistry compile(Reader reader) throws SchemaProblem {
+    public TypeDefinitionRegistry parse(Reader reader) throws SchemaProblem {
         try (Reader input = reader) {
-            return compile(read(input));
+            return parse(read(input));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     /**
-     * Compiles a srtring of schema definitions into a {@link TypeDefinitionRegistry}
+     * Parse a string of schema definitions and create a {@link TypeDefinitionRegistry}
      *
-     * @param schemaInput the schema string to compile
+     * @param schemaInput the schema string to parse
      *
-     * @return the registry of compiled type definitions
+     * @return registry of type definitions
      *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
-    public TypeDefinitionRegistry compile(String schemaInput) throws SchemaProblem {
+    public TypeDefinitionRegistry parse(String schemaInput) throws SchemaProblem {
         try {
             Parser parser = new Parser();
             Document document = parser.parseDocument(schemaInput);

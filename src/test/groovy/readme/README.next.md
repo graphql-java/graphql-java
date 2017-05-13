@@ -509,7 +509,7 @@ public Object executeOperation(@RequestBody Map body) {
 
 This library allows for "schema driven" development of graphql applications.
 
-It allows you to compile a set of schema files into a executable `GraphqlSchema`.
+It allows you to transform a set of schema files into a executable `GraphqlSchema`.
  
  
 So given a graphql schema input file like :
@@ -559,15 +559,15 @@ type Droid implements Character {
 
 ```
 
-You could compile and generate an executable schema via
+You could generate an executable schema via
 
 ```java
-        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaParser schemaParser = new SchemaParser();
         SchemaGenerator schemaGenerator = new SchemaGenerator();
 
         File schemaFile = loadSchema("starWarsSchema.graphqls");
 
-        TypeDefinitionRegistry typeRegistry = schemaCompiler.compile(schemaFile);
+        TypeDefinitionRegistry typeRegistry = schemaParser.parse(schemaFile);
         RuntimeWiring wiring = buildRuntimeWiring();
         GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
 
@@ -623,7 +623,7 @@ The first technique is to merge multiple Schema IDL files into one logic unit.  
 been split into multiple files and merged all together just before schema generation.
 
    ```java
-        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaParser schemaParser = new SchemaCompiler();
         SchemaGenerator schemaGenerator = new SchemaGenerator();
 
         File schemaFile1 = loadSchema("starWarsSchemaPart1.graphqls");
@@ -632,10 +632,10 @@ been split into multiple files and merged all together just before schema genera
 
         TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
 
-        // each compiled registry is merged into the main registry
-        typeRegistry.merge(schemaCompiler.compile(schemaFile1));
-        typeRegistry.merge(schemaCompiler.compile(schemaFile2));
-        typeRegistry.merge(schemaCompiler.compile(schemaFile3));
+        // each registry is merged into the main registry
+        typeRegistry.merge(schemaParser.compile(schemaFile1));
+        typeRegistry.merge(schemaParser.compile(schemaFile2));
+        typeRegistry.merge(schemaParser.compile(schemaFile3));
 
         GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
    ```
