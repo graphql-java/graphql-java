@@ -39,6 +39,11 @@ class ValidationUtilTest extends Specification {
         !validationUtil.isValidLiteralValue(null, nonNull(GraphQLString))
     }
 
+    def "NullValue and NonNull is invalid"() {
+        expect:
+        !validationUtil.isValidLiteralValue(NullValue.Null, nonNull(GraphQLString))
+    }
+
     def "a nonNull value for a NonNull type is valid"() {
         expect:
         validationUtil.isValidLiteralValue(new StringValue("string"), nonNull(GraphQLString))
@@ -47,6 +52,11 @@ class ValidationUtilTest extends Specification {
     def "null is valid when type is NonNull"() {
         expect:
         validationUtil.isValidLiteralValue(null, GraphQLString)
+    }
+
+    def "NullValue is valid when type is NonNull"() {
+        expect:
+        validationUtil.isValidLiteralValue(NullValue.Null, GraphQLString)
     }
 
     def "variables are valid"() {

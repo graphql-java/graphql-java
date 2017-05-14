@@ -66,6 +66,7 @@ IntValue |
 FloatValue |
 StringValue |
 BooleanValue |
+NullValue |
 enumValue |
 arrayValue |
 objectValue;
@@ -76,6 +77,7 @@ IntValue |
 FloatValue |
 StringValue |
 BooleanValue |
+NullValue |
 enumValue |
 arrayValueWithVariable |
 objectValueWithVariable;
@@ -175,6 +177,8 @@ directiveLocations '|' directiveLocation
 // Token
 
 BooleanValue: 'true' | 'false';
+
+NullValue: 'null';
 
 FRAGMENT: 'fragment';
 QUERY: 'query';

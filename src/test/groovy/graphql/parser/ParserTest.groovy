@@ -96,13 +96,14 @@ class ParserTest extends Specification {
 
     def "parse field arguments"() {
         given:
-        def input = '{ user(id: 10, name: "homer", admin:true, floatValue: 3.04) }'
+        def input = '{ user(id: 10, name: "homer", admin:true, floatValue: 3.04, nullArg : null) }'
 
         def argument = new Argument("id", new IntValue(10))
         def argument2 = new Argument("name", new StringValue("homer"))
         def argument3 = new Argument("admin", new BooleanValue(true))
         def argument4 = new Argument("floatValue", new FloatValue(3.04))
-        def field = new Field("user", [argument, argument2, argument3, argument4])
+        def argument5 = new Argument("nullArg", NullValue.Null)
+        def field = new Field("user", [argument, argument2, argument3, argument4, argument5])
         def selectionSet = new SelectionSet([field])
         def operationDefinition = new OperationDefinition()
         operationDefinition.operation = OperationDefinition.Operation.QUERY
@@ -273,6 +274,29 @@ class ParserTest extends Specification {
 
         def helloField = new Field("hello")
         def variableDefinition = new VariableDefinition("variable", new TypeName("String"), new StringValue("world"))
+        def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
+                [variableDefinition],
+                new SelectionSet([helloField]))
+
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        isEqual(document.definitions[0], queryDefinition)
+    }
+
+    def "parse variable with null value"() {
+        given:
+        def input = """
+            query myQuery(\$variable: String = null) {
+              hello }
+            """
+
+        and: "expected query"
+
+        def helloField = new Field("hello")
+        def variableDefinition = new VariableDefinition("variable", new TypeName("String"), NullValue.Null)
         def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
                 [variableDefinition],
                 new SelectionSet([helloField]))
