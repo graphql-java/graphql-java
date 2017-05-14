@@ -1,9 +1,15 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
+
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Provided to the DataFetcher, therefore public API
+ */
+@PublicApi
 public class FragmentDefinition extends AbstractNode implements Definition {
 
     private String name;
