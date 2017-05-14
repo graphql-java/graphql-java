@@ -587,16 +587,16 @@ You wire this together using this builder pattern
         return RuntimeWiring.newRuntimeWiring()
                 .scalar(CustomScalar)
                 // this uses builder function lambda syntax
-                .type(typeWiring -> typeWiring.typeName("QueryType")
+                .type("QueryType", typeWiring -> typeWiring
                         .dataFetcher("hero", new StaticDataFetcher(StarWarsData.getArtoo()))
                         .dataFetcher("human", StarWarsData.getHumanDataFetcher())
                         .dataFetcher("droid", StarWarsData.getDroidDataFetcher())
                 )
-                .type(typeWiring -> typeWiring.typeName("Human")
+                .type("Human", typeWiring -> typeWiring
                         .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
                 )
                 // you can use builder syntax if you don't like the lambda syntax
-                .type(typeWiring -> typeWiring.typeName("Droid")
+                .type("Droid", typeWiring -> typeWiring
                         .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
                 )
                 // or full builder syntax if that takes your fancy
