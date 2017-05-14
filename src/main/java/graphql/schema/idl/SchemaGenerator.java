@@ -158,9 +158,11 @@ public class SchemaGenerator {
         @SuppressWarnings("OptionalGetWithoutIsPresent")
         OperationTypeDefinition queryOp = operationTypes.stream().filter(op -> "query".equals(op.getName())).findFirst().get();
         Optional<OperationTypeDefinition> mutationOp = operationTypes.stream().filter(op -> "mutation".equals(op.getName())).findFirst();
+        Optional<OperationTypeDefinition> subscriptionOp = operationTypes.stream().filter(op -> "subscription".equals(op.getName())).findFirst();
 
         GraphQLObjectType query = buildOperation(buildCtx, queryOp);
         GraphQLObjectType mutation;
+        GraphQLObjectType subscription;
 
         GraphQLSchema.Builder schemaBuilder = GraphQLSchema
                 .newSchema()
@@ -169,6 +171,10 @@ public class SchemaGenerator {
         if (mutationOp.isPresent()) {
             mutation = buildOperation(buildCtx, mutationOp.get());
             schemaBuilder.mutation(mutation);
+        }
+        if (subscriptionOp.isPresent()) {
+            subscription = buildOperation(buildCtx, subscriptionOp.get());
+            schemaBuilder.subscription(subscription);
         }
         return schemaBuilder.build();
     }
