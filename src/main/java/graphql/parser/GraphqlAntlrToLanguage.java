@@ -1,6 +1,7 @@
 package graphql.parser;
 
 
+import graphql.Internal;
 import graphql.ShouldNotHappenException;
 import graphql.language.AbstractNode;
 import graphql.language.Argument;
@@ -57,6 +58,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
+@Internal
 public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     private final CommonTokenStream tokens;
