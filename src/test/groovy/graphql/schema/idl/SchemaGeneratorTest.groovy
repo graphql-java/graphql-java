@@ -654,4 +654,27 @@ class SchemaGeneratorTest extends Specification {
         def err = thrown(NotAnOutputTypeError.class)
         err.message == "expected OutputType, but found CharacterInput type"
     }
+
+    def "schema with subscription"() {
+        given:
+        def spec = """
+            schema {
+                query: Query
+                subscription: Subscription
+            }
+            type Query {
+                foo: String
+            }
+            
+            type Subscription {
+                foo: String 
+            }
+            """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+        def schema = generateSchema(spec, wiring)
+        then:
+        schema.getSubscriptionType().name == "Subscription"
+    }
 }

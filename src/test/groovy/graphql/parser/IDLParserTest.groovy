@@ -282,6 +282,7 @@ three: [Number] @three
 schema @d1 @d2 {
     query: OpType1
     mutation: OpType2
+    subscription: OpType3
 }
 """
 
@@ -293,6 +294,8 @@ schema @d1 @d2 {
                 .add(new OperationTypeDefinition("query", new TypeName("OpType1")))
         schema.getOperationTypeDefinitions()
                 .add(new OperationTypeDefinition("mutation", new TypeName("OpType2")))
+        schema.getOperationTypeDefinitions()
+                .add(new OperationTypeDefinition("subscription", new TypeName("OpType3")))
 
         when:
         def document = new Parser().parseDocument(input)
