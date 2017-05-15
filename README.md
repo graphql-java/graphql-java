@@ -167,8 +167,7 @@ GraphQLObjectType simpsonCharacter = newObject()
             .name("mainCharacter")
             .description("One of the main Simpson characters?")
             .type(GraphQLBoolean))
-.build();
-
+    .build();
 ```
 
 ##### Creating a new Interface Type
@@ -183,7 +182,6 @@ GraphQLInterfaceType comicCharacter = newInterface()
             .description("The name of the character.")
             .type(GraphQLString))
     .build();
-
 ```
 
 ##### Creating a new Union Type
@@ -207,7 +205,6 @@ GraphQLUnionType PetType = newUnionType()
         }
     })
     .build();
-    
 ```
 
 ##### Creating a new Enum Type
@@ -221,7 +218,6 @@ GraphQLEnumType colorEnum = newEnum()
     .value("GREEN")
     .value("BLUE")
     .build();
-       
 ```
 
 ##### Creating a Object-Input Type
@@ -235,7 +231,6 @@ GraphQLInputObjectType inputObjectType = newInputObject()
                 .name("field")
                 .type(GraphQLString))
         .build();
-
 ```
 
 ##### Lists and NonNull
@@ -253,7 +248,6 @@ Example:
         newArgument()
                 .name("example")
                 .type(nonNull(list(GraphQLString)));
-
 ```
 
 
@@ -265,7 +259,6 @@ GraphQLSchema schema = GraphQLSchema.newSchema()
     .query(queryType) // must be provided
     .mutation(mutationType) // is optional
     .build();
-            
 ```
 
 
@@ -292,7 +285,6 @@ GraphQLObjectType person = newObject()
             .name("friends")
             .type(new GraphQLList(new GraphQLTypeReference("Person"))))
     .build();
-
 ```
  
  
@@ -310,7 +302,6 @@ the property name of the source Object, no `DataFetcher` is needed.
 
 Example of configuring a custom `DataFetcher`:
 ```java
-
 DataFetcher<Foo> fooDataFetcher = new DataFetcher<Foo>() {
     @Override
     public Foo get(DataFetchingEnvironment environment) {
@@ -328,7 +319,6 @@ GraphQLObjectType objectType = newObject()
                 .type(GraphQLString)
                 .dataFetcher(fooDataFetcher))
         .build();
-
 ```
 
 #### Executing 
@@ -412,7 +402,6 @@ GraphQLSchema schema = GraphQLSchema.newSchema()
         .query(queryType)
         .mutation(createReviewForEpisodeMutation)
         .build();
-
 ```
 
 Notice that the input arguments are of type `GraphQLInputObjectType`.  This is important.  Input arguments can ONLY be of that type
@@ -449,7 +438,6 @@ You can however provide your own execution strategies, one to use while querying
 to use when mutating data.
 
 ```java
-
 ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
         2, /* core pool size 2 thread */
         2, /* max pool size 2 thread */
@@ -461,8 +449,6 @@ GraphQL graphQL = GraphQL.newObject(StarWarsSchema.starWarsSchema)
         .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
         .mutationExecutionStrategy(new SimpleExecutionStrategy())
         .build();
-
-
 ```
 
 When provided fields will be executed parallel, except the first level of a mutation operation.
@@ -557,7 +543,6 @@ Dependency:
 dependencies {
   compile 'com.graphql-java:graphql-java:INSERT_LATEST_VERSION_HERE'
 }
-
 ```
 
 
@@ -574,7 +559,6 @@ Add the repository:
     <name>bintray</name>
     <url>http://dl.bintray.com/andimarek/graphql-java</url>
 </repository>
-
 ```
 
 Dependency:
@@ -585,7 +569,6 @@ Dependency:
     <artifactId>graphql-java</artifactId>
     <version>INSERT_LATEST_VERSION_HERE</version>
 </dependency>
-
 ```
 
 
