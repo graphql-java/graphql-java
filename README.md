@@ -226,11 +226,11 @@ Example:
 
 ```java
 GraphQLInputObjectType inputObjectType = newInputObject()
-        .name("inputObjectType")
-        .field(newInputObjectField()
-                .name("field")
-                .type(GraphQLString))
-        .build();
+    .name("inputObjectType")
+    .field(newInputObjectField()
+        .name("field")
+        .type(GraphQLString))
+    .build();
 ```
 
 ##### Lists and NonNull
@@ -240,14 +240,14 @@ GraphQLInputObjectType inputObjectType = newInputObject()
 Example:
 
 ```java
-        GraphQLList.list((GraphQLString); // a list of Strings
+GraphQLList.list((GraphQLString); // a list of Strings
 
-        GraphQLNonNull.nonNull(GraphQLString); // a non null String
+GraphQLNonNull.nonNull(GraphQLString); // a non null String
 
-        // with static imports its even shorter
-        newArgument()
-                .name("example")
-                .type(nonNull(list(GraphQLString)));
+// with static imports its even shorter
+newArgument()
+    .name("example")
+    .type(nonNull(list(GraphQLString)));
 ```
 
 
