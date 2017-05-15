@@ -72,7 +72,6 @@ class SchemaGeneratorTest extends Specification {
         assert authorField.arguments.get(0).type instanceof GraphQLNonNull
         assert unwrap(authorField.arguments.get(0).type).name == "Int"
 
-
         //type Post {
         //    id: Int!
         //            title: String
@@ -131,7 +130,6 @@ class SchemaGeneratorTest extends Specification {
     }
 
 
-
     def "test simple schema generate"() {
 
         def schemaSpec = """
@@ -187,6 +185,7 @@ class SchemaGeneratorTest extends Specification {
         commonSchemaAsserts(schema)
     }
 
+
     def "schema can come from multiple sources and be bound together"() {
         def schemaSpec1 = """
             type Author {
@@ -209,7 +208,6 @@ class SchemaGeneratorTest extends Specification {
         """
 
         def schemaSpec3 = """
-
             # the schema allows the following query
             # to be made
             type Query {
@@ -256,13 +254,123 @@ class SchemaGeneratorTest extends Specification {
         commonSchemaAsserts(schema)
 
 
+    }
+
+    def "union type: union member used two times "() {
+        def spec = """     
+            type Query {
+                foobar: FooOrBar
+                foo: Foo
+            }
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            union FooOrBar = Foo | Bar
+            
+            schema {
+              query: Query
+            }
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0].name == "Foo"
+        types[1].name == "Bar"
+
+    }
+
+    def "union type: union members only used once"() {
+        def spec = """     
+            type Query {
+                foobar: FooOrBar
+            }
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            union FooOrBar = Foo | Bar
+            
+            schema {
+              query: Query
+            }
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0].name == "Foo"
+        types[1].name == "Bar"
+
+    }
+
+    def "union type: union declared before members"() {
+        def spec = """     
+            union FooOrBar = Foo | Bar
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            type Query {
+                foobar: FooOrBar
+            }
+            
+            schema {
+              query: Query
+            }
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0].name == "Foo"
+        types[1].name == "Bar"
 
     }
 
     def "enum types are handled"() {
 
         def spec = """     
-
             enum RGB {
                 RED
                 GREEN
@@ -276,7 +384,6 @@ class SchemaGeneratorTest extends Specification {
             schema {
               query: Query
             }
-
         """
 
         def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring().build())
@@ -294,7 +401,6 @@ class SchemaGeneratorTest extends Specification {
     def "interface types are handled"() {
 
         def spec = """     
-
             interface Foo {
                is_foo : Boolean
             }
@@ -311,7 +417,6 @@ class SchemaGeneratorTest extends Specification {
             schema {
               query: Query
             }
-
         """
 
         def wiring = RuntimeWiring.newRuntimeWiring()
@@ -334,21 +439,17 @@ class SchemaGeneratorTest extends Specification {
     def "type extensions can be specified multiple times #406"() {
 
         def spec = """
-
             interface Interface1 {
                extraField1 : String
             }     
-
             interface Interface2 {
                extraField1 : String
                extraField2 : Int
             }     
-
             interface Interface3 {
                extraField1 : String
                extraField3 : ID
             }     
-
             type BaseType {
                baseField : String
             }
@@ -356,25 +457,20 @@ class SchemaGeneratorTest extends Specification {
             extend type BaseType implements Interface1 {
                extraField1 : String
             }
-
             extend type BaseType implements Interface2 {
                extraField1 : String
                extraField2 : Int
             }
-
             extend type BaseType implements Interface3 {
                extraField1 : String
                extraField3 : ID
             }
-
             extend type BaseType {
                extraField4 : Boolean
             }
-
             extend type BaseType {
                extraField5 : Boolean!
             }
-
             #
             # if we repeat a definition, that's ok as long as its the same types as before
             # they will be de-duped since the effect is the same
@@ -386,7 +482,6 @@ class SchemaGeneratorTest extends Specification {
             schema {
               query: BaseType
             }
-
         """
 
         def wiring = RuntimeWiring.newRuntimeWiring()
@@ -433,11 +528,9 @@ class SchemaGeneratorTest extends Specification {
     def "read me type example makes sense"() {
 
         def spec = """             
-
             schema {
               query: Human
             }
-
             type Episode {
                 name : String
             }
@@ -450,12 +543,10 @@ class SchemaGeneratorTest extends Specification {
                 id: ID!
                 name: String!
             }
-
             extend type Human implements Character {
                 name: String!
                 friends: [Character]
             }
-
             extend type Human {
                 appearsIn: [Episode]!
                 homePlanet: String
@@ -537,5 +628,28 @@ class SchemaGeneratorTest extends Specification {
         then:
         def err = thrown(NotAnOutputTypeError.class)
         err.message == "expected OutputType, but found CharacterInput type [@11:13]"
+    }
+
+    def "schema with subscription"() {
+        given:
+        def spec = """
+            schema {
+                query: Query
+                subscription: Subscription
+            }
+            type Query {
+                foo: String
+            }
+            
+            type Subscription {
+                foo: String 
+            }
+            """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+        def schema = generateSchema(spec, wiring)
+        then:
+        schema.getSubscriptionType().name == "Subscription"
     }
 }
