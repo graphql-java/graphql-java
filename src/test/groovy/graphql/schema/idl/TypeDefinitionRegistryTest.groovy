@@ -7,8 +7,8 @@ import spock.lang.Specification
 
 class TypeDefinitionRegistryTest extends Specification {
 
-    TypeDefinitionRegistry compile(String spec) {
-        new SchemaCompiler().compile(spec)
+    TypeDefinitionRegistry parse(String spec) {
+        new SchemaParser().parse(spec)
     }
 
     def "test default scalars are locked in"() {
@@ -57,8 +57,8 @@ class TypeDefinitionRegistryTest extends Specification {
             type Post { id: Int! }
         """
 
-        def result1 = compile(spec1)
-        def result2 = compile(spec2)
+        def result1 = parse(spec1)
+        def result2 = parse(spec2)
 
         def registry = result1.merge(result2)
 
@@ -84,8 +84,8 @@ class TypeDefinitionRegistryTest extends Specification {
             }
         """
 
-        def result1 = compile(spec1)
-        def result2 = compile(spec2)
+        def result1 = parse(spec1)
+        def result2 = parse(spec2)
 
         when:
         result1.merge(result2)
@@ -113,8 +113,8 @@ class TypeDefinitionRegistryTest extends Specification {
 
         """
 
-        def result1 = compile(spec1)
-        def result2 = compile(spec2)
+        def result1 = parse(spec1)
+        def result2 = parse(spec2)
 
         when:
         result1.merge(result2)
@@ -148,8 +148,8 @@ class TypeDefinitionRegistryTest extends Specification {
 
         """
 
-        def result1 = compile(spec1)
-        def result2 = compile(spec2)
+        def result1 = parse(spec1)
+        def result2 = parse(spec2)
 
         when:
         result1.merge(result2)
@@ -189,8 +189,8 @@ class TypeDefinitionRegistryTest extends Specification {
 
         """
 
-        def result1 = compile(spec1)
-        def result2 = compile(spec2)
+        def result1 = parse(spec1)
+        def result2 = parse(spec2)
 
         when:
 

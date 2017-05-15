@@ -40,7 +40,6 @@ to checkout the appropriate tag when looking for the version documented here.
 - [Contributions](#contributions)
 - [Build it](#build-it)
 - [Development Build](#development-build)
-- [Javadocs](#javadocs)
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
 - [Related Projects](#related-projects)
@@ -65,8 +64,8 @@ take the time to read it.
 
 If you have a question or want to discuss anything else related to this project: 
 
-- There is a mailing list (Google Group) for graphql-java: [graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
-- And a chat room (Gitter.im) for graphql-java: [graphql-java chat](https://gitter.im/graphql-java/graphql-java)
+- Feel free to open a new [Issue](https://github.com/graphql-java/graphql-java/issues) 
+- We have a public chat room (Gitter.im) for graphql-java: [graphql-java chat](https://gitter.im/graphql-java/graphql-java)
 
 ### Hello World
 
@@ -539,11 +538,6 @@ The latest development build is available on Bintray.
 
 Please look at [Latest Build](https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion) for the 
 latest version value.
-
-#### Javadocs
-
-See the [project page](http://graphql-java.github.io/graphql-java/) for the javadocs associated with each release.
-
 
 #### How to use the latest build with Gradle
 

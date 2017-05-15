@@ -5,7 +5,7 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.*
 import spock.lang.Specification
 
-class SchemaDecompilerTest extends Specification {
+class SchemaPrinterTest extends Specification {
 
     def nonNull(GraphQLType type) {
         new GraphQLNonNull(type)
@@ -53,7 +53,7 @@ class SchemaDecompilerTest extends Specification {
     GraphQLSchema load(String fileName, RuntimeWiring wiring) {
         def stream = getClass().getClassLoader().getResourceAsStream(fileName)
 
-        def typeRegistry = new SchemaCompiler().compile(new InputStreamReader(stream))
+        def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
         def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
         schema
     }
@@ -63,8 +63,8 @@ class SchemaDecompilerTest extends Specification {
         GraphQLType type1 = nonNull(list(nonNull(list(nonNull(Scalars.GraphQLInt)))))
         GraphQLType type2 = nonNull(nonNull(list(nonNull(Scalars.GraphQLInt))))
 
-        def typeStr1 = new SchemaDecompiler().typeString(type1)
-        def typeStr2 = new SchemaDecompiler().typeString(type2)
+        def typeStr1 = new SchemaPrinter().typeString(type1)
+        def typeStr2 = new SchemaPrinter().typeString(type2)
 
         expect:
         typeStr1 == "[[Int!]!]!"
@@ -76,20 +76,20 @@ class SchemaDecompilerTest extends Specification {
         def argument1 = new GraphQLArgument("arg1", "desc-arg1", list(nonNull(Scalars.GraphQLInt)), 10)
         def argument2 = new GraphQLArgument("arg2", "desc-arg2", Scalars.GraphQLString, null)
         def argument3 = new GraphQLArgument("arg3", "desc-arg3", Scalars.GraphQLString, "default")
-        def argStr = new SchemaDecompiler().argsString([argument1, argument2, argument3])
+        def argStr = new SchemaPrinter().argsString([argument1, argument2, argument3])
 
         expect:
 
         argStr == "(arg1 : [Int!] = 10, arg2 : String, arg3 : String = \"default\")"
     }
 
-    def "decompile type direct"() {
+    def "print type direct"() {
         GraphQLSchema schema = starWarsSchema()
 
-        def decompile = new SchemaDecompiler().decompile(schema.getType("Character"))
+        def result = new SchemaPrinter().print(schema.getType("Character"))
 
         expect:
-        decompile ==
+        result ==
                 """interface Character {
    id : ID!
    name : String!
@@ -103,26 +103,26 @@ class SchemaDecompilerTest extends Specification {
     def "starWars default Test"() {
         GraphQLSchema schema = starWarsSchema()
 
-        def decompile = new SchemaDecompiler().decompile(schema)
+        def result = new SchemaPrinter().print(schema)
 
         expect:
-        decompile != null
-        !decompile.contains("scalar")
-        !decompile.contains("__TypeKind")
+        result != null
+        !result.contains("scalar")
+        !result.contains("__TypeKind")
     }
 
     def "starWars non default Test"() {
         GraphQLSchema schema = starWarsSchema()
 
-        def options = SchemaDecompiler.Options.defaultOptions()
+        def options = SchemaPrinter.Options.defaultOptions()
                 .includeIntrospectionTypes(true)
                 .includeScalarTypes(true)
 
-        def decompile = new SchemaDecompiler(options).decompile(schema)
+        def result = new SchemaPrinter(options).print(schema)
 
         expect:
-        decompile != null
-        decompile.contains("scalar")
-        decompile.contains("__TypeKind")
+        result != null
+        result.contains("scalar")
+        result.contains("__TypeKind")
     }
 }

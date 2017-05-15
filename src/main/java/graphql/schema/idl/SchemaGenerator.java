@@ -22,7 +22,6 @@ import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeExtensionDefinition;
-import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.DataFetcher;
@@ -55,7 +54,7 @@ import java.util.Optional;
 import java.util.Stack;
 
 /**
- * This can generate a working runtime schema from a compiled type registry and runtime wiring
+ * This can generate a working runtime schema from a type registry and runtime wiring
  */
 public class SchemaGenerator {
 
@@ -135,7 +134,7 @@ public class SchemaGenerator {
     /**
      * This will take a {@link TypeDefinitionRegistry} and a {@link RuntimeWiring} and put them together to create a executable schema
      *
-     * @param typeRegistry this can be obtained via {@link SchemaCompiler#compile(String)}
+     * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
      * @return an executable schema
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
@@ -159,9 +158,11 @@ public class SchemaGenerator {
         @SuppressWarnings("OptionalGetWithoutIsPresent")
         OperationTypeDefinition queryOp = operationTypes.stream().filter(op -> "query".equals(op.getName())).findFirst().get();
         Optional<OperationTypeDefinition> mutationOp = operationTypes.stream().filter(op -> "mutation".equals(op.getName())).findFirst();
+        Optional<OperationTypeDefinition> subscriptionOp = operationTypes.stream().filter(op -> "subscription".equals(op.getName())).findFirst();
 
         GraphQLObjectType query = buildOperation(buildCtx, queryOp);
         GraphQLObjectType mutation;
+        GraphQLObjectType subscription;
 
         GraphQLSchema.Builder schemaBuilder = GraphQLSchema
                 .newSchema()
@@ -170,6 +171,10 @@ public class SchemaGenerator {
         if (mutationOp.isPresent()) {
             mutation = buildOperation(buildCtx, mutationOp.get());
             schemaBuilder.mutation(mutation);
+        }
+        if (subscriptionOp.isPresent()) {
+            subscription = buildOperation(buildCtx, subscriptionOp.get());
+            schemaBuilder.subscription(subscription);
         }
         return schemaBuilder.build();
     }
@@ -261,6 +266,7 @@ public class SchemaGenerator {
     }
 
     private GraphQLObjectType buildObjectType(BuildContext buildCtx, ObjectTypeDefinition typeDefinition) {
+
         GraphQLObjectType.Builder builder = GraphQLObjectType.newObject();
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
@@ -339,7 +345,8 @@ public class SchemaGenerator {
         builder.typeResolver(getTypeResolver(buildCtx, typeDefinition.getName()));
 
         typeDefinition.getMemberTypes().forEach(mt -> {
-            builder.possibleType(new GraphQLTypeReference(((TypeName) mt).getName()));
+            GraphQLObjectType objectType = buildOutputType(buildCtx, mt);
+            builder.possibleType(objectType);
         });
         return builder.build();
     }

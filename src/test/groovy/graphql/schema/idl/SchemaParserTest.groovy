@@ -4,7 +4,6 @@ import graphql.language.EnumTypeDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.ObjectTypeDefinition
 import graphql.language.ScalarTypeDefinition
-import graphql.language.TypeExtensionDefinition
 import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
 
@@ -12,7 +11,7 @@ import spock.lang.Specification
  * We don't want to retest the base GraphQL parser since it has its own testing
  * but we do want to test our aspects of it
  */
-class SchemaCompilerTest extends Specification {
+class SchemaParserTest extends Specification {
 
     static ALL_DEFINED_TYPES = """
 
@@ -91,10 +90,10 @@ class SchemaCompilerTest extends Specification {
           """
 
     TypeDefinitionRegistry read(String types) {
-        new SchemaCompiler().compile(types)
+        new SchemaParser().parse(types)
     }
 
-    def "test full schema compile"() {
+    def "test full schema parsing"() {
 
         def typeRegistry = read(ALL_DEFINED_TYPES)
         def parsedTypes = typeRegistry.types()
@@ -139,6 +138,34 @@ class SchemaCompilerTest extends Specification {
         then:
 
         thrown(SchemaProblem)
+    }
+
+    def "schema with union"() {
+        def schema = """     
+
+            type Query {
+                foobar: FooOrBar
+            }
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            union FooOrBar = Foo | Bar
+            
+            schema {
+              query: Query
+            }
+
+        """
+        when:
+        TypeDefinitionRegistry typeRegistry = new SchemaParser().parse(schema)
+        then:
+        typeRegistry.types().size() == 4
     }
 
 }

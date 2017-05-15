@@ -2,8 +2,6 @@ package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
 import graphql.schema.*
-import graphql.schema.idl.errors.NotAnInputTypeError
-import graphql.schema.idl.errors.NotAnOutputTypeError
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator

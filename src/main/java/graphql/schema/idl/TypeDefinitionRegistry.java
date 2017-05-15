@@ -22,7 +22,7 @@ import static java.util.Optional.ofNullable;
 
 /**
  * A {@link TypeDefinitionRegistry} contains the set of type definitions that come from compiling
- * a graphql schema definition file via {@link SchemaCompiler#compile(String)}
+ * a graphql schema definition file via {@link SchemaParser#parse(String)}
  */
 public class TypeDefinitionRegistry {
 

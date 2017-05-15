@@ -1,9 +1,12 @@
 package graphql.language;
 
 
+import graphql.Internal;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Internal
 public class OperationTypeDefinition extends AbstractNode {
     private String name;
     private Type type;

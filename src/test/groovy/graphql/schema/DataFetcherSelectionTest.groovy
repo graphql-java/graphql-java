@@ -6,8 +6,8 @@ import graphql.execution.FieldCollector
 import graphql.language.AstPrinter
 import graphql.language.Field
 import graphql.schema.idl.RuntimeWiring
-import graphql.schema.idl.SchemaCompiler
 import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.SchemaParser
 import spock.lang.Specification
 
 import java.util.stream.Collectors
@@ -23,7 +23,7 @@ class DataFetcherSelectionTest extends Specification {
     GraphQLSchema load(String fileName, RuntimeWiring wiring) {
         def stream = getClass().getClassLoader().getResourceAsStream(fileName)
 
-        def typeRegistry = new SchemaCompiler().compile(new InputStreamReader(stream))
+        def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
         def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
         schema
     }
