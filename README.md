@@ -3,8 +3,6 @@
 [![Join the chat at https://gitter.im/graphql-java/graphql-java](https://badges.gitter.im/graphql-java/graphql-java.svg)](https://gitter.im/graphql-java/graphql-java?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ##### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.
-     
-
 
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
@@ -458,16 +456,16 @@ See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) fo
 Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
 
 #### JDK8 Lambdas
-This project is built using JDK6. But if you're using JDK8 and above then you can also use lambdas.
+This project is built using JDK8 and you can use lambdas for more concise code:
 ```java
 GraphQLObjectType queryType = newObject()
-                .name("helloWorldQuery")
-                .field(field -> field.type(GraphQLString)
-                        .name("hello")
-                        .argument(argument -> argument.name("arg")
-                                .type(GraphQLBoolean))
-                        .dataFetcher(env -> "hello"))
-                .build();
+    .name("helloWorldQuery")
+    .field(field -> field.type(GraphQLString)
+        .name("hello")
+        .argument(argument -> argument.name("arg")
+            .type(GraphQLBoolean))
+        .dataFetcher(env -> "hello"))
+    .build();
 ```
 
 #### Logging
@@ -570,10 +568,6 @@ Dependency:
     <version>INSERT_LATEST_VERSION_HERE</version>
 </dependency>
 ```
-
-
-
-
 
 
 
