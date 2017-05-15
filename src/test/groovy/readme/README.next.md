@@ -3,8 +3,6 @@
 [![Join the chat at https://gitter.im/graphql-java/graphql-java](https://badges.gitter.im/graphql-java/graphql-java.svg)](https://gitter.im/graphql-java/graphql-java?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ##### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.
-     
-
 
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
@@ -167,8 +165,7 @@ GraphQLObjectType simpsonCharacter = newObject()
             .name("mainCharacter")
             .description("One of the main Simpson characters?")
             .type(GraphQLBoolean))
-.build();
-
+    .build();
 ```
 
 ##### Creating a new Interface Type
@@ -183,7 +180,6 @@ GraphQLInterfaceType comicCharacter = newInterface()
             .description("The name of the character.")
             .type(GraphQLString))
     .build();
-
 ```
 
 ##### Creating a new Union Type
@@ -208,7 +204,6 @@ GraphQLUnionType PetType = newUnionType()
             }
         })
         .build();
-    
 ```
 
 ##### Creating a new Enum Type
@@ -222,7 +217,6 @@ GraphQLEnumType colorEnum = newEnum()
     .value("GREEN")
     .value("BLUE")
     .build();
-       
 ```
 
 ##### Creating a Object-Input Type
@@ -236,7 +230,6 @@ GraphQLInputObjectType inputObjectType = newInputObject()
                 .name("field")
                 .type(GraphQLString))
         .build();
-
 ```
 
 ##### Lists and NonNull
@@ -246,15 +239,14 @@ GraphQLInputObjectType inputObjectType = newInputObject()
 Example:
 
 ```java
-        GraphQLList.list((GraphQLString); // a list of Strings
+GraphQLList.list((GraphQLString); // a list of Strings
 
-        GraphQLNonNull.nonNull(GraphQLString); // a non null String
+GraphQLNonNull.nonNull(GraphQLString); // a non null String
 
-        // with static imports its even shorter
-        newArgument()
-                .name("example")
-                .type(nonNull(list(GraphQLString)));
-
+// with static imports its even shorter
+newArgument()
+    .name("example")
+    .type(nonNull(list(GraphQLString)));
 ```
 
 
@@ -265,8 +257,7 @@ Example:
 GraphQLSchema schema = GraphQLSchema.newSchema()
     .query(queryType) // must be provided
     .mutation(mutationType) // is optional
-    .build();
-            
+    .build();         
 ```
 
 
@@ -293,7 +284,6 @@ GraphQLObjectType person = newObject()
             .name("friends")
             .type(new GraphQLList(new GraphQLTypeReference("Person"))))
     .build();
-
 ```
  
  
@@ -311,7 +301,6 @@ the property name of the source Object, no `DataFetcher` is needed.
 
 Example of configuring a custom `DataFetcher`:
 ```java
-
 DataFetcher<Foo> fooDataFetcher = new DataFetcher<Foo>() {
     @Override
     public Foo get(DataFetchingEnvironment environment) {
@@ -329,7 +318,6 @@ GraphQLObjectType objectType = newObject()
                 .type(GraphQLString)
                 .dataFetcher(fooDataFetcher))
         .build();
-
 ```
 
 #### Executing 
@@ -413,7 +401,6 @@ GraphQLSchema schema = GraphQLSchema.newSchema()
         .query(queryType)
         .mutation(createReviewForEpisodeMutation)
         .build();
-
 ```
 
 Notice that the input arguments are of type `GraphQLInputObjectType`.  This is important.  Input arguments can ONLY be of that type
@@ -450,7 +437,6 @@ You can however provide your own execution strategies, one to use while querying
 to use when mutating data.
 
 ```java
-
 ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
         2, /* core pool size 2 thread */
         2, /* max pool size 2 thread */
@@ -462,8 +448,6 @@ GraphQL graphQL = GraphQL.newObject(StarWarsSchema.starWarsSchema)
         .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
         .mutationExecutionStrategy(new SimpleExecutionStrategy())
         .build();
-
-
 ```
 
 When provided fields will be executed parallel, except the first level of a mutation operation.
@@ -515,7 +499,6 @@ It allows you to transform a set of schema files into a executable `GraphqlSchem
 So given a graphql schema input file like :
 
 ```graphql
-
 schema {
     query: QueryType
 }
@@ -555,22 +538,19 @@ type Droid implements Character {
     appearsIn: [Episode]!
     primaryFunction: String
 }
-
-
 ```
 
 You could generate an executable schema via
 
 ```java
-        SchemaParser schemaParser = new SchemaParser();
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+SchemaParser schemaParser = new SchemaParser();
+SchemaGenerator schemaGenerator = new SchemaGenerator();
 
-        File schemaFile = loadSchema("starWarsSchema.graphqls");
+File schemaFile = loadSchema("starWarsSchema.graphqls");
 
-        TypeDefinitionRegistry typeRegistry = schemaParser.parse(schemaFile);
-        RuntimeWiring wiring = buildRuntimeWiring();
-        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
-
+TypeDefinitionRegistry typeRegistry = schemaParser.parse(schemaFile);
+RuntimeWiring wiring = buildRuntimeWiring();
+GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
 ```
 
 The static schema definition file has the field and type definitions but you need a runtime wiring to make
@@ -582,33 +562,30 @@ executable schema.
 You wire this together using this builder pattern
 
 ```java
-
-    RuntimeWiring buildRuntimeWiring() {
-        return RuntimeWiring.newRuntimeWiring()
-                .scalar(CustomScalar)
-                // this uses builder function lambda syntax
-                .type("QueryType", typeWiring -> typeWiring
-                        .dataFetcher("hero", new StaticDataFetcher(StarWarsData.getArtoo()))
-                        .dataFetcher("human", StarWarsData.getHumanDataFetcher())
-                        .dataFetcher("droid", StarWarsData.getDroidDataFetcher())
-                )
-                .type("Human", typeWiring -> typeWiring
-                        .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
-                )
-                // you can use builder syntax if you don't like the lambda syntax
-                .type("Droid", typeWiring -> typeWiring
-                        .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
-                )
-                // or full builder syntax if that takes your fancy
-                .type(
-                        newTypeWiring("Character")
-                                .typeResolver(StarWarsData.getCharacterTypeResolver())
-                                .build()
-                )
-                .build();
-    }
-
-
+RuntimeWiring buildRuntimeWiring() {
+    return RuntimeWiring.newRuntimeWiring()
+            .scalar(CustomScalar)
+            // this uses builder function lambda syntax
+            .type("QueryType", typeWiring -> typeWiring
+                    .dataFetcher("hero", new StaticDataFetcher(StarWarsData.getArtoo()))
+                    .dataFetcher("human", StarWarsData.getHumanDataFetcher())
+                    .dataFetcher("droid", StarWarsData.getDroidDataFetcher())
+            )
+            .type("Human", typeWiring -> typeWiring
+                    .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
+            )
+            // you can use builder syntax if you don't like the lambda syntax
+            .type("Droid", typeWiring -> typeWiring
+                    .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
+            )
+            // or full builder syntax if that takes your fancy
+            .type(
+                    newTypeWiring("Character")
+                            .typeResolver(StarWarsData.getCharacterTypeResolver())
+                            .build()
+            )
+            .build();
+}
 ```
 
 NOTE: IDL is not currently part of the [formal graphql spec](https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document).  
@@ -622,23 +599,23 @@ Having one one large schema file is not always viable.  You can modularise you s
 The first technique is to merge multiple Schema IDL files into one logic unit.  In the case below the schema as 
 been split into multiple files and merged all together just before schema generation.
 
-   ```java
-        SchemaParser schemaParser = new SchemaCompiler();
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
+```java
+SchemaParser schemaParser = new SchemaCompiler();
+SchemaGenerator schemaGenerator = new SchemaGenerator();
 
-        File schemaFile1 = loadSchema("starWarsSchemaPart1.graphqls");
-        File schemaFile2 = loadSchema("starWarsSchemaPart2.graphqls");
-        File schemaFile3 = loadSchema("starWarsSchemaPart3.graphqls");
+File schemaFile1 = loadSchema("starWarsSchemaPart1.graphqls");
+File schemaFile2 = loadSchema("starWarsSchemaPart2.graphqls");
+File schemaFile3 = loadSchema("starWarsSchemaPart3.graphqls");
 
-        TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
+TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
 
-        // each registry is merged into the main registry
-        typeRegistry.merge(schemaParser.compile(schemaFile1));
-        typeRegistry.merge(schemaParser.compile(schemaFile2));
-        typeRegistry.merge(schemaParser.compile(schemaFile3));
+// each registry is merged into the main registry
+typeRegistry.merge(schemaParser.compile(schemaFile1));
+typeRegistry.merge(schemaParser.compile(schemaFile2));
+typeRegistry.merge(schemaParser.compile(schemaFile3));
 
-        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
-   ```
+GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
+```
 
 The Graphql IDL type system has another construct for modularising your schema.  You can use `type extensions` to add
 extra fields and interfaces to a type.
@@ -714,7 +691,6 @@ extend type CombinedQueryFromMultipleTeams {
 extend type CombinedQueryFromMultipleTeams {
     auditing : Auditing
 }
-
 ```
 
 #### Subscription Support
@@ -764,7 +740,6 @@ repositories {
     mavenCentral()
     maven { url  "http://dl.bintray.com/andimarek/graphql-java" }
 }
-
 ```
 
 Dependency:
@@ -773,7 +748,6 @@ Dependency:
 dependencies {
   compile 'com.graphql-java:graphql-java:INSERT_LATEST_VERSION_HERE'
 }
-
 ```
 
 
@@ -790,7 +764,6 @@ Add the repository:
     <name>bintray</name>
     <url>http://dl.bintray.com/andimarek/graphql-java</url>
 </repository>
-
 ```
 
 Dependency:
@@ -801,12 +774,7 @@ Dependency:
     <artifactId>graphql-java</artifactId>
     <version>INSERT_LATEST_VERSION_HERE</version>
 </dependency>
-
 ```
-
-
-
-
 
 
 
