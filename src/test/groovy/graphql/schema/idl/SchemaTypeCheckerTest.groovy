@@ -9,12 +9,12 @@ import spock.lang.Specification
 
 class SchemaTypeCheckerTest extends Specification {
 
-    TypeDefinitionRegistry compile(String spec) {
-        new SchemaCompiler().compile(spec)
+    TypeDefinitionRegistry parse(String spec) {
+        new SchemaParser().parse(spec)
     }
 
     List<GraphQLError> check(String spec) {
-        def types = compile(spec)
+        def types = parse(spec)
 
         def resolver = new TypeResolver() {
             @Override

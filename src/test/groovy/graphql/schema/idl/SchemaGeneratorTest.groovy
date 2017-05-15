@@ -2,6 +2,8 @@ package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
 import graphql.schema.*
+import graphql.schema.idl.errors.NotAnInputTypeError
+import graphql.schema.idl.errors.NotAnOutputTypeError
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -22,7 +24,7 @@ class SchemaGeneratorTest extends Specification {
 
 
     GraphQLSchema generateSchema(String schemaSpec, RuntimeWiring wiring) {
-        def typeRegistry = new SchemaCompiler().compile(schemaSpec)
+        def typeRegistry = new SchemaParser().parse(schemaSpec)
         def result = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
         result
     }
@@ -69,7 +71,6 @@ class SchemaGeneratorTest extends Specification {
         assert authorField.arguments.get(0).name == "id"
         assert authorField.arguments.get(0).type instanceof GraphQLNonNull
         assert unwrap(authorField.arguments.get(0).type).name == "Int"
-
 
         //type Post {
         //    id: Int!
@@ -129,7 +130,6 @@ class SchemaGeneratorTest extends Specification {
     }
 
 
-
     def "test simple schema generate"() {
 
         def schemaSpec = """
@@ -184,6 +184,7 @@ class SchemaGeneratorTest extends Specification {
 
         commonSchemaAsserts(schema)
     }
+
 
     def "schema can come from multiple sources and be bound together"() {
         def schemaSpec1 = """
@@ -241,9 +242,9 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def typeRegistry1 = new SchemaCompiler().compile(schemaSpec1)
-        def typeRegistry2 = new SchemaCompiler().compile(schemaSpec2)
-        def typeRegistry3 = new SchemaCompiler().compile(schemaSpec3)
+        def typeRegistry1 = new SchemaParser().parse(schemaSpec1)
+        def typeRegistry2 = new SchemaParser().parse(schemaSpec2)
+        def typeRegistry3 = new SchemaParser().parse(schemaSpec3)
 
         typeRegistry1.merge(typeRegistry2).merge(typeRegistry3)
 
@@ -254,6 +255,123 @@ class SchemaGeneratorTest extends Specification {
         commonSchemaAsserts(schema)
 
 
+    }
+
+    def "union type: union member used two times "() {
+        def spec = """     
+
+            type Query {
+                foobar: FooOrBar
+                foo: Foo
+            }
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            union FooOrBar = Foo | Bar
+            
+            schema {
+              query: Query
+            }
+
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0].name == "Foo"
+        types[1].name == "Bar"
+
+    }
+
+    def "union type: union members only used once"() {
+        def spec = """     
+
+            type Query {
+                foobar: FooOrBar
+            }
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            union FooOrBar = Foo | Bar
+            
+            schema {
+              query: Query
+            }
+
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0].name == "Foo"
+        types[1].name == "Bar"
+
+    }
+
+    def "union type: union declared before members"() {
+        def spec = """     
+
+            union FooOrBar = Foo | Bar
+            
+            type Foo {
+               name: String 
+            }
+            
+            type Bar {
+                other: String
+            }
+            
+            type Query {
+                foobar: FooOrBar
+            }
+            
+            schema {
+              query: Query
+            }
+
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0].name == "Foo"
+        types[1].name == "Bar"
 
     }
 
@@ -479,8 +597,84 @@ class SchemaGeneratorTest extends Specification {
 
         type.interfaces.size() == 1
         type.interfaces[0].name == "Character"
+    }
 
+    def "Type used as inputType should throw appropriate error #425"() {
+        when:
+        def spec = """
+            schema {
+                query: Query
+            }
+            
+            type Query {
+                findCharacter(character: CharacterInput!): Boolean
+            }
+            
+            # CharacterInput must be an input, but is a type
+            type CharacterInput {
+                firstName: String
+                lastName: String
+                family: Boolean
+            }
+        """
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
 
+        generateSchema(spec, wiring)
 
+        then:
+        def err = thrown(NotAnInputTypeError.class)
+        err.message == "expected InputType, but found CharacterInput type"
+    }
+
+    def "InputType used as type should throw appropriate error #425"() {
+        when:
+        def spec = """
+            schema {
+                query: Query
+            }
+            
+            type Query {
+                findCharacter: CharacterInput
+            }
+            
+            # CharacterInput must be an input, but is a type
+            input CharacterInput {
+                firstName: String
+                lastName: String
+                family: Boolean
+            }
+        """
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+
+        generateSchema(spec, wiring)
+
+        then:
+        def err = thrown(NotAnOutputTypeError.class)
+        err.message == "expected OutputType, but found CharacterInput type"
+    }
+
+    def "schema with subscription"() {
+        given:
+        def spec = """
+            schema {
+                query: Query
+                subscription: Subscription
+            }
+            type Query {
+                foo: String
+            }
+            
+            type Subscription {
+                foo: String 
+            }
+            """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+        def schema = generateSchema(spec, wiring)
+        then:
+        schema.getSubscriptionType().name == "Subscription"
     }
 }

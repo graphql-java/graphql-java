@@ -40,7 +40,6 @@ to checkout the appropriate tag when looking for the version documented here.
 - [Contributions](#contributions)
 - [Build it](#build-it)
 - [Development Build](#development-build)
-- [Javadocs](#javadocs)
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
 - [Related Projects](#related-projects)
@@ -65,8 +64,8 @@ take the time to read it.
 
 If you have a question or want to discuss anything else related to this project: 
 
-- There is a mailing list (Google Group) for graphql-java: [graphql-java group](https://groups.google.com/forum/#!forum/graphql-java)
-- And a chat room (Gitter.im) for graphql-java: [graphql-java chat](https://gitter.im/graphql-java/graphql-java)
+- Feel free to open a new [Issue](https://github.com/graphql-java/graphql-java/issues) 
+- We have a public chat room (Gitter.im) for graphql-java: [graphql-java chat](https://gitter.im/graphql-java/graphql-java)
 
 ### Hello World
 
@@ -510,7 +509,7 @@ public Object executeOperation(@RequestBody Map body) {
 
 This library allows for "schema driven" development of graphql applications.
 
-It allows you to compile a set of schema files into a executable `GraphqlSchema`.
+It allows you to transform a set of schema files into a executable `GraphqlSchema`.
  
  
 So given a graphql schema input file like :
@@ -560,15 +559,15 @@ type Droid implements Character {
 
 ```
 
-You could compile and generate an executable schema via
+You could generate an executable schema via
 
 ```java
-        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaParser schemaParser = new SchemaParser();
         SchemaGenerator schemaGenerator = new SchemaGenerator();
 
         File schemaFile = loadSchema("starWarsSchema.graphqls");
 
-        TypeDefinitionRegistry typeRegistry = schemaCompiler.compile(schemaFile);
+        TypeDefinitionRegistry typeRegistry = schemaParser.parse(schemaFile);
         RuntimeWiring wiring = buildRuntimeWiring();
         GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
 
@@ -588,16 +587,16 @@ You wire this together using this builder pattern
         return RuntimeWiring.newRuntimeWiring()
                 .scalar(CustomScalar)
                 // this uses builder function lambda syntax
-                .type(typeWiring -> typeWiring.typeName("QueryType")
+                .type("QueryType", typeWiring -> typeWiring
                         .dataFetcher("hero", new StaticDataFetcher(StarWarsData.getArtoo()))
                         .dataFetcher("human", StarWarsData.getHumanDataFetcher())
                         .dataFetcher("droid", StarWarsData.getDroidDataFetcher())
                 )
-                .type(typeWiring -> typeWiring.typeName("Human")
+                .type("Human", typeWiring -> typeWiring
                         .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
                 )
                 // you can use builder syntax if you don't like the lambda syntax
-                .type(typeWiring -> typeWiring.typeName("Droid")
+                .type("Droid", typeWiring -> typeWiring
                         .dataFetcher("friends", StarWarsData.getFriendsDataFetcher())
                 )
                 // or full builder syntax if that takes your fancy
@@ -624,7 +623,7 @@ The first technique is to merge multiple Schema IDL files into one logic unit.  
 been split into multiple files and merged all together just before schema generation.
 
    ```java
-        SchemaCompiler schemaCompiler = new SchemaCompiler();
+        SchemaParser schemaParser = new SchemaCompiler();
         SchemaGenerator schemaGenerator = new SchemaGenerator();
 
         File schemaFile1 = loadSchema("starWarsSchemaPart1.graphqls");
@@ -633,10 +632,10 @@ been split into multiple files and merged all together just before schema genera
 
         TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
 
-        // each compiled registry is merged into the main registry
-        typeRegistry.merge(schemaCompiler.compile(schemaFile1));
-        typeRegistry.merge(schemaCompiler.compile(schemaFile2));
-        typeRegistry.merge(schemaCompiler.compile(schemaFile3));
+        // each registry is merged into the main registry
+        typeRegistry.merge(schemaParser.compile(schemaFile1));
+        typeRegistry.merge(schemaParser.compile(schemaFile2));
+        typeRegistry.merge(schemaParser.compile(schemaFile3));
 
         GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
    ```
@@ -754,10 +753,6 @@ The latest development build is available on Bintray.
 
 Please look at [Latest Build](https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion) for the 
 latest version value.
-
-#### Javadocs
-
-See the [project page](http://graphql-java.github.io/graphql-java/) for the javadocs associated with each release.
 
 
 #### How to use the latest build with Gradle

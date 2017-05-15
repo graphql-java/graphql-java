@@ -1,5 +1,6 @@
 package graphql.parser;
 
+import graphql.Internal;
 import graphql.language.Document;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
@@ -12,6 +13,7 @@ import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.List;
 
+@Internal
 public class Parser {
 
     public Document parseDocument(String input) {

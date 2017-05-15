@@ -1,9 +1,16 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
+
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+* This is provided to a DataFetcher, therefore it is a public API.
+* This might change in the future.
+ */
+@PublicApi
 public class Field extends AbstractNode implements Selection {
 
     private String name;

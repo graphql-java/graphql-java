@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.PublicApi;
 import graphql.execution.ExecutionId;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -10,6 +11,7 @@ import java.util.Map;
 /**
  * A DataFetchingEnvironment instance of passed to a {@link DataFetcher} as an execution context parameter
  */
+@PublicApi
 public interface DataFetchingEnvironment {
     /**
      * @param <T> you decide what type it is
