@@ -2,6 +2,7 @@ package graphql.execution.instrumentation.parameters;
 
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.Instrumentation;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLFieldDefinition;
 
 /**
@@ -10,10 +11,12 @@ import graphql.schema.GraphQLFieldDefinition;
 public class FieldParameters {
     private final ExecutionContext executionContext;
     private final graphql.schema.GraphQLFieldDefinition fieldDef;
+    private final DataFetchingEnvironment environment;
 
-    public FieldParameters(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef) {
+    public FieldParameters(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment) {
         this.executionContext = executionContext;
         this.fieldDef = fieldDef;
+        this.environment = environment;
     }
 
     public ExecutionContext getExecutionContext() {
@@ -22,5 +25,9 @@ public class FieldParameters {
 
     public GraphQLFieldDefinition getField() {
         return fieldDef;
+    }
+
+    public DataFetchingEnvironment getEnvironment() {
+        return environment;
     }
 }
