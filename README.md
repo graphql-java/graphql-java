@@ -17,6 +17,8 @@ The versioning follows [Semantic Versioning](http://semver.org) since `2.0.0`.
 **Hint**: This README documents the latest release, but `master` contains the current development version. So please make sure 
 to checkout the appropriate tag when looking for the version documented here.
 
+Make sure to check out the [awesome related projects](https://github.com/graphql-java/awesome-graphql-java) built on GraphQL Java.
+
 [![Build Status](https://travis-ci.org/graphql-java/graphql-java.svg?branch=master)](https://travis-ci.org/graphql-java/graphql-java)
 [![Latest Release](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
 [![Latest Dev Build](https://api.bintray.com/packages/andimarek/graphql-java/graphql-java/images/download.svg)](https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion)
@@ -42,7 +44,6 @@ to checkout the appropriate tag when looking for the version documented here.
 - [Development Build](#development-build)
 - [Details](#details)
 - [Acknowledgment](#acknowledgment)
-- [Related Projects](#related-projects)
 - [License](#license)
  
 
@@ -633,10 +634,6 @@ code for the upcoming version.  The readme for that upcoming version can be foun
 
 This implementation is based on the [js reference implementation](https://github.com/graphql/graphql-js).
 For example the StarWarSchema and the tests (among a lot of other things) are simply adapted to the Java world.
-
-### Related projects
-
-Please have a look at the [awesome-graphql-java](https://github.com/graphql-java/awesome-graphql-java) list.
 
 ### License
 
