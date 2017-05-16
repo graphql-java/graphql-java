@@ -12,7 +12,7 @@ public class FieldFetchParameters extends FieldParameters {
     private final DataFetchingEnvironment environment;
 
     public FieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment) {
-        super(getExecutionContext, fieldDef);
+        super(getExecutionContext, fieldDef, environment);
         this.environment = environment;
     }
 
