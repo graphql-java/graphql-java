@@ -3,8 +3,6 @@
 [![Join the chat at https://gitter.im/graphql-java/graphql-java](https://badges.gitter.im/graphql-java/graphql-java.svg)](https://gitter.im/graphql-java/graphql-java?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ##### Friendly warning: As GraphQL itself is currently a Working Draft, expect changes.
-     
-
 
 This is a GraphQL Java implementation based on the [specification](https://github.com/facebook/graphql) 
 and the JavaScript [reference implementation](https://github.com/graphql/graphql-js).
@@ -168,8 +166,7 @@ GraphQLObjectType simpsonCharacter = newObject()
             .name("mainCharacter")
             .description("One of the main Simpson characters?")
             .type(GraphQLBoolean))
-.build();
-
+    .build();
 ```
 
 ##### Creating a new Interface Type
@@ -184,7 +181,6 @@ GraphQLInterfaceType comicCharacter = newInterface()
             .description("The name of the character.")
             .type(GraphQLString))
     .build();
-
 ```
 
 ##### Creating a new Union Type
@@ -208,7 +204,6 @@ GraphQLUnionType PetType = newUnionType()
         }
     })
     .build();
-    
 ```
 
 ##### Creating a new Enum Type
@@ -222,7 +217,6 @@ GraphQLEnumType colorEnum = newEnum()
     .value("GREEN")
     .value("BLUE")
     .build();
-       
 ```
 
 ##### Creating a Object-Input Type
@@ -231,12 +225,11 @@ Example:
 
 ```java
 GraphQLInputObjectType inputObjectType = newInputObject()
-        .name("inputObjectType")
-        .field(newInputObjectField()
-                .name("field")
-                .type(GraphQLString))
-        .build();
-
+    .name("inputObjectType")
+    .field(newInputObjectField()
+        .name("field")
+        .type(GraphQLString))
+    .build();
 ```
 
 ##### Lists and NonNull
@@ -246,15 +239,14 @@ GraphQLInputObjectType inputObjectType = newInputObject()
 Example:
 
 ```java
-        GraphQLList.list((GraphQLString); // a list of Strings
+GraphQLList.list((GraphQLString); // a list of Strings
 
-        GraphQLNonNull.nonNull(GraphQLString); // a non null String
+GraphQLNonNull.nonNull(GraphQLString); // a non null String
 
-        // with static imports its even shorter
-        newArgument()
-                .name("example")
-                .type(nonNull(list(GraphQLString)));
-
+// with static imports its even shorter
+newArgument()
+    .name("example")
+    .type(nonNull(list(GraphQLString)));
 ```
 
 
@@ -266,7 +258,6 @@ GraphQLSchema schema = GraphQLSchema.newSchema()
     .query(queryType) // must be provided
     .mutation(mutationType) // is optional
     .build();
-            
 ```
 
 
@@ -293,7 +284,6 @@ GraphQLObjectType person = newObject()
             .name("friends")
             .type(new GraphQLList(new GraphQLTypeReference("Person"))))
     .build();
-
 ```
  
  
@@ -311,7 +301,6 @@ the property name of the source Object, no `DataFetcher` is needed.
 
 Example of configuring a custom `DataFetcher`:
 ```java
-
 DataFetcher<Foo> fooDataFetcher = new DataFetcher<Foo>() {
     @Override
     public Foo get(DataFetchingEnvironment environment) {
@@ -329,7 +318,6 @@ GraphQLObjectType objectType = newObject()
                 .type(GraphQLString)
                 .dataFetcher(fooDataFetcher))
         .build();
-
 ```
 
 #### Executing 
@@ -413,7 +401,6 @@ GraphQLSchema schema = GraphQLSchema.newSchema()
         .query(queryType)
         .mutation(createReviewForEpisodeMutation)
         .build();
-
 ```
 
 Notice that the input arguments are of type `GraphQLInputObjectType`.  This is important.  Input arguments can ONLY be of that type
@@ -450,7 +437,6 @@ You can however provide your own execution strategies, one to use while querying
 to use when mutating data.
 
 ```java
-
 ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
         2, /* core pool size 2 thread */
         2, /* max pool size 2 thread */
@@ -462,8 +448,6 @@ GraphQL graphQL = GraphQL.newObject(StarWarsSchema.starWarsSchema)
         .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
         .mutationExecutionStrategy(new SimpleExecutionStrategy())
         .build();
-
-
 ```
 
 When provided fields will be executed parallel, except the first level of a mutation operation.
@@ -473,16 +457,16 @@ See [specification](http://facebook.github.io/graphql/#sec-Normal-evaluation) fo
 Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
 
 #### JDK8 Lambdas
-This project is built using JDK6. But if you're using JDK8 and above then you can also use lambdas.
+This project is built using JDK8 and you can use lambdas for more concise code:
 ```java
 GraphQLObjectType queryType = newObject()
-                .name("helloWorldQuery")
-                .field(field -> field.type(GraphQLString)
-                        .name("hello")
-                        .argument(argument -> argument.name("arg")
-                                .type(GraphQLBoolean))
-                        .dataFetcher(env -> "hello"))
-                .build();
+    .name("helloWorldQuery")
+    .field(field -> field.type(GraphQLString)
+        .name("hello")
+        .argument(argument -> argument.name("arg")
+            .type(GraphQLBoolean))
+        .dataFetcher(env -> "hello"))
+    .build();
 ```
 
 #### Logging
@@ -558,7 +542,6 @@ Dependency:
 dependencies {
   compile 'com.graphql-java:graphql-java:INSERT_LATEST_VERSION_HERE'
 }
-
 ```
 
 
@@ -575,7 +558,6 @@ Add the repository:
     <name>bintray</name>
     <url>http://dl.bintray.com/andimarek/graphql-java</url>
 </repository>
-
 ```
 
 Dependency:
@@ -586,12 +568,7 @@ Dependency:
     <artifactId>graphql-java</artifactId>
     <version>INSERT_LATEST_VERSION_HERE</version>
 </dependency>
-
 ```
-
-
-
-
 
 
 
