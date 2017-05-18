@@ -7,6 +7,11 @@ import graphql.StarWarsSchema;
 import graphql.TypeResolutionEnvironment;
 import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.execution.SimpleExecutionStrategy;
+import graphql.language.Directive;
+import graphql.language.FieldDefinition;
+import graphql.language.InterfaceTypeDefinition;
+import graphql.language.TypeDefinition;
+import graphql.language.UnionTypeDefinition;
 import graphql.schema.Coercing;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -26,6 +31,7 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import graphql.schema.idl.WiringFactory;
 
 import java.io.File;
 import java.util.HashMap;
@@ -61,7 +67,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
  * You should place these examples into the README.next.md and NOT the main README.md.  This allows
  * 'master' to progress yet shows consumers the released information about the project.
  */
-@SuppressWarnings({"unused", "Convert2Lambda", "UnnecessaryLocalVariable", "ConstantConditions"})
+@SuppressWarnings({"unused", "Convert2Lambda", "UnnecessaryLocalVariable", "ConstantConditions", "SameParameterValue"})
 public class ReadmeExamples {
 
 
@@ -357,6 +363,60 @@ public class ReadmeExamples {
                                 .build()
                 )
                 .build();
+    }
+
+    RuntimeWiring buildDynamicRuntimeWiring() {
+        WiringFactory dynamicWiringFactory = new WiringFactory() {
+            @Override
+            public boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+                return getDirective(definition,"specialMarker") != null;
+            }
+
+            @Override
+            public boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+                return getDirective(definition, "specialMarker") != null;
+            }
+
+            @Override
+            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+                Directive directive = getDirective(definition, "specialMarker");
+                return createTypeResolver(definition, directive);
+            }
+
+            @Override
+            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+                Directive directive  = getDirective(definition,"specialMarker");
+                return createTypeResolver(definition,directive);
+            }
+
+            @Override
+            public boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+                return getDirective(definition,"dataFetcher") != null;
+            }
+
+            @Override
+            public DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+                Directive directive = getDirective(definition, "dataFetcher");
+                return createDataFetcher(definition,directive);
+            }
+        };
+        return RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(dynamicWiringFactory).build();
+    }
+
+    private DataFetcher createDataFetcher(FieldDefinition definition, Directive directive) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    private TypeResolver createTypeResolver(TypeDefinition definition, Directive directive) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    private Directive getDirective(TypeDefinition definition, String type) {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+    private Directive getDirective(FieldDefinition fieldDefintion, String type) {
+        throw new UnsupportedOperationException("Not implemented");
     }
 
 

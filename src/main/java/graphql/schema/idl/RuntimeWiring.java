@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Assert;
 import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLScalarType;
@@ -20,11 +21,13 @@ public class RuntimeWiring {
     private final Map<String, Map<String, DataFetcher>> dataFetchers;
     private final Map<String, GraphQLScalarType> scalars;
     private final Map<String, TypeResolver> typeResolvers;
+    private final WiringFactory wiringFactory;
 
-    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers) {
+    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, WiringFactory wiringFactory) {
         this.dataFetchers = dataFetchers;
         this.scalars = scalars;
         this.typeResolvers = typeResolvers;
+        this.wiringFactory = wiringFactory;
     }
 
     public Map<String, GraphQLScalarType> getScalars() {
@@ -43,6 +46,10 @@ public class RuntimeWiring {
         return typeResolvers;
     }
 
+    public WiringFactory getWiringFactory() {
+        return wiringFactory;
+    }
+
     /**
      * @return a builder of Runtime Wiring
      */
@@ -55,9 +62,23 @@ public class RuntimeWiring {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
         private final Map<String, GraphQLScalarType> scalars = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolvers = new LinkedHashMap<>();
+        private WiringFactory wiringFactory = new NoopWiringFactory();
 
         private Builder() {
             ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);
+        }
+
+        /**
+         * Adds a wiring factory into the runtime wiring
+         *
+         * @param wiringFactory the wiring factory to add
+         *
+         * @return this outer builder
+         */
+        public Builder wiringFactory(WiringFactory wiringFactory) {
+            Assert.assertNotNull(wiringFactory, "You must provide a wiring factory");
+            this.wiringFactory = wiringFactory;
+            return this;
         }
 
         /**
@@ -86,7 +107,7 @@ public class RuntimeWiring {
         /**
          * This form allows a lambda to be used as the builder of a type wiring
          *
-         * @param typeName the name of the type to wire
+         * @param typeName        the name of the type to wire
          * @param builderFunction a function that will be given the builder to use
          *
          * @return the runtime wiring builder
@@ -119,7 +140,7 @@ public class RuntimeWiring {
          * @return the built runtime wiring
          */
         public RuntimeWiring build() {
-            return new RuntimeWiring(dataFetchers, scalars, typeResolvers);
+            return new RuntimeWiring(dataFetchers, scalars, typeResolvers, wiringFactory);
         }
 
     }

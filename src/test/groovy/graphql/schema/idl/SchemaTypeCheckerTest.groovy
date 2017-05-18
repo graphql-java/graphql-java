@@ -2,6 +2,10 @@ package graphql.schema.idl
 
 import graphql.GraphQLError
 import graphql.TypeResolutionEnvironment
+import graphql.language.FieldDefinition
+import graphql.language.InterfaceTypeDefinition
+import graphql.language.UnionTypeDefinition
+import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
 import graphql.schema.idl.errors.SchemaMissingError
@@ -13,17 +17,60 @@ class SchemaTypeCheckerTest extends Specification {
         new SchemaParser().parse(spec)
     }
 
+    def resolver = new TypeResolver() {
+        @Override
+        GraphQLObjectType getType(TypeResolutionEnvironment env) {
+            throw new UnsupportedOperationException("Not implemented")
+        }
+    }
+
+    class NamedWiringFactory implements WiringFactory {
+        List<String> names
+
+        NamedWiringFactory(List<String> names) {
+            this.names = names
+        }
+
+        @Override
+        boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+            return names.contains(definition.getName())
+        }
+
+        @Override
+        boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+            return names.contains(definition.getName())
+        }
+
+        @Override
+        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+            resolver
+        }
+
+        @Override
+        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+            resolver
+        }
+
+        @Override
+        boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+            false
+        }
+
+        @Override
+        DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+            throw new UnsupportedOperationException("Not implemented")
+        }
+    }
+
+
     List<GraphQLError> check(String spec) {
         def types = parse(spec)
 
-        def resolver = new TypeResolver() {
-            @Override
-            GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                throw new UnsupportedOperationException("Not implemented")
-            }
-        }
+
+        NamedWiringFactory wiringFactory = new NamedWiringFactory(["InterfaceType"])
+
         def wiring = RuntimeWiring.newRuntimeWiring()
-                .type(TypeRuntimeWiring.newTypeWiring("InterfaceType").typeResolver(resolver))
+                .wiringFactory(wiringFactory)
                 .type(TypeRuntimeWiring.newTypeWiring("InterfaceType1").typeResolver(resolver))
                 .type(TypeRuntimeWiring.newTypeWiring("InterfaceType2").typeResolver(resolver))
                 .build()

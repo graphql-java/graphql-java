@@ -289,6 +289,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
+        types[0] instanceof  GraphQLObjectType
+        types[1] instanceof  GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -326,6 +328,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
+        types[0] instanceof  GraphQLObjectType
+        types[1] instanceof  GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -363,6 +367,47 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
+        types[0] instanceof  GraphQLObjectType
+        types[1] instanceof  GraphQLObjectType
+        types[0].name == "Foo"
+        types[1].name == "Bar"
+
+    }
+
+    def "union type: recursive definition via union type: Foo -> FooOrBar -> Foo  "() {
+        def spec = """     
+
+            schema {
+              query: Foo
+            }
+            
+            type Foo {
+                foobar: FooOrBar
+            }
+            
+            union FooOrBar = Foo | Bar
+            
+            type Bar {
+                other: String
+            }
+            
+            
+
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
+                .type("FooOrBar", buildResolver())
+                .build())
+
+
+        expect:
+
+        def foobar = schema.getQueryType().getFieldDefinition("foobar")
+        foobar.type instanceof GraphQLUnionType
+        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        types.size() == 2
+        types[0] instanceof  GraphQLObjectType
+        types[1] instanceof  GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 

@@ -609,7 +609,52 @@ You wire this together using this builder pattern
                 .build();
     }
 
+```
 
+There is a another way to wiring in type resolvers and data fetchers and that is via the `WiringFactory` interface.  This
+allow for a more dynamic runtime wiring since the IDL definitions can be examined in order to decide what to wire in.
+You could for example look at IDL directives to help you decide what runtime to create or some other aspect of the IDL
+definition.
+
+```java
+    RuntimeWiring buildDynamicRuntimeWiring() {
+        WiringFactory dynamicWiringFactory = new WiringFactory() {
+            @Override
+            public boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+                return getDirective(definition,"specialMarker") != null;
+            }
+
+            @Override
+            public boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+                return getDirective(definition,"specialMarker") != null;
+            }
+
+            @Override
+            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+                Directive directive  = getDirective(definition,"specialMarker");
+                return createTypeResolver(definition,directive);
+            }
+
+            @Override
+            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+                Directive directive  = getDirective(definition,"specialMarker");
+                return createTypeResolver(definition,directive);
+            }
+
+            @Override
+            public boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+                return getDirective(definition,"dataFetcher") != null;
+            }
+
+            @Override
+            public DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+                Directive directive = getDirective(definition, "dataFetcher");
+                return createDataFetcher(definition,directive);
+            }
+        };
+        return RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(dynamicWiringFactory).build();
+    }
 ```
 
 NOTE: IDL is not currently part of the [formal graphql spec](https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document).  

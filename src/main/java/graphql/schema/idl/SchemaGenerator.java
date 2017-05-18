@@ -53,6 +53,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Stack;
 
+import static graphql.Assert.assertNotNull;
+
 /**
  * This can generate a working runtime schema from a type registry and runtime wiring
  */
@@ -73,6 +75,10 @@ public class SchemaGenerator {
         BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
             this.typeRegistry = typeRegistry;
             this.wiring = wiring;
+        }
+
+        public TypeDefinitionRegistry getTypeRegistry() {
+            return typeRegistry;
         }
 
         @SuppressWarnings("OptionalGetWithoutIsPresent")
@@ -220,7 +226,7 @@ public class SchemaGenerator {
             outputType = buildUnionType(buildCtx, (UnionTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof EnumTypeDefinition) {
             outputType = buildEnumType((EnumTypeDefinition) typeDefinition);
-        } else if (typeDefinition instanceof ScalarTypeDefinition){
+        } else if (typeDefinition instanceof ScalarTypeDefinition) {
             outputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
         } else {
             // typeDefinition is not a valid output type
@@ -253,7 +259,7 @@ public class SchemaGenerator {
             inputType = buildInputObjectType(buildCtx, (InputObjectTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof EnumTypeDefinition) {
             inputType = buildEnumType((EnumTypeDefinition) typeDefinition);
-        } else if (typeDefinition instanceof ScalarTypeDefinition){
+        } else if (typeDefinition instanceof ScalarTypeDefinition) {
             inputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
         } else {
             // typeDefinition is not a valid InputType
@@ -331,7 +337,7 @@ public class SchemaGenerator {
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
-        builder.typeResolver(getTypeResolver(buildCtx, typeDefinition.getName()));
+        builder.typeResolver(getTypeResolverForInterface(buildCtx, typeDefinition));
 
         typeDefinition.getFieldDefinitions().forEach(fieldDef ->
                 builder.field(buildField(buildCtx, typeDefinition, fieldDef)));
@@ -342,11 +348,15 @@ public class SchemaGenerator {
         GraphQLUnionType.Builder builder = GraphQLUnionType.newUnionType();
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
-        builder.typeResolver(getTypeResolver(buildCtx, typeDefinition.getName()));
+        builder.typeResolver(getTypeResolverForUnion(buildCtx, typeDefinition));
 
         typeDefinition.getMemberTypes().forEach(mt -> {
-            GraphQLObjectType objectType = buildOutputType(buildCtx, mt);
-            builder.possibleType(objectType);
+            GraphQLOutputType outputType = buildOutputType(buildCtx, mt);
+            if (outputType instanceof GraphQLTypeReference) {
+                builder.possibleType((GraphQLTypeReference) outputType);
+            } else {
+                builder.possibleType((GraphQLObjectType) outputType);
+            }
         });
         return builder.build();
     }
@@ -381,14 +391,23 @@ public class SchemaGenerator {
     }
 
     private DataFetcher buildDataFetcher(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
-        RuntimeWiring wiring = buildCtx.getWiring();
         String fieldName = fieldDef.getName();
-        DataFetcher dataFetcher = wiring.getDataFetcherForType(parentType.getName()).get(fieldName);
-        if (dataFetcher == null) {
-            //
-            // in the future we could support FieldDateFetcher but we would need a way to indicate that in the schema spec
-            // perhaps by a directive
-            dataFetcher = new PropertyDataFetcher(fieldName);
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        RuntimeWiring wiring = buildCtx.getWiring();
+        WiringFactory wiringFactory = wiring.getWiringFactory();
+
+        DataFetcher dataFetcher;
+        if (wiringFactory.providesDataFetcher(typeRegistry, fieldDef)) {
+            dataFetcher = wiringFactory.getDataFetcher(typeRegistry, fieldDef);
+            assertNotNull(dataFetcher, "The WiringFactory indicated it provides a data fetcher but then returned null");
+        } else {
+            dataFetcher = wiring.getDataFetcherForType(parentType.getName()).get(fieldName);
+            if (dataFetcher == null) {
+                //
+                // in the future we could support FieldDateFetcher but we would need a way to indicate that in the schema spec
+                // perhaps by a directive
+                dataFetcher = new PropertyDataFetcher(fieldName);
+            }
         }
         return dataFetcher;
     }
@@ -454,12 +473,45 @@ public class SchemaGenerator {
         return map;
     }
 
-    private TypeResolver getTypeResolver(BuildContext buildCtx, String name) {
-        TypeResolver typeResolver = buildCtx.getWiring().getTypeResolvers().get(name);
-        if (typeResolver == null) {
-            // this really should be checked earlier via a pre-flight check
-            typeResolver = new TypeResolverProxy();
+    private TypeResolver getTypeResolverForUnion(BuildContext buildCtx, UnionTypeDefinition unionType) {
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        RuntimeWiring wiring = buildCtx.getWiring();
+        WiringFactory wiringFactory = wiring.getWiringFactory();
+
+        TypeResolver typeResolver;
+        if (wiringFactory.providesTypeResolver(typeRegistry, unionType)) {
+            typeResolver = wiringFactory.getTypeResolver(typeRegistry, unionType);
+            assertNotNull(typeResolver, "The WiringFactory indicated it provides a type resolver but then returned null");
+
+        } else {
+            typeResolver = wiring.getTypeResolvers().get(unionType.getName());
+            if (typeResolver == null) {
+                // this really should be checked earlier via a pre-flight check
+                typeResolver = new TypeResolverProxy();
+            }
         }
+
+        return typeResolver;
+    }
+
+    private TypeResolver getTypeResolverForInterface(BuildContext buildCtx, InterfaceTypeDefinition interfaceType) {
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        RuntimeWiring wiring = buildCtx.getWiring();
+        WiringFactory wiringFactory = wiring.getWiringFactory();
+
+        TypeResolver typeResolver;
+        if (wiringFactory.providesTypeResolver(typeRegistry, interfaceType)) {
+            typeResolver = wiringFactory.getTypeResolver(typeRegistry, interfaceType);
+            assertNotNull(typeResolver, "The WiringFactory indicated it provides a type resolver but then returned null");
+
+        } else {
+            typeResolver = wiring.getTypeResolvers().get(interfaceType.getName());
+            if (typeResolver == null) {
+                // this really should be checked earlier via a pre-flight check
+                typeResolver = new TypeResolverProxy();
+            }
+        }
+
         return typeResolver;
     }
 
