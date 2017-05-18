@@ -208,7 +208,6 @@ class SchemaGeneratorTest extends Specification {
         """
 
         def schemaSpec3 = """
-
             # the schema allows the following query
             # to be made
             type Query {
@@ -259,7 +258,6 @@ class SchemaGeneratorTest extends Specification {
 
     def "union type: union member used two times "() {
         def spec = """     
-
             type Query {
                 foobar: FooOrBar
                 foo: Foo
@@ -278,7 +276,6 @@ class SchemaGeneratorTest extends Specification {
             schema {
               query: Query
             }
-
         """
 
         def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
@@ -299,7 +296,6 @@ class SchemaGeneratorTest extends Specification {
 
     def "union type: union members only used once"() {
         def spec = """     
-
             type Query {
                 foobar: FooOrBar
             }
@@ -317,7 +313,6 @@ class SchemaGeneratorTest extends Specification {
             schema {
               query: Query
             }
-
         """
 
         def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
@@ -338,7 +333,6 @@ class SchemaGeneratorTest extends Specification {
 
     def "union type: union declared before members"() {
         def spec = """     
-
             union FooOrBar = Foo | Bar
             
             type Foo {
@@ -356,7 +350,6 @@ class SchemaGeneratorTest extends Specification {
             schema {
               query: Query
             }
-
         """
 
         def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
@@ -378,7 +371,6 @@ class SchemaGeneratorTest extends Specification {
     def "enum types are handled"() {
 
         def spec = """     
-
             enum RGB {
                 RED
                 GREEN
@@ -392,7 +384,6 @@ class SchemaGeneratorTest extends Specification {
             schema {
               query: Query
             }
-
         """
 
         def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring().build())
@@ -410,7 +401,6 @@ class SchemaGeneratorTest extends Specification {
     def "interface types are handled"() {
 
         def spec = """     
-
             interface Foo {
                is_foo : Boolean
             }
@@ -427,7 +417,6 @@ class SchemaGeneratorTest extends Specification {
             schema {
               query: Query
             }
-
         """
 
         def wiring = RuntimeWiring.newRuntimeWiring()
@@ -450,21 +439,17 @@ class SchemaGeneratorTest extends Specification {
     def "type extensions can be specified multiple times #406"() {
 
         def spec = """
-
             interface Interface1 {
                extraField1 : String
             }     
-
             interface Interface2 {
                extraField1 : String
                extraField2 : Int
             }     
-
             interface Interface3 {
                extraField1 : String
                extraField3 : ID
             }     
-
             type BaseType {
                baseField : String
             }
@@ -472,25 +457,20 @@ class SchemaGeneratorTest extends Specification {
             extend type BaseType implements Interface1 {
                extraField1 : String
             }
-
             extend type BaseType implements Interface2 {
                extraField1 : String
                extraField2 : Int
             }
-
             extend type BaseType implements Interface3 {
                extraField1 : String
                extraField3 : ID
             }
-
             extend type BaseType {
                extraField4 : Boolean
             }
-
             extend type BaseType {
                extraField5 : Boolean!
             }
-
             #
             # if we repeat a definition, that's ok as long as its the same types as before
             # they will be de-duped since the effect is the same
@@ -502,7 +482,6 @@ class SchemaGeneratorTest extends Specification {
             schema {
               query: BaseType
             }
-
         """
 
         def wiring = RuntimeWiring.newRuntimeWiring()
@@ -549,11 +528,9 @@ class SchemaGeneratorTest extends Specification {
     def "read me type example makes sense"() {
 
         def spec = """             
-
             schema {
               query: Human
             }
-
             type Episode {
                 name : String
             }
@@ -566,12 +543,10 @@ class SchemaGeneratorTest extends Specification {
                 id: ID!
                 name: String!
             }
-
             extend type Human implements Character {
                 name: String!
                 friends: [Character]
             }
-
             extend type Human {
                 appearsIn: [Episode]!
                 homePlanet: String
@@ -624,7 +599,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnInputTypeError.class)
-        err.message == "expected InputType, but found CharacterInput type"
+        err.message == "expected InputType, but found CharacterInput type [@11:13]"
     }
 
     def "InputType used as type should throw appropriate error #425"() {
@@ -652,7 +627,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnOutputTypeError.class)
-        err.message == "expected OutputType, but found CharacterInput type"
+        err.message == "expected OutputType, but found CharacterInput type [@11:13]"
     }
 
     def "schema with subscription"() {
