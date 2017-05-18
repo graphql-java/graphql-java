@@ -16,7 +16,6 @@ import graphql.language.Node;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectValue;
 import graphql.language.OperationTypeDefinition;
-import graphql.language.ResolvedTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.StringValue;
@@ -338,7 +337,7 @@ public class SchemaGenerator {
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
-        builder.typeResolver(getTypeResolver(buildCtx, typeDefinition));
+        builder.typeResolver(getTypeResolverForInterface(buildCtx, typeDefinition));
 
         typeDefinition.getFieldDefinitions().forEach(fieldDef ->
                 builder.field(buildField(buildCtx, typeDefinition, fieldDef)));
@@ -349,7 +348,7 @@ public class SchemaGenerator {
         GraphQLUnionType.Builder builder = GraphQLUnionType.newUnionType();
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
-        builder.typeResolver(getTypeResolver(buildCtx, typeDefinition));
+        builder.typeResolver(getTypeResolverForUnion(buildCtx, typeDefinition));
 
         typeDefinition.getMemberTypes().forEach(mt -> {
             GraphQLOutputType outputType = buildOutputType(buildCtx, mt);
@@ -474,18 +473,39 @@ public class SchemaGenerator {
         return map;
     }
 
-    private TypeResolver getTypeResolver(BuildContext buildCtx, ResolvedTypeDefinition typeDefinition) {
+    private TypeResolver getTypeResolverForUnion(BuildContext buildCtx, UnionTypeDefinition unionType) {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         RuntimeWiring wiring = buildCtx.getWiring();
         WiringFactory wiringFactory = wiring.getWiringFactory();
 
         TypeResolver typeResolver;
-        if (wiringFactory.providesTypeResolver(typeRegistry, typeDefinition)) {
-            typeResolver = wiringFactory.getTypeResolver(typeRegistry, typeDefinition);
+        if (wiringFactory.providesTypeResolver(typeRegistry, unionType)) {
+            typeResolver = wiringFactory.getTypeResolver(typeRegistry, unionType);
             assertNotNull(typeResolver, "The WiringFactory indicated it provides a type resolver but then returned null");
 
         } else {
-            typeResolver = wiring.getTypeResolvers().get(typeDefinition.getName());
+            typeResolver = wiring.getTypeResolvers().get(unionType.getName());
+            if (typeResolver == null) {
+                // this really should be checked earlier via a pre-flight check
+                typeResolver = new TypeResolverProxy();
+            }
+        }
+
+        return typeResolver;
+    }
+
+    private TypeResolver getTypeResolverForInterface(BuildContext buildCtx, InterfaceTypeDefinition interfaceType) {
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        RuntimeWiring wiring = buildCtx.getWiring();
+        WiringFactory wiringFactory = wiring.getWiringFactory();
+
+        TypeResolver typeResolver;
+        if (wiringFactory.providesTypeResolver(typeRegistry, interfaceType)) {
+            typeResolver = wiringFactory.getTypeResolver(typeRegistry, interfaceType);
+            assertNotNull(typeResolver, "The WiringFactory indicated it provides a type resolver but then returned null");
+
+        } else {
+            typeResolver = wiring.getTypeResolvers().get(interfaceType.getName());
             if (typeResolver == null) {
                 // this really should be checked earlier via a pre-flight check
                 typeResolver = new TypeResolverProxy();

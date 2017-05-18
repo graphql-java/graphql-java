@@ -2,8 +2,6 @@ package graphql.schema.idl;
 
 import graphql.Assert;
 import graphql.PublicApi;
-import graphql.language.FieldDefinition;
-import graphql.language.ResolvedTypeDefinition;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
@@ -64,7 +62,7 @@ public class RuntimeWiring {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
         private final Map<String, GraphQLScalarType> scalars = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolvers = new LinkedHashMap<>();
-        private WiringFactory wiringFactory = WiringFactory.NOOP_WIRING_FACTORY;
+        private WiringFactory wiringFactory = new NoopWiringFactory();
 
         private Builder() {
             ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);

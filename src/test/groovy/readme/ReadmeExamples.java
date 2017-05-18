@@ -9,8 +9,9 @@ import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.execution.SimpleExecutionStrategy;
 import graphql.language.Directive;
 import graphql.language.FieldDefinition;
-import graphql.language.ResolvedTypeDefinition;
+import graphql.language.InterfaceTypeDefinition;
 import graphql.language.TypeDefinition;
+import graphql.language.UnionTypeDefinition;
 import graphql.schema.Coercing;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -367,13 +368,23 @@ public class ReadmeExamples {
     RuntimeWiring buildDynamicRuntimeWiring() {
         WiringFactory dynamicWiringFactory = new WiringFactory() {
             @Override
-            public boolean providesTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
-                // you must indicate if you handle this type.  It will be either a Union or Interface definition
+            public boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
                 return getDirective(definition,"specialMarker") != null;
             }
 
             @Override
-            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
+            public boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+                return getDirective(definition, "specialMarker") != null;
+            }
+
+            @Override
+            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+                Directive directive = getDirective(definition, "specialMarker");
+                return createTypeResolver(definition, directive);
+            }
+
+            @Override
+            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
                 Directive directive  = getDirective(definition,"specialMarker");
                 return createTypeResolver(definition,directive);
             }
@@ -397,7 +408,7 @@ public class ReadmeExamples {
         throw new UnsupportedOperationException("Not implemented");
     }
 
-    private TypeResolver createTypeResolver(ResolvedTypeDefinition definition, Directive directive) {
+    private TypeResolver createTypeResolver(TypeDefinition definition, Directive directive) {
         throw new UnsupportedOperationException("Not implemented");
     }
 

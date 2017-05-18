@@ -620,13 +620,23 @@ definition.
     RuntimeWiring buildDynamicRuntimeWiring() {
         WiringFactory dynamicWiringFactory = new WiringFactory() {
             @Override
-            public boolean providesTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
-                // you must indicate if you handle this type.  It will be either a Union or Interface definition
+            public boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
                 return getDirective(definition,"specialMarker") != null;
             }
 
             @Override
-            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
+            public boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+                return getDirective(definition,"specialMarker") != null;
+            }
+
+            @Override
+            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+                Directive directive  = getDirective(definition,"specialMarker");
+                return createTypeResolver(definition,directive);
+            }
+
+            @Override
+            public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
                 Directive directive  = getDirective(definition,"specialMarker");
                 return createTypeResolver(definition,directive);
             }
@@ -645,7 +655,6 @@ definition.
         return RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(dynamicWiringFactory).build();
     }
-
 ```
 
 NOTE: IDL is not currently part of the [formal graphql spec](https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document).  

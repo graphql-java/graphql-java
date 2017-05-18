@@ -2,7 +2,8 @@ package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
 import graphql.language.FieldDefinition
-import graphql.language.ResolvedTypeDefinition
+import graphql.language.InterfaceTypeDefinition
+import graphql.language.UnionTypeDefinition
 import graphql.schema.*
 import spock.lang.Specification
 
@@ -42,12 +43,22 @@ class WiringFactoryTest extends Specification {
         }
 
         @Override
-        boolean providesTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
+        boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
             return name == definition.getName()
         }
 
         @Override
-        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
+        boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+            return name == definition.getName()
+        }
+
+        @Override
+        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+            return new NamedTypeResolver(name)
+        }
+
+        @Override
+        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
             return new NamedTypeResolver(name)
         }
 

@@ -1,7 +1,8 @@
 package graphql.schema.idl;
 
 import graphql.language.FieldDefinition;
-import graphql.language.ResolvedTypeDefinition;
+import graphql.language.InterfaceTypeDefinition;
+import graphql.language.UnionTypeDefinition;
 import graphql.schema.DataFetcher;
 import graphql.schema.TypeResolver;
 
@@ -23,7 +24,7 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public boolean providesTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
+    public boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
         for (WiringFactory factory : factories) {
             if (factory.providesTypeResolver(registry, definition)) {
                 return true;
@@ -33,7 +34,27 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
+    public boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesTypeResolver(registry, definition)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesTypeResolver(registry, definition)) {
+                return factory.getTypeResolver(registry, definition);
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
         for (WiringFactory factory : factories) {
             if (factory.providesTypeResolver(registry, definition)) {
                 return factory.getTypeResolver(registry, definition);

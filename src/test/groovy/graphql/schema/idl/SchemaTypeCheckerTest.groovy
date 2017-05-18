@@ -3,7 +3,8 @@ package graphql.schema.idl
 import graphql.GraphQLError
 import graphql.TypeResolutionEnvironment
 import graphql.language.FieldDefinition
-import graphql.language.ResolvedTypeDefinition
+import graphql.language.InterfaceTypeDefinition
+import graphql.language.UnionTypeDefinition
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
@@ -31,12 +32,22 @@ class SchemaTypeCheckerTest extends Specification {
         }
 
         @Override
-        boolean providesTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
+        boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
             return names.contains(definition.getName())
         }
 
         @Override
-        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, ResolvedTypeDefinition definition) {
+        boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+            return names.contains(definition.getName())
+        }
+
+        @Override
+        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+            resolver
+        }
+
+        @Override
+        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
             resolver
         }
 
