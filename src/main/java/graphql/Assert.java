@@ -10,7 +10,7 @@ public class Assert {
         throw new AssertException(errorMessage);
     }
 
-    public static void assertNeverCalled() {
+    public static <T> T assertNeverCalled() {
         throw new AssertException("Should never been called");
     }
 

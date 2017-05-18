@@ -1,11 +1,12 @@
 package graphql.schema.idl;
 
-import graphql.Assert;
 import graphql.language.FieldDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.DataFetcher;
 import graphql.schema.TypeResolver;
+
+import static graphql.Assert.assertNeverCalled;
 
 public class NoopWiringFactory implements WiringFactory {
     @Override
@@ -20,14 +21,12 @@ public class NoopWiringFactory implements WiringFactory {
 
     @Override
     public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition interfaceType) {
-        Assert.assertNeverCalled();
-        return null;
+        return assertNeverCalled();
     }
 
     @Override
     public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition unionType) {
-        Assert.assertNeverCalled();
-        return null;
+        return assertNeverCalled();
     }
 
     @Override
