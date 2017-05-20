@@ -13,7 +13,7 @@ import static java.util.Base64.getEncoder;
 
 public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
 
-    private static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
+    static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
     private final String prefix;
     private final List<T> data;
 
@@ -47,6 +47,8 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
         int begin = Math.max(afterOffset, -1) + 1;
         int beforeOffset = getOffsetFromCursor(environment.getArgument("before"), edges.size());
         int end = Math.min(beforeOffset, edges.size());
+
+        if (begin > end) begin = end;
 
         edges = edges.subList(begin, end);
         if (edges.size() == 0) {
