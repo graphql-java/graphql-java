@@ -1,5 +1,5 @@
 Relay Support
-==============
+=============
 
 
 Very basic support for `Relay <https://github.com/facebook/relay`_ is included.
@@ -34,7 +34,7 @@ string to this library as the query and the ``variables`` map as the third argum
 
 
 Apollo Support
----------------
+--------------
 
 There is no special support for `Apollo <https://github.com/apollographql/apollo-client>`_ included: Apollo works with any schema.
 
