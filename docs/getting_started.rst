@@ -1,7 +1,7 @@
 Getting started
 ===============
 
-``graphql-java`` is requires at least Java 8.
+``graphql-java`` requires at least Java 8.
 
 
 How to use the latest release with Gradle
