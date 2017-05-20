@@ -30,11 +30,12 @@ The mutation is invoked via a query like :
       }
     }
 
-You need to send in arguments during that mutation operation, in this case for the variables for `$ep` and `$review`
+You need to send in arguments during that mutation operation, in this case for the variables for ``$ep`` and ``$review``
 
 You would create types like this to handle this mutation :
 
 .. code-block:: java
+
     GraphQLInputObjectType episodeType = GraphQLInputObjectType.newInputObject()
             .name("Episode")
             .field(newInputObjectField()
