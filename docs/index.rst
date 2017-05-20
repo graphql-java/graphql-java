@@ -37,6 +37,8 @@ License
 
 graphql-java is licensed under the MIT License.
 
+Test
+
 .. toctree::
     :maxdepth: 1
     :caption: Documentation
