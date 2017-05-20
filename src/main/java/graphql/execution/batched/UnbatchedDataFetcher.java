@@ -18,7 +18,6 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
     private final DataFetcher delegate;
 
     public UnbatchedDataFetcher(DataFetcher delegate) {
-        assert !(delegate instanceof BatchedDataFetcher);
         this.delegate = delegate;
     }
 
