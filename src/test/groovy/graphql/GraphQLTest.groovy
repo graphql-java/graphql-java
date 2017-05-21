@@ -9,6 +9,8 @@ import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.schema.GraphQLInputObjectType.newInputObject
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
@@ -342,7 +344,7 @@ class GraphQLTest extends Specification {
                                 .name("foo")
                                 .type(GraphQLInt)
                                 .argument(newArgument().name("bar").type(GraphQLInt).build())
-                        .dataFetcher( { return it.getArgument("bar")})
+                                .dataFetcher({ return it.getArgument("bar") })
                 ))
                 .build()
         def query = "{foo(bar: 12345678910)}"
@@ -354,5 +356,64 @@ class GraphQLTest extends Specification {
         thrown(GraphQLException)
 //        result.errors.size() == 1
     }
+
+    def "query with missing argument results in arguments map with value null"() {
+        given:
+        def dataFetcher = Mock(DataFetcher)
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("QueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(GraphQLInt).build())
+                                .dataFetcher(dataFetcher)
+                ))
+                .build()
+        def query = "{foo}"
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+        1 * dataFetcher.get(_) >> {
+            DataFetchingEnvironment env ->
+                assert env.arguments.size() == 1
+                assert env.arguments['bar'] == null
+        }
+    }
+
+    def "query with missing key in an input object result in a empty map"() {
+        given:
+        def dataFetcher = Mock(DataFetcher)
+        def inputObject = newInputObject().name("bar")
+                .field(newInputObjectField().name("someKey").type(GraphQLString).build())
+                .field(newInputObjectField().name("otherKey").type(GraphQLString).build()).build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("QueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build())
+                                .dataFetcher(dataFetcher)
+                ))
+                .build()
+        def query = "{foo(bar: {someKey: \"value\"})}"
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+        result.errors.size() == 0
+        1 * dataFetcher.get(_) >> {
+            DataFetchingEnvironment env ->
+                assert env.arguments.size() == 1
+                assert env.arguments["bar"] instanceof Map
+                assert env.arguments['bar']['someKey'] == 'value'
+                assert env.arguments['bar']['otherKey'] == null
+        }
+    }
+
 
 }
