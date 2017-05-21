@@ -822,11 +822,11 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             // we strip the leading hash # character but we don't trim because we don't
             // know the "comment markup".  Maybe its space sensitive, maybe its not.  So
             // consumers can decide that
-            text = (text == null) ? "" : text;
-            text = text.replaceFirst("^#", "");
-            if (text.length() > 0) {
-                comments.add(new Comment(text, new SourceLocation(refTok.getLine(), refTok.getCharPositionInLine())));
+            if (text == null) {
+                continue;
             }
+            text = text.replaceFirst("^#", "");
+            comments.add(new Comment(text, new SourceLocation(refTok.getLine(), refTok.getCharPositionInLine())));
         }
         return comments;
     }

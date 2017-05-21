@@ -289,8 +289,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
-        types[0] instanceof  GraphQLObjectType
-        types[1] instanceof  GraphQLObjectType
+        types[0] instanceof GraphQLObjectType
+        types[1] instanceof GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -328,8 +328,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
-        types[0] instanceof  GraphQLObjectType
-        types[1] instanceof  GraphQLObjectType
+        types[0] instanceof GraphQLObjectType
+        types[1] instanceof GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -367,8 +367,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
-        types[0] instanceof  GraphQLObjectType
-        types[1] instanceof  GraphQLObjectType
+        types[0] instanceof GraphQLObjectType
+        types[1] instanceof GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -406,8 +406,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
-        types[0] instanceof  GraphQLObjectType
-        types[1] instanceof  GraphQLObjectType
+        types[0] instanceof GraphQLObjectType
+        types[1] instanceof GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -696,5 +696,99 @@ class SchemaGeneratorTest extends Specification {
         def schema = generateSchema(spec, wiring)
         then:
         schema.getSubscriptionType().name == "Subscription"
+    }
+
+
+    def "comments are used as descriptions"() {
+        given:
+        def spec = """
+        # description 1
+        # description 2
+        type Query {
+            # description 3
+            foo: String
+            union: Union
+            interface(input: Input): Interface
+            enum: Enum
+        }
+        # description 4
+        union Union = Query
+        
+        # description 5
+        interface Interface {
+            # interface field
+            foo: String
+        }
+        # description 6 
+        input Input {
+            # input field
+            foo: String
+        }
+        # description 7
+        enum Enum {
+            # enum value
+            FOO
+        }
+        schema {
+          query: Query
+        }
+        """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Union", buildResolver())
+                .type("Interface", buildResolver())
+                .build()
+        def schema = generateSchema(spec, wiring)
+
+        then:
+        schema.getQueryType().description == "description 1\ndescription 2"
+        schema.getQueryType().getFieldDefinition("foo").description == "description 3"
+        ((GraphQLUnionType) schema.getType("Union")).description == "description 4"
+
+        ((GraphQLInterfaceType) schema.getType("Interface")).description == "description 5"
+        ((GraphQLInterfaceType) schema.getType("Interface")).getFieldDefinition("foo").description == "interface field"
+
+        ((GraphQLInputObjectType) schema.getType("Input")).description == "description 6"
+        ((GraphQLInputObjectType) schema.getType("Input")).getFieldDefinition("foo").description == "input field"
+
+        ((GraphQLEnumType) schema.getType("Enum")).description == "description 7"
+        ((GraphQLEnumType) schema.getType("Enum")).getValue("FOO").description == "enum value"
+    }
+
+    def "comments are separated from descriptions with empty lines"() {
+        given:
+        def spec = """
+        # should be ignored comment
+        #
+        # description 1
+        # description 2
+        type Query {
+            # this should be ignored
+            # and this
+            #
+            # and this after an empty line
+            # and the last one that should be ignored
+            # 
+            # description 3
+            # description 4
+            foo: String
+            # ignored and with not description following
+            #
+            bar: String
+        }
+        schema {
+          query: Query
+        }
+        """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Union", buildResolver())
+                .type("Interface", buildResolver())
+                .build()
+        def schema = generateSchema(spec, wiring)
+
+        then:
+        schema.getQueryType().description == "description 1\ndescription 2"
+        schema.getQueryType().getFieldDefinition("foo").description == "description 3\ndescription 4"
     }
 }

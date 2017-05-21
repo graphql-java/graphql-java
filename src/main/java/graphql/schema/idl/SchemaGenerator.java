@@ -45,6 +45,7 @@ import graphql.schema.idl.errors.NotAnInputTypeError;
 import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -52,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 
@@ -366,7 +368,8 @@ public class SchemaGenerator {
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
-        typeDefinition.getEnumValueDefinitions().forEach(evd -> builder.value(evd.getName()));
+        typeDefinition.getEnumValueDefinitions().forEach(evd -> builder.value(evd.getName(), evd.getName(), buildDescription(evd)));
+//        typeDefinition.getEnumValueDefinitions().forEach(evd -> builder.value(evd.getName()));
         return builder.build();
     }
 
@@ -517,14 +520,17 @@ public class SchemaGenerator {
 
 
     private String buildDescription(Node node) {
-        StringBuilder sb = new StringBuilder();
         List<Comment> comments = node.getComments();
+        List<String> lines = new ArrayList<>();
         for (int i = 0; i < comments.size(); i++) {
-            if (i > 0) {
-                sb.append("\n");
+            String commentLine = comments.get(i).getContent().trim();
+            if (commentLine.isEmpty()) {
+                lines.clear();
+            } else {
+                lines.add(commentLine);
             }
-            sb.append(comments.get(i).getContent().trim());
         }
-        return sb.toString();
+        if (lines.size() == 0) return null;
+        return lines.stream().collect(Collectors.joining("\n"));
     }
 }
