@@ -5,6 +5,7 @@ import graphql.schema.*
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -302,12 +303,12 @@ class GraphQLTest extends Specification {
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
-                    .name("RootQueryType")
-                    .field(
-                    newFieldDefinition()
-                        .name("parent")
-                        .type(nonNull(parentType)) // non nullable parent
-                        .dataFetcher({ env -> new ParentTypeImplementation() })
+                        .name("RootQueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("parent")
+                                .type(nonNull(parentType)) // non nullable parent
+                                .dataFetcher({ env -> new ParentTypeImplementation() })
 
                 ))
                 .build()
@@ -328,6 +329,30 @@ class GraphQLTest extends Specification {
 
         result.errors.size() == 1
         result.data == null
+    }
+
+
+    def "query with int literal too large"() {
+        given:
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("QueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(GraphQLInt).build())
+                        .dataFetcher( { return it.getArgument("bar")})
+                ))
+                .build()
+        def query = "{foo(bar: 12345678910)}"
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+        // This should result in an ArgumentsOfCorrectType error
+        thrown(GraphQLException)
+//        result.errors.size() == 1
     }
 
 }
