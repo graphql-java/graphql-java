@@ -1,9 +1,9 @@
 package graphql.schema;
 
 
+import graphql.AssertException;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
-import graphql.AssertException;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -40,6 +40,36 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         }
     };
 
+
+    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
+        this(name, description, values, null);
+    }
+
+    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, EnumTypeDefinition definition) {
+        assertValidName(name);
+        this.name = name;
+        this.description = description;
+        this.definition = definition;
+        buildMap(values);
+    }
+
+    public List<GraphQLEnumValueDefinition> getValues() {
+        return new ArrayList<>(valueDefinitionMap.values());
+    }
+
+    public GraphQLEnumValueDefinition getValue(String name) {
+        return valueDefinitionMap.get(name);
+    }
+
+    private void buildMap(List<GraphQLEnumValueDefinition> values) {
+        for (GraphQLEnumValueDefinition valueDefinition : values) {
+            String name = valueDefinition.getName();
+            if (valueDefinitionMap.containsKey(name))
+                throw new AssertException("value " + name + " redefined");
+            valueDefinitionMap.put(name, valueDefinition);
+        }
+    }
+
     private Object getValueByName(Object value) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
         if (enumValueDefinition != null) return enumValueDefinition.getValue();
@@ -59,31 +89,6 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         return null;
     }
 
-    public List<GraphQLEnumValueDefinition> getValues() {
-        return new ArrayList<>(valueDefinitionMap.values());
-    }
-
-
-    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
-        this(name,description,values,null);
-    }
-
-    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, EnumTypeDefinition definition) {
-        assertValidName(name);
-        this.name = name;
-        this.description = description;
-        this.definition = definition;
-        buildMap(values);
-    }
-
-    private void buildMap(List<GraphQLEnumValueDefinition> values) {
-        for (GraphQLEnumValueDefinition valueDefinition : values) {
-            String name = valueDefinition.getName();
-            if (valueDefinitionMap.containsKey(name))
-                throw new AssertException("value " + name + " redefined");
-            valueDefinitionMap.put(name, valueDefinition);
-        }
-    }
 
     public String getName() {
         return name;
