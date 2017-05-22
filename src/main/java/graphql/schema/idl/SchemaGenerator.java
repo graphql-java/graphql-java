@@ -13,6 +13,7 @@ import graphql.language.InputValueDefinition;
 import graphql.language.IntValue;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
+import graphql.language.NullValue;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectValue;
 import graphql.language.OperationTypeDefinition;
@@ -432,6 +433,8 @@ public class SchemaGenerator {
             result = arrayValue.getValues().stream().map(this::buildValue).toArray();
         } else if (value instanceof ObjectValue) {
             result = buildObjectValue((ObjectValue) value);
+        } else if (value instanceof NullValue) {
+            result = null;
         }
         return result;
 
