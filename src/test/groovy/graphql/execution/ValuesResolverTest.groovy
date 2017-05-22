@@ -383,4 +383,26 @@ class ValuesResolverTest extends Specification {
         [intKey: 10]                      | _
         [intKey: 10, requiredField: null] | _
     }
+
+    def "getVariableValues: simple types with values not provided in variables map"() {
+        given:
+
+        def schema = TestUtil.schemaWithInputType(GraphQLString)
+        VariableDefinition fooVarDef = new VariableDefinition("foo", new TypeName("String"))
+        VariableDefinition barVarDef = new VariableDefinition("bar", new TypeName("String"))
+
+        when:
+        def resolvedValues = resolver.getVariableValues(schema, [fooVarDef, barVarDef], InputValue)
+
+        then:
+        resolvedValues == outputValue
+
+        where:
+        InputValue                || outputValue
+        [foo: "added", bar: null] || [foo: "added", bar: null]
+
+        // later this will be true once we apply missing value code
+        //[foo: "added"]            || [foo: "added"]
+    }
+
 }

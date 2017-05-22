@@ -129,6 +129,9 @@ public class ValuesResolver {
         if (inputValue instanceof VariableReference) {
             return variables.get(((VariableReference) inputValue).getName());
         }
+        if (inputValue instanceof NullValue) {
+            return null;
+        }
         if (type instanceof GraphQLScalarType) {
             return ((GraphQLScalarType) type).getCoercing().parseLiteral(inputValue);
         }

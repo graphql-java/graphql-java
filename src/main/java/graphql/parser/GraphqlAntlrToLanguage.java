@@ -58,7 +58,10 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
+import static graphql.language.NullValue.Null;
+
 @Internal
+
 public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     private final CommonTokenStream tokens;
@@ -668,6 +671,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
             newNode(booleanValue, ctx);
             return booleanValue;
+        } else if (ctx.NullValue() != null) {
+            newNode(Null, ctx);
+            return Null;
         } else if (ctx.StringValue() != null) {
             StringValue stringValue = new StringValue(parseString(ctx.StringValue().getText()));
             newNode(stringValue, ctx);
@@ -713,6 +719,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
             newNode(booleanValue, ctx);
             return booleanValue;
+        } else if (ctx.NullValue() != null) {
+            newNode(Null, ctx);
+            return Null;
         } else if (ctx.StringValue() != null) {
             StringValue stringValue = new StringValue(parseString(ctx.StringValue().getText()));
             newNode(stringValue, ctx);
