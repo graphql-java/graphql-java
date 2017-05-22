@@ -523,8 +523,8 @@ public class SchemaGenerator {
         List<Comment> comments = node.getComments();
         List<String> lines = new ArrayList<>();
         for (int i = 0; i < comments.size(); i++) {
-            String commentLine = comments.get(i).getContent().trim();
-            if (commentLine.isEmpty()) {
+            String commentLine = comments.get(i).getContent();
+            if (commentLine.trim().isEmpty()) {
                 lines.clear();
             } else {
                 lines.add(commentLine);

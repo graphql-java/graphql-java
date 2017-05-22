@@ -67,7 +67,7 @@ class SchemaGeneratorTest extends Specification {
 
         def authorField = schema.getQueryType().getFieldDefinition("author")
         assert authorField.type.name == "Author"
-        assert authorField.description == "author query must receive an id as argument"
+        assert authorField.description == " author query must receive an id as argument"
         assert authorField.arguments.get(0).name == "id"
         assert authorField.arguments.get(0).type instanceof GraphQLNonNull
         assert unwrap(authorField.arguments.get(0).type).name == "Int"
@@ -125,7 +125,7 @@ class SchemaGeneratorTest extends Specification {
         assert (unwrap(upvotePostFieldArg.type) as GraphQLInputObjectType).getField("votes").type.name == "Int"
 
         def queryType = schema.getQueryType()
-        assert queryType.description == "the schema allows the following query\nto be made"
+        assert queryType.description == " the schema allows the following query\n to be made"
 
     }
 
@@ -702,7 +702,7 @@ class SchemaGeneratorTest extends Specification {
     def "comments are used as descriptions"() {
         given:
         def spec = """
-        # description 1
+        #description 1
         # description 2
         type Query {
             # description 3
@@ -741,18 +741,18 @@ class SchemaGeneratorTest extends Specification {
         def schema = generateSchema(spec, wiring)
 
         then:
-        schema.getQueryType().description == "description 1\ndescription 2"
-        schema.getQueryType().getFieldDefinition("foo").description == "description 3"
-        ((GraphQLUnionType) schema.getType("Union")).description == "description 4"
+        schema.getQueryType().description == "description 1\n description 2"
+        schema.getQueryType().getFieldDefinition("foo").description == " description 3"
+        ((GraphQLUnionType) schema.getType("Union")).description == " description 4"
 
-        ((GraphQLInterfaceType) schema.getType("Interface")).description == "description 5"
-        ((GraphQLInterfaceType) schema.getType("Interface")).getFieldDefinition("foo").description == "interface field"
+        ((GraphQLInterfaceType) schema.getType("Interface")).description == " description 5"
+        ((GraphQLInterfaceType) schema.getType("Interface")).getFieldDefinition("foo").description == " interface field"
 
-        ((GraphQLInputObjectType) schema.getType("Input")).description == "description 6"
-        ((GraphQLInputObjectType) schema.getType("Input")).getFieldDefinition("foo").description == "input field"
+        ((GraphQLInputObjectType) schema.getType("Input")).description == " description 6 "
+        ((GraphQLInputObjectType) schema.getType("Input")).getFieldDefinition("foo").description == " input field"
 
-        ((GraphQLEnumType) schema.getType("Enum")).description == "description 7"
-        ((GraphQLEnumType) schema.getType("Enum")).getValue("FOO").description == "enum value"
+        ((GraphQLEnumType) schema.getType("Enum")).description == " description 7"
+        ((GraphQLEnumType) schema.getType("Enum")).getValue("FOO").description == " enum value"
     }
 
     def "comments are separated from descriptions with empty lines"() {
@@ -788,7 +788,7 @@ class SchemaGeneratorTest extends Specification {
         def schema = generateSchema(spec, wiring)
 
         then:
-        schema.getQueryType().description == "description 1\ndescription 2"
-        schema.getQueryType().getFieldDefinition("foo").description == "description 3\ndescription 4"
+        schema.getQueryType().description == " description 1\n description 2"
+        schema.getQueryType().getFieldDefinition("foo").description == " description 3\n description 4"
     }
 }
