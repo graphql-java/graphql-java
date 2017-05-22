@@ -323,4 +323,53 @@ query HeroNameAndFriends($episode: Episode = "JEDI") {
 '''
     }
 
+//-------------------------------------------------
+    def "ast printing of null"() {
+        def query = '''
+query NullEpisodeQuery {
+  hero(episode: null) {
+    name
+  }
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''query NullEpisodeQuery {
+  hero(episode: null) {
+    name
+  }
+}
+'''
+    }
+
+    //-------------------------------------------------
+    def "ast printing of default variables with null"() {
+        def query = '''
+query NullVariableDefaultValueQuery($episode: Episode = null) {
+  hero(episode: $episode) {
+    name
+    friends {
+      name
+    }
+  }
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''query NullVariableDefaultValueQuery($episode: Episode = null) {
+  hero(episode: $episode) {
+    name
+    friends {
+      name
+    }
+  }
+}
+'''
+    }
+
+
 }

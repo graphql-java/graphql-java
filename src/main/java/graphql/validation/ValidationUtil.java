@@ -25,6 +25,9 @@ public class ValidationUtil {
         if (value == null) {
             return !(type instanceof GraphQLNonNull);
         }
+        if (value instanceof NullValue) {
+            return !(type instanceof GraphQLNonNull);
+        }
         if (value instanceof VariableReference) {
             return true;
         }
