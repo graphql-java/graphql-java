@@ -9,7 +9,7 @@ import graphql.schema.GraphQLList
 import graphql.schema.GraphQLScalarType
 import spock.lang.Specification
 
-import static graphql.execution.ExecutionParameters.newParameters
+import static ExecutionStrategyParameters.newParameters
 import static graphql.schema.GraphQLNonNull.nonNull
 
 @SuppressWarnings("GroovyPointlessBoolean")
@@ -21,14 +21,14 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy = new ExecutionStrategy() {
 
             @Override
-            ExecutionResult execute(ExecutionContext executionContext, ExecutionParameters parameters) {
+            ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
                 return null
             }
         }
     }
 
     def buildContext() {
-        new ExecutionContext(null, null, null, executionStrategy, executionStrategy, executionStrategy, null, null, null, null)
+        new ExecutionContext(null, null, null, executionStrategy, executionStrategy, executionStrategy, null, null, null, null, null)
     }
 
 

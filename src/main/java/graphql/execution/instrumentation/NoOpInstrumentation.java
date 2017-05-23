@@ -2,10 +2,10 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
 import graphql.execution.instrumentation.parameters.DataFetchParameters;
-import graphql.execution.instrumentation.parameters.ExecutionParameters;
 import graphql.execution.instrumentation.parameters.FieldFetchParameters;
 import graphql.execution.instrumentation.parameters.FieldParameters;
-import graphql.execution.instrumentation.parameters.ValidationParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.validation.ValidationError;
 
@@ -22,7 +22,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecution(ExecutionParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
         return new InstrumentationContext<ExecutionResult>() {
             @Override
             public void onEnd(ExecutionResult result) {
@@ -35,7 +35,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<Document> beginParse(ExecutionParameters parameters) {
+    public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
         return new InstrumentationContext<Document>() {
             @Override
             public void onEnd(Document result) {
@@ -48,7 +48,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<List<ValidationError>> beginValidation(ValidationParameters parameters) {
+    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         return new InstrumentationContext<List<ValidationError>>() {
             @Override
             public void onEnd(List<ValidationError> result) {

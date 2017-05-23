@@ -15,7 +15,6 @@ import java.util.Map;
 public interface DataFetchingEnvironment {
     /**
      * @param <T> you decide what type it is
-     *
      * @return the current object being queried
      */
     <T> T getSource();
@@ -29,7 +28,6 @@ public interface DataFetchingEnvironment {
      * Returns true of the named argument is present
      *
      * @param name the name of the argument
-     *
      * @return true of the named argument is present
      */
     boolean containsArgument(String name);
@@ -39,7 +37,6 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     *
      * @return the named argument or null if its not [present
      */
     <T> T getArgument(String name);
@@ -49,10 +46,11 @@ public interface DataFetchingEnvironment {
      * is invoked
      *
      * @param <T> you decide what type it is
-     *
      * @return a context object
      */
     <T> T getContext();
+
+    <T> T getRoot();
 
     /**
      * @return the list of fields currently in query context

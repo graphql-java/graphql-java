@@ -59,6 +59,7 @@ class DataFetcherTest extends Specification {
                 dataHolder,
                 Collections.emptyMap(),
                 null,
+                null,
                 Collections.emptyList(),
                 type,
                 null,
