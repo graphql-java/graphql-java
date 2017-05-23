@@ -31,7 +31,13 @@ public class Scalars {
 
     // true if its a number or string that we will attempt to convert to a number via toNumber()
     private static boolean isNumberIsh(Object input) {
-        return input instanceof Number || input instanceof String;
+        if (input instanceof Number) {
+            return true;
+        }
+        if (input instanceof String) {
+            return true;
+        }
+        return false;
     }
 
     private static Number toNumber(Object input) {
@@ -53,16 +59,26 @@ public class Scalars {
         throw new AssertException("Unexpected case - this call should be protected by a previous call to isNumberIsh()");
     }
 
-
     public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing<Integer, Integer>() {
+
         @Override
         public Integer serialize(Object input) {
             if (input instanceof Integer) {
                 return (Integer) input;
             } else if (isNumberIsh(input)) {
-                return toNumber(input).intValue();
+                BigDecimal value;
+                try {
+                    value = new BigDecimal(input.toString());
+                } catch (NumberFormatException e) {
+                    throw new GraphQLException("Invalid input " + input + " for Int");
+                }
+                try {
+                    return value.intValueExact();
+                } catch (ArithmeticException e) {
+                    throw new GraphQLException("Invalid input " + input + " for Int");
+                }
             } else {
-                return null;
+                throw new GraphQLException("Invalid input " + input + " for Int");
             }
         }
 
@@ -76,7 +92,7 @@ public class Scalars {
             if (!(input instanceof IntValue)) return null;
             BigInteger value = ((IntValue) input).getValue();
             if (value.compareTo(INT_MIN) == -1 || value.compareTo(INT_MAX) == 1) {
-                throw new GraphQLException("Int literal is too big or too small");
+                return null;
             }
             return value.intValue();
         }
@@ -121,9 +137,19 @@ public class Scalars {
             if (input instanceof Short) {
                 return (Short) input;
             } else if (isNumberIsh(input)) {
-                return toNumber(input).shortValue();
+                BigDecimal value;
+                try {
+                    value = new BigDecimal(input.toString());
+                } catch (NumberFormatException e) {
+                    throw new GraphQLException("Invalid input " + input + " for Short");
+                }
+                try {
+                    return value.shortValueExact();
+                } catch (ArithmeticException e) {
+                    throw new GraphQLException("Invalid input " + input + " for Short");
+                }
             } else {
-                return null;
+                throw new GraphQLException("Invalid input " + input + " for Short");
             }
         }
 
@@ -137,7 +163,7 @@ public class Scalars {
             if (!(input instanceof IntValue)) return null;
             BigInteger value = ((IntValue) input).getValue();
             if (value.compareTo(SHORT_MIN) < 0 || value.compareTo(SHORT_MAX) > 0) {
-                throw new GraphQLException("Int literal is too big or too small for a short, would cause overflow");
+                return null;
             }
             return value.shortValue();
         }
@@ -266,7 +292,7 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing<String,String>() {
+    public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing<String, String>() {
         @Override
         public String serialize(Object input) {
             return input == null ? null : input.toString();
@@ -285,7 +311,7 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing<Boolean,Boolean>() {
+    public static GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing<Boolean, Boolean>() {
         @Override
         public Boolean serialize(Object input) {
             if (input instanceof Boolean) {
@@ -312,7 +338,7 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing<Object,Object>() {
+    public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing<Object, Object>() {
         @Override
         public Object serialize(Object input) {
             if (input instanceof String) {
@@ -343,7 +369,7 @@ public class Scalars {
     });
 
 
-    public static GraphQLScalarType GraphQLChar = new GraphQLScalarType("Char", "Built-in Char as Character", new Coercing<Character,Character>() {
+    public static GraphQLScalarType GraphQLChar = new GraphQLScalarType("Char", "Built-in Char as Character", new Coercing<Character, Character>() {
         @Override
         public Character serialize(Object input) {
             if (input instanceof String) {

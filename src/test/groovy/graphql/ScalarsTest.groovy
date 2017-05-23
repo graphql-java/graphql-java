@@ -195,42 +195,6 @@ class ScalarsTest extends Specification {
         new BigInteger(42)           | 42
     }
 
-    @Unroll
-    def "Int parse literal #literal.value as #result"() {
-        expect:
-        Scalars.GraphQLInt.getCoercing().parseLiteral(literal) == result
-
-        where:
-        literal               | result
-        new IntValue(42)      | 42
-        new StringValue("-1") | null
-        new FloatValue(42.3)  | null
-
-    }
-
-    @Unroll
-    def "Int serialize/parseValue #value into #result (#result.class)"() {
-        expect:
-        Scalars.GraphQLInt.getCoercing().serialize(value) == result
-        Scalars.GraphQLInt.getCoercing().parseValue(value) == result
-
-        where:
-        value                        | result
-        "42"                         | 42
-        new Integer(42)              | 42
-        "-1"                         | -1
-        null                         | null
-        //
-        // lenient value support
-        "42.3"                       | 42
-        new Byte("42")               | 42
-        new Short("42")              | 42
-        new Long(42345784398534785l) | 1020221569 // loss of precision in this case
-        new Double(42.3)             | 42
-        new Float(42.3)              | 42
-        new BigDecimal(42.3)         | 42
-        new BigInteger(42)           | 42
-    }
 
     @Unroll
     def "Short parse literal #literal.value as #result"() {
