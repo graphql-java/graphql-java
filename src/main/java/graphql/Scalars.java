@@ -411,13 +411,12 @@ public class Scalars {
     public static GraphQLScalarType GraphQLChar = new GraphQLScalarType("Char", "Built-in Char as Character", new Coercing<Character, Character>() {
         @Override
         public Character serialize(Object input) {
-            if (input instanceof String) {
-                return ((String) input).length() != 1 ?
-                        null : ((String) input).charAt(0);
+            if (input instanceof String && ((String) input).length() == 1) {
+                return ((String) input).charAt(0);
             } else if (input instanceof Character) {
                 return (Character) input;
             } else {
-                return null;
+                throw new GraphQLException("Invalid input " + input + " for Char");
             }
         }
 
@@ -430,7 +429,7 @@ public class Scalars {
         public Character parseLiteral(Object input) {
             if (!(input instanceof StringValue)) return null;
             String value = ((StringValue) input).getValue();
-            if (value == null || value.length() != 1) return null;
+            if (value.length() != 1) return null;
             return value.charAt(0);
         }
     });
