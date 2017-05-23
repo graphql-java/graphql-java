@@ -188,9 +188,19 @@ public class Scalars {
             if (input instanceof Byte) {
                 return (Byte) input;
             } else if (isNumberIsh(input)) {
-                return toNumber(input).byteValue();
+                BigDecimal value;
+                try {
+                    value = new BigDecimal(input.toString());
+                } catch (NumberFormatException e) {
+                    throw new GraphQLException("Invalid input " + input + " for Byte");
+                }
+                try {
+                    return value.byteValueExact();
+                } catch (ArithmeticException e) {
+                    throw new GraphQLException("Invalid input " + input + " for Byte");
+                }
             } else {
-                return null;
+                throw new GraphQLException("Invalid input " + input + " for Byte");
             }
         }
 
@@ -204,7 +214,7 @@ public class Scalars {
             if (!(input instanceof IntValue)) return null;
             BigInteger value = ((IntValue) input).getValue();
             if (value.compareTo(BYTE_MIN) < 0 || value.compareTo(BYTE_MAX) > 0) {
-                throw new GraphQLException("Int literal is too big or too small for a byte, would cause overflow");
+                return null;
             }
             return value.byteValue();
         }
