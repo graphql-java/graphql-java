@@ -221,15 +221,24 @@ public class Scalars {
     });
 
 
+    /**
+     * Note: The Float type in GraphQL is equivalent to Double in Java. (double precision IEEE 754)
+     */
     public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing<Double, Double>() {
         @Override
         public Double serialize(Object input) {
             if (input instanceof Double) {
                 return (Double) input;
             } else if (isNumberIsh(input)) {
-                return toNumber(input).doubleValue();
+                BigDecimal value;
+                try {
+                    value = new BigDecimal(input.toString());
+                } catch (NumberFormatException e) {
+                    throw new GraphQLException("Invalid input " + input + " for Byte");
+                }
+                return value.doubleValue();
             } else {
-                return null;
+                throw new GraphQLException("Invalid input " + input + " for Byte");
             }
         }
 
