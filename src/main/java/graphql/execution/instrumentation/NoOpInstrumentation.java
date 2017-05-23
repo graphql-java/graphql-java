@@ -16,7 +16,7 @@ import java.util.List;
  */
 public final class NoOpInstrumentation implements Instrumentation {
 
-    public static NoOpInstrumentation INSTANCE = new NoOpInstrumentation();
+    public static final NoOpInstrumentation INSTANCE = new NoOpInstrumentation();
 
     private NoOpInstrumentation() {
     }
