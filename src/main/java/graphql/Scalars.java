@@ -379,24 +379,23 @@ public class Scalars {
 
     public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing<Object, Object>() {
         @Override
-        public Object serialize(Object input) {
+        public String serialize(Object input) {
             if (input instanceof String) {
-                return input;
+                return (String) input;
             }
             if (input instanceof Integer) {
                 return String.valueOf(input);
             }
-
-            return null;
+            throw new GraphQLException("Invalid input " + input + " for ID");
         }
 
         @Override
-        public Object parseValue(Object input) {
+        public String parseValue(Object input) {
             return serialize(input);
         }
 
         @Override
-        public Object parseLiteral(Object input) {
+        public String parseLiteral(Object input) {
             if (input instanceof StringValue) {
                 return ((StringValue) input).getValue();
             }
