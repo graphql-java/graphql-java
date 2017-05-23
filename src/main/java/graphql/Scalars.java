@@ -22,12 +22,6 @@ public class Scalars {
     private static final BigInteger SHORT_MAX = BigInteger.valueOf(Short.MAX_VALUE);
     private static final BigInteger SHORT_MIN = BigInteger.valueOf(Short.MIN_VALUE);
 
-    private static boolean isWholeNumber(Object input) {
-        return input instanceof Long
-                || input instanceof Integer
-                || input instanceof Short
-                || input instanceof Byte;
-    }
 
     // true if its a number or string that we will attempt to convert to a number via toNumber()
     private static boolean isNumberIsh(Object input) {
@@ -38,25 +32,6 @@ public class Scalars {
             return true;
         }
         return false;
-    }
-
-    private static Number toNumber(Object input) {
-        if (input instanceof Number) {
-            return (Number) input;
-        }
-        if (input instanceof String) {
-            // we go to double and then let each scalar type decide what precision they want from it.  This
-            // will allow lenient behavior in string input as well as Number input... eg "42.3" as a string to a Long
-            // scalar is the same as new Double(42.3) to a Long scalar.
-            //
-            // each type will use Java Narrow casting to turn this into the desired type (Long, Integer, Short etc...)
-            //
-            // See http://docs.oracle.com/javase/specs/jls/se7/html/jls-5.html#jls-5.1.3
-            //
-            return Double.parseDouble((String) input);
-        }
-        // we never expect this and if we do, the code is wired wrong
-        throw new AssertException("Unexpected case - this call should be protected by a previous call to isNumberIsh()");
     }
 
     public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing<Integer, Integer>() {
@@ -227,9 +202,7 @@ public class Scalars {
     public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing<Double, Double>() {
         @Override
         public Double serialize(Object input) {
-            if (input instanceof Double) {
-                return (Double) input;
-            } else if (isNumberIsh(input)) {
+            if (isNumberIsh(input)) {
                 BigDecimal value;
                 try {
                     value = new BigDecimal(input.toString());
@@ -262,15 +235,15 @@ public class Scalars {
     public static GraphQLScalarType GraphQLBigInteger = new GraphQLScalarType("BigInteger", "Built-in java.math.BigInteger", new Coercing<BigInteger, BigInteger>() {
         @Override
         public BigInteger serialize(Object input) {
-            if (input instanceof BigInteger) {
-                return (BigInteger) input;
-            } else if (input instanceof String) {
-                return new BigInteger((String) input);
-            } else if (isNumberIsh(input)) {
-                return BigInteger.valueOf(toNumber(input).longValue());
-            } else {
-                return null;
-            }
+//            if (input instanceof BigInteger) {
+//                return (BigInteger) input;
+//            } else if (input instanceof String) {
+//                return new BigInteger((String) input);
+//            } else if (isNumberIsh(input)) {
+//                return BigInteger.valueOf(toNumber(input).longValue());
+//            } else {
+            return null;
+//            }
         }
 
         @Override
@@ -292,17 +265,14 @@ public class Scalars {
     public static GraphQLScalarType GraphQLBigDecimal = new GraphQLScalarType("BigDecimal", "Built-in java.math.BigDecimal", new Coercing<BigDecimal, BigDecimal>() {
         @Override
         public BigDecimal serialize(Object input) {
-            if (input instanceof BigDecimal) {
-                return (BigDecimal) input;
-            } else if (input instanceof String) {
-                return new BigDecimal((String) input);
-            } else if (isWholeNumber(input)) {
-                return BigDecimal.valueOf(toNumber(input).longValue());
-            } else if (input instanceof Number) {
-                return BigDecimal.valueOf(toNumber(input).doubleValue());
-            } else {
-                return null;
+            if (isNumberIsh(input)) {
+                try {
+                    return new BigDecimal(input.toString());
+                } catch (NumberFormatException e) {
+                    throw new GraphQLException("Invalid input " + input + " for BigDecimal");
+                }
             }
+            throw new GraphQLException("Invalid input " + input + " for BigDecimal");
         }
 
         @Override
@@ -313,7 +283,11 @@ public class Scalars {
         @Override
         public BigDecimal parseLiteral(Object input) {
             if (input instanceof StringValue) {
-                return new BigDecimal(((StringValue) input).getValue());
+                try {
+                    return new BigDecimal(((StringValue) input).getValue());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
             } else if (input instanceof IntValue) {
                 return new BigDecimal(((IntValue) input).getValue());
             } else if (input instanceof FloatValue) {
