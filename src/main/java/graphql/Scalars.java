@@ -235,15 +235,20 @@ public class Scalars {
     public static GraphQLScalarType GraphQLBigInteger = new GraphQLScalarType("BigInteger", "Built-in java.math.BigInteger", new Coercing<BigInteger, BigInteger>() {
         @Override
         public BigInteger serialize(Object input) {
-//            if (input instanceof BigInteger) {
-//                return (BigInteger) input;
-//            } else if (input instanceof String) {
-//                return new BigInteger((String) input);
-//            } else if (isNumberIsh(input)) {
-//                return BigInteger.valueOf(toNumber(input).longValue());
-//            } else {
-            return null;
-//            }
+            if (isNumberIsh(input)) {
+                BigDecimal value;
+                try {
+                    value = new BigDecimal(input.toString());
+                } catch (NumberFormatException e) {
+                    throw new GraphQLException("Invalid input " + input + " for BigDecimal");
+                }
+                try {
+                    return value.toBigIntegerExact();
+                } catch (ArithmeticException e) {
+                    throw new GraphQLException("Invalid input " + input + " for BigDecimal");
+                }
+            }
+            throw new GraphQLException("Invalid input " + input + " for BigDecimal");
         }
 
         @Override
@@ -254,9 +259,19 @@ public class Scalars {
         @Override
         public BigInteger parseLiteral(Object input) {
             if (input instanceof StringValue) {
-                return new BigInteger(((StringValue) input).getValue());
+                try {
+                    return new BigDecimal(((StringValue) input).getValue()).toBigIntegerExact();
+                } catch (NumberFormatException | ArithmeticException e) {
+                    return null;
+                }
             } else if (input instanceof IntValue) {
                 return ((IntValue) input).getValue();
+            } else if (input instanceof FloatValue) {
+                try {
+                    return ((FloatValue) input).getValue().toBigIntegerExact();
+                } catch (ArithmeticException e) {
+                    return null;
+                }
             }
             return null;
         }
