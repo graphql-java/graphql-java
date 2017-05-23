@@ -104,9 +104,19 @@ public class Scalars {
             if (input instanceof Long) {
                 return (Long) input;
             } else if (isNumberIsh(input)) {
-                return toNumber(input).longValue();
+                BigDecimal value;
+                try {
+                    value = new BigDecimal(input.toString());
+                } catch (NumberFormatException e) {
+                    throw new GraphQLException("Invalid input " + input + " for Long");
+                }
+                try {
+                    return value.longValueExact();
+                } catch (ArithmeticException e) {
+                    throw new GraphQLException("Invalid input " + input + " for Long");
+                }
             } else {
-                return null;
+                throw new GraphQLException("Invalid input " + input + " for Int");
             }
         }
 
@@ -118,12 +128,15 @@ public class Scalars {
         @Override
         public Long parseLiteral(Object input) {
             if (input instanceof StringValue) {
-                return Long.parseLong(((StringValue) input).getValue());
+                try {
+                    return Long.parseLong(((StringValue) input).getValue());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
             } else if (input instanceof IntValue) {
                 BigInteger value = ((IntValue) input).getValue();
-                // Check if out of bounds.
                 if (value.compareTo(LONG_MIN) < 0 || value.compareTo(LONG_MAX) > 0) {
-                    throw new GraphQLException("Int literal is too big or too small for a long, would cause overflow");
+                    return null;
                 }
                 return value.longValue();
             }
