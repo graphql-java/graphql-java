@@ -6,8 +6,8 @@ import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
-import static graphql.Scalars.*
 import static AstValueHelper.astFromValue
+import static graphql.Scalars.*
 
 class AstValueHelperTest extends Specification {
 
@@ -34,8 +34,6 @@ class AstValueHelperTest extends Specification {
     def 'converts Int values to Int ASTs'() {
         expect:
         astFromValue(123.0, GraphQLInt).isEqualTo(new IntValue(bigInt(123)))
-
-        astFromValue(123.5, GraphQLInt).isEqualTo(new IntValue(bigInt(123)))
 
         astFromValue(1e4, GraphQLInt).isEqualTo(new IntValue(bigInt(10000)))
     }

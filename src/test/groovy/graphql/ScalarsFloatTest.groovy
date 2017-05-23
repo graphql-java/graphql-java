@@ -81,6 +81,7 @@ class ScalarsFloatTest extends Specification {
         value           | _
         ""              | _
         "not a number " | _
+        Double.NaN      | _
     }
 
 

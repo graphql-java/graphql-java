@@ -23,7 +23,6 @@ public class Scalars {
     private static final BigInteger SHORT_MIN = BigInteger.valueOf(Short.MIN_VALUE);
 
 
-    // true if its a number or string that we will attempt to convert to a number via toNumber()
     private static boolean isNumberIsh(Object input) {
         if (input instanceof Number) {
             return true;

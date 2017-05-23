@@ -75,10 +75,7 @@ class ScalarsQueryTest extends Specification {
                 .build().execute(query)
 
         then:
-        result.data == expected
-        result.errors.empty
-        resultBatched.data == expected
-        resultBatched.errors.empty
+        thrown(GraphQLException)
     }
 
     def 'Escaped characters are handled'() {
@@ -109,11 +106,8 @@ class ScalarsQueryTest extends Specification {
         def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
         
         then:
-        //FIXME do not propagate exception, but instead raise an error.
-        thrown(NumberFormatException)
-        //TODO result.errors.empty == false
-        //TODO result.errors == xyz
-        
+        thrown(GraphQLException)
+
         where:
         number       | _
         "bigInteger" | _
