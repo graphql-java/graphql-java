@@ -339,12 +339,19 @@ public class Scalars {
         public Boolean serialize(Object input) {
             if (input instanceof Boolean) {
                 return (Boolean) input;
-            } else if (input instanceof Integer) {
-                return (Integer) input > 0;
             } else if (input instanceof String) {
                 return Boolean.parseBoolean((String) input);
+            } else if (isNumberIsh(input)) {
+                BigDecimal value;
+                try {
+                    value = new BigDecimal(input.toString());
+                } catch (NumberFormatException e) {
+                    // this should never happen because String is handled above
+                    throw new GraphQLException("Invalid input " + input + " for Boolean");
+                }
+                return value.compareTo(BigDecimal.ZERO) != 0;
             } else {
-                return null;
+                throw new GraphQLException("Invalid input " + input + " for Boolean");
             }
         }
 
