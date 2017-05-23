@@ -91,6 +91,7 @@ class ScalarsIntTest extends Specification {
         new Float(42.3)              | _
         Integer.MAX_VALUE + 1l       | _
         Integer.MIN_VALUE - 1l       | _
+        new Object()                 | _
 
     }
 

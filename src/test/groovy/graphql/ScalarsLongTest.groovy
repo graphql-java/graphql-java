@@ -96,6 +96,7 @@ class ScalarsLongTest extends Specification {
         new Float(42.3)  | _
         tooBig           | _
         tooSmall         | _
+        new Object()     | _
     }
 
 

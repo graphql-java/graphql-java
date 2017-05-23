@@ -91,6 +91,7 @@ class ScalarsByteTest extends Specification {
         new Float(42.3)              | _
         Byte.MAX_VALUE + 1l          | _
         Byte.MIN_VALUE - 1l          | _
+        new Object()                 | _
 
     }
 
