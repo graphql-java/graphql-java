@@ -2,10 +2,10 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
 import graphql.execution.instrumentation.parameters.DataFetchParameters;
-import graphql.execution.instrumentation.parameters.ExecutionParameters;
 import graphql.execution.instrumentation.parameters.FieldFetchParameters;
 import graphql.execution.instrumentation.parameters.FieldParameters;
-import graphql.execution.instrumentation.parameters.ValidationParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.schema.DataFetcher;
 import graphql.validation.ValidationError;
@@ -28,7 +28,7 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    InstrumentationContext<ExecutionResult> beginExecution(ExecutionParameters parameters);
+    InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters);
 
     /**
      * This is called just before a query is parsed and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
@@ -38,7 +38,7 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    InstrumentationContext<Document> beginParse(ExecutionParameters parameters);
+    InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters);
 
     /**
      * This is called just before the parsed query Document is validated and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
@@ -48,7 +48,7 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    InstrumentationContext<List<ValidationError>> beginValidation(ValidationParameters parameters);
+    InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters);
 
     /**
      * This is called just before the data fetch is started and when this step finishes the {@link InstrumentationContext#onEnd(Object)}

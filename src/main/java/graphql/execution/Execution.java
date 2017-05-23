@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.execution.ExecutionParameters.newParameters;
+import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
@@ -41,11 +41,11 @@ public class Execution {
         this.instrumentation = instrumentation;
     }
 
-    public ExecutionResult execute(ExecutionId executionId, GraphQLSchema graphQLSchema, Object root, Document document, String operationName, Map<String, Object> args) {
+    public ExecutionResult execute(ExecutionId executionId, GraphQLSchema graphQLSchema, Object context, Object root, Document document, String operationName, Map<String, Object> args) {
         ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver(), instrumentation);
         ExecutionContext executionContext = executionContextBuilder
                 .executionId(executionId)
-                .build(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, root, document, operationName, args);
+                .build(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, context, root, document, operationName, args);
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
 
@@ -93,7 +93,7 @@ public class Execution {
         TypeInfo typeInfo = newTypeInfo().type(operationRootType).build();
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo);
 
-        ExecutionParameters parameters = newParameters()
+        ExecutionStrategyParameters parameters = newParameters()
                 .typeInfo(typeInfo)
                 .source(root)
                 .fields(fields)

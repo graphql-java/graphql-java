@@ -8,8 +8,8 @@ import graphql.execution.SimpleExecutionStrategy;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.NoOpInstrumentation;
-import graphql.execution.instrumentation.parameters.ExecutionParameters;
-import graphql.execution.instrumentation.parameters.ValidationParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.Parser;
@@ -46,7 +46,6 @@ public class GraphQL {
      * A GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -60,7 +59,6 @@ public class GraphQL {
      *
      * @param graphQLSchema the schema to use
      * @param queryStrategy the query execution strategy to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -75,7 +73,6 @@ public class GraphQL {
      * @param graphQLSchema    the schema to use
      * @param queryStrategy    the query execution strategy to use
      * @param mutationStrategy the mutation execution strategy to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -90,7 +87,6 @@ public class GraphQL {
      * @param queryStrategy        the query execution strategy to use
      * @param mutationStrategy     the mutation execution strategy to use
      * @param subscriptionStrategy the subscription execution strategy to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -98,8 +94,8 @@ public class GraphQL {
         this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE);
     }
 
-    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy,  ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation) {
-        this.graphQLSchema = assertNotNull(graphQLSchema,"queryStrategy must be non null");
+    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation) {
+        this.graphQLSchema = assertNotNull(graphQLSchema, "queryStrategy must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SimpleExecutionStrategy();
@@ -111,7 +107,6 @@ public class GraphQL {
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
-     *
      * @return a builder of GraphQL objects
      */
     public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
@@ -164,13 +159,19 @@ public class GraphQL {
         }
 
         public GraphQL build() {
-            assertNotNull(graphQLSchema,"queryStrategy must be non null");
+            assertNotNull(graphQLSchema, "queryStrategy must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
             return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation);
         }
     }
 
+    /**
+     * @param requestString
+     * @return
+     * @deprecated Use {@link #execute(ExecutionInput)}
+     */
+    @Deprecated
     public ExecutionResult execute(String requestString) {
         return execute(requestString, null);
     }
@@ -188,12 +189,29 @@ public class GraphQL {
     }
 
     public ExecutionResult execute(String requestString, String operationName, Object context, Map<String, Object> arguments) {
-        InstrumentationContext<ExecutionResult> executionCtx = instrumentation.beginExecution(new ExecutionParameters(requestString, operationName, context, arguments));
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .requestString(requestString)
+                .operationName(operationName)
+                .context(context)
+                .root(context) // This we are doing do be backwards compatible
+                .arguments(arguments)
+                .build();
+        return execute(executionInput);
+    }
+
+    public ExecutionResult execute(ExecutionInput executionInput) {
+        String requestString = executionInput.getRequestString();
+        String operationName = executionInput.getOperationName();
+        Object context = executionInput.getContext();
+        Object root = executionInput.getRoot();
+        Map<String, Object> arguments = executionInput.getArguments();
+
+        InstrumentationContext<ExecutionResult> executionCtx = instrumentation.beginExecution(new InstrumentationExecutionParameters(requestString, operationName, context, arguments));
 
         assertNotNull(arguments, "arguments can't be null");
         log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
 
-        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new ExecutionParameters(requestString, operationName, context, arguments));
+        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new InstrumentationExecutionParameters(requestString, operationName, context, arguments));
         Parser parser = new Parser();
         Document document;
         try {
@@ -209,7 +227,7 @@ public class GraphQL {
             return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
 
-        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new ValidationParameters(requestString,operationName,context,arguments,document));
+        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(requestString, operationName, context, arguments, document));
 
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
@@ -222,7 +240,7 @@ public class GraphQL {
         ExecutionId executionId = idProvider.provide(requestString, operationName, context);
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
-        ExecutionResult result = execution.execute(executionId, graphQLSchema, context, document, operationName, arguments);
+        ExecutionResult result = execution.execute(executionId, graphQLSchema, context, root, document, operationName, arguments);
 
         executionCtx.onEnd(result);
 

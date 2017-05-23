@@ -11,7 +11,7 @@ class ExecutionIdTest extends Specification {
         ExecutionId executionId = null
 
         @Override
-        ExecutionResult execute(ExecutionContext executionContext, ExecutionParameters parameters) {
+        ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
             executionId = executionContext.executionId
             return super.execute(executionContext, parameters)
         }

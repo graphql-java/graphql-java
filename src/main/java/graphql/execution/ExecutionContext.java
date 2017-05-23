@@ -3,7 +3,6 @@ package graphql.execution;
 
 import graphql.GraphQLError;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
@@ -23,10 +22,11 @@ public class ExecutionContext {
     private final OperationDefinition operationDefinition;
     private final Map<String, Object> variables;
     private final Object root;
+    private final Object context;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final Instrumentation instrumentation;
 
-    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object root) {
+    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.queryStrategy = queryStrategy;
@@ -35,6 +35,7 @@ public class ExecutionContext {
         this.fragmentsByName = fragmentsByName;
         this.operationDefinition = operationDefinition;
         this.variables = variables;
+        this.context = context;
         this.root = root;
         this.instrumentation = instrumentation;
     }
@@ -62,6 +63,10 @@ public class ExecutionContext {
 
     public Map<String, Object> getVariables() {
         return variables;
+    }
+
+    public Object getContext() {
+        return context;
     }
 
     public <T> T getRoot() {
