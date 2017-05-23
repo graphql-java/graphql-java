@@ -157,10 +157,10 @@ class GraphQLTest extends Specification {
         set.add("One")
         set.add("Two")
 
-        def schema = GraphQLSchema.newSchema()
-                .query(GraphQLObjectType.newObject()
+        def schema = newSchema()
+                .query(newObject()
                 .name("QueryType")
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                 .name("set")
                 .type(new GraphQLList(GraphQLString))
                 .dataFetcher({ set })))
@@ -231,7 +231,7 @@ class GraphQLTest extends Specification {
                 .build()
 
         when:
-        def result = new GraphQL(schema).execute("mutation { doesNotExist }");
+        def result = new GraphQL(schema).execute("mutation { doesNotExist }")
 
         then:
         result.errors.size() == 1
@@ -372,12 +372,12 @@ class GraphQLTest extends Specification {
                 .build()
         def query = "{foo}"
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query)
+        GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         1 * dataFetcher.get(_) >> {
             DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
+                assert env.arguments.size() == 0
                 assert env.arguments['bar'] == null
         }
     }
