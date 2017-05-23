@@ -327,7 +327,7 @@ public class Scalars {
     public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing<String, String>() {
         @Override
         public String serialize(Object input) {
-            return input == null ? null : input.toString();
+            return input.toString();
         }
 
         @Override
