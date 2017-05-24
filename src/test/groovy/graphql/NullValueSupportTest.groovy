@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.NonNullableValueCoercedAsNullException
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
@@ -179,13 +180,12 @@ class NullValueSupportTest extends Specification {
         GraphQL.newGraphQL(schema).build().execute(queryStr, "mutate", "ctx", variables)
 
         then:
-        def err = thrown(GraphQLException)
-        assert err.message.startsWith(expectedExceptionMsg): "Expected GraphQLError msg in ${testCase} : ${err.message}"
+        thrown(expectedException)
 
 
         where:
 
-        testCase | queryStr       | variables   || expectedExceptionMsg
+        testCase | queryStr       | variables   || expectedException
 
         // ------------------------------
         'G'      | '''
@@ -194,7 +194,7 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [:]         || "Null value for NonNull type GraphQLNonNull"
+        ''' | [:]         || NonNullableValueCoercedAsNullException
 
         // ------------------------------
         'H'      | '''
@@ -203,8 +203,47 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [var: null] || "Null value for NonNull type GraphQLNonNull"
+        ''' | [var: null] || NonNullableValueCoercedAsNullException
 
     }
 
+    def "nulls in literal places are supported in general"() {
+
+        def fetcher = new CapturingDataFetcher()
+
+        def schema = TestUtil.schema("""
+            schema { query : Query }
+            
+            type Query {
+                list(arg : [String]) : Int
+                scalar(arg : String) : Int
+                complex(arg : ComplexInputObject) : Int
+            }
+            
+            input ComplexInputObject {
+                 a: String
+                 b: Int!
+            }
+            
+            """,
+                ["Query": [
+                        "list"   : fetcher,
+                        "scalar" : fetcher,
+                        "complex": fetcher,
+                ]])
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(queryStr, null, "ctx", [:])
+        assert result.errors.isEmpty(): "Unexpected query errors : ${result.errors}"
+
+        then:
+        fetcher.args == expectedArgs
+
+        where:
+        queryStr                                   | expectedArgs
+        '''{ list(arg : ["abc", null, "xyz"]) }''' | [arg: ["abc", null, "xyz"]]
+        '''{ scalar(arg : null) }'''               | [arg: null]
+        '''{ complex(arg : null) }'''              | [arg: null]
+
+    }
 }
