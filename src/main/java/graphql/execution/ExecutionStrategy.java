@@ -145,6 +145,9 @@ public abstract class ExecutionStrategy {
         }
 
 
+        // when we are here, we have a complex type: Interface, Union or Object
+        // and we must go deeper
+
         GraphQLObjectType resolvedType;
         if (fieldType instanceof GraphQLInterfaceType) {
             TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
