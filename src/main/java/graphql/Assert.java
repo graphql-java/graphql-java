@@ -19,6 +19,11 @@ public class Assert {
         return c;
     }
 
+    public static void assertTrue(boolean condition, String errorMessage) {
+        if (condition) return;
+        throw new AssertException(errorMessage);
+    }
+
     private static final String invalidNameErrorMessage = "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]*";
 
     /**
