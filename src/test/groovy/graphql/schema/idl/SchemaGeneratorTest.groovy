@@ -791,4 +791,68 @@ class SchemaGeneratorTest extends Specification {
         schema.getQueryType().description == " description 1\n description 2"
         schema.getQueryType().getFieldDefinition("foo").description == " description 3\n description 4"
     }
+
+    enum ExampleEnum {
+        A,
+        B,
+        C
+    }
+
+    def "static enum values provider"() {
+        given:
+        def spec = """
+        type Query {
+            foo: Enum
+        }
+        enum Enum {
+            A
+            B
+            C 
+        }
+        schema {
+            query: Query
+        }
+        """
+        def enumValuesProvider = new StaticEnumValuesProvider<ExampleEnum>(ExampleEnum.class);
+        when:
+
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Enum", { TypeRuntimeWiring.Builder it -> it.enumValues(enumValuesProvider) } as UnaryOperator)
+                .build()
+        def schema = generateSchema(spec, wiring)
+        GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
+
+        then:
+        enumType.getValue("A").value == ExampleEnum.A
+        enumType.getValue("B").value == ExampleEnum.B
+        enumType.getValue("C").value == ExampleEnum.C
+    }
+
+    def "enum with no values provider: value is the name"() {
+        given:
+        def spec = """
+        type Query {
+            foo: Enum
+        }
+        enum Enum {
+            A
+            B
+            C 
+        }
+        schema {
+            query: Query
+        }
+        """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+        def schema = generateSchema(spec, wiring)
+        GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
+
+        then:
+        enumType.getValue("A").value == "A"
+        enumType.getValue("B").value == "B"
+        enumType.getValue("C").value == "C"
+
+    }
 }

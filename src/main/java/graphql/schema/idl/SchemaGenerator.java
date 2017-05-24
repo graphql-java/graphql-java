@@ -227,7 +227,7 @@ public class SchemaGenerator {
         } else if (typeDefinition instanceof UnionTypeDefinition) {
             outputType = buildUnionType(buildCtx, (UnionTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof EnumTypeDefinition) {
-            outputType = buildEnumType((EnumTypeDefinition) typeDefinition);
+            outputType = buildEnumType(buildCtx, (EnumTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof ScalarTypeDefinition) {
             outputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
         } else {
@@ -260,7 +260,7 @@ public class SchemaGenerator {
         if (typeDefinition instanceof InputObjectTypeDefinition) {
             inputType = buildInputObjectType(buildCtx, (InputObjectTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof EnumTypeDefinition) {
-            inputType = buildEnumType((EnumTypeDefinition) typeDefinition);
+            inputType = buildEnumType(buildCtx, (EnumTypeDefinition) typeDefinition);
         } else if (typeDefinition instanceof ScalarTypeDefinition) {
             inputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
         } else {
@@ -363,13 +363,23 @@ public class SchemaGenerator {
         return builder.build();
     }
 
-    private GraphQLEnumType buildEnumType(EnumTypeDefinition typeDefinition) {
+    private GraphQLEnumType buildEnumType(BuildContext buildCtx, EnumTypeDefinition typeDefinition) {
         GraphQLEnumType.Builder builder = GraphQLEnumType.newEnum();
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
-        typeDefinition.getEnumValueDefinitions().forEach(evd -> builder.value(evd.getName(), evd.getName(), buildDescription(evd)));
-//        typeDefinition.getEnumValueDefinitions().forEach(evd -> builder.value(evd.getName()));
+        EnumValuesProvider enumValuesProvider = buildCtx.getWiring().getEnumValuesProviders().get(typeDefinition.getName());
+        typeDefinition.getEnumValueDefinitions().forEach(evd -> {
+            String description = buildDescription(evd);
+            Object value;
+            if (enumValuesProvider != null) {
+                value = enumValuesProvider.getValue(evd.getName());
+                assertNotNull(value, String.format("EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName()));
+            } else {
+                value = evd.getName();
+            }
+            builder.value(evd.getName(), value, description);
+        });
         return builder.build();
     }
 
