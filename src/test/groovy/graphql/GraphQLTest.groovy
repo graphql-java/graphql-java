@@ -352,9 +352,8 @@ class GraphQLTest extends Specification {
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
-        // This should result in an ArgumentsOfCorrectType error
-        thrown(GraphQLException)
-//        result.errors.size() == 1
+        result.errors.size() == 1
+        result.errors[0].description.contains("has wrong type")
     }
 
     def "query with missing argument results in arguments map with value null"() {

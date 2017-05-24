@@ -2,6 +2,9 @@ package graphql.schema;
 
 
 import graphql.AssertException;
+import graphql.GraphQLException;
+import graphql.Internal;
+import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
 
@@ -10,8 +13,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+@PublicApi
 public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
 
     private final String name;
@@ -41,10 +46,12 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     };
 
 
+    @Internal
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
         this(name, description, values, null);
     }
 
+    @Internal
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, EnumTypeDefinition definition) {
         assertValidName(name);
         this.name = name;
@@ -73,20 +80,14 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     private Object getValueByName(Object value) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
         if (enumValueDefinition != null) return enumValueDefinition.getValue();
-        return null;
+        throw new GraphQLException("Invalid input for Enum '" + name + "'. No value found for name " + value.toString());
     }
 
     private Object getNameByValue(Object value) {
-        if (value == null) {
-            for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
-                if (valueDefinition.getValue() == null) return valueDefinition.getName();
-            }
-        } else {
-            for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
-                if (value.equals(valueDefinition.getValue())) return valueDefinition.getName();
-            }
+        for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
+            if (value.equals(valueDefinition.getValue())) return valueDefinition.getName();
         }
-        return null;
+        throw new GraphQLException("Invalid input for Enum '" + name + "'. Unknown value " + value);
     }
 
 
@@ -143,6 +144,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         }
 
         public Builder value(String name, Object value) {
+            assertNotNull(value, "value can't be null");
             values.add(new GraphQLEnumValueDefinition(name, null, value));
             return this;
         }

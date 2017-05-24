@@ -1,11 +1,12 @@
 package graphql.schema
 
+import graphql.AssertException
+import graphql.GraphQLException
+import graphql.language.EnumValue
+import graphql.language.StringValue
 import spock.lang.Specification
 
-import graphql.AssertException
-
 import static graphql.schema.GraphQLEnumType.newEnum
-
 
 class GraphQLEnumTypeTest extends Specification {
 
@@ -17,9 +18,12 @@ class GraphQLEnumTypeTest extends Specification {
                 .build();
     }
 
-    def "parse value returns null for unknown value"() {
-        expect:
-        enumType.getCoercing().parseValue("UNKNOWN") == null
+    def "parse throws exception for unknown value"() {
+        when:
+        enumType.getCoercing().parseValue("UNKNOWN")
+
+        then:
+        thrown(GraphQLException)
     }
 
 
@@ -33,25 +37,38 @@ class GraphQLEnumTypeTest extends Specification {
         enumType.getCoercing().serialize(42) == "NAME"
     }
 
-    def "serialize returns null for unknown value"() {
-        expect:
-        enumType.getCoercing().serialize(12) == null
+    def "serialize throws exception for unknown value"() {
+        when:
+        enumType.getCoercing().serialize(12)
+        then:
+        thrown(GraphQLException)
     }
 
-    def "serialize returns NULL for null and null being an known value"() {
-        setup:
-        def enumType = newEnum().name("TestEnum")
-                .value("NAME", 42)
-                .value("NULL", null)
-                .build();
+
+    def "parseLiteral return null for invalid input"() {
         expect:
-        enumType.getCoercing().serialize(null) == "NULL"
+        enumType.getCoercing().parseLiteral(new StringValue("foo")) == null
     }
 
-    def "serialize returns null for null value "() {
+    def "parseLiteral return null for invalid enum name"() {
         expect:
-        enumType.getCoercing().serialize(null) == null
+        enumType.getCoercing().parseLiteral(new EnumValue("NOT_NAME")) == null
     }
+
+    def "parseLiteral returns value for 'NAME'"() {
+        expect:
+        enumType.getCoercing().parseLiteral(new EnumValue("NAME")) == 42
+    }
+
+
+    def "null values are not allowed"() {
+        when:
+        newEnum().name("AnotherTestEnum")
+                .value("NAME", null)
+        then:
+        thrown(AssertException)
+    }
+
 
     def "duplicate value definition fails"() {
         when:

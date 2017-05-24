@@ -257,6 +257,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     private Object coerce(GraphQLType type, Object value) {
+        if (value == null) return null;
         if (type instanceof GraphQLEnumType) {
             return ((GraphQLEnumType) type).getCoercing().serialize(value);
         } else {

@@ -1,9 +1,11 @@
 package graphql.schema;
 
 
-import static graphql.Assert.assertNotNull;
+import graphql.PublicApi;
+
 import static graphql.Assert.assertValidName;
 
+@PublicApi
 public class GraphQLEnumValueDefinition {
 
     private final String name;
@@ -12,7 +14,7 @@ public class GraphQLEnumValueDefinition {
     private final String deprecationReason;
 
     public GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason) {
-    	assertValidName(name);
+        assertValidName(name);
         this.name = name;
         this.description = description;
         this.value = value;
