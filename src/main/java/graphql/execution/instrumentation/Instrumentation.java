@@ -1,10 +1,10 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
-import graphql.execution.instrumentation.parameters.DataFetchParameters;
-import graphql.execution.instrumentation.parameters.FieldFetchParameters;
-import graphql.execution.instrumentation.parameters.FieldParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.schema.DataFetcher;
@@ -58,7 +58,7 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    InstrumentationContext<ExecutionResult> beginDataFetch(DataFetchParameters parameters);
+    InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters);
 
     /**
      * This is called just before a field is resolved and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
@@ -68,7 +68,7 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    InstrumentationContext<ExecutionResult> beginField(FieldParameters parameters);
+    InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters);
 
     /**
      * This is called just before a field {@link DataFetcher} is invoked and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
@@ -78,5 +78,5 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    InstrumentationContext<Object> beginFieldFetch(FieldFetchParameters parameters);
+    InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters);
 }

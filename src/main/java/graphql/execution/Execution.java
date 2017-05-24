@@ -8,7 +8,7 @@ import graphql.Internal;
 import graphql.MutationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.parameters.DataFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
@@ -69,7 +69,7 @@ public class Execution {
             Object root,
             OperationDefinition operationDefinition) {
 
-        InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(new DataFetchParameters(executionContext));
+        InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(new InstrumentationDataFetchParameters(executionContext));
 
         OperationDefinition.Operation operation = operationDefinition.getOperation();
         GraphQLObjectType operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operation);

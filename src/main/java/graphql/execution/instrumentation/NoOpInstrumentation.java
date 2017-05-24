@@ -1,10 +1,10 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
-import graphql.execution.instrumentation.parameters.DataFetchParameters;
-import graphql.execution.instrumentation.parameters.FieldFetchParameters;
-import graphql.execution.instrumentation.parameters.FieldParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.validation.ValidationError;
@@ -61,7 +61,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginDataFetch(DataFetchParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
         return new InstrumentationContext<ExecutionResult>() {
             @Override
             public void onEnd(ExecutionResult result) {
@@ -74,7 +74,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginField(FieldParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
         return new InstrumentationContext<ExecutionResult>() {
             @Override
             public void onEnd(ExecutionResult result) {
@@ -87,7 +87,7 @@ public final class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<Object> beginFieldFetch(FieldFetchParameters parameters) {
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         return new InstrumentationContext<Object>() {
             @Override
             public void onEnd(Object result) {

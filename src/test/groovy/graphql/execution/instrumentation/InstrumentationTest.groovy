@@ -105,17 +105,17 @@ class InstrumentationTest extends Specification {
             }
 
             @Override
-            InstrumentationContext<ExecutionResult> beginDataFetch(DataFetchParameters parameters) {
+            InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
                 return new Timer("data-fetch", executionList)
             }
 
             @Override
-            InstrumentationContext<ExecutionResult> beginField(FieldParameters parameters) {
+            InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
                 return new Timer("field-$parameters.field.name", executionList)
             }
 
             @Override
-            InstrumentationContext<Object> beginFieldFetch(FieldFetchParameters parameters) {
+            InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
                 return new Timer("fetch-$parameters.field.name", executionList)
             }
         }
