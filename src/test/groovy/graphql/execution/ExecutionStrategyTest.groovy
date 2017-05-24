@@ -8,7 +8,7 @@ import spock.lang.Specification
 
 import static graphql.execution.ExecutionParameters.newParameters
 
-class ExecutionStrategySpec extends Specification {
+class ExecutionStrategyTest extends Specification {
 
     ExecutionStrategy executionStrategy
 

@@ -12,7 +12,7 @@ import spock.lang.Specification
 
 import java.util.concurrent.atomic.AtomicInteger
 
-class GraphqlExecutionSpec extends Specification {
+class GraphqlExecutionTest extends Specification {
 
     private GraphQLSchema schema = new FunWithStringsSchemaFactory().createSchema();
 
