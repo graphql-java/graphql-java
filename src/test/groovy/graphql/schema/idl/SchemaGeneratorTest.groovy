@@ -813,7 +813,7 @@ class SchemaGeneratorTest extends Specification {
             query: Query
         }
         """
-        def enumValuesProvider = new StaticEnumValuesProvider<ExampleEnum>(ExampleEnum.class);
+        def enumValuesProvider = new NaturalEnumValuesProvider<ExampleEnum>(ExampleEnum.class);
         when:
 
         def wiring = RuntimeWiring.newRuntimeWiring()

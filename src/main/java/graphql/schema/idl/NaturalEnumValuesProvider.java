@@ -9,12 +9,12 @@ import graphql.PublicApi;
  * @param <T>
  */
 @PublicApi
-public class StaticEnumValuesProvider<T extends Enum<T>> implements EnumValuesProvider {
+public class NaturalEnumValuesProvider<T extends Enum<T>> implements EnumValuesProvider {
 
 
     private final Class<T> enumType;
 
-    public StaticEnumValuesProvider(Class<T> enumType) {
+    public NaturalEnumValuesProvider(Class<T> enumType) {
         Assert.assertNotNull(enumType, "enumType can't be null");
         this.enumType = enumType;
     }

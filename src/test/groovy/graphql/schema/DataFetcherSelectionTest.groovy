@@ -8,7 +8,6 @@ import graphql.language.Field
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.stream.Collectors
@@ -74,7 +73,6 @@ class DataFetcherSelectionTest extends Specification {
         return new SelectionCapturingDataFetcher(delegate, captureList)
     }
 
-
     RuntimeWiring wiring = RuntimeWiring.newRuntimeWiring()
             .type(newTypeWiring("QueryType")
             .dataFetchers(
@@ -98,8 +96,6 @@ class DataFetcherSelectionTest extends Specification {
 
     def executableStarWarsSchema = load("starWarsSchema.graphqls", wiring)
 
-    //TODO: fix me later
-    @Ignore
     def "field selection can be captured via data environment"() {
 
         captureList.clear()
