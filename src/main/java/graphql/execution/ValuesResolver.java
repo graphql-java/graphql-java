@@ -98,7 +98,7 @@ public class ValuesResolver {
         if (graphQLType instanceof GraphQLNonNull) {
             Object returnValue = coerceValue(((GraphQLNonNull) graphQLType).getWrappedType(), value);
             if (returnValue == null) {
-                throw new GraphQLException("Null value for NonNull type " + graphQLType);
+                throw new NonNullableValueCoercedAsNullException(graphQLType);
             }
             return returnValue;
         }
@@ -240,8 +240,7 @@ public class ValuesResolver {
 
     private void assertNonNullInputField(GraphQLInputObjectField inputTypeField) {
         if (inputTypeField.getType() instanceof GraphQLNonNull) {
-            // Possibly overkill; an object literal with a missing non null field shouldn't pass validation
-            throw new GraphQLException("Null value for NonNull type " + inputTypeField.getType());
+            throw new NonNullableValueCoercedAsNullException(inputTypeField.getType());
         }
     }
 

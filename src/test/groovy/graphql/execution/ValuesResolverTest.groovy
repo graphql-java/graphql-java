@@ -251,8 +251,8 @@ class ValuesResolverTest extends Specification {
 
     def "getArgumentValues: resolves enum literals"() {
         given: "the ast"
-        EnumValue enumValue1 = new EnumValue("PLUTO");
-        EnumValue enumValue2 = new EnumValue("MARS");
+        EnumValue enumValue1 = new EnumValue("PLUTO")
+        EnumValue enumValue2 = new EnumValue("MARS")
         def argument1 = new Argument("arg1", enumValue1)
         def argument2 = new Argument("arg2", enumValue2)
 
@@ -400,9 +400,7 @@ class ValuesResolverTest extends Specification {
         where:
         InputValue                || outputValue
         [foo: "added", bar: null] || [foo: "added", bar: null]
-
-        // later this will be true once we apply missing value code
-        //[foo: "added"]            || [foo: "added"]
+        [foo: "added"]            || [foo: "added"]
     }
 
 }
