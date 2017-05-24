@@ -75,6 +75,7 @@ class ExecutionStrategyTest extends Specification {
         def parameters = newParameters()
                 .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
+                .fields(["dummy": []])
                 .build()
 
         when:
