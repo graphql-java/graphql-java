@@ -204,12 +204,12 @@ public class GraphQL {
         String operationName = executionInput.getOperationName();
         Object context = executionInput.getContext();
         Object root = executionInput.getRoot();
-        Map<String, Object> arguments = executionInput.getArguments();
+        Map<String, Object> arguments = executionInput.getArguments() != null ? executionInput.getArguments() : Collections.emptyMap();
+
+        log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
 
         InstrumentationContext<ExecutionResult> executionCtx = instrumentation.beginExecution(new InstrumentationExecutionParameters(requestString, operationName, context, arguments));
 
-        assertNotNull(arguments, "arguments can't be null");
-        log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
 
         InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new InstrumentationExecutionParameters(requestString, operationName, context, arguments));
         Parser parser = new Parser();
