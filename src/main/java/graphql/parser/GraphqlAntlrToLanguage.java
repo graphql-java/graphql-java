@@ -537,7 +537,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         InputValueDefinition def = new InputValueDefinition(ctx.name().getText());
         newNode(def, ctx);
         if (ctx.defaultValue() != null) {
-            def.setValue(getValue(ctx.defaultValue().value()));
+            def.setDefaultValue(getValue(ctx.defaultValue().value()));
         }
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.contextProperty == ContextProperty.FieldDefinition) {

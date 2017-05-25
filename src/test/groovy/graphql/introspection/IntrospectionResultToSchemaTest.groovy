@@ -45,13 +45,23 @@ class IntrospectionResultToSchemaTest extends Specification {
                 "args": [
                   {
                     "name": "episode",
-                    "description": "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode.",
+                    "description": "comment about episode",
                     "type": {
                       "kind": "ENUM",
                       "name": "Episode",
                       "ofType": null
                     },
                     "defaultValue": null
+                  },
+                  {
+                    "name": "foo",
+                    "description": "",
+                    "type": {
+                        "kind": "SCALAR",
+                        "name": "String",
+                        "ofType": null
+                    },
+                    "defaultValue": "bar"
                   }
                 ],
                 "type": {
@@ -75,10 +85,12 @@ class IntrospectionResultToSchemaTest extends Specification {
         when:
         ObjectTypeDefinition objectTypeDefinition = introspectionResultToSchema.createObject(parsed)
         AstPrinter astPrinter = new AstPrinter()
-        println astPrinter.printAst(objectTypeDefinition)
+        def result = astPrinter.printAst(objectTypeDefinition)
 
         then:
-        true
+        result == """type QueryType {
+  hero(episode: Episode, foo: String = \"bar\"): Character
+}"""
 
     }
 }
