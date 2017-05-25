@@ -169,7 +169,8 @@ class IntrospectionResultToSchemaTest extends Specification {
         def result = astPrinter.printAst(interfaceTypeDefinition)
 
         then:
-        result == """interface Character {
+        result == """#A character in the Star Wars Trilogy
+interface Character {
   #The id of the character.
   id: String!
   #The name of the character.
