@@ -334,5 +334,34 @@ CharacterInput {
 }"""
     }
 
+
+    def "create schema"() {
+        def input = """{
+          "__schema": {
+            "queryType": {
+              "name": "QueryType"
+            },
+            "mutationType": {"name":"MutationType"},
+            "subscriptionType": {"name":"SubscriptionType"},
+            "types": [
+            ]
+            }"""
+        def slurper = new JsonSlurper()
+        def parsed = slurper.parseText(input)
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
+        AstPrinter astPrinter = new AstPrinter()
+        def result = astPrinter.printAst(document)
+
+        then:
+        result == """schema {
+  query: QueryType
+  mutation: MutationType
+  subscription: SubscriptionType
+}
+"""
+
+    }
 }
 

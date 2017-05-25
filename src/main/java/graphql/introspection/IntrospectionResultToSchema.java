@@ -1,6 +1,8 @@
 package graphql.introspection;
 
+import graphql.PublicApi;
 import graphql.language.Comment;
+import graphql.language.Document;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
@@ -10,9 +12,12 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.OperationTypeDefinition;
+import graphql.language.SchemaDefinition;
 import graphql.language.SourceLocation;
 import graphql.language.StringValue;
 import graphql.language.Type;
+import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 
@@ -22,24 +27,75 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 
+@PublicApi
 public class IntrospectionResultToSchema {
 
 
-//    public String to(Map<String, Object> introspectionResult) {
-//        return null;
-//    }
+    @SuppressWarnings("unchecked")
+    public Document createSchemaDefinition(Map<String, Object> introspectionResult) {
+        assertTrue(introspectionResult.get("__schema") != null, "__schema expected");
+        Map<String, Object> schema = (Map<String, Object>) introspectionResult.get("__schema");
 
-    private List<Comment> toComment(String description) {
-        if (description == null) return Collections.emptyList();
-        Comment comment = new Comment(description, new SourceLocation(1, 1));
-        return Arrays.asList(comment);
+        SchemaDefinition schemaDefinition = new SchemaDefinition();
+
+        Map<String, Object> queryType = (Map<String, Object>) schema.get("queryType");
+        assertNotNull(queryType, "queryType expected");
+        TypeName query = new TypeName((String) queryType.get("name"));
+        schemaDefinition.getOperationTypeDefinitions().add(new OperationTypeDefinition("query", query));
+
+        Map<String, Object> mutationType = (Map<String, Object>) schema.get("mutationType");
+        if (mutationType != null) {
+            TypeName mutation = new TypeName((String) mutationType.get("name"));
+            schemaDefinition.getOperationTypeDefinitions().add(new OperationTypeDefinition("mutation", mutation));
+        }
+
+        Map<String, Object> subscriptionType = (Map<String, Object>) schema.get("subscriptionType");
+        if (subscriptionType != null) {
+            TypeName subscription = new TypeName((String) subscriptionType.get("name"));
+            schemaDefinition.getOperationTypeDefinitions().add(new OperationTypeDefinition("subscription", subscription));
+        }
+
+        Document document = new Document();
+        document.getDefinitions().add(schemaDefinition);
+
+        List<Map<String, Object>> types = (List<Map<String, Object>>) introspectionResult.get("types");
+        if (types != null) {
+            for (Map<String, Object> type : types) {
+                TypeDefinition typeDefinition = createTypeDefintion(type);
+                document.getDefinitions().add(typeDefinition);
+            }
+        }
+
+        return document;
     }
 
+    private TypeDefinition createTypeDefintion(Map<String, Object> type) {
+        String kind = (String) type.get("kind");
+        switch (kind) {
+            case "INTERFACE":
+                return createInterface(type);
+            case "OBJECT":
+                return createObject(type);
+            case "UNION":
+                return createUnion(type);
+            case "ENUM":
+                return createEnum(type);
+            case "INPUT_OBJECT":
+                return createInputObject(type);
+//            case "SCALAR":
+//                return new TypeName((String) type.get("name"));
+            default:
+                return assertShouldNeverHappen("unexpected kind " + kind);
+        }
+    }
+
+
     @SuppressWarnings("unchecked")
-    public UnionTypeDefinition createUnion(Map<String, Object> input) {
+    UnionTypeDefinition createUnion(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("UNION"), "wrong input");
 
         UnionTypeDefinition unionTypeDefinition = new UnionTypeDefinition((String) input.get("name"));
@@ -56,7 +112,7 @@ public class IntrospectionResultToSchema {
     }
 
     @SuppressWarnings("unchecked")
-    public EnumTypeDefinition createEnum(Map<String, Object> input) {
+    EnumTypeDefinition createEnum(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("ENUM"), "wrong input");
 
         EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition((String) input.get("name"));
@@ -75,7 +131,7 @@ public class IntrospectionResultToSchema {
     }
 
     @SuppressWarnings("unchecked")
-    public InterfaceTypeDefinition createInterface(Map<String, Object> input) {
+    InterfaceTypeDefinition createInterface(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("INTERFACE"), "wrong input");
 
         InterfaceTypeDefinition interfaceTypeDefinition = new InterfaceTypeDefinition((String) input.get("name"));
@@ -88,7 +144,7 @@ public class IntrospectionResultToSchema {
     }
 
     @SuppressWarnings("unchecked")
-    public InputObjectTypeDefinition createInputObject(Map<String, Object> input) {
+    InputObjectTypeDefinition createInputObject(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("INPUT_OBJECT"), "wrong input");
 
         InputObjectTypeDefinition inputObjectTypeDefinition = new InputObjectTypeDefinition((String) input.get("name"));
@@ -101,7 +157,7 @@ public class IntrospectionResultToSchema {
     }
 
     @SuppressWarnings("unchecked")
-    public ObjectTypeDefinition createObject(Map<String, Object> input) {
+    ObjectTypeDefinition createObject(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("OBJECT"), "wrong input");
 
         ObjectTypeDefinition objectTypeDefinition = new ObjectTypeDefinition((String) input.get("name"));
@@ -118,7 +174,7 @@ public class IntrospectionResultToSchema {
         for (Map<String, Object> field : fields) {
             FieldDefinition fieldDefinition = new FieldDefinition((String) field.get("name"));
             fieldDefinition.setComments(toComment((String) field.get("description")));
-            fieldDefinition.setType(createType((Map<String, Object>) field.get("type")));
+            fieldDefinition.setType(createTypeIndirection((Map<String, Object>) field.get("type")));
 
             List<Map<String, Object>> args = (List<Map<String, Object>>) field.get("args");
             List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(args);
@@ -132,7 +188,7 @@ public class IntrospectionResultToSchema {
     private List<InputValueDefinition> createInputValueDefinitions(List<Map<String, Object>> args) {
         List<InputValueDefinition> result = new ArrayList<>();
         for (Map<String, Object> arg : args) {
-            Type argType = createType((Map<String, Object>) arg.get("type"));
+            Type argType = createTypeIndirection((Map<String, Object>) arg.get("type"));
             InputValueDefinition inputValueDefinition = new InputValueDefinition((String) arg.get("name"), argType);
             inputValueDefinition.setComments(toComment((String) arg.get("description")));
 
@@ -146,7 +202,7 @@ public class IntrospectionResultToSchema {
     }
 
     @SuppressWarnings("unchecked")
-    Type createType(Map<String, Object> type) {
+    private Type createTypeIndirection(Map<String, Object> type) {
         String kind = (String) type.get("kind");
         switch (kind) {
             case "INTERFACE":
@@ -157,12 +213,18 @@ public class IntrospectionResultToSchema {
             case "SCALAR":
                 return new TypeName((String) type.get("name"));
             case "NON_NULL":
-                return new NonNullType(createType((Map<String, Object>) type.get("ofType")));
+                return new NonNullType(createTypeIndirection((Map<String, Object>) type.get("ofType")));
             case "LIST":
-                return new ListType(createType((Map<String, Object>) type.get("ofType")));
+                return new ListType(createTypeIndirection((Map<String, Object>) type.get("ofType")));
             default:
                 return assertShouldNeverHappen("Unknown kind " + kind);
         }
+    }
+
+    private List<Comment> toComment(String description) {
+        if (description == null) return Collections.emptyList();
+        Comment comment = new Comment(description, new SourceLocation(1, 1));
+        return Arrays.asList(comment);
     }
 
 }
