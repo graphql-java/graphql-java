@@ -3,11 +3,16 @@ package graphql.introspection;
 import graphql.language.Comment;
 import graphql.language.FieldDefinition;
 import graphql.language.InputValueDefinition;
+import graphql.language.InterfaceTypeDefinition;
+import graphql.language.ListType;
+import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.SourceLocation;
 import graphql.language.StringValue;
+import graphql.language.Type;
 import graphql.language.TypeName;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -29,13 +34,20 @@ public class IntrospectionResultToSchema {
         return Arrays.asList(comment);
     }
 
-    /*
-      type QueryType {
-          hero(episode: Episode): Character
-          human(id : String) : Human
-          droid(id: ID!): Droid
-      }
-     */
+
+    @SuppressWarnings("unchecked")
+    public InterfaceTypeDefinition createInterface(Map<String, Object> input) {
+        assertTrue(input.get("kind").equals("INTERFACE"), "wrong input");
+
+        InterfaceTypeDefinition interfaceTypeDefinition = new InterfaceTypeDefinition((String) input.get("name"));
+        List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
+        interfaceTypeDefinition.getFieldDefinitions().addAll(createFields(fields));
+
+        return interfaceTypeDefinition;
+
+    }
+
+
     @SuppressWarnings("unchecked")
     public ObjectTypeDefinition createObject(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("OBJECT"), "wrong input");
@@ -44,6 +56,13 @@ public class IntrospectionResultToSchema {
         objectTypeDefinition.setComments(toComment((String) input.get("description")));
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
 
+        objectTypeDefinition.getFieldDefinitions().addAll(createFields(fields));
+
+        return objectTypeDefinition;
+    }
+
+    private List<FieldDefinition> createFields(List<Map<String, Object>> fields) {
+        List<FieldDefinition> result = new ArrayList<>();
         for (Map<String, Object> field : fields) {
             FieldDefinition fieldDefinition = new FieldDefinition((String) field.get("name"));
             fieldDefinition.setComments(toComment((String) field.get("description")));
@@ -52,8 +71,8 @@ public class IntrospectionResultToSchema {
             List<Map<String, Object>> args = (List<Map<String, Object>>) field.get("args");
 
             for (Map<String, Object> arg : args) {
-                TypeName typeName = createType((Map<String, Object>) arg.get("type"));
-                InputValueDefinition inputValueDefinition = new InputValueDefinition((String) arg.get("name"), typeName);
+                Type argType = createType((Map<String, Object>) arg.get("type"));
+                InputValueDefinition inputValueDefinition = new InputValueDefinition((String) arg.get("name"), argType);
 
                 if (arg.get("defaultValue") != null) {
                     StringValue defaultValue = new StringValue((String) arg.get("defaultValue"));
@@ -61,12 +80,13 @@ public class IntrospectionResultToSchema {
                 }
                 fieldDefinition.getInputValueDefinitions().add(inputValueDefinition);
             }
-            objectTypeDefinition.getFieldDefinitions().add(fieldDefinition);
+            result.add(fieldDefinition);
         }
-        return objectTypeDefinition;
+        return result;
     }
 
-    TypeName createType(Map<String, Object> type) {
+    @SuppressWarnings("unchecked")
+    Type createType(Map<String, Object> type) {
         String kind = (String) type.get("kind");
         switch (kind) {
             case "INTERFACE":
@@ -76,6 +96,10 @@ public class IntrospectionResultToSchema {
                 return new TypeName((String) type.get("name"));
             case "SCALAR":
                 return new TypeName((String) type.get("name"));
+            case "NON_NULL":
+                return new NonNullType(createType((Map<String, Object>) type.get("ofType")));
+            case "LIST":
+                return new ListType(createType((Map<String, Object>) type.get("ofType")));
             default:
                 return assertShouldNeverHappen("Unknown kind " + kind);
         }

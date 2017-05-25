@@ -1,35 +1,12 @@
 package graphql.introspection
 
-import graphql.GraphQL
-import graphql.StarWarsSchema
 import graphql.language.AstPrinter
+import graphql.language.InterfaceTypeDefinition
 import graphql.language.ObjectTypeDefinition
-import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
 class IntrospectionResultToSchemaTest extends Specification {
-
-    def "Allow querying the schema with pre-defined full introspection query"() {
-        given:
-        def query = IntrospectionQuery.INTROSPECTION_QUERY
-
-        when:
-        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query)
-        println result.data
-        println JsonOutput.prettyPrint(JsonOutput.toJson(result.data))
-
-        then:
-        Map<String, Object> schema = (Map<String, Object>) result.data
-        schema.size() == 1
-        Map<String, Object> schemaParts = (Map<String, Map>) schema.get("__schema")
-        schemaParts.size() == 5
-        schemaParts.get('queryType').size() == 1
-        schemaParts.get('mutationType') == null
-        schemaParts.get('subscriptionType') == null
-        schemaParts.get('types').size() == 15
-        schemaParts.get('directives').size() == 2
-    }
 
     def introspectionResultToSchema = new IntrospectionResultToSchema()
 
@@ -90,6 +67,116 @@ class IntrospectionResultToSchemaTest extends Specification {
         then:
         result == """type QueryType {
   hero(episode: Episode, foo: String = \"bar\"): Character
+}"""
+
+    }
+
+    def "create interface"() {
+        def input = """ {
+        "kind": "INTERFACE",
+        "name": "Character",
+        "description": "A character in the Star Wars Trilogy",
+        "fields": [
+          {
+            "name": "id",
+            "description": "The id of the character.",
+            "args": [
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "name",
+            "description": "The name of the character.",
+            "args": [
+            ],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "friends",
+            "description": "The friends of the character, or an empty list if they have none.",
+            "args": [
+            ],
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "INTERFACE",
+                "name": "Character",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "appearsIn",
+            "description": "Which movies they appear in.",
+            "args": [
+            ],
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "Episode",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": [
+          {
+            "kind": "OBJECT",
+            "name": "Human",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "Droid",
+            "ofType": null
+          }
+        ]
+      }
+      """
+        def slurper = new JsonSlurper()
+        def parsed = slurper.parseText(input)
+
+        when:
+        InterfaceTypeDefinition interfaceTypeDefinition = introspectionResultToSchema.createInterface(parsed)
+        AstPrinter astPrinter = new AstPrinter()
+        def result = astPrinter.printAst(interfaceTypeDefinition)
+
+        then:
+        result == """interface Character {
+  #The id of the character.
+  id: String!
+  #The name of the character.
+  name: String
+  #The friends of the character, or an empty list if they have none.
+  friends: [Character]
+  #Which movies they appear in.
+  appearsIn: [Episode]
 }"""
 
     }
