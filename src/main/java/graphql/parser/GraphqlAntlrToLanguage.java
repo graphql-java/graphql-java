@@ -741,7 +741,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         throw new ShouldNotHappenException();
     }
 
-    private String parseString(String string) {
+    static String parseString(String string) {
         StringWriter writer = new StringWriter(string.length() - 2);
         int end = string.length() - 1;
         for (int i = 1; i < end; i++) {
@@ -778,7 +778,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
                     writer.write('\t');
                     continue;
                 case 'u':
-                    int codepoint = Integer.parseInt(string.substring(i + 1, i + 5), 16);
+                    String hexStr = string.substring(i + 1, i + 5);
+                    int codepoint = Integer.parseInt(hexStr, 16);
                     i += 4;
                     writer.write(codepoint);
                     continue;
