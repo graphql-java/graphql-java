@@ -211,7 +211,7 @@ public class IntrospectionResultToSchema {
             case "OBJECT":
             case "UNION":
             case "ENUM":
-                return new TypeName((String) type.get("name"));
+            case "INPUT_OBJECT":
             case "SCALAR":
                 return new TypeName((String) type.get("name"));
             case "NON_NULL":
