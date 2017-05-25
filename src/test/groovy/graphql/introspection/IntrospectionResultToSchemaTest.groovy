@@ -1,9 +1,6 @@
 package graphql.introspection
 
-import graphql.language.AstPrinter
-import graphql.language.EnumTypeDefinition
-import graphql.language.InterfaceTypeDefinition
-import graphql.language.ObjectTypeDefinition
+import graphql.language.*
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
@@ -234,5 +231,44 @@ enum Episode {
 }"""
 
     }
+
+    def "create union"() {
+        def input = """ {
+          "kind": "UNION",
+          "name": "Everything",
+          "description": "all the stuff",
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": [
+            {
+              "kind": "OBJECT",
+              "name": "Character",
+              "ofType": null
+            },
+            {
+              "kind": "OBJECT",
+              "name": "Episode",
+              "ofType": null
+            }
+          ]
+        }
+      """
+        def slurper = new JsonSlurper()
+        def parsed = slurper.parseText(input)
+
+        when:
+        UnionTypeDefinition unionTypeDefinition = introspectionResultToSchema.createUnion(parsed)
+        AstPrinter astPrinter = new AstPrinter()
+        def result = astPrinter.printAst(unionTypeDefinition)
+
+        then:
+        result == """#all the stuff
+union Everything = Character | Episode"""
+
+    }
+
+
 }
 

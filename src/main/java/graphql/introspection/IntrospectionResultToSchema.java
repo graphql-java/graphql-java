@@ -13,6 +13,7 @@ import graphql.language.SourceLocation;
 import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeName;
+import graphql.language.UnionTypeDefinition;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,14 +27,31 @@ import static graphql.Assert.assertTrue;
 public class IntrospectionResultToSchema {
 
 
-    public String introscpectionResultToSchema(Map<String, Object> introspectionResult) {
-        return null;
-    }
+//    public String to(Map<String, Object> introspectionResult) {
+//        return null;
+//    }
 
     private List<Comment> toComment(String description) {
         if (description == null) return Collections.emptyList();
         Comment comment = new Comment(description, new SourceLocation(1, 1));
         return Arrays.asList(comment);
+    }
+
+    @SuppressWarnings("unchecked")
+    public UnionTypeDefinition createUnion(Map<String, Object> input) {
+        assertTrue(input.get("kind").equals("UNION"), "wrong input");
+
+        UnionTypeDefinition unionTypeDefinition = new UnionTypeDefinition((String) input.get("name"));
+        unionTypeDefinition.setComments(toComment((String) input.get("description")));
+
+        List<Map<String, Object>> possibleTypes = (List<Map<String, Object>>) input.get("possibleTypes");
+
+        for (Map<String, Object> possibleType : possibleTypes) {
+            TypeName typeName = new TypeName((String) possibleType.get("name"));
+            unionTypeDefinition.getMemberTypes().add(typeName);
+        }
+
+        return unionTypeDefinition;
     }
 
     @SuppressWarnings("unchecked")
