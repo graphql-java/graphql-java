@@ -30,7 +30,7 @@ class IntrospectionResultToSchemaTest extends Specification {
                   },
                   {
                     "name": "foo",
-                    "description": "",
+                    "description": null,
                     "type": {
                         "kind": "SCALAR",
                         "name": "String",
@@ -64,7 +64,11 @@ class IntrospectionResultToSchemaTest extends Specification {
 
         then:
         result == """type QueryType {
-  hero(episode: Episode, foo: String = \"bar\"): Character
+  hero(
+  #comment about episode
+  episode: Episode
+  foo: String = \"bar\"
+  ): Character
 }"""
 
     }
@@ -269,6 +273,66 @@ union Everything = Character | Episode"""
 
     }
 
+    def "create input object"() {
+        def input = """ {
+        "kind": "INPUT_OBJECT",
+        "name": "CharacterInput",
+        "description": "input for characters",
+        "fields": null,
+        "inputFields": [
+            {
+                "name": "firstName",
+                "description": "first name",
+                "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+            },
+                "defaultValue": null
+            },
+            {
+                "name": "lastName",
+                "description": null,
+                "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+            },
+                "defaultValue": null
+            },
+            {
+                "name": "family",
+                "description": null,
+                "type": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+            },
+                "defaultValue": null
+            }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+    }
+    """
+        def slurper = new JsonSlurper()
+        def parsed = slurper.parseText(input)
+
+        when:
+        InputObjectTypeDefinition inputObjectTypeDefinition = introspectionResultToSchema.createInputObject(parsed)
+        AstPrinter astPrinter = new AstPrinter()
+        def result = astPrinter.printAst(inputObjectTypeDefinition)
+
+        then:
+        result == """#input for characters
+CharacterInput {
+  #first name
+  firstName: String
+  lastName: String
+  family: Boolean
+}"""
+    }
 
 }
 

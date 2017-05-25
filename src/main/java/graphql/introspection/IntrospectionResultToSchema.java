@@ -4,6 +4,7 @@ import graphql.language.Comment;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
+import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ListType;
@@ -86,6 +87,18 @@ public class IntrospectionResultToSchema {
 
     }
 
+    @SuppressWarnings("unchecked")
+    public InputObjectTypeDefinition createInputObject(Map<String, Object> input) {
+        assertTrue(input.get("kind").equals("INPUT_OBJECT"), "wrong input");
+
+        InputObjectTypeDefinition inputObjectTypeDefinition = new InputObjectTypeDefinition((String) input.get("name"));
+        inputObjectTypeDefinition.setComments(toComment((String) input.get("description")));
+        List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("inputFields");
+        List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(fields);
+        inputObjectTypeDefinition.getInputValueDefinitions().addAll(inputValueDefinitions);
+
+        return inputObjectTypeDefinition;
+    }
 
     @SuppressWarnings("unchecked")
     public ObjectTypeDefinition createObject(Map<String, Object> input) {
@@ -108,18 +121,26 @@ public class IntrospectionResultToSchema {
             fieldDefinition.setType(createType((Map<String, Object>) field.get("type")));
 
             List<Map<String, Object>> args = (List<Map<String, Object>>) field.get("args");
-
-            for (Map<String, Object> arg : args) {
-                Type argType = createType((Map<String, Object>) arg.get("type"));
-                InputValueDefinition inputValueDefinition = new InputValueDefinition((String) arg.get("name"), argType);
-
-                if (arg.get("defaultValue") != null) {
-                    StringValue defaultValue = new StringValue((String) arg.get("defaultValue"));
-                    inputValueDefinition.setDefaultValue(defaultValue);
-                }
-                fieldDefinition.getInputValueDefinitions().add(inputValueDefinition);
-            }
+            List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(args);
+            fieldDefinition.getInputValueDefinitions().addAll(inputValueDefinitions);
             result.add(fieldDefinition);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<InputValueDefinition> createInputValueDefinitions(List<Map<String, Object>> args) {
+        List<InputValueDefinition> result = new ArrayList<>();
+        for (Map<String, Object> arg : args) {
+            Type argType = createType((Map<String, Object>) arg.get("type"));
+            InputValueDefinition inputValueDefinition = new InputValueDefinition((String) arg.get("name"), argType);
+            inputValueDefinition.setComments(toComment((String) arg.get("description")));
+
+            if (arg.get("defaultValue") != null) {
+                StringValue defaultValue = new StringValue((String) arg.get("defaultValue"));
+                inputValueDefinition.setDefaultValue(defaultValue);
+            }
+            result.add(inputValueDefinition);
         }
         return result;
     }
