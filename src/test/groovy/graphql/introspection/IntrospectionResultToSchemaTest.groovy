@@ -1,6 +1,12 @@
 package graphql.introspection
 
-import graphql.language.*
+import graphql.language.AstPrinter
+import graphql.language.Document
+import graphql.language.EnumTypeDefinition
+import graphql.language.InputObjectTypeDefinition
+import graphql.language.InterfaceTypeDefinition
+import graphql.language.ObjectTypeDefinition
+import graphql.language.UnionTypeDefinition
 import groovy.json.JsonSlurper
 import spock.lang.Specification
 
@@ -362,6 +368,89 @@ CharacterInput {
 }
 """
 
+    }
+
+    def "test starwars introspection result"() {
+        given:
+        String starwars = this.getClass().getResource('/starwars-introspection.json').text
+        def slurper = new JsonSlurper()
+        def parsed = slurper.parseText(starwars)
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
+        AstPrinter astPrinter = new AstPrinter()
+        def result = astPrinter.printAst(document)
+
+        then:
+        result == """schema {
+  query: QueryType
+}
+
+type QueryType {
+  hero(
+  #If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode.
+  episode: Episode
+  ): Character
+  human(
+  #id of the human
+  id: String!
+  ): Human
+  droid(
+  #id of the droid
+  id: String!
+  ): Droid
+}
+
+#A character in the Star Wars Trilogy
+interface Character {
+  #The id of the character.
+  id: String!
+  #The name of the character.
+  name: String
+  #The friends of the character, or an empty list if they have none.
+  friends: [Character]
+  #Which movies they appear in.
+  appearsIn: [Episode]
+}
+
+#One of the films in the Star Wars Trilogy
+enum Episode {
+  #Released in 1977.
+  NEWHOPE
+  #Released in 1980.
+  EMPIRE
+  #Released in 1983.
+  JEDI
+}
+
+#A humanoid creature in the Star Wars universe.
+type Human {
+  #The id of the human.
+  id: String!
+  #The name of the human.
+  name: String
+  #The friends of the human, or an empty list if they have none.
+  friends: [Character]
+  #Which movies they appear in.
+  appearsIn: [Episode]
+  #The home planet of the human, or null if unknown.
+  homePlanet: String
+}
+
+#A mechanical creature in the Star Wars universe.
+type Droid {
+  #The id of the droid.
+  id: String!
+  #The name of the droid.
+  name: String
+  #The friends of the droid, or an empty list if they have none.
+  friends: [Character]
+  #Which movies they appear in.
+  appearsIn: [Episode]
+  #The primary function of the droid.
+  primaryFunction: String
+}
+"""
     }
 }
 

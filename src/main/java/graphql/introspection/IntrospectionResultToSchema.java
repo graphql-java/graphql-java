@@ -62,19 +62,20 @@ public class IntrospectionResultToSchema {
         Document document = new Document();
         document.getDefinitions().add(schemaDefinition);
 
-        List<Map<String, Object>> types = (List<Map<String, Object>>) introspectionResult.get("types");
-        if (types != null) {
-            for (Map<String, Object> type : types) {
-                TypeDefinition typeDefinition = createTypeDefintion(type);
-                document.getDefinitions().add(typeDefinition);
-            }
+        List<Map<String, Object>> types = (List<Map<String, Object>>) schema.get("types");
+        for (Map<String, Object> type : types) {
+            TypeDefinition typeDefinition = createTypeDefinition(type);
+            if (typeDefinition == null) continue;
+            document.getDefinitions().add(typeDefinition);
         }
 
         return document;
     }
 
-    private TypeDefinition createTypeDefintion(Map<String, Object> type) {
+    private TypeDefinition createTypeDefinition(Map<String, Object> type) {
         String kind = (String) type.get("kind");
+        String name = (String) type.get("name");
+        if (name.startsWith("__")) return null;
         switch (kind) {
             case "INTERFACE":
                 return createInterface(type);
@@ -86,8 +87,9 @@ public class IntrospectionResultToSchema {
                 return createEnum(type);
             case "INPUT_OBJECT":
                 return createInputObject(type);
-//            case "SCALAR":
-//                return new TypeName((String) type.get("name"));
+            case "SCALAR":
+                // todo don't ignore all scalars
+                return null;
             default:
                 return assertShouldNeverHappen("unexpected kind " + kind);
         }
