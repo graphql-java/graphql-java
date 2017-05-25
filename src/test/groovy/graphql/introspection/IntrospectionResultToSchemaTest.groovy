@@ -1,6 +1,7 @@
 package graphql.introspection
 
 import graphql.language.AstPrinter
+import graphql.language.EnumTypeDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.ObjectTypeDefinition
 import groovy.json.JsonSlurper
@@ -177,6 +178,58 @@ class IntrospectionResultToSchemaTest extends Specification {
   friends: [Character]
   #Which movies they appear in.
   appearsIn: [Episode]
+}"""
+
+    }
+
+    def "create enum"() {
+        def input = """ {
+        "kind": "ENUM",
+        "name": "Episode",
+        "description": "One of the films in the Star Wars Trilogy",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "NEWHOPE",
+            "description": "Released in 1977.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "EMPIRE",
+            "description": "Released in 1980.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "JEDI",
+            "description": "Released in 1983.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      }
+      """
+        def slurper = new JsonSlurper()
+        def parsed = slurper.parseText(input)
+
+        when:
+        EnumTypeDefinition interfaceTypeDefinition = introspectionResultToSchema.createEnum(parsed)
+        AstPrinter astPrinter = new AstPrinter()
+        def result = astPrinter.printAst(interfaceTypeDefinition)
+
+        then:
+        result == """#One of the films in the Star Wars Trilogy
+enum Episode {
+  #Released in 1977.
+  NEWHOPE
+  #Released in 1980.
+  EMPIRE
+  #Released in 1983.
+  JEDI
 }"""
 
     }

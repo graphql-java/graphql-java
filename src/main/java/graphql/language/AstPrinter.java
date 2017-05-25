@@ -89,12 +89,16 @@ public class AstPrinter {
     }
 
     private static NodePrinter<EnumTypeDefinition> enumTypeDefinition() {
-        return (out, node) -> out.printf("%s", spaced(
-                "enum",
-                node.getName(),
-                directives(node.getDirectives()),
-                block(node.getEnumValueDefinitions())
-        ));
+        return (out, node) -> {
+            out.printf("%s", comments(node));
+            out.printf("%s",
+                    spaced(
+                            "enum",
+                            node.getName(),
+                            directives(node.getDirectives()),
+                            block(node.getEnumValueDefinitions())
+                    ));
+        };
     }
 
     private static NodePrinter<EnumValue> enumValue() {
@@ -102,7 +106,10 @@ public class AstPrinter {
     }
 
     private static NodePrinter<EnumValueDefinition> enumValueDefinition() {
-        return (out, node) -> out.printf("%s", node.getName());
+        return (out, node) -> {
+            out.printf("%s", comments(node));
+            out.printf("%s", node.getName());
+        };
     }
 
     private static NodePrinter<Field> field() {
@@ -461,7 +468,6 @@ public class AstPrinter {
      * This will pretty print the AST node in graphql language format
      *
      * @param node the AST node to print
-     *
      * @return the printed node in graphql language format
      */
     public static String printAst(Node node) {

@@ -1,6 +1,8 @@
 package graphql.introspection;
 
 import graphql.language.Comment;
+import graphql.language.EnumTypeDefinition;
+import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
@@ -34,12 +36,31 @@ public class IntrospectionResultToSchema {
         return Arrays.asList(comment);
     }
 
+    @SuppressWarnings("unchecked")
+    public EnumTypeDefinition createEnum(Map<String, Object> input) {
+        assertTrue(input.get("kind").equals("ENUM"), "wrong input");
+
+        EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition((String) input.get("name"));
+        enumTypeDefinition.setComments(toComment((String) input.get("description")));
+
+        List<Map<String, Object>> enumValues = (List<Map<String, Object>>) input.get("enumValues");
+
+        for (Map<String, Object> enumValue : enumValues) {
+
+            EnumValueDefinition enumValueDefinition = new EnumValueDefinition((String) enumValue.get("name"));
+            enumValueDefinition.setComments(toComment((String) enumValue.get("description")));
+            enumTypeDefinition.getEnumValueDefinitions().add(enumValueDefinition);
+        }
+
+        return enumTypeDefinition;
+    }
 
     @SuppressWarnings("unchecked")
     public InterfaceTypeDefinition createInterface(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("INTERFACE"), "wrong input");
 
         InterfaceTypeDefinition interfaceTypeDefinition = new InterfaceTypeDefinition((String) input.get("name"));
+        interfaceTypeDefinition.setComments(toComment((String) input.get("description")));
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
         interfaceTypeDefinition.getFieldDefinitions().addAll(createFields(fields));
 
