@@ -55,7 +55,6 @@ public class RulesVisitor implements DocumentVisitor {
 
     @Override
     public void enter(Node node, List<Node> ancestors) {
-//        System.out.println("enter: " + node);
         validationContext.getTraversalContext().enter(node, ancestors);
         Set<AbstractRule> tmpRulesSet = new LinkedHashSet<>(this.rules);
         tmpRulesSet.removeAll(rulesToSkip);
