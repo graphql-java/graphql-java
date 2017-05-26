@@ -1,9 +1,12 @@
 package graphql.validation;
 
 
+import graphql.Internal;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@Internal
 public class ValidationErrorCollector {
 
     private final List<ValidationError> errors = new ArrayList<>();

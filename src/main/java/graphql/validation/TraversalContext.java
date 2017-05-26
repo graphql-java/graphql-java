@@ -1,17 +1,50 @@
 package graphql.validation;
 
 
+import graphql.Internal;
 import graphql.ShouldNotHappenException;
 import graphql.execution.TypeFromAST;
-import graphql.language.*;
-import graphql.schema.*;
+import graphql.language.Argument;
+import graphql.language.ArrayValue;
+import graphql.language.Directive;
+import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.InlineFragment;
+import graphql.language.Node;
+import graphql.language.ObjectField;
+import graphql.language.OperationDefinition;
+import graphql.language.SelectionSet;
+import graphql.language.TypeName;
+import graphql.language.VariableDefinition;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCompositeType;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLNullableType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphQLUnmodifiedType;
+import graphql.schema.SchemaUtil;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.introspection.Introspection.*;
+import static graphql.introspection.Introspection.SchemaMetaFieldDef;
+import static graphql.introspection.Introspection.TypeMetaFieldDef;
+import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
-public class TraversalContext implements QueryLanguageVisitor {
+@Internal
+public class TraversalContext implements DocumentVisitor {
     GraphQLSchema schema;
     List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
     List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();

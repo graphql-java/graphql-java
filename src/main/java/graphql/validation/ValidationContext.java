@@ -1,14 +1,22 @@
 package graphql.validation;
 
 
+import graphql.Internal;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
-import graphql.schema.*;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCompositeType;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Internal
 public class ValidationContext {
 
     private final GraphQLSchema schema;

@@ -5,7 +5,13 @@ import graphql.language.Definition;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.Node;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.DocumentVisitor;
+import graphql.validation.ErrorFactory;
+import graphql.validation.LanguageTraversal;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -35,7 +41,7 @@ public class NoFragmentCycles extends AbstractRule {
 
     private List<FragmentSpread> gatherSpreads(FragmentDefinition fragmentDefinition) {
         final List<FragmentSpread> fragmentSpreads = new ArrayList<>();
-        QueryLanguageVisitor visitor = new QueryLanguageVisitor() {
+        DocumentVisitor visitor = new DocumentVisitor() {
             @Override
             public void enter(Node node, List<Node> path) {
                 if (node instanceof FragmentSpread) {
