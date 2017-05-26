@@ -201,7 +201,10 @@ public class GraphQL {
             parseCtx.onEnd(document);
         } catch (ParseCancellationException e) {
             RecognitionException recognitionException = (RecognitionException) e.getCause();
-            SourceLocation sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
+            SourceLocation sourceLocation = null;
+            if (recognitionException != null) {
+                sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
+            }
             InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
             return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
