@@ -414,5 +414,12 @@ class GraphQLTest extends Specification {
         }
     }
 
+    def "#448 invalid trailing braces are handled correctly"() {
+        when:
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute("{hero { name }} }")
 
+        then:
+        !result.errors.isEmpty()
+        result.errors[0].errorType == ErrorType.InvalidSyntax
+    }
 }
