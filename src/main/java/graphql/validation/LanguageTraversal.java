@@ -1,11 +1,13 @@
 package graphql.validation;
 
 
+import graphql.Internal;
 import graphql.language.Node;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Internal
 public class LanguageTraversal {
 
     private final List<Node> path;
