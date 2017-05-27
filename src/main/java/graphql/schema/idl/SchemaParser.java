@@ -83,7 +83,7 @@ public class SchemaParser {
 
     /**
      * special method to build directly a TypeDefinitionRegistry from a Document
-     * useful for Introspection =&gt; IDL (Document) => TypeDefinitionRegistry
+     * useful for Introspection =&gt; IDL (Document) =&gt; TypeDefinitionRegistry
      *
      * @param document containing type definitions
      * @throws SchemaProblem if an error occurs
