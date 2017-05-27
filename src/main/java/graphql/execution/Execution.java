@@ -56,7 +56,7 @@ public class Execution {
         } else if (operation == QUERY) {
             return graphQLSchema.getQueryType();
 
-        }  else if (operation == SUBSCRIPTION) {
+        } else if (operation == SUBSCRIPTION) {
             return graphQLSchema.getSubscriptionType();
 
         } else {
@@ -90,10 +90,14 @@ public class Execution {
 
         Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
+        TypeInfo typeInfo = newTypeInfo().type(operationRootType).build();
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo);
+
         ExecutionParameters parameters = newParameters()
-                .typeInfo(newTypeInfo().type(operationRootType))
+                .typeInfo(typeInfo)
                 .source(root)
                 .fields(fields)
+                .nonNullFieldValidator(nonNullableFieldValidator)
                 .build();
 
         ExecutionResult result;

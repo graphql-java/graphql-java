@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.language.Field;
 
 import java.util.List;
@@ -15,12 +16,14 @@ public class ExecutionParameters {
     private final Object source;
     private final Map<String, Object> arguments;
     private final Map<String, List<Field>> fields;
+    private final NonNullableFieldValidator nonNullableFieldValidator;
 
-    private ExecutionParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments) {
+    private ExecutionParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator) {
         this.typeInfo = assertNotNull(typeInfo, "typeInfo is null");
         this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
         this.arguments = arguments;
+        this.nonNullableFieldValidator = nonNullableFieldValidator;
     }
 
     public TypeInfo typeInfo() {
@@ -39,6 +42,10 @@ public class ExecutionParameters {
         return arguments;
     }
 
+    public NonNullableFieldValidator nonNullFieldValidator() {
+        return nonNullableFieldValidator;
+    }
+
     public static Builder newParameters() {
         return new Builder();
     }
@@ -54,6 +61,7 @@ public class ExecutionParameters {
         Object source;
         Map<String, List<Field>> fields;
         Map<String, Object> arguments;
+        NonNullableFieldValidator nonNullableFieldValidator;
 
         public Builder typeInfo(TypeInfo type) {
             this.typeInfo = type;
@@ -79,9 +87,14 @@ public class ExecutionParameters {
             this.arguments = arguments;
             return this;
         }
+        
+        public Builder nonNullFieldValidator(NonNullableFieldValidator nonNullableFieldValidator) {
+            this.nonNullableFieldValidator = Assert.assertNotNull(nonNullableFieldValidator,"requires a NonNullValidator");
+            return this;
+        }
 
         public ExecutionParameters build() {
-            return new ExecutionParameters(typeInfo, source, fields, arguments);
+            return new ExecutionParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator);
         }
     }
 }
