@@ -57,9 +57,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
                 results.put(fieldName, executionResult != null ? executionResult.getData() : null);
             }
             return new ExecutionResultImpl(results, executionContext.getErrors());
-        } catch (InterruptedException e) {
-            throw new GraphQLException(e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new GraphQLException(e);
         }
     }

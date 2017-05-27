@@ -30,9 +30,7 @@ public class SchemaParser {
      * Parse a file of schema definitions and create a {@link TypeDefinitionRegistry}
      *
      * @param file the file to parse
-     *
      * @return registry of type definitions
-     *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
     public TypeDefinitionRegistry parse(File file) throws SchemaProblem {
@@ -47,9 +45,7 @@ public class SchemaParser {
      * Parse a reader of schema definitions and create a {@link TypeDefinitionRegistry}
      *
      * @param reader the reader to parse
-     *
      * @return registry of type definitions
-     *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
     public TypeDefinitionRegistry parse(Reader reader) throws SchemaProblem {
@@ -64,9 +60,7 @@ public class SchemaParser {
      * Parse a string of schema definitions and create a {@link TypeDefinitionRegistry}
      *
      * @param schemaInput the schema string to parse
-     *
      * @return registry of type definitions
-     *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
     public TypeDefinitionRegistry parse(String schemaInput) throws SchemaProblem {
@@ -87,7 +81,15 @@ public class SchemaParser {
         return new SchemaProblem(Collections.singletonList(invalidSyntaxError));
     }
 
-    private TypeDefinitionRegistry buildRegistry(Document document) {
+    /**
+     * special method to build directly a TypeDefinitionRegistry from a Document
+     * useful for Introspection =&gt; IDL (Document) =&gt; TypeDefinitionRegistry
+     *
+     * @param document containing type definitions
+     * @throws SchemaProblem if an error occurs
+     * @return the TypeDefinitionRegistry containing all type definitions from the document
+     */
+    public TypeDefinitionRegistry buildRegistry(Document document) {
         List<GraphQLError> errors = new ArrayList<>();
         TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
         List<Definition> definitions = document.getDefinitions();

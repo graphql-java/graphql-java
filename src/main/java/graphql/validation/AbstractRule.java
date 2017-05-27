@@ -1,10 +1,24 @@
 package graphql.validation;
 
 
-import graphql.language.*;
+import graphql.Internal;
+import graphql.language.Argument;
+import graphql.language.Directive;
+import graphql.language.Document;
+import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.Node;
+import graphql.language.OperationDefinition;
+import graphql.language.SelectionSet;
+import graphql.language.TypeName;
+import graphql.language.VariableDefinition;
+import graphql.language.VariableReference;
 
 import java.util.List;
 
+@Internal
 public class AbstractRule {
 
     private final ValidationContext validationContext;

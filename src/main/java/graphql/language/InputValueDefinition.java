@@ -39,7 +39,7 @@ public class InputValueDefinition extends AbstractNode {
         return defaultValue;
     }
 
-    public void setValue(Value defaultValue) {
+    public void setDefaultValue(Value defaultValue) {
         this.defaultValue = defaultValue;
     }
 

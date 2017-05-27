@@ -18,7 +18,4 @@ public class ErrorFactory {
         return new ValidationError(validationErrorType, locationList, description);
     }
 
-    public ValidationError newError(ValidationErrorType validationErrorType, String description) {
-        return new ValidationError(validationErrorType, (List) null, description);
-    }
 }

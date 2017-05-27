@@ -1,6 +1,7 @@
 package graphql.execution
 
 import graphql.ExecutionResult
+import graphql.GraphQLException
 import graphql.Scalars
 import graphql.language.Field
 import graphql.schema.GraphQLList
@@ -8,7 +9,7 @@ import spock.lang.Specification
 
 import static graphql.execution.ExecutionParameters.newParameters
 
-class ExecutionStrategySpec extends Specification {
+class ExecutionStrategyTest extends Specification {
 
     ExecutionStrategy executionStrategy
 
@@ -36,7 +37,7 @@ class ExecutionStrategySpec extends Specification {
         def parameters = newParameters()
                 .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
-                .fields([ "fld" : []])
+                .fields(["fld": []])
                 .build()
 
         when:
@@ -55,7 +56,7 @@ class ExecutionStrategySpec extends Specification {
         def parameters = newParameters()
                 .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
-                .fields([ "fld" : []])
+                .fields(["fld": []])
                 .build()
 
         when:
@@ -63,6 +64,26 @@ class ExecutionStrategySpec extends Specification {
 
         then:
         executionResult.data == ["test"]
+    }
+
+    // this is wrong: we should return null with an error
+    def "completing value with serializing throwing exception"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = Scalars.GraphQLInt
+        String result = "not a number"
+        def parameters = newParameters()
+                .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
+                .source(result)
+                .fields(["dummy": []])
+                .build()
+
+        when:
+        executionStrategy.completeValue(executionContext, parameters, [new Field()])
+
+        then:
+        thrown(GraphQLException)
+
     }
 
 }

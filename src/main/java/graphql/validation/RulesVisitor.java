@@ -1,11 +1,30 @@
 package graphql.validation;
 
 
-import graphql.language.*;
+import graphql.Internal;
+import graphql.language.Argument;
+import graphql.language.Directive;
+import graphql.language.Document;
+import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.Node;
+import graphql.language.OperationDefinition;
+import graphql.language.SelectionSet;
+import graphql.language.TypeName;
+import graphql.language.VariableDefinition;
+import graphql.language.VariableReference;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-public class RulesVisitor implements QueryLanguageVisitor {
+@Internal
+public class RulesVisitor implements DocumentVisitor {
 
     private final List<AbstractRule> rules = new ArrayList<>();
     private ValidationContext validationContext;
@@ -36,7 +55,6 @@ public class RulesVisitor implements QueryLanguageVisitor {
 
     @Override
     public void enter(Node node, List<Node> ancestors) {
-//        System.out.println("enter: " + node);
         validationContext.getTraversalContext().enter(node, ancestors);
         Set<AbstractRule> tmpRulesSet = new LinkedHashSet<>(this.rules);
         tmpRulesSet.removeAll(rulesToSkip);

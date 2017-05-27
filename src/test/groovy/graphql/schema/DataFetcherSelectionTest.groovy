@@ -5,6 +5,7 @@ import graphql.StarWarsData
 import graphql.execution.FieldCollector
 import graphql.language.AstPrinter
 import graphql.language.Field
+import graphql.schema.idl.MapEnumValuesProvider
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
@@ -49,7 +50,7 @@ class DataFetcherSelectionTest extends Specification {
             //
             def selectionSet = environment.getSelectionSet().get()
 
-            if (! selectionSet.isEmpty()) {
+            if (!selectionSet.isEmpty()) {
                 String subSelection = captureSubSelection(selectionSet)
                 captureList.add(subSelection)
             }
@@ -73,6 +74,9 @@ class DataFetcherSelectionTest extends Specification {
         return new SelectionCapturingDataFetcher(delegate, captureList)
     }
 
+    def episodeValuesProvider = new MapEnumValuesProvider([NEWHOPE: 4, EMPIRE: 5, JEDI: 6])
+    def episodeWiring = newTypeWiring("Episode").enumValues(episodeValuesProvider).build()
+
     RuntimeWiring wiring = RuntimeWiring.newRuntimeWiring()
             .type(newTypeWiring("QueryType")
             .dataFetchers(
@@ -92,6 +96,7 @@ class DataFetcherSelectionTest extends Specification {
             .type(newTypeWiring("Character")
             .typeResolver(StarWarsData.getCharacterTypeResolver())
     )
+            .type(episodeWiring)
             .build()
 
     def executableStarWarsSchema = load("starWarsSchema.graphqls", wiring)

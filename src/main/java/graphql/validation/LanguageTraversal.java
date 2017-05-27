@@ -1,11 +1,13 @@
 package graphql.validation;
 
 
+import graphql.Internal;
 import graphql.language.Node;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Internal
 public class LanguageTraversal {
 
     private final List<Node> path;
@@ -22,18 +24,18 @@ public class LanguageTraversal {
         }
     }
 
-    public void traverse(Node root, QueryLanguageVisitor queryLanguageVisitor) {
-        traverseImpl(root, queryLanguageVisitor, path);
+    public void traverse(Node root, DocumentVisitor documentVisitor) {
+        traverseImpl(root, documentVisitor, path);
     }
 
 
-    private void traverseImpl(Node root, QueryLanguageVisitor queryLanguageVisitor, List<Node> path) {
-        queryLanguageVisitor.enter(root, path);
+    private void traverseImpl(Node root, DocumentVisitor documentVisitor, List<Node> path) {
+        documentVisitor.enter(root, path);
         path.add(root);
         for (Node child : root.getChildren()) {
-            traverseImpl(child, queryLanguageVisitor, path);
+            traverseImpl(child, documentVisitor, path);
         }
         path.remove(path.size() - 1);
-        queryLanguageVisitor.leave(root, path);
+        documentVisitor.leave(root, path);
     }
 }

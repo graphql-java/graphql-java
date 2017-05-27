@@ -67,7 +67,7 @@ class SchemaGeneratorTest extends Specification {
 
         def authorField = schema.getQueryType().getFieldDefinition("author")
         assert authorField.type.name == "Author"
-        assert authorField.description == "author query must receive an id as argument"
+        assert authorField.description == " author query must receive an id as argument"
         assert authorField.arguments.get(0).name == "id"
         assert authorField.arguments.get(0).type instanceof GraphQLNonNull
         assert unwrap(authorField.arguments.get(0).type).name == "Int"
@@ -125,7 +125,7 @@ class SchemaGeneratorTest extends Specification {
         assert (unwrap(upvotePostFieldArg.type) as GraphQLInputObjectType).getField("votes").type.name == "Int"
 
         def queryType = schema.getQueryType()
-        assert queryType.description == "the schema allows the following query\nto be made"
+        assert queryType.description == " the schema allows the following query\n to be made"
 
     }
 
@@ -289,8 +289,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
-        types[0] instanceof  GraphQLObjectType
-        types[1] instanceof  GraphQLObjectType
+        types[0] instanceof GraphQLObjectType
+        types[1] instanceof GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -328,8 +328,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
-        types[0] instanceof  GraphQLObjectType
-        types[1] instanceof  GraphQLObjectType
+        types[0] instanceof GraphQLObjectType
+        types[1] instanceof GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -367,8 +367,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
-        types[0] instanceof  GraphQLObjectType
-        types[1] instanceof  GraphQLObjectType
+        types[0] instanceof GraphQLObjectType
+        types[1] instanceof GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -406,8 +406,8 @@ class SchemaGeneratorTest extends Specification {
         foobar.type instanceof GraphQLUnionType
         def types = ((GraphQLUnionType) foobar.type).getTypes();
         types.size() == 2
-        types[0] instanceof  GraphQLObjectType
-        types[1] instanceof  GraphQLObjectType
+        types[0] instanceof GraphQLObjectType
+        types[1] instanceof GraphQLObjectType
         types[0].name == "Foo"
         types[1].name == "Bar"
 
@@ -696,5 +696,163 @@ class SchemaGeneratorTest extends Specification {
         def schema = generateSchema(spec, wiring)
         then:
         schema.getSubscriptionType().name == "Subscription"
+    }
+
+
+    def "comments are used as descriptions"() {
+        given:
+        def spec = """
+        #description 1
+        # description 2
+        type Query {
+            # description 3
+            foo: String
+            union: Union
+            interface(input: Input): Interface
+            enum: Enum
+        }
+        # description 4
+        union Union = Query
+        
+        # description 5
+        interface Interface {
+            # interface field
+            foo: String
+        }
+        # description 6 
+        input Input {
+            # input field
+            foo: String
+        }
+        # description 7
+        enum Enum {
+            # enum value
+            FOO
+        }
+        schema {
+          query: Query
+        }
+        """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Union", buildResolver())
+                .type("Interface", buildResolver())
+                .build()
+        def schema = generateSchema(spec, wiring)
+
+        then:
+        schema.getQueryType().description == "description 1\n description 2"
+        schema.getQueryType().getFieldDefinition("foo").description == " description 3"
+        ((GraphQLUnionType) schema.getType("Union")).description == " description 4"
+
+        ((GraphQLInterfaceType) schema.getType("Interface")).description == " description 5"
+        ((GraphQLInterfaceType) schema.getType("Interface")).getFieldDefinition("foo").description == " interface field"
+
+        ((GraphQLInputObjectType) schema.getType("Input")).description == " description 6 "
+        ((GraphQLInputObjectType) schema.getType("Input")).getFieldDefinition("foo").description == " input field"
+
+        ((GraphQLEnumType) schema.getType("Enum")).description == " description 7"
+        ((GraphQLEnumType) schema.getType("Enum")).getValue("FOO").description == " enum value"
+    }
+
+    def "comments are separated from descriptions with empty lines"() {
+        given:
+        def spec = """
+        # should be ignored comment
+        #
+        # description 1
+        # description 2
+        type Query {
+            # this should be ignored
+            # and this
+            #
+            # and this after an empty line
+            # and the last one that should be ignored
+            # 
+            # description 3
+            # description 4
+            foo: String
+            # ignored and with not description following
+            #
+            bar: String
+        }
+        schema {
+          query: Query
+        }
+        """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Union", buildResolver())
+                .type("Interface", buildResolver())
+                .build()
+        def schema = generateSchema(spec, wiring)
+
+        then:
+        schema.getQueryType().description == " description 1\n description 2"
+        schema.getQueryType().getFieldDefinition("foo").description == " description 3\n description 4"
+    }
+
+    enum ExampleEnum {
+        A,
+        B,
+        C
+    }
+
+    def "static enum values provider"() {
+        given:
+        def spec = """
+        type Query {
+            foo: Enum
+        }
+        enum Enum {
+            A
+            B
+            C 
+        }
+        schema {
+            query: Query
+        }
+        """
+        def enumValuesProvider = new NaturalEnumValuesProvider<ExampleEnum>(ExampleEnum.class);
+        when:
+
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Enum", { TypeRuntimeWiring.Builder it -> it.enumValues(enumValuesProvider) } as UnaryOperator)
+                .build()
+        def schema = generateSchema(spec, wiring)
+        GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
+
+        then:
+        enumType.getValue("A").value == ExampleEnum.A
+        enumType.getValue("B").value == ExampleEnum.B
+        enumType.getValue("C").value == ExampleEnum.C
+    }
+
+    def "enum with no values provider: value is the name"() {
+        given:
+        def spec = """
+        type Query {
+            foo: Enum
+        }
+        enum Enum {
+            A
+            B
+            C 
+        }
+        schema {
+            query: Query
+        }
+        """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+        def schema = generateSchema(spec, wiring)
+        GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
+
+        then:
+        enumType.getValue("A").value == "A"
+        enumType.getValue("B").value == "B"
+        enumType.getValue("C").value == "C"
+
     }
 }

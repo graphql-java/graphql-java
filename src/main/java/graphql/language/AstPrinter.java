@@ -90,12 +90,16 @@ public class AstPrinter {
     }
 
     private static NodePrinter<EnumTypeDefinition> enumTypeDefinition() {
-        return (out, node) -> out.printf("%s", spaced(
-                "enum",
-                node.getName(),
-                directives(node.getDirectives()),
-                block(node.getEnumValueDefinitions())
-        ));
+        return (out, node) -> {
+            out.printf("%s", comments(node));
+            out.printf("%s",
+                    spaced(
+                            "enum",
+                            node.getName(),
+                            directives(node.getDirectives()),
+                            block(node.getEnumValueDefinitions())
+                    ));
+        };
     }
 
     private static NodePrinter<EnumValue> enumValue() {
@@ -103,7 +107,10 @@ public class AstPrinter {
     }
 
     private static NodePrinter<EnumValueDefinition> enumValueDefinition() {
-        return (out, node) -> out.printf("%s", node.getName());
+        return (out, node) -> {
+            out.printf("%s", comments(node));
+            out.printf("%s", node.getName());
+        };
     }
 
     private static NodePrinter<Field> field() {
@@ -125,14 +132,28 @@ public class AstPrinter {
 
     private static NodePrinter<FieldDefinition> fieldDefinition() {
         return (out, node) -> {
-            String args = join(node.getInputValueDefinitions(), ", ");
             out.printf("%s", comments(node));
-            out.printf("%s", node.getName() +
-                    wrap("(", args, ")") +
-                    ": " + type(node.getType()) +
-                    directives(node.getDirectives())
-            );
+            String args;
+            if (hasComments(node.getInputValueDefinitions())) {
+                args = join(node.getInputValueDefinitions(), "\n");
+                out.printf("%s", node.getName() +
+                        wrap("(\n", args, "\n)") +
+                        ": " + type(node.getType()) +
+                        directives(node.getDirectives())
+                );
+            } else {
+                args = join(node.getInputValueDefinitions(), ", ");
+                out.printf("%s", node.getName() +
+                        wrap("(", args, ")") +
+                        ": " + type(node.getType()) +
+                        directives(node.getDirectives())
+                );
+            }
         };
+    }
+
+    private static boolean hasComments(List<? extends Node> nodes) {
+        return nodes.stream().filter(it -> it.getComments().size() > 0).count() > 0;
     }
 
     private static NodePrinter<FragmentDefinition> fragmentDefinition() {
@@ -464,7 +485,6 @@ public class AstPrinter {
      * This will pretty print the AST node in graphql language format
      *
      * @param node the AST node to print
-     *
      * @return the printed node in graphql language format
      */
     public static String printAst(Node node) {

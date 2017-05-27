@@ -17,8 +17,8 @@ public class ExecutionParameters {
     private final Map<String, List<Field>> fields;
 
     private ExecutionParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments) {
-        this.typeInfo = assertNotNull(typeInfo, "");
-        this.fields = assertNotNull(fields, "");
+        this.typeInfo = assertNotNull(typeInfo, "typeInfo is null");
+        this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
         this.arguments = arguments;
     }

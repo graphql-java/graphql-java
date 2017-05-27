@@ -19,11 +19,13 @@ public class TypeRuntimeWiring {
     private final String typeName;
     private final Map<String, DataFetcher> fieldDataFetchers;
     private final TypeResolver typeResolver;
+    private final EnumValuesProvider enumValuesProvider;
 
-    private TypeRuntimeWiring(String typeName, Map<String, DataFetcher> fieldDataFetchers, TypeResolver typeResolver) {
+    private TypeRuntimeWiring(String typeName, Map<String, DataFetcher> fieldDataFetchers, TypeResolver typeResolver, EnumValuesProvider enumValuesProvider) {
         this.typeName = typeName;
         this.fieldDataFetchers = fieldDataFetchers;
         this.typeResolver = typeResolver;
+        this.enumValuesProvider = enumValuesProvider;
     }
 
     public String getTypeName() {
@@ -36,6 +38,10 @@ public class TypeRuntimeWiring {
 
     public TypeResolver getTypeResolver() {
         return typeResolver;
+    }
+
+    public EnumValuesProvider getEnumValuesProvider() {
+        return enumValuesProvider;
     }
 
     /**
@@ -66,6 +72,7 @@ public class TypeRuntimeWiring {
         private String typeName;
         private final Map<String, DataFetcher> fieldDataFetchers = new LinkedHashMap<>();
         private TypeResolver typeResolver;
+        private EnumValuesProvider enumValuesProvider;
 
         /**
          * Sets the type name for this type wiring.  You MUST set this.
@@ -121,12 +128,18 @@ public class TypeRuntimeWiring {
             return this;
         }
 
+        public Builder enumValues(EnumValuesProvider enumValuesProvider) {
+            assertNotNull(enumValuesProvider, "you must provide a type resolver");
+            this.enumValuesProvider = enumValuesProvider;
+            return this;
+        }
+
         /**
          * @return the built type wiring
          */
         public TypeRuntimeWiring build() {
             assertNotNull(typeName, "you must provide a type name");
-            return new TypeRuntimeWiring(typeName, fieldDataFetchers, typeResolver);
+            return new TypeRuntimeWiring(typeName, fieldDataFetchers, typeResolver, enumValuesProvider);
         }
     }
 
