@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.InputMapDefinesTooManyFieldsException
 import graphql.execution.NonNullableValueCoercedAsNullException
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
@@ -30,6 +31,7 @@ import spock.lang.Unroll
  L          { $var }                { b:123 }               { b: 123 }
  M          { $var }                { a : "abc", b:null }   Error: b must be non‐null.
  N          { $var }                { a : "abc" }           Error: b must be non‐null.
+ O          { $var }                { a : "abc", b: 123, c:"xyz" }   Error: c is not a valid field
 
  */
 
@@ -216,7 +218,7 @@ class NullValueSupportTest extends Specification {
 
         where:
 
-        testCase | queryStr       | variables                  || expectedException
+        testCase | queryStr       | variables                           || expectedException
 
         // ------------------------------
         'G'      | '''
@@ -225,7 +227,7 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [:]                        || NonNullableValueCoercedAsNullException
+        ''' | [:]                                 || NonNullableValueCoercedAsNullException
 
         // ------------------------------
         'H'      | '''
@@ -234,7 +236,7 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [var: null]                || NonNullableValueCoercedAsNullException
+        ''' | [var: null]                         || NonNullableValueCoercedAsNullException
 
         // ------------------------------
         'M'      | '''
@@ -243,7 +245,7 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [var: [a: "abc", b: null]] || NonNullableValueCoercedAsNullException
+        ''' | [var: [a: "abc", b: null]]          || NonNullableValueCoercedAsNullException
 
         // ------------------------------
         'N'      | '''
@@ -252,8 +254,16 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [var: [a: "abc"]]          || NonNullableValueCoercedAsNullException
+        ''' | [var: [a: "abc"]]                   || NonNullableValueCoercedAsNullException
 
+        // ------------------------------
+        'O'      | '''
+            mutation mutate($var : ExampleInputObject) {
+                mutate(inputArg : $var) {
+                    a
+                }        
+            }
+        ''' | [var: [a: "abc", b: 123, c: "xyz"]] || InputMapDefinesTooManyFieldsException
 
     }
 

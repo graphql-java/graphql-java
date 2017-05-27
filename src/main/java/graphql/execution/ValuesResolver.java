@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ValuesResolver {
 
@@ -123,7 +124,15 @@ public class ValuesResolver {
 
     private Object coerceValueForInputObjectType(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
         Map<String, Object> result = new LinkedHashMap<>();
-        for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
+        List<GraphQLInputObjectField> fields = inputObjectType.getFields();
+        List<String> fieldNames = fields.stream().map(GraphQLInputObjectField::getName).collect(Collectors.toList());
+        for (String inputFieldName : input.keySet()) {
+            if (!fieldNames.contains(inputFieldName)) {
+                throw new InputMapDefinesTooManyFieldsException(inputObjectType, inputFieldName);
+            }
+        }
+
+        for (GraphQLInputObjectField inputField : fields) {
             if (input.containsKey(inputField.getName()) || alwaysHasValue(inputField)) {
                 Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
                 result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
