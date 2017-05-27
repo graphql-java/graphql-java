@@ -465,4 +465,19 @@ class ParserTest extends Specification {
         then:
         noExceptionThrown()
     }
+
+
+    def "parses null value"() {
+        given:
+        def input = "{ foo(bar: null) }"
+
+        when:
+        def document = new Parser().parseDocument(input)
+        def operation = document.definitions[0] as OperationDefinition
+        def selection = operation.selectionSet.selections[0] as Field
+
+        then:
+        selection.arguments[0].value == NullValue.Null
+
+    }
 }

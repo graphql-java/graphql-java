@@ -46,8 +46,6 @@ class TestUtil {
             return new SchemaGenerator().makeExecutableSchema(registry, runtimeWiring)
         } catch (SchemaProblem e) {
             assert false: "The schema could not be compiled : ${e}"
-            e.printStackTrace()
-            null
         }
     }
 }
