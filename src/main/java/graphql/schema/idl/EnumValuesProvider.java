@@ -11,7 +11,7 @@ import graphql.PublicSpi;
 public interface EnumValuesProvider {
 
     /**
-     * @param name
+     * @param name an Enum value
      * @return not null
      */
     Object getValue(String name);

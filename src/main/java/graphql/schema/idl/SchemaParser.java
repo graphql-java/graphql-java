@@ -83,10 +83,11 @@ public class SchemaParser {
 
     /**
      * special method to build directly a TypeDefinitionRegistry from a Document
-     * useful for Introscpection -> IDL (Document) -> TypeDefinitionRegistry
+     * useful for Introspection =&gt; IDL (Document) => TypeDefinitionRegistry
      *
-     * @param document conataining type defintions
-     * @throws SchemaProblem
+     * @param document containing type definitions
+     * @throws SchemaProblem if an error occurs
+     * @return the TypeDefinitionRegistry containing all type definitions from the document
      */
     public TypeDefinitionRegistry buildRegistry(Document document) {
         List<GraphQLError> errors = new ArrayList<>();
