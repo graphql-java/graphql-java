@@ -4,23 +4,32 @@ import graphql.execution.NonNullableValueCoercedAsNullException
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
+import spock.lang.Unroll
 
 /*
  * Taken from http://facebook.github.io/graphql/#sec-Input-Objects
  *
  *
  
- Test Case   Original Value	        Variables	    Coerced Value
- A          { a: "abc", b: 123 }	null	        { a: "abc", b: 123 }
- B          { a: 123, b: "123" }	null	        { a: "123", b: 123 }
- C          { a: "abc" }	        null	        Error: Missing required field b
- D          { a: "abc", b: null }	null	        Error: b must be non‐null.
- E          { a: null, b: 1 }	    null	        { a: null, b: 1 }
- F          { b: $var }             { var: 123 }    { b: 123 }
- G          { b: $var }             {}	            Error: Missing required field b.
- H          { b: $var }             { var: null }	Error: b must be non‐null.
- I          { a: $var, b: 1 }       { var: null }   { a: null, b: 1 }
- J          { a: $var, b: 1 }       {}              { b: 1 }
+ Test Case   Original Value	        Variables	            Coerced Value
+ --------------------------------------------------------------------------------------------
+ A          { a: "abc", b: 123 }	null	                { a: "abc", b: 123 }
+ B          { a: 123, b: "123" }	null	                { a: "123", b: 123 }
+ C          { a: "abc" }	        null	                Error: Missing required field b
+ D          { a: "abc", b: null }	null	                Error: b must be non‐null.
+ E          { a: null, b: 1 }	    null	                { a: null, b: 1 }
+ F          { b: $var }             { var: 123 }            { b: 123 }
+ G          { b: $var }             {}	                    Error: Missing required field b.
+ H          { b: $var }             { var: null }	        Error: b must be non‐null.
+ I          { a: $var, b: 1 }       { var: null }           { a: null, b: 1 }
+ J          { a: $var, b: 1 }       {}                      { b: 1 }
+
+ These did not come from the spec but added by us as extra tests
+
+ K          { $var }                { a : "abc", b:123 }    { a: "abc", b: 123 }
+ L          { $var }                { b:123 }               { b: 123 }
+ M          { $var }                { a : "abc", b:null }   Error: b must be non‐null.
+ N          { $var }                { a : "abc" }           Error: b must be non‐null.
 
  */
 
@@ -48,7 +57,8 @@ class NullValueSupportTest extends Specification {
             
         '''
 
-    def "test graphql spec examples that output results"() {
+    @Unroll
+    "test graphql spec examples that output results : #testCase"() {
         def fetcher = new CapturingDataFetcher()
 
         def schema = TestUtil.schema(graphqlSpecExamples, ["Mutation": ["mutate": fetcher]])
@@ -63,7 +73,7 @@ class NullValueSupportTest extends Specification {
 
         where:
 
-        testCase | queryStr       | variables   || expectedArgs
+        testCase | queryStr       | variables                 || expectedArgs
 
         // ------------------------------
         'A'      | '''
@@ -72,7 +82,7 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [:]         || [inputArg: [a: "abc", b: 123]]
+        ''' | [:]                       || [inputArg: [a: "abc", b: 123]]
 
         // ------------------------------
         // coerced from string -> int and vice versus
@@ -97,7 +107,7 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [:]         || [inputArg: [a: null, b: 1]]
+        ''' | [:]                       || [inputArg: [a: null, b: 1]]
 
         // ------------------------------
         'F'      | '''
@@ -106,7 +116,7 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [var: 123]  || [inputArg: [b: 123]]
+        ''' | [var: 123]                || [inputArg: [b: 123]]
 
         // ------------------------------
         'I'      | '''
@@ -115,7 +125,7 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [var: null] || [inputArg: [a: null, b: 1]]
+        ''' | [var: null]               || [inputArg: [a: null, b: 1]]
 
         // ------------------------------
         'J'      | '''
@@ -124,10 +134,30 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [:]         || [inputArg: [b: 1]]
+        ''' | [:]                       || [inputArg: [b: 1]]
+
+        // ------------------------------
+        'K'      | '''
+            mutation mutate($var : ExampleInputObject) {
+                mutate(inputArg : $var) {
+                    a
+                }        
+            }
+        ''' | [var: [a: "abc", b: 123]] || [inputArg: [a: "abc", b: 123]]
+
+        // ------------------------------
+        'L'      | '''
+            mutation mutate($var : ExampleInputObject) {
+                mutate(inputArg : $var) {
+                    a
+                }        
+            }
+        ''' | [var: [b: 123]]           || [inputArg: [b: 123]]
+
     }
 
-    def "test graphql spec examples that output errors"() {
+    @Unroll
+    "test graphql spec examples that output errors #testCase"() {
         def fetcher = new CapturingDataFetcher()
 
         def schema = TestUtil.schema(graphqlSpecExamples, ["Mutation": ["mutate": fetcher]])
@@ -170,7 +200,8 @@ class NullValueSupportTest extends Specification {
         ''' | [:]       || ValidationErrorType.WrongType
     }
 
-    def "test graphql spec examples that output exception"() {
+    @Unroll
+    "test graphql spec examples that output exception : #testCase"() {
         def fetcher = new CapturingDataFetcher()
 
         def schema = TestUtil.schema(graphqlSpecExamples, ["Mutation": ["mutate": fetcher]])
@@ -185,7 +216,7 @@ class NullValueSupportTest extends Specification {
 
         where:
 
-        testCase | queryStr       | variables   || expectedException
+        testCase | queryStr       | variables                  || expectedException
 
         // ------------------------------
         'G'      | '''
@@ -194,7 +225,7 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [:]         || NonNullableValueCoercedAsNullException
+        ''' | [:]                        || NonNullableValueCoercedAsNullException
 
         // ------------------------------
         'H'      | '''
@@ -203,7 +234,26 @@ class NullValueSupportTest extends Specification {
                     a
                 }        
             }
-        ''' | [var: null] || NonNullableValueCoercedAsNullException
+        ''' | [var: null]                || NonNullableValueCoercedAsNullException
+
+        // ------------------------------
+        'M'      | '''
+            mutation mutate($var : ExampleInputObject) {
+                mutate(inputArg : $var) {
+                    a
+                }        
+            }
+        ''' | [var: [a: "abc", b: null]] || NonNullableValueCoercedAsNullException
+
+        // ------------------------------
+        'N'      | '''
+            mutation mutate($var : ExampleInputObject) {
+                mutate(inputArg : $var) {
+                    a
+                }        
+            }
+        ''' | [var: [a: "abc"]]          || NonNullableValueCoercedAsNullException
+
 
     }
 
