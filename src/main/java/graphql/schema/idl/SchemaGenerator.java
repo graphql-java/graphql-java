@@ -38,6 +38,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.PropertyDataFetcher;
@@ -50,10 +51,12 @@ import graphql.schema.idl.errors.SchemaProblem;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
@@ -207,7 +210,9 @@ public class SchemaGenerator {
             }
         }
 
-        return schemaBuilder.build();
+        Set<GraphQLType> additionalTypes = buildAdditionalTypes(buildCtx);
+
+        return schemaBuilder.build(additionalTypes);
     }
 
     private GraphQLObjectType buildOperation(BuildContext buildCtx, OperationTypeDefinition operation) {
@@ -216,6 +221,31 @@ public class SchemaGenerator {
         return buildOutputType(buildCtx, type);
     }
 
+    /**
+     * We build the query / mutation / subscription path as a tree of referenced types
+     * but then we build the rest of the types specified and put them in as additional types
+     *
+     * @param buildCtx the context we need to work out what we are doing
+     *
+     * @return the additional types not referenced from the top level operations
+     */
+    private Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
+        Set<GraphQLType> additionalTypes = new HashSet<>();
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        typeRegistry.types().values().forEach(typeDefinition -> {
+            TypeName typeName = new TypeName(typeDefinition.getName());
+            if (typeDefinition instanceof InputObjectTypeDefinition) {
+                if (buildCtx.hasInputType(typeDefinition) == null) {
+                    additionalTypes.add(buildInputType(buildCtx, typeName));
+                }
+            } else {
+                if (buildCtx.hasOutputType(typeDefinition) == null) {
+                    additionalTypes.add(buildOutputType(buildCtx, typeName));
+                }
+            }
+        });
+        return additionalTypes;
+    }
 
     /**
      * This is the main recursive spot that builds out the various forms of Output types
