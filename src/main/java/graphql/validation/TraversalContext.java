@@ -102,7 +102,7 @@ public class TraversalContext implements DocumentVisitor {
             fieldDefinition = getFieldDef(schema, parentType, field);
         }
         addFieldDef(fieldDefinition);
-        addType(fieldDefinition != null ? fieldDefinition.getType() : null);
+        addOutputType(fieldDefinition != null ? fieldDefinition.getType() : null);
     }
 
     private void enterImpl(Directive directive) {
@@ -111,11 +111,11 @@ public class TraversalContext implements DocumentVisitor {
 
     private void enterImpl(OperationDefinition operationDefinition) {
         if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
-            addType(schema.getMutationType());
+            addOutputType(schema.getMutationType());
         } else if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
-            addType(schema.getQueryType());
+            addOutputType(schema.getQueryType());
         } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
-            addType(schema.getSubscriptionType());
+            addOutputType(schema.getSubscriptionType());
         } else {
             throw new ShouldNotHappenException();
         }
@@ -129,12 +129,12 @@ public class TraversalContext implements DocumentVisitor {
         } else {
             type = (GraphQLOutputType) getParentType();
         }
-        addType(type);
+        addOutputType(type);
     }
 
     private void enterImpl(FragmentDefinition fragmentDefinition) {
         GraphQLType type = schema.getType(fragmentDefinition.getTypeCondition().getName());
-        addType((GraphQLOutputType) type);
+        addOutputType((GraphQLOutputType) type);
     }
 
     private void enterImpl(VariableDefinition variableDefinition) {
@@ -214,11 +214,15 @@ public class TraversalContext implements DocumentVisitor {
         return (GraphQLNullableType) (type instanceof GraphQLNonNull ? ((GraphQLNonNull) type).getWrappedType() : type);
     }
 
+    /**
+     * @return can be null if current node does not have a OutputType associated: for example
+     * if the current field is unknown
+     */
     public GraphQLOutputType getOutputType() {
         return lastElement(outputTypeStack);
     }
 
-    private void addType(GraphQLOutputType type) {
+    private void addOutputType(GraphQLOutputType type) {
         outputTypeStack.add(type);
     }
 
@@ -228,6 +232,9 @@ public class TraversalContext implements DocumentVisitor {
         return list.get(list.size() - 1);
     }
 
+    /**
+     * @return can be null if the parent is not a CompositeType
+     */
     public GraphQLCompositeType getParentType() {
         return lastElement(parentTypeStack);
     }
