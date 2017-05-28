@@ -1,7 +1,11 @@
 package graphql.schema.idl;
 
 import graphql.GraphQLError;
+import graphql.language.Argument;
 import graphql.language.AstPrinter;
+import graphql.language.Directive;
+import graphql.language.EnumTypeDefinition;
+import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
@@ -9,6 +13,7 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.SchemaDefinition;
+import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeExtensionDefinition;
@@ -16,6 +21,7 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError;
 import graphql.schema.idl.errors.InterfaceFieldRedefinitionError;
+import graphql.schema.idl.errors.InvalidDeprecationDirectiveError;
 import graphql.schema.idl.errors.MissingInterfaceFieldArgumentsError;
 import graphql.schema.idl.errors.MissingInterfaceFieldError;
 import graphql.schema.idl.errors.MissingInterfaceTypeError;
@@ -37,6 +43,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -59,6 +66,8 @@ public class SchemaTypeChecker {
 
         checkScalarImplementationsArePresent(errors, typeRegistry, wiring);
         checkTypeResolversArePresent(errors, typeRegistry, wiring);
+
+        checkDirectivesAreSensible(errors, typeRegistry);
 
         return errors;
     }
@@ -85,6 +94,7 @@ public class SchemaTypeChecker {
 
         }
     }
+
 
     private void checkForMissingTypes(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         // type extensions
@@ -151,6 +161,69 @@ public class SchemaTypeChecker {
         });
     }
 
+    private void checkDirectivesAreSensible(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+        Map<String, TypeDefinition> typesMap = typeRegistry.types();
+
+        // type extensions
+        List<TypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        typeExtensions.forEach(typeExtension -> checkFieldDirectives(errors, typeExtension, typeExtension.getFieldDefinitions()));
+
+        // objects
+        List<ObjectTypeDefinition> objectTypes = filterTo(typesMap, ObjectTypeDefinition.class);
+        objectTypes.forEach(objectType -> checkFieldDirectives(errors, objectType, objectType.getFieldDefinitions()));
+
+        // interfaces
+        List<InterfaceTypeDefinition> interfaceTypes = filterTo(typesMap, InterfaceTypeDefinition.class);
+        interfaceTypes.forEach(interfaceType -> checkFieldDirectives(errors, interfaceType, interfaceType.getFieldDefinitions()));
+
+        // enum types
+        List<EnumTypeDefinition> enumTypes = filterTo(typesMap, EnumTypeDefinition.class);
+        enumTypes.forEach(enumType -> checkEnumValueDirectives(errors, enumType, enumType.getEnumValueDefinitions()));
+
+        // input types
+        List<InputObjectTypeDefinition> inputTypes = filterTo(typesMap, InputObjectTypeDefinition.class);
+        inputTypes.forEach(inputType -> checkInputValueDirectives(errors, inputType, inputType.getInputValueDefinitions()));
+    }
+
+    private void checkFieldDirectives(List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions) {
+        fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
+            checkDeprecatedDirective(errors, directive,
+                    () -> new InvalidDeprecationDirectiveError(typeDefinition, fld));
+        }));
+    }
+
+    private void checkEnumValueDirectives(List<GraphQLError> errors, EnumTypeDefinition enumType, List<EnumValueDefinition> enumValueDefinitions) {
+        enumValueDefinitions.forEach(enumValue -> enumValue.getDirectives().forEach(directive -> {
+            checkDeprecatedDirective(errors, directive,
+                    () -> new InvalidDeprecationDirectiveError(enumType, enumValue));
+        }));
+    }
+
+    private void checkInputValueDirectives(List<GraphQLError> errors, InputObjectTypeDefinition inputType, List<InputValueDefinition> inputValueDefinitions) {
+        inputValueDefinitions.forEach(inputValueDef -> inputValueDef.getDirectives().forEach(directive -> {
+            checkDeprecatedDirective(errors, directive,
+                    () -> new InvalidDeprecationDirectiveError(inputType, inputValueDef));
+        }));
+    }
+
+    private void checkDeprecatedDirective(List<GraphQLError> errors, Directive directive, Supplier<InvalidDeprecationDirectiveError> errorSupplier) {
+        if ("deprecated".equals(directive.getName())) {
+            // it can have zero args
+            List<Argument> arguments = directive.getArguments();
+            if (arguments.size() == 0) {
+                return;
+            }
+            // but if has more than it must have 1 called "reason" of type StringValue
+            if (arguments.size() == 1) {
+                Argument arg = arguments.get(0);
+                if ("reason".equals(arg.getName()) && arg.getValue() instanceof StringValue) {
+                    return;
+                }
+            }
+            // not valid
+            errors.add(errorSupplier.get());
+        }
+    }
 
     private void checkTypeResolversArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
 

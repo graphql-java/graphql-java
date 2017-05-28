@@ -1,7 +1,16 @@
 package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
-import graphql.schema.*
+import graphql.schema.GraphQLEnumType
+import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLInterfaceType
+import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNonNull
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLType
+import graphql.schema.GraphQLUnionType
+import graphql.schema.TypeResolver
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import spock.lang.Specification
@@ -287,7 +296,7 @@ class SchemaGeneratorTest extends Specification {
 
         def foobar = schema.getQueryType().getFieldDefinition("foobar")
         foobar.type instanceof GraphQLUnionType
-        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        def types = ((GraphQLUnionType) foobar.type).getTypes()
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
@@ -326,7 +335,7 @@ class SchemaGeneratorTest extends Specification {
 
         def foobar = schema.getQueryType().getFieldDefinition("foobar")
         foobar.type instanceof GraphQLUnionType
-        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        def types = ((GraphQLUnionType) foobar.type).getTypes()
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
@@ -365,7 +374,7 @@ class SchemaGeneratorTest extends Specification {
 
         def foobar = schema.getQueryType().getFieldDefinition("foobar")
         foobar.type instanceof GraphQLUnionType
-        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        def types = ((GraphQLUnionType) foobar.type).getTypes()
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
@@ -404,7 +413,7 @@ class SchemaGeneratorTest extends Specification {
 
         def foobar = schema.getQueryType().getFieldDefinition("foobar")
         foobar.type instanceof GraphQLUnionType
-        def types = ((GraphQLUnionType) foobar.type).getTypes();
+        def types = ((GraphQLUnionType) foobar.type).getTypes()
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
@@ -813,7 +822,7 @@ class SchemaGeneratorTest extends Specification {
             query: Query
         }
         """
-        def enumValuesProvider = new NaturalEnumValuesProvider<ExampleEnum>(ExampleEnum.class);
+        def enumValuesProvider = new NaturalEnumValuesProvider<ExampleEnum>(ExampleEnum.class)
         when:
 
         def wiring = RuntimeWiring.newRuntimeWiring()
@@ -854,5 +863,40 @@ class SchemaGeneratorTest extends Specification {
         enumType.getValue("B").value == "B"
         enumType.getValue("C").value == "C"
 
+    }
+
+    def "deprecated directive is supported"() {
+        given:
+        def spec = """
+        type Query {
+            foo: Enum @deprecated(reason : "foo reason")
+            bar: String @deprecated
+            baz: String
+        }
+        enum Enum {
+            foo @deprecated(reason : "foo reason")
+            bar @deprecated
+            baz 
+        }
+        schema {
+            query: Query
+        }
+        """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+
+        def schema = generateSchema(spec, wiring)
+        GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
+        GraphQLObjectType queryType = schema.getType("Query") as GraphQLObjectType
+
+        then:
+        enumType.getValue("foo").getDeprecationReason() == "foo reason"
+        enumType.getValue("bar").getDeprecationReason() == "No longer supported" // default according to spec
+        !enumType.getValue("baz").isDeprecated()
+
+        queryType.getFieldDefinition("foo").getDeprecationReason() == "foo reason"
+        queryType.getFieldDefinition("bar").getDeprecationReason() == "No longer supported" // default according to spec
+        !queryType.getFieldDefinition("baz").isDeprecated()
     }
 }

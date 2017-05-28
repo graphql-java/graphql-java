@@ -14,6 +14,13 @@ class IntrospectionResultToSchemaTest extends Specification {
 
     def introspectionResultToSchema = new IntrospectionResultToSchema()
 
+    Map<String, Object> slurp(String input) {
+        def slurper = new JsonSlurper()
+        Map<String, Object> parsed = slurper.parseText(input) as Map<String, Object>
+        parsed
+
+    }
+
     def "create object"() {
         def input = """ {
             "kind": "OBJECT",
@@ -50,8 +57,8 @@ class IntrospectionResultToSchemaTest extends Specification {
                   "name": "Character",
                   "ofType": null
                 },
-                "isDeprecated": false,
-                "deprecationReason": null
+                "isDeprecated": true,
+                "deprecationReason": "killed off character"
               }
             ],
             "inputFields": null,
@@ -60,8 +67,7 @@ class IntrospectionResultToSchemaTest extends Specification {
             "possibleTypes": null
       }
       """
-        def slurper = new JsonSlurper()
-        def parsed = slurper.parseText(input)
+        def parsed = slurp(input)
 
         when:
         ObjectTypeDefinition objectTypeDefinition = introspectionResultToSchema.createObject(parsed)
@@ -74,7 +80,7 @@ class IntrospectionResultToSchemaTest extends Specification {
   #comment about episode
   episode: Episode
   foo: String = \"bar\"
-  ): Character
+  ): Character @deprecated(reason: "killed off character")
 }"""
 
     }
@@ -167,8 +173,7 @@ class IntrospectionResultToSchemaTest extends Specification {
         ]
       }
       """
-        def slurper = new JsonSlurper()
-        def parsed = slurper.parseText(input)
+        def parsed = slurp(input)
 
         when:
         InterfaceTypeDefinition interfaceTypeDefinition = introspectionResultToSchema.createInterface(parsed)
@@ -214,20 +219,19 @@ interface Character {
           {
             "name": "JEDI",
             "description": "Released in 1983.",
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "killed by clones"
           }
         ],
         "possibleTypes": null
       }
       """
-        def slurper = new JsonSlurper()
-        def parsed = slurper.parseText(input)
+        def parsed = slurp(input)
 
         when:
-        EnumTypeDefinition interfaceTypeDefinition = introspectionResultToSchema.createEnum(parsed)
+        EnumTypeDefinition enumTypeDef = introspectionResultToSchema.createEnum(parsed)
         AstPrinter astPrinter = new AstPrinter()
-        def result = astPrinter.printAst(interfaceTypeDefinition)
+        def result = astPrinter.printAst(enumTypeDef)
 
         then:
         result == """#One of the films in the Star Wars Trilogy
@@ -237,7 +241,7 @@ enum Episode {
   #Released in 1980.
   EMPIRE
   #Released in 1983.
-  JEDI
+  JEDI @deprecated(reason: "killed by clones")
 }"""
 
     }
@@ -265,8 +269,7 @@ enum Episode {
           ]
         }
       """
-        def slurper = new JsonSlurper()
-        def parsed = slurper.parseText(input)
+        def parsed = slurp(input)
 
         when:
         UnionTypeDefinition unionTypeDefinition = introspectionResultToSchema.createUnion(parsed)
@@ -322,8 +325,7 @@ union Everything = Character | Episode"""
         "possibleTypes": null
     }
     """
-        def slurper = new JsonSlurper()
-        def parsed = slurper.parseText(input)
+        def parsed = slurp(input)
 
         when:
         InputObjectTypeDefinition inputObjectTypeDefinition = introspectionResultToSchema.createInputObject(parsed)
@@ -352,8 +354,7 @@ CharacterInput {
             "types": [
             ]
             }"""
-        def slurper = new JsonSlurper()
-        def parsed = slurper.parseText(input)
+        def parsed = slurp(input)
 
         when:
         Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
@@ -373,8 +374,8 @@ CharacterInput {
     def "test starwars introspection result"() {
         given:
         String starwars = this.getClass().getResource('/starwars-introspection.json').text
-        def slurper = new JsonSlurper()
-        def parsed = slurper.parseText(starwars)
+
+        def parsed = slurp(starwars)
 
         when:
         Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
@@ -456,8 +457,8 @@ type Droid {
     def "test simpsons introspection result"() {
         given:
         String simpsons = this.getClass().getResource('/simpsons-introspection.json').text
-        def slurper = new JsonSlurper()
-        def parsed = slurper.parseText(simpsons)
+
+        def parsed = slurp(simpsons)
 
         when:
         Document document = introspectionResultToSchema.createSchemaDefinition(parsed)

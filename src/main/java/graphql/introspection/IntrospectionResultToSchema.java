@@ -1,7 +1,9 @@
 package graphql.introspection;
 
 import graphql.PublicApi;
+import graphql.language.Argument;
 import graphql.language.Comment;
+import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValueDefinition;
@@ -31,6 +33,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 
+@SuppressWarnings("unchecked")
 @PublicApi
 public class IntrospectionResultToSchema {
 
@@ -126,6 +129,9 @@ public class IntrospectionResultToSchema {
 
             EnumValueDefinition enumValueDefinition = new EnumValueDefinition((String) enumValue.get("name"));
             enumValueDefinition.setComments(toComment((String) enumValue.get("description")));
+
+            createDeprecatedDirective(enumValue, enumValueDefinition.getDirectives());
+
             enumTypeDefinition.getEnumValueDefinitions().add(enumValueDefinition);
         }
 
@@ -178,12 +184,26 @@ public class IntrospectionResultToSchema {
             fieldDefinition.setComments(toComment((String) field.get("description")));
             fieldDefinition.setType(createTypeIndirection((Map<String, Object>) field.get("type")));
 
+            createDeprecatedDirective(field, fieldDefinition.getDirectives());
+
             List<Map<String, Object>> args = (List<Map<String, Object>>) field.get("args");
             List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(args);
             fieldDefinition.getInputValueDefinitions().addAll(inputValueDefinitions);
             result.add(fieldDefinition);
         }
         return result;
+}
+
+    private void createDeprecatedDirective(Map<String, Object> field, List<Directive> directives) {
+        if ((Boolean) field.get("isDeprecated")) {
+            String reason = (String) field.get("deprecationReason");
+            if (reason == null) {
+                reason = "No longer supported"; // default according to spec
+            }
+            Argument reasonArg = new Argument("reason", new StringValue(reason));
+            Directive deprecated = new Directive("deprecated", Collections.singletonList(reasonArg));
+            directives.add(deprecated);
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -226,7 +246,7 @@ public class IntrospectionResultToSchema {
     private List<Comment> toComment(String description) {
         if (description == null) return Collections.emptyList();
         Comment comment = new Comment(description, new SourceLocation(1, 1));
-        return Arrays.asList(comment);
+        return Collections.singletonList(comment);
     }
 
 }

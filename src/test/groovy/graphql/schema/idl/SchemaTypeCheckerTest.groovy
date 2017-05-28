@@ -693,4 +693,47 @@ class SchemaTypeCheckerTest extends Specification {
 
         result.isEmpty()
     }
+
+    def "test that deprecation directive is valid"() {
+
+        def spec = """                        
+            
+            interface InterfaceType1 {
+                fieldA : String @deprecated(badName : "must be called reason") 
+            }
+
+            type BaseType implements InterfaceType1 {
+                fieldA : String
+                fieldC : String @deprecated(reason : "it must have", one : "argument value")
+            }
+
+            extend type BaseType {
+                fieldB : Int
+                fieldD: Int @deprecated(badName : "must be called reason")
+                fieldE: Int @deprecated(reason : "it must have", one : "argument value")
+            }
+            
+            enum EnumType {
+                
+                enumA @deprecated(badName : "must be called reason"),
+                enumB @deprecated(reason : "it must have", one : "argument value")
+            }
+
+            input InputType {
+                inputFieldA : String @deprecated(badName : "must be called reason")
+                inputFieldA : String @deprecated(reason : "it must have", one : "argument value")
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        !result.isEmpty()
+        result.size() == 8
+    }
 }
