@@ -11,6 +11,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.FieldFetchParameters;
 import graphql.execution.instrumentation.parameters.FieldParameters;
 import graphql.language.Field;
+import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironmentImpl;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -96,7 +97,8 @@ public abstract class ExecutionStrategy {
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(new FieldFetchParameters(executionContext, fieldDef, environment));
         Object resolvedValue = null;
         try {
-            resolvedValue = fieldDef.getDataFetcher().get(environment);
+            DataFetcher dataFetcher = fieldDef.getDataFetcher();
+            resolvedValue = dataFetcher.get(environment);
 
             fetchCtx.onEnd(resolvedValue);
         } catch (Exception e) {

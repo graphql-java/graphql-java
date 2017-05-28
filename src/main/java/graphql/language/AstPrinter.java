@@ -26,6 +26,7 @@ public class AstPrinter {
         printers.put(Argument.class, argument());
         printers.put(ArrayValue.class, value());
         printers.put(BooleanValue.class, value());
+        printers.put(NullValue.class, value());
         printers.put(Directive.class, directive());
         printers.put(DirectiveDefinition.class, directiveDefinition());
         printers.put(DirectiveLocation.class, directiveLocation());
@@ -399,6 +400,8 @@ public class AstPrinter {
             return valueOf(((EnumValue) value).getName());
         } else if (value instanceof BooleanValue) {
             return valueOf(((BooleanValue) value).isValue());
+        } else if (value instanceof NullValue) {
+            return "null";
         } else if (value instanceof ArrayValue) {
             return "[" + join(((ArrayValue) value).getValues(), ", ") + "]";
         } else if (value instanceof ObjectValue) {

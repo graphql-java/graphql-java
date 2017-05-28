@@ -251,8 +251,8 @@ class ValuesResolverTest extends Specification {
 
     def "getArgumentValues: resolves enum literals"() {
         given: "the ast"
-        EnumValue enumValue1 = new EnumValue("PLUTO");
-        EnumValue enumValue2 = new EnumValue("MARS");
+        EnumValue enumValue1 = new EnumValue("PLUTO")
+        EnumValue enumValue2 = new EnumValue("MARS")
         def argument1 = new Argument("arg1", enumValue1)
         def argument2 = new Argument("arg2", enumValue2)
 
@@ -383,4 +383,24 @@ class ValuesResolverTest extends Specification {
         [intKey: 10]                      | _
         [intKey: 10, requiredField: null] | _
     }
+
+    def "getVariableValues: simple types with values not provided in variables map"() {
+        given:
+
+        def schema = TestUtil.schemaWithInputType(GraphQLString)
+        VariableDefinition fooVarDef = new VariableDefinition("foo", new TypeName("String"))
+        VariableDefinition barVarDef = new VariableDefinition("bar", new TypeName("String"))
+
+        when:
+        def resolvedValues = resolver.getVariableValues(schema, [fooVarDef, barVarDef], InputValue)
+
+        then:
+        resolvedValues == outputValue
+
+        where:
+        InputValue                || outputValue
+        [foo: "added", bar: null] || [foo: "added", bar: null]
+        [foo: "added"]            || [foo: "added"]
+    }
+
 }

@@ -2,18 +2,44 @@ package graphql.execution;
 
 
 import graphql.GraphQLException;
-import graphql.language.*;
-import graphql.schema.*;
+import graphql.language.Argument;
+import graphql.language.ArrayValue;
+import graphql.language.NullValue;
+import graphql.language.ObjectField;
+import graphql.language.ObjectValue;
+import graphql.language.Value;
+import graphql.language.VariableDefinition;
+import graphql.language.VariableReference;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ValuesResolver {
 
 
-    public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> inputs) {
+    public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> args) {
         Map<String, Object> result = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
-            result.put(variableDefinition.getName(), getVariableValue(schema, variableDefinition, inputs.get(variableDefinition.getName())));
+            String varName = variableDefinition.getName();
+            // we transfer the variable as field arguments if its present as value
+            if (args.containsKey(varName)) {
+                Object arg = args.get(varName);
+                Object variableValue = getVariableValue(schema, variableDefinition, arg);
+                result.put(varName, variableValue);
+            }
         }
         return result;
     }
@@ -23,14 +49,19 @@ public class ValuesResolver {
         Map<String, Object> result = new LinkedHashMap<>();
         Map<String, Argument> argumentMap = argumentMap(arguments);
         for (GraphQLArgument fieldArgument : argumentTypes) {
-            Argument argument = argumentMap.get(fieldArgument.getName());
+            String argName = fieldArgument.getName();
+            Argument argument = argumentMap.get(argName);
             Object value;
             if (argument != null) {
                 value = coerceValueAst(fieldArgument.getType(), argument.getValue(), variables);
             } else {
                 value = fieldArgument.getDefaultValue();
             }
-            result.put(fieldArgument.getName(), value);
+            // only put an arg into the result IF they specified a variable at all or
+            // the default value ended up being something non null
+            if (argumentMap.containsKey(argName) || value != null) {
+                result.put(argName, value);
+            }
         }
         return result;
     }
@@ -48,6 +79,7 @@ public class ValuesResolver {
     private Object getVariableValue(GraphQLSchema schema, VariableDefinition variableDefinition, Object inputValue) {
         GraphQLType type = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
 
+        //noinspection ConstantConditions
         if (!isValid(type, inputValue)) {
             throw new GraphQLException("Invalid value for type");
         }
@@ -67,7 +99,7 @@ public class ValuesResolver {
         if (graphQLType instanceof GraphQLNonNull) {
             Object returnValue = coerceValue(((GraphQLNonNull) graphQLType).getWrappedType(), value);
             if (returnValue == null) {
-                throw new GraphQLException("Null value for NonNull type " + graphQLType);
+                throw new NonNullableValueCoercedAsNullException(graphQLType);
             }
             return returnValue;
         }
@@ -81,6 +113,7 @@ public class ValuesResolver {
         } else if (graphQLType instanceof GraphQLList) {
             return coerceValueForList((GraphQLList) graphQLType, value);
         } else if (graphQLType instanceof GraphQLInputObjectType && value instanceof Map) {
+            //noinspection unchecked
             return coerceValueForInputObjectType((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
             return value;
@@ -91,7 +124,15 @@ public class ValuesResolver {
 
     private Object coerceValueForInputObjectType(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
         Map<String, Object> result = new LinkedHashMap<>();
-        for (GraphQLInputObjectField inputField : inputObjectType.getFields()) {
+        List<GraphQLInputObjectField> fields = inputObjectType.getFields();
+        List<String> fieldNames = fields.stream().map(GraphQLInputObjectField::getName).collect(Collectors.toList());
+        for (String inputFieldName : input.keySet()) {
+            if (!fieldNames.contains(inputFieldName)) {
+                throw new InputMapDefinesTooManyFieldsException(inputObjectType, inputFieldName);
+            }
+        }
+
+        for (GraphQLInputObjectField inputField : fields) {
             if (input.containsKey(inputField.getName()) || alwaysHasValue(inputField)) {
                 Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
                 result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
@@ -128,6 +169,9 @@ public class ValuesResolver {
     private Object coerceValueAst(GraphQLType type, Value inputValue, Map<String, Object> variables) {
         if (inputValue instanceof VariableReference) {
             return variables.get(((VariableReference) inputValue).getName());
+        }
+        if (inputValue instanceof NullValue) {
+            return null;
         }
         if (type instanceof GraphQLScalarType) {
             return ((GraphQLScalarType) type).getCoercing().parseLiteral(inputValue);
@@ -167,20 +211,46 @@ public class ValuesResolver {
 
         for (GraphQLInputObjectField inputTypeField : type.getFields()) {
             if (inputValueFieldsByName.containsKey(inputTypeField.getName())) {
+                boolean putObjectInMap = true;
+
                 ObjectField field = inputValueFieldsByName.get(inputTypeField.getName());
-                Object fieldValue = coerceValueAst(inputTypeField.getType(), field.getValue(), variables);
-                if (fieldValue == null) {
-                    fieldValue = inputTypeField.getDefaultValue();
+                Value fieldInputValue = field.getValue();
+
+                Object fieldObject = null;
+                if (fieldInputValue instanceof VariableReference) {
+                    String varName = ((VariableReference) fieldInputValue).getName();
+                    if (!variables.containsKey(varName)) {
+                        putObjectInMap = false;
+                    } else {
+                        fieldObject = variables.get(varName);
+                    }
+                } else {
+                    fieldObject = coerceValueAst(inputTypeField.getType(), fieldInputValue, variables);
                 }
-                result.put(field.getName(), fieldValue);
+
+                if (fieldObject == null) {
+                    if (!field.getValue().isEqualTo(NullValue.Null)) {
+                        fieldObject = inputTypeField.getDefaultValue();
+                    }
+                }
+                if (putObjectInMap) {
+                    result.put(field.getName(), fieldObject);
+                } else {
+                    assertNonNullInputField(inputTypeField);
+                }
             } else if (inputTypeField.getDefaultValue() != null) {
                 result.put(inputTypeField.getName(), inputTypeField.getDefaultValue());
-            } else if (inputTypeField.getType() instanceof GraphQLNonNull) {
-                // Possibly overkill; an object literal with a missing non null field shouldn't pass validation
-                throw new GraphQLException("Null value for NonNull type " + inputTypeField.getType());
+            } else {
+                assertNonNullInputField(inputTypeField);
             }
         }
         return result;
+    }
+
+    private void assertNonNullInputField(GraphQLInputObjectField inputTypeField) {
+        if (inputTypeField.getType() instanceof GraphQLNonNull) {
+            throw new NonNullableValueCoercedAsNullException(inputTypeField.getType());
+        }
     }
 
     private Map<String, ObjectField> mapObjectValueFieldsByName(ObjectValue inputValue) {
