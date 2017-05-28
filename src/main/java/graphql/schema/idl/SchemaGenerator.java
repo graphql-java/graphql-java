@@ -22,6 +22,7 @@ import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeExtensionDefinition;
+import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.DataFetcher;
@@ -127,11 +128,6 @@ public class SchemaGenerator {
         RuntimeWiring getWiring() {
             return wiring;
         }
-
-        @SuppressWarnings("OptionalGetWithoutIsPresent")
-        public SchemaDefinition getSchemaDefinition() {
-            return typeRegistry.schemaDefinition().get();
-        }
     }
 
     private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();
@@ -144,7 +140,9 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
      * @return an executable schema
+     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -158,32 +156,56 @@ public class SchemaGenerator {
     }
 
     private GraphQLSchema makeExecutableSchemaImpl(BuildContext buildCtx) {
-
-        SchemaDefinition schemaDefinition = buildCtx.getSchemaDefinition();
-        List<OperationTypeDefinition> operationTypes = schemaDefinition.getOperationTypeDefinitions();
-
-        // pre-flight checked via checker
-        @SuppressWarnings("OptionalGetWithoutIsPresent")
-        OperationTypeDefinition queryOp = operationTypes.stream().filter(op -> "query".equals(op.getName())).findFirst().get();
-        Optional<OperationTypeDefinition> mutationOp = operationTypes.stream().filter(op -> "mutation".equals(op.getName())).findFirst();
-        Optional<OperationTypeDefinition> subscriptionOp = operationTypes.stream().filter(op -> "subscription".equals(op.getName())).findFirst();
-
-        GraphQLObjectType query = buildOperation(buildCtx, queryOp);
+        GraphQLObjectType query;
         GraphQLObjectType mutation;
         GraphQLObjectType subscription;
 
-        GraphQLSchema.Builder schemaBuilder = GraphQLSchema
-                .newSchema()
-                .query(query);
+        GraphQLSchema.Builder schemaBuilder = GraphQLSchema.newSchema();
 
-        if (mutationOp.isPresent()) {
-            mutation = buildOperation(buildCtx, mutationOp.get());
-            schemaBuilder.mutation(mutation);
+        //
+        // Schema can be missing if the type is called 'Query'.  Pre flight checks have checked that!
+        //
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        if (!typeRegistry.schemaDefinition().isPresent()) {
+            @SuppressWarnings("OptionalGetWithoutIsPresent")
+            TypeDefinition queryTypeDef = typeRegistry.getType("Query").get();
+
+            query = buildOutputType(buildCtx, new TypeName(queryTypeDef.getName()));
+            schemaBuilder.query(query);
+
+            Optional<TypeDefinition> mutationTypeDef = typeRegistry.getType("Mutation");
+            if (mutationTypeDef.isPresent()) {
+                mutation = buildOutputType(buildCtx, new TypeName(mutationTypeDef.get().getName()));
+                schemaBuilder.mutation(mutation);
+            }
+            Optional<TypeDefinition> subscriptionTypeDef = typeRegistry.getType("Subscription");
+            if (subscriptionTypeDef.isPresent()) {
+                subscription = buildOutputType(buildCtx, new TypeName(subscriptionTypeDef.get().getName()));
+                schemaBuilder.subscription(subscription);
+            }
+        } else {
+            SchemaDefinition schemaDefinition = typeRegistry.schemaDefinition().get();
+            List<OperationTypeDefinition> operationTypes = schemaDefinition.getOperationTypeDefinitions();
+
+            // pre-flight checked via checker
+            @SuppressWarnings("OptionalGetWithoutIsPresent")
+            OperationTypeDefinition queryOp = operationTypes.stream().filter(op -> "query".equals(op.getName())).findFirst().get();
+            Optional<OperationTypeDefinition> mutationOp = operationTypes.stream().filter(op -> "mutation".equals(op.getName())).findFirst();
+            Optional<OperationTypeDefinition> subscriptionOp = operationTypes.stream().filter(op -> "subscription".equals(op.getName())).findFirst();
+
+            query = buildOperation(buildCtx, queryOp);
+            schemaBuilder.query(query);
+
+            if (mutationOp.isPresent()) {
+                mutation = buildOperation(buildCtx, mutationOp.get());
+                schemaBuilder.mutation(mutation);
+            }
+            if (subscriptionOp.isPresent()) {
+                subscription = buildOperation(buildCtx, subscriptionOp.get());
+                schemaBuilder.subscription(subscription);
+            }
         }
-        if (subscriptionOp.isPresent()) {
-            subscription = buildOperation(buildCtx, subscriptionOp.get());
-            schemaBuilder.subscription(subscription);
-        }
+
         return schemaBuilder.build();
     }
 
@@ -199,6 +221,7 @@ public class SchemaGenerator {
      *
      * @param buildCtx the context we need to work out what we are doing
      * @param rawType  the type to be built
+     *
      * @return an output type
      */
     @SuppressWarnings("unchecked")
@@ -532,8 +555,8 @@ public class SchemaGenerator {
     private String buildDescription(Node node) {
         List<Comment> comments = node.getComments();
         List<String> lines = new ArrayList<>();
-        for (int i = 0; i < comments.size(); i++) {
-            String commentLine = comments.get(i).getContent();
+        for (Comment comment : comments) {
+            String commentLine = comment.getContent();
             if (commentLine.trim().isEmpty()) {
                 lines.clear();
             } else {
