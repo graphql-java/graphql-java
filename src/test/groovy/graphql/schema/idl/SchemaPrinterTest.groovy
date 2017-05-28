@@ -5,6 +5,8 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.*
 import spock.lang.Specification
 
+import java.util.function.UnaryOperator
+
 class SchemaPrinterTest extends Specification {
 
     def nonNull(GraphQLType type) {
@@ -16,8 +18,8 @@ class SchemaPrinterTest extends Specification {
     }
 
     GraphQLSchema starWarsSchema() {
-        def wiring =  RuntimeWiring.newRuntimeWiring()
-                .type("Character", { type -> type.typeResolver(resolver)})
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Character", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .scalar(ASTEROID)
                 .build()
         GraphQLSchema schema = load("starWarsSchemaExtended.graphqls", wiring)
@@ -25,7 +27,7 @@ class SchemaPrinterTest extends Specification {
     }
 
 
-    GraphQLScalarType ASTEROID = new GraphQLScalarType("Asteroid","desc", new Coercing() {
+    GraphQLScalarType ASTEROID = new GraphQLScalarType("Asteroid", "desc", new Coercing() {
         @Override
         Object serialize(Object input) {
             throw new UnsupportedOperationException("Not implemented")
@@ -55,6 +57,12 @@ class SchemaPrinterTest extends Specification {
 
         def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
         def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
+        schema
+    }
+
+    GraphQLSchema generate(String spec) {
+        def typeRegistry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, RuntimeWiring.newRuntimeWiring().build())
         schema
     }
 
@@ -125,4 +133,87 @@ class SchemaPrinterTest extends Specification {
         result.contains("scalar")
         result.contains("__TypeKind")
     }
+
+    def "default root names are handled"() {
+        def schema = generate("""
+            type Query {
+                field : String
+            }
+
+            type Mutation {
+                field : String
+            }
+
+            type Subscription {
+                field : String
+            }
+            
+        """)
+
+
+        def result = new SchemaPrinter().print(schema)
+
+        expect:
+        result == """type Mutation {
+   field : String
+}
+
+type Query {
+   field : String
+}
+
+type Subscription {
+   field : String
+}
+
+"""
+    }
+
+    def "schema is printed if default root names are not ALL present"() {
+        def schema = generate("""
+            type Query {
+                field : String
+            }
+
+            type MutationX {
+                field : String
+            }
+
+            type Subscription {
+                field : String
+            }
+            
+            schema {
+                query : Query
+                mutation : MutationX
+                subscription : Subscription
+            } 
+            
+        """)
+
+
+        def result = new SchemaPrinter().print(schema)
+
+        expect:
+        result == """schema {
+   query : Query
+   mutation : MutationX
+   subscription : Subscription
+}
+
+type MutationX {
+   field : String
+}
+
+type Query {
+   field : String
+}
+
+type Subscription {
+   field : String
+}
+
+"""
+    }
+
 }

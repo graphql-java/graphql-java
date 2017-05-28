@@ -64,9 +64,17 @@ public class SchemaTypeChecker {
     }
 
     private void checkSchemaInvariants(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+        /*
+            https://github.com/facebook/graphql/pull/90/files#diff-fe406b08746616e2f5f00909488cce66R1000
+
+            GraphQL type system definitions can omit the schema definition when the query
+            and mutation root types are named `Query` and `Mutation`, respectively.
+         */
         // schema
         if (!typeRegistry.schemaDefinition().isPresent()) {
-            errors.add(new SchemaMissingError());
+            if (!typeRegistry.getType("Query").isPresent()) {
+                errors.add(new SchemaMissingError());
+            }
         } else {
             SchemaDefinition schemaDefinition = typeRegistry.schemaDefinition().get();
             List<OperationTypeDefinition> operationTypeDefinitions = schemaDefinition.getOperationTypeDefinitions();
