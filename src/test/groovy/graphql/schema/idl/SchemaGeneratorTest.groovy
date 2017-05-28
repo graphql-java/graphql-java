@@ -17,6 +17,8 @@ import spock.lang.Specification
 
 import java.util.function.UnaryOperator
 
+import static graphql.Scalars.*
+
 class SchemaGeneratorTest extends Specification {
 
     def resolver = new TypeResolver() {
@@ -899,4 +901,65 @@ class SchemaGeneratorTest extends Specification {
         queryType.getFieldDefinition("bar").getDeprecationReason() == "No longer supported" // default according to spec
         !queryType.getFieldDefinition("baz").isDeprecated()
     }
+
+
+    def "schema is optional if there is a type called Query"() {
+
+        def spec = """     
+            type Query {
+              field : String
+            }
+            
+            type mutation {   # case matters this is not an implicit mutation
+              field : Int
+            }
+
+            type subscription { # case matters this is not an implicit subscription
+              field : Boolean
+            }
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring().build())
+
+        expect:
+
+        schema != null
+        schema.getQueryType() != null
+        schema.getMutationType() == null
+        schema.getSubscriptionType() == null
+        schema.getQueryType().getFieldDefinition("field").getType() == GraphQLString
+
+    }
+
+    def "schema is optional if there is a type called Query while Mutation and Subscription will be found"() {
+
+        def spec = """     
+            type Query {
+              field : String
+            }
+
+            type Mutation {
+              field : Int
+            }
+
+            type Subscription {
+              field : Boolean
+            }
+        """
+
+        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring().build())
+
+        expect:
+
+        schema != null
+        schema != null
+        schema.getQueryType() != null
+        schema.getMutationType() != null
+        schema.getSubscriptionType() != null
+        schema.getQueryType().getFieldDefinition("field").getType() == GraphQLString
+        schema.getMutationType().getFieldDefinition("field").getType() == GraphQLInt
+        schema.getSubscriptionType().getFieldDefinition("field").getType() == GraphQLBoolean
+
+    }
+
 }

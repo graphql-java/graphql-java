@@ -154,6 +154,9 @@ public class SchemaUtil {
         if (schema.isSupportingMutations()) {
             collectTypes(schema.getMutationType(), typesByName);
         }
+        if (schema.isSupportingSubscriptions()) {
+            collectTypes(schema.getSubscriptionType(), typesByName);
+        }
         if (additionalTypes != null) {
             for (GraphQLType type : additionalTypes) {
                 collectTypes(type, typesByName);

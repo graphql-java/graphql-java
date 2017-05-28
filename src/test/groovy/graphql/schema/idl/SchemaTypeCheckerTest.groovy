@@ -181,7 +181,7 @@ class SchemaTypeCheckerTest extends Specification {
                 id : ID!
             }
             
-            # no schema defined and hence we can proceed
+            # no schema defined and hence we cant proceed
         """
 
         def result = check(spec)
@@ -204,6 +204,43 @@ class SchemaTypeCheckerTest extends Specification {
         expect:
 
         result.get(0).getMessage().contains("The operation type 'MissingType' is not present when resolving type 'query'")
+    }
+
+    def "test missing schema is ok with Query type"() {
+
+        def spec = """ 
+            type Query {
+                id : ID!
+            }
+            
+            # no schema defined but its named ok
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.isEmpty()
+    }
+
+    def "test missing schema is not ok with standard named Mutation and Subscription types"() {
+
+        def spec = """ 
+            type Mutation {
+                id : ID!
+            }
+            type Subscription {
+                id : ID!
+            }
+            
+            # no schema defined but its named ok
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.get(0) instanceof SchemaMissingError
     }
 
     def "test operation type is not an object"() {
