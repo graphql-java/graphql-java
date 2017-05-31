@@ -11,6 +11,8 @@ public interface ExecutionResult {
 
     List<GraphQLError> getErrors();
 
-    Map<Object,Object> getExtensions();
+    Map<Object, Object> getExtensions();
+
+    ExecutionResult toMap();
 
 }
