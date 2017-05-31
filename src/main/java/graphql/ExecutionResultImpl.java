@@ -61,4 +61,47 @@ public class ExecutionResultImpl implements ExecutionResult {
     public Map<Object, Object> getExtensions() {
         return extensions == null ? null : new HashMap<>(extensions);
     }
+
+    @Override
+    public ExecutionResult toMap() {
+        return (errors == null || errors.isEmpty())? new ExecutionResultWithoutErrors(data, extensions) : this;
+    }
+
+
+    private static class ExecutionResultWithoutErrors implements ExecutionResult {
+
+        private Object data;
+        private Map<Object,Object> extensions = null;
+        private final transient List<GraphQLError> errors = new ArrayList<>();
+
+        ExecutionResultWithoutErrors(Object data, Map<Object, Object> extensions) {
+
+            this.data = data;
+
+            if (extensions != null && !extensions.isEmpty()) {
+                this.extensions = new HashMap<>(extensions);
+            }
+        }
+
+        @Override
+        public <T> T getData() {
+            //noinspection unchecked
+            return (T) data;
+        }
+
+        @Override
+        public List<GraphQLError> getErrors() {
+            return errors;
+        }
+
+        @Override
+        public Map<Object, Object> getExtensions() {
+            return extensions == null ? null : new HashMap<>(extensions);
+        }
+
+        @Override
+        public ExecutionResult toMap() {
+            return this;
+        }
+    }
 }
