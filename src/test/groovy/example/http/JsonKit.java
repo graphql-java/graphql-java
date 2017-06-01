@@ -15,6 +15,9 @@ import java.util.Map;
  */
 public class JsonKit {
     static final Gson GSON = new GsonBuilder()
+            //
+            // This is important because the graphql spec says that null values should be present
+            //
             .serializeNulls()
             .create();
 
