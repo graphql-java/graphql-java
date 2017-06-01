@@ -59,6 +59,8 @@ public class HttpMain extends AbstractHandler {
         // this builds out the parameters we need like the graphql query
         QueryParameters parameters = QueryParameters.from(request);
         if (parameters.getQuery() == null) {
+            //
+            // how to handle nonsensical requests is up to your application
             response.setStatus(400);
             return;
         }

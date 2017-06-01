@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Graphql clients can send GET or POST HTTP requests.  The spec does not make an explicit
@@ -42,43 +41,20 @@ class QueryParameters {
     static QueryParameters from(HttpServletRequest request) {
         QueryParameters parameters = new QueryParameters();
         if ("POST".equalsIgnoreCase(request.getMethod())) {
-            //
-            // the graphql guidance says  :
-            //
-            // If the "application/graphql" Content-Type header is present, treat
-            // the HTTP POST body contents as the GraphQL query string.
-            if ("application/graphql".equals(request.getContentType())) {
-                parameters.query = readPostBody(request);
-            } else {
-                Map<String, Object> json = readJSON(request);
-
-                //
-                // the graphql guidance says  :
-                //
-                //  - If the "query" query string parameter is present
-                //  - ..., it should be parsed and handled
-                //  - in the same way as the HTTP GET case.
-                //
-                Optional<String> queryStr = getQueryQueryParameter(request);
-                parameters.query = queryStr.orElseGet(() -> (String) json.get("query"));
-                parameters.operationName = (String) json.get("operationName");
-                parameters.variables = getVariablesFromPost(json.get("variables"));
-            }
+            Map<String, Object> json = readJSON(request);
+            parameters.query = (String) json.get("query");
+            parameters.operationName = (String) json.get("operationName");
+            parameters.variables = getVariables(json.get("variables"));
         } else {
             parameters.query = request.getParameter("query");
             parameters.operationName = request.getParameter("operationName");
-            parameters.variables = getVariablesFromPost(request.getParameter("variables"));
+            parameters.variables = getVariables(request.getParameter("variables"));
         }
         return parameters;
     }
 
-    private static Optional<String> getQueryQueryParameter(HttpServletRequest request) {
-        // http servlet spec getParameter() does not distinguish between POST body or GET query strings
-        // so we have to parse for it in this case
-        return HttpKit.getQueryParameter(request,"query");
-    }
 
-    private static Map<String, Object> getVariablesFromPost(Object variables) {
+    private static Map<String, Object> getVariables(Object variables) {
         if (variables instanceof Map) {
             Map<?, ?> inputVars = (Map) variables;
             Map<String, Object> vars = new HashMap<>();
