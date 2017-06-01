@@ -11,17 +11,17 @@ public class ExecutionResultImpl implements ExecutionResult {
 
     private final List<GraphQLError> errors = new ArrayList<>();
     private Object data;
-    private Map<Object,Object> extensions = null;
+    private Map<Object, Object> extensions = null;
 
     public ExecutionResultImpl(List<? extends GraphQLError> errors) {
-        this(null,errors,null);
+        this(null, errors, null);
     }
 
     public ExecutionResultImpl(Object data, List<? extends GraphQLError> errors) {
-        this(data,errors,null);
+        this(data, errors, null);
     }
 
-    public ExecutionResultImpl(Object data, List<? extends GraphQLError> errors, Map<Object,Object> extensions) {
+    public ExecutionResultImpl(Object data, List<? extends GraphQLError> errors, Map<Object, Object> extensions) {
         this.data = data;
 
         if (errors != null && !errors.isEmpty()) {
@@ -63,15 +63,15 @@ public class ExecutionResultImpl implements ExecutionResult {
     }
 
     @Override
-    public ExecutionResult toMap() {
-        return (errors == null || errors.isEmpty())? new ExecutionResultWithoutErrors(data, extensions) : this;
+    public ExecutionResult toSpecification() {
+        return (errors == null || errors.isEmpty()) ? new ExecutionResultWithoutErrors(data, extensions) : this;
     }
 
 
     private static class ExecutionResultWithoutErrors implements ExecutionResult {
 
         private Object data;
-        private Map<Object,Object> extensions = null;
+        private Map<Object, Object> extensions = null;
         private final transient List<GraphQLError> errors = new ArrayList<>();
 
         ExecutionResultWithoutErrors(Object data, Map<Object, Object> extensions) {
@@ -100,7 +100,7 @@ public class ExecutionResultImpl implements ExecutionResult {
         }
 
         @Override
-        public ExecutionResult toMap() {
+        public ExecutionResult toSpecification() {
             return this;
         }
     }

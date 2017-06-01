@@ -13,6 +13,11 @@ public interface ExecutionResult {
 
     Map<Object, Object> getExtensions();
 
-    ExecutionResult toMap();
+    /**
+     * Makes the ExecutionResult ready to be serialized according to the GraphQL specifications
+     * (Call this method just before you make ExecutionResult a JSON object)
+     * @return ExecutionResult that can be serialized according to the GraphQL specifications
+     */
+    ExecutionResult toSpecification();
 
 }
