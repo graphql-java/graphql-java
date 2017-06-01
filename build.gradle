@@ -35,6 +35,9 @@ dependencies {
     testCompile 'org.codehaus.groovy:groovy-all:2.4.10'
     testCompile 'cglib:cglib-nodep:3.1'
     testCompile 'org.objenesis:objenesis:2.1'
+    testCompile 'com.google.code.gson:gson:2.8.0'
+    testCompile 'org.eclipse.jetty:jetty-server:9.4.5.v20170502'
+    testCompile 'org.slf4j:slf4j-simple:1.7.22'
 }
 
 compileJava.source file("build/generated-src"), sourceSets.main.java
