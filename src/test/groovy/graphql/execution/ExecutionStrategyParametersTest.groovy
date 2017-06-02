@@ -6,7 +6,7 @@ import static graphql.Scalars.GraphQLString
 import static graphql.execution.ExecutionStrategyParameters.newParameters
 import static graphql.execution.TypeInfo.newTypeInfo
 
-class ExecutionParametersTest extends Specification {
+class ExecutionStrategyParametersTest extends Specification {
 
     def "ExecutionParameters can be transformed"() {
         given:
