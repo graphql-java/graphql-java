@@ -61,7 +61,7 @@ public interface DataFetchingEnvironment {
     /**
      * This is the source object for the root query.
      *
-     * @param <T>
+     * @param <T>  you decide what type it is
      * @return can be null
      */
     <T> T getRoot();
