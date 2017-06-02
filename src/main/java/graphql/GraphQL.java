@@ -167,8 +167,8 @@ public class GraphQL {
     }
 
     /**
-     * @param requestString
-     * @return
+     * @param requestString  the query/mutation/subscription
+     * @return result including errors
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
