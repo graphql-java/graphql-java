@@ -3,7 +3,7 @@ package graphql.execution
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
-import static graphql.execution.ExecutionParameters.newParameters
+import static graphql.execution.ExecutionStrategyParameters.newParameters
 import static graphql.execution.TypeInfo.newTypeInfo
 
 class ExecutionParametersTest extends Specification {
