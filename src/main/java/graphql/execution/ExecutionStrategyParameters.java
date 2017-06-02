@@ -6,6 +6,7 @@ import graphql.language.Field;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 
@@ -48,8 +49,18 @@ public class ExecutionStrategyParameters {
         return nonNullableFieldValidator;
     }
 
+    public ExecutionParameters transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newParameters(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static Builder newParameters() {
         return new Builder();
+    }
+
+    public static Builder newParameters(ExecutionParameters oldParameters) {
+        return new Builder(oldParameters);
     }
 
     @Override
@@ -64,6 +75,17 @@ public class ExecutionStrategyParameters {
         Map<String, List<Field>> fields;
         Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
+
+        private Builder() {
+        }
+
+        private Builder(ExecutionParameters oldParameters) {
+            this.typeInfo = oldParameters.typeInfo;
+            this.source = oldParameters.source;
+            this.fields = oldParameters.fields;
+            this.arguments = oldParameters.arguments;
+            this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
+        }
 
         public Builder typeInfo(TypeInfo type) {
             this.typeInfo = type;
