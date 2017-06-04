@@ -8,6 +8,7 @@ import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInputType
+import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
@@ -24,6 +25,7 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.schema.GraphQLInterfaceType.newInterface
 
 class SchemaPrinterTest extends Specification {
 
@@ -404,6 +406,35 @@ input Input {
 
 """
 
+    }
+
+    def "prints interface description as comment"() {
+        given:
+        GraphQLInterfaceType graphQLInterfaceType = newInterface()
+                .name("Interface")
+                .description("about interface")
+                .field(newFieldDefinition().name("field").description("about field").type(GraphQLString).build())
+                .typeResolver({ it -> null })
+                .build()
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("field").type(graphQLInterfaceType).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """#about interface
+interface Interface {
+   #about field
+   field : String
+}
+
+type Query {
+   field : Interface
+}
+
+"""
     }
 
 

@@ -165,10 +165,13 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type, "");
             out.format("interface %s {\n", type.getName());
-            type.getFieldDefinitions().forEach(fd ->
-                    out.format("   %s%s : %s\n",
-                            fd.getName(), argsString(fd.getArguments()), typeString(fd.getType())));
+            type.getFieldDefinitions().forEach(fd -> {
+                printComments(out, fd, "   ");
+                out.format("   %s%s : %s\n",
+                        fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
+            });
             out.format("}\n\n");
         };
     }
@@ -368,6 +371,8 @@ public class SchemaPrinter {
             return ((GraphQLInputObjectType) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLInputObjectField) {
             return ((GraphQLInputObjectField) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLInterfaceType) {
+            return ((GraphQLInterfaceType) descriptionHolder).getDescription();
         } else {
             return Assert.assertShouldNeverHappen();
         }
