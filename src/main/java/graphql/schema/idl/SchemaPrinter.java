@@ -5,6 +5,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
@@ -118,6 +119,7 @@ public class SchemaPrinter {
         printType(out, typesAsList, GraphQLObjectType.class);
         printType(out, typesAsList, GraphQLEnumType.class);
         printType(out, typesAsList, GraphQLScalarType.class);
+        printType(out, typesAsList, GraphQLInputObjectType.class);
 
         return sw.toString();
     }
@@ -213,10 +215,13 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type, "");
             out.format("input %s {\n", type.getName());
-            type.getFieldDefinitions().forEach(fd ->
-                    out.format("   %s : %s\n",
-                            fd.getName(), typeString(fd.getType())));
+            type.getFieldDefinitions().forEach(fd -> {
+                printComments(out, fd, "   ");
+                out.format("   %s : %s\n",
+                        fd.getName(), typeString(fd.getType()));
+            });
             out.format("}\n\n");
         };
     }
@@ -359,6 +364,10 @@ public class SchemaPrinter {
             return ((GraphQLEnumValueDefinition) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLInputObjectType) {
+            return ((GraphQLInputObjectType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLInputObjectField) {
+            return ((GraphQLInputObjectField) descriptionHolder).getDescription();
         } else {
             return Assert.assertShouldNeverHappen();
         }
