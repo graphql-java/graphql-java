@@ -437,5 +437,41 @@ type Query {
 """
     }
 
+    def "prints scalar description as comment"() {
+        given:
+        GraphQLScalarType myScalar = new GraphQLScalarType("Scalar", "about scalar", new Coercing() {
+            @Override
+            Object serialize(Object input) {
+                return null
+            }
+
+            @Override
+            Object parseValue(Object input) {
+                return null
+            }
+
+            @Override
+            Object parseLiteral(Object input) {
+                return null
+            }
+        });
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("field").type(myScalar).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeScalarTypes(true)).print(schema)
+
+        then:
+        result == """type Query {
+   field : Scalar
+}
+
+#about scalar
+scalar Scalar
+
+"""
+    }
+
 
 }
