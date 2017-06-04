@@ -1,8 +1,10 @@
 package graphql.schema.idl;
 
+import graphql.Assert;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
+import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
@@ -193,9 +195,11 @@ public class SchemaPrinter {
             }
             printComments(out, type);
             out.format("type %s {\n", type.getName());
-            type.getFieldDefinitions().forEach(fd ->
-                    out.format("   %s%s : %s\n",
-                            fd.getName(), argsString(fd.getArguments()), typeString(fd.getType())));
+            type.getFieldDefinitions().forEach(fd -> {
+                printComments(out, fd, "   ");
+                out.format("   %s%s : %s\n",
+                        fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
+            });
             out.format("}\n\n");
         };
     }
@@ -331,11 +335,29 @@ public class SchemaPrinter {
         printer.print(out, type);
     }
 
-    void printComments(PrintWriter out, GraphQLObjectType graphQLType) {
-        if (graphQLType.getDescription() == null) {
+    void printComments(PrintWriter out, GraphQLFieldDefinition fieldDefinition, String prefix) {
+        String description = fieldDefinition.getDescription();
+        if (description == null) {
             return;
         }
-        Stream<String> stream = Arrays.stream(graphQLType.getDescription().split("\n"));
+        Stream<String> stream = Arrays.stream(description.split("\n"));
+        stream.map(s -> prefix + "#" + s + "\n").forEach(out::write);
+    }
+
+    void printComments(PrintWriter out, GraphQLType graphQLType) {
+        String description = getDescription(graphQLType);
+        if (description == null) {
+            return;
+        }
+        Stream<String> stream = Arrays.stream(description.split("\n"));
         stream.map(s -> "#" + s + "\n").forEach(out::write);
+    }
+
+    String getDescription(GraphQLType graphQLType) {
+        if (graphQLType instanceof GraphQLObjectType) {
+            return ((GraphQLObjectType) graphQLType).getDescription();
+        } else {
+            return Assert.assertShouldNeverHappen();
+        }
     }
 }

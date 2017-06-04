@@ -228,19 +228,40 @@ type Subscription {
     def "prints object description as comment"() {
         given:
         GraphQLFieldDefinition fieldDefinition = GraphQLFieldDefinition.newFieldDefinition()
-                .name("field").description("About field").type(Scalars.GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").description("About Query").field(fieldDefinition).build()
+                .name("field").type(Scalars.GraphQLString).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter().print(schema)
 
         then:
         result == """#About Query
+#Second Line
 type Query {
    field : String
 }
 
 """
+    }
+
+    def "prints field description as comment"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = GraphQLFieldDefinition.newFieldDefinition()
+                .name("field").description("About field\nsecond").type(Scalars.GraphQLString).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """type Query {
+   #About field
+   #second
+   field : String
+}
+
+"""
+
     }
 
 }
