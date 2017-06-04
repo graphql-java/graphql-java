@@ -6,6 +6,8 @@ import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
@@ -18,7 +20,10 @@ import spock.lang.Specification
 
 import java.util.function.UnaryOperator
 
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 
 class SchemaPrinterTest extends Specification {
 
@@ -95,8 +100,8 @@ class SchemaPrinterTest extends Specification {
 
     def "argsString"() {
         def argument1 = new GraphQLArgument("arg1", "desc-arg1", list(nonNull(Scalars.GraphQLInt)), 10)
-        def argument2 = new GraphQLArgument("arg2", "desc-arg2", Scalars.GraphQLString, null)
-        def argument3 = new GraphQLArgument("arg3", "desc-arg3", Scalars.GraphQLString, "default")
+        def argument2 = new GraphQLArgument("arg2", "desc-arg2", GraphQLString, null)
+        def argument3 = new GraphQLArgument("arg3", "desc-arg3", GraphQLString, "default")
         def argStr = new SchemaPrinter().argsString([argument1, argument2, argument3])
 
         expect:
@@ -232,7 +237,7 @@ type Subscription {
     def "prints object description as comment"() {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
-                .name("field").type(Scalars.GraphQLString).build()
+                .name("field").type(GraphQLString).build()
         def queryType = GraphQLObjectType.newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
@@ -251,7 +256,7 @@ type Query {
     def "prints field description as comment"() {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
-                .name("field").description("About field\nsecond").type(Scalars.GraphQLString).build()
+                .name("field").description("About field\nsecond").type(GraphQLString).build()
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
@@ -300,7 +305,7 @@ enum Enum {
     def "prints union description as comment"() {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
-                .name("field").type(Scalars.GraphQLString).build()
+                .name("field").type(GraphQLString).build()
         def possibleType = GraphQLObjectType.newObject().name("PossibleType").field(fieldDefinition).build()
         GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
                 .name("Union")
@@ -333,10 +338,10 @@ type Query {
 
     def "prints union"() {
         def possibleType1 = GraphQLObjectType.newObject().name("PossibleType1").field(
-                newFieldDefinition().name("field").type(Scalars.GraphQLString).build()
+                newFieldDefinition().name("field").type(GraphQLString).build()
         ).build()
         def possibleType2 = GraphQLObjectType.newObject().name("PossibleType2").field(
-                newFieldDefinition().name("field").type(Scalars.GraphQLString).build()
+                newFieldDefinition().name("field").type(GraphQLString).build()
         ).build()
         GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
                 .name("Union")
@@ -369,5 +374,37 @@ type Query {
 """
 
     }
+
+    def "prints input description as comment"() {
+        given:
+        GraphQLInputType inputType = GraphQLInputObjectType.newInputObject()
+                .name("Input")
+                .field(newInputObjectField().name("field").description("about field").type(GraphQLString).build())
+                .description("About input")
+                .build()
+        GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
+                .name("field")
+                .argument(newArgument().name("arg").type(inputType).build())
+                .type(GraphQLString).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """type Query {
+   field(arg : Input) : String
+}
+
+#About input
+input Input {
+   #about field
+   field : String
+}
+
+"""
+
+    }
+
 
 }
