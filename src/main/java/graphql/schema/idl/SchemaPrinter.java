@@ -148,8 +148,10 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type, "");
             out.format("enum %s {\n", type.getName());
             for (GraphQLEnumValueDefinition enumValueDefinition : type.getValues()) {
+                printComments(out, enumValueDefinition, "   ");
                 out.format("   %s\n", enumValueDefinition.getName());
             }
             out.format("}\n\n");
@@ -193,7 +195,7 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
-            printComments(out, type);
+            printComments(out, type, "");
             out.format("type %s {\n", type.getName());
             type.getFieldDefinitions().forEach(fd -> {
                 printComments(out, fd, "   ");
@@ -335,8 +337,9 @@ public class SchemaPrinter {
         printer.print(out, type);
     }
 
-    void printComments(PrintWriter out, GraphQLFieldDefinition fieldDefinition, String prefix) {
-        String description = fieldDefinition.getDescription();
+
+    private void printComments(PrintWriter out, Object graphQLType, String prefix) {
+        String description = getDescription(graphQLType);
         if (description == null) {
             return;
         }
@@ -344,18 +347,15 @@ public class SchemaPrinter {
         stream.map(s -> prefix + "#" + s + "\n").forEach(out::write);
     }
 
-    void printComments(PrintWriter out, GraphQLType graphQLType) {
-        String description = getDescription(graphQLType);
-        if (description == null) {
-            return;
-        }
-        Stream<String> stream = Arrays.stream(description.split("\n"));
-        stream.map(s -> "#" + s + "\n").forEach(out::write);
-    }
-
-    String getDescription(GraphQLType graphQLType) {
-        if (graphQLType instanceof GraphQLObjectType) {
-            return ((GraphQLObjectType) graphQLType).getDescription();
+    private String getDescription(Object descriptionHolder) {
+        if (descriptionHolder instanceof GraphQLObjectType) {
+            return ((GraphQLObjectType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLEnumType) {
+            return ((GraphQLEnumType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLFieldDefinition) {
+            return ((GraphQLFieldDefinition) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLEnumValueDefinition) {
+            return ((GraphQLEnumValueDefinition) descriptionHolder).getDescription();
         } else {
             return Assert.assertShouldNeverHappen();
         }
