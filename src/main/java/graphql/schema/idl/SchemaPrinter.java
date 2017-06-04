@@ -140,6 +140,7 @@ public class SchemaPrinter {
                 return;
             }
             if (!ScalarInfo.isStandardScalar(type)) {
+                printComments(out, type, "");
                 out.format("scalar %s\n\n", type.getName());
             }
         };
@@ -373,6 +374,8 @@ public class SchemaPrinter {
             return ((GraphQLInputObjectField) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLInterfaceType) {
             return ((GraphQLInterfaceType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLScalarType) {
+            return ((GraphQLScalarType) descriptionHolder).getDescription();
         } else {
             return Assert.assertShouldNeverHappen();
         }
