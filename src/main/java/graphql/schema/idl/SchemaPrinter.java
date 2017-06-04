@@ -176,6 +176,7 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type, "");
             out.format("union %s = ", type.getName());
             List<GraphQLOutputType> types = type.getTypes();
             for (int i = 0; i < types.size(); i++) {
@@ -185,7 +186,7 @@ public class SchemaPrinter {
                 }
                 out.format("%s", objectType.getName());
             }
-            out.format("}\n\n");
+            out.format("\n\n");
         };
     }
 
@@ -356,6 +357,8 @@ public class SchemaPrinter {
             return ((GraphQLFieldDefinition) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLEnumValueDefinition) {
             return ((GraphQLEnumValueDefinition) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLUnionType) {
+            return ((GraphQLUnionType) descriptionHolder).getDescription();
         } else {
             return Assert.assertShouldNeverHappen();
         }

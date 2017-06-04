@@ -12,10 +12,13 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
+import graphql.schema.GraphQLUnionType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
+
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 
 class SchemaPrinterTest extends Specification {
 
@@ -228,7 +231,7 @@ type Subscription {
 
     def "prints object description as comment"() {
         given:
-        GraphQLFieldDefinition fieldDefinition = GraphQLFieldDefinition.newFieldDefinition()
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(Scalars.GraphQLString).build()
         def queryType = GraphQLObjectType.newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
@@ -247,7 +250,7 @@ type Query {
 
     def "prints field description as comment"() {
         given:
-        GraphQLFieldDefinition fieldDefinition = GraphQLFieldDefinition.newFieldDefinition()
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").description("About field\nsecond").type(Scalars.GraphQLString).build()
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
@@ -272,7 +275,7 @@ type Query {
                 .description("About enum")
                 .value("value", "value", "value desc")
                 .build()
-        GraphQLFieldDefinition fieldDefinition = GraphQLFieldDefinition.newFieldDefinition()
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(graphQLEnumType).build()
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
@@ -288,6 +291,79 @@ type Query {
 enum Enum {
    #value desc
    value
+}
+
+"""
+
+    }
+
+    def "prints union description as comment"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("field").type(Scalars.GraphQLString).build()
+        def possibleType = GraphQLObjectType.newObject().name("PossibleType").field(fieldDefinition).build()
+        GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
+                .name("Union")
+                .description("About union")
+                .possibleType(possibleType)
+                .typeResolver({ it -> null })
+                .build()
+        GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
+                .name("field").type(unionType).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """#About union
+union Union = PossibleType
+
+type PossibleType {
+   field : String
+}
+
+type Query {
+   field : Union
+}
+
+"""
+
+    }
+
+    def "prints union"() {
+        def possibleType1 = GraphQLObjectType.newObject().name("PossibleType1").field(
+                newFieldDefinition().name("field").type(Scalars.GraphQLString).build()
+        ).build()
+        def possibleType2 = GraphQLObjectType.newObject().name("PossibleType2").field(
+                newFieldDefinition().name("field").type(Scalars.GraphQLString).build()
+        ).build()
+        GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
+                .name("Union")
+                .possibleType(possibleType1)
+                .possibleType(possibleType2)
+                .typeResolver({ it -> null })
+                .build()
+        GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
+                .name("field").type(unionType).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """union Union = PossibleType1 | PossibleType2
+
+type PossibleType1 {
+   field : String
+}
+
+type PossibleType2 {
+   field : String
+}
+
+type Query {
+   field : Union
 }
 
 """
