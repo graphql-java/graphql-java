@@ -170,7 +170,7 @@ public class SchemaPrinter {
             out.format("interface %s {\n", type.getName());
             type.getFieldDefinitions().forEach(fd -> {
                 printComments(out, fd, "   ");
-                out.format("   %s%s : %s\n",
+                out.format("   %s%s: %s\n",
                         fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
             });
             out.format("}\n\n");
@@ -206,7 +206,7 @@ public class SchemaPrinter {
             out.format("type %s {\n", type.getName());
             type.getFieldDefinitions().forEach(fd -> {
                 printComments(out, fd, "   ");
-                out.format("   %s%s : %s\n",
+                out.format("   %s%s: %s\n",
                         fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
             });
             out.format("}\n\n");
@@ -223,7 +223,7 @@ public class SchemaPrinter {
             out.format("input %s {\n", type.getName());
             type.getFieldDefinitions().forEach(fd -> {
                 printComments(out, fd, "   ");
-                out.format("   %s : %s\n",
+                out.format("   %s: %s\n",
                         fd.getName(), typeString(fd.getType()));
             });
             out.format("}\n\n");
@@ -254,13 +254,13 @@ public class SchemaPrinter {
             if (needsSchemaPrinted) {
                 out.format("schema {\n");
                 if (queryType != null) {
-                    out.format("   query : %s\n", queryType.getName());
+                    out.format("   query: %s\n", queryType.getName());
                 }
                 if (mutationType != null) {
-                    out.format("   mutation : %s\n", mutationType.getName());
+                    out.format("   mutation: %s\n", mutationType.getName());
                 }
                 if (subscriptionType != null) {
-                    out.format("   subscription : %s\n", subscriptionType.getName());
+                    out.format("   subscription: %s\n", subscriptionType.getName());
                 }
                 out.format("}\n\n");
             }
@@ -293,6 +293,8 @@ public class SchemaPrinter {
     }
 
     String argsString(List<GraphQLArgument> arguments) {
+        boolean hasDescriptions = arguments.stream().filter(arg -> arg.getDescription() != null).count() > 0;
+        String prefix = hasDescriptions ? "   " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
         for (GraphQLArgument argument : arguments) {
@@ -301,7 +303,15 @@ public class SchemaPrinter {
             } else {
                 sb.append(", ");
             }
-            sb.append(argument.getName()).append(" : ").append(typeString(argument.getType()));
+            if (hasDescriptions) {
+                sb.append("\n");
+            }
+            String description = argument.getDescription();
+            if (description != null) {
+                Stream<String> stream = Arrays.stream(description.split("\n"));
+                stream.map(s -> "   #" + s + "\n").forEach(sb::append);
+            }
+            sb.append(prefix + argument.getName()).append(": ").append(typeString(argument.getType()));
             Object defaultValue = argument.getDefaultValue();
             if (defaultValue != null) {
                 sb.append(" = ");
@@ -314,7 +324,10 @@ public class SchemaPrinter {
             count++;
         }
         if (count > 0) {
-            sb.append(")");
+            if (hasDescriptions) {
+                sb.append("\n");
+            }
+            sb.append(prefix + ")");
         }
         return sb.toString();
     }
@@ -376,6 +389,8 @@ public class SchemaPrinter {
             return ((GraphQLInterfaceType) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLScalarType) {
             return ((GraphQLScalarType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLArgument) {
+            return ((GraphQLArgument) descriptionHolder).getDescription();
         } else {
             return Assert.assertShouldNeverHappen();
         }
