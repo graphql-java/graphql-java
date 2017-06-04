@@ -2,7 +2,16 @@ package graphql.schema.idl
 
 import graphql.Scalars
 import graphql.TypeResolutionEnvironment
-import graphql.schema.*
+import graphql.schema.Coercing
+import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNonNull
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLScalarType
+import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLType
+import graphql.schema.TypeResolver
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -210,6 +219,24 @@ type Query {
 }
 
 type Subscription {
+   field : String
+}
+
+"""
+    }
+
+    def "prints object description as comment"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = GraphQLFieldDefinition.newFieldDefinition()
+                .name("field").description("About field").type(Scalars.GraphQLString).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").description("About Query").field(fieldDefinition).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """#About Query
+type Query {
    field : String
 }
 
