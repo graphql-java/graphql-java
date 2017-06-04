@@ -101,14 +101,14 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString"() {
-        def argument1 = new GraphQLArgument("arg1", "desc-arg1", list(nonNull(Scalars.GraphQLInt)), 10)
-        def argument2 = new GraphQLArgument("arg2", "desc-arg2", GraphQLString, null)
-        def argument3 = new GraphQLArgument("arg3", "desc-arg3", GraphQLString, "default")
+        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(Scalars.GraphQLInt)), 10)
+        def argument2 = new GraphQLArgument("arg2", null, GraphQLString, null)
+        def argument3 = new GraphQLArgument("arg3", null, GraphQLString, "default")
         def argStr = new SchemaPrinter().argsString([argument1, argument2, argument3])
 
         expect:
 
-        argStr == "(arg1 : [Int!] = 10, arg2 : String, arg3 : String = \"default\")"
+        argStr == "(arg1: [Int!] = 10, arg2: String, arg3: String = \"default\")"
     }
 
     def "print type direct"() {
@@ -119,10 +119,10 @@ class SchemaPrinterTest extends Specification {
         expect:
         result ==
                 """interface Character {
-   id : ID!
-   name : String!
-   friends : [Character]
-   appearsIn : [Episode]!
+   id: ID!
+   name: String!
+   friends: [Character]
+   appearsIn: [Episode]!
 }
 
 """
@@ -157,15 +157,15 @@ class SchemaPrinterTest extends Specification {
     def "default root names are handled"() {
         def schema = generate("""
             type Query {
-                field : String
+                field: String
             }
 
             type Mutation {
-                field : String
+                field: String
             }
 
             type Subscription {
-                field : String
+                field: String
             }
             
         """)
@@ -175,15 +175,15 @@ class SchemaPrinterTest extends Specification {
 
         expect:
         result == """type Mutation {
-   field : String
+   field: String
 }
 
 type Query {
-   field : String
+   field: String
 }
 
 type Subscription {
-   field : String
+   field: String
 }
 
 """
@@ -192,21 +192,21 @@ type Subscription {
     def "schema is printed if default root names are not ALL present"() {
         def schema = generate("""
             type Query {
-                field : String
+                field: String
             }
 
             type MutationX {
-                field : String
+                field: String
             }
 
             type Subscription {
-                field : String
+                field: String
             }
             
             schema {
-                query : Query
-                mutation : MutationX
-                subscription : Subscription
+                query: Query
+                mutation: MutationX
+                subscription: Subscription
             } 
             
         """)
@@ -216,21 +216,21 @@ type Subscription {
 
         expect:
         result == """schema {
-   query : Query
-   mutation : MutationX
-   subscription : Subscription
+   query: Query
+   mutation: MutationX
+   subscription: Subscription
 }
 
 type MutationX {
-   field : String
+   field: String
 }
 
 type Query {
-   field : String
+   field: String
 }
 
 type Subscription {
-   field : String
+   field: String
 }
 
 """
@@ -249,7 +249,7 @@ type Subscription {
         result == """#About Query
 #Second Line
 type Query {
-   field : String
+   field: String
 }
 
 """
@@ -268,7 +268,7 @@ type Query {
         result == """type Query {
    #About field
    #second
-   field : String
+   field: String
 }
 
 """
@@ -291,7 +291,7 @@ type Query {
 
         then:
         result == """type Query {
-   field : Enum
+   field: Enum
 }
 
 #About enum
@@ -327,11 +327,11 @@ enum Enum {
 union Union = PossibleType
 
 type PossibleType {
-   field : String
+   field: String
 }
 
 type Query {
-   field : Union
+   field: Union
 }
 
 """
@@ -362,15 +362,15 @@ type Query {
         result == """union Union = PossibleType1 | PossibleType2
 
 type PossibleType1 {
-   field : String
+   field: String
 }
 
 type PossibleType2 {
-   field : String
+   field: String
 }
 
 type Query {
-   field : Union
+   field: Union
 }
 
 """
@@ -395,13 +395,13 @@ type Query {
 
         then:
         result == """type Query {
-   field(arg : Input) : String
+   field(arg: Input): String
 }
 
 #About input
 input Input {
    #about field
-   field : String
+   field: String
 }
 
 """
@@ -427,11 +427,11 @@ input Input {
         result == """#about interface
 interface Interface {
    #about field
-   field : String
+   field: String
 }
 
 type Query {
-   field : Interface
+   field: Interface
 }
 
 """
@@ -464,13 +464,41 @@ type Query {
 
         then:
         result == """type Query {
-   field : Scalar
+   field: Scalar
 }
 
 #about scalar
 scalar Scalar
 
 """
+    }
+
+    def "special formatting for argument descriptions"() {
+        GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
+                .name("field")
+                .argument(newArgument().name("arg1").description("about arg1").type(GraphQLString).build())
+                .argument(newArgument().name("arg2").type(GraphQLString).build())
+                .argument(newArgument().name("arg3").description("about 3\nsecond line").type(GraphQLString).build())
+                .type(GraphQLString).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """type Query {
+   field(
+   #about arg1
+   arg1: String, 
+   arg2: String, 
+   #about 3
+   #second line
+   arg3: String
+   ): String
+}
+
+"""
+
     }
 
 
