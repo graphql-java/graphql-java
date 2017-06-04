@@ -1,5 +1,6 @@
 package example.http;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.StarWarsData;
@@ -22,6 +23,7 @@ import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 
+import static graphql.ExecutionInput.newExecutionInput;
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
 /**
@@ -54,16 +56,21 @@ public class HttpMain extends AbstractHandler {
         baseRequest.setHandled(true);
     }
 
-    private void handleStarWars(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    private void handleStarWars(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {
         //
-        // this builds out the parameters we need like the graphql query
-        QueryParameters parameters = QueryParameters.from(request);
+        // this builds out the parameters we need like the graphql query from the http request
+        QueryParameters parameters = QueryParameters.from(httpRequest);
         if (parameters.getQuery() == null) {
             //
             // how to handle nonsensical requests is up to your application
-            response.setStatus(400);
+            httpResponse.setStatus(400);
             return;
         }
+
+        ExecutionInput.Builder executionInput = newExecutionInput()
+                .requestString(parameters.getQuery())
+                .operationName(parameters.getOperationName())
+                .arguments(parameters.getVariables());
 
         //
         // the context object is something that means something to down stream code.  It is instructions
@@ -79,6 +86,7 @@ public class HttpMain extends AbstractHandler {
         Map<String, Object> context = new HashMap<>();
         context.put("YouAppSecurityClearanceLevel", "CodeRed");
         context.put("YouAppExecutingUser", "Dr Nefarious");
+        executionInput.context(context);
 
         //
         // you need a schema in order to execute queries
@@ -86,14 +94,9 @@ public class HttpMain extends AbstractHandler {
 
         // finally you build a runtime graphql object and execute the query
         GraphQL graphQL = GraphQL.newGraphQL(schema).build();
-        ExecutionResult executionResult = graphQL.execute(
-                parameters.getQuery(),
-                parameters.getOperationName(),
-                context,
-                parameters.getVariables()
-        );
+        ExecutionResult executionResult = graphQL.execute(executionInput.build());
 
-        returnAsJson(response, executionResult);
+        returnAsJson(httpResponse, executionResult);
     }
 
 
