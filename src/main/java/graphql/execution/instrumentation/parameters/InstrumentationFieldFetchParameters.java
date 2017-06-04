@@ -8,10 +8,10 @@ import graphql.schema.GraphQLFieldDefinition;
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
-public class FieldFetchParameters extends FieldParameters {
+public class InstrumentationFieldFetchParameters extends InstrumentationFieldParameters {
     private final DataFetchingEnvironment environment;
 
-    public FieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment) {
+    public InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment) {
         super(getExecutionContext, fieldDef, environment);
         this.environment = environment;
     }

@@ -1,35 +1,26 @@
 package graphql.schema.idl
 
-import graphql.TypeResolutionEnvironment
-import graphql.schema.*
+import graphql.TestUtil
+import graphql.schema.GraphQLEnumType
+import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLInterfaceType
+import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNonNull
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLType
+import graphql.schema.GraphQLUnionType
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
 
-import static graphql.Scalars.*
+import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLInt
+import static graphql.Scalars.GraphQLString
 
 class SchemaGeneratorTest extends Specification {
-
-    def resolver = new TypeResolver() {
-
-        @Override
-        GraphQLObjectType getType(TypeResolutionEnvironment env) {
-            throw new UnsupportedOperationException("Not implemented")
-        }
-    }
-
-    private UnaryOperator<TypeRuntimeWiring.Builder> buildResolver() {
-        { builder -> builder.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>
-    }
-
-
-    GraphQLSchema generateSchema(String schemaSpec, RuntimeWiring wiring) {
-        def typeRegistry = new SchemaParser().parse(schemaSpec)
-        def result = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
-        result
-    }
 
     GraphQLType unwrap1Layer(GraphQLType type) {
         if (type instanceof GraphQLNonNull) {
@@ -179,7 +170,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = generateSchema(schemaSpec, RuntimeWiring.newRuntimeWiring().build())
+        def schema = TestUtil.schema(schemaSpec)
 
 
         expect:
@@ -280,9 +271,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
-                .type("FooOrBar", buildResolver())
-                .build())
+        def schema = TestUtil.schema(spec)
 
 
         expect:
@@ -319,9 +308,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
-                .type("FooOrBar", buildResolver())
-                .build())
+        def schema = TestUtil.schema(spec)
 
 
         expect:
@@ -358,10 +345,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
-                .type("FooOrBar", buildResolver())
-                .build())
-
+        def schema = TestUtil.schema(spec)
 
         expect:
 
@@ -397,10 +381,7 @@ class SchemaGeneratorTest extends Specification {
 
         """
 
-        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring()
-                .type("FooOrBar", buildResolver())
-                .build())
-
+        def schema = TestUtil.schema(spec)
 
         expect:
 
@@ -433,7 +414,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring().build())
+        def schema = TestUtil.schema(spec)
 
         expect:
 
@@ -466,12 +447,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .type("Foo", buildResolver())
-                .type("Goo", buildResolver())
-                .build()
-
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec)
 
         expect:
 
@@ -531,13 +507,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .type("Interface1", buildResolver())
-                .type("Interface2", buildResolver())
-                .type("Interface3", buildResolver())
-                .build()
-
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec)
 
         expect:
 
@@ -600,11 +570,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .type("Character", buildResolver())
-                .build()
-
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec)
 
         expect:
 
@@ -639,10 +605,7 @@ class SchemaGeneratorTest extends Specification {
                 family: Boolean
             }
         """
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .build()
-
-        generateSchema(spec, wiring)
+        TestUtil.schema(spec)
 
         then:
         def err = thrown(NotAnInputTypeError.class)
@@ -667,10 +630,7 @@ class SchemaGeneratorTest extends Specification {
                 family: Boolean
             }
         """
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .build()
-
-        generateSchema(spec, wiring)
+        TestUtil.schema(spec)
 
         then:
         def err = thrown(NotAnOutputTypeError.class)
@@ -693,9 +653,8 @@ class SchemaGeneratorTest extends Specification {
             }
             """
         when:
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .build()
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec)
+
         then:
         schema.getSubscriptionType().name == "Subscription"
     }
@@ -736,11 +695,7 @@ class SchemaGeneratorTest extends Specification {
         }
         """
         when:
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .type("Union", buildResolver())
-                .type("Interface", buildResolver())
-                .build()
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec)
 
         then:
         schema.getQueryType().description == "description 1\n description 2"
@@ -783,11 +738,7 @@ class SchemaGeneratorTest extends Specification {
         }
         """
         when:
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .type("Union", buildResolver())
-                .type("Interface", buildResolver())
-                .build()
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec)
 
         then:
         schema.getQueryType().description == " description 1\n description 2"
@@ -821,7 +772,7 @@ class SchemaGeneratorTest extends Specification {
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type("Enum", { TypeRuntimeWiring.Builder it -> it.enumValues(enumValuesProvider) } as UnaryOperator)
                 .build()
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec, wiring)
         GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
 
         then:
@@ -846,9 +797,8 @@ class SchemaGeneratorTest extends Specification {
         }
         """
         when:
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .build()
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec)
+
         GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
 
         then:
@@ -875,7 +825,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring().build())
+        def schema = TestUtil.schema(spec)
 
         expect:
 
@@ -903,11 +853,10 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = generateSchema(spec, RuntimeWiring.newRuntimeWiring().build())
+        def schema = TestUtil.schema(spec)
 
         expect:
 
-        schema != null
         schema != null
         schema.getQueryType() != null
         schema.getMutationType() != null
@@ -918,4 +867,49 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
+    def "builds additional types not referenced from schema top level"() {
+        def spec = """      
+            schema {
+                query : Query
+            }
+            
+            type Query {
+              fieldA : ReferencedA
+              fieldB : ReferencedB
+            }
+            
+            type ReferencedA {
+              field : String
+            }
+
+            type ReferencedB {
+              field : String
+            }
+
+            type UnReferencedA {
+              field : String
+            }
+            
+            input UnReferencedB {
+              field : String
+            }
+            
+            interface UnReferencedC {
+                field : String
+            }
+            
+            union UnReferencedD = ReferencedA | ReferencedB  
+        """
+
+        def schema = TestUtil.schema(spec)
+
+        expect:
+
+        schema.getType("ReferencedA") instanceof GraphQLObjectType
+        schema.getType("ReferencedB") instanceof GraphQLObjectType
+        schema.getType("UnReferencedA") instanceof GraphQLObjectType
+        schema.getType("UnReferencedB") instanceof GraphQLInputObjectType
+        schema.getType("UnReferencedC") instanceof GraphQLInterfaceType
+        schema.getType("UnReferencedD") instanceof GraphQLUnionType
+    }
 }

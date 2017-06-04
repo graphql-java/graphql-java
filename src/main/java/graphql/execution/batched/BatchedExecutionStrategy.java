@@ -4,8 +4,8 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.execution.ExecutionContext;
-import graphql.execution.ExecutionParameters;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.TypeResolutionParameters;
 import graphql.language.Field;
@@ -55,7 +55,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private final BatchedDataFetcherFactory batchingFactory = new BatchedDataFetcherFactory();
 
     @Override
-    public ExecutionResult execute(ExecutionContext executionContext, ExecutionParameters parameters) {
+    public ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         GraphQLExecutionNodeDatum data = new GraphQLExecutionNodeDatum(new LinkedHashMap<>(), parameters.source());
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLExecutionNode root = new GraphQLExecutionNode(type, parameters.fields(), singletonList(data));
@@ -296,6 +296,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
                 sources,
                 argumentValues,
+                executionContext.getContext(),
                 executionContext.getRoot(),
                 fields,
                 fieldDef.getType(),

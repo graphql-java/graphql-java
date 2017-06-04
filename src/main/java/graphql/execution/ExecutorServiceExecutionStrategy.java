@@ -16,8 +16,8 @@ import java.util.concurrent.Future;
 
 /**
  * <p>ExecutorServiceExecutionStrategy uses an {@link ExecutorService} to parallelize the resolve.</p>
- * 
- * Due to the nature of {@link #execute(ExecutionContext, ExecutionParameters)}  implementation, {@link ExecutorService}
+ *
+ * Due to the nature of {@link #execute(ExecutionContext, ExecutionStrategyParameters)}  implementation, {@link ExecutorService}
  * MUST have the following 2 characteristics:
  * <ul>
  * <li>1. The underlying {@link java.util.concurrent.ThreadPoolExecutor} MUST have a reasonable {@code maximumPoolSize}
@@ -38,7 +38,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
     }
 
     @Override
-    public ExecutionResult execute(final ExecutionContext executionContext, final ExecutionParameters parameters) {
+    public ExecutionResult execute(final ExecutionContext executionContext, final ExecutionStrategyParameters parameters) {
         if (executorService == null)
             return new SimpleExecutionStrategy().execute(executionContext,parameters);
 

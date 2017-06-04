@@ -7,7 +7,7 @@ import static graphql.schema.GraphQLNonNull.nonNull
 
 class NonNullableFieldValidatorTest extends Specification {
 
-    ExecutionContext context = new ExecutionContext(null, null, null, null, null, null, null, null, null, null)
+    ExecutionContext context = Mock(ExecutionContext)
 
     def "non nullable field throws exception"() {
         TypeInfo typeInfo = TypeInfo.newTypeInfo().type(nonNull(GraphQLString)).build()

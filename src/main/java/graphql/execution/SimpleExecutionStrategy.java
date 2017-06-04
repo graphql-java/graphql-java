@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class SimpleExecutionStrategy extends ExecutionStrategy {
     @Override
-    public ExecutionResult execute(ExecutionContext executionContext, ExecutionParameters parameters) throws NonNullableFieldWasNullException {
+    public ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         Map<String, List<Field>> fields = parameters.fields();
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {

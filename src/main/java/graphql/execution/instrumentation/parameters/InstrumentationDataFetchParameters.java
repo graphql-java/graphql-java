@@ -6,10 +6,10 @@ import graphql.execution.instrumentation.Instrumentation;
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
-public class DataFetchParameters {
+public class InstrumentationDataFetchParameters {
     private final ExecutionContext executionContext;
 
-    public DataFetchParameters(ExecutionContext executionContext) {
+    public InstrumentationDataFetchParameters(ExecutionContext executionContext) {
         this.executionContext = executionContext;
     }
 

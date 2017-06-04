@@ -1,6 +1,5 @@
 package graphql.relay
 
-import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentImpl
 import spock.lang.Specification
 
@@ -11,7 +10,7 @@ class SimpleListConnectionTest extends Specification {
         given:
         def testList = ["a", "b"]
         def listConnection = new SimpleListConnection(testList)
-        def env = new DataFetchingEnvironmentImpl(null, ["after": createCursor(3)], null, null, null, null, null, null, null, null);
+        def env = new DataFetchingEnvironmentImpl(null, ["after": createCursor(3)], null, null, null, null, null, null, null, null, null);
 
         when:
         Object item = listConnection.get(env);
