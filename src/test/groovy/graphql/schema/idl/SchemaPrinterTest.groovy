@@ -4,6 +4,7 @@ import graphql.Scalars
 import graphql.TypeResolutionEnvironment
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
@@ -258,6 +259,35 @@ type Query {
    #About field
    #second
    field : String
+}
+
+"""
+
+    }
+
+    def "prints enum description as comment"() {
+        given:
+        GraphQLEnumType graphQLEnumType = GraphQLEnumType.newEnum()
+                .name("Enum")
+                .description("About enum")
+                .value("value", "value", "value desc")
+                .build()
+        GraphQLFieldDefinition fieldDefinition = GraphQLFieldDefinition.newFieldDefinition()
+                .name("field").type(graphQLEnumType).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """type Query {
+   field : Enum
+}
+
+#About enum
+enum Enum {
+   #value desc
+   value
 }
 
 """
