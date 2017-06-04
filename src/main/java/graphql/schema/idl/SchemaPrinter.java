@@ -18,11 +18,13 @@ import graphql.schema.GraphQLUnionType;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.stream.Stream;
 
 /**
  * This can print an in memory GraphQL schema back to a logical schema definition
@@ -58,7 +60,6 @@ public class SchemaPrinter {
          * This will allow you to include introspection types that are contained in a schema
          *
          * @param flag whether to include them
-         *
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
@@ -69,7 +70,6 @@ public class SchemaPrinter {
          * This will allow you to include scalar types that are contained in a schema
          *
          * @param flag whether to include them
-         *
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
@@ -99,7 +99,6 @@ public class SchemaPrinter {
      * This can print an in memory GraphQL schema back to a logical schema definition
      *
      * @param schema the schema in play
-     *
      * @return the logical schema definition
      */
     public String print(GraphQLSchema schema) {
@@ -192,6 +191,7 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type);
             out.format("type %s {\n", type.getName());
             type.getFieldDefinitions().forEach(fd ->
                     out.format("   %s%s : %s\n",
@@ -329,5 +329,13 @@ public class SchemaPrinter {
     private void printType(PrintWriter out, GraphQLType type) {
         TypePrinter<Object> printer = printer(type.getClass());
         printer.print(out, type);
+    }
+
+    void printComments(PrintWriter out, GraphQLObjectType graphQLType) {
+        if (graphQLType.getDescription() == null) {
+            return;
+        }
+        Stream<String> stream = Arrays.stream(graphQLType.getDescription().split("\n"));
+        stream.map(s -> "#" + s + "\n").forEach(out::write);
     }
 }
