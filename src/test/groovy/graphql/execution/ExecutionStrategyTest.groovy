@@ -1,8 +1,8 @@
 package graphql.execution
 
 import graphql.ExecutionResult
-import graphql.GraphQLException
 import graphql.Scalars
+import graphql.SerializationError
 import graphql.language.Field
 import graphql.schema.Coercing
 import graphql.schema.GraphQLList
@@ -75,18 +75,24 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = Scalars.GraphQLInt
+        def typeInfo = TypeInfo.newTypeInfo().type(fieldType).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         String result = "not a number"
+
         def parameters = newParameters()
-                .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
+                .typeInfo(typeInfo)
                 .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["dummy": []])
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters, [new Field()])
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, [new Field()])
 
         then:
-        thrown(GraphQLException)
+        executionResult.data == null
+        executionContext.errors.size() == 1
+        executionContext.errors[0] instanceof SerializationError
 
     }
 
@@ -116,7 +122,7 @@ class ExecutionStrategyTest extends Specification {
         ExecutionContext executionContext = buildContext()
         def fieldType = NullProducingScalar
         def typeInfo = TypeInfo.newTypeInfo().type(nonNull(fieldType)).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext,typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
 
         when:
         def parameters = newParameters()

@@ -4,6 +4,8 @@ import graphql.language.BooleanValue
 import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseValueException
+import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -59,20 +61,11 @@ class ScalarsBigDecimalTest extends Specification {
     }
 
     @Unroll
-    def "serialize/parseValue throws exception for invalid input #value"() {
-        expect:
-        try {
-            Scalars.GraphQLBigDecimal.getCoercing().serialize(value)
-            assert false: "no exception thrown"
-        } catch (GraphQLException e) {
-            // expected
-        }
-        try {
-            Scalars.GraphQLBigDecimal.getCoercing().parseValue(value)
-            assert false: "no exception thrown"
-        } catch (GraphQLException e) {
-            // expected
-        }
+    def "serialize throws exception for invalid input #value"() {
+        when:
+        Scalars.GraphQLBigDecimal.getCoercing().serialize(value)
+        then:
+        thrown(CoercingSerializeException)
 
         where:
         value           | _
@@ -81,5 +74,18 @@ class ScalarsBigDecimalTest extends Specification {
         new Object()    | _
     }
 
+    @Unroll
+    def "parseValue throws exception for invalid input #value"() {
+        when:
+        Scalars.GraphQLBigDecimal.getCoercing().parseValue(value)
+        then:
+        thrown(CoercingParseValueException)
+
+        where:
+        value           | _
+        ""              | _
+        "not a number " | _
+        new Object()    | _
+    }
 
 }
