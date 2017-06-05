@@ -31,6 +31,7 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
                     source,
                     environment.getArguments(),
                     environment.getContext(),
+                    environment.getRoot(),
                     environment.getFields(),
                     environment.getFieldType(),
                     environment.getParentType(),

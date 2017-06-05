@@ -1,5 +1,7 @@
 package graphql.introspection
 
+import graphql.ExecutionInput
+import graphql.GraphQL
 import graphql.language.AstPrinter
 import graphql.language.Document
 import graphql.language.EnumTypeDefinition
@@ -7,8 +9,18 @@ import graphql.language.InputObjectTypeDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.ObjectTypeDefinition
 import graphql.language.UnionTypeDefinition
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
+import graphql.schema.idl.RuntimeWiring
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.SchemaParser
+import graphql.schema.idl.SchemaPrinter
 import groovy.json.JsonSlurper
 import spock.lang.Specification
+
+import static graphql.Scalars.GraphQLString
+import static graphql.introspection.IntrospectionQuery.INTROSPECTION_QUERY
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 
 class IntrospectionResultToSchemaTest extends Specification {
 
@@ -527,5 +539,84 @@ CharacterInput {
 }
 """
     }
+
+
+    def "test complete round trip"() {
+        given:
+        def queryType = GraphQLObjectType.newObject().name("Query").field(newFieldDefinition().name("hello").type(GraphQLString).build())
+        GraphQLSchema graphQLSchema = GraphQLSchema.newSchema().query(queryType).build()
+
+
+        when:
+        def printedSchema = new SchemaPrinter().print(graphQLSchema)
+        def typeRegistry = new SchemaParser().parse(printedSchema)
+        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build();
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
+
+        def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().requestString(INTROSPECTION_QUERY).build())
+        Document schemaDefinitionDocument = introspectionResultToSchema.createSchemaDefinition(introspectionResult.data as Map)
+        AstPrinter astPrinter = new AstPrinter()
+        def astPrinterResult = astPrinter.printAst(schemaDefinitionDocument)
+
+        then:
+        printedSchema == astPrinterResult
+    }
+
+    def "doesn't create schemaDefinition if not needed"() {
+        def input = """ {
+          "__schema": {
+            "queryType": {
+              "name": "Query"
+            },
+            "mutationType": ${mutationName},
+            "subscriptionType": ${subscriptionName},
+            "types": [{ 
+                "kind": "OBJECT",
+                "name": "Query",
+                "description": null,
+                "fields": [
+                  {
+                    "name": "hello",
+                    "description": null,
+                    "args": [],
+                    "type": {
+                      "kind": "SCALAR",
+                      "name": "String",
+                      "ofType": null
+                    },
+                    "isDeprecated": false,
+                    "deprecationReason": null
+                  }
+                ],
+                "inputFields": null,
+                "interfaces": [],
+                "enumValues": null,
+                "possibleTypes": null
+              }]
+          }
+          }
+      """
+        def slurper = new JsonSlurper()
+        def parsed = slurper.parseText(input)
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
+        AstPrinter astPrinter = new AstPrinter()
+        def result = astPrinter.printAst(document)
+
+        then:
+        result == """type Query {
+  hello: String
+}
+"""
+
+        where:
+        mutationName          | subscriptionName
+        null                  | null
+        '{"name":"Mutation"}' | '{"name":"Subscription"}'
+        '{"name":"Mutation"}' | null
+        null                  | '{"name":"Subscription"}'
+    }
+
 }
 

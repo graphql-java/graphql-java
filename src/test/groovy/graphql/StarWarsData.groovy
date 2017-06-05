@@ -4,6 +4,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
+import graphql.schema.idl.EnumValuesProvider
 
 class StarWarsData {
 
@@ -130,4 +131,14 @@ class StarWarsData {
         }
     }
 
+    static EnumValuesProvider episodeResolver = new EnumValuesProvider() {
+        @Override
+        Object getValue(String name) {
+            switch (name) {
+                case "NEWHOPE": return 4
+                case "EMPIRE": return 5
+                case "JEDI": return 6
+            }
+        }
+    }
 }
