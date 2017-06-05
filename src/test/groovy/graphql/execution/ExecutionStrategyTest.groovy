@@ -5,11 +5,13 @@ import graphql.Scalars
 import graphql.SerializationError
 import graphql.language.Field
 import graphql.schema.Coercing
+import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLScalarType
 import spock.lang.Specification
 
 import static ExecutionStrategyParameters.newParameters
+import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLNonNull.nonNull
 
 @SuppressWarnings("GroovyPointlessBoolean")
@@ -70,7 +72,6 @@ class ExecutionStrategyTest extends Specification {
         executionResult.data == ["test"]
     }
 
-    // this is wrong: we should return null with an error
     def "completing value with serializing throwing exception"() {
         given:
         ExecutionContext executionContext = buildContext()
@@ -78,6 +79,31 @@ class ExecutionStrategyTest extends Specification {
         def typeInfo = TypeInfo.newTypeInfo().type(fieldType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         String result = "not a number"
+
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .fields(["dummy": []])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters, [new Field()])
+
+        then:
+        executionResult.data == null
+        executionContext.errors.size() == 1
+        executionContext.errors[0] instanceof SerializationError
+
+    }
+
+    def "completing enum with serializing throwing exception"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        GraphQLEnumType enumType = newEnum().name("Enum").value("value").build()
+        def typeInfo = TypeInfo.newTypeInfo().type(enumType).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        String result = "not a enum number"
 
         def parameters = newParameters()
                 .typeInfo(typeInfo)

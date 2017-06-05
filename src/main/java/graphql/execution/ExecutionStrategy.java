@@ -145,7 +145,7 @@ public abstract class ExecutionStrategy {
         } else if (fieldType instanceof GraphQLScalarType) {
             return completeValueForScalar((GraphQLScalarType) fieldType, parameters, result, executionContext);
         } else if (fieldType instanceof GraphQLEnumType) {
-            return completeValueForEnum((GraphQLEnumType) fieldType, parameters, result);
+            return completeValueForEnum((GraphQLEnumType) fieldType, parameters, result, executionContext);
         }
 
 
@@ -221,8 +221,14 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
-    protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, ExecutionStrategyParameters parameters, Object result) {
-        Object serialized = enumType.getCoercing().serialize(result);
+    protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, ExecutionStrategyParameters parameters, Object result, ExecutionContext context) {
+        Object serialized;
+        try {
+            serialized = enumType.getCoercing().serialize(result);
+        } catch (CoercingSerializeException e) {
+            context.addError(new SerializationError(e));
+            serialized = null;
+        }
         serialized = parameters.nonNullFieldValidator().validate(serialized);
         return new ExecutionResultImpl(serialized, null);
     }
