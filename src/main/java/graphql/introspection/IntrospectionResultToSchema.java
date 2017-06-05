@@ -40,27 +40,35 @@ public class IntrospectionResultToSchema {
         assertTrue(introspectionResult.get("__schema") != null, "__schema expected");
         Map<String, Object> schema = (Map<String, Object>) introspectionResult.get("__schema");
 
-        SchemaDefinition schemaDefinition = new SchemaDefinition();
 
         Map<String, Object> queryType = (Map<String, Object>) schema.get("queryType");
         assertNotNull(queryType, "queryType expected");
         TypeName query = new TypeName((String) queryType.get("name"));
+        boolean nonDefaultQueryName = !"Query".equals(query.getName());
+
+        SchemaDefinition schemaDefinition = new SchemaDefinition();
         schemaDefinition.getOperationTypeDefinitions().add(new OperationTypeDefinition("query", query));
 
         Map<String, Object> mutationType = (Map<String, Object>) schema.get("mutationType");
+        boolean nonDefaultMutationName = false;
         if (mutationType != null) {
             TypeName mutation = new TypeName((String) mutationType.get("name"));
+            nonDefaultMutationName = !"Mutation".equals(mutation.getName());
             schemaDefinition.getOperationTypeDefinitions().add(new OperationTypeDefinition("mutation", mutation));
         }
 
         Map<String, Object> subscriptionType = (Map<String, Object>) schema.get("subscriptionType");
+        boolean nonDefaultSubscriptionName = false;
         if (subscriptionType != null) {
             TypeName subscription = new TypeName((String) subscriptionType.get("name"));
+            nonDefaultSubscriptionName = !"Subscription".equals(subscription.getName());
             schemaDefinition.getOperationTypeDefinitions().add(new OperationTypeDefinition("subscription", subscription));
         }
 
         Document document = new Document();
-        document.getDefinitions().add(schemaDefinition);
+        if (nonDefaultQueryName || nonDefaultMutationName || nonDefaultSubscriptionName) {
+            document.getDefinitions().add(schemaDefinition);
+        }
 
         List<Map<String, Object>> types = (List<Map<String, Object>>) schema.get("types");
         for (Map<String, Object> type : types) {

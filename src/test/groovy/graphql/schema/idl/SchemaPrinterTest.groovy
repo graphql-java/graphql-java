@@ -119,10 +119,10 @@ class SchemaPrinterTest extends Specification {
         expect:
         result ==
                 """interface Character {
-   id: ID!
-   name: String!
-   friends: [Character]
-   appearsIn: [Episode]!
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
 }
 
 """
@@ -167,7 +167,6 @@ class SchemaPrinterTest extends Specification {
             type Subscription {
                 field: String
             }
-            
         """)
 
 
@@ -175,17 +174,16 @@ class SchemaPrinterTest extends Specification {
 
         expect:
         result == """type Mutation {
-   field: String
+  field: String
 }
 
 type Query {
-   field: String
+  field: String
 }
 
 type Subscription {
-   field: String
+  field: String
 }
-
 """
     }
 
@@ -216,23 +214,22 @@ type Subscription {
 
         expect:
         result == """schema {
-   query: Query
-   mutation: MutationX
-   subscription: Subscription
+  query: Query
+  mutation: MutationX
+  subscription: Subscription
 }
 
 type MutationX {
-   field: String
+  field: String
 }
 
 type Query {
-   field: String
+  field: String
 }
 
 type Subscription {
-   field: String
+  field: String
 }
-
 """
     }
 
@@ -249,9 +246,8 @@ type Subscription {
         result == """#About Query
 #Second Line
 type Query {
-   field: String
+  field: String
 }
-
 """
     }
 
@@ -266,11 +262,10 @@ type Query {
 
         then:
         result == """type Query {
-   #About field
-   #second
-   field: String
+  #About field
+  #second
+  field: String
 }
-
 """
 
     }
@@ -291,15 +286,14 @@ type Query {
 
         then:
         result == """type Query {
-   field: Enum
+  field: Enum
 }
 
 #About enum
 enum Enum {
-   #value desc
-   value
+  #value desc
+  value
 }
-
 """
 
     }
@@ -327,13 +321,12 @@ enum Enum {
 union Union = PossibleType
 
 type PossibleType {
-   field: String
+  field: String
 }
 
 type Query {
-   field: Union
+  field: Union
 }
-
 """
 
     }
@@ -362,17 +355,16 @@ type Query {
         result == """union Union = PossibleType1 | PossibleType2
 
 type PossibleType1 {
-   field: String
+  field: String
 }
 
 type PossibleType2 {
-   field: String
+  field: String
 }
 
 type Query {
-   field: Union
+  field: Union
 }
-
 """
 
     }
@@ -395,15 +387,14 @@ type Query {
 
         then:
         result == """type Query {
-   field(arg: Input): String
+  field(arg: Input): String
 }
 
 #About input
 input Input {
-   #about field
-   field: String
+  #about field
+  field: String
 }
-
 """
 
     }
@@ -426,14 +417,13 @@ input Input {
         then:
         result == """#about interface
 interface Interface {
-   #about field
-   field: String
+  #about field
+  field: String
 }
 
 type Query {
-   field: Interface
+  field: Interface
 }
-
 """
     }
 
@@ -464,12 +454,11 @@ type Query {
 
         then:
         result == """type Query {
-   field: Scalar
+  field: Scalar
 }
 
 #about scalar
 scalar Scalar
-
 """
     }
 
@@ -487,16 +476,15 @@ scalar Scalar
 
         then:
         result == """type Query {
-   field(
-   #about arg1
-   arg1: String, 
-   arg2: String, 
-   #about 3
-   #second line
-   arg3: String
-   ): String
+  field(
+  #about arg1
+  arg1: String, 
+  arg2: String, 
+  #about 3
+  #second line
+  arg3: String
+  ): String
 }
-
 """
 
     }

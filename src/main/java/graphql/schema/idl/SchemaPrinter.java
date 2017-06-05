@@ -121,7 +121,11 @@ public class SchemaPrinter {
         printType(out, typesAsList, GraphQLScalarType.class);
         printType(out, typesAsList, GraphQLInputObjectType.class);
 
-        return sw.toString();
+        String result = sw.toString();
+        if (result.endsWith("\n\n")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
     }
 
     private interface TypePrinter<T> {
@@ -154,8 +158,8 @@ public class SchemaPrinter {
             printComments(out, type, "");
             out.format("enum %s {\n", type.getName());
             for (GraphQLEnumValueDefinition enumValueDefinition : type.getValues()) {
-                printComments(out, enumValueDefinition, "   ");
-                out.format("   %s\n", enumValueDefinition.getName());
+                printComments(out, enumValueDefinition, "  ");
+                out.format("  %s\n", enumValueDefinition.getName());
             }
             out.format("}\n\n");
         };
@@ -169,8 +173,8 @@ public class SchemaPrinter {
             printComments(out, type, "");
             out.format("interface %s {\n", type.getName());
             type.getFieldDefinitions().forEach(fd -> {
-                printComments(out, fd, "   ");
-                out.format("   %s%s: %s\n",
+                printComments(out, fd, "  ");
+                out.format("  %s%s: %s\n",
                         fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
             });
             out.format("}\n\n");
@@ -205,8 +209,8 @@ public class SchemaPrinter {
             printComments(out, type, "");
             out.format("type %s {\n", type.getName());
             type.getFieldDefinitions().forEach(fd -> {
-                printComments(out, fd, "   ");
-                out.format("   %s%s: %s\n",
+                printComments(out, fd, "  ");
+                out.format("  %s%s: %s\n",
                         fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
             });
             out.format("}\n\n");
@@ -222,8 +226,8 @@ public class SchemaPrinter {
             printComments(out, type, "");
             out.format("input %s {\n", type.getName());
             type.getFieldDefinitions().forEach(fd -> {
-                printComments(out, fd, "   ");
-                out.format("   %s: %s\n",
+                printComments(out, fd, "  ");
+                out.format("  %s: %s\n",
                         fd.getName(), typeString(fd.getType()));
             });
             out.format("}\n\n");
@@ -254,13 +258,13 @@ public class SchemaPrinter {
             if (needsSchemaPrinted) {
                 out.format("schema {\n");
                 if (queryType != null) {
-                    out.format("   query: %s\n", queryType.getName());
+                    out.format("  query: %s\n", queryType.getName());
                 }
                 if (mutationType != null) {
-                    out.format("   mutation: %s\n", mutationType.getName());
+                    out.format("  mutation: %s\n", mutationType.getName());
                 }
                 if (subscriptionType != null) {
-                    out.format("   subscription: %s\n", subscriptionType.getName());
+                    out.format("  subscription: %s\n", subscriptionType.getName());
                 }
                 out.format("}\n\n");
             }
@@ -294,7 +298,7 @@ public class SchemaPrinter {
 
     String argsString(List<GraphQLArgument> arguments) {
         boolean hasDescriptions = arguments.stream().filter(arg -> arg.getDescription() != null).count() > 0;
-        String prefix = hasDescriptions ? "   " : "";
+        String prefix = hasDescriptions ? "  " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
         for (GraphQLArgument argument : arguments) {
@@ -309,7 +313,7 @@ public class SchemaPrinter {
             String description = argument.getDescription();
             if (description != null) {
                 Stream<String> stream = Arrays.stream(description.split("\n"));
-                stream.map(s -> "   #" + s + "\n").forEach(sb::append);
+                stream.map(s -> "  #" + s + "\n").forEach(sb::append);
             }
             sb.append(prefix + argument.getName()).append(": ").append(typeString(argument.getType()));
             Object defaultValue = argument.getDefaultValue();
