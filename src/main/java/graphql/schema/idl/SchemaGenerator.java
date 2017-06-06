@@ -463,9 +463,11 @@ public class SchemaGenerator {
         RuntimeWiring wiring = buildCtx.getWiring();
         WiringFactory wiringFactory = wiring.getWiringFactory();
 
+        WiringContext wiringContext = new WiringContext(typeRegistry, parentType, fieldDef);
+
         DataFetcher dataFetcher;
-        if (wiringFactory.providesDataFetcher(typeRegistry, parentType, fieldDef)) {
-            dataFetcher = wiringFactory.getDataFetcher(typeRegistry, parentType, fieldDef);
+        if (wiringFactory.providesDataFetcher(wiringContext)) {
+            dataFetcher = wiringFactory.getDataFetcher(wiringContext);
             assertNotNull(dataFetcher, "The WiringFactory indicated it provides a data fetcher but then returned null");
         } else {
             dataFetcher = wiring.getDataFetcherForType(parentType.getName()).get(fieldName);

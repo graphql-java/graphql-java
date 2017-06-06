@@ -1,8 +1,7 @@
 package graphql.schema.idl;
 
-import graphql.language.FieldDefinition;
+import graphql.Assert;
 import graphql.language.InterfaceTypeDefinition;
-import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.DataFetcher;
 import graphql.schema.TypeResolver;
@@ -53,51 +52,21 @@ public interface WiringFactory {
     /**
      * This is called to ask if this factory can provide a data fetcher for the definition
      *
-     * @param registry   the registry of all types
-     * @param parentType the type of the parent
-     * @param definition the field definition in play
-     * @return true if the factory can give out a date fetcher
+     * @param context the context where wiring is happening
+     * @return true if the factory can give out a data fetcher
      */
-    default boolean providesDataFetcher(TypeDefinitionRegistry registry, TypeDefinition parentType, FieldDefinition definition) {
-        return providesDataFetcher(registry, definition);
-    }
-
-    /**
-     * This is called to ask if this factory can provide a data fetcher for the definition
-     *
-     * @param registry   the registry of all types
-     * @param definition the field definition in play
-     * @return true if the factory can give out a date fetcher
-     * @deprecated use overloaded version with parentType
-     */
-    @Deprecated
-    default boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+    default boolean providesDataFetcher(WiringContext context) {
         return false;
     }
 
     /**
      * Returns a {@link DataFetcher} given the type definition
      *
-     * @param registry   the registry of all types
-     * @param parentType the type of the parent
-     * @param definition the definition to be resolved
+     * @param context the context where wiring is happening
      * @return a {@link DataFetcher}
      */
-    default DataFetcher getDataFetcher(TypeDefinitionRegistry registry, TypeDefinition parentType, FieldDefinition definition) {
-        return getDataFetcher(registry, definition);
-    }
-
-    /**
-     * Returns a {@link DataFetcher} given the type definition
-     *
-     * @param registry   the registry of all types
-     * @param definition the definition to be resolved
-     * @return a {@link DataFetcher}
-     * @deprecated use overloaded version with parentType
-     */
-    @Deprecated
-    default DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
-        return null;
+    default DataFetcher getDataFetcher(WiringContext context) {
+        return Assert.assertNeverCalled();
     }
 
 }
