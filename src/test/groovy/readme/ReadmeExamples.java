@@ -27,11 +27,7 @@ import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.StaticDataFetcher;
 import graphql.schema.TypeResolver;
-import graphql.schema.idl.RuntimeWiring;
-import graphql.schema.idl.SchemaGenerator;
-import graphql.schema.idl.SchemaParser;
-import graphql.schema.idl.TypeDefinitionRegistry;
-import graphql.schema.idl.WiringFactory;
+import graphql.schema.idl.*;
 
 import java.io.File;
 import java.util.HashMap;
@@ -390,14 +386,14 @@ public class ReadmeExamples {
             }
 
             @Override
-            public boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
-                return getDirective(definition,"dataFetcher") != null;
+            public boolean providesDataFetcher(WiringContext context) {
+                return getDirective(context.getDefinition(), "dataFetcher") != null;
             }
 
             @Override
-            public DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
-                Directive directive = getDirective(definition, "dataFetcher");
-                return createDataFetcher(definition,directive);
+            public DataFetcher getDataFetcher(WiringContext context) {
+                Directive directive = getDirective(context.getDefinition(), "dataFetcher");
+                return createDataFetcher(context.getDefinition(), directive);
             }
         };
         return RuntimeWiring.newRuntimeWiring()

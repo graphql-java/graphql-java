@@ -1,6 +1,6 @@
 package graphql.schema.idl;
 
-import graphql.language.FieldDefinition;
+import graphql.Assert;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.DataFetcher;
@@ -52,19 +52,21 @@ public interface WiringFactory {
     /**
      * This is called to ask if this factory can provide a data fetcher for the definition
      *
-     * @param registry   the registry of all types
-     * @param definition the field definition in play
-     * @return true if the factory can give out a date fetcher
+     * @param context the context where wiring is happening
+     * @return true if the factory can give out a data fetcher
      */
-    boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition);
+    default boolean providesDataFetcher(WiringContext context) {
+        return false;
+    }
 
     /**
      * Returns a {@link DataFetcher} given the type definition
      *
-     * @param registry   the registry of all types
-     * @param definition the definition to be resolved
+     * @param context the context where wiring is happening
      * @return a {@link DataFetcher}
      */
-    DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition);
+    default DataFetcher getDataFetcher(WiringContext context) {
+        return Assert.assertNeverCalled();
+    }
 
 }

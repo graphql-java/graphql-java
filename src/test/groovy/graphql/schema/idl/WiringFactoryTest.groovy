@@ -1,7 +1,6 @@
 package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
-import graphql.language.FieldDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.UnionTypeDefinition
 import graphql.schema.*
@@ -63,12 +62,12 @@ class WiringFactoryTest extends Specification {
         }
 
         @Override
-        boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
-            return name == definition.getName()
+        boolean providesDataFetcher(WiringContext context) {
+            return name == context.definition.getName()
         }
 
         @Override
-        DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+        DataFetcher getDataFetcher(WiringContext context) {
             return new NamedDataFetcher(name)
         }
     }

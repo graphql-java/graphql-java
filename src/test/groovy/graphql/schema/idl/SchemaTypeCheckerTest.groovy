@@ -2,7 +2,6 @@ package graphql.schema.idl
 
 import graphql.GraphQLError
 import graphql.TypeResolutionEnvironment
-import graphql.language.FieldDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.UnionTypeDefinition
 import graphql.schema.DataFetcher
@@ -52,12 +51,12 @@ class SchemaTypeCheckerTest extends Specification {
         }
 
         @Override
-        boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+        boolean providesDataFetcher(WiringContext context) {
             false
         }
 
         @Override
-        DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+        DataFetcher getDataFetcher(WiringContext context) {
             throw new UnsupportedOperationException("Not implemented")
         }
     }

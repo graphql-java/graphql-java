@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.language.FieldDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.DataFetcher;
@@ -64,9 +63,9 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+    public boolean providesDataFetcher(WiringContext context) {
         for (WiringFactory factory : factories) {
-            if (factory.providesDataFetcher(registry, definition)) {
+            if (factory.providesDataFetcher(context)) {
                 return true;
             }
         }
@@ -74,10 +73,10 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+    public DataFetcher getDataFetcher(WiringContext context) {
         for (WiringFactory factory : factories) {
-            if (factory.providesDataFetcher(registry, definition)) {
-                return factory.getDataFetcher(registry, definition);
+            if (factory.providesDataFetcher(context)) {
+                return factory.getDataFetcher(context);
             }
         }
         return null;
