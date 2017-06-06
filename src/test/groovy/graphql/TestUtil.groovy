@@ -16,6 +16,7 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.TypeDefinitionRegistry
 import graphql.schema.idl.TypeRuntimeWiring
+import graphql.schema.idl.WiringContext
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
 
@@ -98,13 +99,13 @@ class TestUtil {
         }
 
         @Override
-        boolean providesDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
+        boolean providesDataFetcher(WiringContext context) {
             return true
         }
 
         @Override
-        DataFetcher getDataFetcher(TypeDefinitionRegistry registry, FieldDefinition definition) {
-            return new PropertyDataFetcher(definition.getName())
+        DataFetcher getDataFetcher(WiringContext context) {
+            return new PropertyDataFetcher(context.definition.getName())
         }
     }
 
