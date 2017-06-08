@@ -23,8 +23,9 @@ public class VariablesTypesMatcher {
         if (expectedType instanceof GraphQLNonNull) {
             if (actualType instanceof GraphQLNonNull) {
                 return checkType(((GraphQLNonNull) actualType).getWrappedType(), ((GraphQLNonNull) expectedType).getWrappedType());
-            }
-            return false;
+            } else {
+                return checkType(actualType, ((GraphQLNonNull) expectedType).getWrappedType());
+            } 
         }
 
         if (actualType instanceof GraphQLNonNull) {
