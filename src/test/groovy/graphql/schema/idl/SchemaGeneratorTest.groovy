@@ -1,6 +1,5 @@
 package graphql.schema.idl
 
-import graphql.TestUtil
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
@@ -19,6 +18,7 @@ import java.util.function.UnaryOperator
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.schema
 
 class SchemaGeneratorTest extends Specification {
 
@@ -170,7 +170,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(schemaSpec)
+        def schema = schema(schemaSpec)
 
 
         expect:
@@ -271,7 +271,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
 
         expect:
@@ -308,7 +308,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
 
         expect:
@@ -345,7 +345,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         expect:
 
@@ -381,7 +381,7 @@ class SchemaGeneratorTest extends Specification {
 
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         expect:
 
@@ -414,7 +414,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         expect:
 
@@ -447,7 +447,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         expect:
 
@@ -507,7 +507,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         expect:
 
@@ -570,7 +570,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         expect:
 
@@ -605,7 +605,7 @@ class SchemaGeneratorTest extends Specification {
                 family: Boolean
             }
         """
-        TestUtil.schema(spec)
+        schema(spec)
 
         then:
         def err = thrown(NotAnInputTypeError.class)
@@ -630,7 +630,7 @@ class SchemaGeneratorTest extends Specification {
                 family: Boolean
             }
         """
-        TestUtil.schema(spec)
+        schema(spec)
 
         then:
         def err = thrown(NotAnOutputTypeError.class)
@@ -653,7 +653,7 @@ class SchemaGeneratorTest extends Specification {
             }
             """
         when:
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         then:
         schema.getSubscriptionType().name == "Subscription"
@@ -695,7 +695,7 @@ class SchemaGeneratorTest extends Specification {
         }
         """
         when:
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         then:
         schema.getQueryType().description == "description 1\n description 2"
@@ -738,7 +738,7 @@ class SchemaGeneratorTest extends Specification {
         }
         """
         when:
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         then:
         schema.getQueryType().description == " description 1\n description 2"
@@ -772,7 +772,7 @@ class SchemaGeneratorTest extends Specification {
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type("Enum", { TypeRuntimeWiring.Builder it -> it.enumValues(enumValuesProvider) } as UnaryOperator)
                 .build()
-        def schema = TestUtil.schema(spec, wiring)
+        def schema = schema(spec, wiring)
         GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
 
         then:
@@ -797,7 +797,7 @@ class SchemaGeneratorTest extends Specification {
         }
         """
         when:
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
 
@@ -829,7 +829,7 @@ class SchemaGeneratorTest extends Specification {
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .build()
 
-        def schema = generateSchema(spec, wiring)
+        def schema = schema(spec, wiring)
         GraphQLEnumType enumType = schema.getType("Enum") as GraphQLEnumType
         GraphQLObjectType queryType = schema.getType("Query") as GraphQLObjectType
 
@@ -860,7 +860,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         expect:
 
@@ -888,7 +888,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         expect:
 
@@ -936,7 +936,7 @@ class SchemaGeneratorTest extends Specification {
             union UnReferencedD = ReferencedA | ReferencedB  
         """
 
-        def schema = TestUtil.schema(spec)
+        def schema = schema(spec)
 
         expect:
 
