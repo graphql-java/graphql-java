@@ -1,7 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.language.InterfaceTypeDefinition;
-import graphql.language.UnionTypeDefinition;
 import graphql.schema.DataFetcher;
 import graphql.schema.TypeResolver;
 
@@ -9,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 
 /**
  * This combines a number of {@link WiringFactory}s together to act as one.  It asks each one
@@ -23,9 +22,9 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+    public boolean providesTypeResolver(InterfaceWiringEnvironment environment) {
         for (WiringFactory factory : factories) {
-            if (factory.providesTypeResolver(registry, definition)) {
+            if (factory.providesTypeResolver(environment)) {
                 return true;
             }
         }
@@ -33,9 +32,19 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+    public TypeResolver getTypeResolver(InterfaceWiringEnvironment environment) {
         for (WiringFactory factory : factories) {
-            if (factory.providesTypeResolver(registry, definition)) {
+            if (factory.providesTypeResolver(environment)) {
+                return factory.getTypeResolver(environment);
+            }
+        }
+        return assertShouldNeverHappen();
+    }
+
+    @Override
+    public boolean providesTypeResolver(UnionWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesTypeResolver(environment)) {
                 return true;
             }
         }
@@ -43,29 +52,19 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+    public TypeResolver getTypeResolver(UnionWiringEnvironment environment) {
         for (WiringFactory factory : factories) {
-            if (factory.providesTypeResolver(registry, definition)) {
-                return factory.getTypeResolver(registry, definition);
+            if (factory.providesTypeResolver(environment)) {
+                return factory.getTypeResolver(environment);
             }
         }
-        return null;
+        return assertShouldNeverHappen();
     }
 
     @Override
-    public TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+    public boolean providesDataFetcher(FieldWiringEnvironment environment) {
         for (WiringFactory factory : factories) {
-            if (factory.providesTypeResolver(registry, definition)) {
-                return factory.getTypeResolver(registry, definition);
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public boolean providesDataFetcher(WiringContext context) {
-        for (WiringFactory factory : factories) {
-            if (factory.providesDataFetcher(context)) {
+            if (factory.providesDataFetcher(environment)) {
                 return true;
             }
         }
@@ -73,12 +72,12 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public DataFetcher getDataFetcher(WiringContext context) {
+    public DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
         for (WiringFactory factory : factories) {
-            if (factory.providesDataFetcher(context)) {
-                return factory.getDataFetcher(context);
+            if (factory.providesDataFetcher(environment)) {
+                return factory.getDataFetcher(environment);
             }
         }
-        return null;
+        return assertShouldNeverHappen();
     }
 }

@@ -24,39 +24,39 @@ class SchemaTypeCheckerTest extends Specification {
     }
 
     class NamedWiringFactory implements WiringFactory {
-        List<String> names
+        String name
 
-        NamedWiringFactory(List<String> names) {
-            this.names = names
+        NamedWiringFactory(String name) {
+            this.name = name
         }
 
         @Override
-        boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
-            return names.contains(definition.getName())
+        boolean providesTypeResolver(InterfaceWiringEnvironment environment) {
+            return name == environment.getInterfaceTypeDefinition().getName()
         }
 
         @Override
-        boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
-            return names.contains(definition.getName())
-        }
-
-        @Override
-        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+        TypeResolver getTypeResolver(InterfaceWiringEnvironment environment) {
             resolver
         }
 
         @Override
-        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+        boolean providesTypeResolver(UnionWiringEnvironment environment) {
+            return name == environment.getUnionTypeDefinition().getName()
+        }
+
+        @Override
+        TypeResolver getTypeResolver(UnionWiringEnvironment environment) {
             resolver
         }
 
         @Override
-        boolean providesDataFetcher(WiringContext context) {
+        boolean providesDataFetcher(FieldWiringEnvironment environment) {
             false
         }
 
         @Override
-        DataFetcher getDataFetcher(WiringContext context) {
+        DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
             throw new UnsupportedOperationException("Not implemented")
         }
     }
@@ -66,7 +66,7 @@ class SchemaTypeCheckerTest extends Specification {
         def types = parse(spec)
 
 
-        NamedWiringFactory wiringFactory = new NamedWiringFactory(["InterfaceType"])
+        NamedWiringFactory wiringFactory = new NamedWiringFactory("InterfaceType")
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(wiringFactory)

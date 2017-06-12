@@ -1,9 +1,14 @@
 package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
-import graphql.language.InterfaceTypeDefinition
-import graphql.language.UnionTypeDefinition
-import graphql.schema.*
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLInterfaceType
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLUnionType
+import graphql.schema.PropertyDataFetcher
+import graphql.schema.TypeResolver
 import spock.lang.Specification
 
 class WiringFactoryTest extends Specification {
@@ -42,32 +47,32 @@ class WiringFactoryTest extends Specification {
         }
 
         @Override
-        boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
-            return name == definition.getName()
+        boolean providesTypeResolver(InterfaceWiringEnvironment environment) {
+            return name == environment.getInterfaceTypeDefinition().getName()
         }
 
         @Override
-        boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
-            return name == definition.getName()
-        }
-
-        @Override
-        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition definition) {
+        TypeResolver getTypeResolver(InterfaceWiringEnvironment environment) {
             return new NamedTypeResolver(name)
         }
 
         @Override
-        TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition definition) {
+        boolean providesTypeResolver(UnionWiringEnvironment environment) {
+            return name == environment.getUnionTypeDefinition().getName()
+        }
+
+        @Override
+        TypeResolver getTypeResolver(UnionWiringEnvironment environment) {
             return new NamedTypeResolver(name)
         }
 
         @Override
-        boolean providesDataFetcher(WiringContext context) {
-            return name == context.definition.getName()
+        boolean providesDataFetcher(FieldWiringEnvironment environment) {
+            return name == environment.getFieldDefinition().getName()
         }
 
         @Override
-        DataFetcher getDataFetcher(WiringContext context) {
+        DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
             return new NamedDataFetcher(name)
         }
     }
@@ -145,7 +150,48 @@ class WiringFactoryTest extends Specification {
 
         def friendsDataFetcher = humanType.getFieldDefinition("friends").getDataFetcher() as NamedDataFetcher
         friendsDataFetcher.name == "friends"
-
     }
 
+    def "ensure field wiring environment makes sense"() {
+        def spec = """             
+
+            schema {
+              query: Human
+            }
+
+            type Human {
+                id: ID!
+                name: String!
+                homePlanet: String
+            }
+        """
+
+        def wiringFactory = new WiringFactory() {
+
+            @Override
+            boolean providesDataFetcher(FieldWiringEnvironment environment) {
+                assert ["id", "name", "homePlanet"].contains(environment.fieldDefinition.name)
+                assert environment.parentType.name == "Human"
+                assert environment.registry.getType("Human").isPresent()
+                return true
+            }
+
+            @Override
+            DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
+                assert ["id", "name", "homePlanet"].contains(environment.fieldDefinition.name)
+                assert environment.parentType.name == "Human"
+                assert environment.registry.getType("Human").isPresent()
+                new PropertyDataFetcher(environment.fieldDefinition.name)
+            }
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .build()
+
+        generateSchema(spec, wiring)
+
+        expect:
+
+        true // assertions in callback
+    }
 }

@@ -1,72 +1,82 @@
 package graphql.schema.idl;
 
-import graphql.Assert;
-import graphql.language.InterfaceTypeDefinition;
-import graphql.language.UnionTypeDefinition;
+import graphql.PublicSpi;
 import graphql.schema.DataFetcher;
 import graphql.schema.TypeResolver;
+
+import static graphql.Assert.assertShouldNeverHappen;
 
 /**
  * A WiringFactory allows you to more dynamically wire in {@link TypeResolver}s and {@link DataFetcher}s
  * based on the IDL definitions.  For example you could look at the directives say to build a more dynamic
  * set of type resolvers and data fetchers.
  */
+@PublicSpi
 public interface WiringFactory {
 
     /**
      * This is called to ask if this factory can provide a type resolver for the interface
      *
-     * @param registry      the registry of all types
-     * @param interfaceType the definition to be resolved
-     * @return true if the factory can give out a type resolver
-     */
-    boolean providesTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition interfaceType);
-
-    /**
-     * This is called to ask if this factory can provide a type resolver for the union
+     * @param environment the wiring environment
      *
-     * @param registry  the registry of all types
-     * @param unionType the definition to be resolved
      * @return true if the factory can give out a type resolver
      */
-    boolean providesTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition unionType);
+    default boolean providesTypeResolver(InterfaceWiringEnvironment environment) {
+        return false;
+    }
 
     /**
      * Returns a {@link TypeResolver} given the type interface
      *
-     * @param registry   the registry of all types
-     * @param interfaceType the definition to be resolved
+     * @param environment the wiring environment
+     *
      * @return a {@link TypeResolver}
      */
-    TypeResolver getTypeResolver(TypeDefinitionRegistry registry, InterfaceTypeDefinition interfaceType);
+    default TypeResolver getTypeResolver(InterfaceWiringEnvironment environment) {
+        return assertShouldNeverHappen();
+    }
+
+    /**
+     * This is called to ask if this factory can provide a type resolver for the union
+     *
+     * @param environment the wiring environment
+     *
+     * @return true if the factory can give out a type resolver
+     */
+    default boolean providesTypeResolver(UnionWiringEnvironment environment) {
+        return false;
+    }
 
     /**
      * Returns a {@link TypeResolver} given the type union
      *
-     * @param registry  the registry of all types
-     * @param unionType the definition to be resolved
+     * @param environment the union wiring environment
+     *
      * @return a {@link TypeResolver}
      */
-    TypeResolver getTypeResolver(TypeDefinitionRegistry registry, UnionTypeDefinition unionType);
+    default TypeResolver getTypeResolver(UnionWiringEnvironment environment) {
+        return assertShouldNeverHappen();
+    }
 
     /**
      * This is called to ask if this factory can provide a data fetcher for the definition
      *
-     * @param context the context where wiring is happening
+     * @param environment the wiring environment
+     *
      * @return true if the factory can give out a data fetcher
      */
-    default boolean providesDataFetcher(WiringContext context) {
+    default boolean providesDataFetcher(FieldWiringEnvironment environment) {
         return false;
     }
 
     /**
      * Returns a {@link DataFetcher} given the type definition
      *
-     * @param context the context where wiring is happening
+     * @param environment the wiring environment
+     *
      * @return a {@link DataFetcher}
      */
-    default DataFetcher getDataFetcher(WiringContext context) {
-        return Assert.assertNeverCalled();
+    default DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
+        return assertShouldNeverHappen();
     }
-
 }

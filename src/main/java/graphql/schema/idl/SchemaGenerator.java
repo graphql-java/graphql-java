@@ -463,11 +463,11 @@ public class SchemaGenerator {
         RuntimeWiring wiring = buildCtx.getWiring();
         WiringFactory wiringFactory = wiring.getWiringFactory();
 
-        WiringContext wiringContext = new WiringContext(typeRegistry, parentType, fieldDef);
+        FieldWiringEnvironment wiringEnvironment = new FieldWiringEnvironment(typeRegistry, parentType, fieldDef);
 
         DataFetcher dataFetcher;
-        if (wiringFactory.providesDataFetcher(wiringContext)) {
-            dataFetcher = wiringFactory.getDataFetcher(wiringContext);
+        if (wiringFactory.providesDataFetcher(wiringEnvironment)) {
+            dataFetcher = wiringFactory.getDataFetcher(wiringEnvironment);
             assertNotNull(dataFetcher, "The WiringFactory indicated it provides a data fetcher but then returned null");
         } else {
             dataFetcher = wiring.getDataFetcherForType(parentType.getName()).get(fieldName);
@@ -550,9 +550,11 @@ public class SchemaGenerator {
         WiringFactory wiringFactory = wiring.getWiringFactory();
 
         TypeResolver typeResolver;
-        if (wiringFactory.providesTypeResolver(typeRegistry, unionType)) {
-            typeResolver = wiringFactory.getTypeResolver(typeRegistry, unionType);
-            assertNotNull(typeResolver, "The WiringFactory indicated it provides a type resolver but then returned null");
+        UnionWiringEnvironment environment = new UnionWiringEnvironment(typeRegistry, unionType);
+
+        if (wiringFactory.providesTypeResolver(environment)) {
+            typeResolver = wiringFactory.getTypeResolver(environment);
+            assertNotNull(typeResolver, "The WiringFactory indicated it union provides a type resolver but then returned null");
 
         } else {
             typeResolver = wiring.getTypeResolvers().get(unionType.getName());
@@ -571,9 +573,12 @@ public class SchemaGenerator {
         WiringFactory wiringFactory = wiring.getWiringFactory();
 
         TypeResolver typeResolver;
-        if (wiringFactory.providesTypeResolver(typeRegistry, interfaceType)) {
-            typeResolver = wiringFactory.getTypeResolver(typeRegistry, interfaceType);
-            assertNotNull(typeResolver, "The WiringFactory indicated it provides a type resolver but then returned null");
+
+        InterfaceWiringEnvironment environment = new InterfaceWiringEnvironment(typeRegistry, interfaceType);
+
+        if (wiringFactory.providesTypeResolver(environment)) {
+            typeResolver = wiringFactory.getTypeResolver(environment);
+            assertNotNull(typeResolver, "The WiringFactory indicated it provides a interface type resolver but then returned null");
 
         } else {
             typeResolver = wiring.getTypeResolvers().get(interfaceType.getName());
@@ -582,7 +587,6 @@ public class SchemaGenerator {
                 typeResolver = new TypeResolverProxy();
             }
         }
-
         return typeResolver;
     }
 
