@@ -13,6 +13,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
     private final Map<String, Object> arguments;
     private final Object context;
+    private final Object root;
     private final List<Field> fields;
     private final GraphQLOutputType fieldType;
     private final GraphQLType parentType;
@@ -21,10 +22,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, DataFetchingFieldSelectionSet selectionSet) {
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, Object root, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, DataFetchingFieldSelectionSet selectionSet) {
         this.source = source;
         this.arguments = arguments;
         this.context = context;
+        this.root = root;
         this.fields = fields;
         this.fieldType = fieldType;
         this.parentType = parentType;
@@ -57,6 +59,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public <T> T getContext() {
         return (T) context;
+    }
+
+    @Override
+    public <T> T getRoot() {
+        return (T) root;
     }
 
     @Override

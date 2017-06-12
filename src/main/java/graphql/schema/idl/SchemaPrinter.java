@@ -1,8 +1,11 @@
 package graphql.schema.idl;
 
+import graphql.Assert;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
@@ -18,11 +21,13 @@ import graphql.schema.GraphQLUnionType;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.stream.Stream;
 
 /**
  * This can print an in memory GraphQL schema back to a logical schema definition
@@ -58,7 +63,6 @@ public class SchemaPrinter {
          * This will allow you to include introspection types that are contained in a schema
          *
          * @param flag whether to include them
-         *
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
@@ -69,7 +73,6 @@ public class SchemaPrinter {
          * This will allow you to include scalar types that are contained in a schema
          *
          * @param flag whether to include them
-         *
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
@@ -99,7 +102,6 @@ public class SchemaPrinter {
      * This can print an in memory GraphQL schema back to a logical schema definition
      *
      * @param schema the schema in play
-     *
      * @return the logical schema definition
      */
     public String print(GraphQLSchema schema) {
@@ -117,8 +119,13 @@ public class SchemaPrinter {
         printType(out, typesAsList, GraphQLObjectType.class);
         printType(out, typesAsList, GraphQLEnumType.class);
         printType(out, typesAsList, GraphQLScalarType.class);
+        printType(out, typesAsList, GraphQLInputObjectType.class);
 
-        return sw.toString();
+        String result = sw.toString();
+        if (result.endsWith("\n\n")) {
+            result = result.substring(0, result.length() - 1);
+        }
+        return result;
     }
 
     private interface TypePrinter<T> {
@@ -137,6 +144,7 @@ public class SchemaPrinter {
                 return;
             }
             if (!ScalarInfo.isStandardScalar(type)) {
+                printComments(out, type, "");
                 out.format("scalar %s\n\n", type.getName());
             }
         };
@@ -147,9 +155,11 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type, "");
             out.format("enum %s {\n", type.getName());
             for (GraphQLEnumValueDefinition enumValueDefinition : type.getValues()) {
-                out.format("   %s\n", enumValueDefinition.getName());
+                printComments(out, enumValueDefinition, "  ");
+                out.format("  %s\n", enumValueDefinition.getName());
             }
             out.format("}\n\n");
         };
@@ -160,10 +170,13 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type, "");
             out.format("interface %s {\n", type.getName());
-            type.getFieldDefinitions().forEach(fd ->
-                    out.format("   %s%s : %s\n",
-                            fd.getName(), argsString(fd.getArguments()), typeString(fd.getType())));
+            type.getFieldDefinitions().forEach(fd -> {
+                printComments(out, fd, "  ");
+                out.format("  %s%s: %s\n",
+                        fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
+            });
             out.format("}\n\n");
         };
     }
@@ -173,6 +186,7 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type, "");
             out.format("union %s = ", type.getName());
             List<GraphQLOutputType> types = type.getTypes();
             for (int i = 0; i < types.size(); i++) {
@@ -182,7 +196,7 @@ public class SchemaPrinter {
                 }
                 out.format("%s", objectType.getName());
             }
-            out.format("}\n\n");
+            out.format("\n\n");
         };
     }
 
@@ -192,10 +206,13 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type, "");
             out.format("type %s {\n", type.getName());
-            type.getFieldDefinitions().forEach(fd ->
-                    out.format("   %s%s : %s\n",
-                            fd.getName(), argsString(fd.getArguments()), typeString(fd.getType())));
+            type.getFieldDefinitions().forEach(fd -> {
+                printComments(out, fd, "  ");
+                out.format("  %s%s: %s\n",
+                        fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
+            });
             out.format("}\n\n");
         };
     }
@@ -206,10 +223,13 @@ public class SchemaPrinter {
             if (isIntrospectionType(type)) {
                 return;
             }
+            printComments(out, type, "");
             out.format("input %s {\n", type.getName());
-            type.getFieldDefinitions().forEach(fd ->
-                    out.format("   %s : %s\n",
-                            fd.getName(), typeString(fd.getType())));
+            type.getFieldDefinitions().forEach(fd -> {
+                printComments(out, fd, "  ");
+                out.format("  %s: %s\n",
+                        fd.getName(), typeString(fd.getType()));
+            });
             out.format("}\n\n");
         };
     }
@@ -238,13 +258,13 @@ public class SchemaPrinter {
             if (needsSchemaPrinted) {
                 out.format("schema {\n");
                 if (queryType != null) {
-                    out.format("   query : %s\n", queryType.getName());
+                    out.format("  query: %s\n", queryType.getName());
                 }
                 if (mutationType != null) {
-                    out.format("   mutation : %s\n", mutationType.getName());
+                    out.format("  mutation: %s\n", mutationType.getName());
                 }
                 if (subscriptionType != null) {
-                    out.format("   subscription : %s\n", subscriptionType.getName());
+                    out.format("  subscription: %s\n", subscriptionType.getName());
                 }
                 out.format("}\n\n");
             }
@@ -277,6 +297,8 @@ public class SchemaPrinter {
     }
 
     String argsString(List<GraphQLArgument> arguments) {
+        boolean hasDescriptions = arguments.stream().filter(arg -> arg.getDescription() != null).count() > 0;
+        String prefix = hasDescriptions ? "  " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
         for (GraphQLArgument argument : arguments) {
@@ -285,7 +307,15 @@ public class SchemaPrinter {
             } else {
                 sb.append(", ");
             }
-            sb.append(argument.getName()).append(" : ").append(typeString(argument.getType()));
+            if (hasDescriptions) {
+                sb.append("\n");
+            }
+            String description = argument.getDescription();
+            if (description != null) {
+                Stream<String> stream = Arrays.stream(description.split("\n"));
+                stream.map(s -> "  #" + s + "\n").forEach(sb::append);
+            }
+            sb.append(prefix + argument.getName()).append(": ").append(typeString(argument.getType()));
             Object defaultValue = argument.getDefaultValue();
             if (defaultValue != null) {
                 sb.append(" = ");
@@ -298,7 +328,10 @@ public class SchemaPrinter {
             count++;
         }
         if (count > 0) {
-            sb.append(")");
+            if (hasDescriptions) {
+                sb.append("\n");
+            }
+            sb.append(prefix + ")");
         }
         return sb.toString();
     }
@@ -329,5 +362,41 @@ public class SchemaPrinter {
     private void printType(PrintWriter out, GraphQLType type) {
         TypePrinter<Object> printer = printer(type.getClass());
         printer.print(out, type);
+    }
+
+
+    private void printComments(PrintWriter out, Object graphQLType, String prefix) {
+        String description = getDescription(graphQLType);
+        if (description == null) {
+            return;
+        }
+        Stream<String> stream = Arrays.stream(description.split("\n"));
+        stream.map(s -> prefix + "#" + s + "\n").forEach(out::write);
+    }
+
+    private String getDescription(Object descriptionHolder) {
+        if (descriptionHolder instanceof GraphQLObjectType) {
+            return ((GraphQLObjectType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLEnumType) {
+            return ((GraphQLEnumType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLFieldDefinition) {
+            return ((GraphQLFieldDefinition) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLEnumValueDefinition) {
+            return ((GraphQLEnumValueDefinition) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLUnionType) {
+            return ((GraphQLUnionType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLInputObjectType) {
+            return ((GraphQLInputObjectType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLInputObjectField) {
+            return ((GraphQLInputObjectField) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLInterfaceType) {
+            return ((GraphQLInterfaceType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLScalarType) {
+            return ((GraphQLScalarType) descriptionHolder).getDescription();
+        } else if (descriptionHolder instanceof GraphQLArgument) {
+            return ((GraphQLArgument) descriptionHolder).getDescription();
+        } else {
+            return Assert.assertShouldNeverHappen();
+        }
     }
 }

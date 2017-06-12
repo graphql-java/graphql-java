@@ -8,10 +8,10 @@ import java.util.Map;
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
-public class ValidationParameters extends ExecutionParameters {
+public class InstrumentationValidationParameters extends InstrumentationExecutionParameters {
     private final Document document;
 
-    public ValidationParameters(String query, String operation, Object context, Map<String, Object> arguments, Document document) {
+    public InstrumentationValidationParameters(String query, String operation, Object context, Map<String, Object> arguments, Document document) {
         super(query, operation, context, arguments);
         this.document = document;
     }

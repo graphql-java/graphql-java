@@ -1,0 +1,87 @@
+#
+# Schemas must have at least a query root type
+#
+schema {
+    query: Query
+}
+
+# This is the type that will be the root of our query, and the
+# entry point into our schema. It gives us the ability to fetch
+# objects by their IDs, as well as to fetch the undisputed hero
+# of the *Star Wars* trilogy, `R2-D2`, directly.
+type Query {
+    # If omitted, returns the hero of the whole saga. If
+    # provided, returns the hero of that particular episode.
+    hero(
+        # You can indicate what episode the hero was in
+        episode: Episode
+    ) : Character
+
+    human(
+        # The id of the human you are interested in
+        id : String
+    ) : Human
+
+    droid(
+        # The non null id of the droid you are interested in
+        id: ID!
+    ): Droid
+}
+
+# One of the films in the Star Wars Trilogy
+enum Episode {
+    # Released in 1977
+    NEWHOPE
+    # Released in 1980.
+    EMPIRE
+    # Released in 1983.
+    JEDI
+}
+
+# A character in the Star Wars Trilogy
+interface Character {
+    # The id of the character.
+    id: ID!
+    # The name of the character.
+    name: String!
+    # The friends of the character, or an empty list if they
+    # have none.
+    friends: [Character]
+    # Which movies they appear in.
+    appearsIn: [Episode]!
+    # All secrets about their past.
+    secretBackstory : String @deprecated(reason : "We have decided that this is not canon")
+}
+
+# A humanoid creature in the Star Wars universe.
+type Human implements Character {
+    # The id of the human.
+    id: ID!
+    # The name of the human.
+    name: String!
+    # The friends of the human, or an empty list if they have none.
+    friends: [Character]
+    # Which movies they appear in.
+    appearsIn: [Episode]!
+    # The home planet of the human, or null if unknown.
+    homePlanet: String
+    # Where are they from and how they came to be who they are.
+    secretBackstory : String @deprecated(reason : "We have decided that this is not canon")
+}
+
+# A mechanical creature in the Star Wars universe.
+type Droid implements Character {
+    # The id of the droid.
+    id: ID!
+    # The name of the droid.
+    name: String!
+    # The friends of the droid, or an empty list if they have none.
+    friends: [Character]
+    # Which movies they appear in.
+    appearsIn: [Episode]!
+    # The primary function of the droid.
+    primaryFunction: String
+    # Construction date and the name of the designer.
+    secretBackstory : String @deprecated(reason : "We have decided that this is not canon")
+}
+

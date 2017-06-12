@@ -13,10 +13,15 @@ import java.util.Map;
  */
 @PublicApi
 public interface DataFetchingEnvironment {
+
     /**
-     * @param <T> you decide what type it is
+     * This is the value of the current object to be queried.
+     * Or to put it differently: it is the value of the parent field.
+     * <p>
+     * For the root query, it is equal to {{@link DataFetchingEnvironment#getRoot}
      *
-     * @return the current object being queried
+     * @param <T> you decide what type it is
+     * @return can be null for the root query, otherwise it is never null
      */
     <T> T getSource();
 
@@ -29,7 +34,6 @@ public interface DataFetchingEnvironment {
      * Returns true of the named argument is present
      *
      * @param name the name of the argument
-     *
      * @return true of the named argument is present
      */
     boolean containsArgument(String name);
@@ -39,20 +43,28 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     *
      * @return the named argument or null if its not [present
      */
     <T> T getArgument(String name);
 
     /**
-     * Returns a context argument that is set up when the {@link graphql.GraphQL#execute(String, Object)} method
-     * is invoked
+     * Returns a context argument that is set up when the {@link graphql.GraphQL#execute} method
+     * is invoked.
+     * <p>
+     * This is a info object which is provided to all DataFetcher, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
-     *
-     * @return a context object
+     * @return can be null
      */
     <T> T getContext();
+
+    /**
+     * This is the source object for the root query.
+     *
+     * @param <T>  you decide what type it is
+     * @return can be null
+     */
+    <T> T getRoot();
 
     /**
      * @return the list of fields currently in query context

@@ -371,5 +371,34 @@ query NullVariableDefaultValueQuery($episode: Episode = null) {
 '''
     }
 
+    def "print arguments descriptions"() {
+        def query = '''
+type Query {
+    field(
+    #description1
+    arg1: String,
+    arg2: String,
+    #description3
+    arg3: String
+    ): String
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''type Query {
+  field(
+  #description1
+  arg1: String
+  arg2: String
+  #description3
+  arg3: String
+  ): String
+}
+'''
+
+    }
+
 
 }
