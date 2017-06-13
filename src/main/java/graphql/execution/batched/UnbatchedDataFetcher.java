@@ -3,10 +3,11 @@ package graphql.execution.batched;
 
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.DataFetchingEnvironmentImpl;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 
 /**
  * Given a normal data fetcher as a delegate,
@@ -27,18 +28,10 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
         List<Object> sources = environment.getSource();
         List<Object> results = new ArrayList<>();
         for (Object source : sources) {
-            DataFetchingEnvironment singleEnv = new DataFetchingEnvironmentImpl(
-                    source,
-                    environment.getArguments(),
-                    environment.getContext(),
-                    environment.getRoot(),
-                    environment.getFields(),
-                    environment.getFieldType(),
-                    environment.getParentType(),
-                    environment.getGraphQLSchema(),
-                    environment.getFragmentsByName(),
-                    environment.getExecutionId(),
-                    environment.getSelectionSet());
+
+            DataFetchingEnvironment singleEnv = newDataFetchingEnvironment(environment)
+                    .source(source)
+                    .build();
             results.add(delegate.get(singleEnv));
         }
         return results;

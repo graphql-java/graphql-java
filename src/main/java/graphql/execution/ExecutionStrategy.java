@@ -15,7 +15,6 @@ import graphql.language.Field;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.DataFetchingEnvironmentImpl;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLEnumType;
@@ -41,6 +40,7 @@ import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 
 @PublicSpi
 public abstract class ExecutionStrategy {
@@ -73,26 +73,22 @@ public abstract class ExecutionStrategy {
 
 
     protected ExecutionResult resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fields) {
-        GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), type, fields.get(0));
+        GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
 
-        DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
-                parameters.source(),
-                argumentValues,
-                executionContext.getContext(),
-                executionContext.getRoot(),
-                fields,
-                fieldType,
-                type,
-                executionContext.getGraphQLSchema(),
-                executionContext.getFragmentsByName(),
-                executionContext.getExecutionId(),
-                fieldCollector);
+        DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
+                .source(parameters.source())
+                .arguments(argumentValues)
+                .fields(fields)
+                .fieldType(fieldType)
+                .parentType(parentType)
+                .selectionSet(fieldCollector)
+                .build();
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 

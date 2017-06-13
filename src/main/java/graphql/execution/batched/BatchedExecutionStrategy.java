@@ -11,7 +11,6 @@ import graphql.execution.TypeResolutionParameters;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.DataFetchingEnvironmentImpl;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLEnumType;
@@ -36,6 +35,7 @@ import java.util.Map;
 import java.util.Queue;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
+import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 
 /**
@@ -293,18 +293,14 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
 
-        DataFetchingEnvironment environment = new DataFetchingEnvironmentImpl(
-                sources,
-                argumentValues,
-                executionContext.getContext(),
-                executionContext.getRoot(),
-                fields,
-                fieldDef.getType(),
-                parentType,
-                executionContext.getGraphQLSchema(),
-                executionContext.getFragmentsByName(),
-                executionContext.getExecutionId(),
-                fieldCollector);
+        DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
+                .source(sources)
+                .arguments(argumentValues)
+                .fields(fields)
+                .fieldType(fieldDef.getType())
+                .parentType(parentType)
+                .selectionSet(fieldCollector)
+                .build();
 
         List<Object> values;
         try {

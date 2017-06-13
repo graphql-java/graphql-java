@@ -10,13 +10,14 @@ class SimpleListConnectionTest extends Specification {
         given:
         def testList = ["a", "b"]
         def listConnection = new SimpleListConnection(testList)
-        def env = new DataFetchingEnvironmentImpl(null, ["after": createCursor(3)], null, null, null, null, null, null, null, null, null);
+
+        def env = DataFetchingEnvironmentImpl.newDataFetchingEnvironment().arguments(["after": createCursor(3)]).build()
 
         when:
-        Object item = listConnection.get(env);
+        Object item = listConnection.get(env)
 
         then:
-        item instanceof graphql.relay.Connection
+        item instanceof Connection
     }
 
 

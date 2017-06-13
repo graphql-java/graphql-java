@@ -55,20 +55,7 @@ class DataFetcherTest extends Specification {
     }
 
     def env(GraphQLOutputType type) {
-        new DataFetchingEnvironmentImpl(
-                dataHolder,
-                Collections.emptyMap(),
-                null,
-                null,
-                Collections.emptyList(),
-                type,
-                null,
-                null,
-                Collections.emptyMap(),
-                null,
-                null
-        )
-
+        DataFetchingEnvironmentImpl.newDataFetchingEnvironment().source(dataHolder).fieldType(type).build()
     }
 
     def "get field value"() {
