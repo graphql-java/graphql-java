@@ -20,6 +20,11 @@ public class SchemaProblem extends GraphQLException {
         this.errors = new ArrayList<>(errors);
     }
 
+    @Override
+    public String getMessage() {
+        return "errors=" + errors;
+    }
+
     public List<GraphQLError> getErrors() {
         return errors;
     }
