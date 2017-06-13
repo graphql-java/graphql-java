@@ -7,19 +7,7 @@ import spock.lang.Specification
 class PropertyDataFetcherTest extends Specification {
 
     def env(obj) {
-        return new DataFetchingEnvironmentImpl(
-                obj,
-                Collections.emptyMap(),
-                Collections.emptyList(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                Collections.emptyMap(),
-                null,
-                null
-        )
+        DataFetchingEnvironmentImpl.newDataFetchingEnvironment().source(obj).build()
     }
 
     def "fetch via public getter with private subclass"() {
