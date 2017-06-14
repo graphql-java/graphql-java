@@ -4,10 +4,12 @@ import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
 
+import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment
+
 class PropertyDataFetcherTest extends Specification {
 
     def env(obj) {
-        DataFetchingEnvironmentImpl.newDataFetchingEnvironment().source(obj).build()
+        newDataFetchingEnvironment().source(obj).build()
     }
 
     def "fetch via public getter with private subclass"() {

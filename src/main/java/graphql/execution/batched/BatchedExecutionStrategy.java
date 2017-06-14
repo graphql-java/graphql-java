@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.Queue;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
-import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
+import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 
 /**

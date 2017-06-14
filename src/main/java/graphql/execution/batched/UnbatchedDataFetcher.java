@@ -7,8 +7,6 @@ import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
-
 /**
  * Given a normal data fetcher as a delegate,
  * uses that fetcher in a batched context by iterating through each source value and calling
@@ -29,9 +27,8 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
         List<Object> results = new ArrayList<>();
         for (Object source : sources) {
 
-            DataFetchingEnvironment singleEnv = newDataFetchingEnvironment(environment)
-                    .source(source)
-                    .build();
+            DataFetchingEnvironment singleEnv = environment
+                    .transform(builder -> builder.source(source));
             results.add(delegate.get(singleEnv));
         }
         return results;
