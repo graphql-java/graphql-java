@@ -1,16 +1,16 @@
 package graphql.schema;
 
 
-import graphql.execution.ExecutionContext;
+import graphql.Internal;
 import graphql.execution.ExecutionId;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("unchecked")
+@Internal
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
     private final Map<String, Object> arguments;
@@ -101,111 +101,5 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public DataFetchingFieldSelectionSet getSelectionSet() {
         return selectionSet;
-    }
-
-    public static Builder newDataFetchingEnvironment() {
-        return new Builder();
-    }
-
-    public static Builder newDataFetchingEnvironment(ExecutionContext executionContext) {
-        return new Builder()
-                .context(executionContext.getContext())
-                .root(executionContext.getRoot())
-                .graphQLSchema(executionContext.getGraphQLSchema())
-                .fragmentsByName(executionContext.getFragmentsByName())
-                .executionId(executionContext.getExecutionId());
-    }
-
-
-    public static Builder newDataFetchingEnvironment(DataFetchingEnvironment environment) {
-        return new Builder()
-                .source(environment.getSource())
-                .arguments(environment.getArguments())
-                .context(environment.getContext())
-                .root(environment.getRoot())
-                .fields(environment.getFields())
-                .fieldType(environment.getFieldType())
-                .parentType(environment.getParentType())
-                .graphQLSchema(environment.getGraphQLSchema())
-                .fragmentsByName(environment.getFragmentsByName())
-                .executionId(environment.getExecutionId())
-                .selectionSet(environment.getSelectionSet());
-    }
-
-    public static class Builder {
-
-        private Object source;
-        private Map<String, Object> arguments = Collections.emptyMap();
-        private Object context;
-        private Object root;
-        private List<Field> fields = Collections.emptyList();
-        private GraphQLOutputType fieldType;
-        private GraphQLType parentType;
-        private GraphQLSchema graphQLSchema;
-        private Map<String, FragmentDefinition> fragmentsByName = Collections.emptyMap();
-        private ExecutionId executionId;
-        private DataFetchingFieldSelectionSet selectionSet;
-
-
-        public Builder source(Object source) {
-            this.source = source;
-            return this;
-        }
-
-        public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = arguments;
-            return this;
-        }
-
-        public Builder context(Object context) {
-            this.context = context;
-            return this;
-        }
-
-        public Builder root(Object root) {
-            this.root = root;
-            return this;
-        }
-
-        public Builder fields(List<Field> fields) {
-            this.fields = fields;
-            return this;
-        }
-
-        public Builder fieldType(GraphQLOutputType fieldType) {
-            this.fieldType = fieldType;
-            return this;
-        }
-
-        public Builder parentType(GraphQLType parentType) {
-            this.parentType = parentType;
-            return this;
-        }
-
-        public Builder graphQLSchema(GraphQLSchema graphQLSchema) {
-            this.graphQLSchema = graphQLSchema;
-            return this;
-        }
-
-        public Builder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
-            this.fragmentsByName = fragmentsByName;
-            return this;
-        }
-
-        public Builder executionId(ExecutionId executionId) {
-            this.executionId = executionId;
-            return this;
-        }
-
-        public Builder selectionSet(DataFetchingFieldSelectionSet selectionSet) {
-            this.selectionSet = selectionSet;
-            return this;
-        }
-
-        public DataFetchingEnvironment build() {
-            return new DataFetchingEnvironmentImpl(source, arguments, context, root,
-                    fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet
-            );
-        }
     }
 }

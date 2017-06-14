@@ -7,6 +7,9 @@ import graphql.language.FragmentDefinition;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+
+import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 
 /**
  * A DataFetchingEnvironment instance of passed to a {@link DataFetcher} as an execution context parameter
@@ -21,6 +24,7 @@ public interface DataFetchingEnvironment {
      * For the root query, it is equal to {{@link DataFetchingEnvironment#getRoot}
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null for the root query, otherwise it is never null
      */
     <T> T getSource();
@@ -34,6 +38,7 @@ public interface DataFetchingEnvironment {
      * Returns true of the named argument is present
      *
      * @param name the name of the argument
+     *
      * @return true of the named argument is present
      */
     boolean containsArgument(String name);
@@ -43,6 +48,7 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
+     *
      * @return the named argument or null if its not [present
      */
     <T> T getArgument(String name);
@@ -54,6 +60,7 @@ public interface DataFetchingEnvironment {
      * This is a info object which is provided to all DataFetcher, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null
      */
     <T> T getContext();
@@ -61,7 +68,8 @@ public interface DataFetchingEnvironment {
     /**
      * This is the source object for the root query.
      *
-     * @param <T>  you decide what type it is
+     * @param <T> you decide what type it is
+     *
      * @return can be null
      */
     <T> T getRoot();
@@ -100,4 +108,18 @@ public interface DataFetchingEnvironment {
      * @return the {@link DataFetchingFieldSelectionSet} for the current operation
      */
     DataFetchingFieldSelectionSet getSelectionSet();
+
+
+    /**
+     * This allows you to transform this DataFetchingEnvironment object into another one.
+     *
+     * @param action the action to which a {@link DataFetchingEnvironmentBuilder} is passed
+     *
+     * @return a new transformed DataFetchingEnvironment
+     */
+    default DataFetchingEnvironment transform(Consumer<DataFetchingEnvironmentBuilder> action) {
+        DataFetchingEnvironmentBuilder builder = newDataFetchingEnvironment(this);
+        action.accept(builder);
+        return builder.build();
+    }
 }
