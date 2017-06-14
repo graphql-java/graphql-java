@@ -1,0 +1,99 @@
+package graphql.execution
+
+import graphql.ExceptionWhileDataFetching
+import graphql.ExecutionInput
+import graphql.GraphQL
+import graphql.GraphQLError
+import graphql.TestUtil
+import graphql.schema.DataFetcher
+import spock.lang.Specification
+import spock.lang.Unroll
+
+class ExecutionPathTest extends Specification {
+
+    @Unroll
+    "unit test toList works as expected : #actual"() {
+
+        expect:
+        actual.toList() == expected
+
+        where:
+        actual                                                        || expected
+        ExecutionPath.rootPath()                                      || []
+        ExecutionPath.rootPath().segment("A")                         || ["A"]
+        ExecutionPath.rootPath().segment("A").segment(1).segment("B") || ["A", 1, "B"]
+        ExecutionPath.rootPath().segment("A").segment("B").segment(1) || ["A", "B", 1]
+    }
+
+    @Unroll
+    "unit test toString works as expected : #actual"() {
+        expect:
+        actual.toString() == expected
+
+        where:
+        actual                                                        || expected
+        ExecutionPath.rootPath()                                      || ""
+        ExecutionPath.rootPath().segment("A")                         || "/A"
+        ExecutionPath.rootPath().segment("A").segment(1).segment("B") || "/A[1]/B"
+        ExecutionPath.rootPath().segment("A").segment("B").segment(1) || "/A/B[1]"
+    }
+
+
+    def "full integration test of path support"() {
+        when:
+
+        def spec = """
+        type Query {
+            f1 : String
+            f2 : [Test] 
+        }
+        
+        type Test {
+            sub1 : String
+            sub2 : String
+        }
+            
+        """
+
+
+        def f1Fetcher = { env -> throw new RuntimeException("error") } as DataFetcher
+        def f2Fetcher = { env -> [false, true, false] } as DataFetcher
+        def sub1Fetcher = { env -> "staticValue" } as DataFetcher
+        def sub2Fetcher = { env ->
+            boolean willThrow = env.getSource()
+            if (willThrow) {
+                throw new RuntimeException("error")
+            }
+            return "no error"
+        } as DataFetcher
+        def schema = TestUtil.schema(spec,
+                ["Query":
+                         [
+                                 "f1": f1Fetcher,
+                                 "f2": f2Fetcher
+                         ],
+                 "Test" :
+                         [
+                                 "sub1": sub1Fetcher,
+                                 "sub2": sub2Fetcher
+                         ]
+                ])
+
+
+        GraphQL graphQL = GraphQL.newGraphQL(schema).build()
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .requestString("{f1 f2{sub1 sub2}}")
+                .build()
+
+        List<GraphQLError> errors = graphQL.execute(executionInput).getErrors()
+
+        then:
+
+        def error = (ExceptionWhileDataFetching) errors.get(0)
+        ["f1"] == error.getPath()
+
+        def error2 = (ExceptionWhileDataFetching) errors.get(1)
+        ["f2", 1, "sub2"] == error2.getPath()
+    }
+}

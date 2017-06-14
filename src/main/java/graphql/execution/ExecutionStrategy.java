@@ -39,6 +39,7 @@ import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
+import static java.lang.String.format;
 
 @PublicSpi
 public abstract class ExecutionStrategy {
@@ -58,6 +59,7 @@ public abstract class ExecutionStrategy {
      * @param executionContext the execution context in play
      * @param fieldDef         the field definition
      * @param argumentValues   the map of arguments
+     * @param path             the logical path to the field in question
      * @param e                the exception that occurred
      */
     @SuppressWarnings("unused")
@@ -65,8 +67,8 @@ public abstract class ExecutionStrategy {
             ExecutionContext executionContext,
             GraphQLFieldDefinition fieldDef,
             Map<String, Object> argumentValues,
-            Exception e) {
-        executionContext.addError(new ExceptionWhileDataFetching(e));
+            ExecutionPath path, Exception e) {
+        executionContext.addError(new ExceptionWhileDataFetching(path, e));
     }
 
 
@@ -104,9 +106,9 @@ public abstract class ExecutionStrategy {
 
             fetchCtx.onEnd(resolvedValue);
         } catch (Exception e) {
-            log.warn("Exception while fetching data", e);
-            handleDataFetchingException(executionContext, fieldDef, argumentValues, e);
+            log.warn(format("Exception while fetching data '%s'", parameters.path()), e);
             fetchCtx.onEnd(e);
+            handleDataFetchingException(executionContext, fieldDef, argumentValues, parameters.path(), e);
         }
 
         TypeInfo fieldTypeInfo = newTypeInfo()
@@ -123,6 +125,7 @@ public abstract class ExecutionStrategy {
                 .arguments(argumentValues)
                 .source(resolvedValue)
                 .nonNullFieldValidator(nonNullableFieldValidator)
+                .path(parameters.path())
                 .build();
 
         ExecutionResult result = completeValue(executionContext, newParameters, fields);
@@ -186,6 +189,7 @@ public abstract class ExecutionStrategy {
                 .typeInfo(newTypeInfo)
                 .fields(subFields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
+                .path(parameters.path())
                 .source(result).build();
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
@@ -239,19 +243,24 @@ public abstract class ExecutionStrategy {
         List<Object> completedResults = new ArrayList<>();
         TypeInfo typeInfo = parameters.typeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
+        int idx = 0;
         for (Object item : result) {
 
             TypeInfo wrappedTypeInfo = typeInfo.asType(fieldType.getWrappedType());
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedTypeInfo);
 
+            ExecutionPath indexedPath = parameters.path().segment(idx);
+
             ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
                     .typeInfo(wrappedTypeInfo)
                     .fields(parameters.fields())
                     .nonNullFieldValidator(nonNullableFieldValidator)
+                    .path(indexedPath)
                     .source(item).build();
 
             ExecutionResult completedValue = completeValue(executionContext, newParameters, fields);
             completedResults.add(completedValue != null ? completedValue.getData() : null);
+            idx++;
         }
         return new ExecutionResultImpl(completedResults, null);
     }

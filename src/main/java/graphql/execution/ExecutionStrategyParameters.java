@@ -20,13 +20,15 @@ public class ExecutionStrategyParameters {
     private final Map<String, Object> arguments;
     private final Map<String, List<Field>> fields;
     private final NonNullableFieldValidator nonNullableFieldValidator;
+    private final ExecutionPath path;
 
-    private ExecutionStrategyParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator) {
+    private ExecutionStrategyParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator, ExecutionPath path) {
         this.typeInfo = assertNotNull(typeInfo, "typeInfo is null");
         this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
         this.arguments = arguments;
         this.nonNullableFieldValidator = nonNullableFieldValidator;
+        this.path = path;
     }
 
     public TypeInfo typeInfo() {
@@ -49,11 +51,16 @@ public class ExecutionStrategyParameters {
         return nonNullableFieldValidator;
     }
 
+    public ExecutionPath path() {
+        return path;
+    }
+
     public ExecutionStrategyParameters transform(Consumer<Builder> builderConsumer) {
         Builder builder = newParameters(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
+
 
     public static Builder newParameters() {
         return new Builder();
@@ -65,8 +72,8 @@ public class ExecutionStrategyParameters {
 
     @Override
     public String toString() {
-        return String.format("ExecutionStrategyParameters { typeInfo=%s, source=%s, fields=%s }",
-                typeInfo, source, fields);
+        return String.format("ExecutionStrategyParameters { path=%s, typeInfo=%s, source=%s, fields=%s }",
+                path, typeInfo, source, fields);
     }
 
     public static class Builder {
@@ -75,6 +82,7 @@ public class ExecutionStrategyParameters {
         Map<String, List<Field>> fields;
         Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
+        ExecutionPath path = ExecutionPath.rootPath();
 
         private Builder() {
         }
@@ -111,14 +119,19 @@ public class ExecutionStrategyParameters {
             this.arguments = arguments;
             return this;
         }
-        
+
         public Builder nonNullFieldValidator(NonNullableFieldValidator nonNullableFieldValidator) {
-            this.nonNullableFieldValidator = Assert.assertNotNull(nonNullableFieldValidator,"requires a NonNullValidator");
+            this.nonNullableFieldValidator = Assert.assertNotNull(nonNullableFieldValidator, "requires a NonNullValidator");
+            return this;
+        }
+
+        public Builder path(ExecutionPath path) {
+            this.path = path;
             return this;
         }
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator);
+            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path);
         }
     }
 }
