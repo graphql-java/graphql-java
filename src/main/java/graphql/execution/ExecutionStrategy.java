@@ -5,12 +5,14 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.PublicSpi;
+import graphql.SerializationError;
 import graphql.TypeResolutionEnvironment;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.language.Field;
+import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -137,9 +139,9 @@ public abstract class ExecutionStrategy {
         } else if (fieldType instanceof GraphQLList) {
             return completeValueForList(executionContext, parameters, fields, toIterable(result));
         } else if (fieldType instanceof GraphQLScalarType) {
-            return completeValueForScalar((GraphQLScalarType) fieldType, parameters, result);
+            return completeValueForScalar((GraphQLScalarType) fieldType, parameters, result, executionContext);
         } else if (fieldType instanceof GraphQLEnumType) {
-            return completeValueForEnum((GraphQLEnumType) fieldType, parameters, result);
+            return completeValueForEnum((GraphQLEnumType) fieldType, parameters, result, executionContext);
         }
 
 
@@ -215,14 +217,28 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
-    protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, ExecutionStrategyParameters parameters, Object result) {
-        Object serialized = enumType.getCoercing().serialize(result);
+    protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, ExecutionStrategyParameters parameters, Object result, ExecutionContext context) {
+        Object serialized;
+        try {
+            serialized = enumType.getCoercing().serialize(result);
+        } catch (CoercingSerializeException e) {
+            context.addError(new SerializationError(e));
+            serialized = null;
+        }
         serialized = parameters.nonNullFieldValidator().validate(serialized);
         return new ExecutionResultImpl(serialized, null);
     }
 
-    protected ExecutionResult completeValueForScalar(GraphQLScalarType scalarType, ExecutionStrategyParameters parameters, Object result) {
-        Object serialized = scalarType.getCoercing().serialize(result);
+    protected ExecutionResult completeValueForScalar(GraphQLScalarType scalarType, ExecutionStrategyParameters parameters, Object result, ExecutionContext context) {
+        Object serialized;
+        try {
+            serialized = scalarType.getCoercing().serialize(result);
+        } catch (CoercingSerializeException e) {
+            serialized = null;
+            context.addError(new SerializationError(e));
+        }
+
+        // TODO: fix that: this should not be handled here
         //6.6.1 http://facebook.github.io/graphql/#sec-Field-entries
         if (serialized instanceof Double && ((Double) serialized).isNaN()) {
             serialized = null;

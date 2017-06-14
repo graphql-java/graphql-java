@@ -4,6 +4,8 @@ import graphql.language.BooleanValue
 import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseValueException
+import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -62,20 +64,11 @@ class ScalarsFloatTest extends Specification {
     }
 
     @Unroll
-    def "serialize/parseValue throws exception for invalid input #value"() {
-        expect:
-        try {
-            Scalars.GraphQLFloat.getCoercing().serialize(value)
-            assert false: "no exception thrown"
-        } catch (GraphQLException e) {
-            // expected
-        }
-        try {
-            Scalars.GraphQLFloat.getCoercing().parseValue(value)
-            assert false: "no exception thrown"
-        } catch (GraphQLException e) {
-            // expected
-        }
+    def "serialize throws exception for invalid input #value"() {
+        when:
+        Scalars.GraphQLFloat.getCoercing().serialize(value)
+        then:
+        thrown(CoercingSerializeException)
 
         where:
         value           | _
@@ -84,5 +77,18 @@ class ScalarsFloatTest extends Specification {
         Double.NaN      | _
     }
 
+    @Unroll
+    def "serialize/parseValue throws exception for invalid input #value"() {
+        when:
+        Scalars.GraphQLFloat.getCoercing().parseValue(value)
+        then:
+        thrown(CoercingParseValueException)
+
+        where:
+        value           | _
+        ""              | _
+        "not a number " | _
+        Double.NaN      | _
+    }
 
 }

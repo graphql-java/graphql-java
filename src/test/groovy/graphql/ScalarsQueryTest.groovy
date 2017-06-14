@@ -106,7 +106,7 @@ class ScalarsQueryTest extends Specification {
         def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
         
         then:
-        thrown(GraphQLException)
+        result.errors[0] instanceof SerializationError
 
         where:
         number       | _
