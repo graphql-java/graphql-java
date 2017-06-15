@@ -143,9 +143,9 @@ public abstract class ExecutionStrategy {
         } else if (fieldType instanceof GraphQLList) {
             return completeValueForList(executionContext, parameters, fields, toIterable(result));
         } else if (fieldType instanceof GraphQLScalarType) {
-            return completeValueForScalar((GraphQLScalarType) fieldType, parameters, result, executionContext);
+            return completeValueForScalar(executionContext, parameters, (GraphQLScalarType) fieldType, result);
         } else if (fieldType instanceof GraphQLEnumType) {
-            return completeValueForEnum((GraphQLEnumType) fieldType, parameters, result, executionContext);
+            return completeValueForEnum(executionContext, parameters, (GraphQLEnumType) fieldType, result);
         }
 
 
@@ -221,25 +221,25 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
-    protected ExecutionResult completeValueForEnum(GraphQLEnumType enumType, ExecutionStrategyParameters parameters, Object result, ExecutionContext context) {
+    protected ExecutionResult completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
         Object serialized;
         try {
             serialized = enumType.getCoercing().serialize(result);
         } catch (CoercingSerializeException e) {
-            context.addError(new SerializationError(e));
+            executionContext.addError(new SerializationError(e));
             serialized = null;
         }
         serialized = parameters.nonNullFieldValidator().validate(serialized);
         return new ExecutionResultImpl(serialized, null);
     }
 
-    protected ExecutionResult completeValueForScalar(GraphQLScalarType scalarType, ExecutionStrategyParameters parameters, Object result, ExecutionContext context) {
+    protected ExecutionResult completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
         Object serialized;
         try {
             serialized = scalarType.getCoercing().serialize(result);
         } catch (CoercingSerializeException e) {
             serialized = null;
-            context.addError(new SerializationError(e));
+            executionContext.addError(new SerializationError(e));
         }
 
         // TODO: fix that: this should not be handled here
