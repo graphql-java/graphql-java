@@ -136,8 +136,9 @@ class SchemaParserTest extends Specification {
         read(spec)
 
         then:
-
-        thrown(SchemaProblem)
+        def schemaProblem = thrown(SchemaProblem)
+        schemaProblem.getMessage().contains("InvalidSyntaxError")
+        schemaProblem.getErrors().size() == 1
     }
 
     def "schema with union"() {

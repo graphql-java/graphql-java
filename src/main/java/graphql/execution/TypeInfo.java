@@ -74,7 +74,7 @@ public class TypeInfo {
                 typeIsNonNull, type, parentType);
     }
 
-    static class Builder {
+    public static class Builder {
         GraphQLType type;
         TypeInfo parentType;
 

@@ -1,7 +1,6 @@
 package graphql.schema
 
 import graphql.AssertException
-import graphql.GraphQLException
 import graphql.language.EnumValue
 import graphql.language.StringValue
 import spock.lang.Specification
@@ -23,7 +22,7 @@ class GraphQLEnumTypeTest extends Specification {
         enumType.getCoercing().parseValue("UNKNOWN")
 
         then:
-        thrown(GraphQLException)
+        thrown(CoercingParseValueException)
     }
 
 
@@ -41,7 +40,7 @@ class GraphQLEnumTypeTest extends Specification {
         when:
         enumType.getCoercing().serialize(12)
         then:
-        thrown(GraphQLException)
+        thrown(CoercingSerializeException)
     }
 
 
