@@ -37,12 +37,6 @@ public class FieldCollectorParameters {
         this.objectType = objectType;
     }
 
-    public static Builder newParameters(GraphQLSchema graphQLSchema, GraphQLObjectType objectType) {
-        Assert.assertNotNull(graphQLSchema, "You must provide a schema");
-        Assert.assertNotNull(objectType, "You must provide an object type");
-        return new Builder().schema(graphQLSchema).objectType(objectType);
-    }
-
     public static class Builder {
         private GraphQLSchema graphQLSchema;
         private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
@@ -70,6 +64,8 @@ public class FieldCollectorParameters {
         }
 
         public FieldCollectorParameters build() {
+            Assert.assertNotNull(graphQLSchema, "You must provide a schema");
+            Assert.assertNotNull(objectType, "You must provide an object type");
             return new FieldCollectorParameters(graphQLSchema, variables, fragmentsByName, objectType);
         }
 

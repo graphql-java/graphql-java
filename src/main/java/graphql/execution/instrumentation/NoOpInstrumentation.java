@@ -23,79 +23,41 @@ public final class NoOpInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        return new InstrumentationContext<ExecutionResult>() {
-            @Override
-            public void onEnd(ExecutionResult result) {
-            }
-
-            @Override
-            public void onEnd(Exception e) {
-            }
-        };
+        return new NoOpInstrumentationContext<>();
     }
 
     @Override
     public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        return new InstrumentationContext<Document>() {
-            @Override
-            public void onEnd(Document result) {
-            }
-
-            @Override
-            public void onEnd(Exception e) {
-            }
-        };
+        return new NoOpInstrumentationContext<>();
     }
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return new InstrumentationContext<List<ValidationError>>() {
-            @Override
-            public void onEnd(List<ValidationError> result) {
-            }
-
-            @Override
-            public void onEnd(Exception e) {
-            }
-        };
+        return new NoOpInstrumentationContext<>();
     }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
-        return new InstrumentationContext<ExecutionResult>() {
-            @Override
-            public void onEnd(ExecutionResult result) {
-            }
-
-            @Override
-            public void onEnd(Exception e) {
-            }
-        };
+        return new NoOpInstrumentationContext<>();
     }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        return new InstrumentationContext<ExecutionResult>() {
-            @Override
-            public void onEnd(ExecutionResult result) {
-            }
-
-            @Override
-            public void onEnd(Exception e) {
-            }
-        };
+        return new NoOpInstrumentationContext<>();
     }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        return new InstrumentationContext<Object>() {
-            @Override
-            public void onEnd(Object result) {
-            }
+        return new NoOpInstrumentationContext<>();
+    }
 
-            @Override
-            public void onEnd(Exception e) {
-            }
-        };
+    private static class NoOpInstrumentationContext<T> implements InstrumentationContext<T> {
+        @Override
+        public void onEnd(T result) {
+        }
+
+        @Override
+        public void onEnd(Exception e) {
+        }
     }
 }

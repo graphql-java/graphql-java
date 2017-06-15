@@ -50,17 +50,9 @@ public class ExecutionStrategyParameters {
     }
 
     public ExecutionStrategyParameters transform(Consumer<Builder> builderConsumer) {
-        Builder builder = newParameters(this);
+        Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
-    }
-
-    public static Builder newParameters() {
-        return new Builder();
-    }
-
-    public static Builder newParameters(ExecutionStrategyParameters oldParameters) {
-        return new Builder(oldParameters);
     }
 
     @Override
@@ -76,7 +68,7 @@ public class ExecutionStrategyParameters {
         Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
 
-        private Builder() {
+        Builder() {
         }
 
         private Builder(ExecutionStrategyParameters oldParameters) {

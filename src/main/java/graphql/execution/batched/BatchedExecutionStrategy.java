@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import static graphql.execution.FieldCollectorParameters.newParameters;
 import static java.util.Collections.singletonList;
 
 /**
@@ -212,7 +211,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private Map<String, List<Field>> getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
                                                     List<Field> fields) {
 
-        FieldCollectorParameters collectorParameters = newParameters(executionContext.getGraphQLSchema(), resolvedType)
+        FieldCollectorParameters collectorParameters = new FieldCollectorParameters.Builder()
+                .schema(executionContext.getGraphQLSchema())
+                .objectType(resolvedType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();

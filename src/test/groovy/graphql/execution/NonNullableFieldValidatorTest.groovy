@@ -10,7 +10,7 @@ class NonNullableFieldValidatorTest extends Specification {
     ExecutionContext context = Mock(ExecutionContext)
 
     def "non nullable field throws exception"() {
-        TypeInfo typeInfo = TypeInfo.newTypeInfo().type(nonNull(GraphQLString)).build()
+        TypeInfo typeInfo = new TypeInfo.Builder().type(nonNull(GraphQLString)).build()
 
         NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
 
@@ -23,7 +23,7 @@ class NonNullableFieldValidatorTest extends Specification {
     }
 
     def "nullable field does not throw exception"() {
-        TypeInfo typeInfo = TypeInfo.newTypeInfo().type(GraphQLString).build()
+        TypeInfo typeInfo = new TypeInfo.Builder().type(GraphQLString).build()
 
         NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
 

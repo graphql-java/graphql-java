@@ -10,7 +10,6 @@ import graphql.schema.GraphQLList
 import graphql.schema.GraphQLScalarType
 import spock.lang.Specification
 
-import static ExecutionStrategyParameters.newParameters
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLNonNull.nonNull
 
@@ -40,8 +39,8 @@ class ExecutionStrategyTest extends Specification {
         Field field = new Field()
         def fieldType = new GraphQLList(Scalars.GraphQLString)
         def result = Arrays.asList("test")
-        def parameters = newParameters()
-                .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
+        def parameters = new ExecutionStrategyParameters.Builder()
+                .typeInfo(new TypeInfo.Builder().type(fieldType))
                 .source(result)
                 .fields(["fld": []])
                 .build()
@@ -59,8 +58,8 @@ class ExecutionStrategyTest extends Specification {
         Field field = new Field()
         def fieldType = new GraphQLList(Scalars.GraphQLString)
         String[] result = ["test"]
-        def parameters = newParameters()
-                .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
+        def parameters = new ExecutionStrategyParameters.Builder()
+                .typeInfo(new TypeInfo.Builder().type(fieldType))
                 .source(result)
                 .fields(["fld": []])
                 .build()
@@ -76,11 +75,11 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = Scalars.GraphQLInt
-        def typeInfo = TypeInfo.newTypeInfo().type(fieldType).build()
+        def typeInfo = new TypeInfo.Builder().type(fieldType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         String result = "not a number"
 
-        def parameters = newParameters()
+        def parameters = new ExecutionStrategyParameters.Builder()
                 .typeInfo(typeInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -101,11 +100,11 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         GraphQLEnumType enumType = newEnum().name("Enum").value("value").build()
-        def typeInfo = TypeInfo.newTypeInfo().type(enumType).build()
+        def typeInfo = new TypeInfo.Builder().type(enumType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         String result = "not a enum number"
 
-        def parameters = newParameters()
+        def parameters = new ExecutionStrategyParameters.Builder()
                 .typeInfo(typeInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -147,12 +146,12 @@ class ExecutionStrategyTest extends Specification {
 
         ExecutionContext executionContext = buildContext()
         def fieldType = NullProducingScalar
-        def typeInfo = TypeInfo.newTypeInfo().type(nonNull(fieldType)).build()
+        def typeInfo = new TypeInfo.Builder().type(nonNull(fieldType)).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
 
         when:
-        def parameters = newParameters()
-                .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
+        def parameters = new ExecutionStrategyParameters.Builder()
+                .typeInfo(new TypeInfo.Builder().type(fieldType))
                 .source(result)
                 .fields(["dummy": []])
                 .nonNullFieldValidator(nullableFieldValidator)
