@@ -19,8 +19,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.execution.ExecutionStrategyParameters.newParameters;
-import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
@@ -42,32 +40,24 @@ public class Execution {
     }
 
     public ExecutionResult execute(ExecutionId executionId, GraphQLSchema graphQLSchema, Object context, Object root, Document document, String operationName, Map<String, Object> args) {
-        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver(), instrumentation);
-        ExecutionContext executionContext = executionContextBuilder
+        final ExecutionContext executionContext = new ExecutionContextBuilder()
+                .valuesResolver(new ValuesResolver())
+                .instrumentation(instrumentation)
                 .executionId(executionId)
-                .build(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, context, root, document, operationName, args);
+                .graphQLSchema(graphQLSchema)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .context(context)
+                .root(root)
+                .document(document)
+                .operationName(operationName)
+                .args(args)
+                .build();
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
 
-    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition.Operation operation) {
-        if (operation == MUTATION) {
-            return graphQLSchema.getMutationType();
-
-        } else if (operation == QUERY) {
-            return graphQLSchema.getQueryType();
-
-        } else if (operation == SUBSCRIPTION) {
-            return graphQLSchema.getSubscriptionType();
-
-        } else {
-            throw new GraphQLException("Unhandled case.  An extra operation enum has been added without code support");
-        }
-    }
-
-    private ExecutionResult executeOperation(
-            ExecutionContext executionContext,
-            Object root,
-            OperationDefinition operationDefinition) {
+    private ExecutionResult executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(new InstrumentationDataFetchParameters(executionContext));
 
@@ -83,17 +73,21 @@ public class Execution {
             return new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError()));
         }
 
-        FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters(executionContext.getGraphQLSchema(), operationRootType)
+        FieldCollectorParameters collectorParameters = new FieldCollectorParameters.Builder()
+                .schema(executionContext.getGraphQLSchema())
+                .objectType(operationRootType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
 
         Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
-        TypeInfo typeInfo = newTypeInfo().type(operationRootType).build();
+        TypeInfo typeInfo = new TypeInfo.Builder()
+                .type(operationRootType)
+                .build();
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo);
 
-        ExecutionStrategyParameters parameters = newParameters()
+        ExecutionStrategyParameters parameters = new ExecutionStrategyParameters.Builder()
                 .typeInfo(typeInfo)
                 .source(root)
                 .fields(fields)
@@ -122,5 +116,20 @@ public class Execution {
 
         dataFetchCtx.onEnd(result);
         return result;
+    }
+
+    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition.Operation operation) {
+        if (operation == MUTATION) {
+            return graphQLSchema.getMutationType();
+
+        } else if (operation == QUERY) {
+            return graphQLSchema.getQueryType();
+
+        } else if (operation == SUBSCRIPTION) {
+            return graphQLSchema.getSubscriptionType();
+
+        } else {
+            throw new GraphQLException("Unhandled case.  An extra operation enum has been added without code support");
+        }
     }
 }

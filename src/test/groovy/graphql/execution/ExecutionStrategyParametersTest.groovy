@@ -3,15 +3,13 @@ package graphql.execution
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
-import static graphql.execution.ExecutionStrategyParameters.newParameters
-import static graphql.execution.TypeInfo.newTypeInfo
 
 class ExecutionStrategyParametersTest extends Specification {
 
     def "ExecutionParameters can be transformed"() {
         given:
-        def parameters = newParameters()
-                .typeInfo(newTypeInfo().type(GraphQLString))
+        def parameters = new ExecutionStrategyParameters.Builder()
+                .typeInfo(new TypeInfo.Builder().type(GraphQLString))
                 .source(new Object())
                 .fields("a": [])
                 .build()

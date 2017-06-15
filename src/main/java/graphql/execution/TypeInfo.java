@@ -55,10 +55,6 @@ public class TypeInfo {
         return new TypeInfo(unwrap(type), this.parentType, this.typeIsNonNull);
     }
 
-    public static Builder newTypeInfo() {
-        return new Builder();
-    }
-
     private static GraphQLType unwrap(GraphQLType type) {
         // its possible to have non nulls wrapping non nulls of things but it must end at some point
         while (type instanceof GraphQLNonNull) {
@@ -66,7 +62,6 @@ public class TypeInfo {
         }
         return type;
     }
-
 
     @Override
     public String toString() {

@@ -1,9 +1,8 @@
 package graphql.execution.instrumentation.parameters;
 
+import graphql.ExecutionInput;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.language.Document;
-
-import java.util.Map;
 
 /**
  * Parameters sent to {@link Instrumentation} methods
@@ -11,8 +10,8 @@ import java.util.Map;
 public class InstrumentationValidationParameters extends InstrumentationExecutionParameters {
     private final Document document;
 
-    public InstrumentationValidationParameters(String query, String operation, Object context, Map<String, Object> arguments, Document document) {
-        super(query, operation, context, arguments);
+    public InstrumentationValidationParameters(ExecutionInput executionInput, Document document) {
+        super(executionInput);
         this.document = document;
     }
 

@@ -244,50 +244,108 @@ public class GraphQL {
      * @return result including errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
+        log.debug("Executing request. operation name: {}. Request: {} ", executionInput.getOperationName(), executionInput.getRequestString());
+
+        InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(new InstrumentationExecutionParameters(executionInput));
+        final ExecutionResult executionResult = parseValidateAndExecute(executionInput);
+        executionInstrumentation.onEnd(executionResult);
+
+        return executionResult;
+    }
+
+    private ExecutionResult parseValidateAndExecute(ExecutionInput executionInput) {
+        ParseResult parseResult = parse(executionInput);
+        if (parseResult.isFailure()) {
+            return toParseFailureExecutionResult(parseResult.getException());
+        }
+        final Document document = parseResult.getData();
+
+        final List<ValidationError> errors = validate(executionInput, document);
+        if (!errors.isEmpty()) {
+            return new ExecutionResultImpl(errors);
+        }
+
+        return execute(executionInput, document);
+    }
+
+    private ParseResult parse(ExecutionInput executionInput) {
+        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(new InstrumentationExecutionParameters(executionInput));
+
+        Parser parser = new Parser();
+        Document document;
+        try {
+            document = parser.parseDocument(executionInput.getRequestString());
+        } catch (ParseCancellationException e) {
+            parseInstrumentation.onEnd(e);
+            return ParseResult.ofError((RecognitionException) e.getCause());
+        }
+
+        parseInstrumentation.onEnd(document);
+        return ParseResult.of(document);
+    }
+
+    private List<ValidationError> validate(ExecutionInput executionInput, Document document) {
+        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document));
+
+        Validator validator = new Validator();
+        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
+
+        validationCtx.onEnd(validationErrors);
+        return validationErrors;
+    }
+
+    private ExecutionResult execute(ExecutionInput executionInput, Document document) {
         String requestString = executionInput.getRequestString();
         String operationName = executionInput.getOperationName();
         Object context = executionInput.getContext();
         Object root = executionInput.getRoot();
         Map<String, Object> arguments = executionInput.getArguments() != null ? executionInput.getArguments() : Collections.emptyMap();
 
-        log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
-
-        InstrumentationContext<ExecutionResult> executionCtx = instrumentation.beginExecution(new InstrumentationExecutionParameters(requestString, operationName, context, arguments));
-
-
-        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new InstrumentationExecutionParameters(requestString, operationName, context, arguments));
-        Parser parser = new Parser();
-        Document document;
-        try {
-            document = parser.parseDocument(requestString);
-            parseCtx.onEnd(document);
-        } catch (ParseCancellationException e) {
-            RecognitionException recognitionException = (RecognitionException) e.getCause();
-            SourceLocation sourceLocation = null;
-            if (recognitionException != null) {
-                sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
-            }
-            InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
-            return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
-        }
-
-        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(requestString, operationName, context, arguments, document));
-
-        Validator validator = new Validator();
-        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
-
-        validationCtx.onEnd(validationErrors);
-
-        if (validationErrors.size() > 0) {
-            return new ExecutionResultImpl(validationErrors);
-        }
-        ExecutionId executionId = idProvider.provide(requestString, operationName, context);
-
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
-        ExecutionResult result = execution.execute(executionId, graphQLSchema, context, root, document, operationName, arguments);
+        ExecutionId executionId = idProvider.provide(requestString, operationName, context);
+        return execution.execute(executionId, graphQLSchema, context, root, document, operationName, arguments);
+    }
 
-        executionCtx.onEnd(result);
+    private static class ParseResult {
+        private final Document data;
+        private final RecognitionException exception;
 
-        return result;
+        ParseResult(Document data, RecognitionException exception) {
+            this.data = data;
+            this.exception = exception;
+        }
+
+        boolean isFailure() {
+            return data == null;
+        }
+
+        public Document getData() {
+            return data;
+        }
+
+        public RecognitionException getException() {
+            return exception;
+        }
+
+        static ParseResult of(Document result) {
+            return new ParseResult(result, null);
+        }
+
+        static ParseResult ofError(RecognitionException e) {
+            return new ParseResult(null, e);
+        }
+    }
+
+    private ExecutionResult toParseFailureExecutionResult(RecognitionException exception) {
+        InvalidSyntaxError invalidSyntaxError = toInvalidSyntaxError(exception);
+        return new ExecutionResultImpl(invalidSyntaxError);
+    }
+
+    private InvalidSyntaxError toInvalidSyntaxError(RecognitionException recognitionException) {
+        SourceLocation sourceLocation = null;
+        if (recognitionException != null) {
+            sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
+        }
+        return new InvalidSyntaxError(sourceLocation);
     }
 }

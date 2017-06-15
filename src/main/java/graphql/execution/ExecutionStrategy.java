@@ -36,8 +36,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.execution.FieldCollectorParameters.newParameters;
-import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
@@ -111,7 +109,7 @@ public abstract class ExecutionStrategy {
             fetchCtx.onEnd(e);
         }
 
-        TypeInfo fieldTypeInfo = newTypeInfo()
+        TypeInfo fieldTypeInfo = new TypeInfo.Builder()
                 .type(fieldType)
                 .parentInfo(parameters.typeInfo())
                 .build();
@@ -119,7 +117,7 @@ public abstract class ExecutionStrategy {
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, fieldTypeInfo);
 
-        ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
+        ExecutionStrategyParameters newParameters = new ExecutionStrategyParameters.Builder()
                 .typeInfo(fieldTypeInfo)
                 .fields(parameters.fields())
                 .arguments(argumentValues)
@@ -174,7 +172,9 @@ public abstract class ExecutionStrategy {
             resolvedType = (GraphQLObjectType) fieldType;
         }
 
-        FieldCollectorParameters collectorParameters = newParameters(executionContext.getGraphQLSchema(), resolvedType)
+        FieldCollectorParameters collectorParameters = new FieldCollectorParameters.Builder()
+                .schema(executionContext.getGraphQLSchema())
+                .objectType(resolvedType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
@@ -184,7 +184,7 @@ public abstract class ExecutionStrategy {
         TypeInfo newTypeInfo = typeInfo.asType(resolvedType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newTypeInfo);
 
-        ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
+        ExecutionStrategyParameters newParameters = new ExecutionStrategyParameters.Builder()
                 .typeInfo(newTypeInfo)
                 .fields(subFields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
@@ -260,7 +260,7 @@ public abstract class ExecutionStrategy {
             TypeInfo wrappedTypeInfo = typeInfo.asType(fieldType.getWrappedType());
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedTypeInfo);
 
-            ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
+            ExecutionStrategyParameters newParameters = new ExecutionStrategyParameters.Builder()
                     .typeInfo(wrappedTypeInfo)
                     .fields(parameters.fields())
                     .nonNullFieldValidator(nonNullableFieldValidator)

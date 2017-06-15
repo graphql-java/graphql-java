@@ -18,19 +18,77 @@ public class ExecutionContextBuilder {
     private ValuesResolver valuesResolver;
     private Instrumentation instrumentation;
     private ExecutionId executionId;
+    private GraphQLSchema graphQLSchema;
+    private ExecutionStrategy queryStrategy;
+    private ExecutionStrategy mutationStrategy;
+    private ExecutionStrategy subscriptionStrategy;
+    private Object context;
+    private Object root;
+    private Document document;
+    private String operationName;
+    private Map<String, Object> args;
 
-    public ExecutionContextBuilder(ValuesResolver valuesResolver, Instrumentation instrumentation) {
+    public ExecutionContextBuilder valuesResolver(final ValuesResolver valuesResolver) {
         this.valuesResolver = valuesResolver;
-        this.instrumentation = instrumentation;
+        return this;
     }
 
+    public ExecutionContextBuilder instrumentation(final Instrumentation instrumentation) {
+        this.instrumentation = instrumentation;
+        return this;
+    }
 
     public ExecutionContextBuilder executionId(ExecutionId executionId) {
         this.executionId = executionId;
         return this;
     }
 
-    public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Object context, Object root, Document document, String operationName, Map<String, Object> args) {
+    public ExecutionContextBuilder graphQLSchema(final GraphQLSchema graphQLSchema) {
+        this.graphQLSchema = graphQLSchema;
+        return this;
+    }
+
+    public ExecutionContextBuilder queryStrategy(final ExecutionStrategy queryStrategy) {
+        this.queryStrategy = queryStrategy;
+        return this;
+    }
+
+    public ExecutionContextBuilder mutationStrategy(final ExecutionStrategy mutationStrategy) {
+        this.mutationStrategy = mutationStrategy;
+        return this;
+    }
+
+    public ExecutionContextBuilder subscriptionStrategy(final ExecutionStrategy subscriptionStrategy) {
+        this.subscriptionStrategy = subscriptionStrategy;
+        return this;
+    }
+
+    public ExecutionContextBuilder context(final Object context) {
+        this.context = context;
+        return this;
+    }
+
+    public ExecutionContextBuilder root(final Object root) {
+        this.root = root;
+        return this;
+    }
+
+    public ExecutionContextBuilder document(final Document document) {
+        this.document = document;
+        return this;
+    }
+
+    public ExecutionContextBuilder operationName(final String operationName) {
+        this.operationName = operationName;
+        return this;
+    }
+
+    public ExecutionContextBuilder args(final Map<String, Object> args) {
+        this.args = args;
+        return this;
+    }
+
+    public ExecutionContext build() {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
 
