@@ -108,18 +108,4 @@ public interface DataFetchingEnvironment {
      * @return the {@link DataFetchingFieldSelectionSet} for the current operation
      */
     DataFetchingFieldSelectionSet getSelectionSet();
-
-
-    /**
-     * This allows you to transform this DataFetchingEnvironment object into another one.
-     *
-     * @param action the action to which a {@link DataFetchingEnvironmentBuilder} is passed
-     *
-     * @return a new transformed DataFetchingEnvironment
-     */
-    default DataFetchingEnvironment transform(Consumer<DataFetchingEnvironmentBuilder> action) {
-        DataFetchingEnvironmentBuilder builder = newDataFetchingEnvironment(this);
-        action.accept(builder);
-        return builder.build();
-    }
 }
