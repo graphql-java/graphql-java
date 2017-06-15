@@ -731,6 +731,76 @@ class SchemaTypeCheckerTest extends Specification {
         result.isEmpty()
     }
 
+    def "test that field names within types are unique"() {
+
+        def spec = """                        
+            
+            type Query {
+                fieldA : String
+                fieldA : Int
+            }
+
+            extend type Query {
+                fieldB : String
+                fieldB : Int
+                fieldOK : Int
+            }
+            
+            enum EnumType {
+                enumA
+                enumA
+                enumOK
+            }
+
+            input InputType {
+                inputFieldA : String
+                inputFieldA : String
+                inputFieldOK : String
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        !result.isEmpty()
+        result.size() == 4
+    }
+
+    def "test that field args are unique"() {
+
+        def spec = """                        
+            
+            type Query {
+                fieldA(arg1 : Int, arg1 : String) : String
+                fieldB(arg1 : Int, argOK : String) : String
+            }
+
+            extend type Query {
+                fieldC(arg1 : Int, arg1 : String) : String
+                fieldD(arg1 : Int, argOK : String) : String
+            }
+            
+            interface InterfaceType1 {
+                fieldX(arg1 : Int, arg1 : String) : String
+                fieldY(arg1 : Int, argOK : String) : String
+            }
+            
+            type Implementor implements InterfaceType1 {
+                fieldX(arg1 : Int, arg1 : String) : String
+                fieldY(arg1 : Int, argOK : String) : String
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        !result.isEmpty()
+        result.size() == 4
+    }
+
+
     def "test that deprecation directive is valid"() {
 
         def spec = """                        
@@ -739,12 +809,12 @@ class SchemaTypeCheckerTest extends Specification {
                 fieldA : String @deprecated(badName : "must be called reason") 
             }
 
-            type BaseType implements InterfaceType1 {
+            type Query implements InterfaceType1 {
                 fieldA : String
                 fieldC : String @deprecated(reason : "it must have", one : "argument value")
             }
 
-            extend type BaseType {
+            extend type Query {
                 fieldB : Int
                 fieldD: Int @deprecated(badName : "must be called reason")
                 fieldE: Int @deprecated(reason : "it must have", one : "argument value")
@@ -758,11 +828,7 @@ class SchemaTypeCheckerTest extends Specification {
 
             input InputType {
                 inputFieldA : String @deprecated(badName : "must be called reason")
-                inputFieldA : String @deprecated(reason : "it must have", one : "argument value")
-            }
-
-            schema {
-              query : BaseType
+                inputFieldB : String @deprecated(reason : "it must have", one : "argument value")
             }
         """
 
@@ -773,4 +839,83 @@ class SchemaTypeCheckerTest extends Specification {
         !result.isEmpty()
         result.size() == 8
     }
+
+    def "test that directives are valid"() {
+
+        def spec = """                        
+            
+            interface InterfaceType1 {
+                fieldA : String @directiveA @directiveA 
+            }
+
+            type Query implements InterfaceType1 {
+                fieldA : String
+                fieldC : String @directiveA @directiveA
+            }
+
+            extend type Query {
+                fieldB : Int
+                fieldD: Int @directiveA @directiveA
+                fieldE: Int @directiveA @directiveOK
+            }
+            
+            enum EnumType {
+                
+                enumA @directiveA @directiveA
+                enumB @directiveA @directiveOK
+            }
+
+            input InputType {
+                inputFieldA : String @directiveA @directiveA
+                inputFieldB : String @directiveA @directiveOK
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        !result.isEmpty()
+        result.size() == 5
+    }
+
+    def "test that directives args are valid"() {
+
+        def spec = """                        
+            
+            interface InterfaceType1 {
+                fieldA : String @directive(arg1 : 1, arg1 : 2) 
+            }
+
+            type Query implements InterfaceType1 {
+                fieldA : String
+                fieldC : String @directive(arg1 : 1, arg1 : 2)
+            }
+
+            extend type Query {
+                fieldB : Int
+                fieldD: Int @directive(arg1 : 1, arg1 : 2)
+                fieldE: Int @directive(arg1 : 1, argOK : 2)
+            }
+            
+            enum EnumType {
+                
+                enumA @directive(arg1 : 1, arg1 : 2)
+                enumB @directive(arg1 : 1, argOK : 2)
+            }
+
+            input InputType {
+                inputFieldA : String @directive(arg1 : 1, arg1 : 2)
+                inputFieldB : String @directive(arg1 : 1, argOK : 2)
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        !result.isEmpty()
+        result.size() == 5
+    }
+
 }

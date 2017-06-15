@@ -28,6 +28,9 @@ import graphql.schema.idl.errors.MissingInterfaceTypeError;
 import graphql.schema.idl.errors.MissingScalarImplementationError;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.MissingTypeResolverError;
+import graphql.schema.idl.errors.NonUniqueArgumentError;
+import graphql.schema.idl.errors.NonUniqueDirectiveError;
+import graphql.schema.idl.errors.NonUniqueNameError;
 import graphql.schema.idl.errors.OperationTypesMustBeObjects;
 import graphql.schema.idl.errors.QueryOperationMissingError;
 import graphql.schema.idl.errors.SchemaMissingError;
@@ -37,9 +40,12 @@ import graphql.schema.idl.errors.TypeExtensionMissingBaseTypeError;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -67,7 +73,7 @@ public class SchemaTypeChecker {
         checkScalarImplementationsArePresent(errors, typeRegistry, wiring);
         checkTypeResolversArePresent(errors, typeRegistry, wiring);
 
-        checkDirectivesAreSensible(errors, typeRegistry);
+        checkFieldsAreSensible(errors, typeRegistry);
 
         return errors;
     }
@@ -169,50 +175,143 @@ public class SchemaTypeChecker {
         });
     }
 
-    private void checkDirectivesAreSensible(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+    private void checkFieldsAreSensible(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         Map<String, TypeDefinition> typesMap = typeRegistry.types();
 
         // type extensions
         List<TypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-        typeExtensions.forEach(typeExtension -> checkFieldDirectives(errors, typeExtension, typeExtension.getFieldDefinitions()));
+        typeExtensions.forEach(typeExtension -> checkTypeExtFields(errors, typeExtension, typeExtension.getFieldDefinitions()));
 
         // objects
         List<ObjectTypeDefinition> objectTypes = filterTo(typesMap, ObjectTypeDefinition.class);
-        objectTypes.forEach(objectType -> checkFieldDirectives(errors, objectType, objectType.getFieldDefinitions()));
+        objectTypes.forEach(objectType -> checkObjTypeFields(errors, objectType, objectType.getFieldDefinitions()));
 
         // interfaces
         List<InterfaceTypeDefinition> interfaceTypes = filterTo(typesMap, InterfaceTypeDefinition.class);
-        interfaceTypes.forEach(interfaceType -> checkFieldDirectives(errors, interfaceType, interfaceType.getFieldDefinitions()));
+        interfaceTypes.forEach(interfaceType -> checkInterfaceFields(errors, interfaceType, interfaceType.getFieldDefinitions()));
 
         // enum types
         List<EnumTypeDefinition> enumTypes = filterTo(typesMap, EnumTypeDefinition.class);
-        enumTypes.forEach(enumType -> checkEnumValueDirectives(errors, enumType, enumType.getEnumValueDefinitions()));
+        enumTypes.forEach(enumType -> checkEnumValues(errors, enumType, enumType.getEnumValueDefinitions()));
 
         // input types
         List<InputObjectTypeDefinition> inputTypes = filterTo(typesMap, InputObjectTypeDefinition.class);
-        inputTypes.forEach(inputType -> checkInputValueDirectives(errors, inputType, inputType.getInputValueDefinitions()));
+        inputTypes.forEach(inputType -> checkInputValues(errors, inputType, inputType.getInputValueDefinitions()));
     }
 
-    private void checkFieldDirectives(List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions) {
+    private void checkTypeExtFields(List<GraphQLError> errors, TypeExtensionDefinition typeExtension, List<FieldDefinition> fieldDefinitions) {
+
+        // field unique ness
+        checkNamedUniqueness(errors, fieldDefinitions, FieldDefinition::getName,
+                (name, fieldDef) -> new NonUniqueNameError(typeExtension, fieldDef));
+
+        // field arg unique ness
+        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getInputValueDefinitions(), InputValueDefinition::getName,
+                (name, inputValueDefinition) -> new NonUniqueArgumentError(typeExtension, fld, name)));
+
+        // directive checks
+        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
+                (directiveName, directive) -> new NonUniqueDirectiveError(typeExtension, fld, directiveName)));
+
+        fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
+            checkDeprecatedDirective(errors, directive,
+                    () -> new InvalidDeprecationDirectiveError(typeExtension, fld));
+
+            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
+                    (argumentName, argument) -> new NonUniqueArgumentError(typeExtension, fld, argumentName));
+
+        }));
+    }
+
+    private void checkObjTypeFields(List<GraphQLError> errors, ObjectTypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions) {
+        // field unique ness
+        checkNamedUniqueness(errors, fieldDefinitions, FieldDefinition::getName,
+                (name, fieldDef) -> new NonUniqueNameError(typeDefinition, fieldDef));
+
+        // field arg unique ness
+        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getInputValueDefinitions(), InputValueDefinition::getName,
+                (name, inputValueDefinition) -> new NonUniqueArgumentError(typeDefinition, fld, name)));
+
+        // directive checks
+        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
+                (directiveName, directive) -> new NonUniqueDirectiveError(typeDefinition, fld, directiveName)));
+
         fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
             checkDeprecatedDirective(errors, directive,
                     () -> new InvalidDeprecationDirectiveError(typeDefinition, fld));
+
+            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
+                    (argumentName, argument) -> new NonUniqueArgumentError(typeDefinition, fld, argumentName));
+
         }));
     }
 
-    private void checkEnumValueDirectives(List<GraphQLError> errors, EnumTypeDefinition enumType, List<EnumValueDefinition> enumValueDefinitions) {
+    private void checkInterfaceFields(List<GraphQLError> errors, InterfaceTypeDefinition interfaceType, List<FieldDefinition> fieldDefinitions) {
+        // field unique ness
+        checkNamedUniqueness(errors, fieldDefinitions, FieldDefinition::getName,
+                (name, fieldDef) -> new NonUniqueNameError(interfaceType, fieldDef));
+
+        // field arg unique ness
+        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getInputValueDefinitions(), InputValueDefinition::getName,
+                (name, inputValueDefinition) -> new NonUniqueArgumentError(interfaceType, fld, name)));
+
+        // directive checks
+        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
+                (directiveName, directive) -> new NonUniqueDirectiveError(interfaceType, fld, directiveName)));
+
+        fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
+            checkDeprecatedDirective(errors, directive,
+                    () -> new InvalidDeprecationDirectiveError(interfaceType, fld));
+
+            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
+                    (argumentName, argument) -> new NonUniqueArgumentError(interfaceType, fld, argumentName));
+
+        }));
+    }
+
+    private void checkEnumValues(List<GraphQLError> errors, EnumTypeDefinition enumType, List<EnumValueDefinition> enumValueDefinitions) {
+
+        // enum unique ness
+        checkNamedUniqueness(errors, enumValueDefinitions, EnumValueDefinition::getName,
+                (name, inputValueDefinition) -> new NonUniqueNameError(enumType, inputValueDefinition));
+
+
+        // directive checks
+        enumValueDefinitions.forEach(enumValue -> {
+            BiFunction<String, Directive, NonUniqueDirectiveError> errorFunction = (directiveName, directive) -> new NonUniqueDirectiveError(enumType, enumValue, directiveName);
+            checkNamedUniqueness(errors, enumValue.getDirectives(), Directive::getName, errorFunction);
+        });
+
         enumValueDefinitions.forEach(enumValue -> enumValue.getDirectives().forEach(directive -> {
             checkDeprecatedDirective(errors, directive,
                     () -> new InvalidDeprecationDirectiveError(enumType, enumValue));
+
+            BiFunction<String, Argument, NonUniqueArgumentError> errorFunction = (argumentName, argument) -> new NonUniqueArgumentError(enumType, enumValue, argumentName);
+            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName, errorFunction);
+
         }));
     }
 
-    private void checkInputValueDirectives(List<GraphQLError> errors, InputObjectTypeDefinition inputType, List<InputValueDefinition> inputValueDefinitions) {
+    private void checkInputValues(List<GraphQLError> errors, InputObjectTypeDefinition inputType, List<InputValueDefinition> inputValueDefinitions) {
+
+        // field unique ness
+        checkNamedUniqueness(errors, inputValueDefinitions, InputValueDefinition::getName,
+                (name, inputValueDefinition) -> new NonUniqueNameError(inputType, inputValueDefinition));
+
+
+        // directive checks
+        inputValueDefinitions.forEach(inputValueDef -> checkNamedUniqueness(errors, inputValueDef.getDirectives(), Directive::getName,
+                (directiveName, directive) -> new NonUniqueDirectiveError(inputType, inputValueDef, directiveName)));
+
         inputValueDefinitions.forEach(inputValueDef -> inputValueDef.getDirectives().forEach(directive -> {
             checkDeprecatedDirective(errors, directive,
                     () -> new InvalidDeprecationDirectiveError(inputType, inputValueDef));
+
+            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
+                    (argumentName, argument) -> new NonUniqueArgumentError(inputType, inputValueDef, argumentName));
         }));
     }
+
 
     private void checkDeprecatedDirective(List<GraphQLError> errors, Directive directive, Supplier<InvalidDeprecationDirectiveError> errorSupplier) {
         if ("deprecated".equals(directive.getName())) {
@@ -231,6 +330,22 @@ public class SchemaTypeChecker {
             // not valid
             errors.add(errorSupplier.get());
         }
+    }
+
+    /*
+     * A simple function that takes a list of things, asks for their names and checks that the
+     * names are unique within that list.  If not it calls the error handler function
+     */
+    private <T, E extends GraphQLError> void checkNamedUniqueness(List<GraphQLError> errors, List<T> listOfNamedThings, Function<T, String> namer, BiFunction<String, T, E> errorFunction) {
+        Map<String, T> mapOfThings = new LinkedHashMap<>();
+        listOfNamedThings.forEach(thing -> {
+            String name = namer.apply(thing);
+            if (mapOfThings.containsKey(name)) {
+                errors.add(errorFunction.apply(name, thing));
+            } else {
+                mapOfThings.put(name, thing);
+            }
+        });
     }
 
     private void checkTypeResolversArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
@@ -323,7 +438,7 @@ public class SchemaTypeChecker {
 
                 Map<String, FieldDefinition> objectFields = objectTypeDef.getFieldDefinitions().stream()
                         .collect(Collectors.toMap(
-                                FieldDefinition::getName, Function.identity()
+                                FieldDefinition::getName, Function.identity(), mergeFirstValue()
                         ));
 
                 interfaceTypeDef.getFieldDefinitions().forEach(interfaceFieldDef -> {
@@ -398,7 +513,7 @@ public class SchemaTypeChecker {
     private void checkForFieldRedefinition(List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions, List<FieldDefinition> referenceFieldDefinitions) {
         Map<String, FieldDefinition> referenceFields = referenceFieldDefinitions.stream()
                 .collect(Collectors.toMap(
-                        FieldDefinition::getName, Function.identity()
+                        FieldDefinition::getName, Function.identity(), mergeFirstValue()
                 ));
 
         fieldDefinitions.forEach(fld -> {
@@ -463,4 +578,7 @@ public class SchemaTypeChecker {
                 .collect(Collectors.toList());
     }
 
+    private <T> BinaryOperator<T> mergeFirstValue() {
+        return (v1, v2) -> v1;
+    }
 }
