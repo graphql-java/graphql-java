@@ -6,6 +6,8 @@ import graphql.language.SourceLocation;
 
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+
 /**
  * See (http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability), but if a non nullable field
  * actually resolves to a null value and the parent type is nullable then the parent must in fact become null
@@ -14,18 +16,20 @@ import java.util.List;
 public class NonNullableFieldWasNullException extends RuntimeException implements GraphQLError {
 
     private final TypeInfo typeInfo;
+    private final ExecutionPath path;
 
 
-    public NonNullableFieldWasNullException(TypeInfo typeInfo) {
-        super(buildMsg(typeInfo));
+    public NonNullableFieldWasNullException(TypeInfo typeInfo, ExecutionPath path) {
+        super(buildMsg(assertNotNull(typeInfo), assertNotNull(path)));
         this.typeInfo = typeInfo;
+        this.path = path;
     }
 
-    private static String buildMsg(TypeInfo typeInfo) {
+    private static String buildMsg(TypeInfo typeInfo, ExecutionPath path) {
         if (typeInfo.hasParentType()) {
-            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s'", typeInfo.type().getName(), typeInfo.parentTypeInfo().type().getName());
+            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", typeInfo.type().getName(), typeInfo.parentTypeInfo().type().getName(), path);
         }
-        return String.format("Cannot return null for non-nullable type: '%s' ", typeInfo.type().getName());
+        return String.format("Cannot return null for non-nullable type: '%s' (%s) ", typeInfo.type().getName(), path);
     }
 
     public TypeInfo getTypeInfo() {
@@ -40,5 +44,24 @@ public class NonNullableFieldWasNullException extends RuntimeException implement
     @Override
     public ErrorType getErrorType() {
         return null;
+    }
+
+    /**
+     * The graphql spec says that that path field of any error should be a list
+     * of path entries - http://facebook.github.io/graphql/#sec-Errors
+     *
+     * @return the path in list format
+     */
+    public List<Object> getPath() {
+        return path.toList();
+    }
+
+
+    @Override
+    public String toString() {
+        return "NonNullableFieldWasNullException{" +
+                "path=" + path +
+                "typeInfo=" + typeInfo +
+                '}';
     }
 }

@@ -48,11 +48,16 @@ class ExecutionPathTest extends Specification {
             f1 : String
             f2 : [Test] 
             f3 : Float
+            f4 : NonNullType
         }
         
         type Test {
             sub1 : String
             sub2 : String
+        }
+        
+        type NonNullType {
+            nonNullField : String!
         }
             
         """
@@ -69,17 +74,26 @@ class ExecutionPathTest extends Specification {
             }
             return "no error"
         } as DataFetcher
+
+        def f4Fetcher = { env -> "Some Value" } as DataFetcher
+        def nonNullFieldFetcher = { env -> null } as DataFetcher
+
         def schema = TestUtil.schema(spec,
-                ["Query":
+                ["Query"      :
                          [
                                  "f1": f1Fetcher,
                                  "f2": f2Fetcher,
-                                 "f3": f3Fetcher
+                                 "f3": f3Fetcher,
+                                 "f4": f4Fetcher
                          ],
-                 "Test" :
+                 "Test"       :
                          [
                                  "sub1": sub1Fetcher,
                                  "sub2": sub2Fetcher
+                         ],
+                 "NonNullType":
+                         [
+                                 "nonNullField": nonNullFieldFetcher
                          ]
                 ])
 
@@ -87,14 +101,26 @@ class ExecutionPathTest extends Specification {
         GraphQL graphQL = GraphQL.newGraphQL(schema).build()
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .requestString("{f1 f2{sub1 sub2} f3}")
+                .requestString("""
+                    {
+                        f1 
+                        f2 {
+                            sub1 
+                            sub2
+                        } 
+                        f3
+                        f4 {
+                          nonNullField
+                        }
+                    }
+                        """)
                 .build()
 
         List<GraphQLError> errors = graphQL.execute(executionInput).getErrors()
 
         then:
 
-        errors.size() == 3
+        errors.size() == 4
 
         def error = errors.get(0) as ExceptionWhileDataFetching
         ["f1"] == error.getPath()
@@ -104,5 +130,8 @@ class ExecutionPathTest extends Specification {
 
         def error3 = errors.get(2) as SerializationError
         ["f3"] == error3.getPath()
+
+        def error4 = errors.get(3) as NonNullableFieldWasNullException
+        ["f4", "nonNullField"] == error4.getPath()
     }
 }

@@ -7,6 +7,7 @@ import graphql.schema.CoercingSerializeException;
 
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
 
 @PublicApi
@@ -16,8 +17,8 @@ public class SerializationError implements GraphQLError {
     private final ExecutionPath path;
 
     public SerializationError(ExecutionPath path, CoercingSerializeException exception) {
-        this.path = path;
-        this.exception = exception;
+        this.path = assertNotNull(path);
+        this.exception = assertNotNull(exception);
     }
 
     public CoercingSerializeException getException() {
@@ -27,7 +28,7 @@ public class SerializationError implements GraphQLError {
 
     @Override
     public String getMessage() {
-        return format("Can't serialize value %s: %s", path == null ? "" : path, exception.getMessage());
+        return format("Can't serialize value (%s) : %s", path, exception.getMessage());
     }
 
     @Override
@@ -47,7 +48,7 @@ public class SerializationError implements GraphQLError {
      * @return the path in list format
      */
     public List<Object> getPath() {
-        return path == null ? null : path.toList();
+        return path.toList();
     }
 
     @Override

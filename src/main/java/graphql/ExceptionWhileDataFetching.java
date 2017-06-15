@@ -6,6 +6,7 @@ import graphql.language.SourceLocation;
 
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
 
 @PublicApi
@@ -15,8 +16,8 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     private final Throwable exception;
 
     public ExceptionWhileDataFetching(ExecutionPath path, Throwable exception) {
-        this.path = path;
-        this.exception = exception;
+        this.path = assertNotNull(path);
+        this.exception = assertNotNull(exception);
     }
 
     public Throwable getException() {
@@ -26,7 +27,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
 
     @Override
     public String getMessage() {
-        return format("Exception while fetching data %s: %s", path == null ? "" : path, exception.getMessage());
+        return format("Exception while fetching data (%s) : %s", path, exception.getMessage());
     }
 
     @Override
@@ -41,7 +42,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
      * @return the path in list format
      */
     public List<Object> getPath() {
-        return path == null ? null : path.toList();
+        return path.toList();
     }
 
     @Override

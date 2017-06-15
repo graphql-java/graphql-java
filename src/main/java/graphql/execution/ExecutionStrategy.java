@@ -41,7 +41,6 @@ import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
-import static java.lang.String.format;
 
 @PublicSpi
 public abstract class ExecutionStrategy {
@@ -69,8 +68,12 @@ public abstract class ExecutionStrategy {
             ExecutionContext executionContext,
             GraphQLFieldDefinition fieldDef,
             Map<String, Object> argumentValues,
-            ExecutionPath path, Exception e) {
-        executionContext.addError(new ExceptionWhileDataFetching(path, e));
+            ExecutionPath path,
+            Exception e) {
+        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, e);
+        executionContext.addError(error);
+        log.warn(error.getMessage(), e);
+
     }
 
 
@@ -108,7 +111,6 @@ public abstract class ExecutionStrategy {
 
             fetchCtx.onEnd(resolvedValue);
         } catch (Exception e) {
-            log.warn(format("Exception while fetching data '%s'", parameters.path()), e);
             fetchCtx.onEnd(e);
             handleDataFetchingException(executionContext, fieldDef, argumentValues, parameters.path(), e);
         }
@@ -142,7 +144,7 @@ public abstract class ExecutionStrategy {
         GraphQLType fieldType = parameters.typeInfo().type();
 
         if (result == null) {
-            return parameters.nonNullFieldValidator().validate(null);
+            return parameters.nonNullFieldValidator().validate(parameters.path(), null);
         } else if (fieldType instanceof GraphQLList) {
             return completeValueForList(executionContext, parameters, fields, toIterable(result));
         } else if (fieldType instanceof GraphQLScalarType) {
@@ -232,7 +234,7 @@ public abstract class ExecutionStrategy {
         } catch (CoercingSerializeException e) {
             serialized = handleCoercionProblem(context, parameters, e);
         }
-        serialized = parameters.nonNullFieldValidator().validate(serialized);
+        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
         return new ExecutionResultImpl(serialized, null);
     }
 
@@ -249,13 +251,14 @@ public abstract class ExecutionStrategy {
         if (serialized instanceof Double && ((Double) serialized).isNaN()) {
             serialized = null;
         }
-        serialized = parameters.nonNullFieldValidator().validate(serialized);
+        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
         return new ExecutionResultImpl(serialized, null);
     }
 
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
-        log.warn(format("Coercion exception while completing value '%s'", parameters.path()), e);
-        context.addError(new SerializationError(parameters.path(), e));
+        SerializationError error = new SerializationError(parameters.path(), e);
+        log.warn(error.getMessage(), e);
+        context.addError(error);
         return null;
     }
 

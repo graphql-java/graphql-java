@@ -10,6 +10,11 @@ public class Assert {
         throw new AssertException(errorMessage);
     }
 
+    public static <T> T assertNotNull(T object) {
+        if (object != null) return object;
+        throw new AssertException("Object required to be not null");
+    }
+
     public static <T> T assertNeverCalled() {
         throw new AssertException("Should never been called");
     }
@@ -39,6 +44,7 @@ public class Assert {
      * currently non null, non empty,
      *
      * @param name - the name to be validated.
+     *
      * @return the name if valid, or AssertException if invalid.
      */
     public static String assertValidName(String name) {
