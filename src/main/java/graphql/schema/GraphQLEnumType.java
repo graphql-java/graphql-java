@@ -2,7 +2,6 @@ package graphql.schema;
 
 
 import graphql.AssertException;
-import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
@@ -80,14 +79,14 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     private Object getValueByName(Object value) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
         if (enumValueDefinition != null) return enumValueDefinition.getValue();
-        throw new GraphQLException("Invalid input for Enum '" + name + "'. No value found for name " + value.toString());
+        throw new CoercingParseValueException("Invalid input for Enum '" + name + "'. No value found for name '" + value.toString() + "'");
     }
 
     private Object getNameByValue(Object value) {
         for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
             if (value.equals(valueDefinition.getValue())) return valueDefinition.getName();
         }
-        throw new GraphQLException("Invalid input for Enum '" + name + "'. Unknown value " + value);
+        throw new CoercingSerializeException("Invalid input for Enum '" + name + "'. Unknown value '" + value + "'");
     }
 
 

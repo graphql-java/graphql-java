@@ -3,6 +3,8 @@ package graphql
 import graphql.language.BooleanValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseValueException
+import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -43,20 +45,24 @@ class ScalarsIDTest extends Specification {
     }
 
     @Unroll
-    def "serialize/parseValue throws exception for invalid input #value"() {
-        expect:
-        try {
-            Scalars.GraphQLID.getCoercing().serialize(value)
-            assert false: "no exception thrown"
-        } catch (GraphQLException e) {
-            // expected
-        }
-        try {
-            Scalars.GraphQLID.getCoercing().parseValue(value)
-            assert false: "no exception thrown"
-        } catch (GraphQLException e) {
-            // expected
-        }
+    def "serialize throws exception for invalid input #value"() {
+        when:
+        Scalars.GraphQLID.getCoercing().serialize(value)
+        then:
+        thrown(CoercingSerializeException)
+
+        where:
+        value        | _
+        new Object() | _
+
+    }
+
+    @Unroll
+    def "parseValue throws exception for invalid input #value"() {
+        when:
+        Scalars.GraphQLID.getCoercing().parseValue(value)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         value        | _

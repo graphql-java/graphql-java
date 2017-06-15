@@ -3,6 +3,8 @@ package graphql
 import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseValueException
+import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -65,20 +67,11 @@ class ScalarsShortTest extends Specification {
     }
 
     @Unroll
-    def "serialize/parseValue throws exception for invalid input #value"() {
-        expect:
-        try {
-            Scalars.GraphQLShort.getCoercing().serialize(value)
-            assert false: "no exception thrown"
-        } catch (GraphQLException e) {
-            // expected
-        }
-        try {
-            Scalars.GraphQLShort.getCoercing().parseValue(value)
-            assert false: "no exception thrown"
-        } catch (GraphQLException e) {
-            // expected
-        }
+    def "serialize throws exception for invalid input #value"() {
+        when:
+        Scalars.GraphQLShort.getCoercing().serialize(value)
+        then:
+        thrown(CoercingSerializeException)
 
         where:
         value                        | _
@@ -94,5 +87,25 @@ class ScalarsShortTest extends Specification {
 
     }
 
+    @Unroll
+    def "parseValue throws exception for invalid input #value"() {
+        when:
+        Scalars.GraphQLShort.getCoercing().parseValue(value)
+        then:
+        thrown(CoercingParseValueException)
+
+        where:
+        value                        | _
+        ""                           | _
+        "not a number "              | _
+        "42.3"                       | _
+        new Long(42345784398534785l) | _
+        new Double(42.3)             | _
+        new Float(42.3)              | _
+        Short.MAX_VALUE + 1l         | _
+        Short.MIN_VALUE - 1l         | _
+        new Object()                 | _
+
+    }
 
 }
