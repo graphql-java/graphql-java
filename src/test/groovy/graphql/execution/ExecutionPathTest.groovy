@@ -4,6 +4,7 @@ import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.GraphQLError
+import graphql.SerializationError
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import spock.lang.Specification
@@ -46,6 +47,7 @@ class ExecutionPathTest extends Specification {
         type Query {
             f1 : String
             f2 : [Test] 
+            f3 : Float
         }
         
         type Test {
@@ -58,6 +60,7 @@ class ExecutionPathTest extends Specification {
 
         def f1Fetcher = { env -> throw new RuntimeException("error") } as DataFetcher
         def f2Fetcher = { env -> [false, true, false] } as DataFetcher
+        def f3Fetcher = { env -> "This is not a float" } as DataFetcher
         def sub1Fetcher = { env -> "staticValue" } as DataFetcher
         def sub2Fetcher = { env ->
             boolean willThrow = env.getSource()
@@ -70,7 +73,8 @@ class ExecutionPathTest extends Specification {
                 ["Query":
                          [
                                  "f1": f1Fetcher,
-                                 "f2": f2Fetcher
+                                 "f2": f2Fetcher,
+                                 "f3": f3Fetcher
                          ],
                  "Test" :
                          [
@@ -83,17 +87,22 @@ class ExecutionPathTest extends Specification {
         GraphQL graphQL = GraphQL.newGraphQL(schema).build()
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .requestString("{f1 f2{sub1 sub2}}")
+                .requestString("{f1 f2{sub1 sub2} f3}")
                 .build()
 
         List<GraphQLError> errors = graphQL.execute(executionInput).getErrors()
 
         then:
 
-        def error = (ExceptionWhileDataFetching) errors.get(0)
+        errors.size() == 3
+
+        def error = errors.get(0) as ExceptionWhileDataFetching
         ["f1"] == error.getPath()
 
-        def error2 = (ExceptionWhileDataFetching) errors.get(1)
+        def error2 = errors.get(1) as ExceptionWhileDataFetching
         ["f2", 1, "sub2"] == error2.getPath()
+
+        def error3 = errors.get(2) as SerializationError
+        ["f3"] == error3.getPath()
     }
 }

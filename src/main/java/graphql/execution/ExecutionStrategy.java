@@ -230,8 +230,7 @@ public abstract class ExecutionStrategy {
         try {
             serialized = enumType.getCoercing().serialize(result);
         } catch (CoercingSerializeException e) {
-            context.addError(new SerializationError(e));
-            serialized = null;
+            serialized = handleCoercionProblem(context, parameters, e);
         }
         serialized = parameters.nonNullFieldValidator().validate(serialized);
         return new ExecutionResultImpl(serialized, null);
@@ -242,8 +241,7 @@ public abstract class ExecutionStrategy {
         try {
             serialized = scalarType.getCoercing().serialize(result);
         } catch (CoercingSerializeException e) {
-            serialized = null;
-            context.addError(new SerializationError(e));
+            serialized = handleCoercionProblem(context, parameters, e);
         }
 
         // TODO: fix that: this should not be handled here
@@ -253,6 +251,12 @@ public abstract class ExecutionStrategy {
         }
         serialized = parameters.nonNullFieldValidator().validate(serialized);
         return new ExecutionResultImpl(serialized, null);
+    }
+
+    private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
+        log.warn(format("Coercion exception while completing value '%s'", parameters.path()), e);
+        context.addError(new SerializationError(parameters.path(), e));
+        return null;
     }
 
     protected ExecutionResult completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fields, Iterable<Object> result) {

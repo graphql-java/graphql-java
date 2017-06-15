@@ -14,10 +14,6 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     private final ExecutionPath path;
     private final Throwable exception;
 
-    public ExceptionWhileDataFetching(Throwable exception) {
-        this(null, exception);
-    }
-
     public ExceptionWhileDataFetching(ExecutionPath path, Throwable exception) {
         this.path = path;
         this.exception = exception;
