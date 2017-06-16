@@ -2,6 +2,7 @@ package graphql;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Internal
@@ -9,6 +10,10 @@ public class ExecutionResultImpl implements ExecutionResult {
 
     private final List<GraphQLError> errors = new ArrayList<>();
     private Object data;
+
+    public ExecutionResultImpl(GraphQLError error) {
+        this(Collections.singletonList(error));
+    }
 
     public ExecutionResultImpl(List<? extends GraphQLError> errors) {
         this(null, errors);
@@ -22,8 +27,6 @@ public class ExecutionResultImpl implements ExecutionResult {
         }
 
     }
-
-
 
     @Override
     public <T> T getData() {

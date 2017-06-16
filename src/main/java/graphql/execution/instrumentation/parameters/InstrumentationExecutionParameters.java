@@ -1,8 +1,10 @@
 package graphql.execution.instrumentation.parameters;
 
+import graphql.ExecutionInput;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -14,6 +16,15 @@ public class InstrumentationExecutionParameters {
     private final String operation;
     private final Object context;
     private final Map<String, Object> variables;
+
+    public InstrumentationExecutionParameters(ExecutionInput executionInput) {
+        this(
+                executionInput.getQuery(),
+                executionInput.getOperationName(),
+                executionInput.getContext(),
+                executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap()
+        );
+    }
 
     public InstrumentationExecutionParameters(String query, String operation, Object context, Map<String, Object> variables) {
         this.query = query;
