@@ -11,7 +11,7 @@ import java.util.Map;
 @SuppressWarnings("unchecked")
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
-    private final Map<String, Object> arguments;
+    private final Map<String, Object> variables;
     private final Object context;
     private final Object root;
     private final List<Field> fields;
@@ -22,9 +22,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, Object root, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, DataFetchingFieldSelectionSet selectionSet) {
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> variables, Object context, Object root, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, DataFetchingFieldSelectionSet selectionSet) {
         this.source = source;
-        this.arguments = arguments;
+        this.variables = variables;
         this.context = context;
         this.root = root;
         this.fields = fields;
@@ -42,18 +42,18 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public Map<String, Object> getArguments() {
-        return arguments;
+    public Map<String, Object> getVariables() {
+        return variables;
     }
 
     @Override
-    public boolean containsArgument(String name) {
-        return arguments.containsKey(name);
+    public boolean containsVariable(String name) {
+        return variables.containsKey(name);
     }
 
     @Override
-    public <T> T getArgument(String name) {
-        return (T) arguments.get(name);
+    public <T> T getVariable(String name) {
+        return (T) variables.get(name);
     }
 
     @Override

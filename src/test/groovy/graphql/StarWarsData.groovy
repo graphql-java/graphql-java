@@ -9,74 +9,74 @@ import graphql.schema.idl.EnumValuesProvider
 class StarWarsData {
 
 
-    static def luke = [
+    static luke = [
             id        : '1000',
             name      : 'Luke Skywalker',
             friends   : ['1002', '1003', '2000', '2001'],
             appearsIn : [4, 5, 6],
             homePlanet: 'Tatooine'
-    ];
+    ]
 
-    static def vader = [
+    static vader = [
             id        : '1001',
             name      : 'Darth Vader',
             friends   : ['1004'],
             appearsIn : [4, 5, 6],
             homePlanet: 'Tatooine',
-    ];
+    ]
 
-    static def han = [
+    static han = [
             id       : '1002',
             name     : 'Han Solo',
             friends  : ['1000', '1003', '2001'],
             appearsIn: [4, 5, 6],
-    ];
+    ]
 
-    static def leia = [
+    static leia = [
             id        : '1003',
             name      : 'Leia Organa',
             friends   : ['1000', '1002', '2000', '2001'],
             appearsIn : [4, 5, 6],
             homePlanet: 'Alderaan',
-    ];
+    ]
 
-    static def tarkin = [
+    static tarkin = [
             id       : '1004',
             name     : 'Wilhuff Tarkin',
             friends  : ['1001'],
             appearsIn: [4],
-    ];
+    ]
 
-    static def humanData = [
+    static humanData = [
             '1000': luke,
             '1001': vader,
             '1002': han,
             '1003': leia,
             '1004': tarkin,
-    ];
+    ]
 
-    static def threepio = [
+    static threepio = [
             id             : '2000',
             name           : 'C-3PO',
             friends        : ['1000', '1002', '1003', '2001'],
             appearsIn      : [4, 5, 6],
             primaryFunction: 'Protocol',
-    ];
+    ]
 
-    static def artoo = [
+    static artoo = [
             id             : '2001',
             name           : 'R2-D2',
             friends        : ['1000', '1002', '1003'],
             appearsIn      : [4, 5, 6],
             primaryFunction: 'Astromech',
-    ];
+    ]
 
-    static def droidData = [
+    static droidData = [
             "2000": threepio,
             "2001": artoo,
     ]
 
-    static def getCharacter(String id) {
+    static getCharacter(String id) {
         if (humanData[id] != null) return humanData[id]
         if (droidData[id] != null) return droidData[id]
         return null
@@ -85,7 +85,7 @@ class StarWarsData {
     static DataFetcher humanDataFetcher = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {
-            def id = environment.arguments.id
+            def id = environment.variables.id
             humanData[id]
         }
     }
@@ -94,7 +94,7 @@ class StarWarsData {
     static DataFetcher droidDataFetcher = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {
-            def id = environment.arguments.id
+            def id = environment.variables.id
             droidData[id]
         }
     }
@@ -107,7 +107,7 @@ class StarWarsData {
                 return StarWarsSchema.humanType
             if (droidData[id] != null)
                 return StarWarsSchema.droidType
-            return null;
+            return null
         }
     }
 
@@ -124,10 +124,10 @@ class StarWarsData {
 
     static DataFetcher heroDataFetcher = new DataFetcher() {
         @Override
-        public Object get(DataFetchingEnvironment environment) {
-            if (environment.containsArgument("episode")
-                    && 5 == environment.getArgument("episode")) return luke;
-            return artoo;
+        Object get(DataFetchingEnvironment environment) {
+            if (environment.containsVariable("episode")
+                    && 5 == environment.getVariable("episode")) return luke
+            return artoo
         }
     }
 

@@ -68,9 +68,9 @@ public class HttpMain extends AbstractHandler {
         }
 
         ExecutionInput.Builder executionInput = newExecutionInput()
-                .requestString(parameters.getQuery())
+                .query(parameters.getQuery())
                 .operationName(parameters.getOperationName())
-                .arguments(parameters.getVariables());
+                .variables(parameters.getVariables());
 
         //
         // the context object is something that means something to down stream code.  It is instructions

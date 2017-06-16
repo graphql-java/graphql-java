@@ -31,8 +31,8 @@ public class MutationSchema {
     }
 
     public static class SubscriptionRoot {
-        List<String> result = new ArrayList<String>();
-        List<Integer> subscribers = new ArrayList<Integer>();
+        List<String> result = new ArrayList<>();
+        List<Integer> subscribers = new ArrayList<>();
         NumberHolder numberHolder;
 
         public SubscriptionRoot(int initalNumber) {
@@ -91,7 +91,7 @@ public class MutationSchema {
                             .name("newNumber")
                             .type(GraphQLInt))
                     .dataFetcher(environment -> {
-                        Integer newNumber = environment.getArgument("newNumber");
+                        Integer newNumber = environment.getVariable("newNumber");
                         SubscriptionRoot root = environment.getSource();
                         return root.changeNumber(newNumber);
                     }))
@@ -102,7 +102,7 @@ public class MutationSchema {
                             .name("newNumber")
                             .type(GraphQLInt))
                     .dataFetcher(environment -> {
-                        Integer newNumber = environment.getArgument("newNumber");
+                        Integer newNumber = environment.getVariable("newNumber");
                         SubscriptionRoot root = environment.getSource();
                         return root.failToChangeTheNumber(newNumber);
                     }))
@@ -117,7 +117,7 @@ public class MutationSchema {
                             .name("clientId")
                             .type(GraphQLInt))
                     .dataFetcher(environment -> {
-                        Integer clientId = environment.getArgument("clientId");
+                        Integer clientId = environment.getVariable("clientId");
                         SubscriptionRoot subscriptionRoot = environment.getSource();
                         subscriptionRoot.subscribeToNumberChanges(clientId);
                         return subscriptionRoot.getNumberHolder();

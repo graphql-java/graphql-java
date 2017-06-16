@@ -1,7 +1,5 @@
 package graphql;
 
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
@@ -33,8 +31,8 @@ public class NestedInputSchema {
                         .name("value")
                         .type(GraphQLInt)
                         .dataFetcher(environment -> {
-                            Integer initialValue = environment.getArgument("initialValue");
-                            Map<String, Object> filter = environment.getArgument("filter");
+                            Integer initialValue = environment.getVariable("initialValue");
+                            Map<String, Object> filter = environment.getVariable("filter");
                             if (filter != null) {
                                 if (filter.containsKey("even")) {
                                     Boolean even = (Boolean) filter.get("even");

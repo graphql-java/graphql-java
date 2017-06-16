@@ -168,7 +168,7 @@ public class Introspection {
 
     public static DataFetcher fieldsFetcher = environment -> {
         Object type = environment.getSource();
-        Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+        Boolean includeDeprecated = environment.getVariable("includeDeprecated");
         if (type instanceof GraphQLFieldsContainer) {
             GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
             List<GraphQLFieldDefinition> fieldDefinitions = fieldsContainer.getFieldDefinitions();
@@ -203,7 +203,7 @@ public class Introspection {
 
     public static DataFetcher enumValuesTypesFetcher = environment -> {
         Object type = environment.getSource();
-        Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+        Boolean includeDeprecated = environment.getVariable("includeDeprecated");
         if (type instanceof GraphQLEnumType) {
             List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
             if (includeDeprecated) return values;
@@ -412,7 +412,7 @@ public class Introspection {
                     .name("name")
                     .type(nonNull(GraphQLString)))
             .dataFetcher(environment -> {
-                String name = environment.getArgument("name");
+                String name = environment.getVariable("name");
                 return environment.getGraphQLSchema().getType(name);
             }).build();
 

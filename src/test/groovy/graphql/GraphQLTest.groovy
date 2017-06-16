@@ -344,7 +344,7 @@ class GraphQLTest extends Specification {
                                 .name("foo")
                                 .type(GraphQLInt)
                                 .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                .dataFetcher({ return it.getArgument("bar") })
+                                .dataFetcher({ return it.getVariable("bar") })
                 ))
                 .build()
         def query = "{foo(bar: 12345678910)}"
@@ -377,8 +377,8 @@ class GraphQLTest extends Specification {
         then:
         1 * dataFetcher.get(_) >> {
             DataFetchingEnvironment env ->
-                assert env.arguments.size() == 0
-                assert env.arguments['bar'] == null
+                assert env.variables.size() == 0
+                assert env.variables['bar'] == null
         }
     }
 
@@ -407,10 +407,10 @@ class GraphQLTest extends Specification {
         result.errors.size() == 0
         1 * dataFetcher.get(_) >> {
             DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert env.arguments['bar']['someKey'] == 'value'
-                assert env.arguments['bar']['otherKey'] == null
+                assert env.variables.size() == 1
+                assert env.variables["bar"] instanceof Map
+                assert env.variables['bar']['someKey'] == 'value'
+                assert env.variables['bar']['otherKey'] == null
         }
     }
 

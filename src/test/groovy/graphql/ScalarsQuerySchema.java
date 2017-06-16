@@ -12,11 +12,11 @@ import java.math.BigInteger;
 
 public class ScalarsQuerySchema {
 
-    public static final DataFetcher inputDF = environment -> environment.getArgument("input");
+    public static final DataFetcher inputDF = environment -> environment.getVariable("input");
 
     public static final GraphQLObjectType queryType = newObject()
             .name("QueryType")
-            /** Static Scalars */
+            /*Static Scalars */
             .field(newFieldDefinition()
                     .name("bigInteger")
                     .type(Scalars.GraphQLBigInteger)
@@ -33,7 +33,7 @@ public class ScalarsQuerySchema {
             
             
             
-            /** Scalars with input of same type, value echoed back */
+            /* Scalars with input of same type, value echoed back */
             .field(newFieldDefinition()
                     .name("bigIntegerInput")
                     .type(Scalars.GraphQLBigInteger)
@@ -68,7 +68,7 @@ public class ScalarsQuerySchema {
             
             
             
-            /** Scalars with input of String, cast to scalar */
+            /* Scalars with input of String, cast to scalar */
             .field(newFieldDefinition()
                     .name("bigIntegerString")
                     .type(Scalars.GraphQLBigInteger)

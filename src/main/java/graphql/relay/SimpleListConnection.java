@@ -43,9 +43,9 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
 
         List<Edge<T>> edges = buildEdges();
 
-        int afterOffset = getOffsetFromCursor(environment.getArgument("after"), -1);
+        int afterOffset = getOffsetFromCursor(environment.getVariable("after"), -1);
         int begin = Math.max(afterOffset, -1) + 1;
-        int beforeOffset = getOffsetFromCursor(environment.getArgument("before"), edges.size());
+        int beforeOffset = getOffsetFromCursor(environment.getVariable("before"), edges.size());
         int end = Math.min(beforeOffset, edges.size());
 
         if (begin > end) begin = end;
@@ -55,8 +55,8 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
             return emptyConnection();
         }
 
-        Integer first = environment.<Integer>getArgument("first");
-        Integer last = environment.<Integer>getArgument("last");
+        Integer first = environment.<Integer>getVariable("first");
+        Integer last = environment.<Integer>getVariable("last");
 
         ConnectionCursor firstPresliceCursor = edges.get(0).getCursor();
         ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
