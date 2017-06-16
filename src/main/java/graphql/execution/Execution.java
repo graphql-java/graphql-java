@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
@@ -41,7 +42,12 @@ public class Execution {
         this.instrumentation = instrumentation;
     }
 
-    public ExecutionResult execute(ExecutionId executionId, GraphQLSchema graphQLSchema, Object context, Object root, Document document, String operationName, Map<String, Object> variables) {
+    public ExecutionResult execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput) {
+        final Object context = executionInput.getContext();
+        final Object root = executionInput.getRoot();
+        final String operationName = executionInput.getOperationName();
+        final Map<String, Object> variables = executionInput.getVariables();
+
         ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver(), instrumentation);
         ExecutionContext executionContext = executionContextBuilder
                 .executionId(executionId)

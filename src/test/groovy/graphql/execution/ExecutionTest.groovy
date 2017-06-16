@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.ExecutionInput
 import graphql.MutationSchema
 import graphql.execution.instrumentation.NoOpInstrumentation
 import graphql.parser.Parser
@@ -12,6 +13,7 @@ class ExecutionTest extends Specification {
     def mutationStrategy = Mock(ExecutionStrategy)
     def queryStrategy = Mock(ExecutionStrategy)
     def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, NoOpInstrumentation.INSTANCE)
+    def emptyExecutionInput = ExecutionInput.newExecutionInput().build()
 
     def "query strategy is used for query requests"() {
         given:
@@ -30,7 +32,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(ExecutionId.generate(), MutationSchema.schema, null, null, document, null, null)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput)
 
         then:
         1 * queryStrategy.execute(*_)
@@ -50,7 +52,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(ExecutionId.generate(), MutationSchema.schema, null, null, document, null, null)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput)
 
         then:
         0 * queryStrategy.execute(*_)
@@ -70,7 +72,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(ExecutionId.generate(), MutationSchema.schema, null, null, document, null, null)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput)
 
         then:
         0 * queryStrategy.execute(*_)
