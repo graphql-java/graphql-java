@@ -46,6 +46,7 @@ public class GraphQL {
      * A GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
+     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -59,6 +60,7 @@ public class GraphQL {
      *
      * @param graphQLSchema the schema to use
      * @param queryStrategy the query execution strategy to use
+     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -73,6 +75,7 @@ public class GraphQL {
      * @param graphQLSchema    the schema to use
      * @param queryStrategy    the query execution strategy to use
      * @param mutationStrategy the mutation execution strategy to use
+     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -87,6 +90,7 @@ public class GraphQL {
      * @param queryStrategy        the query execution strategy to use
      * @param mutationStrategy     the mutation execution strategy to use
      * @param subscriptionStrategy the subscription execution strategy to use
+     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -107,6 +111,7 @@ public class GraphQL {
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
+     *
      * @return a builder of GraphQL objects
      */
     public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
@@ -167,99 +172,130 @@ public class GraphQL {
     }
 
     /**
-     * @param requestString the query/mutation/subscription
+     * @param query the query/mutation/subscription
+     *
      * @return result including errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
-    public ExecutionResult execute(String requestString) {
-        return execute(requestString, null);
+    public ExecutionResult execute(String query) {
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .build();
+        return execute(executionInput);
     }
 
     /**
      * Info: This sets context = root to be backwards compatible.
      *
-     * @param requestString the query/mutation/subscription
-     * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
+     * @param query   the query/mutation/subscription
+     * @param context custom object provided to each {@link graphql.schema.DataFetcher}
+     *
      * @return result including errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
-    public ExecutionResult execute(String requestString, Object context) {
-        return execute(requestString, context, Collections.emptyMap());
+    public ExecutionResult execute(String query, Object context) {
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .context(context)
+                .root(context) // This we are doing do be backwards compatible
+                .build();
+        return execute(executionInput);
     }
 
     /**
      * Info: This sets context = root to be backwards compatible.
      *
-     * @param requestString the query/mutation/subscription
+     * @param query         the query/mutation/subscription
      * @param operationName the name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
-     * @return result including errors
-     * @deprecated Use {@link #execute(ExecutionInput)}
-     */
-    @Deprecated
-    public ExecutionResult execute(String requestString, String operationName, Object context) {
-        return execute(requestString, operationName, context, Collections.emptyMap());
-    }
-
-    /**
-     * Info: This sets context = root to be backwards compatible.
      *
-     * @param requestString the query/mutation/subscription
-     * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
-     * @param arguments     variable values uses as argument
      * @return result including errors
-     * @deprecated Use {@link #execute(ExecutionInput)}
-     */
-    @Deprecated
-    public ExecutionResult execute(String requestString, Object context, Map<String, Object> arguments) {
-        return execute(requestString, null, context, arguments);
-    }
-
-    /**
-     * Info: This sets context = root to be backwards compatible.
      *
-     * @param requestString the query/mutation/subscription
-     * @param operationName name of the operation to execute
-     * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
-     * @param arguments     variable values uses as argument
-     * @return result including errors
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
-    public ExecutionResult execute(String requestString, String operationName, Object context, Map<String, Object> arguments) {
+    public ExecutionResult execute(String query, String operationName, Object context) {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .requestString(requestString)
+                .query(query)
                 .operationName(operationName)
                 .context(context)
                 .root(context) // This we are doing do be backwards compatible
-                .arguments(arguments)
+                .build();
+        return execute(executionInput);
+    }
+
+    /**
+     * Info: This sets context = root to be backwards compatible.
+     *
+     * @param query     the query/mutation/subscription
+     * @param context   custom object provided to each {@link graphql.schema.DataFetcher}
+     * @param variables variable values uses as argument
+     *
+     * @return result including errors
+     *
+     * @deprecated Use {@link #execute(ExecutionInput)}
+     */
+    @Deprecated
+    public ExecutionResult execute(String query, Object context, Map<String, Object> variables) {
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .context(context)
+                .root(context) // This we are doing do be backwards compatible
+                .variables(variables)
+                .build();
+        return execute(executionInput);
+    }
+
+    /**
+     * Info: This sets context = root to be backwards compatible.
+     *
+     * @param query         the query/mutation/subscription
+     * @param operationName name of the operation to execute
+     * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
+     * @param variables     variable values uses as argument
+     *
+     * @return result including errors
+     *
+     * @deprecated Use {@link #execute(ExecutionInput)}
+     */
+    @Deprecated
+    public ExecutionResult execute(String query, String operationName, Object context, Map<String, Object> variables) {
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .operationName(operationName)
+                .context(context)
+                .root(context) // This we are doing do be backwards compatible
+                .variables(variables)
                 .build();
         return execute(executionInput);
     }
 
     /**
      * @param executionInput {@link ExecutionInput}
+     *
      * @return result including errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
-        String requestString = executionInput.getRequestString();
+        String query = executionInput.getQuery();
         String operationName = executionInput.getOperationName();
         Object context = executionInput.getContext();
         Object root = executionInput.getRoot();
-        Map<String, Object> arguments = executionInput.getArguments() != null ? executionInput.getArguments() : Collections.emptyMap();
+        Map<String, Object> variables = executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap();
 
-        log.debug("Executing request. operation name: {}. Request: {} ", operationName, requestString);
+        log.debug("Executing request. operation name: {}. query: {} ", operationName, query);
 
-        InstrumentationContext<ExecutionResult> executionCtx = instrumentation.beginExecution(new InstrumentationExecutionParameters(requestString, operationName, context, arguments));
+        InstrumentationContext<ExecutionResult> executionCtx = instrumentation.beginExecution(new InstrumentationExecutionParameters(query, operationName, context, variables));
 
 
-        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new InstrumentationExecutionParameters(requestString, operationName, context, arguments));
+        InstrumentationContext<Document> parseCtx = instrumentation.beginParse(new InstrumentationExecutionParameters(query, operationName, context, variables));
         Parser parser = new Parser();
         Document document;
         try {
-            document = parser.parseDocument(requestString);
+            document = parser.parseDocument(query);
             parseCtx.onEnd(document);
         } catch (ParseCancellationException e) {
             RecognitionException recognitionException = (RecognitionException) e.getCause();
@@ -271,7 +307,7 @@ public class GraphQL {
             return new ExecutionResultImpl(Collections.singletonList(invalidSyntaxError));
         }
 
-        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(requestString, operationName, context, arguments, document));
+        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(query, operationName, context, variables, document));
 
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
@@ -281,10 +317,10 @@ public class GraphQL {
         if (validationErrors.size() > 0) {
             return new ExecutionResultImpl(validationErrors);
         }
-        ExecutionId executionId = idProvider.provide(requestString, operationName, context);
+        ExecutionId executionId = idProvider.provide(query, operationName, context);
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
-        ExecutionResult result = execution.execute(executionId, graphQLSchema, context, root, document, operationName, arguments);
+        ExecutionResult result = execution.execute(executionId, graphQLSchema, context, root, document, operationName, variables);
 
         executionCtx.onEnd(result);
 
