@@ -487,6 +487,9 @@ public class Scalars {
             if (input instanceof Integer) {
                 return String.valueOf(input);
             }
+            if (input instanceof Long) {
+                return String.valueOf(input);
+            }
             return null;
 
         }
