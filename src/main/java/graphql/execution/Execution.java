@@ -41,11 +41,11 @@ public class Execution {
         this.instrumentation = instrumentation;
     }
 
-    public ExecutionResult execute(ExecutionId executionId, GraphQLSchema graphQLSchema, Object context, Object root, Document document, String operationName, Map<String, Object> args) {
+    public ExecutionResult execute(ExecutionId executionId, GraphQLSchema graphQLSchema, Object context, Object root, Document document, String operationName, Map<String, Object> variables) {
         ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver(), instrumentation);
         ExecutionContext executionContext = executionContextBuilder
                 .executionId(executionId)
-                .build(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, context, root, document, operationName, args);
+                .build(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, context, root, document, operationName, variables);
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
 
