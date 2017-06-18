@@ -101,7 +101,7 @@ class ExecutionPathTest extends Specification {
         GraphQL graphQL = GraphQL.newGraphQL(schema).build()
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .requestString("""
+                .query("""
                     {
                         f1 
                         f2 {
