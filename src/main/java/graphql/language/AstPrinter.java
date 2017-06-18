@@ -109,7 +109,11 @@ public class AstPrinter {
     private static NodePrinter<EnumValueDefinition> enumValueDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
-            out.printf("%s", node.getName());
+            out.printf("%s",
+                    spaced(
+                            node.getName(),
+                            directives(node.getDirectives())
+                    ));
         };
     }
 
@@ -138,15 +142,21 @@ public class AstPrinter {
                 args = join(node.getInputValueDefinitions(), "\n");
                 out.printf("%s", node.getName() +
                         wrap("(\n", args, "\n)") +
-                        ": " + type(node.getType()) +
-                        directives(node.getDirectives())
+                        ": " +
+                        spaced(
+                                type(node.getType()),
+                                directives(node.getDirectives())
+                        )
                 );
             } else {
                 args = join(node.getInputValueDefinitions(), ", ");
                 out.printf("%s", node.getName() +
                         wrap("(", args, ")") +
-                        ": " + type(node.getType()) +
-                        directives(node.getDirectives())
+                        ": " +
+                        spaced(
+                                type(node.getType()),
+                                directives(node.getDirectives())
+                        )
                 );
             }
         };
@@ -485,6 +495,7 @@ public class AstPrinter {
      * This will pretty print the AST node in graphql language format
      *
      * @param node the AST node to print
+     *
      * @return the printed node in graphql language format
      */
     public static String printAst(Node node) {

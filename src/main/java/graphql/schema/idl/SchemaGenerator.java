@@ -1,9 +1,11 @@
 package graphql.schema.idl;
 
 import graphql.GraphQLError;
+import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
 import graphql.language.Comment;
+import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
 import graphql.language.FieldDefinition;
@@ -58,9 +60,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * This can generate a working runtime schema from a type registry and runtime wiring
@@ -425,6 +428,8 @@ public class SchemaGenerator {
         EnumValuesProvider enumValuesProvider = buildCtx.getWiring().getEnumValuesProviders().get(typeDefinition.getName());
         typeDefinition.getEnumValueDefinitions().forEach(evd -> {
             String description = buildDescription(evd);
+            String deprecation = buildDeprecationReason(evd.getDirectives());
+
             Object value;
             if (enumValuesProvider != null) {
                 value = enumValuesProvider.getValue(evd.getName());
@@ -432,7 +437,7 @@ public class SchemaGenerator {
             } else {
                 value = evd.getName();
             }
-            builder.value(evd.getName(), value, description);
+            builder.value(evd.getName(), value, description, deprecation);
         });
         return builder.build();
     }
@@ -445,6 +450,7 @@ public class SchemaGenerator {
         GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
         builder.name(fieldDef.getName());
         builder.description(buildDescription(fieldDef));
+        builder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
 
         builder.dataFetcher(buildDataFetcher(buildCtx, parentType, fieldDef));
 
@@ -496,12 +502,14 @@ public class SchemaGenerator {
         fieldBuilder.name(fieldDef.getName());
         fieldBuilder.description(buildDescription(fieldDef));
 
+        // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
+        //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
+
         fieldBuilder.type(buildInputType(buildCtx, fieldDef.getType()));
         fieldBuilder.defaultValue(buildValue(fieldDef.getDefaultValue()));
 
         return fieldBuilder.build();
     }
-
 
     private GraphQLArgument buildArgument(BuildContext buildCtx, InputValueDefinition valueDefinition) {
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
@@ -513,6 +521,7 @@ public class SchemaGenerator {
 
         return builder.build();
     }
+
 
     private Object buildValue(Value value) {
         Object result = null;
@@ -544,6 +553,7 @@ public class SchemaGenerator {
         return map;
     }
 
+    @SuppressWarnings("Duplicates")
     private TypeResolver getTypeResolverForUnion(BuildContext buildCtx, UnionTypeDefinition unionType) {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         RuntimeWiring wiring = buildCtx.getWiring();
@@ -567,6 +577,7 @@ public class SchemaGenerator {
         return typeResolver;
     }
 
+    @SuppressWarnings("Duplicates")
     private TypeResolver getTypeResolverForInterface(BuildContext buildCtx, InterfaceTypeDefinition interfaceType) {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         RuntimeWiring wiring = buildCtx.getWiring();
@@ -590,7 +601,6 @@ public class SchemaGenerator {
         return typeResolver;
     }
 
-
     private String buildDescription(Node node) {
         List<Comment> comments = node.getComments();
         List<String> lines = new ArrayList<>();
@@ -603,6 +613,24 @@ public class SchemaGenerator {
             }
         }
         if (lines.size() == 0) return null;
-        return lines.stream().collect(Collectors.joining("\n"));
+        return lines.stream().collect(joining("\n"));
+    }
+
+
+    private String buildDeprecationReason(List<Directive> directives) {
+        directives = directives == null ? Collections.emptyList() : directives;
+        Optional<Directive> directive = directives.stream().filter(d -> "deprecated".equals(d.getName())).findFirst();
+        if (directive.isPresent()) {
+            Map<String, String> args = directive.get().getArguments().stream().collect(toMap(
+                    Argument::getName, arg -> ((StringValue) arg.getValue()).getValue()
+            ));
+            if (args.isEmpty()) {
+                return "No longer supported"; // default value from spec
+            } else {
+                // pre flight checks have ensured its valid
+                return args.get("reason");
+            }
+        }
+        return null;
     }
 }
