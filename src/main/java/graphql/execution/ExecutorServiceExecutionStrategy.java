@@ -46,7 +46,11 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         Map<String, Future<ExecutionResult>> futures = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
             final List<Field> fieldList = fields.get(fieldName);
-            Callable<ExecutionResult> resolveField = () -> resolveField(executionContext, parameters, fieldList);
+
+            ExecutionPath fieldPath = parameters.path().segment(fieldName);
+            ExecutionStrategyParameters newParameters = parameters.transform(bldr -> bldr.path(fieldPath));
+
+            Callable<ExecutionResult> resolveField = () -> resolveField(executionContext, newParameters, fieldList);
             futures.put(fieldName, executorService.submit(resolveField));
         }
         try {

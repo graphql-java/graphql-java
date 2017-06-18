@@ -1,18 +1,24 @@
 package graphql;
 
 
+import graphql.execution.ExecutionPath;
 import graphql.language.SourceLocation;
 import graphql.schema.CoercingSerializeException;
 
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+import static java.lang.String.format;
+
 @PublicApi
 public class SerializationError implements GraphQLError {
 
     private final CoercingSerializeException exception;
+    private final ExecutionPath path;
 
-    public SerializationError(CoercingSerializeException exception) {
-        this.exception = exception;
+    public SerializationError(ExecutionPath path, CoercingSerializeException exception) {
+        this.path = assertNotNull(path);
+        this.exception = assertNotNull(exception);
     }
 
     public CoercingSerializeException getException() {
@@ -22,7 +28,7 @@ public class SerializationError implements GraphQLError {
 
     @Override
     public String getMessage() {
-        return "Can't serialize value: " + exception.getMessage();
+        return format("Can't serialize value (%s) : %s", path, exception.getMessage());
     }
 
     @Override
@@ -35,13 +41,25 @@ public class SerializationError implements GraphQLError {
         return ErrorType.DataFetchingException;
     }
 
+    /**
+     * The graphql spec says that that path field of any error should be a list
+     * of path entries - http://facebook.github.io/graphql/#sec-Errors
+     *
+     * @return the path in list format
+     */
+    public List<Object> getPath() {
+        return path.toList();
+    }
+
     @Override
     public String toString() {
         return "ExceptionWhileDataFetching{" +
+                "path=" + path +
                 "exception=" + exception +
                 '}';
     }
 
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object o) {
         return Helper.equals(this, o);

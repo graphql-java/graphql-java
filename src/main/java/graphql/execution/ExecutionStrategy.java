@@ -60,6 +60,7 @@ public abstract class ExecutionStrategy {
      * @param executionContext the execution context in play
      * @param fieldDef         the field definition
      * @param argumentValues   the map of arguments
+     * @param path             the logical path to the field in question
      * @param e                the exception that occurred
      */
     @SuppressWarnings("unused")
@@ -67,8 +68,12 @@ public abstract class ExecutionStrategy {
             ExecutionContext executionContext,
             GraphQLFieldDefinition fieldDef,
             Map<String, Object> argumentValues,
+            ExecutionPath path,
             Exception e) {
-        executionContext.addError(new ExceptionWhileDataFetching(e));
+        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, e);
+        executionContext.addError(error);
+        log.warn(error.getMessage(), e);
+
     }
 
 
@@ -102,9 +107,8 @@ public abstract class ExecutionStrategy {
 
             fetchCtx.onEnd(resolvedValue);
         } catch (Exception e) {
-            log.warn("Exception while fetching data", e);
-            handleDataFetchingException(executionContext, fieldDef, argumentValues, e);
             fetchCtx.onEnd(e);
+            handleDataFetchingException(executionContext, fieldDef, argumentValues, parameters.path(), e);
         }
 
         TypeInfo fieldTypeInfo = newTypeInfo()
@@ -121,6 +125,7 @@ public abstract class ExecutionStrategy {
                 .arguments(argumentValues)
                 .source(resolvedValue)
                 .nonNullFieldValidator(nonNullableFieldValidator)
+                .path(parameters.path())
                 .build();
 
         ExecutionResult result = completeValue(executionContext, newParameters, fields);
@@ -135,7 +140,7 @@ public abstract class ExecutionStrategy {
         GraphQLType fieldType = parameters.typeInfo().type();
 
         if (result == null) {
-            return parameters.nonNullFieldValidator().validate(null);
+            return parameters.nonNullFieldValidator().validate(parameters.path(), null);
         } else if (fieldType instanceof GraphQLList) {
             return completeValueForList(executionContext, parameters, fields, toIterable(result));
         } else if (fieldType instanceof GraphQLScalarType) {
@@ -184,6 +189,7 @@ public abstract class ExecutionStrategy {
                 .typeInfo(newTypeInfo)
                 .fields(subFields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
+                .path(parameters.path())
                 .source(result).build();
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
@@ -222,10 +228,9 @@ public abstract class ExecutionStrategy {
         try {
             serialized = enumType.getCoercing().serialize(result);
         } catch (CoercingSerializeException e) {
-            executionContext.addError(new SerializationError(e));
-            serialized = null;
+            serialized = handleCoercionProblem(executionContext, parameters, e);
         }
-        serialized = parameters.nonNullFieldValidator().validate(serialized);
+        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
         return new ExecutionResultImpl(serialized, null);
     }
 
@@ -234,8 +239,7 @@ public abstract class ExecutionStrategy {
         try {
             serialized = scalarType.getCoercing().serialize(result);
         } catch (CoercingSerializeException e) {
-            serialized = null;
-            executionContext.addError(new SerializationError(e));
+            serialized = handleCoercionProblem(executionContext, parameters, e);
         }
 
         // TODO: fix that: this should not be handled here
@@ -243,27 +247,39 @@ public abstract class ExecutionStrategy {
         if (serialized instanceof Double && ((Double) serialized).isNaN()) {
             serialized = null;
         }
-        serialized = parameters.nonNullFieldValidator().validate(serialized);
+        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
         return new ExecutionResultImpl(serialized, null);
+    }
+
+    private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
+        SerializationError error = new SerializationError(parameters.path(), e);
+        log.warn(error.getMessage(), e);
+        context.addError(error);
+        return null;
     }
 
     protected ExecutionResult completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fields, Iterable<Object> result) {
         List<Object> completedResults = new ArrayList<>();
         TypeInfo typeInfo = parameters.typeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
+        int idx = 0;
         for (Object item : result) {
 
             TypeInfo wrappedTypeInfo = typeInfo.asType(fieldType.getWrappedType());
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedTypeInfo);
 
+            ExecutionPath indexedPath = parameters.path().segment(idx);
+
             ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
                     .typeInfo(wrappedTypeInfo)
                     .fields(parameters.fields())
                     .nonNullFieldValidator(nonNullableFieldValidator)
+                    .path(indexedPath)
                     .source(item).build();
 
             ExecutionResult completedValue = completeValue(executionContext, newParameters, fields);
             completedResults.add(completedValue != null ? completedValue.getData() : null);
+            idx++;
         }
         return new ExecutionResultImpl(completedResults, null);
     }

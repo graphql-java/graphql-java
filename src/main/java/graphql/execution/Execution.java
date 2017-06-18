@@ -98,6 +98,7 @@ public class Execution {
                 .source(root)
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
+                .path(ExecutionPath.rootPath())
                 .build();
 
         ExecutionResult result;

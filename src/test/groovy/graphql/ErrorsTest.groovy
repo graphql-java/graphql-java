@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.ExecutionPath
 import graphql.language.SourceLocation
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
@@ -50,9 +51,9 @@ class ErrorsTest extends Specification {
     def "ExceptionWhileDataFetching equals and hashcode works"() {
         expect:
 
-        def same1 = new ExceptionWhileDataFetching(new RuntimeException("bad ju ju"))
-        def same2 = new ExceptionWhileDataFetching(new RuntimeException("bad ju ju"))
-        def different1 = new ExceptionWhileDataFetching(new RuntimeException("unexpected ju ju"))
+        def same1 = new ExceptionWhileDataFetching(ExecutionPath.rootPath(),new RuntimeException("bad ju ju"))
+        def same2 = new ExceptionWhileDataFetching(ExecutionPath.rootPath(),new RuntimeException("bad ju ju"))
+        def different1 = new ExceptionWhileDataFetching(ExecutionPath.rootPath(),new RuntimeException("unexpected ju ju"))
 
         commonAssert(same1, same2, different1)
     }

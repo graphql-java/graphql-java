@@ -15,8 +15,12 @@ public class SimpleExecutionStrategy extends ExecutionStrategy {
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
             List<Field> fieldList = fields.get(fieldName);
+
+            ExecutionPath fieldPath = parameters.path().segment(fieldName);
+            ExecutionStrategyParameters newParameters = parameters.transform(bldr -> bldr.path(fieldPath));
+
             try {
-                ExecutionResult resolvedResult = resolveField(executionContext, parameters, fieldList);
+                ExecutionResult resolvedResult = resolveField(executionContext, newParameters, fieldList);
 
                 results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
             } catch (NonNullableFieldWasNullException e) {
