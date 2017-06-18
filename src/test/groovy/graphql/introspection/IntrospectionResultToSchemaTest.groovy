@@ -553,7 +553,7 @@ CharacterInput {
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build();
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
 
-        def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().requestString(INTROSPECTION_QUERY).build())
+        def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
         Document schemaDefinitionDocument = introspectionResultToSchema.createSchemaDefinition(introspectionResult.data as Map)
         AstPrinter astPrinter = new AstPrinter()
         def astPrinterResult = astPrinter.printAst(schemaDefinitionDocument)
