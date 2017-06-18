@@ -2,7 +2,7 @@ Relay Support
 =============
 
 
-Very basic support for `Relay <https://github.com/facebook/relay`_ is included.
+Very basic support for `Relay <https://github.com/facebook/relay>`_ is included.
 
 **Note**: Relay refers here to "Relay Classic", there is no support for "Relay Modern".
 
