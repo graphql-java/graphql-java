@@ -52,6 +52,7 @@ public class DataFetchingEnvironmentBuilder {
     private Map<String, Object> arguments = Collections.emptyMap();
     private Object context;
     private Object root;
+    private GraphQLFieldDefinition field;
     private List<Field> fields = Collections.emptyList();
     private GraphQLOutputType fieldType;
     private GraphQLType parentType;
@@ -78,6 +79,11 @@ public class DataFetchingEnvironmentBuilder {
 
     public DataFetchingEnvironmentBuilder root(Object root) {
         this.root = root;
+        return this;
+    }
+
+    public DataFetchingEnvironmentBuilder field(GraphQLFieldDefinition field) {
+        this.field = field;
         return this;
     }
 
@@ -118,7 +124,7 @@ public class DataFetchingEnvironmentBuilder {
 
     public DataFetchingEnvironment build() {
         return new DataFetchingEnvironmentImpl(source, arguments, context, root,
-                fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet
+                field, fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet
         );
     }
 }
