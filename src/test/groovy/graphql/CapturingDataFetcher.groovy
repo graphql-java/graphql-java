@@ -4,7 +4,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 
 /**
- * Help to capture data fetcher arguments passed in
+ * Help to capture data fetcher variables passed in
  */
 class CapturingDataFetcher implements DataFetcher {
     Map<String, Object> args
@@ -13,7 +13,7 @@ class CapturingDataFetcher implements DataFetcher {
     @Override
     Object get(DataFetchingEnvironment environment) {
         this.environment = environment
-        this.args = environment.getArguments()
+        this.args = environment.getVariables()
         null
     }
 }

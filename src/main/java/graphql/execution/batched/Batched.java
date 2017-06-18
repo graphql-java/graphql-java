@@ -34,7 +34,7 @@ import java.lang.annotation.Target;
  *   public Object get(DataFetchingEnvironment environment) {
  *     {@literal List<String> retVal = new ArrayList<>();}
  *     {@literal for (String s: (List<String>) environment.getSource()) {}
- *       retVal.add(s + environment.getArgument("text"));
+ *       retVal.add(s + environment.getVariable("text"));
  *     }
  *     return retVal;
  *   }
@@ -46,7 +46,7 @@ import java.lang.annotation.Target;
  * new DataFetcher() {
  *   {@literal @}Override
  *   public Object get(DataFetchingEnvironment e) {
- *     return ((String)e.getSource()) + e.getArgument("text");
+ *     return ((String)e.getSource()) + e.getVariable("text");
  *   }
  * }
  * </code>

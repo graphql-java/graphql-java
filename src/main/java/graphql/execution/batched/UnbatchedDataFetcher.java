@@ -29,7 +29,7 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
         for (Object source : sources) {
             DataFetchingEnvironment singleEnv = new DataFetchingEnvironmentImpl(
                     source,
-                    environment.getArguments(),
+                    environment.getVariables(),
                     environment.getContext(),
                     environment.getRoot(),
                     environment.getFields(),

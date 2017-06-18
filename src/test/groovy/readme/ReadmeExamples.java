@@ -288,8 +288,8 @@ public class ReadmeExamples {
         return new DataFetcher() {
             @Override
             public Review get(DataFetchingEnvironment environment) {
-                Episode episode = environment.getArgument("episode");
-                ReviewInput review = environment.getArgument("review");
+                Episode episode = environment.getVariable("episode");
+                ReviewInput review = environment.getVariable("review");
 
                 // make a call to your store to mutate your database
                 Review updatedReview = reviewStore().update(episode, review);

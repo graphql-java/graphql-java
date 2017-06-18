@@ -48,7 +48,7 @@ public class FunWithStringsSchemaFactory {
                 increment(callCounts, CallType.APPEND);
                 List<String> retVal = new ArrayList<>();
                 for (String s: (List<String>) environment.getSource()) {
-                    retVal.add(s + environment.getArgument("text"));
+                    retVal.add(s + environment.getVariable("text"));
                 }
                 return retVal;
             }
@@ -83,7 +83,7 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.SPLIT);
-                String regex = environment.getArgument("regex");
+                String regex = environment.getVariable("regex");
                 List<String> sources = environment.getSource();
                 List<List<String>> retVal = new ArrayList<>();
                 if (regex == null) {
@@ -159,7 +159,7 @@ public class FunWithStringsSchemaFactory {
     };
 
     public DataFetcher splitFetcher = e -> {
-        String regex = e.getArgument("regex");
+        String regex = e.getVariable("regex");
         if (regex == null ) {
             return null;
         }
@@ -175,7 +175,7 @@ public class FunWithStringsSchemaFactory {
         return retVal;
     };
 
-    public DataFetcher appendFetcher = e -> ((String)e.getSource()) + e.getArgument("text");
+    public DataFetcher appendFetcher = e -> ((String)e.getSource()) + e.getVariable("text");
 
     public void setWordsAndLettersFetcher(DataFetcher fetcher) {
         this.wordsAndLettersFetcher = fetcher;
@@ -269,7 +269,7 @@ public class FunWithStringsSchemaFactory {
                         .argument(GraphQLArgument.newArgument()
                                 .name("value")
                                 .type(Scalars.GraphQLString))
-                        .dataFetcher(env -> env.getArgument("value")))
+                        .dataFetcher(env -> env.getVariable("value")))
                 .name("EnumQuery")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("nullEnum")
