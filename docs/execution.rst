@@ -47,10 +47,11 @@ You would create types like this to handle this mutation :
             .name("ReviewInput")
             .field(newInputObjectField()
                     .name("stars")
-                    .type(Scalars.GraphQLString)
+                    .type(Scalars.GraphQLString))
+            .field(newInputObjectField()
                     .name("commentary")
                     .type(Scalars.GraphQLString))
-            .build();
+            .build();   
 
     GraphQLObjectType reviewType = newObject()
             .name("Review")
