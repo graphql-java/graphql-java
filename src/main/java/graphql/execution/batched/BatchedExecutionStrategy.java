@@ -301,6 +301,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(sources)
                 .arguments(argumentValues)
+                .field(fieldDef)
                 .fields(fields)
                 .fieldType(fieldDef.getType())
                 .parentType(parentType)

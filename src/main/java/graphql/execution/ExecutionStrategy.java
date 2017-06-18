@@ -89,6 +89,7 @@ public abstract class ExecutionStrategy {
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(parameters.source())
                 .arguments(argumentValues)
+                .field(fieldDef)
                 .fields(fields)
                 .fieldType(fieldType)
                 .parentType(parentType)

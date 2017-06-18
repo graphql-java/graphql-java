@@ -7,9 +7,6 @@ import graphql.language.FragmentDefinition;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 
 /**
  * A DataFetchingEnvironment instance of passed to a {@link DataFetcher} as an execution context parameter
@@ -73,6 +70,12 @@ public interface DataFetchingEnvironment {
      * @return can be null
      */
     <T> T getRoot();
+
+    /**
+     * @return the definition of the current field
+     */
+    GraphQLFieldDefinition getField();
+
 
     /**
      * @return the list of fields currently in query context
