@@ -30,7 +30,7 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Object context, Object root, Document document, String operationName, Map<String, Object> args) {
+    public ExecutionContext build(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Object context, Object root, Document document, String operationName, Map<String, Object> variables) {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
 
@@ -60,7 +60,7 @@ public class ExecutionContextBuilder {
         if (operation == null) {
             throw new GraphQLException();
         }
-        Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), args);
+        Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), variables);
 
         return new ExecutionContext(
                 instrumentation,

@@ -13,13 +13,13 @@ public class InstrumentationExecutionParameters {
     private final String query;
     private final String operation;
     private final Object context;
-    private final Map<String, Object> arguments;
+    private final Map<String, Object> variables;
 
-    public InstrumentationExecutionParameters(String query, String operation, Object context, Map<String, Object> arguments) {
+    public InstrumentationExecutionParameters(String query, String operation, Object context, Map<String, Object> variables) {
         this.query = query;
         this.operation = operation;
         this.context = context;
-        this.arguments = arguments;
+        this.variables = variables;
     }
 
     public String getQuery() {
@@ -35,7 +35,7 @@ public class InstrumentationExecutionParameters {
         return (T) context;
     }
 
-    public Map<String, Object> getArguments() {
-        return arguments;
+    public Map<String, Object> getVariables() {
+        return variables;
     }
 }

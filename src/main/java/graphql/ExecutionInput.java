@@ -1,26 +1,27 @@
 package graphql;
 
+import java.util.Collections;
 import java.util.Map;
 
 @PublicApi
 public class ExecutionInput {
-    private final String requestString;
+    private final String query;
     private final String operationName;
     private final Object context;
     private final Object root;
-    private final Map<String, Object> arguments;
+    private final Map<String, Object> variables;
 
 
-    public ExecutionInput(String requestString, String operationName, Object context, Object root, Map<String, Object> arguments) {
-        this.requestString = requestString;
+    public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
+        this.query = query;
         this.operationName = operationName;
         this.context = context;
         this.root = root;
-        this.arguments = arguments;
+        this.variables = variables;
     }
 
-    public String getRequestString() {
-        return requestString;
+    public String getQuery() {
+        return query;
     }
 
     public String getOperationName() {
@@ -35,18 +36,18 @@ public class ExecutionInput {
         return root;
     }
 
-    public Map<String, Object> getArguments() {
-        return arguments;
+    public Map<String, Object> getVariables() {
+        return variables;
     }
 
     @Override
     public String toString() {
         return "ExecutionInput{" +
-                "requestString='" + requestString + '\'' +
+                "query='" + query + '\'' +
                 ", operationName='" + operationName + '\'' +
                 ", context=" + context +
                 ", root=" + root +
-                ", arguments=" + arguments +
+                ", variables=" + variables +
                 '}';
     }
 
@@ -56,14 +57,14 @@ public class ExecutionInput {
 
     public static class Builder {
 
-        private String requestString;
+        private String query;
         private String operationName;
         private Object context;
         private Object root;
-        private Map<String, Object> arguments;
+        private Map<String, Object> variables = Collections.emptyMap();
 
-        public Builder requestString(String requestString) {
-            this.requestString = requestString;
+        public Builder query(String query) {
+            this.query = query;
             return this;
         }
 
@@ -82,13 +83,13 @@ public class ExecutionInput {
             return this;
         }
 
-        public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = arguments;
+        public Builder variables(Map<String, Object> variables) {
+            this.variables = variables;
             return this;
         }
 
         public ExecutionInput build() {
-            return new ExecutionInput(requestString, operationName, context, root, arguments);
+            return new ExecutionInput(query, operationName, context, root, variables);
         }
     }
 }

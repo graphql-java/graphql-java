@@ -39,9 +39,10 @@ class ScalarsIDTest extends Specification {
         Scalars.GraphQLID.getCoercing().parseValue(value) == result
 
         where:
-        value   | result
-        "123ab" | "123ab"
-        123     | "123"
+        value               | result
+        "123ab"             | "123ab"
+        123                 | "123"
+        123123123123123123L | "123123123123123123"
     }
 
     @Unroll
