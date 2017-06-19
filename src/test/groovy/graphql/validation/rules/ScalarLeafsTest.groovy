@@ -23,7 +23,10 @@ class ScalarLeafsTest extends Specification {
         scalarLeafs.checkField(field)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.SubSelectionNotAllowed)
+        errorCollector.containsValidationError(
+            ValidationErrorType.SubSelectionNotAllowed,
+            "Sub selection not allowed on leaf type String of field hello"
+        )
     }
 
     def "sub selection required"() {
@@ -34,6 +37,9 @@ class ScalarLeafsTest extends Specification {
         scalarLeafs.checkField(field)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.SubSelectionRequired)
+        errorCollector.containsValidationError(
+            ValidationErrorType.SubSelectionRequired,
+            "Sub selection required for type objectType of field hello"
+        )
     }
 }

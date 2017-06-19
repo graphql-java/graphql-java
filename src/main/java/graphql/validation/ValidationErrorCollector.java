@@ -20,9 +20,22 @@ public class ValidationErrorCollector {
     }
 
     public boolean containsValidationError(ValidationErrorType validationErrorType) {
+        return containsValidationError(validationErrorType, null);
+    }
+
+    public boolean containsValidationError(ValidationErrorType validationErrorType, String description) {
         for (ValidationError validationError : errors) {
-            if (validationError.getValidationErrorType() == validationErrorType) return true;
+            if (validationError.getValidationErrorType() == validationErrorType) {
+                return description == null || validationError.getDescription().equals(description);
+            }
         }
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return "ValidationErrorCollector{" +
+                "errors=" + errors +
+                '}';
     }
 }
