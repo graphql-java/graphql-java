@@ -20,12 +20,12 @@ public class ScalarLeafs extends AbstractRule {
         if (type == null) return;
         if (schemaUtil.isLeafType(type)) {
             if (field.getSelectionSet() != null) {
-                String message = String.format("Sub selection not allowed on leaf type %s", type.getName());
+                String message = String.format("Sub selection not allowed on leaf type %s of field %s", type.getName(), field.getName());
                 addError(new ValidationError(ValidationErrorType.SubSelectionNotAllowed, field.getSourceLocation(), message));
             }
         } else {
             if (field.getSelectionSet() == null) {
-                String message = String.format("Sub selection required for type %s", type.getName());
+                String message = String.format("Sub selection required for type %s of field %s", type.getName(), field.getName());
                 addError(new ValidationError(ValidationErrorType.SubSelectionRequired, field.getSourceLocation(), message));
             }
         }

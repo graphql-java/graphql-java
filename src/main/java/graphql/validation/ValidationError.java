@@ -42,6 +42,10 @@ public class ValidationError implements GraphQLError {
         return String.format("Validation error of type %s: %s", validationErrorType, description);
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     @Override
     public List<SourceLocation> getLocations() {
         return sourceLocations;
