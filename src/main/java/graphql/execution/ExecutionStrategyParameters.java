@@ -61,6 +61,11 @@ public class ExecutionStrategyParameters {
         return builder.build();
     }
 
+    @Override
+    public String toString() {
+        return String.format("ExecutionStrategyParameters { path=%s, typeInfo=%s, source=%s, fields=%s }",
+                path, typeInfo, source, fields);
+    }
 
     public static Builder newParameters() {
         return new Builder();
@@ -68,12 +73,6 @@ public class ExecutionStrategyParameters {
 
     public static Builder newParameters(ExecutionStrategyParameters oldParameters) {
         return new Builder(oldParameters);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("ExecutionStrategyParameters { path=%s, typeInfo=%s, source=%s, fields=%s }",
-                path, typeInfo, source, fields);
     }
 
     public static class Builder {
@@ -84,9 +83,15 @@ public class ExecutionStrategyParameters {
         NonNullableFieldValidator nonNullableFieldValidator;
         ExecutionPath path = ExecutionPath.rootPath();
 
+        /**
+         * @see ExecutionStrategyParameters#newParameters()
+         */
         private Builder() {
         }
 
+        /**
+         * @see ExecutionStrategyParameters#newParameters(ExecutionStrategyParameters)
+         */
         private Builder(ExecutionStrategyParameters oldParameters) {
             this.typeInfo = oldParameters.typeInfo;
             this.source = oldParameters.source;
