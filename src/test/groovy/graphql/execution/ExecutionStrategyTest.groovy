@@ -3,16 +3,23 @@ package graphql.execution
 import graphql.ExecutionResult
 import graphql.Scalars
 import graphql.SerializationError
+import graphql.execution.instrumentation.NoOpInstrumentation
 import graphql.language.Field
 import graphql.schema.Coercing
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLScalarType
+import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 import static ExecutionStrategyParameters.newParameters
+import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLEnumType.newEnum
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.schema.GraphQLObjectType.newObject
 
 @SuppressWarnings("GroovyPointlessBoolean")
 class ExecutionStrategyTest extends Specification {
@@ -29,8 +36,8 @@ class ExecutionStrategyTest extends Specification {
         }
     }
 
-    def buildContext() {
-        new ExecutionContext(null, null, null, executionStrategy, executionStrategy, executionStrategy, null, null, null, null, null)
+    def buildContext(GraphQLSchema schema = null) {
+        new ExecutionContext(NoOpInstrumentation.INSTANCE, null, schema, executionStrategy, executionStrategy, executionStrategy, null, null, null, "context", "root")
     }
 
 
@@ -38,7 +45,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         Field field = new Field()
-        def fieldType = new GraphQLList(Scalars.GraphQLString)
+        def fieldType = new GraphQLList(GraphQLString)
         def result = Arrays.asList("test")
         def parameters = newParameters()
                 .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
@@ -57,7 +64,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         Field field = new Field()
-        def fieldType = new GraphQLList(Scalars.GraphQLString)
+        def fieldType = new GraphQLList(GraphQLString)
         String[] result = ["test"]
         def parameters = newParameters()
                 .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
@@ -180,6 +187,41 @@ class ExecutionStrategyTest extends Specification {
         1.0d        || false
         0xCAFED00Dd || true
         null        || true
+    }
+
+    def "resolveField creates correct DataFetchingEnvironment"() {
+        def dataFetcher = Mock(DataFetcher)
+        def fieldDefinition = newFieldDefinition().name("someField").type(GraphQLString).dataFetcher(dataFetcher).build()
+        def objectType = newObject()
+                .name("Test")
+                .field(fieldDefinition)
+                .build()
+        def schema = GraphQLSchema.newSchema().query(objectType).build()
+        ExecutionContext executionContext = buildContext(schema)
+        def typeInfo = TypeInfo.newTypeInfo().type(objectType).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        Field field = new Field("someField")
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .source("source")
+                .fields(["someField": [field]])
+                .nonNullFieldValidator(nullableFieldValidator)
+                .build()
+        DataFetchingEnvironment environment
+
+        when:
+        executionStrategy.resolveField(executionContext, parameters, [field])
+
+        then:
+        1 * dataFetcher.get({ it -> environment = it })
+        environment.field == fieldDefinition
+        environment.graphQLSchema == schema
+        environment.context == "context"
+        environment.source == "source"
+        environment.fields == [field]
+        environment.root == "root"
+        environment.parentType == objectType
+        // TODO: there are more properties we should check here
     }
 
 }
