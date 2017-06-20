@@ -214,7 +214,7 @@ class ExecutionStrategyTest extends Specification {
 
         then:
         1 * dataFetcher.get({ it -> environment = it })
-        environment.field == fieldDefinition
+        environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
         environment.context == "context"
         environment.source == "source"

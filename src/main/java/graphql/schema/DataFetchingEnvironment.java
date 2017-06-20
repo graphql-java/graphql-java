@@ -74,7 +74,7 @@ public interface DataFetchingEnvironment {
     /**
      * @return the definition of the current field
      */
-    GraphQLFieldDefinition getField();
+    GraphQLFieldDefinition getFieldDefinition();
 
 
     /**
