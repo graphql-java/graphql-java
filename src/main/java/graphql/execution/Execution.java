@@ -4,7 +4,6 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.MutationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
@@ -20,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
@@ -43,10 +43,6 @@ public class Execution {
     }
 
     public ExecutionResult execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput) {
-        final Object context = executionInput.getContext();
-        final Object root = executionInput.getRoot();
-        final String operationName = executionInput.getOperationName();
-        final Map<String, Object> variables = executionInput.getVariables();
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .valuesResolver(new ValuesResolver())
@@ -56,13 +52,13 @@ public class Execution {
                 .queryStrategy(queryStrategy)
                 .mutationStrategy(mutationStrategy)
                 .subscriptionStrategy(subscriptionStrategy)
-                .context(context)
-                .root(root)
+                .context(executionInput.getContext())
+                .root(executionInput.getRoot())
                 .document(document)
-                .operationName(operationName)
-                .variables(variables)
+                .operationName(executionInput.getOperationName())
+                .variables(executionInput.getVariables())
                 .build();
-        return executeOperation(executionContext, root, executionContext.getOperationDefinition());
+        return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
     private ExecutionResult executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
@@ -128,15 +124,12 @@ public class Execution {
     private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition.Operation operation) {
         if (operation == MUTATION) {
             return graphQLSchema.getMutationType();
-
         } else if (operation == QUERY) {
             return graphQLSchema.getQueryType();
-
         } else if (operation == SUBSCRIPTION) {
             return graphQLSchema.getSubscriptionType();
-
         } else {
-            throw new GraphQLException("Unhandled case.  An extra operation enum has been added without code support");
+            return assertShouldNeverHappen("Unhandled case.  An extra operation enum has been added without code support");
         }
     }
 }
