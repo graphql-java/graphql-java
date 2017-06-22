@@ -5,11 +5,21 @@ import graphql.language.SourceLocation;
 
 import java.util.List;
 
+/**
+ * @see <a href="https://facebook.github.io/graphql/#sec-Errors">GraphQL Spec - 7.2.2 Errors</a>
+ */
 @PublicApi
 public interface GraphQLError {
 
+    /**
+     * @return a description of the error intended for the developer as a guide to understand and correct the error
+     */
     String getMessage();
 
+    /**
+     * @return the location(s) within the GraphQL document at which the error occurred. Each {@link SourceLocation}
+     * describes the beginning of an associated syntax element
+     */
     List<SourceLocation> getLocations();
 
     ErrorType getErrorType();
