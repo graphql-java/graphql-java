@@ -48,32 +48,24 @@ public class Execution {
         final String operationName = executionInput.getOperationName();
         final Map<String, Object> variables = executionInput.getVariables();
 
-        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder(new ValuesResolver(), instrumentation);
-        ExecutionContext executionContext = executionContextBuilder
+        ExecutionContext executionContext = new ExecutionContextBuilder()
+                .valuesResolver(new ValuesResolver())
+                .instrumentation(instrumentation)
                 .executionId(executionId)
-                .build(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, context, root, document, operationName, variables);
+                .graphQLSchema(graphQLSchema)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .context(context)
+                .root(root)
+                .document(document)
+                .operationName(operationName)
+                .variables(variables)
+                .build();
         return executeOperation(executionContext, root, executionContext.getOperationDefinition());
     }
 
-    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition.Operation operation) {
-        if (operation == MUTATION) {
-            return graphQLSchema.getMutationType();
-
-        } else if (operation == QUERY) {
-            return graphQLSchema.getQueryType();
-
-        } else if (operation == SUBSCRIPTION) {
-            return graphQLSchema.getSubscriptionType();
-
-        } else {
-            throw new GraphQLException("Unhandled case.  An extra operation enum has been added without code support");
-        }
-    }
-
-    private ExecutionResult executeOperation(
-            ExecutionContext executionContext,
-            Object root,
-            OperationDefinition operationDefinition) {
+    private ExecutionResult executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(new InstrumentationDataFetchParameters(executionContext));
 
@@ -89,7 +81,9 @@ public class Execution {
             return new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError()));
         }
 
-        FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters(executionContext.getGraphQLSchema(), operationRootType)
+        FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
+                .schema(executionContext.getGraphQLSchema())
+                .objectType(operationRootType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
@@ -129,5 +123,20 @@ public class Execution {
 
         dataFetchCtx.onEnd(result);
         return result;
+    }
+
+    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition.Operation operation) {
+        if (operation == MUTATION) {
+            return graphQLSchema.getMutationType();
+
+        } else if (operation == QUERY) {
+            return graphQLSchema.getQueryType();
+
+        } else if (operation == SUBSCRIPTION) {
+            return graphQLSchema.getSubscriptionType();
+
+        } else {
+            throw new GraphQLException("Unhandled case.  An extra operation enum has been added without code support");
+        }
     }
 }

@@ -30,8 +30,9 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     private DataFetchingFieldSelectionSetImpl(ExecutionContext executionContext, GraphQLObjectType fieldType, List<Field> fields) {
         this.fields = fields;
         this.fieldCollector = new FieldCollector();
-        this.parameters = FieldCollectorParameters.
-                newParameters(executionContext.getGraphQLSchema(), fieldType)
+        this.parameters = FieldCollectorParameters.newParameters()
+                .schema(executionContext.getGraphQLSchema())
+                .objectType(fieldType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
