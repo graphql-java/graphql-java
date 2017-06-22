@@ -199,12 +199,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     private Directive findDirectiveByName(String name, List<Directive> directives) {
-        for (Directive directive : directives) {
-            if (directive.getName().equals(name)) {
-                return directive;
-            }
-        }
-        return null;
+        return Directive.getDirectivesMap(directives).get(name);
     }
 
 

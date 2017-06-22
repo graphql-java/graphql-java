@@ -3,6 +3,7 @@ package graphql.language;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class InterfaceTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
@@ -19,6 +20,14 @@ public class InterfaceTypeDefinition extends AbstractNode implements TypeDefinit
 
     public List<Directive> getDirectives() {
         return directives;
+    }
+
+    public Map<String, Directive> getDirectivesMap() {
+        return Directive.getDirectivesMap(directives);
+    }
+
+    public Directive getDirective(String directiveName) {
+        return getDirectivesMap().get(directiveName);
     }
 
     @Override

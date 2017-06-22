@@ -36,10 +36,7 @@ public class ConditionalNodes {
     }
 
     private Directive findDirective(List<Directive> directives, String name) {
-        for (Directive directive : directives) {
-            if (directive.getName().equals(name)) return directive;
-        }
-        return null;
+        return Directive.getDirectivesMap(directives).get(name);
     }
 
 }

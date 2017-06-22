@@ -5,6 +5,7 @@ import graphql.PublicApi;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /*
 * This is provided to a DataFetcher, therefore it is a public API.
@@ -89,6 +90,15 @@ public class Field extends AbstractNode implements Selection {
     public List<Directive> getDirectives() {
         return directives;
     }
+
+    public Map<String, Directive> getDirectivesMap() {
+        return Directive.getDirectivesMap(directives);
+    }
+
+    public Directive getDirective(String directiveName) {
+        return getDirectivesMap().get(directiveName);
+    }
+
 
     public void setDirectives(List<Directive> directives) {
         this.directives = directives;

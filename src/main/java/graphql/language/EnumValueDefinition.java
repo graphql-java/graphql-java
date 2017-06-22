@@ -3,6 +3,7 @@ package graphql.language;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class EnumValueDefinition extends AbstractNode {
     private String name;
@@ -25,6 +26,14 @@ public class EnumValueDefinition extends AbstractNode {
         return directives;
     }
 
+    public Map<String, Directive> getDirectivesMap() {
+        return Directive.getDirectivesMap(directives);
+    }
+
+    public Directive getDirective(String directiveName) {
+        return getDirectivesMap().get(directiveName);
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
@@ -39,9 +48,9 @@ public class EnumValueDefinition extends AbstractNode {
 
         EnumValueDefinition that = (EnumValueDefinition) o;
 
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
+        if (null == name) {
+            if (null != that.name) return false;
+        } else if (!name.equals(that.name)) {
             return false;
         }
 
@@ -53,8 +62,8 @@ public class EnumValueDefinition extends AbstractNode {
     @Override
     public String toString() {
         return "EnumValueDefinition{" +
-               "name='" + name + '\'' +
-               ", directives=" + directives +
-               '}';
+                "name='" + name + '\'' +
+                ", directives=" + directives +
+                '}';
     }
 }

@@ -3,6 +3,7 @@ package graphql.language;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class InlineFragment extends AbstractNode implements Selection {
     private TypeName typeCondition;
@@ -40,6 +41,15 @@ public class InlineFragment extends AbstractNode implements Selection {
     public List<Directive> getDirectives() {
         return directives;
     }
+
+    public Map<String, Directive> getDirectivesMap() {
+        return Directive.getDirectivesMap(directives);
+    }
+
+    public Directive getDirective(String directiveName) {
+        return getDirectivesMap().get(directiveName);
+    }
+
 
     public void setDirectives(List<Directive> directives) {
         this.directives = directives;
