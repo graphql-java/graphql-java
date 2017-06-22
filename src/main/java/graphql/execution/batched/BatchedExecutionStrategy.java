@@ -217,7 +217,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private Map<String, List<Field>> getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
                                                     List<Field> fields) {
 
-        FieldCollectorParameters collectorParameters = newParameters(executionContext.getGraphQLSchema(), resolvedType)
+        FieldCollectorParameters collectorParameters = newParameters()
+                .schema(executionContext.getGraphQLSchema())
+                .objectType(resolvedType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
