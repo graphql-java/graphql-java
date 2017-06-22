@@ -6,8 +6,8 @@ import java.util.List;
 
 public class Argument extends AbstractNode {
 
-    private String name;
-    private Value value;
+    private final String name;
+    private final Value value;
 
     public Argument(String name, Value value) {
         this.name = name;
@@ -18,18 +18,9 @@ public class Argument extends AbstractNode {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public Value getValue() {
         return value;
     }
-
-    public void setValue(Value value) {
-        this.value = value;
-    }
-
 
     @Override
     public List<Node> getChildren() {

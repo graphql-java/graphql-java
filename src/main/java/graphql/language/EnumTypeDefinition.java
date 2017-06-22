@@ -1,8 +1,8 @@
 package graphql.language;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 public class EnumTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
@@ -15,7 +15,7 @@ public class EnumTypeDefinition extends AbstractNode implements TypeDefinition {
 
     public EnumTypeDefinition(String name, List<Directive> directives) {
         this.name = name;
-        this.directives = ( null == directives ) ? new ArrayList<>() : directives;
+        this.directives = (null == directives) ? new ArrayList<>() : directives;
         this.enumValueDefinitions = new ArrayList<>();
     }
 
@@ -26,6 +26,15 @@ public class EnumTypeDefinition extends AbstractNode implements TypeDefinition {
     public List<Directive> getDirectives() {
         return directives;
     }
+
+    public Map<String, Directive> getDirectivesMap() {
+        return Directive.getDirectivesMap(directives);
+    }
+
+    public Directive getDirective(String directiveName) {
+        return getDirectivesMap().get(directiveName);
+    }
+
 
     @Override
     public String getName() {
@@ -47,9 +56,9 @@ public class EnumTypeDefinition extends AbstractNode implements TypeDefinition {
 
         EnumTypeDefinition that = (EnumTypeDefinition) o;
 
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
+        if (null == name) {
+            if (null != that.name) return false;
+        } else if (!name.equals(that.name)) {
             return false;
         }
         return true;

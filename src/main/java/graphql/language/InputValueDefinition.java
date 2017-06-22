@@ -3,6 +3,7 @@ package graphql.language;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class InputValueDefinition extends AbstractNode {
     private String name;
@@ -17,6 +18,7 @@ public class InputValueDefinition extends AbstractNode {
     public InputValueDefinition(String name, Type type) {
         this(name, type, null);
     }
+
     public InputValueDefinition(String name, Type type, Value defaultValue) {
         this.name = name;
         this.type = type;
@@ -47,6 +49,15 @@ public class InputValueDefinition extends AbstractNode {
         return directives;
     }
 
+    public Map<String, Directive> getDirectivesMap() {
+        return Directive.getDirectivesMap(directives);
+    }
+
+    public Directive getDirective(String directiveName) {
+        return getDirectivesMap().get(directiveName);
+    }
+
+
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
@@ -63,9 +74,9 @@ public class InputValueDefinition extends AbstractNode {
 
         InputValueDefinition that = (InputValueDefinition) o;
 
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
+        if (null == name) {
+            if (null != that.name) return false;
+        } else if (!name.equals(that.name)) {
             return false;
         }
         return true;
