@@ -1,14 +1,17 @@
 package graphql.execution
 
+import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.Scalars
 import graphql.SerializationError
 import graphql.execution.instrumentation.NoOpInstrumentation
 import graphql.language.Field
+import graphql.language.SourceLocation
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLEnumType
+import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
@@ -24,10 +27,12 @@ import static graphql.schema.GraphQLObjectType.newObject
 @SuppressWarnings("GroovyPointlessBoolean")
 class ExecutionStrategyTest extends Specification {
 
+
+    DataFetcherExceptionHandler dataFetcherExceptionHandler = new SimpleDataFetcherExceptionHandler()
     ExecutionStrategy executionStrategy
 
     def setup() {
-        executionStrategy = new ExecutionStrategy() {
+        executionStrategy = new ExecutionStrategy(dataFetcherExceptionHandler) {
 
             @Override
             ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -222,6 +227,129 @@ class ExecutionStrategyTest extends Specification {
         environment.root == "root"
         environment.parentType == objectType
         // TODO: there are more properties we should check here
+    }
+
+    def "test legacy data fetcher error handler method is called for execution strategies that override handle method"() {
+
+        def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
+
+        def dataFetcher = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                throw expectedException
+            }
+        }
+        def fieldDefinition = newFieldDefinition().name("someField").type(GraphQLString).dataFetcher(dataFetcher).build()
+        def objectType = newObject()
+                .name("Test")
+                .field(fieldDefinition)
+                .build()
+        def schema = GraphQLSchema.newSchema().query(objectType).build()
+        ExecutionContext executionContext = buildContext(schema)
+        def typeInfo = TypeInfo.newTypeInfo().type(objectType).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        ExecutionPath expectedPath = ExecutionPath.rootPath().segment("someField")
+        Field field = new Field("someField")
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .source("source")
+                .fields(["someField": [field]])
+                .path(expectedPath)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .build()
+
+
+        boolean handleDataFetchingExceptionCalled = false
+        ExecutionStrategy overridingStrategy = new ExecutionStrategy() {
+            @Override
+            ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+                null
+            }
+
+            @Override
+            protected void handleDataFetchingException(ExecutionContext ec, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, ExecutionPath path, Exception e) {
+                handleDataFetchingExceptionCalled = true
+                assert e == expectedException
+                assert ec == executionContext
+                assert fieldDef == fieldDefinition
+                assert path == expectedPath
+            }
+        }
+
+        when:
+        overridingStrategy.resolveField(executionContext, parameters, [field])
+
+        then:
+        handleDataFetchingExceptionCalled == true
+    }
+
+    def "test that the new data fetcher error handler interface is called"() {
+
+        def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
+
+        def dataFetcher = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                throw expectedException
+            }
+        }
+        def fieldDefinition = newFieldDefinition().name("someField").type(GraphQLString).dataFetcher(dataFetcher).build()
+        def objectType = newObject()
+                .name("Test")
+                .field(fieldDefinition)
+                .build()
+        def schema = GraphQLSchema.newSchema().query(objectType).build()
+        ExecutionContext executionContext = buildContext(schema)
+        def typeInfo = TypeInfo.newTypeInfo().type(objectType).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        Field field = new Field("someField")
+        ExecutionPath expectedPath = ExecutionPath.rootPath().segment("someField")
+        def sourceLocation = new SourceLocation(666, 664)
+        field.setSourceLocation(sourceLocation)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .source("source")
+                .fields(["someField": [field]])
+                .nonNullFieldValidator(nullableFieldValidator)
+                .path(expectedPath)
+                .build()
+
+
+        boolean handlerCalled = false
+        ExecutionStrategy overridingStrategy = new SimpleExecutionStrategy(new SimpleDataFetcherExceptionHandler() {
+            @Override
+            void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
+                handlerCalled = true
+                assert handlerParameters.exception == expectedException
+                assert handlerParameters.executionContext == executionContext
+                assert handlerParameters.fieldDefinition == fieldDefinition
+                assert handlerParameters.field.name == 'someField'
+                assert handlerParameters.path == expectedPath
+
+                // by calling down we are testing the base class as well
+                super.accept(handlerParameters)
+            }
+        }) {
+            @Override
+            ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+                null
+            }
+
+            @Override
+            protected void handleDataFetchingException(ExecutionContext ec, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, ExecutionPath path, Exception e) {
+                assert false: "This should not be called in this case"
+            }
+        }
+
+        when:
+        overridingStrategy.resolveField(executionContext, parameters, [field])
+
+        then:
+        handlerCalled == true
+        executionContext.errors.size() == 1
+        def exceptionWhileDataFetching = executionContext.errors[0] as ExceptionWhileDataFetching
+        exceptionWhileDataFetching.getLocations() == [sourceLocation]
+        exceptionWhileDataFetching.getMessage().contains('This is the exception you are looking for')
     }
 
 }

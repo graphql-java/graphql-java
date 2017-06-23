@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
@@ -50,6 +49,27 @@ public abstract class ExecutionStrategy {
     protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
 
+    protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
+
+    protected ExecutionStrategy() {
+        //
+        // a legacy handler for classes that have decided to override #handleDataFetchingException
+        //
+        super();
+        //noinspection deprecation
+        dataFetcherExceptionHandler = params -> handleDataFetchingException(
+                params.getExecutionContext(),
+                params.getFieldDefinition(),
+                params.getArgumentValues(),
+                params.getPath(),
+                params.getException()
+        );
+    }
+
+    protected ExecutionStrategy(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
+        this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
+    }
+
     public abstract ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException;
 
     /**
@@ -62,26 +82,26 @@ public abstract class ExecutionStrategy {
      * @param argumentValues   the map of arguments
      * @param path             the logical path to the field in question
      * @param e                the exception that occurred
+     *
+     * @deprecated implement the new {@link DataFetcherExceptionHandler} interface and pass it in as a parameter to the strategy
      */
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "DeprecatedIsStillUsed"})
+    @Deprecated
     protected void handleDataFetchingException(
             ExecutionContext executionContext,
             GraphQLFieldDefinition fieldDef,
             Map<String, Object> argumentValues,
             ExecutionPath path,
             Exception e) {
-        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, e);
-        executionContext.addError(error);
-        log.warn(error.getMessage(), e);
-
     }
 
 
     protected ExecutionResult resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fields) {
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
+        Field field = fields.get(0);
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
 
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
@@ -109,7 +129,18 @@ public abstract class ExecutionStrategy {
             fetchCtx.onEnd(resolvedValue);
         } catch (Exception e) {
             fetchCtx.onEnd(e);
-            handleDataFetchingException(executionContext, fieldDef, argumentValues, parameters.path(), e);
+
+            DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
+                    .executionContext(executionContext)
+                    .dataFetchingEnvironment(environment)
+                    .argumentValues(argumentValues)
+                    .field(field)
+                    .fieldDefinition(fieldDef)
+                    .path(parameters.path())
+                    .exception(e)
+                    .build();
+
+            dataFetcherExceptionHandler.accept(handlerParameters);
         }
 
         TypeInfo fieldTypeInfo = newTypeInfo()

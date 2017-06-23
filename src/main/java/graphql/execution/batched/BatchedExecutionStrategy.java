@@ -3,11 +3,14 @@ package graphql.execution.batched;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
+import graphql.execution.DataFetcherExceptionHandler;
+import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.ExecutionContext;
+import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldCollectorParameters;
-import graphql.execution.ExecutionPath;
+import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.TypeResolutionParameters;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
@@ -54,6 +57,14 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(BatchedExecutionStrategy.class);
 
     private final BatchedDataFetcherFactory batchingFactory = new BatchedDataFetcherFactory();
+
+    public BatchedExecutionStrategy() {
+        this(new SimpleDataFetcherExceptionHandler());
+    }
+
+    public BatchedExecutionStrategy(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
+        super(dataFetcherExceptionHandler);
+    }
 
     @Override
     public ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -316,7 +327,18 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         } catch (Exception e) {
             values = new ArrayList<>(nodeData.size());
             log.warn("Exception while fetching data", e);
-            handleDataFetchingException(executionContext, fieldDef, argumentValues, parameters.path(), e);
+
+            DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
+                    .executionContext(executionContext)
+                    .dataFetchingEnvironment(environment)
+                    .argumentValues(argumentValues)
+                    .field(fields.get(0))
+                    .fieldDefinition(fieldDef)
+                    .path(parameters.path())
+                    .exception(e)
+                    .build();
+
+            dataFetcherExceptionHandler.accept(handlerParameters);
         }
 
         List<GraphQLExecutionNodeValue> retVal = new ArrayList<>();

@@ -8,7 +8,27 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * The standard graphql execution strategy that runs fields in parallel
+ */
 public class SimpleExecutionStrategy extends ExecutionStrategy {
+
+    /**
+     * The standard graphql execution strategy that runs fields in parallel
+     */
+    public SimpleExecutionStrategy() {
+        super(new SimpleDataFetcherExceptionHandler());
+    }
+
+    /**
+     * Creates a simple execution handler that uses the provided exception handler
+     *
+     * @param exceptionHandler the exception handler to use
+     */
+    public SimpleExecutionStrategy(DataFetcherExceptionHandler exceptionHandler) {
+        super(exceptionHandler);
+    }
+
     @Override
     public ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         Map<String, List<Field>> fields = parameters.fields();
