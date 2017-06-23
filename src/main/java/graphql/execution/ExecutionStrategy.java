@@ -49,6 +49,16 @@ public abstract class ExecutionStrategy {
 
     protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
+    protected final ExecutionExceptionHandler exceptionHandler;
+
+    public ExecutionStrategy() {
+        // for backwards compatibility, by default delegate to the deprecated internal handler (or overrides in subclasses)
+        this.exceptionHandler = this::handleDataFetchingException;
+    }
+
+    public ExecutionStrategy(ExecutionExceptionHandler exceptionHandler) {
+        this.exceptionHandler = exceptionHandler;
+    }
 
     public abstract ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException;
 
@@ -62,7 +72,10 @@ public abstract class ExecutionStrategy {
      * @param argumentValues   the map of arguments
      * @param path             the logical path to the field in question
      * @param e                the exception that occurred
+     * @deprecated Create a {@link ExecutionExceptionHandler} and inject it into {@link ExecutionStrategy#ExecutionStrategy(ExecutionExceptionHandler)}
+     * or use {@link ExecutionStrategy#ExecutionStrategy()} for the default error handling behavior.
      */
+    @Deprecated
     @SuppressWarnings("unused")
     protected void handleDataFetchingException(
             ExecutionContext executionContext,
@@ -109,7 +122,7 @@ public abstract class ExecutionStrategy {
             fetchCtx.onEnd(resolvedValue);
         } catch (Exception e) {
             fetchCtx.onEnd(e);
-            handleDataFetchingException(executionContext, fieldDef, argumentValues, parameters.path(), e);
+            exceptionHandler.handleDataFetchingException(executionContext, fieldDef, argumentValues, parameters.path(), e);
         }
 
         TypeInfo fieldTypeInfo = newTypeInfo()
