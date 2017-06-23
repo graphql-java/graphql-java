@@ -18,14 +18,14 @@ class DirectiveTest extends Specification {
         //
         // other parts of the system ensure that repeated args are invalid, but if we manually create them
         // we always return the first
-        d1.getArgumentsMap().size() == 3
+        d1.getArgumentsByName().size() == 3
         d1.getArgument("null") == null
         d1.getArgument("a1").getValue().isEqualTo(new StringValue("v1"))
         d1.getArgument("repeated").getValue().isEqualTo(new StringValue("r1"))
 
-        d1.getArgumentsMap().get("null") == null
-        d1.getArgumentsMap().get("a1").getValue().isEqualTo(new StringValue("v1"))
-        d1.getArgumentsMap().get("repeated").getValue().isEqualTo(new StringValue("r1"))
+        d1.getArgumentsByName().get("null") == null
+        d1.getArgumentsByName().get("a1").getValue().isEqualTo(new StringValue("v1"))
+        d1.getArgumentsByName().get("repeated").getValue().isEqualTo(new StringValue("r1"))
     }
 
     def "list of directives can be turned into a map"() {
@@ -36,7 +36,7 @@ class DirectiveTest extends Specification {
                 new Directive("repeated", [new Argument("a1", new StringValue("v1"))]),
                 new Directive("repeated", [new Argument("a1", new StringValue("v2"))]),
         ]
-        def directivesMap = Directive.getDirectivesMap(directives)
+        def directivesMap = NodeUtil.directivesByName(directives)
 
         expect:
 

@@ -26,12 +26,12 @@ public class EnumValueDefinition extends AbstractNode {
         return directives;
     }
 
-    public Map<String, Directive> getDirectivesMap() {
-        return Directive.getDirectivesMap(directives);
+    public Map<String, Directive> getDirectivesByName() {
+        return NodeUtil.directivesByName(directives);
     }
 
     public Directive getDirective(String directiveName) {
-        return getDirectivesMap().get(directiveName);
+        return getDirectivesByName().get(directiveName);
     }
 
     @Override
