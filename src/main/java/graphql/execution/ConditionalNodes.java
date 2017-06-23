@@ -1,12 +1,14 @@
 package graphql.execution;
 
 import graphql.language.Directive;
+import graphql.language.NodeUtil;
 
 import java.util.List;
 import java.util.Map;
 
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.SkipDirective;
+import static graphql.language.NodeUtil.directivesByName;
 
 
 public class ConditionalNodes {
@@ -19,14 +21,14 @@ public class ConditionalNodes {
 
     public boolean shouldInclude(Map<String, Object> variables, List<Directive> directives) {
 
-        Directive skipDirective = findDirective(directives, SkipDirective.getName());
+        Directive skipDirective = getDirectiveByName(directives, SkipDirective.getName());
         if (skipDirective != null) {
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), skipDirective.getArguments(), variables);
             return !(Boolean) argumentValues.get("if");
         }
 
 
-        Directive includeDirective = findDirective(directives, IncludeDirective.getName());
+        Directive includeDirective = getDirectiveByName(directives, IncludeDirective.getName());
         if (includeDirective != null) {
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(IncludeDirective.getArguments(), includeDirective.getArguments(), variables);
             return (Boolean) argumentValues.get("if");
@@ -35,8 +37,8 @@ public class ConditionalNodes {
         return true;
     }
 
-    private Directive findDirective(List<Directive> directives, String name) {
-        return Directive.getDirectivesMap(directives).get(name);
+    private Directive getDirectiveByName(List<Directive> directives, String name) {
+        return directivesByName(directives).get(name);
     }
 
 }

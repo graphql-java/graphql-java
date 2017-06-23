@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.language.NodeUtil.directivesByName;
+
 public class ObjectTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
     private List<Type> implementz = new ArrayList<>();
@@ -23,12 +25,12 @@ public class ObjectTypeDefinition extends AbstractNode implements TypeDefinition
         return directives;
     }
 
-    public Map<String, Directive> getDirectivesMap() {
-        return Directive.getDirectivesMap(directives);
+    public Map<String, Directive> getDirectivesByName() {
+        return directivesByName(directives);
     }
 
     public Directive getDirective(String directiveName) {
-        return getDirectivesMap().get(directiveName);
+        return getDirectivesByName().get(directiveName);
     }
 
     public List<FieldDefinition> getFieldDefinitions() {
