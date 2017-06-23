@@ -20,7 +20,7 @@ public class NodeUtil {
         return getByName(directives, Directive::getName);
     }
 
-    public static Map<String, Argument> argumentByName(List<Argument> arguments) {
+    public static Map<String, Argument> argumentsByName(List<Argument> arguments) {
         return getByName(arguments, Argument::getName);
     }
 
