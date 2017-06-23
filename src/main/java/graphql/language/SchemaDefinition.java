@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.language.NodeUtil.directivesByName;
+
 public class SchemaDefinition extends AbstractNode implements Definition {
     private List<Directive> directives = new ArrayList<>();
     private List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
@@ -16,12 +18,12 @@ public class SchemaDefinition extends AbstractNode implements Definition {
         return directives;
     }
 
-    public Map<String, Directive> getDirectivesMap() {
-        return Directive.getDirectivesMap(directives);
+    public Map<String, Directive> getDirectivesByName() {
+        return directivesByName(directives);
     }
 
     public Directive getDirective(String directiveName) {
-        return getDirectivesMap().get(directiveName);
+        return getDirectivesByName().get(directiveName);
     }
 
 

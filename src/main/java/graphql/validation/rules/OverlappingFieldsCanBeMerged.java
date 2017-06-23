@@ -11,6 +11,7 @@ import graphql.validation.ValidationErrorCollector;
 
 import java.util.*;
 
+import static graphql.language.NodeUtil.directivesByName;
 import static graphql.validation.ValidationErrorType.FieldsConflict;
 
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
@@ -191,15 +192,15 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     private boolean sameDirectives(List<Directive> directives1, List<Directive> directives2) {
         if (directives1.size() != directives2.size()) return false;
         for (Directive directive : directives1) {
-            Directive matchedDirective = findDirectiveByName(directive.getName(), directives2);
+            Directive matchedDirective = getDirectiveByName(directive.getName(), directives2);
             if (matchedDirective == null) return false;
             if (!sameArguments(directive.getArguments(), matchedDirective.getArguments())) return false;
         }
         return true;
     }
 
-    private Directive findDirectiveByName(String name, List<Directive> directives) {
-        return Directive.getDirectivesMap(directives).get(name);
+    private Directive getDirectiveByName(String name, List<Directive> directives) {
+        return directivesByName(directives).get(name);
     }
 
 
