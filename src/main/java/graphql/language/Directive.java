@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.language.NodeUtil.argumentByName;
+import static graphql.language.NodeUtil.argumentsByName;
 
 public class Directive extends AbstractNode {
     private final String name;
@@ -27,7 +27,7 @@ public class Directive extends AbstractNode {
 
     public Map<String, Argument> getArgumentsByName() {
         // the spec says that args MUST be unique within context
-        return argumentByName(arguments);
+        return argumentsByName(arguments);
     }
 
     public Argument getArgument(String argumentName) {
