@@ -116,7 +116,7 @@ public class ExecutionContextBuilder {
             operation = operationsByName.get(operationName);
         }
         if (operation == null) {
-            throw new GraphQLException();
+            throw new GraphQLException("no operation found");
         }
         Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), variables);
 
@@ -130,7 +130,7 @@ public class ExecutionContextBuilder {
                 fragmentsByName,
                 operation,
                 variableValues,
-                root,
-                context);
+                context,
+                root);
     }
 }
