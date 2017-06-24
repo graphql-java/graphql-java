@@ -130,7 +130,7 @@ public class ExecutionContextBuilder {
                 fragmentsByName,
                 operation,
                 variableValues,
-                root,
-                context);
+                context,
+                root);
     }
 }
