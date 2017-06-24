@@ -316,7 +316,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         } catch (Exception e) {
             values = new ArrayList<>(nodeData.size());
             log.warn("Exception while fetching data", e);
-            handleDataFetchingException(executionContext, fieldDef, argumentValues, parameters.path(), e);
+            exceptionHandler.handleDataFetchingException(executionContext, fieldDef, argumentValues, parameters.path(), e);
         }
 
         List<GraphQLExecutionNodeValue> retVal = new ArrayList<>();
