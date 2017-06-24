@@ -1,6 +1,7 @@
 package graphql.execution.preparsed
 
 import graphql.ErrorType
+import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.SimpleExecutionStrategy
@@ -84,14 +85,14 @@ class PreparsedTest extends Specification {
                 .instrumentation(instrumentation)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(query).data
+                .execute(ExecutionInput.newExecutionInput().query(query).build()).data
 
         def data2 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(strategy)
                 .instrumentation(instrumentationPreparsed)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(query).data
+                .execute(ExecutionInput.newExecutionInput().query(query).build()).data
 
 
         then:
@@ -119,12 +120,12 @@ class PreparsedTest extends Specification {
         def result1 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(query)
+                .execute(ExecutionInput.newExecutionInput().query(query).build())
 
         def result2 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(query)
+                .execute(ExecutionInput.newExecutionInput().query(query).build())
 
         then: "Both the first and the second result should give the same validation error"
         result1.errors.size() == 1
