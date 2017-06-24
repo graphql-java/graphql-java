@@ -10,6 +10,9 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
+import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
+import graphql.execution.preparsed.PreparsedDocumentEntry;
+import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.Parser;
@@ -39,6 +42,7 @@ public class GraphQL {
     private final ExecutionStrategy subscriptionStrategy;
     private final ExecutionIdProvider idProvider;
     private final Instrumentation instrumentation;
+    private final PreparsedDocumentProvider preparsedDocumentProvider;
 
 
     /**
@@ -79,7 +83,7 @@ public class GraphQL {
      */
     @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
     }
 
     /**
@@ -94,16 +98,17 @@ public class GraphQL {
      */
     @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
     }
 
-    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation) {
+    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider) {
         this.graphQLSchema = assertNotNull(graphQLSchema, "queryStrategy must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SimpleExecutionStrategy();
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
         this.instrumentation = instrumentation;
+        this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
     }
 
     /**
@@ -126,6 +131,7 @@ public class GraphQL {
         private ExecutionStrategy subscriptionExecutionStrategy = new SimpleExecutionStrategy();
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = NoOpInstrumentation.INSTANCE;
+        private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
 
 
         public Builder(GraphQLSchema graphQLSchema) {
@@ -157,6 +163,11 @@ public class GraphQL {
             return this;
         }
 
+        public Builder preparsedDocumentProvider(PreparsedDocumentProvider preparsedDocumentProvider) {
+            this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "PreparsedDocumentProvider must be non null");
+            return this;
+        }
+
         public Builder executionIdProvider(ExecutionIdProvider executionIdProvider) {
             this.idProvider = assertNotNull(executionIdProvider, "ExecutionIdProvider must be non null");
             return this;
@@ -166,7 +177,7 @@ public class GraphQL {
             assertNotNull(graphQLSchema, "queryStrategy must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation, preparsedDocumentProvider);
         }
     }
 
@@ -289,18 +300,29 @@ public class GraphQL {
     }
 
     private ExecutionResult parseValidateAndExecute(ExecutionInput executionInput) {
-        ParseResult parseResult = parse(executionInput);
-        if (parseResult.isFailure()) {
-            return toParseFailureExecutionResult(parseResult.getException());
-        }
-        final Document document = parseResult.getDocument();
+        PreparsedDocumentEntry preparsedDocumentEntry = preparsedDocumentProvider.get(executionInput.getQuery());
+        if (preparsedDocumentEntry == null) {
+            ParseResult parseResult = parse(executionInput);
+            if (parseResult.isFailure()) {
+                preparsedDocumentEntry = new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
+            } else {
+                final Document document = parseResult.getDocument();
 
-        final List<ValidationError> errors = validate(executionInput, document);
-        if (!errors.isEmpty()) {
-            return new ExecutionResultImpl(errors);
+                final List<ValidationError> errors = validate(executionInput, document);
+                if (!errors.isEmpty()) {
+                    preparsedDocumentEntry = new PreparsedDocumentEntry(errors);
+                } else {
+                    preparsedDocumentEntry = new PreparsedDocumentEntry(document);
+                }
+            }
+            preparsedDocumentProvider.put(executionInput.getQuery(), preparsedDocumentEntry);
         }
 
-        return execute(executionInput, document);
+        if (preparsedDocumentEntry.hasErrors()) {
+            return new ExecutionResultImpl(preparsedDocumentEntry.getErrors());
+        }
+
+        return execute(executionInput, preparsedDocumentEntry.getDocument());
     }
 
     private ParseResult parse(ExecutionInput executionInput) {
@@ -337,11 +359,6 @@ public class GraphQL {
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
         ExecutionId executionId = idProvider.provide(query, operationName, context);
         return execution.execute(document, graphQLSchema, executionId, executionInput);
-    }
-
-    private ExecutionResult toParseFailureExecutionResult(RecognitionException exception) {
-        InvalidSyntaxError invalidSyntaxError = toInvalidSyntaxError(exception);
-        return new ExecutionResultImpl(invalidSyntaxError);
     }
 
     private InvalidSyntaxError toInvalidSyntaxError(RecognitionException recognitionException) {

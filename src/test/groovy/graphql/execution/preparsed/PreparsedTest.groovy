@@ -1,0 +1,137 @@
+package graphql.execution.preparsed
+
+import graphql.ErrorType
+import graphql.GraphQL
+import graphql.StarWarsSchema
+import graphql.execution.SimpleExecutionStrategy
+import graphql.execution.instrumentation.TestingInstrumentation
+import spock.lang.Specification
+
+class PreparsedTest extends Specification {
+
+    def 'Preparse of simple serial execution'() {
+        given:
+
+        def query = """
+        query HeroNameAndFriendsQuery {
+            hero {
+                id
+            }
+        }
+        """
+
+        //
+        // for testing purposes we must use SimpleExecutionStrategy under the covers to get such
+        // serial behaviour.  The Instrumentation of a parallel strategy would be much different
+        // and certainly harder to test
+        def expected = [
+                "start:execution",
+
+                "start:parse",
+                "end:parse",
+
+                "start:validation",
+                "end:validation",
+
+                "start:data-fetch",
+
+                "start:field-hero",
+                "start:fetch-hero",
+                "end:fetch-hero",
+
+                "start:field-id",
+                "start:fetch-id",
+                "end:fetch-id",
+                "end:field-id",
+
+                "end:field-hero",
+
+                "end:data-fetch",
+
+                "end:execution",
+        ]
+
+        def expectedPreparsed = [
+                "start:execution",
+
+                "start:data-fetch",
+
+                "start:field-hero",
+                "start:fetch-hero",
+                "end:fetch-hero",
+
+                "start:field-id",
+                "start:fetch-id",
+                "end:fetch-id",
+                "end:field-id",
+
+                "end:field-hero",
+
+                "end:data-fetch",
+
+                "end:execution",
+        ]
+
+        when:
+
+        def instrumentation = new TestingInstrumentation()
+        def instrumentationPreparsed = new TestingInstrumentation()
+        def preparsedCache = new TestingPreparsedDocumentProvider()
+
+        def strategy = new SimpleExecutionStrategy()
+        def data1 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(strategy)
+                .instrumentation(instrumentation)
+                .preparsedDocumentProvider(preparsedCache)
+                .build()
+                .execute(query).data
+
+        def data2 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(strategy)
+                .instrumentation(instrumentationPreparsed)
+                .preparsedDocumentProvider(preparsedCache)
+                .build()
+                .execute(query).data
+
+
+        then:
+
+        instrumentation.executionList == expected
+        instrumentationPreparsed.executionList == expectedPreparsed
+        data1 == data2
+    }
+
+
+    def "Preparsed query with validation failure"() {
+        given: "A query on non existing field"
+
+        def query = """
+              query HeroNameAndFriendsQuery {
+                  heroXXXX {
+                      id
+                  }
+              }
+              """
+
+        when: "Executed the query twice"
+        def preparsedCache = new TestingPreparsedDocumentProvider()
+
+        def result1 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .preparsedDocumentProvider(preparsedCache)
+                .build()
+                .execute(query)
+
+        def result2 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .preparsedDocumentProvider(preparsedCache)
+                .build()
+                .execute(query)
+
+        then: "Both the first and the second result should give the same validation error"
+        result1.errors.size() == 1
+        result2.errors.size() == 1
+        result1.errors == result2.errors
+
+        result1.errors[0].errorType == ErrorType.ValidationError
+        result1.errors[0].errorType == result2.errors[0].errorType
+    }
+}
