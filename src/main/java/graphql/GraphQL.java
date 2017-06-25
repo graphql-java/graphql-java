@@ -300,27 +300,29 @@ public class GraphQL {
     }
 
     private ExecutionResult parseValidateAndExecute(ExecutionInput executionInput) {
-        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> {
-            ParseResult parseResult = parse(executionInput);
-            if (parseResult.isFailure()) {
-                return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
-            } else {
-                final Document document = parseResult.getDocument();
-
-                final List<ValidationError> errors = validate(executionInput, document);
-                if (!errors.isEmpty()) {
-                    return new PreparsedDocumentEntry(errors);
-                }
-
-                return  new PreparsedDocumentEntry(document);
-            }
-        });
+        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput));
 
         if (preparsedDoc.hasErrors()) {
             return new ExecutionResultImpl(preparsedDoc.getErrors());
         }
 
         return execute(executionInput, preparsedDoc.getDocument());
+    }
+
+    private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput) {
+        ParseResult parseResult = parse(executionInput);
+        if (parseResult.isFailure()) {
+            return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
+        } else {
+            final Document document = parseResult.getDocument();
+
+            final List<ValidationError> errors = validate(executionInput, document);
+            if (!errors.isEmpty()) {
+                return new PreparsedDocumentEntry(errors);
+            }
+
+            return new PreparsedDocumentEntry(document);
+        }
     }
 
     private ParseResult parse(ExecutionInput executionInput) {
