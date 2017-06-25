@@ -141,3 +141,56 @@ When provided fields will be executed parallel, except the first level of a muta
 See `specification <http://facebook.github.io/graphql/#sec-Normal-evaluation>`_ for details.
 
 Alternatively, schemas with nested lists may benefit from using a BatchedExecutionStrategy and creating batched DataFetchers with get() methods annotated @Batched.
+
+
+Query caching
+-------------
+
+Before ``graphql-java`` engine executes a query it must be parsed and validated, and this process can be somewhat time consuming.
+To avoid the need for re-parse/validate the ``GraphQL.Builder`` allows an instance of ``PreparsedDocumentProvider`` to reuse ``Document`` instances.
+
+Please note that this does not cache the result of the query, only the parsed ``Document``.
+
+.. code-block:: java
+
+    Cache<String, PreparsedDocumentEntry> cache = Caffeine.newBuilder().maximumSize(10_000).build(); (1)
+    GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+            .preparsedDocumentProvider(cache::get) (2)
+            .build();
+
+1. Create an instance of preferred cache instance, here is `Caffeine <https://github.com/ben-manes/caffeine>`_  used as it is a high quality caching solution. The cache instance should be thread safe and shared.
+2. The ``PreparsedDocumentProvider`` is a functional interface with only a get method and we can therefore pass a method reference that matches the signature
+into the builder.
+
+
+In order to achieve high cache hit ration it is recommended that field arguments are passed in as variables instead of directly in the query.
+
+The following query:
+
+.. code-block:: json
+
+    query HelloTo {
+         sayHello(to: "Me") {
+            greeting
+         }
+    }
+
+Should be rewritten as:
+
+.. code-block:: json
+
+    query HelloTo($to: String!) {
+         sayHello(to: $to) {
+            greeting
+         }
+    }
+
+with variables:
+
+.. code-block:: json
+
+    {
+       "to": "Me"
+    }
+
+The query is now reused regardless of variable values provided.
