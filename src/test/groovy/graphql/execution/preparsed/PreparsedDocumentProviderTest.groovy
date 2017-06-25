@@ -8,7 +8,7 @@ import graphql.execution.SimpleExecutionStrategy
 import graphql.execution.instrumentation.TestingInstrumentation
 import spock.lang.Specification
 
-class PreparsedTest extends Specification {
+class PreparsedDocumentProviderTest extends Specification {
 
     def 'Preparse of simple serial execution'() {
         given:
@@ -21,10 +21,6 @@ class PreparsedTest extends Specification {
         }
         """
 
-        //
-        // for testing purposes we must use SimpleExecutionStrategy under the covers to get such
-        // serial behaviour.  The Instrumentation of a parallel strategy would be much different
-        // and certainly harder to test
         def expected = [
                 "start:execution",
 
