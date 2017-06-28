@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.ExceptionWhileDataFetching;
+import graphql.language.Field;
 import graphql.language.SourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

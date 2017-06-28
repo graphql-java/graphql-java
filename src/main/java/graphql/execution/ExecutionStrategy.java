@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
@@ -55,7 +56,6 @@ public abstract class ExecutionStrategy {
         //
         // a legacy handler for classes that have decided to override #handleDataFetchingException
         //
-        super();
         //noinspection deprecation
         dataFetcherExceptionHandler = params -> handleDataFetchingException(
                 params.getExecutionContext(),
@@ -93,6 +93,11 @@ public abstract class ExecutionStrategy {
             Map<String, Object> argumentValues,
             ExecutionPath path,
             Exception e) {
+
+        // for legacy reasons we do what we always did.  Later this will be removed
+        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, e, null);
+        executionContext.addError(error);
+        log.warn(error.getMessage(), e);
     }
 
 
