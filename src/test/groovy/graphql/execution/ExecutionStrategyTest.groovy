@@ -194,6 +194,7 @@ class ExecutionStrategyTest extends Specification {
         null        || true
     }
 
+    @SuppressWarnings("GroovyVariableNotAssigned")
     def "resolveField creates correct DataFetchingEnvironment"() {
         def dataFetcher = Mock(DataFetcher)
         def fieldDefinition = newFieldDefinition().name("someField").type(GraphQLString).dataFetcher(dataFetcher).build()
@@ -218,7 +219,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy.resolveField(executionContext, parameters, [field])
 
         then:
-        1 * dataFetcher.get({ it -> environment = it })
+        1 * dataFetcher.get({ it -> environment = it } as DataFetchingEnvironment)
         environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
         environment.context == "context"
@@ -229,10 +230,7 @@ class ExecutionStrategyTest extends Specification {
         // TODO: there are more properties we should check here
     }
 
-    def "test legacy data fetcher error handler method is called for execution strategies that override handle method"() {
-
-        def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
-
+    def exceptionSetupFixture(expectedException) {
         def dataFetcher = new DataFetcher() {
             @Override
             Object get(DataFetchingEnvironment environment) {
@@ -249,7 +247,10 @@ class ExecutionStrategyTest extends Specification {
         def typeInfo = TypeInfo.newTypeInfo().type(objectType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         ExecutionPath expectedPath = ExecutionPath.rootPath().segment("someField")
+
+        SourceLocation sourceLocation = new SourceLocation(666, 999)
         Field field = new Field("someField")
+        field.setSourceLocation(sourceLocation)
         def parameters = newParameters()
                 .typeInfo(typeInfo)
                 .source("source")
@@ -257,6 +258,16 @@ class ExecutionStrategyTest extends Specification {
                 .path(expectedPath)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .build()
+        [executionContext, fieldDefinition, expectedPath, parameters, field, sourceLocation]
+    }
+
+
+    def "test legacy data fetcher error handler method is called for execution strategies that override handle method"() {
+
+        def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
+
+        //noinspection GroovyAssignabilityCheck
+        def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters, Field field) = exceptionSetupFixture(expectedException)
 
 
         boolean handleDataFetchingExceptionCalled = false
@@ -283,36 +294,13 @@ class ExecutionStrategyTest extends Specification {
         handleDataFetchingExceptionCalled == true
     }
 
+
     def "test that the new data fetcher error handler interface is called"() {
 
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
 
-        def dataFetcher = new DataFetcher() {
-            @Override
-            Object get(DataFetchingEnvironment environment) {
-                throw expectedException
-            }
-        }
-        def fieldDefinition = newFieldDefinition().name("someField").type(GraphQLString).dataFetcher(dataFetcher).build()
-        def objectType = newObject()
-                .name("Test")
-                .field(fieldDefinition)
-                .build()
-        def schema = GraphQLSchema.newSchema().query(objectType).build()
-        ExecutionContext executionContext = buildContext(schema)
-        def typeInfo = TypeInfo.newTypeInfo().type(objectType).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
-        Field field = new Field("someField")
-        ExecutionPath expectedPath = ExecutionPath.rootPath().segment("someField")
-        def sourceLocation = new SourceLocation(666, 664)
-        field.setSourceLocation(sourceLocation)
-        def parameters = newParameters()
-                .typeInfo(typeInfo)
-                .source("source")
-                .fields(["someField": [field]])
-                .nonNullFieldValidator(nullableFieldValidator)
-                .path(expectedPath)
-                .build()
+        //noinspection GroovyAssignabilityCheck
+        def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
 
 
         boolean handlerCalled = false
@@ -349,6 +337,30 @@ class ExecutionStrategyTest extends Specification {
         executionContext.errors.size() == 1
         def exceptionWhileDataFetching = executionContext.errors[0] as ExceptionWhileDataFetching
         exceptionWhileDataFetching.getLocations() == [sourceLocation]
+        exceptionWhileDataFetching.getMessage().contains('This is the exception you are looking for')
+    }
+
+    def "test that the old legacy method is still useful for those who derive new execution strategies"() {
+
+        def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
+
+        //noinspection GroovyAssignabilityCheck
+        def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
+
+
+        ExecutionStrategy overridingStrategy = new ExecutionStrategy() {
+            @Override
+            ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+                null
+            }
+        }
+
+        when:
+        overridingStrategy.resolveField(executionContext, parameters, [field])
+
+        then:
+        executionContext.errors.size() == 1
+        def exceptionWhileDataFetching = executionContext.errors[0] as ExceptionWhileDataFetching
         exceptionWhileDataFetching.getMessage().contains('This is the exception you are looking for')
     }
 

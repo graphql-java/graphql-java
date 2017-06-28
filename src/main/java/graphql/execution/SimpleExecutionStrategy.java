@@ -9,12 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The standard graphql execution strategy that runs fields in parallel
+ * The standard graphql execution strategy that runs fields in serial order
  */
 public class SimpleExecutionStrategy extends ExecutionStrategy {
 
     /**
-     * The standard graphql execution strategy that runs fields in parallel
+     * The standard graphql execution strategy that runs fields in serial order 
      */
     public SimpleExecutionStrategy() {
         super(new SimpleDataFetcherExceptionHandler());
