@@ -1,13 +1,5 @@
 import java.text.SimpleDateFormat
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:3.1.0'
-    }
-}
 plugins {
     id "com.jfrog.bintray" version "1.2"
 }
@@ -16,9 +8,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'antlr'
-
 apply plugin: 'osgi'
-apply plugin: 'biz.aQute.bnd.builder'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
