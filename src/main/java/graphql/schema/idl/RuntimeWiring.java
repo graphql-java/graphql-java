@@ -19,17 +19,26 @@ import java.util.function.UnaryOperator;
 public class RuntimeWiring {
 
     private final Map<String, Map<String, DataFetcher>> dataFetchers;
+    private final Map<String, DataFetcher> defaultDataFetchers;
     private final Map<String, GraphQLScalarType> scalars;
     private final Map<String, TypeResolver> typeResolvers;
-    private Map<String, EnumValuesProvider> enumValuesProviders;
     private final WiringFactory wiringFactory;
+    private final Map<String, EnumValuesProvider> enumValuesProviders;
 
-    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory) {
+    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory) {
         this.dataFetchers = dataFetchers;
+        this.defaultDataFetchers = defaultDataFetchers;
         this.scalars = scalars;
         this.typeResolvers = typeResolvers;
         this.wiringFactory = wiringFactory;
         this.enumValuesProviders = enumValuesProviders;
+    }
+
+    /**
+     * @return a builder of Runtime Wiring
+     */
+    public static Builder newRuntimeWiring() {
+        return new Builder();
     }
 
     public Map<String, GraphQLScalarType> getScalars() {
@@ -44,6 +53,10 @@ public class RuntimeWiring {
         return dataFetchers.computeIfAbsent(typeName, k -> new LinkedHashMap<>());
     }
 
+    public DataFetcher getDefaultDataFetcherForType(String typeName) {
+        return defaultDataFetchers.get(typeName);
+    }
+
     public Map<String, TypeResolver> getTypeResolvers() {
         return typeResolvers;
     }
@@ -56,16 +69,10 @@ public class RuntimeWiring {
         return wiringFactory;
     }
 
-    /**
-     * @return a builder of Runtime Wiring
-     */
-    public static Builder newRuntimeWiring() {
-        return new Builder();
-    }
-
     @PublicApi
     public static class Builder {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
+        private final Map<String, DataFetcher> defaultDataFetchers = new LinkedHashMap<>();
         private final Map<String, GraphQLScalarType> scalars = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolvers = new LinkedHashMap<>();
         private final Map<String, EnumValuesProvider> enumValuesProviders = new LinkedHashMap<>();
@@ -79,6 +86,7 @@ public class RuntimeWiring {
          * Adds a wiring factory into the runtime wiring
          *
          * @param wiringFactory the wiring factory to add
+         *
          * @return this outer builder
          */
         public Builder wiringFactory(WiringFactory wiringFactory) {
@@ -91,6 +99,7 @@ public class RuntimeWiring {
          * This allows you to add in new custom Scalar implementations beyond the standard set.
          *
          * @param scalarType the new scalar implementation
+         *
          * @return the runtime wiring builder
          */
         public Builder scalar(GraphQLScalarType scalarType) {
@@ -102,6 +111,7 @@ public class RuntimeWiring {
          * This allows you to add a new type wiring via a builder
          *
          * @param builder the type wiring builder to use
+         *
          * @return this outer builder
          */
         public Builder type(TypeRuntimeWiring.Builder builder) {
@@ -113,6 +123,7 @@ public class RuntimeWiring {
          *
          * @param typeName        the name of the type to wire
          * @param builderFunction a function that will be given the builder to use
+         *
          * @return the runtime wiring builder
          */
         public Builder type(String typeName, UnaryOperator<TypeRuntimeWiring.Builder> builderFunction) {
@@ -124,12 +135,15 @@ public class RuntimeWiring {
          * This adds a type wiring
          *
          * @param typeRuntimeWiring the new type wiring
+         *
          * @return the runtime wiring builder
          */
         public Builder type(TypeRuntimeWiring typeRuntimeWiring) {
             String typeName = typeRuntimeWiring.getTypeName();
             Map<String, DataFetcher> typeDataFetchers = dataFetchers.computeIfAbsent(typeName, k -> new LinkedHashMap<>());
             typeRuntimeWiring.getFieldDataFetchers().forEach(typeDataFetchers::put);
+
+            defaultDataFetchers.put(typeName, typeRuntimeWiring.getDefaultDataFetcher());
 
             TypeResolver typeResolver = typeRuntimeWiring.getTypeResolver();
             if (typeResolver != null) {
@@ -147,7 +161,7 @@ public class RuntimeWiring {
          * @return the built runtime wiring
          */
         public RuntimeWiring build() {
-            return new RuntimeWiring(dataFetchers, scalars, typeResolvers, enumValuesProviders, wiringFactory);
+            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, enumValuesProviders, wiringFactory);
         }
 
     }
