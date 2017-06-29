@@ -224,7 +224,7 @@ class WiringFactoryTest extends Specification {
             }
 
             @Override
-            DataFetcher getDataFetcherOfLastResort(FieldWiringEnvironment environment) {
+            DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
                 def name = environment.getFieldDefinition().getName()
                 fields.add(name)
                 new PropertyDataFetcher(name)

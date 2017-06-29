@@ -43,7 +43,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
-import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
@@ -91,7 +90,7 @@ public class SchemaGenerator {
             return typeRegistry;
         }
 
-        @SuppressWarnings("OptionalGetWithoutIsPresent")
+        @SuppressWarnings({"OptionalGetWithoutIsPresent", "ConstantConditions"})
         TypeDefinition getTypeDefinition(Type type) {
             return typeRegistry.getType(type).get();
         }
@@ -104,8 +103,8 @@ public class SchemaGenerator {
             definitionStack.push(typeInfo.getName());
         }
 
-        String pop() {
-            return definitionStack.pop();
+        void pop() {
+            definitionStack.pop();
         }
 
         GraphQLOutputType hasOutputType(TypeDefinition typeDefinition) {
@@ -174,7 +173,7 @@ public class SchemaGenerator {
         //
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         if (!typeRegistry.schemaDefinition().isPresent()) {
-            @SuppressWarnings("OptionalGetWithoutIsPresent")
+            @SuppressWarnings({"OptionalGetWithoutIsPresent", "ConstantConditions"})
             TypeDefinition queryTypeDef = typeRegistry.getType("Query").get();
 
             query = buildOutputType(buildCtx, new TypeName(queryTypeDef.getName()));
@@ -195,7 +194,7 @@ public class SchemaGenerator {
             List<OperationTypeDefinition> operationTypes = schemaDefinition.getOperationTypeDefinitions();
 
             // pre-flight checked via checker
-            @SuppressWarnings("OptionalGetWithoutIsPresent")
+            @SuppressWarnings({"OptionalGetWithoutIsPresent", "ConstantConditions"})
             OperationTypeDefinition queryOp = operationTypes.stream().filter(op -> "query".equals(op.getName())).findFirst().get();
             Optional<OperationTypeDefinition> mutationOp = operationTypes.stream().filter(op -> "mutation".equals(op.getName())).findFirst();
             Optional<OperationTypeDefinition> subscriptionOp = operationTypes.stream().filter(op -> "subscription".equals(op.getName())).findFirst();
@@ -465,9 +464,10 @@ public class SchemaGenerator {
 
     private DataFetcher buildDataFetcher(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
         String fieldName = fieldDef.getName();
+        String parentTypeName = parentType.getName();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
-        RuntimeWiring wiring = buildCtx.getWiring();
-        WiringFactory wiringFactory = wiring.getWiringFactory();
+        RuntimeWiring runtimeWiring = buildCtx.getWiring();
+        WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
 
         FieldWiringEnvironment wiringEnvironment = new FieldWiringEnvironment(typeRegistry, parentType, fieldDef);
 
@@ -476,10 +476,13 @@ public class SchemaGenerator {
             dataFetcher = wiringFactory.getDataFetcher(wiringEnvironment);
             assertNotNull(dataFetcher, "The WiringFactory indicated it provides a data fetcher but then returned null");
         } else {
-            dataFetcher = wiring.getDataFetcherForType(parentType.getName()).get(fieldName);
+            dataFetcher = runtimeWiring.getDataFetcherForType(parentTypeName).get(fieldName);
             if (dataFetcher == null) {
-                dataFetcher = wiringFactory.getDataFetcherOfLastResort(wiringEnvironment);
-                assertNotNull(dataFetcher, "The WiringFactory indicated MUST provide a data fetcher of last resort");
+                dataFetcher = runtimeWiring.getDefaultDataFetcherForType(parentTypeName);
+                if (dataFetcher == null) {
+                    dataFetcher = wiringFactory.getDefaultDataFetcher(wiringEnvironment);
+                    assertNotNull(dataFetcher, "The WiringFactory indicated MUST provide a data fetcher of last resort as part of its contract");
+                }
             }
         }
         return dataFetcher;

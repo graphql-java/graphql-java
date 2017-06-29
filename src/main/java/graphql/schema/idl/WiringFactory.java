@@ -82,13 +82,13 @@ public interface WiringFactory {
     }
 
     /**
-     * All fields need a data fetcher of some sort.  This method is called to prove the data fetcher
+     * All fields need a data fetcher of some sort and this  method is called to prove the data fetcher
      * of last resort, that is the one that will be used if no specific one has been provided
      * @param environment the wiring environment
      *
      * @return a {@link DataFetcher}
      */
-    default DataFetcher getDataFetcherOfLastResort(FieldWiringEnvironment environment) {
+    default DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
         return new PropertyDataFetcher(environment.getFieldDefinition().getName());
     }
 }
