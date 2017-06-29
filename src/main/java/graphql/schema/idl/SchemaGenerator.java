@@ -478,10 +478,8 @@ public class SchemaGenerator {
         } else {
             dataFetcher = wiring.getDataFetcherForType(parentType.getName()).get(fieldName);
             if (dataFetcher == null) {
-                //
-                // in the future we could support FieldDateFetcher but we would need a way to indicate that in the schema spec
-                // perhaps by a directive
-                dataFetcher = new PropertyDataFetcher(fieldName);
+                dataFetcher = wiringFactory.getDataFetcherOfLastResort(wiringEnvironment);
+                assertNotNull(dataFetcher, "The WiringFactory indicated MUST provide a data fetcher of last resort");
             }
         }
         return dataFetcher;

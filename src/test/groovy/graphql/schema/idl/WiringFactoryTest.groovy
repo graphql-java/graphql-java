@@ -194,4 +194,50 @@ class WiringFactoryTest extends Specification {
 
         true // assertions in callback
     }
+
+    def "last resort data fetcher is used"() {
+
+        def spec = """             
+
+            type Query {
+                id: ID!
+                name: String!
+                homePlanet: String
+            }
+        """
+
+
+        def fields = []
+
+        def wiringFactory = new WiringFactory() {
+            @Override
+            boolean providesDataFetcher(FieldWiringEnvironment environment) {
+                if (environment.getFieldDefinition().getName() == "name") {
+                    return true
+                }
+                return false
+            }
+
+            @Override
+            DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
+                new PropertyDataFetcher("name")
+            }
+
+            @Override
+            DataFetcher getDataFetcherOfLastResort(FieldWiringEnvironment environment) {
+                def name = environment.getFieldDefinition().getName()
+                fields.add(name)
+                new PropertyDataFetcher(name)
+            }
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .build()
+
+        generateSchema(spec, wiring)
+
+        expect:
+
+        fields == ["id","homePlanet"]
+    }
 }
