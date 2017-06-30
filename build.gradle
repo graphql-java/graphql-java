@@ -8,6 +8,7 @@ apply plugin: 'java'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'antlr'
+apply plugin: 'osgi'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8

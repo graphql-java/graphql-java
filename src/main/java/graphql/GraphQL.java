@@ -279,7 +279,7 @@ public class GraphQL {
      * @return result including errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
-        log.debug("Executing request. operation name: {}. query: {} ", executionInput.getOperationName(), executionInput.getQuery());
+        log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
 
         InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(new InstrumentationExecutionParameters(executionInput));
         final ExecutionResult executionResult = parseValidateAndExecute(executionInput);
