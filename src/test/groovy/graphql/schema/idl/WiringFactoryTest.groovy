@@ -195,7 +195,7 @@ class WiringFactoryTest extends Specification {
         true // assertions in callback
     }
 
-    def "last resort data fetcher is used"() {
+    def "default data fetcher is used"() {
 
         def spec = """             
 

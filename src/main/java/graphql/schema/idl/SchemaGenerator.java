@@ -481,7 +481,7 @@ public class SchemaGenerator {
                 dataFetcher = runtimeWiring.getDefaultDataFetcherForType(parentTypeName);
                 if (dataFetcher == null) {
                     dataFetcher = wiringFactory.getDefaultDataFetcher(wiringEnvironment);
-                    assertNotNull(dataFetcher, "The WiringFactory indicated MUST provide a data fetcher of last resort as part of its contract");
+                    assertNotNull(dataFetcher, "The WiringFactory indicated MUST provide a default data fetcher as part of its contract");
                 }
             }
         }
