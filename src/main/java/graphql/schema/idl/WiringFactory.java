@@ -82,8 +82,8 @@ public interface WiringFactory {
     }
 
     /**
-     * All fields need a data fetcher of some sort and this  method is called to prove the data fetcher
-     * of last resort, that is the one that will be used if no specific one has been provided
+     * All fields need a data fetcher of some sort and this  method is called to provide the data fetcher
+     * that will be used if no specific one has been provided
      * @param environment the wiring environment
      *
      * @return a {@link DataFetcher}

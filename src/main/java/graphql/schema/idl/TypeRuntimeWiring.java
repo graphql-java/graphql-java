@@ -122,9 +122,8 @@ public class TypeRuntimeWiring {
         }
 
         /**
-         * All fields in a type need a data fetcher of some sort and this method is called to prove the data fetcher
-         * of last resort, that is the one that will be used for this type if no specific one has been provided
-         * per field.
+         * All fields in a type need a data fetcher of some sort and this method is called to provide the default data fetcher
+         * that will be used for this type if no specific one has been provided per field.
          *
          * @param dataFetcher the default data fetcher to use for this type
          *
