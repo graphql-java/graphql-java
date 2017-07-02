@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.Internal;
 import graphql.language.Field;
 
 import java.util.Collection;
@@ -20,11 +21,12 @@ import static java.util.concurrent.CompletableFuture.supplyAsync;
  * running all fields asynch first, waiting for the results
  */
 @SuppressWarnings("Duplicates")
-public class AsyncFetchThenCompleteExecutionStrategy extends ExecutionStrategy {
+@Internal
+public class AsyncFetchThenCompleteExecutionTestStrategy extends ExecutionStrategy {
 
     private final ExecutorService executor;
 
-    public AsyncFetchThenCompleteExecutionStrategy() {
+    public AsyncFetchThenCompleteExecutionTestStrategy() {
         super(new SimpleDataFetcherExceptionHandler());
         this.executor = ForkJoinPool.commonPool();
     }
@@ -52,9 +54,6 @@ public class AsyncFetchThenCompleteExecutionStrategy extends ExecutionStrategy {
                     fetchField(executionContext, newParameters, fieldList), executor);
             fetchFutures.put(fieldName, fetchFuture);
         }
-
-        // right here would be a good point to run a dataloader.dispatch() say to ensure batching of field fetches
-        // we would need a call out mechanism, either an overloadable method or passed in call back
 
         // now wait for all fetches to finish together via this join
         allOf(fetchFutures.values()).join();

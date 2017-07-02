@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.Internal;
 import graphql.language.Field;
 
 import java.util.LinkedHashMap;
@@ -11,9 +12,10 @@ import java.util.Map;
 /**
  * To prove we can write other execution strategies this one does a breath first approach
  */
-public class BreadthFirstExecutionStrategy extends ExecutionStrategy {
+@Internal
+public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
 
-    public BreadthFirstExecutionStrategy() {
+    public BreadthFirstExecutionTestStrategy() {
         super(new SimpleDataFetcherExceptionHandler());
     }
 
