@@ -130,11 +130,11 @@ class ExecutionStrategyEquivalenceTest extends Specification {
 
         where:
 
-        strategyType      | strategyUnderTest                             | expectedQueriesAndResults
-        "simple"          | new SimpleExecutionStrategy()                 | standardQueriesAndResults()
-        "breadthFirst"    | new BreadthFirstExecutionStrategy()           | standardQueriesAndResults()
-        "executorService" | executorServiceStrategy()                     | standardQueriesAndResults()
-        "asyncFetch"      | new AsyncFetchThenCompleteExecutionStrategy() | standardQueriesAndResults()
+        strategyType      | strategyUnderTest                                 | expectedQueriesAndResults
+        "simple"          | new SimpleExecutionStrategy()                     | standardQueriesAndResults()
+        "breadthFirst"    | new BreadthFirstExecutionTestStrategy()           | standardQueriesAndResults()
+        "executorService" | executorServiceStrategy()                         | standardQueriesAndResults()
+        "asyncFetch"      | new AsyncFetchThenCompleteExecutionTestStrategy() | standardQueriesAndResults()
 
     }
 
