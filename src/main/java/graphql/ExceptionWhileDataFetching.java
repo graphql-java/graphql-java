@@ -4,6 +4,7 @@ package graphql;
 import graphql.execution.ExecutionPath;
 import graphql.language.SourceLocation;
 
+import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
@@ -14,10 +15,12 @@ public class ExceptionWhileDataFetching implements GraphQLError {
 
     private final ExecutionPath path;
     private final Throwable exception;
+    private final SourceLocation sourceLocation;
 
-    public ExceptionWhileDataFetching(ExecutionPath path, Throwable exception) {
+    public ExceptionWhileDataFetching(ExecutionPath path, Throwable exception, SourceLocation sourceLocation) {
         this.path = assertNotNull(path);
         this.exception = assertNotNull(exception);
+        this.sourceLocation = sourceLocation;
     }
 
     public Throwable getException() {
@@ -32,7 +35,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
 
     @Override
     public List<SourceLocation> getLocations() {
-        return null;
+        return Collections.singletonList(sourceLocation);
     }
 
     /**
@@ -55,6 +58,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
         return "ExceptionWhileDataFetching{" +
                 "path=" + path +
                 "exception=" + exception +
+                "sourceLocation=" + sourceLocation +
                 '}';
     }
 
