@@ -46,12 +46,10 @@ public class AsyncFetchThenCompleteExecutionTestStrategy extends ExecutionStrate
 
         // first fetch every value
         for (String fieldName : fields.keySet()) {
-            List<Field> fieldList = fields.get(fieldName);
-
-            ExecutionStrategyParameters newParameters = newParameters(parameters, fieldName);
+            ExecutionStrategyParameters newParameters = newParameters(parameters, fields,fieldName);
 
             CompletableFuture<Object> fetchFuture = supplyAsync(() ->
-                    fetchField(executionContext, newParameters, fieldList), executor);
+                    fetchField(executionContext, newParameters), executor);
             fetchFutures.put(fieldName, fetchFuture);
         }
 
@@ -71,11 +69,11 @@ public class AsyncFetchThenCompleteExecutionTestStrategy extends ExecutionStrate
         for (String fieldName : fetchedValues.keySet()) {
             List<Field> fieldList = fields.get(fieldName);
 
-            ExecutionStrategyParameters newParameters = newParameters(parameters, fieldName);
+            ExecutionStrategyParameters newParameters = newParameters(parameters, fields, fieldName);
 
             Object fetchedValue = fetchedValues.get(fieldName);
             try {
-                ExecutionResult resolvedResult = completeField(executionContext, newParameters, fieldList, fetchedValue);
+                ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue);
                 results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
             } catch (NonNullableFieldWasNullException e) {
                 assertNonNullFieldPrecondition(e);
@@ -86,9 +84,11 @@ public class AsyncFetchThenCompleteExecutionTestStrategy extends ExecutionStrate
         return new ExecutionResultImpl(results, executionContext.getErrors());
     }
 
-    private ExecutionStrategyParameters newParameters(ExecutionStrategyParameters parameters, String fieldName) {
+    private ExecutionStrategyParameters newParameters(ExecutionStrategyParameters parameters, Map<String, List<Field>> fields, String fieldName) {
+        List<Field> currentField = fields.get(fieldName);
         ExecutionPath fieldPath = parameters.path().segment(fieldName);
-        return parameters.transform(builder -> builder.path(fieldPath));
+        return parameters
+                .transform(builder -> builder.field(currentField).path(fieldPath));
     }
 
 

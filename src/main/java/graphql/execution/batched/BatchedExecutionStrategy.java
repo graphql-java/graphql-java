@@ -86,11 +86,12 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             for (String fieldName : node.getFields().keySet()) {
 
                 ExecutionPath fieldPath = parameters.path().segment(fieldName);
-                ExecutionStrategyParameters newParameters = parameters.transform(bldr -> bldr.path(fieldPath));
+                List<Field> currentField = node.getFields().get(fieldName);
+                ExecutionStrategyParameters newParameters = parameters
+                        .transform(builder -> builder.path(fieldPath).field(currentField));
 
-                List<Field> fieldList = node.getFields().get(fieldName);
                 List<GraphQLExecutionNode> childNodes = resolveField(executionContext, newParameters, node.getParentType(),
-                        node.getData(), fieldName, fieldList);
+                        node.getData(), fieldName, currentField);
                 nodes.addAll(childNodes);
             }
         }

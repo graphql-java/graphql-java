@@ -34,14 +34,15 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         // then for every fetched value, complete it
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fetchedValues.keySet()) {
-            List<Field> fieldList = fields.get(fieldName);
+            List<Field> currentField = fields.get(fieldName);
             Object fetchedValue = fetchedValues.get(fieldName);
 
             ExecutionPath fieldPath = parameters.path().segment(fieldName);
-            ExecutionStrategyParameters newParameters = parameters.transform(bldr -> bldr.path(fieldPath));
+            ExecutionStrategyParameters newParameters = parameters
+                    .transform(builder -> builder.field(currentField).path(fieldPath));
 
             try {
-                completeValue(executionContext, results, fieldName, fieldList, fetchedValue, newParameters);
+                completeValue(executionContext, results, fieldName, fetchedValue, newParameters);
             } catch (NonNullableFieldWasNullException e) {
                 assertNonNullFieldPrecondition(e);
                 results = null;
@@ -52,16 +53,17 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
     }
 
     private Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, List<Field>> fields, String fieldName) {
-        List<Field> fieldList = fields.get(fieldName);
+        List<Field> currentField = fields.get(fieldName);
 
         ExecutionPath fieldPath = parameters.path().segment(fieldName);
-        ExecutionStrategyParameters newParameters = parameters.transform(bldr -> bldr.path(fieldPath));
+        ExecutionStrategyParameters newParameters = parameters
+                .transform(builder -> builder.field(currentField).path(fieldPath));
 
-        return fetchField(executionContext, newParameters, fieldList);
+        return fetchField(executionContext, newParameters);
     }
 
-    private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, List<Field> fieldList, Object fetchedValue, ExecutionStrategyParameters newParameters) {
-        ExecutionResult resolvedResult = completeField(executionContext, newParameters, fieldList, fetchedValue);
+    private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, Object fetchedValue, ExecutionStrategyParameters newParameters) {
+        ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue);
         results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
     }
 
