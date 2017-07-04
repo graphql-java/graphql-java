@@ -4,6 +4,7 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.language.Field;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +35,8 @@ public class SimpleExecutionStrategy extends ExecutionStrategy {
     @Override
     public CompletionStage<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         Map<String, List<Field>> fields = parameters.fields();
-        Map<String, Object> results = new LinkedHashMap<>();
+        final Map<String, CompletableFuture<ExecutionResult>> results = new LinkedHashMap<>();
+        List<CompletableFuture<ExecutionResult>> futures = new ArrayList<>();
         for (String fieldName : fields.keySet()) {
             List<Field> fieldList = fields.get(fieldName);
 
@@ -42,15 +44,23 @@ public class SimpleExecutionStrategy extends ExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters.transform(builder -> builder.path(fieldPath));
 
             try {
-                ExecutionResult resolvedResult = resolveField(executionContext, newParameters, fieldList).toCompletableFuture().join();
 
-                results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
+                CompletableFuture<ExecutionResult> future = resolveField(executionContext, newParameters, fieldList).toCompletableFuture();
+                futures.add(future);
+                results.put(fieldName, future);
             } catch (NonNullableFieldWasNullException e) {
+                //TODO: return exception via CompletableFuture and not as a real exception
                 assertNonNullFieldPrecondition(e);
-                results = null;
-                break;
+                return CompletableFuture.completedFuture(null);
             }
         }
-        return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).thenApply((ignored) -> {
+            Map<String, ExecutionResult> realResults = new LinkedHashMap<>();
+            for (String field : results.keySet()) {
+                realResults.put(field, results.get(field).join());
+
+            }
+            return new ExecutionResultImpl(realResults, executionContext.getErrors());
+        });
     }
 }
