@@ -195,8 +195,8 @@ public abstract class ExecutionStrategy {
 
         CompletionStage<Object> fetchField = fetchField(executionContext, parameters, fieldList);
         return fetchField
-                .thenComposeAsync(fetchedValue -> completeField(executionContext, parameters, fieldList, fetchedValue))
-                .thenApplyAsync(completedValue -> {
+                .thenCompose(fetchedValue -> completeField(executionContext, parameters, fieldList, fetchedValue))
+                .thenApply(completedValue -> {
                     fieldCtx.onEnd(completedValue);
                     return completedValue;
                 });
