@@ -336,7 +336,7 @@ class GraphQLTest extends Specification {
         result.errors[0].errorType == ErrorType.InvalidSyntax
     }
 
-    def "wrong argument type: array fo enum instead of enum"() {
+    def "wrong argument type: array of enum instead of enum"() {
         given:
         GraphQLEnumType enumType = GraphQLEnumType.newEnum().name("EnumType").value("Val1").value("Val2").build()
 
