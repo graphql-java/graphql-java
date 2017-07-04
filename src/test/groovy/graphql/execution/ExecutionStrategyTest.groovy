@@ -262,37 +262,6 @@ class ExecutionStrategyTest extends Specification {
     }
 
 
-    def "test legacy data fetcher error handler method is called for execution strategies that override handle method"() {
-
-        def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
-
-        //noinspection GroovyAssignabilityCheck
-        def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters, Field field) = exceptionSetupFixture(expectedException)
-
-
-        boolean handleDataFetchingExceptionCalled = false
-        ExecutionStrategy overridingStrategy = new ExecutionStrategy() {
-            @Override
-            ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
-                null
-            }
-
-            @Override
-            protected void handleDataFetchingException(ExecutionContext ec, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, ExecutionPath path, Exception e) {
-                handleDataFetchingExceptionCalled = true
-                assert e == expectedException
-                assert ec == executionContext
-                assert fieldDef == fieldDefinition
-                assert path == expectedPath
-            }
-        }
-
-        when:
-        overridingStrategy.resolveField(executionContext, parameters, [field])
-
-        then:
-        handleDataFetchingExceptionCalled == true
-    }
 
 
     def "test that the new data fetcher error handler interface is called"() {
@@ -321,11 +290,6 @@ class ExecutionStrategyTest extends Specification {
             @Override
             ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
                 null
-            }
-
-            @Override
-            protected void handleDataFetchingException(ExecutionContext ec, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, ExecutionPath path, Exception e) {
-                assert false: "This should not be called in this case"
             }
         }
 
