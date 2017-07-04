@@ -1,7 +1,20 @@
 package graphql.validation
 
 import graphql.Directives
-import graphql.language.*
+import graphql.language.Argument
+import graphql.language.ArrayValue
+import graphql.language.BooleanValue
+import graphql.language.Directive
+import graphql.language.Field
+import graphql.language.FragmentDefinition
+import graphql.language.InlineFragment
+import graphql.language.ObjectField
+import graphql.language.OperationDefinition
+import graphql.language.SelectionSet
+import graphql.language.StringValue
+import graphql.language.TypeName
+import graphql.language.VariableDefinition
+import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLList
@@ -10,7 +23,9 @@ import spock.lang.Specification
 
 import static graphql.Directives.IncludeDirective
 import static graphql.Scalars.GraphQLString
-import static graphql.StarWarsSchema.*
+import static graphql.StarWarsSchema.droidType
+import static graphql.StarWarsSchema.queryType
+import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.language.OperationDefinition.Operation.QUERY
 
 class TraversalContextTest extends Specification {
@@ -221,5 +236,19 @@ class TraversalContextTest extends Specification {
 
         then:
         traversalContext.getInputType() == inputObjectType
+    }
+
+    def "visit array with schema input type is enum: input type is null after"() {
+        given:
+        GraphQLEnumType enumType = GraphQLEnumType.newEnum().name("EnumType").value("Val1").value("Val2").build()
+        ArrayValue arrayValue = new ArrayValue()
+
+        traversalContext.inputTypeStack.add(enumType)
+
+        when:
+        traversalContext.enter(arrayValue, [])
+
+        then:
+        traversalContext.getInputType() == null
     }
 }
