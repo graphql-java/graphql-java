@@ -140,6 +140,7 @@ public class GraphQLFieldDefinition {
         }
 
         public Builder dataFetcher(DataFetcher dataFetcher) {
+            assertNotNull(dataFetcher, "dataFetcher must be not null");
             this.dataFetcher = dataFetcher;
             return this;
         }
