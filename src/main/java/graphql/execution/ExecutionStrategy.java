@@ -32,9 +32,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
@@ -42,10 +45,11 @@ import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * An execution strategy is give a list of fields from the graphql query to execute and find values for using a recursive strategy.
- *
+ * <p>
  * <pre>
  *     query {
  *          friends {
@@ -67,7 +71,7 @@ import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvir
  *     }
  *
  * </pre>
- *
+ * <p>
  * Given the graphql query above, an execution strategy will be called for the top level fields 'friends' and 'enemies' and it will be asked to find an object
  * to describe them.  Because they are both complex object types, it needs to descend down that query and start fetching and completing
  * fields such as 'id','name' and other complex fields such as 'friends' and 'allies', by recursively calling to itself to execute these lower
@@ -136,12 +140,10 @@ public abstract class ExecutionStrategy {
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
-     *
      * @return an {@link ExecutionResult}
-     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
-    public abstract ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException;
+    public abstract CompletionStage<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException;
 
     /**
      * Handle exceptions which occur during data fetching. By default, add all exceptions to the execution context's
@@ -153,7 +155,6 @@ public abstract class ExecutionStrategy {
      * @param argumentValues   the map of arguments
      * @param path             the logical path to the field in question
      * @param e                the exception that occurred
-     *
      * @deprecated implement the new {@link DataFetcherExceptionHandler} interface and pass it in as a parameter to the strategy
      */
     @SuppressWarnings({"unused", "DeprecatedIsStillUsed"})
@@ -174,50 +175,47 @@ public abstract class ExecutionStrategy {
     /**
      * Called to fetch a value for a field and resolve it further in terms of the graphql query.  This will call
      * #fetchField followed by #completeField and the completed {@link ExecutionResult} is returned.
-     *
+     * <p>
      * An execution strategy can iterate the fields to be executed and call this method for each one
-     *
+     * <p>
      * Graphql fragments mean that for any give logical field can have one or more {@link Field} values associated with it
      * in the query, hence the fieldList.  However the first entry is representative of the field for most purposes.
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fieldList        the instances of the AST {@link Field} to be fetched
-     *
      * @return an {@link ExecutionResult}
-     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
-    protected ExecutionResult resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList) {
+    protected CompletionStage<ExecutionResult> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, fieldList.get(0));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(new InstrumentationFieldParameters(executionContext, fieldDef));
 
-        Object fetchedValue = fetchField(executionContext, parameters, fieldList);
-
-        ExecutionResult result = completeField(executionContext, parameters, fieldList, fetchedValue);
-
-        fieldCtx.onEnd(result);
-        return result;
+        CompletionStage<Object> fetchField = fetchField(executionContext, parameters, fieldList);
+        return fetchField
+                .thenCompose(fetchedValue -> completeField(executionContext, parameters, fieldList, fetchedValue))
+                .thenApply(completedValue -> {
+                    fieldCtx.onEnd(completedValue);
+                    return completedValue;
+                });
     }
 
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
      * {@link GraphQLFieldDefinition}.
-     *
+     * <p>
      * Graphql fragments mean that for any give logical field can have one or more {@link Field} values associated with it
      * in the query, hence the fieldList.  However the first entry is representative of the field for most purposes.
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fieldList        the instances of the AST {@link Field} to be fetched
-     *
      * @return an fetched object
-     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
-    protected Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList) {
+    protected CompletionStage<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList) {
         Field field = fieldList.get(0);
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
@@ -240,10 +238,15 @@ public abstract class ExecutionStrategy {
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment));
-        Object fetchedValue = null;
+        CompletionStage<Object> fetchedValue = null;
         try {
             DataFetcher dataFetcher = fieldDef.getDataFetcher();
-            fetchedValue = dataFetcher.get(environment);
+            Object fetchedValueRaw = dataFetcher.get(environment);
+            if (fetchedValueRaw instanceof CompletionStage) {
+                fetchedValue = (CompletionStage<Object>) fetchedValueRaw;
+            } else {
+                fetchedValue = completedFuture(fetchedValueRaw);
+            }
 
             fetchCtx.onEnd(fetchedValue);
         } catch (Exception e) {
@@ -266,10 +269,10 @@ public abstract class ExecutionStrategy {
 
     /**
      * Called to complete a field based on the type of the field.
-     *
+     * <p>
      * If the field is a scalar type, then it will be coerced  and returned.  However if the field type is an complex object type, then
      * the execution strategy will be called recursively again to execute the fields of that type before returning.
-     *
+     * <p>
      * Graphql fragments mean that for any give logical field can have one or more {@link Field} values associated with it
      * in the query, hence the fieldList.  However the first entry is representative of the field for most purposes.
      *
@@ -277,12 +280,10 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fieldList        the instances of the AST {@link Field} to be fetched
      * @param fetchedValue     the fetched raw value
-     *
      * @return an {@link ExecutionResult}
-     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
-    protected ExecutionResult completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList, Object fetchedValue) {
+    protected CompletionStage<ExecutionResult> completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList, Object fetchedValue) {
         Field field = fieldList.get(0);
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
@@ -312,22 +313,20 @@ public abstract class ExecutionStrategy {
 
     /**
      * Called to complete a value for a field based on the type of the field.
-     *
+     * <p>
      * If the field is a scalar type, then it will be coerced  and returned.  However if the field type is an complex object type, then
      * the execution strategy will be called recursively again to execute the fields of that type before returning.
-     *
+     * <p>
      * Graphql fragments mean that for any give logical field can have one or more {@link Field} values associated with it
      * in the query, hence the fieldList.  However the first entry is representative of the field for most purposes.
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fieldList        the instances of the AST {@link Field} to be fetched
-     *
      * @return an {@link ExecutionResult}
-     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
-    protected ExecutionResult completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList) throws NonNullableFieldWasNullException {
+    protected CompletionStage<ExecutionResult> completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList) throws NonNullableFieldWasNullException {
         TypeInfo typeInfo = parameters.typeInfo();
         Object result = parameters.source();
         GraphQLType fieldType = parameters.typeInfo().type();
@@ -404,7 +403,6 @@ public abstract class ExecutionStrategy {
      * Called to resolve a {@link GraphQLInterfaceType} into a specific {@link GraphQLObjectType} so the object can be executed in terms of that type
      *
      * @param params the params needed for type resolution
-     *
      * @return a {@link GraphQLObjectType}
      */
     protected GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
@@ -420,7 +418,6 @@ public abstract class ExecutionStrategy {
      * Called to resolve a {@link GraphQLUnionType} into a specific {@link GraphQLObjectType} so the object can be executed in terms of that type
      *
      * @param params the params needed for type resolution
-     *
      * @return a {@link GraphQLObjectType}
      */
     protected GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
@@ -439,10 +436,9 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param enumType         the type of the enum
      * @param result           the result to be coerced
-     *
      * @return an {@link ExecutionResult}
      */
-    protected ExecutionResult completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
+    protected CompletionStage<ExecutionResult> completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
         Object serialized;
         try {
             serialized = enumType.getCoercing().serialize(result);
@@ -450,7 +446,7 @@ public abstract class ExecutionStrategy {
             serialized = handleCoercionProblem(executionContext, parameters, e);
         }
         serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
-        return new ExecutionResultImpl(serialized, null);
+        return CompletableFuture.completedFuture(new ExecutionResultImpl(serialized, null));
     }
 
     /**
@@ -461,10 +457,9 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param scalarType       the type of the scalar
      * @param result           the result to be coerced
-     *
      * @return an {@link ExecutionResult}
      */
-    protected ExecutionResult completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
+    protected CompletionStage<ExecutionResult> completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
         Object serialized;
         try {
             serialized = scalarType.getCoercing().serialize(result);
@@ -478,7 +473,7 @@ public abstract class ExecutionStrategy {
             serialized = null;
         }
         serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
-        return new ExecutionResultImpl(serialized, null);
+        return CompletableFuture.completedFuture(new ExecutionResultImpl(serialized, null));
     }
 
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
@@ -496,11 +491,10 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fieldList        the instances of the AST {@link Field} to be fetched
      * @param iterableValues   the values to complete
-     *
      * @return an {@link ExecutionResult}
      */
-    protected ExecutionResult completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList, Iterable<Object> iterableValues) {
-        List<Object> completedResults = new ArrayList<>();
+    protected CompletionStage<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> fieldList, Iterable<Object> iterableValues) {
+        List<CompletionStage<ExecutionResult>> completedResults = new ArrayList<>();
         TypeInfo typeInfo = parameters.typeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
         int idx = 0;
@@ -518,11 +512,13 @@ public abstract class ExecutionStrategy {
                     .path(indexedPath)
                     .source(item).build();
 
-            ExecutionResult completedValue = completeValue(executionContext, newParameters, fieldList);
-            completedResults.add(completedValue != null ? completedValue.getData() : null);
+            CompletionStage<ExecutionResult> completedValue = completeValue(executionContext, newParameters, fieldList);
+            completedResults.add(completedValue);
+//            completedResults.add(completedValue != null ? completedValue.getData() : null);
             idx++;
         }
-        return new ExecutionResultImpl(completedResults, null);
+
+        return allOf(completedResults).thenApply(results -> new ExecutionResultImpl(results, null));
     }
 
     /**
@@ -531,7 +527,6 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param field            the field to find the definition of
-     *
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Field field) {
@@ -545,7 +540,6 @@ public abstract class ExecutionStrategy {
      * @param schema     the schema in play
      * @param parentType the parent type of the field
      * @param field      the field to find the definition of
-     *
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
@@ -570,7 +564,7 @@ public abstract class ExecutionStrategy {
 
     /**
      * See (http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability),
-     *
+     * <p>
      * If a non nullable child field type actually resolves to a null value and the parent type is nullable
      * then the parent must in fact become null
      * so we use exceptions to indicate this special case.  However if the parent is in fact a non nullable type
@@ -579,7 +573,6 @@ public abstract class ExecutionStrategy {
      *
      * @param e this indicates that a null value was returned for a non null field, which needs to cause the parent field
      *          to become null OR continue on as an exception
-     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
@@ -587,5 +580,17 @@ public abstract class ExecutionStrategy {
         if (typeInfo.hasParentType() && typeInfo.parentTypeInfo().typeIsNonNull()) {
             throw e;
         }
+    }
+
+
+    public static <T> CompletableFuture<List<T>> allOf(final Collection<? extends CompletionStage<T>> stageCollection) {
+        List<CompletableFuture<T>> cfs = stageCollection.stream().map(CompletionStage::toCompletableFuture).collect(Collectors.toList());
+        CompletableFuture[] cfsArray = cfs.toArray(new CompletableFuture[stageCollection.size()]);
+
+        return CompletableFuture.allOf(cfsArray)
+                .thenApply(vd -> cfs.stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toList())
+                );
     }
 }

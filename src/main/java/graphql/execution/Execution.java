@@ -100,11 +100,11 @@ public class Execution {
         ExecutionResult result;
         try {
             if (operation == OperationDefinition.Operation.MUTATION) {
-                result = mutationStrategy.execute(executionContext, parameters);
+                result = mutationStrategy.execute(executionContext, parameters).toCompletableFuture().join();
             } else if (operation == SUBSCRIPTION) {
-                result = subscriptionStrategy.execute(executionContext, parameters);
+                result = subscriptionStrategy.execute(executionContext, parameters).toCompletableFuture().join();
             } else {
-                result = queryStrategy.execute(executionContext, parameters);
+                result = queryStrategy.execute(executionContext, parameters).toCompletableFuture().join();
             }
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non null types all the way from an offending non null type
