@@ -304,11 +304,22 @@ public class GraphQL {
     /**
      * Executes the graphql query using the provided input object
      *
+     * @param executionInput {@link ExecutionInput}
+     * @return result including errors
+     */
+    public ExecutionResult execute(ExecutionInput executionInput) {
+        return executeAsync(executionInput).join();
+    }
+
+
+    /**
+     * Executes the graphql query using the provided input object
+     *
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
      *
      * @param executionInput {@link ExecutionInput}
-     * @return a promise to an execution result
+     * @return a promise to an {@link ExecutionResult}
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
@@ -319,13 +330,6 @@ public class GraphQL {
         return executionResult;
     }
 
-    /**
-     * @param executionInput {@link ExecutionInput}
-     * @return result including errors
-     */
-    public ExecutionResult execute(ExecutionInput executionInput) {
-        return executeAsync(executionInput).join();
-    }
 
     private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput) {
         PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput));
