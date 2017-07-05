@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 
@@ -50,6 +51,7 @@ public class GraphQL {
      * A GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
+     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -63,6 +65,7 @@ public class GraphQL {
      *
      * @param graphQLSchema the schema to use
      * @param queryStrategy the query execution strategy to use
+     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -77,6 +80,7 @@ public class GraphQL {
      * @param graphQLSchema    the schema to use
      * @param queryStrategy    the query execution strategy to use
      * @param mutationStrategy the mutation execution strategy to use
+     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -91,6 +95,7 @@ public class GraphQL {
      * @param queryStrategy        the query execution strategy to use
      * @param mutationStrategy     the mutation execution strategy to use
      * @param subscriptionStrategy the subscription execution strategy to use
+     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -112,6 +117,7 @@ public class GraphQL {
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
+     *
      * @return a builder of GraphQL objects
      */
     public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
@@ -178,11 +184,12 @@ public class GraphQL {
     }
 
     /**
+     * Executes the specified graphql query/mutation/subscription
+     *
      * @param query the query/mutation/subscription
-     * @return result including errors
-     * @deprecated Use {@link #execute(ExecutionInput)}
+     *
+     * @return an {@link ExecutionResult} which can include errors
      */
-    @Deprecated
     public ExecutionResult execute(String query) {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
@@ -195,7 +202,9 @@ public class GraphQL {
      *
      * @param query   the query/mutation/subscription
      * @param context custom object provided to each {@link graphql.schema.DataFetcher}
-     * @return result including errors
+     *
+     * @return  an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -214,7 +223,9 @@ public class GraphQL {
      * @param query         the query/mutation/subscription
      * @param operationName the name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
-     * @return result including errors
+     *
+     * @return  an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -234,7 +245,9 @@ public class GraphQL {
      * @param query     the query/mutation/subscription
      * @param context   custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables variable values uses as argument
-     * @return result including errors
+     *
+     * @return  an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -255,7 +268,9 @@ public class GraphQL {
      * @param operationName name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables     variable values uses as argument
-     * @return result including errors
+     *
+     * @return  an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -271,11 +286,91 @@ public class GraphQL {
     }
 
     /**
+     * Executes the graphql query using the provided input object builder
+     *
+     * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
+     * @return an {@link ExecutionResult} which can include errors
+     */
+    public ExecutionResult execute(ExecutionInput.Builder executionInputBuilder) {
+        return execute(executionInputBuilder.build());
+    }
+
+    /**
+     * Executes the graphql query using calling the builder function and giving it a new builder.
+     * <p>
+     * This allows a lambda style like :
+     *
+     * <pre>
+     * {@code
+     *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
+     * }
+     * </pre>
+     *
+     * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
+     * @return  an {@link ExecutionResult} which can include errors
+     */
+    public ExecutionResult execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
+        return execute(builderFunction.apply(ExecutionInput.newExecutionInput()).build());
+    }
+
+    /**
+     * Executes the graphql query using the provided input object
+     *
+     * @param executionInput {@link ExecutionInput}
+     *
+     * @return  an {@link ExecutionResult} which can include errors
+     */
+    public ExecutionResult execute(ExecutionInput executionInput) {
+        return executeAsync(executionInput).join();
+    }
+
+    /**
+     * Executes the graphql query using the provided input object builder
+     *
+     * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
+     * which is the result of executing the provided query.
+     *
+     * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
+     * @return a promise to an {@link ExecutionResult} which can include errors
+     */
+    public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput.Builder executionInputBuilder) {
+        return executeAsync(executionInputBuilder.build());
+    }
+
+    /**
+     * Executes the graphql query using the provided input object builder
+     *
+     * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
+     * which is the result of executing the provided query.
+     * <p>
+     * This allows a lambda style like :
+     *
+     * <pre>
+     * {@code
+     *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
+     * }
+     * </pre>
+     *
+     * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
+     * @return a promise to an {@link ExecutionResult} which can include errors
+     */
+    public CompletableFuture<ExecutionResult> executeAsync(UnaryOperator<ExecutionInput.Builder> builderFunction) {
+        return executeAsync(builderFunction.apply(ExecutionInput.newExecutionInput()).build());
+    }
+
+    /**
+     * Executes the graphql query using the provided input object
+     *
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
      *
      * @param executionInput {@link ExecutionInput}
-     * @return a promise to an execution result
+     *
+     * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
@@ -286,13 +381,6 @@ public class GraphQL {
         return executionResult;
     }
 
-    /**
-     * @param executionInput {@link ExecutionInput}
-     * @return result including errors
-     */
-    public ExecutionResult execute(ExecutionInput executionInput) {
-        return executeAsync(executionInput).join();
-    }
 
     private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput) {
         PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput));

@@ -13,6 +13,10 @@ import graphql.schema.StaticDataFetcher
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import java.util.function.UnaryOperator
+
+import static graphql.ExecutionInput.Builder
+import static graphql.ExecutionInput.newExecutionInput
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
@@ -24,9 +28,7 @@ import static graphql.schema.GraphQLSchema.newSchema
 
 class GraphQLTest extends Specification {
 
-
-    def "simple query"() {
-        given:
+    GraphQLSchema simpleSchema() {
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
@@ -37,6 +39,12 @@ class GraphQLTest extends Specification {
                         .field(fieldDefinition)
                         .build()
         ).build()
+        schema
+    }
+
+    def "simple query"() {
+        given:
+        GraphQLSchema schema = simpleSchema()
 
         when:
         def result = GraphQL.newGraphQL(schema).build().execute('{ hello }').data
@@ -199,7 +207,8 @@ class GraphQLTest extends Specification {
         def expected = [field2: 'value2']
 
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query, 'Query2', null, [:])
+        def executionInput = newExecutionInput().query(query).operationName('Query2').context(null).variables([:])
+        def result = GraphQL.newGraphQL(schema).build().execute(executionInput)
 
         then:
         result.data == expected
@@ -246,7 +255,6 @@ class GraphQLTest extends Specification {
     }
 
 
-
     def "query with int literal too large"() {
         given:
         GraphQLSchema schema = newSchema().query(
@@ -269,6 +277,7 @@ class GraphQLTest extends Specification {
         result.errors[0].description.contains("has wrong type")
     }
 
+    @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with missing argument results in arguments map with value null"() {
         given:
         def dataFetcher = Mock(DataFetcher)
@@ -295,6 +304,7 @@ class GraphQLTest extends Specification {
         }
     }
 
+    @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with missing key in an input object result in a empty map"() {
         given:
         def dataFetcher = Mock(DataFetcher)
@@ -336,6 +346,7 @@ class GraphQLTest extends Specification {
         result.errors[0].errorType == ErrorType.InvalidSyntax
     }
 
+
     def "wrong argument type: array of enum instead of enum"() {
         given:
         GraphQLEnumType enumType = GraphQLEnumType.newEnum().name("EnumType").value("Val1").value("Val2").build()
@@ -345,19 +356,70 @@ class GraphQLTest extends Specification {
                 .field(newFieldDefinition()
                 .name("query")
                 .argument(newArgument().name("fooParam").type(enumType))
-                .type(Scalars.GraphQLInt))
+                .type(GraphQLInt))
                 .build()
 
         GraphQLSchema schema = newSchema()
                 .query(queryType)
                 .build()
         when:
-        final GraphQL graphQL = GraphQL.newGraphQL(schema).build();
-        final ExecutionResult result = graphQL.execute("{query (fooParam: [Val1,Val2])}");
+        final GraphQL graphQL = GraphQL.newGraphQL(schema).build()
+        final ExecutionResult result = graphQL.execute("{query (fooParam: [Val1,Val2])}")
         then:
         result.errors.size() == 1
         result.errors[0].errorType == ErrorType.ValidationError
 
+    }
+
+
+    def "execution input passing builder"() {
+        given:
+        GraphQLSchema schema = simpleSchema()
+
+        when:
+        def builder = newExecutionInput().query('{ hello }')
+        def result = GraphQL.newGraphQL(schema).build().execute(builder).data
+
+        then:
+        result == [hello: 'world']
+    }
+
+    def "execution input using builder function"() {
+        given:
+        GraphQLSchema schema = simpleSchema()
+
+        when:
+
+        def builderFunction = { it.query('{hello}') } as UnaryOperator<Builder>
+        def result = GraphQL.newGraphQL(schema).build().execute(builderFunction).data
+
+        then:
+        result == [hello: 'world']
+    }
+
+    def "execution input passing builder to async"() {
+        given:
+        GraphQLSchema schema = simpleSchema()
+
+        when:
+        def builder = newExecutionInput().query('{ hello }')
+        def result = GraphQL.newGraphQL(schema).build().executeAsync(builder).join().data
+
+        then:
+        result == [hello: 'world']
+    }
+
+    def "execution input using builder function to async"() {
+        given:
+        GraphQLSchema schema = simpleSchema()
+
+        when:
+
+        def builderFunction = { it.query('{hello}') } as UnaryOperator<Builder>
+        def result = GraphQL.newGraphQL(schema).build().executeAsync(builderFunction).join().data
+
+        then:
+        result == [hello: 'world']
     }
 
 }
