@@ -1,25 +1,46 @@
 package graphql.execution
 
 import graphql.ExecutionInput
+import graphql.ExecutionResult
+import graphql.ExecutionResultImpl
 import graphql.MutationSchema
 import graphql.execution.instrumentation.NoOpInstrumentation
 import graphql.parser.Parser
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
+
+import static java.util.Collections.emptyList
+
 class ExecutionTest extends Specification {
 
+    class CountingExecutionStrategy extends ExecutionStrategy {
+        int execute = 0
+
+
+        @Override
+        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+            execute++
+            return CompletableFuture.completedFuture(result())
+        }
+
+        private ExecutionResultImpl result() {
+            new ExecutionResultImpl(emptyList())
+        }
+    }
+
     def parser = new Parser()
-    def subscriptionStrategy = Mock(ExecutionStrategy)
-    def mutationStrategy = Mock(ExecutionStrategy)
-    def queryStrategy = Mock(ExecutionStrategy)
+    def subscriptionStrategy = new CountingExecutionStrategy()
+    def mutationStrategy = new CountingExecutionStrategy()
+    def queryStrategy = new CountingExecutionStrategy()
     def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, NoOpInstrumentation.INSTANCE)
     def emptyExecutionInput = ExecutionInput.newExecutionInput().build()
 
     def "query strategy is used for query requests"() {
         given:
-        def mutationStrategy = Mock(ExecutionStrategy)
+        def mutationStrategy = new CountingExecutionStrategy()
 
-        def queryStrategy = Mock(ExecutionStrategy)
+        def queryStrategy = new CountingExecutionStrategy()
         def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, NoOpInstrumentation.INSTANCE)
 
         def query = '''
@@ -35,9 +56,9 @@ class ExecutionTest extends Specification {
         execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput)
 
         then:
-        1 * queryStrategy.execute(*_)
-        0 * mutationStrategy.execute(*_)
-        0 * subscriptionStrategy.execute(*_)
+        queryStrategy.execute == 1
+        mutationStrategy.execute == 0
+        subscriptionStrategy.execute == 0
     }
 
     def "mutation strategy is used for mutation requests"() {
@@ -55,9 +76,9 @@ class ExecutionTest extends Specification {
         execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput)
 
         then:
-        0 * queryStrategy.execute(*_)
-        1 * mutationStrategy.execute(*_)
-        0 * subscriptionStrategy.execute(*_)
+        queryStrategy.execute == 0
+        mutationStrategy.execute == 1
+        subscriptionStrategy.execute == 0
     }
 
     def "subscription strategy is used for subscription requests"() {
@@ -75,8 +96,8 @@ class ExecutionTest extends Specification {
         execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput)
 
         then:
-        0 * queryStrategy.execute(*_)
-        0 * mutationStrategy.execute(*_)
-        1 * subscriptionStrategy.execute(*_)
+        queryStrategy.execute == 0
+        mutationStrategy.execute == 0
+        subscriptionStrategy.execute == 1
     }
 }

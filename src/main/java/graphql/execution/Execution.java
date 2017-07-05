@@ -18,6 +18,7 @@ import graphql.schema.GraphQLSchema;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -25,6 +26,7 @@ import static graphql.execution.TypeInfo.newTypeInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
 public class Execution {
@@ -42,7 +44,7 @@ public class Execution {
         this.instrumentation = instrumentation;
     }
 
-    public ExecutionResult execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput) {
+    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput) {
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .valuesResolver(new ValuesResolver())
@@ -61,7 +63,7 @@ public class Execution {
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
-    private ExecutionResult executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
+    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(new InstrumentationDataFetchParameters(executionContext));
 
@@ -74,7 +76,7 @@ public class Execution {
         // for the record earlier code has asserted that we have a query type in the schema since the spec says this is
         // ALWAYS required
         if (operation == MUTATION && operationRootType == null) {
-            return new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError()));
+            return completedFuture(new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError())));
         }
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
@@ -97,7 +99,7 @@ public class Execution {
                 .path(ExecutionPath.rootPath())
                 .build();
 
-        ExecutionResult result;
+        CompletableFuture<ExecutionResult> result;
         try {
             if (operation == OperationDefinition.Operation.MUTATION) {
                 result = mutationStrategy.execute(executionContext, parameters);
@@ -114,10 +116,11 @@ public class Execution {
             //
             // http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
             //
-            result = new ExecutionResultImpl(null, executionContext.getErrors());
+            result = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
         }
 
-        dataFetchCtx.onEnd(result);
+        result.thenAccept(dataFetchCtx::onEnd);
+
         return result;
     }
 
