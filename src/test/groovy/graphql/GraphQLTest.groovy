@@ -3,6 +3,7 @@ package graphql
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
@@ -340,6 +341,32 @@ class GraphQLTest extends Specification {
         !result.errors.isEmpty()
         result.errors[0].errorType == ErrorType.InvalidSyntax
     }
+
+
+    def "wrong argument type: array of enum instead of enum"() {
+        given:
+        GraphQLEnumType enumType = GraphQLEnumType.newEnum().name("EnumType").value("Val1").value("Val2").build()
+
+        GraphQLObjectType queryType = newObject()
+                .name("QueryType")
+                .field(newFieldDefinition()
+                .name("query")
+                .argument(newArgument().name("fooParam").type(enumType))
+                .type(Scalars.GraphQLInt))
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .query(queryType)
+                .build()
+        when:
+        final GraphQL graphQL = GraphQL.newGraphQL(schema).build();
+        final ExecutionResult result = graphQL.execute("{query (fooParam: [Val1,Val2])}");
+        then:
+        result.errors.size() == 1
+        result.errors[0].errorType == ErrorType.ValidationError
+
+    }
+
 
     def "execution input passing builder"() {
         given:
