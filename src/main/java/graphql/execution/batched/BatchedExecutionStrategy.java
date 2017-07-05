@@ -37,10 +37,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link DataFetcher}s that have
@@ -67,11 +69,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     @Override
-    public ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         GraphQLExecutionNodeDatum data = new GraphQLExecutionNodeDatum(new LinkedHashMap<>(), parameters.source());
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLExecutionNode root = new GraphQLExecutionNode(type, parameters.fields(), singletonList(data));
-        return execute(executionContext, parameters, root);
+        return completedFuture(execute(executionContext, parameters, root));
     }
 
     private ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLExecutionNode root) {

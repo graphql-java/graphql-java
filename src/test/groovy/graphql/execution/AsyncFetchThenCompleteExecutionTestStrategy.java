@@ -32,7 +32,7 @@ public class AsyncFetchThenCompleteExecutionTestStrategy extends ExecutionStrate
     }
 
     @Override
-    public ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
         Map<String, Object> fetchedValues = fetchFields(executionContext, parameters);
 
@@ -63,7 +63,7 @@ public class AsyncFetchThenCompleteExecutionTestStrategy extends ExecutionStrate
         return fetchedValues;
     }
 
-    private ExecutionResult completeFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, Object> fetchedValues) {
+    private CompletableFuture<ExecutionResult> completeFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, Object> fetchedValues) {
         Map<String, List<Field>> fields = parameters.fields();
 
         // then for every fetched value, complete it, breath first
@@ -75,7 +75,7 @@ public class AsyncFetchThenCompleteExecutionTestStrategy extends ExecutionStrate
 
             Object fetchedValue = fetchedValues.get(fieldName);
             try {
-                ExecutionResult resolvedResult = completeField(executionContext, newParameters, fieldList, fetchedValue);
+                ExecutionResult resolvedResult = completeField(executionContext, newParameters, fieldList, fetchedValue).join();
                 results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
             } catch (NonNullableFieldWasNullException e) {
                 assertNonNullFieldPrecondition(e);
@@ -83,7 +83,7 @@ public class AsyncFetchThenCompleteExecutionTestStrategy extends ExecutionStrate
                 break;
             }
         }
-        return new ExecutionResultImpl(results, executionContext.getErrors());
+        return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 
     private ExecutionStrategyParameters newParameters(ExecutionStrategyParameters parameters, String fieldName) {

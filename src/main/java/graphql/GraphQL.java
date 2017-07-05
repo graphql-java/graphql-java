@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -50,7 +51,6 @@ public class GraphQL {
      * A GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -64,7 +64,6 @@ public class GraphQL {
      *
      * @param graphQLSchema the schema to use
      * @param queryStrategy the query execution strategy to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -79,7 +78,6 @@ public class GraphQL {
      * @param graphQLSchema    the schema to use
      * @param queryStrategy    the query execution strategy to use
      * @param mutationStrategy the mutation execution strategy to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -94,7 +92,6 @@ public class GraphQL {
      * @param queryStrategy        the query execution strategy to use
      * @param mutationStrategy     the mutation execution strategy to use
      * @param subscriptionStrategy the subscription execution strategy to use
-     *
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
@@ -116,7 +113,6 @@ public class GraphQL {
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
-     *
      * @return a builder of GraphQL objects
      */
     public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
@@ -186,7 +182,6 @@ public class GraphQL {
      * Executes the specified graphql query/mutation/subscription
      *
      * @param query the query/mutation/subscription
-     *
      * @return result including errors
      */
     public ExecutionResult execute(String query) {
@@ -201,9 +196,7 @@ public class GraphQL {
      *
      * @param query   the query/mutation/subscription
      * @param context custom object provided to each {@link graphql.schema.DataFetcher}
-     *
      * @return result including errors
-     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -222,9 +215,7 @@ public class GraphQL {
      * @param query         the query/mutation/subscription
      * @param operationName the name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
-     *
      * @return result including errors
-     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -244,9 +235,7 @@ public class GraphQL {
      * @param query     the query/mutation/subscription
      * @param context   custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables variable values uses as argument
-     *
      * @return result including errors
-     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -267,9 +256,7 @@ public class GraphQL {
      * @param operationName name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables     variable values uses as argument
-     *
      * @return result including errors
-     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -317,25 +304,34 @@ public class GraphQL {
     /**
      * Executes the graphql query using the provided input object
      *
-     * @param executionInput {@link ExecutionInput}
+     * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
+     * which is the result of executing the provided query.
      *
-     * @return result including errors
+     * @param executionInput {@link ExecutionInput}
+     * @return a promise to an execution result
      */
-    public ExecutionResult execute(ExecutionInput executionInput) {
+    public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
 
         InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(new InstrumentationExecutionParameters(executionInput));
-        final ExecutionResult executionResult = parseValidateAndExecute(executionInput);
-        executionInstrumentation.onEnd(executionResult);
-
+        final CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput);
+        executionResult.thenAccept(executionInstrumentation::onEnd);
         return executionResult;
     }
 
-    private ExecutionResult parseValidateAndExecute(ExecutionInput executionInput) {
+    /**
+     * @param executionInput {@link ExecutionInput}
+     * @return result including errors
+     */
+    public ExecutionResult execute(ExecutionInput executionInput) {
+        return executeAsync(executionInput).join();
+    }
+
+    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput) {
         PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput));
 
         if (preparsedDoc.hasErrors()) {
-            return new ExecutionResultImpl(preparsedDoc.getErrors());
+            return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
         }
 
         return execute(executionInput, preparsedDoc.getDocument());
@@ -383,7 +379,7 @@ public class GraphQL {
         return validationErrors;
     }
 
-    private ExecutionResult execute(ExecutionInput executionInput, Document document) {
+    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document) {
         String query = executionInput.getQuery();
         String operationName = executionInput.getOperationName();
         Object context = executionInput.getContext();
