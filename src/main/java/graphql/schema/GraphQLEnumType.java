@@ -16,7 +16,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
 @PublicApi
-public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType {
+public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType {
 
     private final String name;
     private final String description;

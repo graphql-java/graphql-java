@@ -4,6 +4,8 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.*
 import spock.lang.Specification
 
+import java.util.function.UnaryOperator
+
 class RuntimeWiringTest extends Specification {
 
     public static final Coercing coercing = new Coercing() {
@@ -51,19 +53,21 @@ class RuntimeWiringTest extends Specification {
 
     def "basic call structure"() {
         def wiring = RuntimeWiring.newRuntimeWiring()
-                .type("Query",{ type -> type
+                .type("Query", { type -> type
                     .dataFetcher("fieldX", new NamedDF("fieldX"))
                     .dataFetcher("fieldY", new NamedDF("fieldY"))
                     .dataFetcher("fieldZ", new NamedDF("fieldZ"))
+                    .defaultDataFetcher(new NamedDF("defaultQueryDF"))
                     .typeResolver(new NamedTR("typeResolver4Query"))
-        })
+        } as UnaryOperator<TypeRuntimeWiring.Builder>)
 
-                .type("Mutation",{ type -> type
+                .type("Mutation", { type -> type
                     .dataFetcher("fieldX", new NamedDF("mfieldX"))
                     .dataFetcher("fieldY", new NamedDF("mfieldY"))
                     .dataFetcher("fieldZ", new NamedDF("mfieldZ"))
+                    .defaultDataFetcher(new NamedDF("defaultMutationDF"))
                     .typeResolver(new NamedTR("typeResolver4Mutation"))
-        })
+        } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .build()
 
 
@@ -74,6 +78,7 @@ class RuntimeWiringTest extends Specification {
         (fetchers.get("Query").get("fieldX") as NamedDF).name == "fieldX"
         (fetchers.get("Query").get("fieldY") as NamedDF).name == "fieldY"
         (fetchers.get("Query").get("fieldZ") as NamedDF).name == "fieldZ"
+        (wiring.getDefaultDataFetcherForType("Query") as NamedDF).name == "defaultQueryDF"
 
         (resolvers.get("Query") as NamedTR).name == "typeResolver4Query"
 
@@ -81,6 +86,7 @@ class RuntimeWiringTest extends Specification {
         (fetchers.get("Mutation").get("fieldX") as NamedDF).name == "mfieldX"
         (fetchers.get("Mutation").get("fieldY") as NamedDF).name == "mfieldY"
         (fetchers.get("Mutation").get("fieldZ") as NamedDF).name == "mfieldZ"
+        (wiring.getDefaultDataFetcherForType("Mutation") as NamedDF).name == "defaultMutationDF"
 
         (resolvers.get("Mutation") as NamedTR).name == "typeResolver4Mutation"
     }

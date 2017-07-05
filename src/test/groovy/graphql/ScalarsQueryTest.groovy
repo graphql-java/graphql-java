@@ -82,11 +82,11 @@ class ScalarsQueryTest extends Specification {
         given:
         def query = """
         query {
-          stringInput(input: "test \\" \\/ \\b \\f \\n \\r \\t \\u12Aa")
+          stringInput(input: "test \\\\ \\" \\/ \\b \\f \\n \\r \\t \\u12Aa")
         }
         """
         def expected = [
-                stringInput: "test \" / \b \f \n \r \t \u12Aa",
+                stringInput: "test \\ \" / \b \f \n \r \t \u12Aa",
         ]
 
         when:

@@ -1,7 +1,15 @@
 package graphql
 
 import graphql.language.SourceLocation
-import graphql.schema.*
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLEnumType
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNonNull
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
+import graphql.schema.StaticDataFetcher
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
@@ -11,7 +19,6 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
-import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 
@@ -239,100 +246,6 @@ class GraphQLTest extends Specification {
     }
 
 
-    class ParentTypeImplementation {
-        String nullChild = null
-        String nonNullChild = "not null"
-    }
-
-    def "#268 - null child field values are allowed in nullable parent type"() {
-
-        // see https://github.com/graphql-java/graphql-java/issues/268
-
-        given:
-
-
-        GraphQLOutputType parentType = newObject()
-                .name("currentType")
-                .field(newFieldDefinition().name("nullChild")
-                .type(nonNull(GraphQLString)))
-                .field(newFieldDefinition().name("nonNullChild")
-                .type(nonNull(GraphQLString)))
-                .build()
-
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(newFieldDefinition()
-                        .name("parent")
-                        .type(parentType) // nullable parent
-                        .dataFetcher({ env -> new ParentTypeImplementation() })
-
-                ))
-                .build()
-
-        def query = """
-        query { 
-            parent {
-                nonNullChild
-                nullChild
-            }
-        }
-        """
-
-        when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query)
-
-        then:
-
-        result.errors.size() == 1
-        result.data["parent"] == null
-    }
-
-    def "#268 - null child field values are NOT allowed in non nullable parent types"() {
-
-        // see https://github.com/graphql-java/graphql-java/issues/268
-
-        given:
-
-
-        GraphQLOutputType parentType = newObject()
-                .name("currentType")
-                .field(newFieldDefinition().name("nullChild")
-                .type(nonNull(GraphQLString)))
-                .field(newFieldDefinition().name("nonNullChild")
-                .type(nonNull(GraphQLString)))
-                .build()
-
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(
-                        newFieldDefinition()
-                                .name("parent")
-                                .type(nonNull(parentType)) // non nullable parent
-                                .dataFetcher({ env -> new ParentTypeImplementation() })
-
-                ))
-                .build()
-
-        def query = """
-        query { 
-            parent {
-                nonNullChild
-                nullChild
-            }
-        }
-        """
-
-        when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query)
-
-        then:
-
-        result.errors.size() == 1
-        result.data == null
-    }
-
 
     def "query with int literal too large"() {
         given:
@@ -422,4 +335,29 @@ class GraphQLTest extends Specification {
         !result.errors.isEmpty()
         result.errors[0].errorType == ErrorType.InvalidSyntax
     }
+
+    def "wrong argument type: array of enum instead of enum"() {
+        given:
+        GraphQLEnumType enumType = GraphQLEnumType.newEnum().name("EnumType").value("Val1").value("Val2").build()
+
+        GraphQLObjectType queryType = newObject()
+                .name("QueryType")
+                .field(newFieldDefinition()
+                .name("query")
+                .argument(newArgument().name("fooParam").type(enumType))
+                .type(Scalars.GraphQLInt))
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .query(queryType)
+                .build()
+        when:
+        final GraphQL graphQL = GraphQL.newGraphQL(schema).build();
+        final ExecutionResult result = graphQL.execute("{query (fooParam: [Val1,Val2])}");
+        then:
+        result.errors.size() == 1
+        result.errors[0].errorType == ErrorType.ValidationError
+
+    }
+
 }

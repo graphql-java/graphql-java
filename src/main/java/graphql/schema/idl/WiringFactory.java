@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.PublicSpi;
 import graphql.schema.DataFetcher;
+import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -78,5 +79,16 @@ public interface WiringFactory {
      */
     default DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
         return assertShouldNeverHappen();
+    }
+
+    /**
+     * All fields need a data fetcher of some sort and this  method is called to provide the data fetcher
+     * that will be used if no specific one has been provided
+     * @param environment the wiring environment
+     *
+     * @return a {@link DataFetcher}
+     */
+    default DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
+        return new PropertyDataFetcher(environment.getFieldDefinition().getName());
     }
 }
