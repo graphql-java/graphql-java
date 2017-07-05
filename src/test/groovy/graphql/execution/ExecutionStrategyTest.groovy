@@ -51,7 +51,6 @@ class ExecutionStrategyTest extends Specification {
     def "completes value for a java.util.List"() {
         given:
         ExecutionContext executionContext = buildContext()
-        Field field = new Field()
         def fieldType = new GraphQLList(GraphQLString)
         def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
@@ -61,7 +60,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters, [field]).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
         executionResult.data == result
@@ -70,7 +69,6 @@ class ExecutionStrategyTest extends Specification {
     def "completes value for an array"() {
         given:
         ExecutionContext executionContext = buildContext()
-        Field field = new Field()
         def fieldType = new GraphQLList(GraphQLString)
         def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
@@ -80,7 +78,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters, [field]).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
         executionResult.data == result
@@ -102,7 +100,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters, [new Field()]).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
         executionResult.data == null
@@ -127,7 +125,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters, [new Field()]).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
         executionResult.data == null
@@ -174,7 +172,7 @@ class ExecutionStrategyTest extends Specification {
 
         Exception actualException = null
         try {
-            executionStrategy.completeValue(executionContext, parameters, [new Field()])
+            executionStrategy.completeValue(executionContext, parameters)
         } catch (Exception e) {
             actualException = e
         }
@@ -213,12 +211,13 @@ class ExecutionStrategyTest extends Specification {
                 .typeInfo(typeInfo)
                 .source("source")
                 .fields(["someField": [field]])
+                .field([field])
                 .nonNullFieldValidator(nullableFieldValidator)
                 .build()
         DataFetchingEnvironment environment
 
         when:
-        executionStrategy.resolveField(executionContext, parameters, [field])
+        executionStrategy.resolveField(executionContext, parameters)
 
         then:
         1 * dataFetcher.get({ it -> environment = it } as DataFetchingEnvironment)
@@ -257,6 +256,7 @@ class ExecutionStrategyTest extends Specification {
                 .typeInfo(typeInfo)
                 .source("source")
                 .fields(["someField": [field]])
+                .field([field])
                 .path(expectedPath)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .build()
@@ -269,7 +269,7 @@ class ExecutionStrategyTest extends Specification {
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
 
         //noinspection GroovyAssignabilityCheck
-        def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters, Field field) = exceptionSetupFixture(expectedException)
+        def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters) = exceptionSetupFixture(expectedException)
 
 
         boolean handleDataFetchingExceptionCalled = false
@@ -290,7 +290,7 @@ class ExecutionStrategyTest extends Specification {
         }
 
         when:
-        overridingStrategy.resolveField(executionContext, parameters, [field])
+        overridingStrategy.resolveField(executionContext, parameters)
 
         then:
         handleDataFetchingExceptionCalled == true
@@ -301,7 +301,7 @@ class ExecutionStrategyTest extends Specification {
 
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
 
-        //noinspection GroovyAssignabilityCheck
+        //noinspection GroovyAssignabilityCheck,GroovyUnusedAssignment
         def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
 
 
@@ -332,7 +332,7 @@ class ExecutionStrategyTest extends Specification {
         }
 
         when:
-        overridingStrategy.resolveField(executionContext, parameters, [field])
+        overridingStrategy.resolveField(executionContext, parameters)
 
         then:
         handlerCalled == true
@@ -346,7 +346,7 @@ class ExecutionStrategyTest extends Specification {
 
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
 
-        //noinspection GroovyAssignabilityCheck
+        //noinspection GroovyAssignabilityCheck,GroovyUnusedAssignment
         def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
 
 
@@ -358,7 +358,7 @@ class ExecutionStrategyTest extends Specification {
         }
 
         when:
-        overridingStrategy.resolveField(executionContext, parameters, [field])
+        overridingStrategy.resolveField(executionContext, parameters)
 
         then:
         executionContext.errors.size() == 1
