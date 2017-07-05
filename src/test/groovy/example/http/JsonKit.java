@@ -3,7 +3,6 @@ package example.http;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
-import graphql.ExecutionResult;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -21,8 +20,8 @@ public class JsonKit {
             .serializeNulls()
             .create();
 
-    public static void toJson(HttpServletResponse response, ExecutionResult executionResult) throws IOException {
-        GSON.toJson(executionResult, response.getWriter());
+    public static void toJson(HttpServletResponse response, Object result) throws IOException {
+        GSON.toJson(result, response.getWriter());
     }
 
     public static Map<String, Object> toMap(String jsonStr) {

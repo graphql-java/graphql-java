@@ -103,7 +103,7 @@ public class HttpMain extends AbstractHandler {
     private void returnAsJson(HttpServletResponse response, ExecutionResult executionResult) throws IOException {
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_OK);
-        JsonKit.toJson(response, executionResult);
+        JsonKit.toJson(response, executionResult.toSpecification());
     }
 
     private GraphQLSchema buildStarWarsSchema() {

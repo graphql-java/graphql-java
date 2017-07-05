@@ -1,0 +1,62 @@
+package graphql
+
+import graphql.language.SourceLocation
+import spock.lang.Specification
+
+class ExecutionResultTest extends Specification {
+
+    def KNOWN_ERRORS = [new InvalidSyntaxError(new SourceLocation(666,664))]
+
+
+    def "data with no errors"() {
+        given:
+        def er = new ExecutionResultImpl("hello world", null)
+        when:
+        def actual = er.getData()
+        def errors = er.getErrors()
+        def specMap = er.toSpecification()
+        then:
+        actual == "hello world"
+
+        errors.size() == 0
+
+        specMap.size() == 1
+        specMap["data"] == "hello world"
+    }
+
+    def "errors and data"() {
+        given:
+        def er = new ExecutionResultImpl("hello world", KNOWN_ERRORS)
+        when:
+        def actual = er.getData()
+        def errors = er.getErrors()
+        def specMap = er.toSpecification()
+        then:
+        actual == "hello world"
+
+        errors.size() == 1
+        errors == KNOWN_ERRORS
+
+        specMap.size() == 2
+        specMap["data"] == "hello world"
+        specMap["errors"] == KNOWN_ERRORS
+    }
+
+    def "errors and no data"() {
+        given:
+        def er = new ExecutionResultImpl(KNOWN_ERRORS)
+        when:
+        def actual = er.getData()
+        def errors = er.getErrors()
+        def specMap = er.toSpecification()
+        then:
+        actual == null
+
+        errors.size() == 1
+        errors == KNOWN_ERRORS
+
+        specMap.size() == 1
+        specMap["errors"] == KNOWN_ERRORS
+    }
+
+}
