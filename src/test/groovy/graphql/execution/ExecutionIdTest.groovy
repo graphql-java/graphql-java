@@ -5,13 +5,15 @@ import graphql.GraphQL
 import graphql.StarWarsSchema
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
+
 class ExecutionIdTest extends Specification {
 
     class CaptureIdStrategy extends SimpleExecutionStrategy {
         ExecutionId executionId = null
 
         @Override
-        ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
             executionId = executionContext.executionId
             return super.execute(executionContext, parameters)
         }

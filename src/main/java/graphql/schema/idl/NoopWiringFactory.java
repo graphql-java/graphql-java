@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.schema.DataFetcher;
+import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -37,4 +38,8 @@ public class NoopWiringFactory implements WiringFactory {
         return assertShouldNeverHappen();
     }
 
+    @Override
+    public DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
+        return new PropertyDataFetcher(environment.getFieldDefinition().getName());
+    }
 }

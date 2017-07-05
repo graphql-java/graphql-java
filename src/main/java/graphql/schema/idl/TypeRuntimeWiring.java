@@ -17,31 +17,17 @@ import static graphql.Assert.assertNotNull;
  */
 public class TypeRuntimeWiring {
     private final String typeName;
+    private final DataFetcher defaultDataFetcher;
     private final Map<String, DataFetcher> fieldDataFetchers;
     private final TypeResolver typeResolver;
     private final EnumValuesProvider enumValuesProvider;
 
-    private TypeRuntimeWiring(String typeName, Map<String, DataFetcher> fieldDataFetchers, TypeResolver typeResolver, EnumValuesProvider enumValuesProvider) {
+    private TypeRuntimeWiring(String typeName, DataFetcher defaultDataFetcher, Map<String, DataFetcher> fieldDataFetchers, TypeResolver typeResolver, EnumValuesProvider enumValuesProvider) {
         this.typeName = typeName;
+        this.defaultDataFetcher = defaultDataFetcher;
         this.fieldDataFetchers = fieldDataFetchers;
         this.typeResolver = typeResolver;
         this.enumValuesProvider = enumValuesProvider;
-    }
-
-    public String getTypeName() {
-        return typeName;
-    }
-
-    public Map<String, DataFetcher> getFieldDataFetchers() {
-        return fieldDataFetchers;
-    }
-
-    public TypeResolver getTypeResolver() {
-        return typeResolver;
-    }
-
-    public EnumValuesProvider getEnumValuesProvider() {
-        return enumValuesProvider;
     }
 
     /**
@@ -68,9 +54,30 @@ public class TypeRuntimeWiring {
         return builderFunction.apply(newTypeWiring(typeName)).build();
     }
 
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public Map<String, DataFetcher> getFieldDataFetchers() {
+        return fieldDataFetchers;
+    }
+
+    public DataFetcher getDefaultDataFetcher() {
+        return defaultDataFetcher;
+    }
+
+    public TypeResolver getTypeResolver() {
+        return typeResolver;
+    }
+
+    public EnumValuesProvider getEnumValuesProvider() {
+        return enumValuesProvider;
+    }
+
     public static class Builder {
-        private String typeName;
         private final Map<String, DataFetcher> fieldDataFetchers = new LinkedHashMap<>();
+        private String typeName;
+        private DataFetcher defaultDataFetcher;
         private TypeResolver typeResolver;
         private EnumValuesProvider enumValuesProvider;
 
@@ -115,6 +122,20 @@ public class TypeRuntimeWiring {
         }
 
         /**
+         * All fields in a type need a data fetcher of some sort and this method is called to provide the default data fetcher
+         * that will be used for this type if no specific one has been provided per field.
+         *
+         * @param dataFetcher the default data fetcher to use for this type
+         *
+         * @return the current type wiring
+         */
+        public Builder defaultDataFetcher(DataFetcher dataFetcher) {
+            assertNotNull(dataFetcher);
+            defaultDataFetcher = dataFetcher;
+            return this;
+        }
+
+        /**
          * Adds a {@link TypeResolver} to the current type.  This MUST be specified for Interface
          * and Union types.
          *
@@ -139,7 +160,7 @@ public class TypeRuntimeWiring {
          */
         public TypeRuntimeWiring build() {
             assertNotNull(typeName, "you must provide a type name");
-            return new TypeRuntimeWiring(typeName, fieldDataFetchers, typeResolver, enumValuesProvider);
+            return new TypeRuntimeWiring(typeName, defaultDataFetcher, fieldDataFetchers, typeResolver, enumValuesProvider);
         }
     }
 

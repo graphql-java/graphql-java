@@ -8,6 +8,7 @@ import graphql.language.Field;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * To prove we can write other execution strategies this one does a breath first approach
@@ -20,7 +21,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
     }
 
     @Override
-    public ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         Map<String, List<Field>> fields = parameters.fields();
 
         Map<String, Object> fetchedValues = new LinkedHashMap<>();
@@ -49,7 +50,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
                 break;
             }
         }
-        return new ExecutionResultImpl(results, executionContext.getErrors());
+        return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 
     private Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, List<Field>> fields, String fieldName) {
@@ -63,7 +64,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
     }
 
     private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, Object fetchedValue, ExecutionStrategyParameters newParameters) {
-        ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue);
+        ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).join();
         results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
     }
 

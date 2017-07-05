@@ -17,6 +17,8 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
+
 import static ExecutionStrategyParameters.newParameters
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLEnumType.newEnum
@@ -35,7 +37,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy = new ExecutionStrategy(dataFetcherExceptionHandler) {
 
             @Override
-            ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
                 return null
             }
         }
@@ -50,7 +52,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = new GraphQLList(GraphQLString)
-        def result = Arrays.asList("test")
+        def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
                 .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
@@ -58,17 +60,17 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
-        executionResult.data == ["test"]
+        executionResult.data == result
     }
 
     def "completes value for an array"() {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = new GraphQLList(GraphQLString)
-        String[] result = ["test"]
+        def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
                 .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
@@ -76,10 +78,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
-        executionResult.data == ["test"]
+        executionResult.data == result
     }
 
     def "completing value with serializing throwing exception"() {
@@ -98,7 +100,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
         executionResult.data == null
@@ -123,7 +125,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
         executionResult.data == null
@@ -273,7 +275,7 @@ class ExecutionStrategyTest extends Specification {
         boolean handleDataFetchingExceptionCalled = false
         ExecutionStrategy overridingStrategy = new ExecutionStrategy() {
             @Override
-            ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
                 null
             }
 
@@ -319,7 +321,7 @@ class ExecutionStrategyTest extends Specification {
             }
         }) {
             @Override
-            ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
                 null
             }
 
@@ -350,7 +352,7 @@ class ExecutionStrategyTest extends Specification {
 
         ExecutionStrategy overridingStrategy = new ExecutionStrategy() {
             @Override
-            ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
                 null
             }
         }
