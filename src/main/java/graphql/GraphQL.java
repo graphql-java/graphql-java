@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 
@@ -182,13 +183,12 @@ public class GraphQL {
     }
 
     /**
+     * Executes the specified graphql query/mutation/subscription
+     *
      * @param query the query/mutation/subscription
      *
      * @return result including errors
-     *
-     * @deprecated Use {@link #execute(ExecutionInput)}
      */
-    @Deprecated
     public ExecutionResult execute(String query) {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
@@ -285,6 +285,38 @@ public class GraphQL {
     }
 
     /**
+     * Executes the graphql query using the provided input object builder
+     *
+     * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
+     * @return result including errors
+     */
+    public ExecutionResult execute(ExecutionInput.Builder executionInputBuilder) {
+        return execute(executionInputBuilder.build());
+    }
+
+    /**
+     * Executes the graphql query using calling the builder function and giving it a new builder.
+     * <p>
+     * This allows a lambda style like :
+     *
+     * <pre>
+     * {@code
+     *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
+     * }
+     * </pre>
+     *
+     * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
+     * @return result including errors
+     */
+    public ExecutionResult execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
+        return execute(builderFunction.apply(ExecutionInput.newExecutionInput()).build());
+    }
+
+    /**
+     * Executes the graphql query using the provided input object
+     *
      * @param executionInput {@link ExecutionInput}
      *
      * @return result including errors

@@ -1,9 +1,19 @@
 package graphql
 
 import graphql.language.SourceLocation
-import graphql.schema.*
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNonNull
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLOutputType
+import graphql.schema.GraphQLSchema
+import graphql.schema.StaticDataFetcher
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
+
+import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
@@ -17,9 +27,7 @@ import static graphql.schema.GraphQLSchema.newSchema
 
 class GraphQLTest extends Specification {
 
-
-    def "simple query"() {
-        given:
+    GraphQLSchema simpleSchema() {
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
@@ -30,6 +38,12 @@ class GraphQLTest extends Specification {
                         .field(fieldDefinition)
                         .build()
         ).build()
+        schema
+    }
+
+    def "simple query"() {
+        given:
+        GraphQLSchema schema = simpleSchema()
 
         when:
         def result = GraphQL.newGraphQL(schema).build().execute('{ hello }').data
@@ -422,4 +436,30 @@ class GraphQLTest extends Specification {
         !result.errors.isEmpty()
         result.errors[0].errorType == ErrorType.InvalidSyntax
     }
+
+    def "execution input passing builder"() {
+        given:
+        GraphQLSchema schema = simpleSchema()
+
+        when:
+        def builder = ExecutionInput.newExecutionInput().query('{ hello }')
+        def result = GraphQL.newGraphQL(schema).build().execute(builder).data
+
+        then:
+        result == [hello: 'world']
+    }
+
+    def "execution input using builder function"() {
+        given:
+        GraphQLSchema schema = simpleSchema()
+
+        when:
+
+        def builderFunction = { it.query('{hello}')} as UnaryOperator<ExecutionInput.Builder>
+        def result = GraphQL.newGraphQL(schema).build().execute(builderFunction).data
+
+        then:
+        result == [hello: 'world']
+    }
+
 }
