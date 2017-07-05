@@ -10,4 +10,5 @@ public interface ExecutionResult {
 
     List<GraphQLError> getErrors();
 
+    ExecutionResult toSpecification();
 }

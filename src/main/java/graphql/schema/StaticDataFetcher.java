@@ -1,17 +1,16 @@
 package graphql.schema;
 
 
-public class StaticDataFetcher implements DataFetcher {
+public class StaticDataFetcher<T> implements DataFetcher<T> {
 
+    private final T value;
 
-    private final Object value;
-
-    public StaticDataFetcher(Object value) {
+    public StaticDataFetcher(T value) {
         this.value = value;
     }
 
     @Override
-    public Object get(DataFetchingEnvironment environment) {
+    public T get(DataFetchingEnvironment environment) {
         return value;
     }
 }

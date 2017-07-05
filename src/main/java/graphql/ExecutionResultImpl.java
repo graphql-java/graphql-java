@@ -43,4 +43,36 @@ public class ExecutionResultImpl implements ExecutionResult {
         return new ArrayList<>(errors);
     }
 
+    @Override
+    public ExecutionResult toSpecification() {
+        return (errors == null || errors.isEmpty()) ? new ExecutionResultWithoutErrors(data) : this;
+    }
+
+
+    private static class ExecutionResultWithoutErrors implements ExecutionResult {
+
+        private Object data;
+        private final transient List<GraphQLError> errors = new ArrayList<>();
+
+        ExecutionResultWithoutErrors(Object data) {
+            this.data = data;
+        }
+
+        @Override
+        public <T> T getData() {
+            //noinspection unchecked
+            return (T) data;
+        }
+
+        @Override
+        public List<GraphQLError> getErrors() {
+            return errors;
+        }
+
+        @Override
+        public ExecutionResult toSpecification() {
+            return this;
+        }
+    }
+
 }
