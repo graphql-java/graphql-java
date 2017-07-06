@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
@@ -47,7 +46,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * An execution strategy is give a list of fields from the graphql query to execute and find values for using a recursive strategy.
- * 
+ *
  * <pre>
  *     query {
  *          friends {
@@ -109,18 +108,12 @@ public abstract class ExecutionStrategy {
 
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
+    /**
+     * The default execution strategy constructor uses the {@link SimpleDataFetcherExceptionHandler}
+     * for data fetching errors.
+     */
     protected ExecutionStrategy() {
-        //
-        // a legacy handler for classes that have decided to override #handleDataFetchingException
-        //
-        //noinspection deprecation
-        dataFetcherExceptionHandler = params -> handleDataFetchingException(
-                params.getExecutionContext(),
-                params.getFieldDefinition(),
-                params.getArgumentValues(),
-                params.getPath(),
-                params.getException()
-        );
+        dataFetcherExceptionHandler = new SimpleDataFetcherExceptionHandler();
     }
 
     /**
@@ -142,33 +135,6 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     public abstract CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException;
-
-    /**
-     * Handle exceptions which occur during data fetching. By default, add all exceptions to the execution context's
-     * error's. Subclasses may specify custom handling, e.g. of different behavior with different exception types (e.g.
-     * re-throwing certain exceptions).
-     *
-     * @param executionContext the execution context in play
-     * @param fieldDef         the field definition
-     * @param argumentValues   the map of arguments
-     * @param path             the logical path to the field in question
-     * @param e                the exception that occurred
-     * @deprecated implement the new {@link DataFetcherExceptionHandler} interface and pass it in as a parameter to the strategy
-     */
-    @SuppressWarnings({"unused", "DeprecatedIsStillUsed"})
-    @Deprecated
-    protected void handleDataFetchingException(
-            ExecutionContext executionContext,
-            GraphQLFieldDefinition fieldDef,
-            Map<String, Object> argumentValues,
-            ExecutionPath path,
-            Exception e) {
-
-        // for legacy reasons we do what we always did.  Later this will be removed
-        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, e, null);
-        executionContext.addError(error);
-        log.warn(error.getMessage(), e);
-    }
 
     /**
      * Called to fetch a value for a field and resolve it further in terms of the graphql query.  This will call
