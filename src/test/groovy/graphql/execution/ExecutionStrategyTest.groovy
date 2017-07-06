@@ -17,6 +17,8 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
+
 import static ExecutionStrategyParameters.newParameters
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLEnumType.newEnum
@@ -35,7 +37,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy = new ExecutionStrategy(dataFetcherExceptionHandler) {
 
             @Override
-            ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
                 return null
             }
         }
@@ -49,9 +51,8 @@ class ExecutionStrategyTest extends Specification {
     def "completes value for a java.util.List"() {
         given:
         ExecutionContext executionContext = buildContext()
-        Field field = new Field()
         def fieldType = new GraphQLList(GraphQLString)
-        def result = Arrays.asList("test")
+        def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
                 .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
@@ -59,18 +60,17 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters, [field])
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
-        executionResult.data == ["test"]
+        executionResult.data == result
     }
 
     def "completes value for an array"() {
         given:
         ExecutionContext executionContext = buildContext()
-        Field field = new Field()
         def fieldType = new GraphQLList(GraphQLString)
-        String[] result = ["test"]
+        def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
                 .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
@@ -78,10 +78,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters, [field])
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
-        executionResult.data == ["test"]
+        executionResult.data == result
     }
 
     def "completing value with serializing throwing exception"() {
@@ -100,7 +100,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters, [new Field()])
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
         executionResult.data == null
@@ -125,7 +125,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters, [new Field()])
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
 
         then:
         executionResult.data == null
@@ -172,7 +172,7 @@ class ExecutionStrategyTest extends Specification {
 
         Exception actualException = null
         try {
-            executionStrategy.completeValue(executionContext, parameters, [new Field()])
+            executionStrategy.completeValue(executionContext, parameters)
         } catch (Exception e) {
             actualException = e
         }
@@ -211,12 +211,13 @@ class ExecutionStrategyTest extends Specification {
                 .typeInfo(typeInfo)
                 .source("source")
                 .fields(["someField": [field]])
+                .field([field])
                 .nonNullFieldValidator(nullableFieldValidator)
                 .build()
         DataFetchingEnvironment environment
 
         when:
-        executionStrategy.resolveField(executionContext, parameters, [field])
+        executionStrategy.resolveField(executionContext, parameters)
 
         then:
         1 * dataFetcher.get({ it -> environment = it } as DataFetchingEnvironment)
@@ -255,6 +256,7 @@ class ExecutionStrategyTest extends Specification {
                 .typeInfo(typeInfo)
                 .source("source")
                 .fields(["someField": [field]])
+                .field([field])
                 .path(expectedPath)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .build()
@@ -268,7 +270,7 @@ class ExecutionStrategyTest extends Specification {
 
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
 
-        //noinspection GroovyAssignabilityCheck
+        //noinspection GroovyAssignabilityCheck,GroovyUnusedAssignment
         def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
 
 
@@ -288,13 +290,13 @@ class ExecutionStrategyTest extends Specification {
             }
         }) {
             @Override
-            ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
                 null
             }
         }
 
         when:
-        overridingStrategy.resolveField(executionContext, parameters, [field])
+        overridingStrategy.resolveField(executionContext, parameters)
 
         then:
         handlerCalled == true
@@ -308,19 +310,19 @@ class ExecutionStrategyTest extends Specification {
 
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
 
-        //noinspection GroovyAssignabilityCheck
+        //noinspection GroovyAssignabilityCheck,GroovyUnusedAssignment
         def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ExecutionPath expectedPath, ExecutionStrategyParameters parameters, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
 
 
         ExecutionStrategy overridingStrategy = new ExecutionStrategy() {
             @Override
-            ExecutionResult execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
+            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
                 null
             }
         }
 
         when:
-        overridingStrategy.resolveField(executionContext, parameters, [field])
+        overridingStrategy.resolveField(executionContext, parameters)
 
         then:
         executionContext.errors.size() == 1

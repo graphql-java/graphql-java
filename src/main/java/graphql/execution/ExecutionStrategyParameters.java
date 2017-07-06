@@ -21,14 +21,16 @@ public class ExecutionStrategyParameters {
     private final Map<String, List<Field>> fields;
     private final NonNullableFieldValidator nonNullableFieldValidator;
     private final ExecutionPath path;
+    private final List<Field> currentField;
 
-    private ExecutionStrategyParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator, ExecutionPath path) {
+    private ExecutionStrategyParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator, ExecutionPath path, List<Field> currentField) {
         this.typeInfo = assertNotNull(typeInfo, "typeInfo is null");
         this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
         this.arguments = arguments;
         this.nonNullableFieldValidator = nonNullableFieldValidator;
         this.path = path;
+        this.currentField = currentField;
     }
 
     public TypeInfo typeInfo() {
@@ -53,6 +55,17 @@ public class ExecutionStrategyParameters {
 
     public ExecutionPath path() {
         return path;
+    }
+
+    /**
+     * This returns the current field in its query representations.  Global fragments mean that
+     * a single named field can have multiple representations and different field subselections
+     * hence the use of a list of Field
+     *
+     * @return the current field in list form  or null if this has not be computed yet
+     */
+    public List<Field> field() {
+        return currentField;
     }
 
     public ExecutionStrategyParameters transform(Consumer<Builder> builderConsumer) {
@@ -82,6 +95,7 @@ public class ExecutionStrategyParameters {
         Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
         ExecutionPath path = ExecutionPath.rootPath();
+        List<Field> currentField;
 
         /**
          * @see ExecutionStrategyParameters#newParameters()
@@ -115,6 +129,11 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
+        public Builder field(List<Field> currentField) {
+            this.currentField = currentField;
+            return this;
+        }
+
         public Builder source(Object source) {
             this.source = source;
             return this;
@@ -136,7 +155,7 @@ public class ExecutionStrategyParameters {
         }
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path);
+            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField);
         }
     }
 }

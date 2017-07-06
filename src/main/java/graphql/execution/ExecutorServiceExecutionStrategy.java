@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -44,19 +45,20 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
 
     @Override
-    public ExecutionResult execute(final ExecutionContext executionContext, final ExecutionStrategyParameters parameters) {
+    public CompletableFuture<ExecutionResult> execute(final ExecutionContext executionContext, final ExecutionStrategyParameters parameters) {
         if (executorService == null)
             return new SimpleExecutionStrategy().execute(executionContext, parameters);
 
         Map<String, List<Field>> fields = parameters.fields();
         Map<String, Future<ExecutionResult>> futures = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
-            final List<Field> fieldList = fields.get(fieldName);
+            final List<Field> currentField = fields.get(fieldName);
 
             ExecutionPath fieldPath = parameters.path().segment(fieldName);
-            ExecutionStrategyParameters newParameters = parameters.transform(bldr -> bldr.path(fieldPath));
+            ExecutionStrategyParameters newParameters = parameters
+                    .transform(builder -> builder.field(currentField).path(fieldPath));
 
-            Callable<ExecutionResult> resolveField = () -> resolveField(executionContext, newParameters, fieldList);
+            Callable<ExecutionResult> resolveField = () -> resolveField(executionContext, newParameters).join();
             futures.put(fieldName, executorService.submit(resolveField));
         }
         try {
@@ -66,7 +68,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
                 results.put(fieldName, executionResult != null ? executionResult.getData() : null);
             }
-            return new ExecutionResultImpl(results, executionContext.getErrors());
+            return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
         } catch (InterruptedException | ExecutionException e) {
             throw new GraphQLException(e);
         }

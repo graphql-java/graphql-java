@@ -7,6 +7,9 @@ import graphql.language.Field;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * The standard graphql execution strategy that runs fields in serial order
@@ -30,17 +33,18 @@ public class SimpleExecutionStrategy extends ExecutionStrategy {
     }
 
     @Override
-    public ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         Map<String, List<Field>> fields = parameters.fields();
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
-            List<Field> fieldList = fields.get(fieldName);
+            List<Field> currentField = fields.get(fieldName);
 
             ExecutionPath fieldPath = parameters.path().segment(fieldName);
-            ExecutionStrategyParameters newParameters = parameters.transform(builder -> builder.path(fieldPath));
+            ExecutionStrategyParameters newParameters = parameters
+                    .transform(builder -> builder.field(currentField).path(fieldPath));
 
             try {
-                ExecutionResult resolvedResult = resolveField(executionContext, newParameters, fieldList);
+                ExecutionResult resolvedResult = resolveField(executionContext, newParameters).join();
 
                 results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
             } catch (NonNullableFieldWasNullException e) {
@@ -49,6 +53,6 @@ public class SimpleExecutionStrategy extends ExecutionStrategy {
                 break;
             }
         }
-        return new ExecutionResultImpl(results, executionContext.getErrors());
+        return completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 }
