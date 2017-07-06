@@ -329,7 +329,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         try {
             values = (List<Object>) getDataFetcher(fieldDef).get(environment);
         } catch (Exception e) {
-            values = new ArrayList<>(nodeData.size());
+            values = Collections.nCopies(nodeData.size(), null);
             log.warn("Exception while fetching data", e);
 
             DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
