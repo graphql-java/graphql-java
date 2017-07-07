@@ -2,6 +2,7 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.execution.ExecutionId;
+import graphql.execution.ExecutionTypeInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
@@ -87,6 +88,12 @@ public interface DataFetchingEnvironment {
      */
     GraphQLOutputType getFieldType();
 
+
+    /**
+     * @return the field {@link ExecutionTypeInfo} for the current data fetch operation
+     */
+    ExecutionTypeInfo getFieldTypeInfo();
+
     /**
      * @return the type of the parent of the current field
      */
@@ -98,17 +105,17 @@ public interface DataFetchingEnvironment {
     GraphQLSchema getGraphQLSchema();
 
     /**
-     * @return the {@link FragmentDefinition} map for the current operation
+     * @return the {@link FragmentDefinition} map for the current data fetch operation
      */
     Map<String, FragmentDefinition> getFragmentsByName();
 
     /**
-     * @return the {@link ExecutionId} for the current operation
+     * @return the {@link ExecutionId} for the current data fetch operation
      */
     ExecutionId getExecutionId();
 
     /**
-     * @return the {@link DataFetchingFieldSelectionSet} for the current operation
+     * @return the {@link DataFetchingFieldSelectionSet} for the current data fetch operation
      */
     DataFetchingFieldSelectionSet getSelectionSet();
 }

@@ -10,9 +10,9 @@ package graphql.execution;
 public class NonNullableFieldValidator {
 
     private final ExecutionContext executionContext;
-    private final TypeInfo typeInfo;
+    private final ExecutionTypeInfo typeInfo;
 
-    public NonNullableFieldValidator(ExecutionContext executionContext, TypeInfo typeInfo) {
+    public NonNullableFieldValidator(ExecutionContext executionContext, ExecutionTypeInfo typeInfo) {
         this.executionContext = executionContext;
         this.typeInfo = typeInfo;
     }
@@ -29,7 +29,7 @@ public class NonNullableFieldValidator {
      */
     <T> T validate(ExecutionPath path, T result) throws NonNullableFieldWasNullException {
         if (result == null) {
-            if (typeInfo.typeIsNonNull()) {
+            if (typeInfo.isNonNullType()) {
                 // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
                 NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(typeInfo, path);
                 executionContext.addError(nonNullException);

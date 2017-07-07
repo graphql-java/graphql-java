@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
-import static graphql.execution.TypeInfo.newTypeInfo;
+import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
@@ -88,7 +88,8 @@ public class Execution {
 
         Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
-        TypeInfo typeInfo = newTypeInfo().type(operationRootType).build();
+        ExecutionPath path = ExecutionPath.rootPath();
+        ExecutionTypeInfo typeInfo = newTypeInfo().type(operationRootType).path(path).build();
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo);
 
         ExecutionStrategyParameters parameters = newParameters()
@@ -96,7 +97,7 @@ public class Execution {
                 .source(root)
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
-                .path(ExecutionPath.rootPath())
+                .path(path)
                 .build();
 
         CompletableFuture<ExecutionResult> result;
