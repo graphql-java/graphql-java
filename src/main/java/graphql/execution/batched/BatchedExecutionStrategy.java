@@ -320,6 +320,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .fieldDefinition(fieldDef)
                 .fields(fields)
                 .fieldType(fieldDef.getType())
+                .fieldTypeInfo(parameters.typeInfo())
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
                 .build();
