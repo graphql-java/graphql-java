@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Directives;
+import graphql.introspection.Introspection;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
@@ -85,14 +86,30 @@ public class GraphQLSchema {
         return subscriptionType != null;
     }
 
+    public GraphQLObjectType getIntrospectionSchema() {
+        return Introspection.__Schema;
+    }
+
+    public GraphQLFieldDefinition getSchemaMetaFieldDef() {
+        return Introspection.SchemaMetaFieldDef;
+    }
+
+    public GraphQLFieldDefinition getTypeMetaFieldDef() {
+        return Introspection.TypeMetaFieldDef;
+    }
+
+    public GraphQLFieldDefinition getTypeNameMetaFieldDef() {
+        return Introspection.TypeNameMetaFieldDef;
+    }
+
     public static Builder newSchema() {
         return new Builder();
     }
 
     public static class Builder {
-        private GraphQLObjectType queryType;
-        private GraphQLObjectType mutationType;
-        private GraphQLObjectType subscriptionType;
+        protected GraphQLObjectType queryType;
+        protected GraphQLObjectType mutationType;
+        protected GraphQLObjectType subscriptionType;
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -125,9 +142,13 @@ public class GraphQLSchema {
             return build(Collections.emptySet());
         }
 
+        protected GraphQLSchema instantiateType(Set<GraphQLType> additionalTypes) {
+            return new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes);
+        }
+
         public GraphQLSchema build(Set<GraphQLType> additionalTypes) {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
-            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes);
+            GraphQLSchema graphQLSchema = instantiateType(additionalTypes);
             new SchemaUtil().replaceTypeReferences(graphQLSchema);
             Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
             if (errors.size() > 0) {

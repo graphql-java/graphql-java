@@ -1,31 +1,12 @@
 package graphql.execution;
 
-import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
-import graphql.GraphQLException;
-import graphql.PublicSpi;
-import graphql.SerializationError;
-import graphql.TypeResolutionEnvironment;
+import graphql.*;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.language.Field;
-import graphql.schema.CoercingSerializeException;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.DataFetchingFieldSelectionSet;
-import graphql.schema.DataFetchingFieldSelectionSetImpl;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
+import graphql.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,9 +19,6 @@ import java.util.concurrent.CompletionException;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -500,15 +478,15 @@ public abstract class ExecutionStrategy {
      */
     protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
         if (schema.getQueryType() == parentType) {
-            if (field.getName().equals(SchemaMetaFieldDef.getName())) {
-                return SchemaMetaFieldDef;
+            if (field.getName().equals(schema.getSchemaMetaFieldDef().getName())) {
+                return schema.getSchemaMetaFieldDef();
             }
-            if (field.getName().equals(TypeMetaFieldDef.getName())) {
-                return TypeMetaFieldDef;
+            if (field.getName().equals(schema.getTypeMetaFieldDef().getName())) {
+                return schema.getTypeMetaFieldDef();
             }
         }
-        if (field.getName().equals(TypeNameMetaFieldDef.getName())) {
-            return TypeNameMetaFieldDef;
+        if (field.getName().equals(schema.getTypeNameMetaFieldDef().getName())) {
+            return schema.getTypeNameMetaFieldDef();
         }
 
         GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());

@@ -4,13 +4,8 @@ package graphql.schema;
 import graphql.AssertException;
 import graphql.GraphQLException;
 import graphql.Internal;
-import graphql.introspection.Introspection;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static java.lang.String.format;
 
@@ -162,7 +157,7 @@ public class SchemaUtil {
                 collectTypes(type, typesByName);
             }
         }
-        collectTypes(Introspection.__Schema, typesByName);
+        collectTypes(schema.getIntrospectionSchema(), typesByName);
         return typesByName;
     }
 
