@@ -118,4 +118,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     public ExecutionTypeInfo getFieldTypeInfo() {
         return fieldTypeInfo;
     }
+
+    @Override
+    public String toString() {
+        return "DataFetchingEnvironmentImpl{" +
+                "fieldTypeInfo=" + fieldTypeInfo +
+                '}';
+    }
 }
