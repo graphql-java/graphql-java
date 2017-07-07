@@ -203,6 +203,7 @@ public abstract class ExecutionStrategy {
         Object fetchedValue = null;
         try {
             DataFetcher dataFetcher = fieldDef.getDataFetcher();
+            dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher);
             fetchedValue = dataFetcher.get(environment);
 
             fetchCtx.onEnd(fetchedValue);

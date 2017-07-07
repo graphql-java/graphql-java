@@ -1,13 +1,21 @@
 package graphql.execution.instrumentation
 
 import graphql.ExecutionResult
-import graphql.execution.instrumentation.parameters.*
+import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
+import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
 import graphql.language.Document
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.validation.ValidationError
 
 class TestingInstrumentation implements Instrumentation {
 
     def executionList = []
+    List<DataFetchingEnvironment> dfInvocations = []
+    List<Class> dfClasses = []
 
     @Override
     InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
@@ -37,6 +45,18 @@ class TestingInstrumentation implements Instrumentation {
     @Override
     InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         return new TestingInstrumentContext("fetch-$parameters.field.name", executionList)
+    }
+
+    @Override
+    DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher) {
+        dfClasses.add(dataFetcher.getClass())
+        return new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                dfInvocations.add(environment)
+                dataFetcher.get(environment)
+            }
+        }
     }
 }
 

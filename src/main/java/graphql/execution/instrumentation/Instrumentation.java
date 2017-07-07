@@ -79,4 +79,18 @@ public interface Instrumentation {
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters);
+
+    /**
+     * This is called to instrument a {@link DataFetcher} just before it is used to fetch a field, allowing you
+     * to adjust what information is passed back or record information about specific data fetches.  Note
+     * the same data fetcher instance maybe presented to you many times and that data fetcher
+     * implementations widely vary.
+     *
+     * @param dataFetcher the data fetcher about to be used
+     *
+     * @return a non null instrumented data fetcher, the default is to return to the same object
+     */
+    default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher) {
+        return dataFetcher;
+    }
 }
