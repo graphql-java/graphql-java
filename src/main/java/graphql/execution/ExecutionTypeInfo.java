@@ -147,9 +147,9 @@ public class ExecutionTypeInfo {
     @Override
     public String toString() {
         return "ExecutionTypeInfo{" +
-                "type=" + type +
+                " path=" + path +
+                ", type=" + type +
                 ", parentType=" + parentType +
-                ", path=" + path +
                 ", typeIsNonNull=" + typeIsNonNull +
                 ", fieldDefinition=" + fieldDefinition +
                 '}';
