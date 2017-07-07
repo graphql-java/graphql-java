@@ -333,7 +333,6 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
         } catch (Exception e) {
             values = Collections.nCopies(nodeData.size(), null);
-            log.warn("Exception while fetching data", e);
 
             DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                     .executionContext(executionContext)
@@ -344,7 +343,6 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                     .path(parameters.path())
                     .exception(e)
                     .build();
-
             dataFetcherExceptionHandler.accept(handlerParameters);
         }
 
