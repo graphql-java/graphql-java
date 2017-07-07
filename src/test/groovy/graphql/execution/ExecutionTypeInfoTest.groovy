@@ -7,8 +7,8 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
 import spock.lang.Specification
 
-import static graphql.Scalars.GraphQLString
 import static ExecutionTypeInfo.newTypeInfo
+import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
@@ -41,23 +41,23 @@ class ExecutionTypeInfoTest extends Specification {
         def listTypeInfo = newTypeInfo().type(list(fieldType)).parentInfo(rootTypeInfo).build()
 
         expect:
-        rootTypeInfo.type() == rootType
+        rootTypeInfo.type == rootType
         !rootTypeInfo.hasParentType()
 
-        fieldTypeInfo.type() == fieldType
+        fieldTypeInfo.type == fieldType
         fieldTypeInfo.hasParentType()
-        fieldTypeInfo.parentTypeInfo().type() == rootType
+        fieldTypeInfo.parentTypeInfo.type == rootType
         !fieldTypeInfo.isNonNullType()
         fieldTypeInfo.getFieldDefinition() == field1Def
 
-        nonNullFieldTypeInfo.type() == fieldType
+        nonNullFieldTypeInfo.type == fieldType
         nonNullFieldTypeInfo.hasParentType()
-        nonNullFieldTypeInfo.parentTypeInfo().type() == rootType
+        nonNullFieldTypeInfo.parentTypeInfo.type == rootType
         nonNullFieldTypeInfo.isNonNullType()
 
-        listTypeInfo.type() == list(fieldType)
+        listTypeInfo.type == list(fieldType)
         listTypeInfo.hasParentType()
-        listTypeInfo.parentTypeInfo().type() == rootType
+        listTypeInfo.parentTypeInfo.type == rootType
         listTypeInfo.isListType()
     }
 
@@ -69,8 +69,8 @@ class ExecutionTypeInfoTest extends Specification {
 
         expect:
 
-        interfaceTypeInfo.type() == interfaceType
-        morphedTypeInfo.type() == fieldType
+        interfaceTypeInfo.type == interfaceType
+        morphedTypeInfo.type == fieldType
     }
 
     def "unwrapping stack works"() {
