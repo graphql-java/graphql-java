@@ -47,7 +47,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * An execution strategy is give a list of fields from the graphql query to execute and find values for using a recursive strategy.
- * 
+ *
  * <pre>
  *     query {
  *          friends {
@@ -237,6 +237,7 @@ public abstract class ExecutionStrategy {
         Object fetchedValue = null;
         try {
             DataFetcher dataFetcher = fieldDef.getDataFetcher();
+            dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher);
             fetchedValue = dataFetcher.get(environment);
 
             fetchCtx.onEnd(fetchedValue);

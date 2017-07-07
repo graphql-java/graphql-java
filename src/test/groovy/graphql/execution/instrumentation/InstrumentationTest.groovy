@@ -3,6 +3,8 @@ package graphql.execution.instrumentation
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.SimpleExecutionStrategy
+import graphql.schema.PropertyDataFetcher
+import graphql.schema.StaticDataFetcher
 import spock.lang.Specification
 
 class InstrumentationTest extends Specification {
@@ -67,6 +69,14 @@ class InstrumentationTest extends Specification {
         then:
 
         instrumentation.executionList == expected
+
+        instrumentation.dfClasses.size() == 2
+        instrumentation.dfClasses[0] == StaticDataFetcher.class
+        instrumentation.dfClasses[1] == PropertyDataFetcher.class
+
+        instrumentation.dfInvocations.size() == 2
+        instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
+        instrumentation.dfInvocations[1].getFieldDefinition().name == 'id'
     }
 
 }
