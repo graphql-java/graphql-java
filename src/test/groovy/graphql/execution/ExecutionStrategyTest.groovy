@@ -5,6 +5,7 @@ import graphql.ExecutionResult
 import graphql.Scalars
 import graphql.SerializationError
 import graphql.execution.instrumentation.NoOpInstrumentation
+import graphql.introspection.SpecificationIntrospectionSupport
 import graphql.language.Field
 import graphql.language.SourceLocation
 import graphql.schema.Coercing
@@ -44,7 +45,7 @@ class ExecutionStrategyTest extends Specification {
     }
 
     def buildContext(GraphQLSchema schema = null) {
-        new ExecutionContext(NoOpInstrumentation.INSTANCE, null, schema, executionStrategy, executionStrategy, executionStrategy, null, null, null, "context", "root")
+        new ExecutionContext(NoOpInstrumentation.INSTANCE, null, schema, executionStrategy, executionStrategy, executionStrategy, null, null, null, "context", "root", SpecificationIntrospectionSupport.INSTANCE)
     }
 
 

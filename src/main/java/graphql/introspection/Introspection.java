@@ -1,8 +1,8 @@
 package graphql.introspection;
 
 
-import graphql.language.AstValueHelper;
 import graphql.language.AstPrinter;
+import graphql.language.AstValueHelper;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
@@ -36,6 +36,19 @@ import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 public class Introspection {
+
+    /**
+     * A field called __schema in the top level query will return the introspection of the schema
+     */
+    public static final String __SCHEMA_FIELD = "__schema";
+    /**
+     * A field called __typename will return the type of the current object
+     */
+    public static final String __TYPENAME_FIELD = "__typename";
+    /**
+     * A field called __type can be used to get information on a named type
+     */
+    public static final String __TYPE_FIELD = "__type";
 
     public enum TypeKind {
         SCALAR,
@@ -399,13 +412,13 @@ public class Introspection {
 
 
     public static GraphQLFieldDefinition SchemaMetaFieldDef = newFieldDefinition()
-            .name("__schema")
+            .name(__SCHEMA_FIELD)
             .type(nonNull(__Schema))
             .description("Access the current type schema of this server.")
             .dataFetcher(DataFetchingEnvironment::getGraphQLSchema).build();
 
     public static GraphQLFieldDefinition TypeMetaFieldDef = newFieldDefinition()
-            .name("__type")
+            .name(__TYPE_FIELD)
             .type(__Type)
             .description("Request the type information of a single type.")
             .argument(newArgument()
@@ -417,7 +430,7 @@ public class Introspection {
             }).build();
 
     public static GraphQLFieldDefinition TypeNameMetaFieldDef = newFieldDefinition()
-            .name("__typename")
+            .name(__TYPENAME_FIELD)
             .type(nonNull(GraphQLString))
             .description("The name of the current Object type at runtime.")
             .dataFetcher(environment -> environment.getParentType().getName())

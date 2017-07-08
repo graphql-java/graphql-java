@@ -112,7 +112,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     private List<GraphQLExecutionNode> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType parentType,
                                                     List<GraphQLExecutionNodeDatum> nodeData, String fieldName, List<Field> fields) {
 
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parentType, fields.get(0));
         if (fieldDef == null) {
             return Collections.emptyList();
         }

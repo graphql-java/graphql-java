@@ -2,6 +2,7 @@ package graphql.validation;
 
 
 import graphql.Internal;
+import graphql.introspection.IntrospectionSupport;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.rules.ArgumentsOfCorrectType;
@@ -30,8 +31,8 @@ import java.util.List;
 @Internal
 public class Validator {
 
-    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
-        ValidationContext validationContext = new ValidationContext(schema, document);
+    public List<ValidationError> validateDocument(GraphQLSchema schema, IntrospectionSupport introspectionSupport, Document document) {
+        ValidationContext validationContext = new ValidationContext(schema, introspectionSupport, document);
 
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();

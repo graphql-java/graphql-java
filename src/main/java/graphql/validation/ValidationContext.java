@@ -2,6 +2,7 @@ package graphql.validation;
 
 
 import graphql.Internal;
+import graphql.introspection.IntrospectionSupport;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
@@ -26,10 +27,10 @@ public class ValidationContext {
     private final Map<String, FragmentDefinition> fragmentDefinitionMap = new LinkedHashMap<>();
 
 
-    public ValidationContext(GraphQLSchema schema, Document document) {
+    public ValidationContext(GraphQLSchema schema, IntrospectionSupport introspectionSupport, Document document) {
         this.schema = schema;
         this.document = document;
-        this.traversalContext = new TraversalContext(schema);
+        this.traversalContext = new TraversalContext(schema, introspectionSupport);
         buildFragmentMap();
     }
 

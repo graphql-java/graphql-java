@@ -4,6 +4,8 @@ package graphql.validation;
 import graphql.Internal;
 import graphql.ShouldNotHappenException;
 import graphql.execution.TypeFromAST;
+import graphql.introspection.Introspection;
+import graphql.introspection.IntrospectionSupport;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.Directive;
@@ -39,25 +41,24 @@ import graphql.schema.SchemaUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
-
 @Internal
 public class TraversalContext implements DocumentVisitor {
-    GraphQLSchema schema;
-    List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
-    List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
-    List<GraphQLInputType> inputTypeStack = new ArrayList<>();
-    List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
-    GraphQLDirective directive;
-    GraphQLArgument argument;
+    private final GraphQLSchema schema;
+    private final IntrospectionSupport introspectionSupport;
+    private final List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
+    private final List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
+    private final List<GraphQLInputType> inputTypeStack = new ArrayList<>();
+    private final List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
 
-    SchemaUtil schemaUtil = new SchemaUtil();
+    private GraphQLDirective directive;
+    private GraphQLArgument argument;
+
+    private final SchemaUtil schemaUtil = new SchemaUtil();
 
 
-    public TraversalContext(GraphQLSchema graphQLSchema) {
+    public TraversalContext(GraphQLSchema graphQLSchema, IntrospectionSupport introspectionSupport) {
         this.schema = graphQLSchema;
+        this.introspectionSupport = introspectionSupport;
     }
 
     @Override
@@ -269,22 +270,23 @@ public class TraversalContext implements DocumentVisitor {
 
 
     private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field) {
+        String fieldName = field.getName();
         if (schema.getQueryType().equals(parentType)) {
-            if (field.getName().equals(SchemaMetaFieldDef.getName())) {
-                return SchemaMetaFieldDef;
+            if (fieldName.equals(Introspection.__SCHEMA_FIELD)) {
+                return introspectionSupport.__Schema();
             }
-            if (field.getName().equals(TypeMetaFieldDef.getName())) {
-                return TypeMetaFieldDef;
+            if (fieldName.equals(Introspection.__TYPE_FIELD)) {
+                return introspectionSupport.__Type();
             }
         }
-        if (field.getName().equals(TypeNameMetaFieldDef.getName())
+        if (fieldName.equals(Introspection.__TYPENAME_FIELD)
                 && (parentType instanceof GraphQLObjectType ||
                 parentType instanceof GraphQLInterfaceType ||
                 parentType instanceof GraphQLUnionType)) {
-            return TypeNameMetaFieldDef;
+            return introspectionSupport.__TypeName();
         }
         if (parentType instanceof GraphQLFieldsContainer) {
-            return ((GraphQLFieldsContainer) parentType).getFieldDefinition(field.getName());
+            return ((GraphQLFieldsContainer) parentType).getFieldDefinition(fieldName);
         }
         return null;
     }

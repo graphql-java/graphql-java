@@ -1,6 +1,7 @@
 package graphql.validation
 
 import graphql.Directives
+import graphql.introspection.SpecificationIntrospectionSupport
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.BooleanValue
@@ -30,7 +31,7 @@ import static graphql.language.OperationDefinition.Operation.QUERY
 
 class TraversalContextTest extends Specification {
 
-    TraversalContext traversalContext = new TraversalContext(starWarsSchema)
+    TraversalContext traversalContext = new TraversalContext(starWarsSchema, SpecificationIntrospectionSupport.INSTANCE)
 
     def "operation definition"() {
         given:
@@ -38,13 +39,13 @@ class TraversalContextTest extends Specification {
         OperationDefinition operationDefinition = new OperationDefinition(queryType.getName(), QUERY, selectionSet)
 
         when:
-        traversalContext.enter(operationDefinition,[])
+        traversalContext.enter(operationDefinition, [])
 
         then:
         traversalContext.getOutputType() == queryType
 
         when:
-        traversalContext.leave(operationDefinition,[])
+        traversalContext.leave(operationDefinition, [])
 
         then:
         traversalContext.getOutputType() == null
@@ -56,13 +57,13 @@ class TraversalContextTest extends Specification {
         traversalContext.outputTypeStack.add(new GraphQLNonNull(droidType))
 
         when:
-        traversalContext.enter(selectionSet,[])
+        traversalContext.enter(selectionSet, [])
 
         then:
         traversalContext.getParentType() == droidType
 
         when:
-        traversalContext.leave(selectionSet,[])
+        traversalContext.leave(selectionSet, [])
 
         then:
         traversalContext.getParentType() == null
@@ -75,14 +76,14 @@ class TraversalContextTest extends Specification {
         Field field = new Field("id")
 
         when:
-        traversalContext.enter(field,[])
+        traversalContext.enter(field, [])
 
         then:
         traversalContext.getOutputType() == droidType.getFieldDefinition("id").getType()
         traversalContext.getFieldDef() == droidType.getFieldDefinition("id")
 
         when:
-        traversalContext.leave(field,[])
+        traversalContext.leave(field, [])
 
         then:
         traversalContext.getOutputType() == null
@@ -95,13 +96,13 @@ class TraversalContextTest extends Specification {
         Directive directive = new Directive("skip")
 
         when:
-        traversalContext.enter(directive,[])
+        traversalContext.enter(directive, [])
 
         then:
         traversalContext.getDirective() == Directives.SkipDirective
 
         when:
-        traversalContext.leave(directive,[])
+        traversalContext.leave(directive, [])
 
         then:
         traversalContext.getDirective() == null
@@ -112,13 +113,13 @@ class TraversalContextTest extends Specification {
         InlineFragment inlineFragment = new InlineFragment(new TypeName(droidType.getName()))
 
         when:
-        traversalContext.enter(inlineFragment,[])
+        traversalContext.enter(inlineFragment, [])
 
         then:
         traversalContext.getOutputType() == droidType
 
         when:
-        traversalContext.leave(inlineFragment,[])
+        traversalContext.leave(inlineFragment, [])
 
         then:
         traversalContext.getOutputType() == null
@@ -129,13 +130,13 @@ class TraversalContextTest extends Specification {
         FragmentDefinition fragmentDefinition = new FragmentDefinition("fragment", new TypeName(droidType.getName()))
 
         when:
-        traversalContext.enter(fragmentDefinition,[])
+        traversalContext.enter(fragmentDefinition, [])
 
         then:
         traversalContext.getOutputType() == droidType
 
         when:
-        traversalContext.leave(fragmentDefinition,[])
+        traversalContext.leave(fragmentDefinition, [])
 
         then:
         traversalContext.getOutputType() == null
@@ -146,13 +147,13 @@ class TraversalContextTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("var", new TypeName("String"))
 
         when:
-        traversalContext.enter(variableDefinition,[])
+        traversalContext.enter(variableDefinition, [])
 
         then:
         traversalContext.getInputType() == GraphQLString
 
         when:
-        traversalContext.leave(variableDefinition,[])
+        traversalContext.leave(variableDefinition, [])
 
         then:
         traversalContext.getInputType() == null
@@ -164,14 +165,14 @@ class TraversalContextTest extends Specification {
         traversalContext.fieldDefStack.add(queryType.getFieldDefinition("droid"))
 
         when:
-        traversalContext.enter(argument,[])
+        traversalContext.enter(argument, [])
 
         then:
         traversalContext.getArgument() == queryType.getFieldDefinition("droid").getArgument("id")
         traversalContext.getInputType() == queryType.getFieldDefinition("droid").getArgument("id").getType()
 
         when:
-        traversalContext.leave(argument,[])
+        traversalContext.leave(argument, [])
 
         then:
         traversalContext.getArgument() == null
@@ -185,14 +186,14 @@ class TraversalContextTest extends Specification {
         traversalContext.directive = IncludeDirective
 
         when:
-        traversalContext.enter(argument,[])
+        traversalContext.enter(argument, [])
 
         then:
         traversalContext.getArgument() == IncludeDirective.getArgument("if")
         traversalContext.getInputType() == IncludeDirective.getArgument("if").getType()
 
         when:
-        traversalContext.leave(argument,[])
+        traversalContext.leave(argument, [])
 
         then:
         traversalContext.getArgument() == null
@@ -206,13 +207,13 @@ class TraversalContextTest extends Specification {
         ArrayValue arrayValue = new ArrayValue([new StringValue("string")])
 
         when:
-        traversalContext.enter(arrayValue,[])
+        traversalContext.enter(arrayValue, [])
 
         then:
         traversalContext.getInputType() == GraphQLString
 
         when:
-        traversalContext.leave(arrayValue,[])
+        traversalContext.leave(arrayValue, [])
 
         then:
         traversalContext.getInputType() == graphQLList
@@ -226,13 +227,13 @@ class TraversalContextTest extends Specification {
         ObjectField objectField = new ObjectField("field", new StringValue("value"))
 
         when:
-        traversalContext.enter(objectField,[])
+        traversalContext.enter(objectField, [])
 
         then:
         traversalContext.getInputType() == GraphQLString
 
         when:
-        traversalContext.leave(objectField,[])
+        traversalContext.leave(objectField, [])
 
         then:
         traversalContext.getInputType() == inputObjectType
