@@ -10,7 +10,7 @@ import spock.lang.Specification
  * validation examples used in the spec in given section
  * http://facebook.github.io/graphql/#sec-Validation
  * @author dwinsor
- *        
+ *
  */
 class SpecValidation562Test extends SpecValidationBase {
 
@@ -33,7 +33,7 @@ fragment interfaceFieldSelection on Pet {
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
     }
-    
+
     def 'Directives Are In Valid Locations -- Skip frag def'() {
         def query = """
 query {
@@ -52,5 +52,23 @@ fragment interfaceFieldSelection on Pet @skip(if: false) {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
+    }
+
+    def 'Directives Are In Valid Locations -- Skip inline frag def'() {
+        def query = """
+query {
+  dog {
+    ...on Pet @skip(if: false) {
+        name
+    }
+  }
+}
+"""
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        validationErrors.empty
+        validationErrors.size() == 0
     }
 }
