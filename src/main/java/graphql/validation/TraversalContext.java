@@ -4,6 +4,7 @@ package graphql.validation;
 import graphql.Internal;
 import graphql.ShouldNotHappenException;
 import graphql.execution.TypeFromAST;
+import graphql.introspection.IntrospectionTypeProvider;
 import graphql.language.*;
 import graphql.schema.*;
 
@@ -237,18 +238,19 @@ public class TraversalContext implements DocumentVisitor {
 
     private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field) {
         if (schema.getQueryType().equals(parentType)) {
-            if (field.getName().equals(schema.getSchemaMetaFieldDef().getName())) {
-                return schema.getSchemaMetaFieldDef();
+            IntrospectionTypeProvider introspectionTypeProvider = schema.getIntrospectionTypeProvider();
+            if (field.getName().equals(introspectionTypeProvider.getSchemaMetaFieldDef().getName())) {
+                return introspectionTypeProvider.getSchemaMetaFieldDef();
             }
-            if (field.getName().equals(schema.getTypeMetaFieldDef().getName())) {
-                return schema.getTypeMetaFieldDef();
+            if (field.getName().equals(introspectionTypeProvider.getTypeMetaFieldDef().getName())) {
+                return introspectionTypeProvider.getTypeMetaFieldDef();
             }
         }
-        if (field.getName().equals(schema.getTypeNameMetaFieldDef().getName())
+        if (field.getName().equals(schema.getIntrospectionTypeProvider().getTypeNameMetaFieldDef().getName())
                 && (parentType instanceof GraphQLObjectType ||
                 parentType instanceof GraphQLInterfaceType ||
                 parentType instanceof GraphQLUnionType)) {
-            return schema.getTypeNameMetaFieldDef();
+            return schema.getIntrospectionTypeProvider().getTypeNameMetaFieldDef();
         }
         if (parentType instanceof GraphQLFieldsContainer) {
             return ((GraphQLFieldsContainer) parentType).getFieldDefinition(field.getName());

@@ -2,18 +2,12 @@ package graphql.schema;
 
 
 import graphql.Directives;
-import graphql.introspection.Introspection;
+import graphql.introspection.IntrospectionTypeProvider;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static graphql.Assert.assertNotNull;
 
@@ -23,6 +17,7 @@ public class GraphQLSchema {
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
     private final Map<String, GraphQLType> typeMap;
+    private final IntrospectionTypeProvider introspectionTypeProvider;
     private Set<GraphQLType> additionalTypes;
 
     public GraphQLSchema(GraphQLObjectType queryType) {
@@ -33,13 +28,16 @@ public class GraphQLSchema {
         this(queryType, mutationType, null, additionalTypes);
     }
 
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary) {
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary) {this(queryType, mutationType, subscriptionType, dictionary, IntrospectionTypeProvider.DEFAULT);}
+
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary, IntrospectionTypeProvider introspectionTypeProvider) {
         assertNotNull(dictionary, "dictionary can't be null");
         assertNotNull(queryType, "queryType can't be null");
         this.queryType = queryType;
         this.mutationType = mutationType;
         this.subscriptionType = subscriptionType;
         this.additionalTypes = dictionary;
+        this.introspectionTypeProvider = introspectionTypeProvider;
         typeMap = new SchemaUtil().allTypes(this, dictionary);
     }
 
@@ -86,21 +84,7 @@ public class GraphQLSchema {
         return subscriptionType != null;
     }
 
-    public GraphQLObjectType getIntrospectionSchema() {
-        return Introspection.__Schema;
-    }
-
-    public GraphQLFieldDefinition getSchemaMetaFieldDef() {
-        return Introspection.SchemaMetaFieldDef;
-    }
-
-    public GraphQLFieldDefinition getTypeMetaFieldDef() {
-        return Introspection.TypeMetaFieldDef;
-    }
-
-    public GraphQLFieldDefinition getTypeNameMetaFieldDef() {
-        return Introspection.TypeNameMetaFieldDef;
-    }
+    public IntrospectionTypeProvider getIntrospectionTypeProvider() {return introspectionTypeProvider; }
 
     public static Builder newSchema() {
         return new Builder();
@@ -110,6 +94,7 @@ public class GraphQLSchema {
         protected GraphQLObjectType queryType;
         protected GraphQLObjectType mutationType;
         protected GraphQLObjectType subscriptionType;
+        protected IntrospectionTypeProvider introspectionTypeProvider = IntrospectionTypeProvider.DEFAULT;
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -138,12 +123,17 @@ public class GraphQLSchema {
             return this;
         }
 
+        public Builder introspectionTypeProvider(IntrospectionTypeProvider introspectionTypeProvider) {
+            this.introspectionTypeProvider = introspectionTypeProvider;
+            return this;
+        }
+
         public GraphQLSchema build() {
             return build(Collections.emptySet());
         }
 
         protected GraphQLSchema instantiateType(Set<GraphQLType> additionalTypes) {
-            return new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes);
+            return new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, introspectionTypeProvider);
         }
 
         public GraphQLSchema build(Set<GraphQLType> additionalTypes) {

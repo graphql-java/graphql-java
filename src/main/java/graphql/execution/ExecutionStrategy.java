@@ -5,6 +5,7 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.introspection.IntrospectionTypeProvider;
 import graphql.language.Field;
 import graphql.schema.*;
 import org.slf4j.Logger;
@@ -478,15 +479,16 @@ public abstract class ExecutionStrategy {
      */
     protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
         if (schema.getQueryType() == parentType) {
-            if (field.getName().equals(schema.getSchemaMetaFieldDef().getName())) {
-                return schema.getSchemaMetaFieldDef();
+            IntrospectionTypeProvider introspectionTypeProvider = schema.getIntrospectionTypeProvider();
+            if (field.getName().equals(introspectionTypeProvider.getSchemaMetaFieldDef().getName())) {
+                return introspectionTypeProvider.getSchemaMetaFieldDef();
             }
-            if (field.getName().equals(schema.getTypeMetaFieldDef().getName())) {
-                return schema.getTypeMetaFieldDef();
+            if (field.getName().equals(introspectionTypeProvider.getTypeMetaFieldDef().getName())) {
+                return introspectionTypeProvider.getTypeMetaFieldDef();
             }
         }
-        if (field.getName().equals(schema.getTypeNameMetaFieldDef().getName())) {
-            return schema.getTypeNameMetaFieldDef();
+        if (field.getName().equals(schema.getIntrospectionTypeProvider().getTypeNameMetaFieldDef().getName())) {
+            return schema.getIntrospectionTypeProvider().getTypeNameMetaFieldDef();
         }
 
         GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());

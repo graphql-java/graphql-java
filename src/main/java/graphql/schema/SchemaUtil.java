@@ -157,7 +157,7 @@ public class SchemaUtil {
                 collectTypes(type, typesByName);
             }
         }
-        collectTypes(schema.getIntrospectionSchema(), typesByName);
+        collectTypes(schema.getIntrospectionTypeProvider().getIntrospectionSchema(), typesByName);
         return typesByName;
     }
 
