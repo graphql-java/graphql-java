@@ -45,7 +45,7 @@ public class KnownDirectives extends AbstractRule {
         } else if (ancestor instanceof FragmentDefinition) {
             return !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_DEFINITION) || directive.isOnFragment());
         } else if (ancestor instanceof InlineFragment) {
-            return (!directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT) || directive.isOnFragment());
+            return !(directive.validLocations().contains(DirectiveLocation.INLINE_FRAGMENT) || directive.isOnFragment());
         }
         return true;
     }
