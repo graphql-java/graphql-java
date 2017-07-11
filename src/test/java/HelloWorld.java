@@ -1,32 +1,33 @@
+import graphql.ExecutionResult;
 import graphql.GraphQL;
-import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.StaticDataFetcher;
+import graphql.schema.idl.RuntimeWiring;
+import graphql.schema.idl.SchemaGenerator;
+import graphql.schema.idl.SchemaParser;
+import graphql.schema.idl.TypeDefinitionRegistry;
 
-import java.util.Map;
-
-import static graphql.Scalars.GraphQLString;
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
-import static graphql.schema.GraphQLObjectType.newObject;
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
 
 public class HelloWorld {
 
     public static void main(String[] args) {
-        GraphQLObjectType queryType = newObject()
-                .name("helloWorldQuery")
-                .field(newFieldDefinition()
-                        .type(GraphQLString)
-                        .name("hello")
-                        .staticValue("world"))
+        String schema = "type Query{hello: String}";
+
+        SchemaParser schemaParser = new SchemaParser();
+        TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
+
+        RuntimeWiring runtimeWiring = newRuntimeWiring()
+                .type("Query", builder -> builder.dataFetcher("hello", new StaticDataFetcher("world")))
                 .build();
 
-        GraphQLSchema schema = GraphQLSchema.newSchema()
-                .query(queryType)
-                .build();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
 
-        GraphQL graphQL = GraphQL.newGraphQL(schema).build();
+        GraphQL build = GraphQL.newGraphQL(graphQLSchema).build();
+        ExecutionResult executionResult = build.execute("{hello}");
 
-        Map<String, Object> result = graphQL.execute("{hello}").getData();
-        System.out.println(result);
+        System.out.println(executionResult.getData().toString());
         // Prints: {hello=world}
     }
 }
