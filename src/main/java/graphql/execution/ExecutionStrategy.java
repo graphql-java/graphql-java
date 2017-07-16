@@ -10,6 +10,8 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.introspection.Introspection;
+import graphql.introspection.IntrospectionSupport;
 import graphql.language.Field;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
@@ -38,9 +40,6 @@ import java.util.concurrent.CompletionException;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -180,7 +179,7 @@ public abstract class ExecutionStrategy {
     protected Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         Field field = parameters.field().get(0);
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parentType, field);
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
@@ -243,7 +242,7 @@ public abstract class ExecutionStrategy {
     protected CompletableFuture<ExecutionResult> completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
         Field field = parameters.field().get(0);
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parentType, field);
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
@@ -488,33 +487,37 @@ public abstract class ExecutionStrategy {
      */
     protected GraphQLFieldDefinition getFieldDef(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Field field) {
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
-        return getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        return getFieldDef(executionContext, parentType, field);
     }
 
     /**
      * Called to discover the field definition give the current parameters and the AST {@link Field}
      *
-     * @param schema     the schema in play
-     * @param parentType the parent type of the field
-     * @param field      the field to find the definition of
+     * @param executionContext the execution context in play
+     * @param parentType       the parent type of the field
+     * @param field            the field to find the definition of
+     *
      * @return a {@link GraphQLFieldDefinition}
      */
-    protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
-        if (schema.getQueryType() == parentType) {
-            if (field.getName().equals(SchemaMetaFieldDef.getName())) {
-                return SchemaMetaFieldDef;
+    protected GraphQLFieldDefinition getFieldDef(ExecutionContext executionContext, GraphQLObjectType parentType, Field field) {
+        IntrospectionSupport introspectionSupport = executionContext.getIntrospectionSupport();
+        GraphQLSchema graphQLSchema = executionContext.getGraphQLSchema();
+        String fieldName = field.getName();
+        if (graphQLSchema.getQueryType() == parentType) {
+            if (fieldName.equals(Introspection.__SCHEMA_FIELD)) {
+                return introspectionSupport.__Schema();
             }
-            if (field.getName().equals(TypeMetaFieldDef.getName())) {
-                return TypeMetaFieldDef;
+            if (fieldName.equals(Introspection.__TYPE_FIELD)) {
+                return introspectionSupport.__Type();
             }
         }
-        if (field.getName().equals(TypeNameMetaFieldDef.getName())) {
-            return TypeNameMetaFieldDef;
+        if (fieldName.equals(Introspection.__TYPENAME_FIELD)) {
+            return introspectionSupport.__TypeName();
         }
 
-        GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());
+        GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(fieldName);
         if (fieldDefinition == null) {
-            throw new GraphQLException("Unknown field " + field.getName());
+            throw new GraphQLException("Unknown field " + fieldName);
         }
         return fieldDefinition;
     }

@@ -1,6 +1,7 @@
 package graphql.validation.rules
 
 import graphql.TypeResolutionEnvironment
+import graphql.introspection.SpecificationIntrospectionSupport
 import graphql.language.Document
 import graphql.language.SourceLocation
 import graphql.parser.Parser
@@ -36,7 +37,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         }
 
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(schema, document)
+        ValidationContext validationContext = new ValidationContext(schema, SpecificationIntrospectionSupport.INSTANCE, document)
         OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 

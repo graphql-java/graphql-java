@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.GraphQLException;
 import graphql.execution.instrumentation.Instrumentation;
+import graphql.introspection.IntrospectionSupport;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
@@ -27,6 +28,7 @@ public class ExecutionContextBuilder {
     private Document document;
     private String operationName;
     private Map<String, Object> variables;
+    private IntrospectionSupport introspectionSupport;
 
     public ExecutionContextBuilder valuesResolver(ValuesResolver valuesResolver) {
         this.valuesResolver = valuesResolver;
@@ -88,6 +90,11 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    public ExecutionContextBuilder introspectionSupport(IntrospectionSupport introspectionSupport) {
+        this.introspectionSupport = introspectionSupport;
+        return this;
+    }
+
     public ExecutionContext build() {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
@@ -131,6 +138,7 @@ public class ExecutionContextBuilder {
                 operation,
                 variableValues,
                 context,
-                root);
+                root,
+                introspectionSupport);
     }
 }

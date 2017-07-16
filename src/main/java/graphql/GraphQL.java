@@ -13,6 +13,8 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.introspection.IntrospectionSupport;
+import graphql.introspection.SpecificationIntrospectionSupport;
 import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.parser.Parser;
@@ -45,6 +47,7 @@ public class GraphQL {
     private final ExecutionIdProvider idProvider;
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
+    private final IntrospectionSupport introspectionSupport;
 
 
     /**
@@ -85,7 +88,7 @@ public class GraphQL {
      */
     @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE, SpecificationIntrospectionSupport.INSTANCE);
     }
 
     /**
@@ -100,10 +103,10 @@ public class GraphQL {
      */
     @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE, SpecificationIntrospectionSupport.INSTANCE);
     }
 
-    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider) {
+    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider, IntrospectionSupport introspectionSupport) {
         this.graphQLSchema = assertNotNull(graphQLSchema, "queryStrategy must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
@@ -111,6 +114,7 @@ public class GraphQL {
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
         this.instrumentation = instrumentation;
         this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
+        this.introspectionSupport = assertNotNull(introspectionSupport);
     }
 
     /**
@@ -134,6 +138,7 @@ public class GraphQL {
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = NoOpInstrumentation.INSTANCE;
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
+        private IntrospectionSupport introspectionSupport = SpecificationIntrospectionSupport.INSTANCE;
 
 
         public Builder(GraphQLSchema graphQLSchema) {
@@ -175,11 +180,16 @@ public class GraphQL {
             return this;
         }
 
+        public Builder introspectionSupport(IntrospectionSupport introspectionSupport) {
+            this.introspectionSupport = assertNotNull(introspectionSupport, "IntrospectionSupport must be non null");
+            return this;
+        }
+
         public GraphQL build() {
             assertNotNull(graphQLSchema, "queryStrategy must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation, preparsedDocumentProvider);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation, preparsedDocumentProvider, introspectionSupport);
         }
     }
 
@@ -203,7 +213,7 @@ public class GraphQL {
      * @param query   the query/mutation/subscription
      * @param context custom object provided to each {@link graphql.schema.DataFetcher}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -224,7 +234,7 @@ public class GraphQL {
      * @param operationName the name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -246,7 +256,7 @@ public class GraphQL {
      * @param context   custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables variable values uses as argument
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -269,7 +279,7 @@ public class GraphQL {
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables     variable values uses as argument
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -309,7 +319,7 @@ public class GraphQL {
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
         return execute(builderFunction.apply(ExecutionInput.newExecutionInput()).build());
@@ -320,7 +330,7 @@ public class GraphQL {
      *
      * @param executionInput {@link ExecutionInput}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
         return executeAsync(executionInput).join();
@@ -428,7 +438,7 @@ public class GraphQL {
         InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document));
 
         Validator validator = new Validator();
-        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
+        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, introspectionSupport, document);
 
         validationCtx.onEnd(validationErrors);
         return validationErrors;
@@ -439,7 +449,7 @@ public class GraphQL {
         String operationName = executionInput.getOperationName();
         Object context = executionInput.getContext();
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, introspectionSupport);
         ExecutionId executionId = idProvider.provide(query, operationName, context);
         return execution.execute(document, graphQLSchema, executionId, executionInput);
     }

@@ -9,6 +9,7 @@ import graphql.MutationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.introspection.IntrospectionSupport;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
@@ -36,12 +37,14 @@ public class Execution {
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
+    private final IntrospectionSupport introspectionSupport;
 
-    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation) {
+    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation, IntrospectionSupport introspectionSupport) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SimpleExecutionStrategy();
         this.instrumentation = instrumentation;
+        this.introspectionSupport = introspectionSupport;
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput) {
@@ -59,6 +62,7 @@ public class Execution {
                 .document(document)
                 .operationName(executionInput.getOperationName())
                 .variables(executionInput.getVariables())
+                .introspectionSupport(introspectionSupport)
                 .build();
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }

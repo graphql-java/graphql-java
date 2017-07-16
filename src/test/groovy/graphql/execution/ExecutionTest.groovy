@@ -5,6 +5,7 @@ import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
 import graphql.MutationSchema
 import graphql.execution.instrumentation.NoOpInstrumentation
+import graphql.introspection.SpecificationIntrospectionSupport
 import graphql.parser.Parser
 import spock.lang.Specification
 
@@ -33,7 +34,7 @@ class ExecutionTest extends Specification {
     def subscriptionStrategy = new CountingExecutionStrategy()
     def mutationStrategy = new CountingExecutionStrategy()
     def queryStrategy = new CountingExecutionStrategy()
-    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, NoOpInstrumentation.INSTANCE)
+    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, NoOpInstrumentation.INSTANCE, SpecificationIntrospectionSupport.INSTANCE)
     def emptyExecutionInput = ExecutionInput.newExecutionInput().build()
 
     def "query strategy is used for query requests"() {
@@ -41,7 +42,7 @@ class ExecutionTest extends Specification {
         def mutationStrategy = new CountingExecutionStrategy()
 
         def queryStrategy = new CountingExecutionStrategy()
-        def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, NoOpInstrumentation.INSTANCE)
+        def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, NoOpInstrumentation.INSTANCE, SpecificationIntrospectionSupport.INSTANCE)
 
         def query = '''
             query {

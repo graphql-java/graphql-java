@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.introspection.SpecificationIntrospectionSupport
 import graphql.parser.Parser
 import graphql.validation.ValidationError
 import graphql.validation.Validator
@@ -10,7 +11,7 @@ class StarWarsValidationTest extends Specification {
 
     List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(StarWarsSchema.starWarsSchema, document)
+        return new Validator().validateDocument(StarWarsSchema.starWarsSchema, SpecificationIntrospectionSupport.INSTANCE, document)
     }
 
     def 'Validates a complex but valid query'() {

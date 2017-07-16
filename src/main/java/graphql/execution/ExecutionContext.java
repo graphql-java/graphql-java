@@ -3,6 +3,7 @@ package graphql.execution;
 
 import graphql.GraphQLError;
 import graphql.execution.instrumentation.Instrumentation;
+import graphql.introspection.IntrospectionSupport;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
@@ -25,8 +26,9 @@ public class ExecutionContext {
     private final Object context;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final Instrumentation instrumentation;
+    private final IntrospectionSupport introspectionSupport;
 
-    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
+    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, IntrospectionSupport introspectionSupport) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.queryStrategy = queryStrategy;
@@ -38,6 +40,7 @@ public class ExecutionContext {
         this.context = context;
         this.root = root;
         this.instrumentation = instrumentation;
+        this.introspectionSupport = introspectionSupport;
     }
 
 
@@ -96,5 +99,9 @@ public class ExecutionContext {
 
     public ExecutionStrategy getSubscriptionStrategy() {
         return subscriptionStrategy;
+    }
+
+    public IntrospectionSupport getIntrospectionSupport() {
+        return introspectionSupport;
     }
 }
