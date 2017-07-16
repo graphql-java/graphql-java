@@ -4,44 +4,12 @@ package graphql.validation;
 import graphql.Internal;
 import graphql.ShouldNotHappenException;
 import graphql.execution.TypeFromAST;
-import graphql.language.Argument;
-import graphql.language.ArrayValue;
-import graphql.language.Directive;
-import graphql.language.Field;
-import graphql.language.FragmentDefinition;
-import graphql.language.InlineFragment;
-import graphql.language.Node;
-import graphql.language.ObjectField;
-import graphql.language.OperationDefinition;
-import graphql.language.SelectionSet;
-import graphql.language.TypeName;
-import graphql.language.VariableDefinition;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLCompositeType;
-import graphql.schema.GraphQLDirective;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLFieldsContainer;
-import graphql.schema.GraphQLInputObjectField;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLNullableType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
-import graphql.schema.GraphQLUnmodifiedType;
-import graphql.schema.SchemaUtil;
+import graphql.introspection.IntrospectionTypeProvider;
+import graphql.language.*;
+import graphql.schema.*;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 @Internal
 public class TraversalContext implements DocumentVisitor {
@@ -270,18 +238,19 @@ public class TraversalContext implements DocumentVisitor {
 
     private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field) {
         if (schema.getQueryType().equals(parentType)) {
-            if (field.getName().equals(SchemaMetaFieldDef.getName())) {
-                return SchemaMetaFieldDef;
+            IntrospectionTypeProvider introspectionTypeProvider = schema.getIntrospectionTypeProvider();
+            if (field.getName().equals(introspectionTypeProvider.getSchemaMetaFieldDef().getName())) {
+                return introspectionTypeProvider.getSchemaMetaFieldDef();
             }
-            if (field.getName().equals(TypeMetaFieldDef.getName())) {
-                return TypeMetaFieldDef;
+            if (field.getName().equals(introspectionTypeProvider.getTypeMetaFieldDef().getName())) {
+                return introspectionTypeProvider.getTypeMetaFieldDef();
             }
         }
-        if (field.getName().equals(TypeNameMetaFieldDef.getName())
+        if (field.getName().equals(schema.getIntrospectionTypeProvider().getTypeNameMetaFieldDef().getName())
                 && (parentType instanceof GraphQLObjectType ||
                 parentType instanceof GraphQLInterfaceType ||
                 parentType instanceof GraphQLUnionType)) {
-            return TypeNameMetaFieldDef;
+            return schema.getIntrospectionTypeProvider().getTypeNameMetaFieldDef();
         }
         if (parentType instanceof GraphQLFieldsContainer) {
             return ((GraphQLFieldsContainer) parentType).getFieldDefinition(field.getName());
