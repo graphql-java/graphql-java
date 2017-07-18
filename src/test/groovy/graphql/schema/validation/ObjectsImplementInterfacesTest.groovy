@@ -2,6 +2,8 @@ package graphql.schema.validation
 
 import graphql.TypeResolutionEnvironment
 import graphql.schema.GraphQLInterfaceType
+import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
@@ -13,6 +15,9 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLUnionType.newUnionType
 
 class ObjectsImplementInterfacesTest extends Specification {
 
@@ -78,20 +83,203 @@ class ObjectsImplementInterfacesTest extends Specification {
 
         errorCollector.containsValidationError(ObjectDoesNotImplementItsInterfaces)
         def errors = errorCollector.getErrors()
-        errors.size() == 7
+        errors.size() == 6
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'friends' is missing"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'age' is defined as 'String' type and not as 'Int' type"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
-                "object type 'obj' does not implement interface 'Interface' because field 'address' is defined as '[String!]' type and not as '[String]' type"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
-                "object type 'obj' does not implement interface 'Interface' because field 'address' is defined as '[String!]' type and not as '[String]' type"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg1' is defined differently"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
-                "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg1' is defined differently"))
+                "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg3' is defined differently"))
+        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
+                "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg4' is defined differently"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'argField2' has a different number of arguments"))
     }
+
+    def "field is object implementing interface"() {
+        given:
+        def person = newInterface()
+                .name("Person")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .typeResolver({})
+                .build()
+
+        def actor = newObject()
+                .name("Actor")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .withInterface(person)
+                .build()
+
+        def prop = newObject()
+                .name("Prop")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("TestInterface")
+                .field(newFieldDefinition().name("field").type(person).build())
+                .typeResolver({})
+                .build()
+
+        GraphQLObjectType goodImpl = newObject()
+                .name("GoodImpl")
+                .field(newFieldDefinition().name("field").type(actor).build())
+                .withInterface(interfaceType)
+                .build()
+
+        GraphQLObjectType badImpl = newObject()
+                .name("BadImpl")
+                .field(newFieldDefinition().name("field").type(prop).build())
+                .withInterface(interfaceType)
+                .build()
+
+        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
+        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
+
+        when:
+        new ObjectsImplementInterfaces().check(goodImpl, goodErrorCollector)
+        new ObjectsImplementInterfaces().check(badImpl, badErrorCollector)
+
+        then:
+        goodErrorCollector.getErrors().isEmpty()
+        !badErrorCollector.getErrors().isEmpty()
+    }
+
+    def "field is list of objects implementing interface"() {
+        given:
+        def person = newInterface()
+                .name("Person")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .typeResolver({})
+                .build()
+
+        def actor = newObject()
+                .name("Actor")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .withInterface(person)
+                .build()
+
+        def prop = newObject()
+                .name("Prop")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("TestInterface")
+                .field(newFieldDefinition().name("field").type(new GraphQLList(person)).build())
+                .typeResolver({})
+                .build()
+
+        GraphQLObjectType goodImpl = newObject()
+                .name("GoodImpl")
+                .field(newFieldDefinition().name("field").type(new GraphQLList(actor)).build())
+                .withInterface(interfaceType)
+                .build()
+
+        GraphQLObjectType badImpl = newObject()
+                .name("BadImpl")
+                .field(newFieldDefinition().name("field").type(new GraphQLList(prop)).build())
+                .withInterface(interfaceType)
+                .build()
+
+        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
+        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
+
+        when:
+        new ObjectsImplementInterfaces().check(goodImpl, goodErrorCollector)
+        new ObjectsImplementInterfaces().check(badImpl, badErrorCollector)
+
+        then:
+        goodErrorCollector.getErrors().isEmpty()
+        !badErrorCollector.getErrors().isEmpty()
+    }
+
+    def "field is member of union"() {
+        given:
+        def actor = newObject()
+                .name("Actor")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+
+        def director = newObject()
+                .name("Director")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+
+        def person = newUnionType()
+                .name("Person")
+                .possibleType(actor)
+                .possibleType(director)
+                .typeResolver({})
+                .build()
+
+        def prop = newObject()
+                .name("Prop")
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("TestInterface")
+                .field(newFieldDefinition().name("field").type(person).build())
+                .typeResolver({})
+                .build()
+
+        GraphQLObjectType goodImpl = newObject()
+                .name("GoodImpl")
+                .field(newFieldDefinition().name("field").type(actor).build())
+                .withInterface(interfaceType)
+                .build()
+
+        GraphQLObjectType badImpl = newObject()
+                .name("BadImpl")
+                .field(newFieldDefinition().name("field").type(prop).build())
+                .withInterface(interfaceType)
+                .build()
+
+        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
+        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
+
+        when:
+        new ObjectsImplementInterfaces().check(goodImpl, goodErrorCollector)
+        new ObjectsImplementInterfaces().check(badImpl, badErrorCollector)
+
+        then:
+        goodErrorCollector.getErrors().isEmpty()
+        !badErrorCollector.getErrors().isEmpty()
+    }
+
+    def "field is non-null"() {
+        given:
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("TestInterface")
+                .field(newFieldDefinition().name("field").type(GraphQLString).build())
+                .typeResolver({})
+                .build()
+
+        GraphQLObjectType goodImpl = newObject()
+                .name("GoodImpl")
+                .field(newFieldDefinition().name("field").type(new GraphQLNonNull(GraphQLString)).build())
+                .withInterface(interfaceType)
+                .build()
+
+        GraphQLObjectType badImpl = newObject()
+                .name("BadImpl")
+                .field(newFieldDefinition().name("field").type(new GraphQLNonNull(GraphQLInt)).build())
+                .withInterface(interfaceType)
+                .build()
+
+        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
+        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
+
+        when:
+        new ObjectsImplementInterfaces().check(goodImpl, goodErrorCollector)
+        new ObjectsImplementInterfaces().check(badImpl, badErrorCollector)
+
+        then:
+        goodErrorCollector.getErrors().isEmpty()
+        !badErrorCollector.getErrors().isEmpty()
+    }
+
 }
