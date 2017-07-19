@@ -9,13 +9,14 @@ import graphql.schema.TypeResolver
 import spock.lang.Specification
 
 import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
-import static graphql.Scalars.*
+import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLInt
+import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
-import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLUnionType.newUnionType
 
