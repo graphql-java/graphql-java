@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Assert;
 import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.language.Argument;
@@ -535,17 +536,18 @@ public class SchemaGenerator {
         }
         if (requiredType instanceof GraphQLScalarType) {
             result = ((GraphQLScalarType)requiredType).getCoercing().parseLiteral(value);
-        } else if (value instanceof EnumValue) {
+        } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
             result = ((EnumValue) value).getName();
         } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
             ArrayValue arrayValue = (ArrayValue) value;
-            GraphQLType wrappedType = ((GraphQLList)requiredType).getWrappedType();
+            GraphQLType wrappedType = ((GraphQLList) requiredType).getWrappedType();
             result = arrayValue.getValues().stream()
                 .map(item -> this.buildValue(item, wrappedType)).collect(Collectors.toList());
-        } else if (value instanceof ObjectValue) {
+        } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
             result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
-        } else if (value instanceof NullValue) {
-            result = null;
+        } else if (value != null && !(value instanceof NullValue)) {
+            Assert.assertShouldNeverHappen(
+                "cannot build value of " + requiredType.getName() + " from " + String.valueOf(value));
         }
         return result;
     }
