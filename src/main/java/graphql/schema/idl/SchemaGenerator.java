@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -36,6 +37,8 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
@@ -59,6 +62,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static java.util.stream.Collectors.joining;
@@ -505,9 +509,9 @@ public class SchemaGenerator {
 
         // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
         //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
-
-        fieldBuilder.type(buildInputType(buildCtx, fieldDef.getType()));
-        fieldBuilder.defaultValue(buildValue(fieldDef.getDefaultValue()));
+        GraphQLInputType inputType = buildInputType(buildCtx, fieldDef.getType());
+        fieldBuilder.type(inputType);
+        fieldBuilder.defaultValue(buildValue(fieldDef.getDefaultValue(), inputType));
 
         return fieldBuilder.build();
     }
@@ -516,41 +520,40 @@ public class SchemaGenerator {
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
         builder.name(valueDefinition.getName());
         builder.description(buildDescription(valueDefinition));
-
-        builder.type(buildInputType(buildCtx, valueDefinition.getType()));
-        builder.defaultValue(buildValue(valueDefinition.getDefaultValue()));
+        GraphQLInputType inputType = buildInputType(buildCtx, valueDefinition.getType());
+        builder.type(inputType);
+        builder.defaultValue(buildValue(valueDefinition.getDefaultValue(), inputType));
 
         return builder.build();
     }
 
 
-    private Object buildValue(Value value) {
+    private Object buildValue(Value value, GraphQLType requiredType) {
         Object result = null;
-        if (value instanceof IntValue) {
-            result = ((IntValue) value).getValue();
-        } else if (value instanceof FloatValue) {
-            result = ((FloatValue) value).getValue();
-        } else if (value instanceof StringValue) {
-            result = ((StringValue) value).getValue();
+        if (requiredType instanceof GraphQLNonNull) {
+            requiredType = ((GraphQLNonNull)requiredType).getWrappedType();
+        }
+        if (requiredType instanceof GraphQLScalarType) {
+            result = ((GraphQLScalarType)requiredType).getCoercing().parseLiteral(value);
         } else if (value instanceof EnumValue) {
             result = ((EnumValue) value).getName();
-        } else if (value instanceof BooleanValue) {
-            result = ((BooleanValue) value).isValue();
-        } else if (value instanceof ArrayValue) {
+        } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
             ArrayValue arrayValue = (ArrayValue) value;
-            result = arrayValue.getValues().stream().map(this::buildValue).toArray();
+            GraphQLType wrappedType = ((GraphQLList)requiredType).getWrappedType();
+            result = arrayValue.getValues().stream()
+                .map(item -> this.buildValue(item, wrappedType)).collect(Collectors.toList());
         } else if (value instanceof ObjectValue) {
-            result = buildObjectValue((ObjectValue) value);
+            result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
         } else if (value instanceof NullValue) {
             result = null;
         }
         return result;
-
     }
 
-    private Object buildObjectValue(ObjectValue defaultValue) {
+    private Object buildObjectValue(ObjectValue defaultValue, GraphQLInputObjectType objectType) {
         HashMap<String, Object> map = new LinkedHashMap<>();
-        defaultValue.getObjectFields().forEach(of -> map.put(of.getName(), buildValue(of.getValue())));
+        defaultValue.getObjectFields().forEach(of -> map.put(of.getName(),
+            buildValue(of.getValue(), objectType.getField(of.getName()).getType())));
         return map;
     }
 
