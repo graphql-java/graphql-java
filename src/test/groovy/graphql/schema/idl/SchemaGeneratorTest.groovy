@@ -951,7 +951,7 @@ class SchemaGeneratorTest extends Specification {
     def "scalar default value is parsed"() {
         def spec = """
             type Query {
-              field(arg1 : Int! = 10, arg2 : [Int!] = [20]) : String
+              field(arg1 : Int! = 10, arg2 : [Int!]! = [20]) : String
             }
         """
 
