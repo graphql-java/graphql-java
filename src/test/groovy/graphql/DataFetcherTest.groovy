@@ -16,7 +16,7 @@ class DataFetcherTest extends Specification {
 
         private String privateField
         public String publicField
-        private Boolean booleanField
+        private boolean booleanField
         private Boolean booleanFieldWithGet
 
         String getProperty() {
@@ -27,7 +27,7 @@ class DataFetcherTest extends Specification {
             privateField = value
         }
 
-        Boolean isBooleanField() {
+        boolean isBooleanField() {
             return booleanField
         }
 
@@ -98,7 +98,7 @@ class DataFetcherTest extends Specification {
         given:
         def environment = env(GraphQLString)
         when:
-        def result = new PropertyDataFetcher("publicField").get(environment)
+        def result = new FieldDataFetcher("publicField").get(environment)
         then:
         result == "publicValue"
     }
