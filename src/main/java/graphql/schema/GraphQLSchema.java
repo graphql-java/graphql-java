@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,6 +24,7 @@ public class GraphQLSchema {
     private final GraphQLObjectType subscriptionType;
     private final Map<String, GraphQLType> typeMap;
     private Set<GraphQLType> additionalTypes;
+    private Set<GraphQLDirective> directives;
 
     public GraphQLSchema(GraphQLObjectType queryType) {
         this(queryType, null, Collections.emptySet());
@@ -33,12 +35,19 @@ public class GraphQLSchema {
     }
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary) {
+        this(queryType, mutationType, subscriptionType, dictionary, Collections.emptySet());
+    }
+
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary, Set<GraphQLDirective> directives) {
         assertNotNull(dictionary, "dictionary can't be null");
         assertNotNull(queryType, "queryType can't be null");
+        assertNotNull(directives, "directives can't be null");
         this.queryType = queryType;
         this.mutationType = mutationType;
         this.subscriptionType = subscriptionType;
         this.additionalTypes = dictionary;
+        this.directives = new HashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
+        this.directives.addAll(directives);
         typeMap = new SchemaUtil().allTypes(this, dictionary);
     }
 
@@ -67,7 +76,7 @@ public class GraphQLSchema {
     }
 
     public List<GraphQLDirective> getDirectives() {
-        return Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective);
+        return new ArrayList<>(directives);
     }
 
     public GraphQLDirective getDirective(String name) {
@@ -122,12 +131,17 @@ public class GraphQLSchema {
         }
 
         public GraphQLSchema build() {
-            return build(Collections.emptySet());
+            return build(Collections.emptySet(), Collections.emptySet());
         }
 
         public GraphQLSchema build(Set<GraphQLType> additionalTypes) {
+            return build(additionalTypes, Collections.emptySet());
+        }
+
+        public GraphQLSchema build(Set<GraphQLType> additionalTypes, Set<GraphQLDirective> additionalDirectives) {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
-            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes);
+            assertNotNull(additionalDirectives, "additionalDirectives can't be null");
+            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives);
             new SchemaUtil().replaceTypeReferences(graphQLSchema);
             Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
             if (errors.size() > 0) {
