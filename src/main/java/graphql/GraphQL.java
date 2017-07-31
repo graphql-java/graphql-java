@@ -203,7 +203,7 @@ public class GraphQL {
      * @param query   the query/mutation/subscription
      * @param context custom object provided to each {@link graphql.schema.DataFetcher}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -224,7 +224,7 @@ public class GraphQL {
      * @param operationName the name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -246,7 +246,7 @@ public class GraphQL {
      * @param context   custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables variable values uses as argument
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -269,7 +269,7 @@ public class GraphQL {
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables     variable values uses as argument
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -300,7 +300,7 @@ public class GraphQL {
      * Executes the graphql query using calling the builder function and giving it a new builder.
      * <p>
      * This allows a lambda style like :
-     *
+     * <p>
      * <pre>
      * {@code
      *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
@@ -309,7 +309,7 @@ public class GraphQL {
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
         return execute(builderFunction.apply(ExecutionInput.newExecutionInput()).build());
@@ -320,7 +320,7 @@ public class GraphQL {
      *
      * @param executionInput {@link ExecutionInput}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
         return executeAsync(executionInput).join();
@@ -328,7 +328,7 @@ public class GraphQL {
 
     /**
      * Executes the graphql query using the provided input object builder
-     *
+     * <p>
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
      *
@@ -342,12 +342,12 @@ public class GraphQL {
 
     /**
      * Executes the graphql query using the provided input object builder
-     *
+     * <p>
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
      * <p>
      * This allows a lambda style like :
-     *
+     * <p>
      * <pre>
      * {@code
      *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
@@ -364,7 +364,7 @@ public class GraphQL {
 
     /**
      * Executes the graphql query using the provided input object
-     *
+     * <p>
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
      *
@@ -376,8 +376,11 @@ public class GraphQL {
         log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
 
         InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(new InstrumentationExecutionParameters(executionInput));
-        final CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput);
+        CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput);
         executionResult.thenAccept(executionInstrumentation::onEnd);
+        //
+        // allow instrumentation to tweak the result
+        executionResult = executionResult.thenApply(instrumentation::instrumentExecutionResult);
         return executionResult;
     }
 
