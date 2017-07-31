@@ -48,7 +48,7 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher) {
+    DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         dfClasses.add(dataFetcher.getClass())
         return new DataFetcher<Object>() {
             @Override

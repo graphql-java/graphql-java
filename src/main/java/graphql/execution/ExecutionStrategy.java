@@ -1,31 +1,12 @@
 package graphql.execution;
 
-import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
-import graphql.GraphQLException;
-import graphql.PublicSpi;
-import graphql.SerializationError;
-import graphql.TypeResolutionEnvironment;
+import graphql.*;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.language.Field;
-import graphql.schema.CoercingSerializeException;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.DataFetchingFieldSelectionSet;
-import graphql.schema.DataFetchingFieldSelectionSetImpl;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
+import graphql.schema.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,15 +19,12 @@ import java.util.concurrent.CompletionException;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.TypeInfo.newTypeInfo;
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
+import static graphql.introspection.Introspection.*;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * An execution strategy is give a list of fields from the graphql query to execute and find values for using a recursive strategy.
- *
  * <pre>
  *     query {
  *          friends {
@@ -154,7 +132,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.field().get(0));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(new InstrumentationFieldParameters(executionContext, fieldDef));
+        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(new InstrumentationFieldParameters(executionContext, fieldDef, getTypeInfo(parameters, fieldDef), parameters.path()));
 
         Object fetchedValue = fetchField(executionContext, parameters);
 
@@ -181,10 +159,12 @@ public abstract class ExecutionStrategy {
         Field field = parameters.field().get(0);
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        TypeInfo fieldTypeInfo = getTypeInfo(parameters, fieldDef);
+
+        GraphQLOutputType fieldType = fieldDef.getType();
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
-        GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.field());
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
@@ -195,15 +175,18 @@ public abstract class ExecutionStrategy {
                 .fieldType(fieldType)
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
+                .typeInfo(fieldTypeInfo)
+                .executionPath(parameters.path())
                 .build();
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment));
+        InstrumentationFieldFetchParameters fieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, fieldTypeInfo, parameters.path());
+        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(fieldFetchParams);
         Object fetchedValue = null;
         try {
             DataFetcher dataFetcher = fieldDef.getDataFetcher();
-            dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher);
+            dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, fieldFetchParams);
             fetchedValue = dataFetcher.get(environment);
 
             fetchCtx.onEnd(fetchedValue);
@@ -225,6 +208,7 @@ public abstract class ExecutionStrategy {
         return fetchedValue;
     }
 
+
     /**
      * Called to complete a field based on the type of the field.
      * <p>
@@ -244,14 +228,10 @@ public abstract class ExecutionStrategy {
         Field field = parameters.field().get(0);
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        TypeInfo fieldTypeInfo = getTypeInfo(parameters, fieldDef);
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
-        GraphQLOutputType fieldType = fieldDef.getType();
-        TypeInfo fieldTypeInfo = newTypeInfo()
-                .type(fieldType)
-                .parentInfo(parameters.typeInfo())
-                .build();
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, fieldTypeInfo);
 
@@ -280,7 +260,6 @@ public abstract class ExecutionStrategy {
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
-     *
      * @return an {@link ExecutionResult}
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
@@ -517,6 +496,20 @@ public abstract class ExecutionStrategy {
             throw new GraphQLException("Unknown field " + field.getName());
         }
         return fieldDefinition;
+    }
+
+    /**
+     * This will return a {@link TypeInfo} instance for the provided field definition
+     *
+     * @param parameters contains the parameters holding the fields to be executed and source object
+     * @param fieldDef   the field definition
+     * @return a {@link TypeInfo} object for the field
+     */
+    protected TypeInfo getTypeInfo(ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef) {
+        return newTypeInfo()
+                .type(fieldDef.getType())
+                .parentInfo(parameters.typeInfo())
+                .build();
     }
 
     /**

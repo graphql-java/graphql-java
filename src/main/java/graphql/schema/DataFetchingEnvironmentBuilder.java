@@ -3,6 +3,8 @@ package graphql.schema;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
+import graphql.execution.ExecutionPath;
+import graphql.execution.TypeInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
@@ -35,6 +37,8 @@ public class DataFetchingEnvironmentBuilder {
                 .graphQLSchema(environment.getGraphQLSchema())
                 .fragmentsByName(environment.getFragmentsByName())
                 .executionId(environment.getExecutionId())
+                .executionPath(environment.getExecutionPath())
+                .typeInfo(environment.getTypeInfo())
                 .selectionSet(environment.getSelectionSet());
     }
 
@@ -59,6 +63,8 @@ public class DataFetchingEnvironmentBuilder {
     private GraphQLSchema graphQLSchema;
     private Map<String, FragmentDefinition> fragmentsByName = Collections.emptyMap();
     private ExecutionId executionId;
+    private TypeInfo typeInfo;
+    private ExecutionPath executionPath;
     private DataFetchingFieldSelectionSet selectionSet;
 
 
@@ -117,6 +123,16 @@ public class DataFetchingEnvironmentBuilder {
         return this;
     }
 
+    public DataFetchingEnvironmentBuilder executionPath(ExecutionPath executionPath) {
+        this.executionPath = executionPath;
+        return this;
+    }
+
+    public DataFetchingEnvironmentBuilder typeInfo(TypeInfo typeInfo) {
+        this.typeInfo = typeInfo;
+        return this;
+    }
+
     public DataFetchingEnvironmentBuilder selectionSet(DataFetchingFieldSelectionSet selectionSet) {
         this.selectionSet = selectionSet;
         return this;
@@ -124,7 +140,7 @@ public class DataFetchingEnvironmentBuilder {
 
     public DataFetchingEnvironment build() {
         return new DataFetchingEnvironmentImpl(source, arguments, context, root,
-                fieldDefinition, fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet
+                fieldDefinition, fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, typeInfo, executionPath, selectionSet
         );
     }
 }

@@ -1,6 +1,8 @@
 package graphql.execution.instrumentation.parameters;
 
 import graphql.execution.ExecutionContext;
+import graphql.execution.ExecutionPath;
+import graphql.execution.TypeInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLFieldDefinition;
@@ -11,8 +13,8 @@ import graphql.schema.GraphQLFieldDefinition;
 public class InstrumentationFieldFetchParameters extends InstrumentationFieldParameters {
     private final DataFetchingEnvironment environment;
 
-    public InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment) {
-        super(getExecutionContext, fieldDef);
+    public InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, TypeInfo typeInfo, ExecutionPath executionPath) {
+        super(getExecutionContext, fieldDef, typeInfo, executionPath);
         this.environment = environment;
     }
 

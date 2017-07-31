@@ -1,11 +1,7 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
-import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
+import graphql.execution.instrumentation.parameters.*;
 import graphql.language.Document;
 import graphql.schema.DataFetcher;
 import graphql.validation.ValidationError;
@@ -14,7 +10,7 @@ import java.util.List;
 
 /**
  * Provides the capability to instrument the execution steps of a GraphQL query.
- *
+ * <p>
  * For example you might want to track which fields are taking the most time to fetch from the backing database
  * or log what fields are being asked for.
  */
@@ -25,7 +21,6 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters);
@@ -35,7 +30,6 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters);
@@ -45,7 +39,6 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters);
@@ -55,7 +48,6 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters);
@@ -65,7 +57,6 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters);
@@ -75,7 +66,6 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters);
@@ -87,10 +77,10 @@ public interface Instrumentation {
      * implementations widely vary.
      *
      * @param dataFetcher the data fetcher about to be used
-     *
+     * @param parameters  the parameters describing the field to be fetched
      * @return a non null instrumented data fetcher, the default is to return to the same object
      */
-    default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher) {
+    default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         return dataFetcher;
     }
 }

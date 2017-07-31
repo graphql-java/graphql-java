@@ -2,6 +2,8 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.execution.ExecutionId;
+import graphql.execution.ExecutionPath;
+import graphql.execution.TypeInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
@@ -21,7 +23,6 @@ public interface DataFetchingEnvironment {
      * For the root query, it is equal to {{@link DataFetchingEnvironment#getRoot}
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null for the root query, otherwise it is never null
      */
     <T> T getSource();
@@ -35,7 +36,6 @@ public interface DataFetchingEnvironment {
      * Returns true of the named argument is present
      *
      * @param name the name of the argument
-     *
      * @return true of the named argument is present
      */
     boolean containsArgument(String name);
@@ -45,7 +45,6 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     *
      * @return the named argument or null if its not [present
      */
     <T> T getArgument(String name);
@@ -57,7 +56,6 @@ public interface DataFetchingEnvironment {
      * This is a info object which is provided to all DataFetcher, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null
      */
     <T> T getContext();
@@ -66,7 +64,6 @@ public interface DataFetchingEnvironment {
      * This is the source object for the root query.
      *
      * @param <T> you decide what type it is
-     *
      * @return can be null
      */
     <T> T getRoot();
@@ -106,6 +103,16 @@ public interface DataFetchingEnvironment {
      * @return the {@link ExecutionId} for the current operation
      */
     ExecutionId getExecutionId();
+
+    /**
+     * @return the {@link TypeInfo} for the current operation
+     */
+    TypeInfo getTypeInfo();
+
+    /**
+     * @return the {@link ExecutionPath} for the current operation
+     */
+    ExecutionPath getExecutionPath();
 
     /**
      * @return the {@link DataFetchingFieldSelectionSet} for the current operation

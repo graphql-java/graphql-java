@@ -3,6 +3,8 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.execution.ExecutionId;
+import graphql.execution.ExecutionPath;
+import graphql.execution.TypeInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
@@ -23,9 +25,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLSchema graphQLSchema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
+    private final TypeInfo typeInfo;
+    private final ExecutionPath executionPath;
     private final DataFetchingFieldSelectionSet selectionSet;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, Object root, GraphQLFieldDefinition fieldDefinition, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, DataFetchingFieldSelectionSet selectionSet) {
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, Object root, GraphQLFieldDefinition fieldDefinition, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, TypeInfo typeInfo, ExecutionPath executionPath, DataFetchingFieldSelectionSet selectionSet) {
         this.source = source;
         this.arguments = arguments;
         this.context = context;
@@ -37,6 +41,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.graphQLSchema = graphQLSchema;
         this.fragmentsByName = fragmentsByName;
         this.executionId = executionId;
+        this.typeInfo = typeInfo;
+        this.executionPath = executionPath;
         this.selectionSet = selectionSet;
     }
 
@@ -103,6 +109,16 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public ExecutionId getExecutionId() {
         return executionId;
+    }
+
+    @Override
+    public TypeInfo getTypeInfo() {
+        return typeInfo;
+    }
+
+    @Override
+    public ExecutionPath getExecutionPath() {
+        return executionPath;
     }
 
     @Override

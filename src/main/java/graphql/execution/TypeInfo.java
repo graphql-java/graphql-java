@@ -1,14 +1,16 @@
 package graphql.execution;
 
+import graphql.PublicApi;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
 import static graphql.Assert.assertNotNull;
 
 /**
- * The raw graphql type system (rightly) does not contain a hierarchy of child to parent types nor the non null ness of
- * type instances.  This add this during query execution.
+ * The raw graphql type system (rightly) does not contain a hierarchy of child to parent types nor the non null-ness of
+ * type instances, however this is resolved during query execution and represented by this class.
  */
+@PublicApi
 public class TypeInfo {
 
     private final GraphQLType type;
@@ -22,15 +24,29 @@ public class TypeInfo {
         assertNotNull(this.type, "you must provide a graphql type");
     }
 
+    /**
+     * @return the type in play, which will have been unwrapped if it was originally a {@link GraphQLNonNull} type
+     */
     public GraphQLType type() {
         return type;
     }
 
+    /**
+     * Allows you to cast this type as a more specific graphql type
+     *
+     * @param clazz the class to cast it to
+     * @param <T>   the type in play
+     * @return the type as that specific graphql type
+     */
     @SuppressWarnings("unchecked")
     public <T extends GraphQLType> T castType(Class<T> clazz) {
         return clazz.cast(type);
     }
 
+
+    /**
+     * @return true if the type was defined as a non null type
+     */
     public boolean typeIsNonNull() {
         return typeIsNonNull;
     }
@@ -39,6 +55,9 @@ public class TypeInfo {
         return parentType;
     }
 
+    /**
+     * @return true if this type has a parent type
+     */
     public boolean hasParentType() {
         return parentType != null;
     }
@@ -48,7 +67,6 @@ public class TypeInfo {
      * parent and non-null ness
      *
      * @param type the new type to be
-     *
      * @return a new type info with the same
      */
     public TypeInfo asType(GraphQLType type) {
@@ -69,6 +87,9 @@ public class TypeInfo {
                 typeIsNonNull, type, parentType);
     }
 
+    /**
+     * @return a buidler of TypeInfo
+     */
     public static TypeInfo.Builder newTypeInfo() {
         return new Builder();
     }

@@ -1,6 +1,6 @@
 package graphql.execution;
 
-import graphql.Internal;
+import graphql.PublicApi;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,7 +10,15 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 
 
-@Internal
+/**
+ * The execution path represents the logical "path" that has been take to execute a field
+ * during a request.
+ * <p>
+ * For example the graphql spec says that that path field of any error should be a list
+ * of path entries - http://facebook.github.io/graphql/#sec-Errors and hence {@link #toList()}
+ * can be called to provide this.
+ */
+@PublicApi
 public class ExecutionPath {
     private static ExecutionPath ROOT_PATH = new ExecutionPath();
 
@@ -73,7 +81,7 @@ public class ExecutionPath {
     private static class StringPathSegment implements PathSegment<String> {
         private final String value;
 
-        public StringPathSegment(String value) {
+        StringPathSegment(String value) {
             assertTrue(value != null && !value.isEmpty(), "empty path component");
             this.value = value;
         }
@@ -92,7 +100,7 @@ public class ExecutionPath {
     private static class IntPathSegment implements PathSegment<Integer> {
         private final int value;
 
-        public IntPathSegment(int value) {
+        IntPathSegment(int value) {
             this.value = value;
         }
 
