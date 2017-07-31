@@ -76,13 +76,13 @@ class InstrumentationTest extends Specification {
         instrumentation.dfInvocations.size() == 2
 
         instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
-        instrumentation.dfInvocations[0].getExecutionPath().toList() == ['hero']
-        instrumentation.dfInvocations[0].getTypeInfo().type().name == 'Character'
-        !instrumentation.dfInvocations[0].getTypeInfo().typeIsNonNull()
+        instrumentation.dfInvocations[0].getFieldTypeInfo().getPath().toList() == ['hero']
+        instrumentation.dfInvocations[0].getFieldTypeInfo().getType().name == 'Character'
+        !instrumentation.dfInvocations[0].getFieldTypeInfo().isNonNullType()
 
         instrumentation.dfInvocations[1].getFieldDefinition().name == 'id'
-        instrumentation.dfInvocations[1].getExecutionPath().toList() == ['hero', 'id']
-        instrumentation.dfInvocations[1].getTypeInfo().type().name == 'String'
-        instrumentation.dfInvocations[1].getTypeInfo().typeIsNonNull()
+        instrumentation.dfInvocations[1].getFieldTypeInfo().getPath().toList() == ['hero', 'id']
+        instrumentation.dfInvocations[1].getFieldTypeInfo().getType().name == 'String'
+        instrumentation.dfInvocations[1].getFieldTypeInfo().isNonNullType()
     }
 }
