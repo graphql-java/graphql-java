@@ -15,24 +15,24 @@ import static graphql.Assert.assertNotNull;
  */
 public class NonNullableFieldWasNullException extends RuntimeException implements GraphQLError {
 
-    private final TypeInfo typeInfo;
+    private final ExecutionTypeInfo typeInfo;
     private final ExecutionPath path;
 
 
-    public NonNullableFieldWasNullException(TypeInfo typeInfo, ExecutionPath path) {
+    public NonNullableFieldWasNullException(ExecutionTypeInfo typeInfo, ExecutionPath path) {
         super(buildMsg(assertNotNull(typeInfo), assertNotNull(path)));
         this.typeInfo = typeInfo;
         this.path = path;
     }
 
-    private static String buildMsg(TypeInfo typeInfo, ExecutionPath path) {
+    private static String buildMsg(ExecutionTypeInfo typeInfo, ExecutionPath path) {
         if (typeInfo.hasParentType()) {
-            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", typeInfo.type().getName(), typeInfo.parentTypeInfo().type().getName(), path);
+            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", typeInfo.getType().getName(), typeInfo.getParentTypeInfo().getType().getName(), path);
         }
-        return String.format("Cannot return null for non-nullable type: '%s' (%s) ", typeInfo.type().getName(), path);
+        return String.format("Cannot return null for non-nullable type: '%s' (%s) ", typeInfo.getType().getName(), path);
     }
 
-    public TypeInfo getTypeInfo() {
+    public ExecutionTypeInfo getTypeInfo() {
         return typeInfo;
     }
 

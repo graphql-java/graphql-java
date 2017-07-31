@@ -4,7 +4,7 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionPath;
-import graphql.execution.TypeInfo;
+import graphql.execution.ExecutionTypeInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
@@ -25,11 +25,10 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final GraphQLSchema graphQLSchema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
-    private final TypeInfo typeInfo;
-    private final ExecutionPath executionPath;
     private final DataFetchingFieldSelectionSet selectionSet;
+    private final ExecutionTypeInfo fieldTypeInfo;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, Object root, GraphQLFieldDefinition fieldDefinition, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, TypeInfo typeInfo, ExecutionPath executionPath, DataFetchingFieldSelectionSet selectionSet) {
+    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, Object root, GraphQLFieldDefinition fieldDefinition, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, DataFetchingFieldSelectionSet selectionSet, ExecutionTypeInfo fieldTypeInfo) {
         this.source = source;
         this.arguments = arguments;
         this.context = context;
@@ -41,9 +40,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.graphQLSchema = graphQLSchema;
         this.fragmentsByName = fragmentsByName;
         this.executionId = executionId;
-        this.typeInfo = typeInfo;
-        this.executionPath = executionPath;
         this.selectionSet = selectionSet;
+        this.fieldTypeInfo = fieldTypeInfo;
     }
 
     @Override
@@ -112,17 +110,19 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public TypeInfo getTypeInfo() {
-        return typeInfo;
-    }
-
-    @Override
-    public ExecutionPath getExecutionPath() {
-        return executionPath;
-    }
-
-    @Override
     public DataFetchingFieldSelectionSet getSelectionSet() {
         return selectionSet;
+    }
+
+    @Override
+    public ExecutionTypeInfo getFieldTypeInfo() {
+        return fieldTypeInfo;
+    }
+
+    @Override
+    public String toString() {
+        return "DataFetchingEnvironmentImpl{" +
+                "fieldTypeInfo=" + fieldTypeInfo +
+                '}';
     }
 }

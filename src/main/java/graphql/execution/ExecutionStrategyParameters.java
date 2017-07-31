@@ -15,7 +15,7 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 public class ExecutionStrategyParameters {
-    private final TypeInfo typeInfo;
+    private final ExecutionTypeInfo typeInfo;
     private final Object source;
     private final Map<String, Object> arguments;
     private final Map<String, List<Field>> fields;
@@ -23,7 +23,7 @@ public class ExecutionStrategyParameters {
     private final ExecutionPath path;
     private final List<Field> currentField;
 
-    private ExecutionStrategyParameters(TypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator, ExecutionPath path, List<Field> currentField) {
+    private ExecutionStrategyParameters(ExecutionTypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator, ExecutionPath path, List<Field> currentField) {
         this.typeInfo = assertNotNull(typeInfo, "typeInfo is null");
         this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
@@ -33,7 +33,7 @@ public class ExecutionStrategyParameters {
         this.currentField = currentField;
     }
 
-    public TypeInfo typeInfo() {
+    public ExecutionTypeInfo typeInfo() {
         return typeInfo;
     }
 
@@ -89,7 +89,7 @@ public class ExecutionStrategyParameters {
     }
 
     public static class Builder {
-        TypeInfo typeInfo;
+        ExecutionTypeInfo typeInfo;
         Object source;
         Map<String, List<Field>> fields;
         Map<String, Object> arguments;
@@ -114,12 +114,12 @@ public class ExecutionStrategyParameters {
             this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
         }
 
-        public Builder typeInfo(TypeInfo type) {
+        public Builder typeInfo(ExecutionTypeInfo type) {
             this.typeInfo = type;
             return this;
         }
 
-        public Builder typeInfo(TypeInfo.Builder type) {
+        public Builder typeInfo(ExecutionTypeInfo.Builder type) {
             this.typeInfo = type.build();
             return this;
         }
