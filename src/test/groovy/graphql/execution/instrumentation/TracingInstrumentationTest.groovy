@@ -9,7 +9,7 @@ import spock.lang.Specification
 class TracingInstrumentationTest extends Specification {
 
 
-    def 'tracing captures'() {
+    def 'tracing captures timings as expected'() {
         given:
 
         def query = """

@@ -5,6 +5,7 @@ import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation.NoOpInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -25,34 +26,22 @@ import java.util.Map;
 @PublicApi
 public class TracingInstrumentation implements Instrumentation {
 
-    private TracingSupport tracingSupport;
-    private Map<String, Object> tracingData;
+    @Override
+    public InstrumentationState createState() {
+        return new TracingSupport();
+    }
 
     @Override
-    public ExecutionResult instrumentExecutionResult(ExecutionResult executionResult) {
+    public ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        TracingSupport tracingSupport = parameters.getInstrumentationState();
         Map<Object, Object> tracingMap = new LinkedHashMap<>();
-        tracingMap.put("tracing", tracingData);
+        tracingMap.put("tracing", tracingSupport.snapshotTracingData());
         return new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), tracingMap);
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        tracingSupport = new TracingSupport();
-        return new InstrumentationContext<ExecutionResult>() {
-            @Override
-            public void onEnd(ExecutionResult result) {
-                tracingData = tracingSupport.snapshotTracingData();
-            }
-
-            @Override
-            public void onEnd(Exception e) {
-                tracingData = tracingSupport.snapshotTracingData();
-            }
-        };
-    }
-
-    @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
+        TracingSupport tracingSupport = parameters.getInstrumentationState();
         TracingSupport.TracingContext ctx = tracingSupport.beginField(parameters.getEnvironment());
         return new InstrumentationContext<Object>() {
             @Override
@@ -65,6 +54,11 @@ public class TracingInstrumentation implements Instrumentation {
                 ctx.onEnd();
             }
         };
+    }
+
+    @Override
+    public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
+        return new NoOpInstrumentationContext<>();
     }
 
     @Override

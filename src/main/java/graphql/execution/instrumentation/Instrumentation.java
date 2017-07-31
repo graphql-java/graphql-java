@@ -21,6 +21,16 @@ import java.util.List;
 public interface Instrumentation {
 
     /**
+     * This will be called just before execution to create an object that is given back to all instrumentation methods
+     * to allow them to have per execution request state
+     *
+     * @return a state object that is passed to each method
+     */
+    default InstrumentationState createState() {
+        return null;
+    }
+
+    /**
      * This is called just before a query is executed and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
      * will be called indicating that the step has finished.
      *
@@ -98,9 +108,11 @@ public interface Instrumentation {
     /**
      * This is called to allow instrumentation to instrument the execution result in some way
      *
+     * @param parameters the parameters to this step
+     *
      * @return a new execution result
      */
-    default ExecutionResult instrumentExecutionResult(ExecutionResult executionResult) {
+    default ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         return executionResult;
     }
 }

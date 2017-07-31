@@ -2,6 +2,7 @@ package graphql.execution.instrumentation.tracing;
 
 import graphql.PublicApi;
 import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.DataFetchingEnvironment;
 
 import java.time.ZonedDateTime;
@@ -20,7 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * instrumentation code.
  */
 @PublicApi
-public class TracingSupport {
+public class TracingSupport implements InstrumentationState {
 
     private final ZonedDateTime startTime;
     private final long startNanos;
