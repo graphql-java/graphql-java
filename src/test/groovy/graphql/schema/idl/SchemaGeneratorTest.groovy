@@ -73,10 +73,13 @@ class SchemaGeneratorTest extends Specification {
         //}
         GraphQLObjectType postType = schema.getType("Post") as GraphQLObjectType
         assert postType.name == "Post"
+        assert postType.getDefinition().getName() == "Post"
         //
         // make sure that wrapped non null fields stay that way. we had a bug where decorated types lost their decoration
         assert postType.getFieldDefinition("author").type instanceof GraphQLNonNull
         assert (postType.getFieldDefinition("author").type as GraphQLNonNull).wrappedType.name == "Author"
+
+        assert postType.getFieldDefinition("author").getDefinition().getName() == "author"
 
         //type Author {
         //    # the ! means that every author object _must_ have an id
@@ -114,8 +117,12 @@ class SchemaGeneratorTest extends Specification {
         assert upvotePostFieldArg.type instanceof GraphQLNonNull
         assert unwrap(upvotePostFieldArg.type).name == "PostUpVote"
 
-        assert (unwrap(upvotePostFieldArg.type) as GraphQLInputObjectType).getField("postId").type.name == "ID"
-        assert (unwrap(upvotePostFieldArg.type) as GraphQLInputObjectType).getField("votes").type.name == "Int"
+        def inputObjectType = unwrap(upvotePostFieldArg.type) as GraphQLInputObjectType
+        assert inputObjectType.getDefinition().getName() == "PostUpVote"
+
+        assert inputObjectType.getField("postId").type.name == "ID"
+        assert inputObjectType.getField("votes").type.name == "Int"
+        assert inputObjectType.getField("votes").getDefinition().name == "votes"
 
         def queryType = schema.getQueryType()
         assert queryType.description == " the schema allows the following query\n to be made"
@@ -387,7 +394,10 @@ class SchemaGeneratorTest extends Specification {
 
         def foobar = schema.getQueryType().getFieldDefinition("foobar")
         foobar.type instanceof GraphQLUnionType
-        def types = ((GraphQLUnionType) foobar.type).getTypes()
+        def unionType = foobar.type as GraphQLUnionType
+        unionType.getName() == "FooOrBar"
+        unionType.getDefinition().getName() == "FooOrBar"
+        def types = unionType.getTypes()
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
@@ -420,9 +430,14 @@ class SchemaGeneratorTest extends Specification {
 
         def rgbField = schema.getQueryType().getFieldDefinition("rgb")
         rgbField.type instanceof GraphQLEnumType
-        (rgbField.type as GraphQLEnumType).values.get(0).getValue() == "RED"
-        (rgbField.type as GraphQLEnumType).values.get(1).getValue() == "GREEN"
-        (rgbField.type as GraphQLEnumType).values.get(2).getValue() == "BLUE"
+
+        def enumType = rgbField.type as GraphQLEnumType
+        enumType.getName() == "RGB"
+        enumType.getDefinition().getName() == "RGB"
+
+        enumType.values.get(0).getValue() == "RED"
+        enumType.values.get(1).getValue() == "GREEN"
+        enumType.values.get(2).getValue() == "BLUE"
 
     }
 
@@ -451,7 +466,10 @@ class SchemaGeneratorTest extends Specification {
 
         expect:
 
-        schema.queryType.interfaces[0].name == "Foo"
+        def interfaceType = schema.queryType.interfaces[0] as GraphQLInterfaceType
+        interfaceType.name == "Foo"
+        interfaceType.getDefinition().getName() == "Foo"
+
         schema.queryType.fieldDefinitions[0].name == "is_foo"
         schema.queryType.fieldDefinitions[0].type.name == "Boolean"
         schema.queryType.fieldDefinitions[1].name == "is_bar"
