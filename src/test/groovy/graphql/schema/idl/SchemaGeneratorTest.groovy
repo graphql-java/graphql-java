@@ -947,4 +947,44 @@ class SchemaGeneratorTest extends Specification {
         schema.getType("UnReferencedC") instanceof GraphQLInterfaceType
         schema.getType("UnReferencedD") instanceof GraphQLUnionType
     }
+
+    def "scalar default value is parsed"() {
+        def spec = """
+            type Query {
+              field(arg1 : Int! = 10, arg2 : [Int!]! = [20]) : String
+            }
+        """
+
+        def schema = schema(spec)
+        schema.getType("Query") instanceof GraphQLObjectType
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+        Object arg1 = query.getFieldDefinition("field").getArgument("arg1").defaultValue
+        Object arg2 = query.getFieldDefinition("field").getArgument("arg2").defaultValue
+
+        expect:
+        arg1 instanceof Integer
+        arg2 instanceof List
+        (arg2 as List).get(0) instanceof Integer
+    }
+
+    def "input object default value is parsed"() {
+        def spec = """
+            input InputObject {
+                str : String
+                num : Int
+            }
+            type Query {
+              field(arg : InputObject = {str : "string", num : 100}) : String
+            }
+        """
+
+        def schema = schema(spec)
+        schema.getType("Query") instanceof GraphQLObjectType
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+        Object arg = query.getFieldDefinition("field").getArgument("arg").defaultValue as Map
+
+        expect:
+        arg["str"] instanceof String
+        arg["num"] instanceof Integer
+    }
 }
