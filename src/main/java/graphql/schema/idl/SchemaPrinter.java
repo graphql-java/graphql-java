@@ -1,16 +1,6 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
-import graphql.language.Argument;
-import graphql.language.ArrayValue;
-import graphql.language.BooleanValue;
-import graphql.language.Directive;
-import graphql.language.EnumValue;
-import graphql.language.FloatValue;
-import graphql.language.IntValue;
-import graphql.language.NullValue;
-import graphql.language.StringValue;
-import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -32,14 +22,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -223,9 +210,8 @@ public class SchemaPrinter {
             out.format("type %s {\n", type.getName());
             type.getFieldDefinitions().forEach(fd -> {
                 printComments(out, fd, "  ");
-                out.format("  %s%s: %s%s\n",
-                        fd.getName(), argsString(fd.getArguments()),
-                        typeString(fd.getType()), directivesString(getDirectives(fd)));
+                out.format("  %s%s: %s\n",
+                        fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
             });
             out.format("}\n\n");
         };
@@ -350,55 +336,6 @@ public class SchemaPrinter {
         return sb.toString();
     }
 
-    String directivesString(List<Directive> directives) {
-        if (directives.isEmpty()) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder(" ");
-        boolean firstDirective = true;
-        for (Directive directive : directives) {
-            if (!firstDirective) {
-                sb.append(' ');
-            } else {
-                firstDirective = false;
-            }
-            sb.append('@').append(directive.getName()).append('(');
-            boolean firstArgument = true;
-            for (Argument argument : directive.getArguments()) {
-                if (!firstArgument) {
-                    sb.append(", ");
-                } else {
-                    firstArgument = false;
-                }
-                sb.append(argument.getName()).append(": ")
-                    .append(valueString(argument.getValue()));
-            }
-            sb.append(')');
-        }
-        return sb.toString();
-    }
-
-    String valueString(Value value) {
-        if (value instanceof IntValue) {
-            return ((IntValue) value).getValue().toString();
-        } else if (value instanceof ArrayValue) {
-            return ((ArrayValue) value).getValues().stream().map(this::valueString)
-                .collect(Collectors.joining(", "));
-        } else if (value instanceof BooleanValue) {
-            return ((BooleanValue) value).isValue() ? "true": "false";
-        } else if(value instanceof EnumValue) {
-            return ((EnumValue) value).getName();
-        } else if (value instanceof FloatValue) {
-            return ((FloatValue) value).getValue().toString();
-        } else if (value instanceof NullValue) {
-            return "null";
-        } else if (value instanceof StringValue) {
-            return "\"" + ((StringValue) value).getValue() + "\"";
-        } else {
-            return Assert.assertShouldNeverHappen();
-        }
-    }
-
     @SuppressWarnings("unchecked")
     private <T> TypePrinter<T> printer(Class<?> clazz) {
         TypePrinter typePrinter = printers.computeIfAbsent(clazz,
@@ -461,57 +398,5 @@ public class SchemaPrinter {
         } else {
             return Assert.assertShouldNeverHappen();
         }
-    }
-
-    private List<Directive> getDirectives(Object directiveHolder) {
-        if (directiveHolder instanceof GraphQLObjectType) {
-            return ((GraphQLObjectType) directiveHolder).getDefinition().getDirectives();
-        } else if (directiveHolder instanceof GraphQLEnumType) {
-            return ((GraphQLEnumType) directiveHolder).getDefinition().getDirectives();
-        } else if (directiveHolder instanceof GraphQLFieldDefinition) {
-          return buildFullDirectives(
-              (GraphQLFieldDefinition)directiveHolder,
-              t -> null,
-              GraphQLFieldDefinition::isDeprecated, GraphQLFieldDefinition::getDeprecationReason);
-        } else if (directiveHolder instanceof GraphQLEnumValueDefinition) {
-          return buildFullDirectives((GraphQLEnumValueDefinition)directiveHolder,
-              t-> null,
-              GraphQLEnumValueDefinition::isDeprecated,
-              GraphQLEnumValueDefinition::getDeprecationReason);
-        } else if (directiveHolder instanceof GraphQLUnionType) {
-            return ((GraphQLUnionType) directiveHolder).getDefinition().getDirectives();
-        } else if (directiveHolder instanceof GraphQLInputObjectType) {
-            return ((GraphQLInputObjectType) directiveHolder).getDefinition().getDirectives();
-        } else if (directiveHolder instanceof GraphQLInputObjectField) {
-            return ((GraphQLInputObjectField) directiveHolder).getDefinition().getDirectives();
-        } else if (directiveHolder instanceof GraphQLInterfaceType) {
-            return ((GraphQLInterfaceType) directiveHolder).getDefinition().getDirectives();
-        } else if (directiveHolder instanceof GraphQLScalarType) {
-            return ((GraphQLScalarType) directiveHolder).getDefinition().getDirectives();
-        } else if (directiveHolder instanceof GraphQLArgument) {
-            return ((GraphQLArgument) directiveHolder).getDefinition().getDirectives();
-        } else {
-            return Assert.assertShouldNeverHappen();
-        }
-    }
-
-    private <T> List<Directive> buildFullDirectives(T target,
-        Function<T, List<Directive>> directiveResolver,
-        Function<T, Boolean> isDeprecatedResolver,
-        Function<T, String> deprecateReasonResolver) {
-        List<Directive> allDirectives = new ArrayList<>();
-        if (directiveResolver != null) {
-            List<Directive> definedDirectives = directiveResolver.apply(target);
-            if (definedDirectives != null) {
-                allDirectives.addAll(definedDirectives);
-            }
-        }
-        if (isDeprecatedResolver != null && isDeprecatedResolver.apply(target)) {
-            String deprecateReason = deprecateReasonResolver == null
-                ? null : deprecateReasonResolver.apply(target);
-          allDirectives.add(new Directive("deprecate", Collections.singletonList(
-                new Argument("reason", new StringValue(deprecateReason)))));
-        }
-        return allDirectives;
     }
 }
