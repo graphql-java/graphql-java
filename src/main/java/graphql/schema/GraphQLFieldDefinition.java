@@ -90,6 +90,19 @@ public class GraphQLFieldDefinition {
         return deprecationReason != null;
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLFieldDefinition{" +
+                "name='" + name + '\'' +
+                ", type=" + type +
+                ", dataFetcher=" + dataFetcher +
+                ", arguments=" + arguments +
+                ", description='" + description + '\'' +
+                ", deprecationReason='" + deprecationReason + '\'' +
+                ", definition=" + definition +
+                '}';
+    }
+
     public static Builder newFieldDefinition() {
         return new Builder();
     }

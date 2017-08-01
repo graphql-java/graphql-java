@@ -5,8 +5,10 @@ import graphql.ExecutionResult
 import graphql.Scalars
 import graphql.SerializationError
 import graphql.execution.instrumentation.NoOpInstrumentation
+import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.SourceLocation
+import graphql.language.StringValue
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -21,6 +23,7 @@ import java.util.concurrent.CompletableFuture
 
 import static ExecutionStrategyParameters.newParameters
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLNonNull.nonNull
@@ -44,7 +47,9 @@ class ExecutionStrategyTest extends Specification {
     }
 
     def buildContext(GraphQLSchema schema = null) {
-        new ExecutionContext(NoOpInstrumentation.INSTANCE, null, schema, executionStrategy, executionStrategy, executionStrategy, null, null, null, "context", "root")
+        ExecutionId executionId = ExecutionId.from("executionId123")
+        def variables = [arg1: "value1"]
+        new ExecutionContext(NoOpInstrumentation.INSTANCE, executionId, schema, executionStrategy, executionStrategy, executionStrategy, null, null, variables, "context", "root")
     }
 
 
@@ -54,7 +59,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = new GraphQLList(GraphQLString)
         def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
-                .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
+                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
                 .fields(["fld": []])
                 .build()
@@ -72,7 +77,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = new GraphQLList(GraphQLString)
         def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
-                .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
+                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
                 .fields(["fld": []])
                 .build()
@@ -88,7 +93,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = Scalars.GraphQLInt
-        def typeInfo = TypeInfo.newTypeInfo().type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         String result = "not a number"
 
@@ -113,7 +118,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         GraphQLEnumType enumType = newEnum().name("Enum").value("value").build()
-        def typeInfo = TypeInfo.newTypeInfo().type(enumType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(enumType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         String result = "not a enum number"
 
@@ -159,12 +164,12 @@ class ExecutionStrategyTest extends Specification {
 
         ExecutionContext executionContext = buildContext()
         def fieldType = NullProducingScalar
-        def typeInfo = TypeInfo.newTypeInfo().type(nonNull(fieldType)).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(nonNull(fieldType)).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
 
         when:
         def parameters = newParameters()
-                .typeInfo(TypeInfo.newTypeInfo().type(fieldType))
+                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(fieldType))
                 .source(result)
                 .fields(["dummy": []])
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -197,22 +202,32 @@ class ExecutionStrategyTest extends Specification {
     @SuppressWarnings("GroovyVariableNotAssigned")
     def "resolveField creates correct DataFetchingEnvironment"() {
         def dataFetcher = Mock(DataFetcher)
-        def fieldDefinition = newFieldDefinition().name("someField").type(GraphQLString).dataFetcher(dataFetcher).build()
+        def fieldDefinition = newFieldDefinition()
+                .name("someField")
+                .type(GraphQLString)
+                .dataFetcher(dataFetcher)
+                .argument(newArgument().name("arg1").type(GraphQLString))
+                .build()
         def objectType = newObject()
                 .name("Test")
                 .field(fieldDefinition)
                 .build()
-        def schema = GraphQLSchema.newSchema().query(objectType).build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
         ExecutionContext executionContext = buildContext(schema)
-        def typeInfo = TypeInfo.newTypeInfo().type(objectType).build()
+        ExecutionTypeInfo typeInfo = ExecutionTypeInfo.newTypeInfo().type(objectType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
-        Field field = new Field("someField")
+        Argument argument = new Argument("arg1", new StringValue("argVal"))
+        Field field = new Field("someField", [argument])
+        ExecutionPath executionPath = ExecutionPath.rootPath().segment("test")
+
         def parameters = newParameters()
                 .typeInfo(typeInfo)
                 .source("source")
                 .fields(["someField": [field]])
                 .field([field])
                 .nonNullFieldValidator(nullableFieldValidator)
+                .path(executionPath)
                 .build()
         DataFetchingEnvironment environment
 
@@ -228,7 +243,11 @@ class ExecutionStrategyTest extends Specification {
         environment.fields == [field]
         environment.root == "root"
         environment.parentType == objectType
-        // TODO: there are more properties we should check here
+        environment.arguments == ["arg1": "argVal"]
+        environment.fieldTypeInfo.type == GraphQLString
+        environment.fieldTypeInfo.path == executionPath
+        environment.fieldTypeInfo.parentTypeInfo.type == objectType
+        environment.executionId == ExecutionId.from("executionId123")
     }
 
     def exceptionSetupFixture(expectedException) {
@@ -245,7 +264,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
         def schema = GraphQLSchema.newSchema().query(objectType).build()
         ExecutionContext executionContext = buildContext(schema)
-        def typeInfo = TypeInfo.newTypeInfo().type(objectType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(objectType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         ExecutionPath expectedPath = ExecutionPath.rootPath().segment("someField")
 
