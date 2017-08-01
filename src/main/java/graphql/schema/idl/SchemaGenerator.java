@@ -337,6 +337,7 @@ public class SchemaGenerator {
     private GraphQLObjectType buildObjectType(BuildContext buildCtx, ObjectTypeDefinition typeDefinition) {
 
         GraphQLObjectType.Builder builder = GraphQLObjectType.newObject();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
@@ -397,6 +398,7 @@ public class SchemaGenerator {
 
     private GraphQLInterfaceType buildInterfaceType(BuildContext buildCtx, InterfaceTypeDefinition typeDefinition) {
         GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
@@ -409,6 +411,7 @@ public class SchemaGenerator {
 
     private GraphQLUnionType buildUnionType(BuildContext buildCtx, UnionTypeDefinition typeDefinition) {
         GraphQLUnionType.Builder builder = GraphQLUnionType.newUnionType();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
         builder.typeResolver(getTypeResolverForUnion(buildCtx, typeDefinition));
@@ -426,6 +429,7 @@ public class SchemaGenerator {
 
     private GraphQLEnumType buildEnumType(BuildContext buildCtx, EnumTypeDefinition typeDefinition) {
         GraphQLEnumType.Builder builder = GraphQLEnumType.newEnum();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
@@ -452,6 +456,7 @@ public class SchemaGenerator {
 
     private GraphQLFieldDefinition buildField(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
         GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
+        builder.definition(fieldDef);
         builder.name(fieldDef.getName());
         builder.description(buildDescription(fieldDef));
         builder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
@@ -495,6 +500,7 @@ public class SchemaGenerator {
 
     private GraphQLInputObjectType buildInputObjectType(BuildContext buildCtx, InputObjectTypeDefinition typeDefinition) {
         GraphQLInputObjectType.Builder builder = GraphQLInputObjectType.newInputObject();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
@@ -505,6 +511,7 @@ public class SchemaGenerator {
 
     private GraphQLInputObjectField buildInputField(BuildContext buildCtx, InputValueDefinition fieldDef) {
         GraphQLInputObjectField.Builder fieldBuilder = GraphQLInputObjectField.newInputObjectField();
+        fieldBuilder.definition(fieldDef);
         fieldBuilder.name(fieldDef.getName());
         fieldBuilder.description(buildDescription(fieldDef));
 
@@ -519,6 +526,7 @@ public class SchemaGenerator {
 
     private GraphQLArgument buildArgument(BuildContext buildCtx, InputValueDefinition valueDefinition) {
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+        builder.definition(valueDefinition);
         builder.name(valueDefinition.getName());
         builder.description(buildDescription(valueDefinition));
         GraphQLInputType inputType = buildInputType(buildCtx, valueDefinition.getType());
