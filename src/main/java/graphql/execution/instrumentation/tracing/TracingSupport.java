@@ -5,7 +5,7 @@ import graphql.execution.ExecutionTypeInfo;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.DataFetchingEnvironment;
 
-import java.time.ZonedDateTime;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,16 +23,16 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 @PublicApi
 public class TracingSupport implements InstrumentationState {
 
-    private final ZonedDateTime startTime;
-    private final long startNanos;
+    private final Instant startRequestTime;
+    private final long startRequestNanos;
     private final ConcurrentLinkedQueue<Map<String, Object>> fieldData;
 
     /**
      * The timer starts as soon as you create this object
      */
     public TracingSupport() {
-        startNanos = System.nanoTime();
-        startTime = ZonedDateTime.now();
+        startRequestNanos = System.nanoTime();
+        startRequestTime = Instant.now();
         fieldData = new ConcurrentLinkedQueue<>();
     }
 
@@ -59,7 +59,7 @@ public class TracingSupport implements InstrumentationState {
         return () -> {
             long now = System.nanoTime();
             long duration = now - startFieldFetch;
-            long startOffset = now - this.startNanos;
+            long startOffset = now - startRequestNanos;
             ExecutionTypeInfo typeInfo = dataFetchingEnvironment.getFieldTypeInfo();
 
             Map<String, Object> fetchMap = new LinkedHashMap<>();
@@ -83,9 +83,9 @@ public class TracingSupport implements InstrumentationState {
 
         Map<String, Object> traceMap = new LinkedHashMap<>();
         traceMap.put("version", 1L);
-        traceMap.put("startTime", rfc3339(startTime));
-        traceMap.put("endTime", rfc3339(ZonedDateTime.now()));
-        traceMap.put("duration", System.nanoTime() - startNanos);
+        traceMap.put("startTime", rfc3339(startRequestTime));
+        traceMap.put("endTime", rfc3339(Instant.now()));
+        traceMap.put("duration", System.nanoTime() - startRequestNanos);
         traceMap.put("execution", executionData());
 
         return traceMap;
@@ -98,8 +98,8 @@ public class TracingSupport implements InstrumentationState {
         return map;
     }
 
-    private String rfc3339(ZonedDateTime time) {
-        return time.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+    private String rfc3339(Instant time) {
+        return DateTimeFormatter.ISO_INSTANT.format(time);
     }
 
 }
