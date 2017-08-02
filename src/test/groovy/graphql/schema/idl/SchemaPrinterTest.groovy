@@ -2,21 +2,7 @@ package graphql.schema.idl
 
 import graphql.Scalars
 import graphql.TypeResolutionEnvironment
-import graphql.schema.Coercing
-import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLEnumType
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLInputType
-import graphql.schema.GraphQLInterfaceType
-import graphql.schema.GraphQLList
-import graphql.schema.GraphQLNonNull
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLScalarType
-import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLType
-import graphql.schema.GraphQLUnionType
-import graphql.schema.TypeResolver
+import graphql.schema.*
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -329,6 +315,24 @@ type Query {
 }
 """
 
+    }
+
+    def "prints directives"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("field")
+                .deprecate("reason")
+                .type(GraphQLString).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """type Query {
+  field: String @deprecate(reason: "reason")
+}
+"""
     }
 
     def "prints union"() {
