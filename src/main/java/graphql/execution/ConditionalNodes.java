@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import graphql.language.Directive;
-import graphql.language.NodeUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -38,6 +37,9 @@ public class ConditionalNodes {
     }
 
     private Directive getDirectiveByName(List<Directive> directives, String name) {
+        if (directives.isEmpty()) {
+            return null;
+        }
         return directivesByName(directives).get(name);
     }
 
