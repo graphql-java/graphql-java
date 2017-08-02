@@ -59,4 +59,29 @@ class ExecutionResultTest extends Specification {
         specMap["errors"] == KNOWN_ERRORS
     }
 
+    def "can have extensions"() {
+
+        given:
+        def extensionsObj = ['list' : ['a','b']]
+        def er = new ExecutionResultImpl("hello world", KNOWN_ERRORS,extensionsObj)
+        when:
+        def actual = er.getData()
+        def errors = er.getErrors()
+        def extensions = er.getExtensions()
+        def specMap = er.toSpecification()
+        then:
+        actual == "hello world"
+
+        errors.size() == 1
+        errors == KNOWN_ERRORS
+
+        extensions == extensionsObj
+
+        specMap.size() == 3
+        specMap["data"] == "hello world"
+        specMap["errors"] == KNOWN_ERRORS
+        specMap["extensions"] == extensionsObj
+
+    }
+
 }

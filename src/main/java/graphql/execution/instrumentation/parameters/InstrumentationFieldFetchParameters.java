@@ -12,7 +12,7 @@ public class InstrumentationFieldFetchParameters extends InstrumentationFieldPar
     private final DataFetchingEnvironment environment;
 
     public InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment) {
-        super(getExecutionContext, fieldDef);
+        super(getExecutionContext, fieldDef, environment.getFieldTypeInfo());
         this.environment = environment;
     }
 

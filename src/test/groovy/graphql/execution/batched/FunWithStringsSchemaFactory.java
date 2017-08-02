@@ -40,6 +40,28 @@ public class FunWithStringsSchemaFactory {
             }
         });
 
+        factory.setThrowExceptionFetcher(new DataFetcher() {
+            @Override
+            @Batched
+            public Object get(DataFetchingEnvironment environment) {
+                throw new RuntimeException("TestException");
+            }
+        });
+
+        factory.setReturnBadList(new DataFetcher() {
+            @Override
+            @Batched
+            @SuppressWarnings("unchecked")
+            public Object get(DataFetchingEnvironment environment) {
+                List<String> retVal = new ArrayList<>();
+                for (String s: (List<String>) environment.getSource()) {
+                    retVal.add("null".equals(s) ? null : s);
+                }
+                retVal.add("badValue");
+                return retVal;
+            }
+        });
+
         factory.setAppendFetcher(new DataFetcher() {
             @Override
             @Batched
@@ -133,6 +155,10 @@ public class FunWithStringsSchemaFactory {
 
     private DataFetcher stringObjectValueFetcher = e -> "null".equals(e.getSource()) ? null : e.getSource();
 
+    private DataFetcher throwExceptionFetcher = e -> { throw new RuntimeException("TestException"); };
+
+    private DataFetcher returnBadListFetcher = e -> { throw new RuntimeException("This field should only be queried in batch."); };
+
     private DataFetcher shatterFetcher = e -> {
         String source = e.getSource();
         if(source.isEmpty()) {
@@ -197,6 +223,14 @@ public class FunWithStringsSchemaFactory {
         this.stringObjectValueFetcher = fetcher;
     }
 
+    public void setThrowExceptionFetcher(DataFetcher fetcher) {
+        this.throwExceptionFetcher = fetcher;
+    }
+
+    public void setReturnBadList(DataFetcher fetcher) {
+        this.returnBadListFetcher = fetcher;
+    }
+
     GraphQLSchema createSchema() {
 
         GraphQLObjectType stringObjectType = GraphQLObjectType.newObject()
@@ -213,7 +247,14 @@ public class FunWithStringsSchemaFactory {
                         .name("veryNonNullValue")
                         .type(new GraphQLNonNull(new GraphQLNonNull(Scalars.GraphQLString)))
                         .dataFetcher(stringObjectValueFetcher))
-
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("throwException")
+                        .type(Scalars.GraphQLString)
+                        .dataFetcher(throwExceptionFetcher))
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("returnBadList")
+                        .type(Scalars.GraphQLString)
+                        .dataFetcher(returnBadListFetcher))
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("shatter")
                         .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject")))))

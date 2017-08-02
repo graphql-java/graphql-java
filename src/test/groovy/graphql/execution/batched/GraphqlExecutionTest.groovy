@@ -4,6 +4,7 @@
 
 package graphql.execution.batched
 
+import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.SimpleExecutionStrategy
@@ -35,6 +36,34 @@ class GraphqlExecutionTest extends Specification {
         nullValueMap.put("value", null);
     }
 
+    private void runTestExpectErrors(String query, Exception exception) {
+        runTestSimpleExpectErrors(query, exception)
+        runTestBatchingUnbatchedExpectErrors(query, exception)
+        runTestBatchingExpectErrors(query, exception)
+    }
+
+    private void runTestBatchingUnbatchedExpectErrors(String query, Exception exception) {
+        def errors = this.graphQLBatchedButUnbatched.execute(query).getErrors()
+        assert errors.size() == 1
+        assert exception.class == ((ExceptionWhileDataFetching) errors.get(0)).getException().class
+        assert exception.getMessage() == ((ExceptionWhileDataFetching) errors.get(0)).getException().getMessage()
+    }
+
+    private void runTestBatchingExpectErrors(String query, Exception exception, boolean checkString = true) {
+        def errors = this.graphQLBatchedValue.execute(query).getErrors()
+        assert errors.size() == 1
+        assert exception.class == ((ExceptionWhileDataFetching) errors.get(0)).getException().class
+        if (checkString)
+            assert exception.getMessage() == ((ExceptionWhileDataFetching) errors.get(0)).getException().getMessage()
+    }
+
+    private void runTestSimpleExpectErrors(String query, Exception exception) {
+        def errors = this.graphQLSimple.execute(query).getErrors()
+        assert errors.size() == 1
+        assert exception.class == ((ExceptionWhileDataFetching) errors.get(0)).getException().class
+        assert exception.getMessage() == ((ExceptionWhileDataFetching) errors.get(0)).getException().getMessage()
+    }
+
     // Split into sub-methods so the stack trace is more useful
     private void runTest(String query, Map<String, Object> expected) {
         runTestSimple(query, expected);
@@ -49,7 +78,6 @@ class GraphqlExecutionTest extends Specification {
     private void runTestBatching(String query, Map<String, Object> expected) {
         assert expected == this.graphQLBatchedValue.execute(query).getData();
     }
-
 
     private void runTestSimple(String query, Map<String, Object> expected) {
         assert expected == this.graphQLSimple.execute(query).getData();
@@ -378,5 +406,21 @@ class GraphqlExecutionTest extends Specification {
         }
     }
 
+    def "Handle exception inside DataFetcher"() {
+        given:
+        String query = "{ string(value: \"\"){ throwException} }"
+        Map<String, Object> expected = mapOf("string", mapOf("throwException", null))
+        expect:
+        runTest(query, expected)
+        runTestExpectErrors(query, new RuntimeException("TestException"))
+    }
 
+    def "Invalid batch size return does not crash whole query but generates error"() {
+        given:
+        String query = "{ string(value: \"\"){ returnBadList } }"
+        Map<String, Object> expected = mapOf("string", mapOf("returnBadList", null))
+        expect:
+        runTestBatching(query, expected)
+        runTestBatchingExpectErrors(query, new DataFetchingException(), false)
+    }
 }
