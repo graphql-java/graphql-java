@@ -328,9 +328,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         List<Object> values;
         try {
             values = (List<Object>) getDataFetcher(fieldDef).get(environment);
+            if (values == null || values.size() != nodeData.size()) {
+                throw new DataFetchingException("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
+            }
         } catch (Exception e) {
-            values = new ArrayList<>(nodeData.size());
-            log.warn("Exception while fetching data", e);
+            values = Collections.nCopies(nodeData.size(), null);
 
             DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                     .executionContext(executionContext)
@@ -341,7 +343,6 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                     .path(parameters.path())
                     .exception(e)
                     .build();
-
             dataFetcherExceptionHandler.accept(handlerParameters);
         }
 
