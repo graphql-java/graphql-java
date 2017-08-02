@@ -294,7 +294,7 @@ class ExecutionStrategyTest extends Specification {
 
 
         boolean handlerCalled = false
-        ExecutionStrategy overridingStrategy = new SimpleExecutionStrategy(new SimpleDataFetcherExceptionHandler() {
+        ExecutionStrategy overridingStrategy = new AsyncExecutionStrategy(new SimpleDataFetcherExceptionHandler() {
             @Override
             void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
                 handlerCalled = true

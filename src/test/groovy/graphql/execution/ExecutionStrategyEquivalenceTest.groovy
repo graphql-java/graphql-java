@@ -4,6 +4,7 @@ import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.ForkJoinPool
 
@@ -109,7 +110,8 @@ class ExecutionStrategyEquivalenceTest extends Specification {
     }
 
 
-    def "execution strategy equivalence"() {
+    @Unroll
+    def "execution strategy equivalence (strategy: #strategyType)"() {
 
         expect:
 
@@ -130,11 +132,12 @@ class ExecutionStrategyEquivalenceTest extends Specification {
 
         where:
 
-        strategyType      | strategyUnderTest                                 | expectedQueriesAndResults
-        "simple"          | new SimpleExecutionStrategy()                     | standardQueriesAndResults()
-        "breadthFirst"    | new BreadthFirstExecutionTestStrategy()           | standardQueriesAndResults()
-        "executorService" | executorServiceStrategy()                         | standardQueriesAndResults()
-        "asyncFetch"      | new AsyncFetchThenCompleteExecutionTestStrategy() | standardQueriesAndResults()
+        strategyType      | strategyUnderTest                       | expectedQueriesAndResults
+        "async"           | new AsyncExecutionStrategy()            | standardQueriesAndResults()
+        "asyncSerial"     | new AsyncSerialExecutionStrategy()      | standardQueriesAndResults()
+        "breadthFirst"    | new BreadthFirstExecutionTestStrategy() | standardQueriesAndResults()
+        "executorService" | executorServiceStrategy()               | standardQueriesAndResults()
+        "breadthFirst"    | new BreadthFirstTestStrategy()          | standardQueriesAndResults()
 
     }
 
