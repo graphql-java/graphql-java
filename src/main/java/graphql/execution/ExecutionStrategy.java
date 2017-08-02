@@ -165,7 +165,7 @@ public abstract class ExecutionStrategy {
 
         CompletableFuture<ExecutionResult> result = completeField(executionContext, parameters, fetchedValue);
 
-        result.thenAccept(fieldCtx::onEnd);
+        result.whenComplete(fieldCtx::onEnd);
 
         return result;
     }
@@ -216,9 +216,9 @@ public abstract class ExecutionStrategy {
             dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
             fetchedValue = dataFetcher.get(environment);
 
-            fetchCtx.onEnd(fetchedValue);
+            fetchCtx.onEnd(fetchedValue, null);
         } catch (Exception e) {
-            fetchCtx.onEnd(e);
+            fetchCtx.onEnd(null, e);
 
             DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                     .executionContext(executionContext)
