@@ -108,7 +108,8 @@ public interface Instrumentation {
     /**
      * This is called to allow instrumentation to instrument the execution result in some way
      *
-     * @param parameters the parameters to this step
+     * @param executionResult the result to instrument
+     * @param parameters      the parameters to this step
      *
      * @return a new execution result
      */
