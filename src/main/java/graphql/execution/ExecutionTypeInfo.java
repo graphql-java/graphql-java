@@ -6,6 +6,7 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 
 import java.util.Stack;
 
@@ -14,7 +15,7 @@ import static graphql.Assert.assertNotNull;
 /**
  * As the graphql query executes, it forms a hierarchy from parent fields (and their type) to their child fields (and their type)
  * until a scalar type is encountered; this class captures that execution type information.
- *
+ * <p>
  * The static graphql type system (rightly) does not contain a hierarchy of child to parent types nor the nonnull ness of
  * type instances, so this helper class adds this information during query execution.
  */
@@ -142,6 +143,19 @@ public class ExecutionTypeInfo {
             }
         }
         return decoration;
+    }
+
+    /**
+     * @return the type in graphql AST format, eg [typeName!]!
+     */
+    public String toAst() {
+        // type info unwraps non nulls - we need it back here
+        GraphQLType type = this.getType();
+        if (isNonNullType()) {
+            type = GraphQLNonNull.nonNull(type);
+        }
+        return GraphQLTypeUtil.getUnwrappedTypeName(type);
+
     }
 
     @Override

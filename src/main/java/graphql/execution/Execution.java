@@ -8,6 +8,7 @@ import graphql.Internal;
 import graphql.MutationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -44,11 +45,12 @@ public class Execution {
         this.instrumentation = instrumentation;
     }
 
-    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput) {
+    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .valuesResolver(new ValuesResolver())
                 .instrumentation(instrumentation)
+                .instrumentationState(instrumentationState)
                 .executionId(executionId)
                 .graphQLSchema(graphQLSchema)
                 .queryStrategy(queryStrategy)
