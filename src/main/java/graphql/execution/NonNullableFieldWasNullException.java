@@ -20,10 +20,26 @@ public class NonNullableFieldWasNullException extends RuntimeException implement
 
 
     public NonNullableFieldWasNullException(ExecutionTypeInfo typeInfo, ExecutionPath path) {
-        super(buildMsg(assertNotNull(typeInfo), assertNotNull(path)));
+        super(
+                buildMsg(assertNotNull(typeInfo),
+                        assertNotNull(path))
+        );
         this.typeInfo = typeInfo;
         this.path = path;
     }
+
+    public NonNullableFieldWasNullException(NonNullableFieldWasNullException previousException) {
+        super(
+                buildMsg(
+                        assertNotNull(previousException.typeInfo.getParentTypeInfo()),
+                        assertNotNull(previousException.typeInfo.getParentTypeInfo().getPath())
+                ),
+                previousException
+        );
+        this.typeInfo = previousException.typeInfo.getParentTypeInfo();
+        this.path = previousException.typeInfo.getParentTypeInfo().getPath();
+    }
+
 
     private static String buildMsg(ExecutionTypeInfo typeInfo, ExecutionPath path) {
         if (typeInfo.hasParentType()) {
@@ -60,8 +76,8 @@ public class NonNullableFieldWasNullException extends RuntimeException implement
     @Override
     public String toString() {
         return "NonNullableFieldWasNullException{" +
-                "path=" + path +
-                "typeInfo=" + typeInfo +
+                " path=" + path +
+                " typeInfo=" + typeInfo +
                 '}';
     }
 }
