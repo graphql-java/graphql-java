@@ -2,7 +2,7 @@ package graphql.execution.instrumentation
 
 import graphql.GraphQL
 import graphql.StarWarsSchema
-import graphql.execution.SimpleExecutionStrategy
+import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.tracing.TracingInstrumentation
 import spock.lang.Specification
 
@@ -26,7 +26,7 @@ class TracingInstrumentationTest extends Specification {
 
         def instrumentation = new TracingInstrumentation();
 
-        def strategy = new SimpleExecutionStrategy()
+        def strategy = new AsyncExecutionStrategy()
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(strategy)

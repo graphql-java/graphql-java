@@ -1,10 +1,11 @@
 package graphql
 
+import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.ExecutorServiceExecutionStrategy
-import graphql.execution.SimpleExecutionStrategy
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -33,7 +34,8 @@ class NonNullHandlingTest extends Specification {
         ExecutionInput.newExecutionInput().query(query).build()
     }
 
-    def "#268 - null child field values are allowed in nullable parent type"() {
+    @Unroll
+    def "#268 - null child field values are allowed in nullable parent type (strategy: #strategyName)"() {
 
         // see https://github.com/graphql-java/graphql-java/issues/268
 
@@ -83,10 +85,11 @@ class NonNullHandlingTest extends Specification {
 
         strategyName | executionStrategy
         'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new SimpleExecutionStrategy()
+        'simple'     | new AsyncExecutionStrategy()
     }
 
-    def "#268 - null child field values are NOT allowed in non nullable parent types"() {
+    @Unroll
+    def "#268 - null child field values are NOT allowed in non nullable parent types (strategy: #strategyName)"() {
 
         // see https://github.com/graphql-java/graphql-java/issues/268
 
@@ -137,10 +140,11 @@ class NonNullHandlingTest extends Specification {
 
         strategyName | executionStrategy
         'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new SimpleExecutionStrategy()
+        'simple'     | new AsyncExecutionStrategy()
     }
 
-    def "#581 - null child field values are allowed in nullable grand parent type"() {
+    @Unroll
+    def "#581 - null child field values are allowed in nullable grand parent type (strategy: #strategyName)"() {
 
         given:
 
@@ -200,11 +204,12 @@ class NonNullHandlingTest extends Specification {
 
         strategyName | executionStrategy
         'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new SimpleExecutionStrategy()
+        'simple'     | new AsyncExecutionStrategy()
 
     }
 
-    def "#581 - null child field values are NOT allowed in non nullable grand parent types"() {
+    @Unroll
+    def "#581 - null child field values are NOT allowed in non nullable grand parent types (strategy: #strategyName)"() {
 
         given:
 
@@ -264,7 +269,7 @@ class NonNullHandlingTest extends Specification {
 
         strategyName | executionStrategy
         'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new SimpleExecutionStrategy()
+        'simple'     | new AsyncExecutionStrategy()
 
     }
 
