@@ -10,7 +10,7 @@ import java.util.Map;
 @Internal
 public class ExecutionResultImpl implements ExecutionResult {
 
-    private final List<GraphQLError> errors = new ArrayList<>();
+    private final List<GraphQLError> errors;
     private final Object data;
     private final transient boolean dataPresent;
 
@@ -31,7 +31,9 @@ public class ExecutionResultImpl implements ExecutionResult {
         this.data = data;
 
         if (errors != null && !errors.isEmpty()) {
-            this.errors.addAll(errors);
+            this.errors = Collections.unmodifiableList(new ArrayList<>(errors));
+        } else {
+            this.errors = Collections.emptyList();
         }
     }
 
@@ -43,7 +45,7 @@ public class ExecutionResultImpl implements ExecutionResult {
 
     @Override
     public List<GraphQLError> getErrors() {
-        return new ArrayList<>(errors);
+        return errors;
     }
 
     @Override
