@@ -552,7 +552,7 @@ public abstract class ExecutionStrategy {
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
         ExecutionTypeInfo typeInfo = e.getTypeInfo();
         if (typeInfo.hasParentType() && typeInfo.getParentTypeInfo().isNonNullType()) {
-            throw e;
+            throw new NonNullableFieldWasNullException(e);
         }
     }
 
