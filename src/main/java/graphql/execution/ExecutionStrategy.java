@@ -36,8 +36,8 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
-import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
+import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
@@ -46,7 +46,6 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * An execution strategy is give a list of fields from the graphql query to execute and find values for using a recursive strategy.
- *
  * <pre>
  *     query {
  *          friends {
@@ -158,7 +157,9 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.field().get(0));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(new InstrumentationFieldParameters(executionContext, fieldDef));
+        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
+                new InstrumentationFieldParameters(executionContext, fieldDef, fieldTypeInfo(parameters, fieldDef))
+        );
 
         Object fetchedValue = fetchField(executionContext, parameters);
 
@@ -207,11 +208,12 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment));
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment);
+        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
         Object fetchedValue = null;
         try {
             DataFetcher dataFetcher = fieldDef.getDataFetcher();
-            dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher);
+            dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
             fetchedValue = dataFetcher.get(environment);
 
             fetchCtx.onEnd(fetchedValue);
@@ -582,8 +584,8 @@ public abstract class ExecutionStrategy {
     /**
      * Builds the type info hierarchy for the current field
      *
-     * @param parameters contains the parameters holding the fields to be executed and source object
-     * @param fieldDefinition   the field definition to build type info for
+     * @param parameters      contains the parameters holding the fields to be executed and source object
+     * @param fieldDefinition the field definition to build type info for
      *
      * @return a new type info
      */

@@ -23,6 +23,12 @@ public interface ExecutionResult {
     List<GraphQLError> getErrors();
 
     /**
+     * @return a map of extensions or null if there are none
+     */
+    Map<Object,Object> getExtensions();
+
+
+    /**
      * The graphql specification says that result of a call should be a map that follows certain rules on what items
      * should be present.  Certain JSON serializers may or may interpret {@link ExecutionResult} to spec, so this method
      * is provided to produce a map that strictly follows the specification.

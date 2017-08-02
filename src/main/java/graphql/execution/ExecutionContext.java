@@ -3,6 +3,7 @@ package graphql.execution;
 
 import graphql.GraphQLError;
 import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
@@ -15,6 +16,7 @@ public class ExecutionContext {
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionId executionId;
+    private final InstrumentationState instrumentationState;
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -26,9 +28,10 @@ public class ExecutionContext {
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final Instrumentation instrumentation;
 
-    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
+    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
+        this.instrumentationState = instrumentationState;
         this.queryStrategy = queryStrategy;
         this.mutationStrategy = mutationStrategy;
         this.subscriptionStrategy = subscriptionStrategy;
@@ -43,6 +46,10 @@ public class ExecutionContext {
 
     public ExecutionId getExecutionId() {
         return executionId;
+    }
+
+    public InstrumentationState getInstrumentationState() {
+        return instrumentationState;
     }
 
     public Instrumentation getInstrumentation() {

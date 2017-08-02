@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.StarWarsData;
+import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -28,7 +29,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
 /**
  * An very simple example of serving a qraphql schema over http.
- *
+ * <p>
  * More info can be found here : http://graphql.org/learn/serving-over-http/
  */
 public class HttpMain extends AbstractHandler {
@@ -93,7 +94,11 @@ public class HttpMain extends AbstractHandler {
         GraphQLSchema schema = buildStarWarsSchema();
 
         // finally you build a runtime graphql object and execute the query
-        GraphQL graphQL = GraphQL.newGraphQL(schema).build();
+        GraphQL graphQL = GraphQL
+                .newGraphQL(schema)
+                // instrumentation is pluggable
+                .instrumentation(new TracingInstrumentation())
+                .build();
         ExecutionResult executionResult = graphQL.execute(executionInput.build());
 
         returnAsJson(httpResponse, executionResult);
