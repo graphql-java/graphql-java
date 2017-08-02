@@ -1,7 +1,11 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
-import graphql.execution.instrumentation.parameters.*;
+import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.schema.DataFetcher;
 import graphql.validation.ValidationError;
@@ -31,6 +35,7 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
+     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters);
@@ -40,6 +45,7 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
+     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters);
@@ -49,6 +55,7 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
+     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters);
@@ -58,6 +65,7 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
+     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters);
@@ -67,6 +75,7 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
+     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters);
@@ -76,6 +85,7 @@ public interface Instrumentation {
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
+     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters);
@@ -98,7 +108,8 @@ public interface Instrumentation {
     /**
      * This is called to allow instrumentation to instrument the execution result in some way
      *
-     * @param parameters the parameters to this step
+     * @param executionResult the result to instrument
+     * @param parameters      the parameters to this step
      *
      * @return a new execution result
      */

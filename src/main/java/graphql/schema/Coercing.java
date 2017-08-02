@@ -16,7 +16,7 @@ import graphql.PublicSpi;
  * Java object value that is acceptable to the scalar type.  Again using the DateTime example, the input coercion would try to
  * parse an ISO date time object or throw an exception if it cant.
  *
- * See <a href="http://facebook.github.io/graphql/#sec-Scalars>http://facebook.github.io/graphql/#sec-Scalars</a>
+ * See http://facebook.github.io/graphql/#sec-Scalars
  */
 @PublicSpi
 public interface Coercing<I, O> {

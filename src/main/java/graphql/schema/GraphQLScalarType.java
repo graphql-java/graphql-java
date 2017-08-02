@@ -8,12 +8,11 @@ import static graphql.Assert.assertValidName;
 
 /**
  * This allows you to define new scalar types.
- * <p>
  * <blockquote>
  * GraphQL provides a number of built‐in scalars, but type systems can add additional scalars with semantic meaning,
  * for example, a GraphQL system could define a scalar called Time which, while serialized as a string, promises to
  * conform to ISO‐8601. When querying a field of type Time, you can then rely on the ability to parse the result with an ISO‐8601 parser and use a client‐specific primitive for time.
- * <p>
+ *
  * From the spec : http://facebook.github.io/graphql/#sec-Scalars
  * </blockquote>
  */
