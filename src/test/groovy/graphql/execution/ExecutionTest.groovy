@@ -4,6 +4,7 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
 import graphql.MutationSchema
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.NoOpInstrumentation
 import graphql.parser.Parser
 import spock.lang.Specification
@@ -35,6 +36,7 @@ class ExecutionTest extends Specification {
     def queryStrategy = new CountingExecutionStrategy()
     def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, NoOpInstrumentation.INSTANCE)
     def emptyExecutionInput = ExecutionInput.newExecutionInput().build()
+    def instrumentationState = new InstrumentationState() {}
 
     def "query strategy is used for query requests"() {
         given:
@@ -53,7 +55,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
 
         then:
         queryStrategy.execute == 1
@@ -73,7 +75,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
 
         then:
         queryStrategy.execute == 0
@@ -93,7 +95,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
 
         then:
         queryStrategy.execute == 0

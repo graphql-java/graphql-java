@@ -14,11 +14,21 @@ import java.util.List;
 
 /**
  * Provides the capability to instrument the execution steps of a GraphQL query.
- *
+ * <p>
  * For example you might want to track which fields are taking the most time to fetch from the backing database
  * or log what fields are being asked for.
  */
 public interface Instrumentation {
+
+    /**
+     * This will be called just before execution to create an object that is given back to all instrumentation methods
+     * to allow them to have per execution request state
+     *
+     * @return a state object that is passed to each method
+     */
+    default InstrumentationState createState() {
+        return null;
+    }
 
     /**
      * This is called just before a query is executed and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
@@ -87,10 +97,23 @@ public interface Instrumentation {
      * implementations widely vary.
      *
      * @param dataFetcher the data fetcher about to be used
+     * @param parameters  the parameters describing the field to be fetched
      *
      * @return a non null instrumented data fetcher, the default is to return to the same object
      */
-    default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher) {
+    default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         return dataFetcher;
+    }
+
+    /**
+     * This is called to allow instrumentation to instrument the execution result in some way
+     *
+     * @param executionResult the result to instrument
+     * @param parameters      the parameters to this step
+     *
+     * @return a new execution result
+     */
+    default ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        return executionResult;
     }
 }

@@ -10,7 +10,6 @@ import spock.lang.Specification
 class InstrumentationTest extends Specification {
 
 
-
     def 'Instrumentation of simple serial execution'() {
         given:
 
@@ -75,8 +74,15 @@ class InstrumentationTest extends Specification {
         instrumentation.dfClasses[1] == PropertyDataFetcher.class
 
         instrumentation.dfInvocations.size() == 2
-        instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
-        instrumentation.dfInvocations[1].getFieldDefinition().name == 'id'
-    }
 
+        instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
+        instrumentation.dfInvocations[0].getFieldTypeInfo().getPath().toList() == ['hero']
+        instrumentation.dfInvocations[0].getFieldTypeInfo().getType().name == 'Character'
+        !instrumentation.dfInvocations[0].getFieldTypeInfo().isNonNullType()
+
+        instrumentation.dfInvocations[1].getFieldDefinition().name == 'id'
+        instrumentation.dfInvocations[1].getFieldTypeInfo().getPath().toList() == ['hero', 'id']
+        instrumentation.dfInvocations[1].getFieldTypeInfo().getType().name == 'String'
+        instrumentation.dfInvocations[1].getFieldTypeInfo().isNonNullType()
+    }
 }

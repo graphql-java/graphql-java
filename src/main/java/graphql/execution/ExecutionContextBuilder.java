@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.GraphQLException;
 import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
@@ -18,6 +19,7 @@ public class ExecutionContextBuilder {
     private ValuesResolver valuesResolver;
     private Instrumentation instrumentation;
     private ExecutionId executionId;
+    private InstrumentationState instrumentationState;
     private GraphQLSchema graphQLSchema;
     private ExecutionStrategy queryStrategy;
     private ExecutionStrategy mutationStrategy;
@@ -35,6 +37,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
         this.instrumentation = instrumentation;
+        return this;
+    }
+
+    public ExecutionContextBuilder instrumentationState(InstrumentationState instrumentationState) {
+        this.instrumentationState = instrumentationState;
         return this;
     }
 
@@ -124,6 +131,7 @@ public class ExecutionContextBuilder {
                 instrumentation,
                 executionId,
                 graphQLSchema,
+                instrumentationState,
                 queryStrategy,
                 mutationStrategy,
                 subscriptionStrategy,

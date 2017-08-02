@@ -1,5 +1,7 @@
 package graphql.schema.idl;
 
+import graphql.Assert;
+import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -36,6 +38,8 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
@@ -59,6 +63,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static java.util.stream.Collectors.joining;
@@ -332,6 +337,7 @@ public class SchemaGenerator {
     private GraphQLObjectType buildObjectType(BuildContext buildCtx, ObjectTypeDefinition typeDefinition) {
 
         GraphQLObjectType.Builder builder = GraphQLObjectType.newObject();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
@@ -392,6 +398,7 @@ public class SchemaGenerator {
 
     private GraphQLInterfaceType buildInterfaceType(BuildContext buildCtx, InterfaceTypeDefinition typeDefinition) {
         GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
@@ -404,6 +411,7 @@ public class SchemaGenerator {
 
     private GraphQLUnionType buildUnionType(BuildContext buildCtx, UnionTypeDefinition typeDefinition) {
         GraphQLUnionType.Builder builder = GraphQLUnionType.newUnionType();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
         builder.typeResolver(getTypeResolverForUnion(buildCtx, typeDefinition));
@@ -421,6 +429,7 @@ public class SchemaGenerator {
 
     private GraphQLEnumType buildEnumType(BuildContext buildCtx, EnumTypeDefinition typeDefinition) {
         GraphQLEnumType.Builder builder = GraphQLEnumType.newEnum();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
@@ -447,6 +456,7 @@ public class SchemaGenerator {
 
     private GraphQLFieldDefinition buildField(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
         GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
+        builder.definition(fieldDef);
         builder.name(fieldDef.getName());
         builder.description(buildDescription(fieldDef));
         builder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
@@ -490,6 +500,7 @@ public class SchemaGenerator {
 
     private GraphQLInputObjectType buildInputObjectType(BuildContext buildCtx, InputObjectTypeDefinition typeDefinition) {
         GraphQLInputObjectType.Builder builder = GraphQLInputObjectType.newInputObject();
+        builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(typeDefinition));
 
@@ -500,57 +511,59 @@ public class SchemaGenerator {
 
     private GraphQLInputObjectField buildInputField(BuildContext buildCtx, InputValueDefinition fieldDef) {
         GraphQLInputObjectField.Builder fieldBuilder = GraphQLInputObjectField.newInputObjectField();
+        fieldBuilder.definition(fieldDef);
         fieldBuilder.name(fieldDef.getName());
         fieldBuilder.description(buildDescription(fieldDef));
 
         // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
         //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
-
-        fieldBuilder.type(buildInputType(buildCtx, fieldDef.getType()));
-        fieldBuilder.defaultValue(buildValue(fieldDef.getDefaultValue()));
+        GraphQLInputType inputType = buildInputType(buildCtx, fieldDef.getType());
+        fieldBuilder.type(inputType);
+        fieldBuilder.defaultValue(buildValue(fieldDef.getDefaultValue(), inputType));
 
         return fieldBuilder.build();
     }
 
     private GraphQLArgument buildArgument(BuildContext buildCtx, InputValueDefinition valueDefinition) {
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+        builder.definition(valueDefinition);
         builder.name(valueDefinition.getName());
         builder.description(buildDescription(valueDefinition));
-
-        builder.type(buildInputType(buildCtx, valueDefinition.getType()));
-        builder.defaultValue(buildValue(valueDefinition.getDefaultValue()));
+        GraphQLInputType inputType = buildInputType(buildCtx, valueDefinition.getType());
+        builder.type(inputType);
+        builder.defaultValue(buildValue(valueDefinition.getDefaultValue(), inputType));
 
         return builder.build();
     }
 
 
-    private Object buildValue(Value value) {
+    private Object buildValue(Value value, GraphQLType requiredType) {
         Object result = null;
-        if (value instanceof IntValue) {
-            result = ((IntValue) value).getValue();
-        } else if (value instanceof FloatValue) {
-            result = ((FloatValue) value).getValue();
-        } else if (value instanceof StringValue) {
-            result = ((StringValue) value).getValue();
-        } else if (value instanceof EnumValue) {
+        if (requiredType instanceof GraphQLNonNull) {
+            requiredType = ((GraphQLNonNull)requiredType).getWrappedType();
+        }
+        if (requiredType instanceof GraphQLScalarType) {
+            result = ((GraphQLScalarType)requiredType).getCoercing().parseLiteral(value);
+        } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
             result = ((EnumValue) value).getName();
-        } else if (value instanceof BooleanValue) {
-            result = ((BooleanValue) value).isValue();
-        } else if (value instanceof ArrayValue) {
+        } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
             ArrayValue arrayValue = (ArrayValue) value;
-            result = arrayValue.getValues().stream().map(this::buildValue).toArray();
-        } else if (value instanceof ObjectValue) {
-            result = buildObjectValue((ObjectValue) value);
-        } else if (value instanceof NullValue) {
-            result = null;
+            GraphQLType wrappedType = ((GraphQLList) requiredType).getWrappedType();
+            result = arrayValue.getValues().stream()
+                .map(item -> this.buildValue(item, wrappedType)).collect(Collectors.toList());
+        } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
+            result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
+        } else if (value != null && !(value instanceof NullValue)) {
+            Assert.assertShouldNeverHappen(
+                "cannot build value of " + requiredType.getName() + " from " + String.valueOf(value));
         }
         return result;
-
     }
 
-    private Object buildObjectValue(ObjectValue defaultValue) {
+    private Object buildObjectValue(ObjectValue defaultValue, GraphQLInputObjectType objectType) {
         HashMap<String, Object> map = new LinkedHashMap<>();
-        defaultValue.getObjectFields().forEach(of -> map.put(of.getName(), buildValue(of.getValue())));
+        defaultValue.getObjectFields().forEach(of -> map.put(of.getName(),
+            buildValue(of.getValue(), objectType.getField(of.getName()).getType())));
         return map;
     }
 

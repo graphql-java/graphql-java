@@ -7,6 +7,7 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.SimpleExecutionStrategy;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
@@ -203,7 +204,7 @@ public class GraphQL {
      * @param query   the query/mutation/subscription
      * @param context custom object provided to each {@link graphql.schema.DataFetcher}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -224,7 +225,7 @@ public class GraphQL {
      * @param operationName the name of the operation to execute
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -246,7 +247,7 @@ public class GraphQL {
      * @param context   custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables variable values uses as argument
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -269,7 +270,7 @@ public class GraphQL {
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      * @param variables     variable values uses as argument
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
@@ -309,7 +310,7 @@ public class GraphQL {
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
         return execute(builderFunction.apply(ExecutionInput.newExecutionInput()).build());
@@ -320,7 +321,7 @@ public class GraphQL {
      *
      * @param executionInput {@link ExecutionInput}
      *
-     * @return  an {@link ExecutionResult} which can include errors
+     * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
         return executeAsync(executionInput).join();
@@ -328,7 +329,7 @@ public class GraphQL {
 
     /**
      * Executes the graphql query using the provided input object builder
-     *
+     * <p>
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
      *
@@ -342,7 +343,7 @@ public class GraphQL {
 
     /**
      * Executes the graphql query using the provided input object builder
-     *
+     * <p>
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
      * <p>
@@ -364,7 +365,7 @@ public class GraphQL {
 
     /**
      * Executes the graphql query using the provided input object
-     *
+     * <p>
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
      *
@@ -375,31 +376,42 @@ public class GraphQL {
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
 
-        InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(new InstrumentationExecutionParameters(executionInput));
-        final CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput);
-        executionResult.thenAccept(executionInstrumentation::onEnd);
+        InstrumentationState instrumentationState = instrumentation.createState();
+
+        InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, instrumentationState);
+        InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(instrumentationParameters);
+        CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, instrumentationState);
+        //
+        // finish up instrumentation
+        executionResult = executionResult.thenApply(er -> {
+            executionInstrumentation.onEnd(er);
+            return er;
+        });
+        //
+        // allow instrumentation to tweak the result
+        executionResult = executionResult.thenApply(er -> instrumentation.instrumentExecutionResult(er, instrumentationParameters));
         return executionResult;
     }
 
 
-    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput) {
-        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput));
+    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, InstrumentationState instrumentationState) {
+        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, instrumentationState));
 
         if (preparsedDoc.hasErrors()) {
             return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
         }
 
-        return execute(executionInput, preparsedDoc.getDocument());
+        return execute(executionInput, preparsedDoc.getDocument(), instrumentationState);
     }
 
-    private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput) {
-        ParseResult parseResult = parse(executionInput);
+    private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, InstrumentationState instrumentationState) {
+        ParseResult parseResult = parse(executionInput, instrumentationState);
         if (parseResult.isFailure()) {
             return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
         } else {
             final Document document = parseResult.getDocument();
 
-            final List<ValidationError> errors = validate(executionInput, document);
+            final List<ValidationError> errors = validate(executionInput, document, instrumentationState);
             if (!errors.isEmpty()) {
                 return new PreparsedDocumentEntry(errors);
             }
@@ -408,8 +420,8 @@ public class GraphQL {
         }
     }
 
-    private ParseResult parse(ExecutionInput executionInput) {
-        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(new InstrumentationExecutionParameters(executionInput));
+    private ParseResult parse(ExecutionInput executionInput, InstrumentationState instrumentationState) {
+        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(new InstrumentationExecutionParameters(executionInput, instrumentationState));
 
         Parser parser = new Parser();
         Document document;
@@ -424,8 +436,8 @@ public class GraphQL {
         return ParseResult.of(document);
     }
 
-    private List<ValidationError> validate(ExecutionInput executionInput, Document document) {
-        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document));
+    private List<ValidationError> validate(ExecutionInput executionInput, Document document, InstrumentationState instrumentationState) {
+        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, instrumentationState));
 
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
@@ -434,14 +446,14 @@ public class GraphQL {
         return validationErrors;
     }
 
-    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document) {
+    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, InstrumentationState instrumentationState) {
         String query = executionInput.getQuery();
         String operationName = executionInput.getOperationName();
         Object context = executionInput.getContext();
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
         ExecutionId executionId = idProvider.provide(query, operationName, context);
-        return execution.execute(document, graphQLSchema, executionId, executionInput);
+        return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
     }
 
     private InvalidSyntaxError toInvalidSyntaxError(RecognitionException recognitionException) {
