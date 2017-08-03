@@ -64,8 +64,18 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         try {
             Map<String, Object> results = new LinkedHashMap<>();
             for (String fieldName : futures.keySet()) {
-                ExecutionResult executionResult = futures.get(fieldName).get();
-
+                ExecutionResult executionResult;
+                try {
+                    executionResult = futures.get(fieldName).get();
+                } catch (ExecutionException e) {
+                    if (e.getCause() instanceof NonNullableFieldWasNullException) {
+                        assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause());
+                        results = null;
+                        break;
+                    } else {
+                        throw e;
+                    }
+                }
                 results.put(fieldName, executionResult != null ? executionResult.getData() : null);
             }
             return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
