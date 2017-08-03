@@ -233,7 +233,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())
-                .objectType(resolvedType)
+                .fieldsContainer(resolvedType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();

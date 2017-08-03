@@ -83,7 +83,7 @@ public class Execution {
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
                 .schema(executionContext.getGraphQLSchema())
-                .objectType(operationRootType)
+                .fieldsContainer(operationRootType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();

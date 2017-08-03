@@ -146,6 +146,19 @@ public class ExecutionTypeInfo {
     }
 
     /**
+     * graphql types can be wrapped in {@link GraphQLNonNull} and {@link GraphQLList} type wrappers
+     * so this method will unwrap the type down to the raw underlying type.
+     *
+     * @param type the type to unwrap
+     *
+     * @return the underlying raw type with {@link GraphQLNonNull} and {@link GraphQLList} type wrappers removed
+     */
+    public static GraphQLType unwrapBaseType(GraphQLType type) {
+        return unwrapType(type).pop();
+    }
+
+
+    /**
      * @return the type in graphql AST format, eg [typeName!]!
      */
     public String toAst() {
