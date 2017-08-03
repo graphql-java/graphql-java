@@ -8,6 +8,7 @@ import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
@@ -146,16 +147,19 @@ public class FieldCollector {
     }
 
     private boolean checkTypeCondition(FieldCollectorParameters parameters, GraphQLType conditionType) {
-        GraphQLObjectType type = parameters.getObjectType();
-        if (conditionType.equals(type)) {
-            return true;
-        }
+        GraphQLFieldsContainer fieldsContainer = parameters.getFieldsContainer();
+        if (fieldsContainer instanceof GraphQLObjectType) {
+            GraphQLObjectType type = (GraphQLObjectType) fieldsContainer;
+            if (conditionType.equals(type)) {
+                return true;
+            }
 
-        if (conditionType instanceof GraphQLInterfaceType) {
-            List<GraphQLObjectType> implementations = schemaUtil.findImplementations(parameters.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
-            return implementations.contains(type);
-        } else if (conditionType instanceof GraphQLUnionType) {
-            return ((GraphQLUnionType) conditionType).getTypes().contains(type);
+            if (conditionType instanceof GraphQLInterfaceType) {
+                List<GraphQLObjectType> implementations = schemaUtil.findImplementations(parameters.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
+                return implementations.contains(type);
+            } else if (conditionType instanceof GraphQLUnionType) {
+                return ((GraphQLUnionType) conditionType).getTypes().contains(type);
+            }
         }
         return false;
     }
