@@ -16,6 +16,19 @@ public class InstrumentationValidationParameters extends InstrumentationExecutio
         this.document = document;
     }
 
+    /**
+     * Returns a cloned parameters object with the new state
+     *
+     * @param instrumentationState the new state for this parameters object
+     *
+     * @return a new parameters object with the new state
+     */
+    public InstrumentationValidationParameters withNewState(InstrumentationState instrumentationState) {
+        return new InstrumentationValidationParameters(
+                this.getExecutionInput(), document, instrumentationState);
+    }
+
+
     public Document getDocument() {
         return document;
     }
