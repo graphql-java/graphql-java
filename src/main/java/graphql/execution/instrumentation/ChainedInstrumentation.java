@@ -28,6 +28,8 @@ import static java.util.stream.Collectors.toList;
  */
 public class ChainedInstrumentation implements Instrumentation {
 
+    // This class is inspired from https://github.com/leangen/graphql-spqr/blob/master/src/main/java/io/leangen/graphql/GraphQLRuntime.java#L80
+
     private final List<Instrumentation> instrumentations;
 
     public ChainedInstrumentation(List<Instrumentation> instrumentations) {
