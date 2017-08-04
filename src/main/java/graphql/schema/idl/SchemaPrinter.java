@@ -1,32 +1,12 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLEnumValueDefinition;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInputObjectField;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
+import graphql.schema.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
@@ -42,6 +22,8 @@ public class SchemaPrinter {
 
         private final boolean includeScalars;
 
+        private boolean includeTypesSubclasses;
+
         private Options(boolean includeIntrospectionTypes, boolean includeScalars) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
@@ -54,6 +36,8 @@ public class SchemaPrinter {
         public boolean isIncludeScalars() {
             return includeScalars;
         }
+
+        public boolean isIncludeTypesSubclasses() { return includeTypesSubclasses; }
 
         public static Options defaultOptions() {
             return new Options(false, false);
@@ -77,6 +61,19 @@ public class SchemaPrinter {
          */
         public Options includeScalarTypes(boolean flag) {
             return new Options(this.includeIntrospectionTypes, flag);
+        }
+
+        /**
+         * This will allow you to correctly print schema that includes subclasses of GraphQL provides types. F
+         * For example, SPRQ project adds MappedGraphQL... classes into schema.
+         *
+         * @param flag whether to include them
+         * @return options
+         */
+        public Options includeTypeSubclasses(boolean flag) {
+            Options result = new Options(this.includeIntrospectionTypes, this.includeScalars);
+            result.includeTypesSubclasses = flag;
+            return result;
         }
     }
 
@@ -297,7 +294,7 @@ public class SchemaPrinter {
     }
 
     String argsString(List<GraphQLArgument> arguments) {
-        boolean hasDescriptions = arguments.stream().filter(arg -> arg.getDescription() != null).count() > 0;
+        boolean hasDescriptions = arguments.stream().filter(arg -> notEmpty(arg.getDescription())).count() > 0;
         String prefix = hasDescriptions ? "  " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
@@ -311,7 +308,7 @@ public class SchemaPrinter {
                 sb.append("\n");
             }
             String description = argument.getDescription();
-            if (description != null) {
+            if (notEmpty(description)) {
                 Stream<String> stream = Arrays.stream(description.split("\n"));
                 stream.map(s -> "  #" + s + "\n").forEach(sb::append);
             }
@@ -338,9 +335,14 @@ public class SchemaPrinter {
 
     @SuppressWarnings("unchecked")
     private <T> TypePrinter<T> printer(Class<?> clazz) {
-        TypePrinter typePrinter = printers.computeIfAbsent(clazz,
-                k -> (out, type) -> out.println("Type not implemented : " + type)
-        );
+        TypePrinter typePrinter = printers.computeIfAbsent(clazz, k -> {
+            TypePrinter result;
+            if(options.isIncludeTypesSubclasses())
+                result = printer(clazz.getSuperclass());
+            else
+                result = (out, type) -> out.println("Type not implemented : " + type);
+            return result;
+        });
         return (TypePrinter<T>) typePrinter;
     }
 
@@ -354,9 +356,11 @@ public class SchemaPrinter {
     }
 
     private void printType(PrintWriter out, List<GraphQLType> typesAsList, Class typeClazz) {
-        typesAsList.stream()
-                .filter(type -> type.getClass().equals(typeClazz))
-                .forEach(type -> printType(out, type));
+        Predicate<GraphQLType> predicate = options.isIncludeTypesSubclasses()
+                ? type -> typeClazz.isAssignableFrom(type.getClass())
+                : type -> typeClazz.equals(type.getClass());
+
+        typesAsList.stream().filter(predicate).forEach(type -> printType(out, type));
     }
 
     private void printType(PrintWriter out, GraphQLType type) {
@@ -367,11 +371,15 @@ public class SchemaPrinter {
 
     private void printComments(PrintWriter out, Object graphQLType, String prefix) {
         String description = getDescription(graphQLType);
-        if (description == null) {
+        if (notEmpty(description)) {
             return;
         }
         Stream<String> stream = Arrays.stream(description.split("\n"));
         stream.map(s -> prefix + "#" + s + "\n").forEach(out::write);
+    }
+
+    private static boolean notEmpty(String s) {
+        return s != null && !s.isEmpty();
     }
 
     private String getDescription(Object descriptionHolder) {
