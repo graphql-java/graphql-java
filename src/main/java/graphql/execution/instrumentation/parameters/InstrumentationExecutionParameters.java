@@ -13,28 +13,19 @@ import java.util.Map;
  */
 @PublicApi
 public class InstrumentationExecutionParameters {
+    private final ExecutionInput executionInput;
     private final String query;
     private final String operation;
     private final Object context;
     private final Map<String, Object> variables;
     private final InstrumentationState instrumentationState;
-    private ExecutionInput executionInput;
 
     public InstrumentationExecutionParameters(ExecutionInput executionInput, InstrumentationState instrumentationState) {
-        this(
-                executionInput.getQuery(),
-                executionInput.getOperationName(),
-                executionInput.getContext(),
-                executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap(),
-                instrumentationState);
         this.executionInput = executionInput;
-    }
-
-    private InstrumentationExecutionParameters(String query, String operation, Object context, Map<String, Object> variables, InstrumentationState instrumentationState) {
-        this.query = query;
-        this.operation = operation;
-        this.context = context;
-        this.variables = variables;
+        this.query = executionInput.getQuery();
+        this.operation = executionInput.getOperationName();
+        this.context = executionInput.getContext();
+        this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap();
         this.instrumentationState = instrumentationState;
     }
 
