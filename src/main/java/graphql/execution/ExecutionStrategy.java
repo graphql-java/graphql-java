@@ -88,7 +88,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * <a href="http://facebook.github.io/graphql/#sec-Normal-and-Serial-Execution">http://facebook.github.io/graphql/#sec-Normal-and-Serial-Execution</a> says:
  * <blockquote>
  * Normally the executor can execute the entries in a grouped field set in whatever order it chooses (often in parallel). Because
- * the resolution of fields other than top‐level mutation fields must always be side effect‐free and idempotent, the
+ * the resolution of fields other than top-level mutation fields must always be side effect-free and idempotent, the
  * execution order must not affect the result, and hence the server has the freedom to execute the
  * field entries in whatever order it deems optimal.
  * </blockquote>
