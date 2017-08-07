@@ -57,7 +57,7 @@ public final class NoOpInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onEnd(Exception e) {
+        public void onEnd(Throwable t) {
         }
     }
 }

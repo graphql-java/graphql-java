@@ -165,7 +165,13 @@ public abstract class ExecutionStrategy {
 
         CompletableFuture<ExecutionResult> result = completeField(executionContext, parameters, fetchedValue);
 
-        result.thenAccept(fieldCtx::onEnd);
+        result = result.whenComplete((obj, throwable) -> {
+            if (throwable != null) {
+                fieldCtx.onEnd(throwable);
+            } else {
+                fieldCtx.onEnd(obj);
+            }
+        });
 
         return result;
     }

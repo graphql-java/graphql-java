@@ -383,9 +383,12 @@ public class GraphQL {
         CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, instrumentationState);
         //
         // finish up instrumentation
-        executionResult = executionResult.thenApply(er -> {
-            executionInstrumentation.onEnd(er);
-            return er;
+        executionResult = executionResult.whenComplete((er, throwable) -> {
+            if (throwable != null) {
+                executionInstrumentation.onEnd(throwable);
+            } else {
+                executionInstrumentation.onEnd(er);
+            }
         });
         //
         // allow instrumentation to tweak the result

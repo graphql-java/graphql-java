@@ -4,10 +4,12 @@ class TestingInstrumentContext<T> implements InstrumentationContext<T> {
     def op
     def start = System.currentTimeMillis()
     def executionList = []
+    def throwableList = []
 
-    TestingInstrumentContext(op, executionList) {
+    TestingInstrumentContext(op, executionList, throwableList) {
         this.op = op
         this.executionList = executionList
+        this.throwableList = throwableList
         executionList << "start:$op"
         println("Started $op...")
     }
@@ -24,7 +26,8 @@ class TestingInstrumentContext<T> implements InstrumentationContext<T> {
     }
 
     @Override
-    void onEnd(Exception e) {
+    void onEnd(Throwable t) {
+        throwableList.add(t)
         end()
     }
 }

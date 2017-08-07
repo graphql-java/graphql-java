@@ -122,7 +122,13 @@ public class Execution {
             result = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
         }
 
-        result.thenAccept(dataFetchCtx::onEnd);
+        result = result.whenComplete((er, throwable) -> {
+            if (throwable != null) {
+                dataFetchCtx.onEnd(throwable);
+            } else {
+                dataFetchCtx.onEnd(er);
+            }
+        });
 
         return result;
     }
