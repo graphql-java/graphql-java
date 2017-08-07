@@ -4,11 +4,13 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.PublicApi;
+import graphql.execution.support.CallableWrapper;
 import graphql.language.Field;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -32,17 +34,29 @@ import java.util.concurrent.Future;
 @PublicApi
 public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
-    ExecutorService executorService;
+    private final ExecutorService executorService;
+    private final CallableWrapper callableWrapper;
 
+    /**
+     * Creates an {@link ExecutorServiceExecutionStrategy} with a {@link SimpleDataFetcherExceptionHandler} and
+     * a no-op {@link CallableWrapper}
+     */
     public ExecutorServiceExecutionStrategy(ExecutorService executorService) {
         this(executorService, new SimpleDataFetcherExceptionHandler());
     }
 
+    /**
+     * Creates an {@link ExecutorServiceExecutionStrategy} with a no-op {@link CallableWrapper}
+     */
     public ExecutorServiceExecutionStrategy(ExecutorService executorService, DataFetcherExceptionHandler dataFetcherExceptionHandler) {
-        super(dataFetcherExceptionHandler);
-        this.executorService = executorService;
+        this(executorService, dataFetcherExceptionHandler, new NoOpCallableWrapper());
     }
 
+    public ExecutorServiceExecutionStrategy(ExecutorService executorService, DataFetcherExceptionHandler dataFetcherExceptionHandler, CallableWrapper callableWrapper) {
+        super(dataFetcherExceptionHandler);
+        this.executorService = executorService;
+        this.callableWrapper = Objects.requireNonNull(callableWrapper);
+    }
 
     @Override
     public CompletableFuture<ExecutionResult> execute(final ExecutionContext executionContext, final ExecutionStrategyParameters parameters) {
@@ -58,8 +72,9 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
-            Callable<ExecutionResult> resolveField = () -> resolveField(executionContext, newParameters).join();
-            futures.put(fieldName, executorService.submit(resolveField));
+            Callable<ExecutionResult> fieldResolver = () -> resolveField(executionContext, newParameters).join();
+            Callable<ExecutionResult> wrappedFieldResolver = callableWrapper.wrapCallable(fieldResolver);
+            futures.put(fieldName, executorService.submit(wrappedFieldResolver));
         }
         try {
             Map<String, Object> results = new LinkedHashMap<>();
@@ -81,6 +96,13 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
             return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
         } catch (InterruptedException | ExecutionException e) {
             throw new GraphQLException(e);
+        }
+    }
+
+    private static class NoOpCallableWrapper implements CallableWrapper {
+        @Override
+        public <T> Callable<T> wrapCallable(Callable<T> callable) {
+            return callable;
         }
     }
 }
