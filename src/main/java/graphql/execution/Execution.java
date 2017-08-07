@@ -40,7 +40,7 @@ public class Execution {
 
     public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
-        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncExecutionStrategy();
+        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
     }
