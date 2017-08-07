@@ -11,6 +11,7 @@ import graphql.schema.DataFetcher;
 import graphql.validation.ValidationError;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Provides the capability to instrument the execution steps of a GraphQL query.
@@ -108,12 +109,12 @@ public interface Instrumentation {
     /**
      * This is called to allow instrumentation to instrument the execution result in some way
      *
-     * @param executionResult the result to instrument
-     * @param parameters      the parameters to this step
+     * @param executionResultFuture a {@link java.util.concurrent.CompletableFuture} of the result to instrument
+     * @param parameters            the parameters to this step
      *
-     * @return a new execution result
+     * @return a new execution result completable future
      */
-    default ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-        return executionResult;
+    default CompletableFuture<ExecutionResult> instrumentExecutionResult(CompletableFuture<ExecutionResult> executionResultFuture, InstrumentationExecutionParameters parameters) {
+        return executionResultFuture;
     }
 }

@@ -390,7 +390,7 @@ public class GraphQL {
         });
         //
         // allow instrumentation to tweak the result
-        executionResult = executionResult.thenApply(er -> instrumentation.instrumentExecutionResult(er, instrumentationParameters));
+        executionResult = instrumentation.instrumentExecutionResult(executionResult, instrumentationParameters);
         return executionResult;
     }
 
