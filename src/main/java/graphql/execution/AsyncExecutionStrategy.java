@@ -1,21 +1,18 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
 import graphql.language.Field;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 
 /**
- * The standard graphql execution strategy that runs fields asynchronously
+ * The standard graphql execution strategy that runs fields asynchronously non-blocking.
  */
-public class AsyncExecutionStrategy extends ExecutionStrategy {
+public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     /**
      * The standard graphql execution strategy that runs fields asynchronously
@@ -63,30 +60,9 @@ public class AsyncExecutionStrategy extends ExecutionStrategy {
                                                          List<CompletableFuture<ExecutionResult>> futures,
                                                          CompletableFuture<ExecutionResult> result) {
         return (notUsed1, notUsed2) -> {
-            Map<String, Object> resolvedValuesByField = new LinkedHashMap<>();
-            int ix = 0;
-            for (CompletableFuture<ExecutionResult> future : futures) {
-
-                if (future.isCompletedExceptionally()) {
-                    future.whenComplete((Null, e) -> handleException(executionContext, result, e));
-                    return;
-                }
-                String fieldName = fieldNames.get(ix++);
-                ExecutionResult resolvedResult = future.join();
-                resolvedValuesByField.put(fieldName, resolvedResult.getData());
-            }
-            result.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors()));
+            completeCompletableFuture(executionContext, fieldNames, futures, result);
         };
     }
 
-    private void handleException(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result, Throwable e) {
-        if (e instanceof CompletionException && e.getCause() instanceof NonNullableFieldWasNullException) {
-            assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause(), result);
-            if (!result.isDone()) {
-                result.complete(new ExecutionResultImpl(null, executionContext.getErrors()));
-            }
-        } else {
-            result.completeExceptionally(e);
-        }
-    }
+
 }
