@@ -39,6 +39,8 @@ dependencies {
     testCompile 'com.google.code.gson:gson:2.8.0'
     testCompile 'org.eclipse.jetty:jetty-server:9.4.5.v20170502'
     testCompile 'org.slf4j:slf4j-simple:1.7.22'
+    testCompile 'org.awaitility:awaitility-groovy:3.0.0'
+
 }
 
 compileJava.source file("build/generated-src"), sourceSets.main.java

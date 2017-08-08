@@ -17,6 +17,7 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
+import static org.awaitility.Awaitility.await
 
 class AsyncExecutionStrategyTest extends Specification {
 
@@ -165,8 +166,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         then:
         !result.isDone()
-        Thread.sleep(200)
-        result.isDone()
+        await().until({ result.isDone() })
         result.get().data == ['hello': 'world', 'hello2': 'world2']
 
     }
