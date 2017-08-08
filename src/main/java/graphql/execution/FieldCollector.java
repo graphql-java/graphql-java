@@ -147,19 +147,16 @@ public class FieldCollector {
     }
 
     private boolean checkTypeCondition(FieldCollectorParameters parameters, GraphQLType conditionType) {
-        GraphQLFieldsContainer fieldsContainer = parameters.getFieldsContainer();
-        if (fieldsContainer instanceof GraphQLObjectType) {
-            GraphQLObjectType type = (GraphQLObjectType) fieldsContainer;
-            if (conditionType.equals(type)) {
-                return true;
-            }
+        GraphQLObjectType type = parameters.getObjectType();
+        if (conditionType.equals(type)) {
+            return true;
+        }
 
-            if (conditionType instanceof GraphQLInterfaceType) {
-                List<GraphQLObjectType> implementations = schemaUtil.findImplementations(parameters.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
-                return implementations.contains(type);
-            } else if (conditionType instanceof GraphQLUnionType) {
-                return ((GraphQLUnionType) conditionType).getTypes().contains(type);
-            }
+        if (conditionType instanceof GraphQLInterfaceType) {
+            List<GraphQLObjectType> implementations = schemaUtil.findImplementations(parameters.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
+            return implementations.contains(type);
+        } else if (conditionType instanceof GraphQLUnionType) {
+            return ((GraphQLUnionType) conditionType).getTypes().contains(type);
         }
         return false;
     }

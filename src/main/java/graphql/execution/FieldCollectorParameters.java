@@ -3,7 +3,7 @@ package graphql.execution;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.language.FragmentDefinition;
-import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
 import java.util.LinkedHashMap;
@@ -17,7 +17,7 @@ public class FieldCollectorParameters {
     private final GraphQLSchema graphQLSchema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
-    private final GraphQLFieldsContainer fieldsContainer;
+    private final GraphQLObjectType objectType;
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
@@ -31,15 +31,15 @@ public class FieldCollectorParameters {
         return variables;
     }
 
-    public GraphQLFieldsContainer getFieldsContainer() {
-        return fieldsContainer;
+    public GraphQLObjectType getObjectType() {
+        return objectType;
     }
 
-    private FieldCollectorParameters(GraphQLSchema graphQLSchema, Map<String, Object> variables, Map<String, FragmentDefinition> fragmentsByName, GraphQLFieldsContainer fieldsContainer) {
+    private FieldCollectorParameters(GraphQLSchema graphQLSchema, Map<String, Object> variables, Map<String, FragmentDefinition> fragmentsByName, GraphQLObjectType objectType) {
         this.fragmentsByName = fragmentsByName;
         this.graphQLSchema = graphQLSchema;
         this.variables = variables;
-        this.fieldsContainer = fieldsContainer;
+        this.objectType = objectType;
     }
 
     public static Builder newParameters() {
@@ -50,7 +50,7 @@ public class FieldCollectorParameters {
         private GraphQLSchema graphQLSchema;
         private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
         private Map<String, Object> variables = new LinkedHashMap<>();
-        private GraphQLFieldsContainer fieldsContainer;
+        private GraphQLObjectType objectType;
 
         /**
          * @see FieldCollectorParameters#newParameters()
@@ -64,8 +64,8 @@ public class FieldCollectorParameters {
             return this;
         }
 
-        public Builder fieldsContainer(GraphQLFieldsContainer fieldsContainer) {
-            this.fieldsContainer = fieldsContainer;
+        public Builder objectType(GraphQLObjectType objectType) {
+            this.objectType = objectType;
             return this;
         }
 
@@ -81,8 +81,7 @@ public class FieldCollectorParameters {
 
         public FieldCollectorParameters build() {
             Assert.assertNotNull(graphQLSchema, "You must provide a schema");
-            Assert.assertNotNull(fieldsContainer, "You must provide an fieldsContainer type");
-            return new FieldCollectorParameters(graphQLSchema, variables, fragmentsByName, fieldsContainer);
+            return new FieldCollectorParameters(graphQLSchema, variables, fragmentsByName, objectType);
         }
 
     }
