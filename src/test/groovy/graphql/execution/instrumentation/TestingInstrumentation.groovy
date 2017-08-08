@@ -11,6 +11,8 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.validation.ValidationError
 
+import java.util.concurrent.CompletableFuture
+
 class TestingInstrumentation implements Instrumentation {
 
     def instrumentationState = new InstrumentationState() {}
@@ -74,9 +76,9 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+    CompletableFuture<ExecutionResult> instrumentExecutionResult(CompletableFuture<ExecutionResult> executionResultFuture, InstrumentationExecutionParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return executionResult
+        return executionResultFuture
     }
 }
 

@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.execution.ExecutionContext;
+import graphql.execution.ExecutionTypeInfo;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.language.Field;
@@ -14,25 +15,29 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     private final static DataFetchingFieldSelectionSet NOOP = Collections::emptyMap;
 
     public static DataFetchingFieldSelectionSet newCollector(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fields) {
-        if (fieldType instanceof GraphQLObjectType) {
-            return new DataFetchingFieldSelectionSetImpl(executionContext, (GraphQLObjectType) fieldType, fields);
+        GraphQLType unwrappedType = ExecutionTypeInfo.unwrapBaseType(fieldType);
+        if (unwrappedType instanceof GraphQLFieldsContainer) {
+            return new DataFetchingFieldSelectionSetImpl(executionContext, asObjectTypeOrNull(unwrappedType), fields);
         } else {
-            // we can only collect fields on object types.  Scalars, Interfaces, Unions etc... cant be done.
-            // we will be called back once they are resolved however
+            // we can only collect fields on object types and interfaces.  Scalars, Unions etc... cant be done.
             return NOOP;
         }
+    }
+
+    private static GraphQLObjectType asObjectTypeOrNull(GraphQLType unwrappedType) {
+        return unwrappedType instanceof GraphQLObjectType ? (GraphQLObjectType) unwrappedType : null;
     }
 
     private final FieldCollector fieldCollector;
     private final FieldCollectorParameters parameters;
     private final List<Field> fields;
 
-    private DataFetchingFieldSelectionSetImpl(ExecutionContext executionContext, GraphQLObjectType fieldType, List<Field> fields) {
+    private DataFetchingFieldSelectionSetImpl(ExecutionContext executionContext, GraphQLObjectType objectType, List<Field> fields) {
         this.fields = fields;
         this.fieldCollector = new FieldCollector();
         this.parameters = FieldCollectorParameters.newParameters()
                 .schema(executionContext.getGraphQLSchema())
-                .objectType(fieldType)
+                .objectType(objectType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();

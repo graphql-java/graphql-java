@@ -4,7 +4,7 @@ import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.StarWarsSchema
-import graphql.execution.SimpleExecutionStrategy
+import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.TestingInstrumentation
 import spock.lang.Specification
 
@@ -75,7 +75,7 @@ class PreparsedDocumentProviderTest extends Specification {
         def instrumentationPreparsed = new TestingInstrumentation()
         def preparsedCache = new TestingPreparsedDocumentProvider()
 
-        def strategy = new SimpleExecutionStrategy()
+        def strategy = new AsyncExecutionStrategy()
         def data1 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(strategy)
                 .instrumentation(instrumentation)

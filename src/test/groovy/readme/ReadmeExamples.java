@@ -5,8 +5,8 @@ import graphql.Scalars;
 import graphql.StarWarsData;
 import graphql.StarWarsSchema;
 import graphql.TypeResolutionEnvironment;
+import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutorServiceExecutionStrategy;
-import graphql.execution.SimpleExecutionStrategy;
 import graphql.language.Directive;
 import graphql.language.FieldDefinition;
 import graphql.language.TypeDefinition;
@@ -184,8 +184,8 @@ public class ReadmeExamples {
 
         GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
-                .mutationExecutionStrategy(new SimpleExecutionStrategy())
-                .subscriptionExecutionStrategy(new SimpleExecutionStrategy())
+                .mutationExecutionStrategy(new AsyncExecutionStrategy())
+                .subscriptionExecutionStrategy(new AsyncExecutionStrategy())
                 .build();
 
     }

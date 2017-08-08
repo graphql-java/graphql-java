@@ -2,9 +2,7 @@ package graphql.execution.instrumentation
 
 import graphql.GraphQL
 import graphql.StarWarsSchema
-import graphql.execution.SimpleExecutionStrategy
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
-import graphql.schema.DataFetcher
+import graphql.execution.AsyncExecutionStrategy
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import spock.lang.Specification
@@ -24,7 +22,7 @@ class InstrumentationTest extends Specification {
         """
 
         //
-        // for testing purposes we must use SimpleExecutionStrategy under the covers to get such
+        // for testing purposes we must use AsyncExecutionStrategy under the covers to get such
         // serial behaviour.  The Instrumentation of a parallel strategy would be much different
         // and certainly harder to test
         def expected = [
@@ -58,7 +56,7 @@ class InstrumentationTest extends Specification {
 
         def instrumentation = new TestingInstrumentation()
 
-        def strategy = new SimpleExecutionStrategy()
+        def strategy = new AsyncExecutionStrategy()
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(strategy)
