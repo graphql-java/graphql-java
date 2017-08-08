@@ -3,7 +3,7 @@ package graphql.execution.instrumentation
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
-import graphql.execution.SimpleExecutionStrategy
+import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
@@ -137,7 +137,7 @@ class ChainedInstrumentationStateTest extends Specification {
 
 
         when:
-        def strategy = new SimpleExecutionStrategy()
+        def strategy = new AsyncExecutionStrategy()
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(strategy)
