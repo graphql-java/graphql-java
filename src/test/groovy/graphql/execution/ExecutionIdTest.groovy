@@ -9,7 +9,7 @@ import java.util.concurrent.CompletableFuture
 
 class ExecutionIdTest extends Specification {
 
-    class CaptureIdStrategy extends SimpleExecutionStrategy {
+    class CaptureIdStrategy extends AsyncExecutionStrategy {
         ExecutionId executionId = null
 
         @Override

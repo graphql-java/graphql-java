@@ -8,28 +8,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
-/**
- * The standard graphql execution strategy that runs fields in serial order
- */
-public class SimpleExecutionStrategy extends ExecutionStrategy {
+public class SerialExecutionStrategy extends ExecutionStrategy {
 
-    /**
-     * The standard graphql execution strategy that runs fields in serial order
-     */
-    public SimpleExecutionStrategy() {
-        super(new SimpleDataFetcherExceptionHandler());
+    public SerialExecutionStrategy() {
+        super();
     }
 
-    /**
-     * Creates a simple execution handler that uses the provided exception handler
-     *
-     * @param exceptionHandler the exception handler to use
-     */
-    public SimpleExecutionStrategy(DataFetcherExceptionHandler exceptionHandler) {
-        super(exceptionHandler);
+    public SerialExecutionStrategy(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
+        super(dataFetcherExceptionHandler);
     }
 
     @Override
@@ -45,12 +35,16 @@ public class SimpleExecutionStrategy extends ExecutionStrategy {
 
             try {
                 ExecutionResult resolvedResult = resolveField(executionContext, newParameters).join();
+                results.put(fieldName, resolvedResult.getData());
+            } catch (CompletionException e) {
+                if (e.getCause() instanceof NonNullableFieldWasNullException) {
+                    assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause());
+                    results = null;
+                    break;
+                } else {
+                    throw e;
+                }
 
-                results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
-            } catch (NonNullableFieldWasNullException e) {
-                assertNonNullFieldPrecondition(e);
-                results = null;
-                break;
             }
         }
         return completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
