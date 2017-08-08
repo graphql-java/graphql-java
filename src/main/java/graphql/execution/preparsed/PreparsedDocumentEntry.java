@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * An instance of a preparsed doucument entry represents the result of a query parse and validation, like
+ * An instance of a preparsed document entry represents the result of a query parse and validation, like
  * an either implementation it contains either the correct result in th document property or the errors.
  */
 public class PreparsedDocumentEntry {

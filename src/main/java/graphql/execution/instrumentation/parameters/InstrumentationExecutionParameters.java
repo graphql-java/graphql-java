@@ -13,6 +13,7 @@ import java.util.Map;
  */
 @PublicApi
 public class InstrumentationExecutionParameters {
+    private final ExecutionInput executionInput;
     private final String query;
     private final String operation;
     private final Object context;
@@ -20,20 +21,27 @@ public class InstrumentationExecutionParameters {
     private final InstrumentationState instrumentationState;
 
     public InstrumentationExecutionParameters(ExecutionInput executionInput, InstrumentationState instrumentationState) {
-        this(
-                executionInput.getQuery(),
-                executionInput.getOperationName(),
-                executionInput.getContext(),
-                executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap(),
-                instrumentationState);
+        this.executionInput = executionInput;
+        this.query = executionInput.getQuery();
+        this.operation = executionInput.getOperationName();
+        this.context = executionInput.getContext();
+        this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap();
+        this.instrumentationState = instrumentationState;
     }
 
-    public InstrumentationExecutionParameters(String query, String operation, Object context, Map<String, Object> variables, InstrumentationState instrumentationState) {
-        this.query = query;
-        this.operation = operation;
-        this.context = context;
-        this.variables = variables;
-        this.instrumentationState = instrumentationState;
+    /**
+     * Returns a cloned parameters object with the new state
+     *
+     * @param instrumentationState the new state for this parameters object
+     *
+     * @return a new parameters object with the new state
+     */
+    public InstrumentationExecutionParameters withNewState(InstrumentationState instrumentationState) {
+        return new InstrumentationExecutionParameters(this.getExecutionInput(), instrumentationState);
+    }
+
+    public ExecutionInput getExecutionInput() {
+        return executionInput;
     }
 
     public String getQuery() {
@@ -57,4 +65,6 @@ public class InstrumentationExecutionParameters {
         //noinspection unchecked
         return (T) instrumentationState;
     }
+
+
 }

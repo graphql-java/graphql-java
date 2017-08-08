@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import graphql.ExceptionWhileDataFetching;
-import graphql.language.Field;
 import graphql.language.SourceLocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,7 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
 
     @Override
     public void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
-        Exception exception = handlerParameters.getException();
+        Throwable exception = handlerParameters.getException();
         SourceLocation sourceLocation = handlerParameters.getField().getSourceLocation();
         ExecutionPath path = handlerParameters.getPath();
 

@@ -32,12 +32,12 @@ class DataFetcherSelectionTest extends Specification {
     class SelectionCapturingDataFetcher implements DataFetcher {
         final DataFetcher delegate
         final FieldCollector fieldCollector
-        final List<String> captureList
+        final Map<String, String> captureMap
 
-        SelectionCapturingDataFetcher(DataFetcher delegate, List<String> captureList) {
+        SelectionCapturingDataFetcher(DataFetcher delegate, Map<String, String> captureMap) {
             this.delegate = delegate
             this.fieldCollector = new FieldCollector()
-            this.captureList = captureList
+            this.captureMap = captureMap
         }
 
         @Override
@@ -52,7 +52,8 @@ class DataFetcherSelectionTest extends Specification {
 
             if (!selectionSet.isEmpty()) {
                 String subSelection = captureSubSelection(selectionSet)
-                captureList.add(subSelection)
+                def path = environment.getFieldTypeInfo().getPath().toString()
+                captureMap.put(path, subSelection)
             }
 
             return delegate.get(environment)
@@ -68,10 +69,10 @@ class DataFetcherSelectionTest extends Specification {
     }
 
     // side effect captured here
-    List<String> captureList = new ArrayList<String>()
+    Map<String, String> captureMap = new HashMap<>()
 
     SelectionCapturingDataFetcher captureSelection(DataFetcher delegate) {
-        return new SelectionCapturingDataFetcher(delegate, captureList)
+        return new SelectionCapturingDataFetcher(delegate, captureMap)
     }
 
     def episodeValuesProvider = new MapEnumValuesProvider([NEWHOPE: 4, EMPIRE: 5, JEDI: 6])
@@ -103,7 +104,7 @@ class DataFetcherSelectionTest extends Specification {
 
     def "field selection can be captured via data environment"() {
 
-        captureList.clear()
+        captureMap.clear()
 
         def query = """
         query CAPTURED_VIA_DF {
@@ -147,9 +148,9 @@ class DataFetcherSelectionTest extends Specification {
 
         then:
 
-        captureList == [
-                // luke part
-                "name\n" +
+        // captures each stage as it descends
+        captureMap == [
+                "/luke"        : "name\n" +
                         "friends {\n" +
                         "  name\n" +
                         "  friends {\n" +
@@ -157,13 +158,55 @@ class DataFetcherSelectionTest extends Specification {
                         "  }\n" +
                         "}\n" +
                         "homePlanet",
-                // leia part
-                "id\n" +
+
+                "/luke/friends": "name\n" +
+                        "friends {\n" +
+                        "  name\n" +
+                        "}",
+
+                "/leia"        : "id\n" +
                         "friends {\n" +
                         "  name\n" +
                         "}\n" +
-                        "appearsIn"
+                        "appearsIn",
+
+                "/leia/friends": "name",
+        ]
+    }
+
+    def "#595 - field selection works for List types"() {
+
+        captureMap.clear()
+
+        def query = """
+        query CAPTURED_VIA_DF {
+            luke: human(id: "1000") {
+                name
+                friends {
+                    name
+                }
+                homePlanet
+            }
+        }
+        """
+
+
+        expect:
+        when:
+        GraphQL.newGraphQL(executableStarWarsSchema).build().execute(query).data
+
+        then:
+
+        captureMap == [
+                "/luke"        : "name\n" +
+                        "friends {\n" +
+                        "  name\n" +
+                        "}\n" +
+                        "homePlanet",
+
+                "/luke/friends": "name"
         ]
 
     }
+
 }
