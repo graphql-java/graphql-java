@@ -140,5 +140,19 @@ class NoFragmentCyclesTest extends Specification {
 
     }
 
+    def "#583 no npe on undefined fragment"() {
+        given:
+        def query = """
+                fragment fragA on Dog { ...fragNotDefined }
+                fragment fragB on Dog { name }
+        """
+
+        when:
+        traverse(query)
+        then:
+
+        // no errors but KnownFragmentNames will pick this up
+        errorCollector.getErrors().isEmpty()
+    }
 
 }
