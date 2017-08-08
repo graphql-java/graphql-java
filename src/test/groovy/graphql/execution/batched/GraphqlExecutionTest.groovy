@@ -7,7 +7,7 @@ package graphql.execution.batched
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.GraphQL
-import graphql.execution.SimpleExecutionStrategy
+import graphql.execution.AsyncExecutionStrategy
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
@@ -18,7 +18,7 @@ class GraphqlExecutionTest extends Specification {
     private GraphQLSchema schema = new FunWithStringsSchemaFactory().createSchema();
 
     private GraphQL graphQLSimple = GraphQL.newGraphQL(schema)
-            .queryExecutionStrategy(new SimpleExecutionStrategy())
+            .queryExecutionStrategy(new AsyncExecutionStrategy())
             .build()
 
     private GraphQL graphQLBatchedButUnbatched = GraphQL.newGraphQL(this.schema)

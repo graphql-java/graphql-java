@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.Assert
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.Scalars
@@ -9,6 +10,7 @@ import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.SourceLocation
 import graphql.language.StringValue
+import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -41,7 +43,7 @@ class ExecutionStrategyTest extends Specification {
 
             @Override
             CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-                return null
+                return Assert.assertShouldNeverHappen("should not be called")
             }
         }
     }
@@ -50,6 +52,47 @@ class ExecutionStrategyTest extends Specification {
         ExecutionId executionId = ExecutionId.from("executionId123")
         def variables = [arg1: "value1"]
         new ExecutionContext(NoOpInstrumentation.INSTANCE, executionId, schema, null, executionStrategy, executionStrategy, executionStrategy, null, null, variables, "context", "root")
+    }
+
+    def "complete values always calls query strategy to execute more"() {
+        given:
+        def dataFetcher = Mock(DataFetcher)
+        def fieldDefinition = newFieldDefinition()
+                .name("someField")
+                .type(GraphQLString)
+                .dataFetcher(dataFetcher)
+                .build()
+        def objectType = newObject()
+                .name("Test")
+                .field(fieldDefinition)
+                .build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
+        def builder = new ExecutionContextBuilder()
+        builder.queryStrategy(Mock(ExecutionStrategy))
+        builder.mutationStrategy(Mock(ExecutionStrategy))
+        builder.subscriptionStrategy(Mock(ExecutionStrategy))
+        builder.graphQLSchema(schema)
+        builder.document(new Parser().parseDocument("{someField}"))
+        builder.executionId(ExecutionId.generate())
+        builder.valuesResolver(new ValuesResolver());
+
+        def executionContext = builder.build()
+        def result = new Object()
+        def parameters = newParameters()
+                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .source(result)
+                .fields(["fld": [new Field()]])
+                .field([new Field()])
+                .build()
+
+        when:
+        executionStrategy.completeValue(executionContext, parameters)
+
+        then:
+        1 * executionContext.queryStrategy.execute(_, _)
+        0 * executionContext.mutationStrategy.execute(_, _)
+        0 * executionContext.subscriptionStrategy.execute(_, _)
     }
 
 
@@ -283,8 +326,6 @@ class ExecutionStrategyTest extends Specification {
     }
 
 
-
-
     def "test that the new data fetcher error handler interface is called"() {
 
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
@@ -294,7 +335,7 @@ class ExecutionStrategyTest extends Specification {
 
 
         boolean handlerCalled = false
-        ExecutionStrategy overridingStrategy = new SimpleExecutionStrategy(new SimpleDataFetcherExceptionHandler() {
+        ExecutionStrategy overridingStrategy = new AsyncExecutionStrategy(new SimpleDataFetcherExceptionHandler() {
             @Override
             void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
                 handlerCalled = true

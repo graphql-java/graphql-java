@@ -39,9 +39,9 @@ public class Execution {
     private final Instrumentation instrumentation;
 
     public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation) {
-        this.queryStrategy = queryStrategy != null ? queryStrategy : new SimpleExecutionStrategy();
-        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new SimpleExecutionStrategy();
-        this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SimpleExecutionStrategy();
+        this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
+        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
+        this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
     }
 
