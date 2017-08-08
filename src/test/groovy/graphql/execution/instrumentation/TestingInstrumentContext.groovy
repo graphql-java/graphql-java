@@ -19,12 +19,7 @@ class TestingInstrumentContext<T> implements InstrumentationContext<T> {
     }
 
     @Override
-    void onEnd(T result) {
-        end()
-    }
-
-    @Override
-    void onEnd(Exception e) {
+    void onEnd(T result, Throwable t) {
         end()
     }
 }
