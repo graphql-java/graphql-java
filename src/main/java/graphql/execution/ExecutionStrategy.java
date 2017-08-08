@@ -349,7 +349,7 @@ public abstract class ExecutionStrategy {
 
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())
-                .fieldsContainer(resolvedType)
+                .objectType(resolvedType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
