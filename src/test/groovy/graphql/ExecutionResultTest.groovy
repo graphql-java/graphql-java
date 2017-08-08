@@ -5,7 +5,7 @@ import spock.lang.Specification
 
 class ExecutionResultTest extends Specification {
 
-    def KNOWN_ERRORS = [new InvalidSyntaxError(new SourceLocation(666,664))]
+    def KNOWN_ERRORS = [new InvalidSyntaxError(new SourceLocation(666, 664), "Yikes")]
 
 
     def "data with no errors"() {
@@ -62,8 +62,8 @@ class ExecutionResultTest extends Specification {
     def "can have extensions"() {
 
         given:
-        def extensionsObj = ['list' : ['a','b']]
-        def er = new ExecutionResultImpl("hello world", KNOWN_ERRORS,extensionsObj)
+        def extensionsObj = ['list': ['a', 'b']]
+        def er = new ExecutionResultImpl("hello world", KNOWN_ERRORS, extensionsObj)
         when:
         def actual = er.getData()
         def errors = er.getErrors()
