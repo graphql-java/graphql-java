@@ -2,6 +2,7 @@ package graphql.execution
 
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.InlineFragment
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
 import graphql.schema.GraphQLObjectType
@@ -31,11 +32,11 @@ class FieldCollectorTest extends Specification {
                 bar2: String 
                 }
                 """)
-        def fieldsContainer = schema.getType("Query") as GraphQLObjectType
+        def objectType = schema.getType("Query") as GraphQLObjectType
         FieldCollector fieldCollector = new FieldCollector()
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
-                .fieldsContainer(fieldsContainer)
+                .objectType(objectType)
                 .build()
         Document document = new Parser().parseDocument("{foo {bar1 bar2 }}")
         Field field = ((OperationDefinition) document.children[0]).selectionSet.selections[0] as Field
@@ -49,6 +50,38 @@ class FieldCollectorTest extends Specification {
         then:
         result['bar1'] == [bar1]
         result['bar2'] == [bar2]
+    }
+
+    def "collect fields on inline fragments"() {
+        def schema = createSchema("""
+            type Query{
+                bar1: String
+                bar2: Test 
+                }
+            interface Test {
+            fieldOnInterface: String
+              }
+            type TestImpl implements Test {
+            fieldOnInterface: String
+            }
+                """)
+        def object = schema.getType("TestImpl") as GraphQLObjectType
+        FieldCollector fieldCollector = new FieldCollector()
+        FieldCollectorParameters fieldCollectorParameters = newParameters()
+                .schema(schema)
+                .objectType(object)
+                .build()
+        Document document = new Parser().parseDocument("{bar1 { ...on Test {fieldOnInterface}}}")
+        Field bar1Field = ((OperationDefinition) document.children[0]).selectionSet.selections[0] as Field
+
+        def inlineFragment = bar1Field.selectionSet.selections[0] as InlineFragment
+        def interfaceField = inlineFragment.selectionSet.selections[0]
+
+        when:
+        def result = fieldCollector.collectFields(fieldCollectorParameters, [bar1Field])
+
+        then:
+        result['fieldOnInterface'] == [interfaceField]
 
     }
 }
