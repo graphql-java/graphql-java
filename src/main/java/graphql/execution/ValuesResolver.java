@@ -46,6 +46,10 @@ public class ValuesResolver {
 
 
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
+        if (argumentTypes.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         Map<String, Argument> argumentMap = argumentMap(arguments);
         for (GraphQLArgument fieldArgument : argumentTypes) {

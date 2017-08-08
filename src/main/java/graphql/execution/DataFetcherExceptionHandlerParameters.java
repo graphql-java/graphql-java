@@ -17,9 +17,9 @@ public class DataFetcherExceptionHandlerParameters {
     private final GraphQLFieldDefinition fieldDefinition;
     private final Map<String, Object> argumentValues;
     private final ExecutionPath path;
-    private final Exception exception;
+    private final Throwable exception;
 
-    public DataFetcherExceptionHandlerParameters(ExecutionContext executionContext, DataFetchingEnvironment dataFetchingEnvironment, Field field, GraphQLFieldDefinition fieldDefinition, Map<String, Object> argumentValues, ExecutionPath path, Exception exception) {
+    public DataFetcherExceptionHandlerParameters(ExecutionContext executionContext, DataFetchingEnvironment dataFetchingEnvironment, Field field, GraphQLFieldDefinition fieldDefinition, Map<String, Object> argumentValues, ExecutionPath path, Throwable exception) {
         this.executionContext = executionContext;
         this.dataFetchingEnvironment = dataFetchingEnvironment;
         this.field = field;
@@ -57,7 +57,7 @@ public class DataFetcherExceptionHandlerParameters {
         return path;
     }
 
-    public Exception getException() {
+    public Throwable getException() {
         return exception;
     }
 
@@ -68,7 +68,7 @@ public class DataFetcherExceptionHandlerParameters {
         GraphQLFieldDefinition fieldDefinition;
         Map<String, Object> argumentValues;
         ExecutionPath path;
-        Exception exception;
+        Throwable exception;
 
         private Builder() {
         }
@@ -103,7 +103,7 @@ public class DataFetcherExceptionHandlerParameters {
             return this;
         }
 
-        public Builder exception(Exception exception) {
+        public Builder exception(Throwable exception) {
             this.exception = exception;
             return this;
         }

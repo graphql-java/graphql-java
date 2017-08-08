@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -47,10 +48,10 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
     @Override
     public CompletableFuture<ExecutionResult> execute(final ExecutionContext executionContext, final ExecutionStrategyParameters parameters) {
         if (executorService == null)
-            return new SimpleExecutionStrategy().execute(executionContext, parameters);
+            return new AsyncExecutionStrategy().execute(executionContext, parameters);
 
         Map<String, List<Field>> fields = parameters.fields();
-        Map<String, Future<ExecutionResult>> futures = new LinkedHashMap<>();
+        Map<String, Future<CompletableFuture<ExecutionResult>>> futures = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
             final List<Field> currentField = fields.get(fieldName);
 
@@ -58,14 +59,24 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
-            Callable<ExecutionResult> resolveField = () -> resolveField(executionContext, newParameters).join();
+            Callable<CompletableFuture<ExecutionResult>> resolveField = () -> resolveField(executionContext, newParameters);
             futures.put(fieldName, executorService.submit(resolveField));
         }
         try {
             Map<String, Object> results = new LinkedHashMap<>();
             for (String fieldName : futures.keySet()) {
-                ExecutionResult executionResult = futures.get(fieldName).get();
-
+                ExecutionResult executionResult;
+                try {
+                    executionResult = futures.get(fieldName).get().join();
+                } catch (CompletionException e) {
+                    if (e.getCause() instanceof NonNullableFieldWasNullException) {
+                        assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause());
+                        results = null;
+                        break;
+                    } else {
+                        throw e;
+                    }
+                }
                 results.put(fieldName, executionResult != null ? executionResult.getData() : null);
             }
             return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
