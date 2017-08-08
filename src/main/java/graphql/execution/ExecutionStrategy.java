@@ -218,8 +218,8 @@ public abstract class ExecutionStrategy {
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
         }
-        fetchedValue.thenAccept(fetchCtx::onEnd);
         return fetchedValue.handle((result, exception) -> {
+            fetchCtx.onEnd(result,exception);
             if (exception != null) {
                 handleFetchingException(executionContext, parameters, field, fieldDef, argumentValues, environment, fetchCtx, exception);
                 return null;
