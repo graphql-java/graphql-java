@@ -68,6 +68,10 @@ public class NoFragmentCycles extends AbstractRule {
 
     private void detectCycleRecursive(String fragmentName, String initialName, List<FragmentSpread> spreadPath) {
         List<FragmentSpread> fragmentSpreads = this.fragmentSpreads.get(fragmentName);
+        if (fragmentSpreads == null) {
+            // KnownFragmentNames will have picked this up.  Lets not NPE
+            return;
+        }
 
         outer:
         for (FragmentSpread fragmentSpread : fragmentSpreads) {

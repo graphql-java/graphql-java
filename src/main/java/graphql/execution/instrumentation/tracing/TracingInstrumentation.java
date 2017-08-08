@@ -18,6 +18,7 @@ import graphql.validation.ValidationError;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * This {@link Instrumentation} implementation uses {@link TracingSupport} to
@@ -32,11 +33,13 @@ public class TracingInstrumentation implements Instrumentation {
     }
 
     @Override
-    public ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-        TracingSupport tracingSupport = parameters.getInstrumentationState();
-        Map<Object, Object> tracingMap = new LinkedHashMap<>();
-        tracingMap.put("tracing", tracingSupport.snapshotTracingData());
-        return new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), tracingMap);
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(CompletableFuture<ExecutionResult> executionResultFuture, InstrumentationExecutionParameters parameters) {
+        return executionResultFuture.thenApply(er -> {
+            TracingSupport tracingSupport = parameters.getInstrumentationState();
+            Map<Object, Object> tracingMap = new LinkedHashMap<>();
+            tracingMap.put("tracing", tracingSupport.snapshotTracingData());
+            return new ExecutionResultImpl(er.getData(), er.getErrors(), tracingMap);
+        });
     }
 
     @Override

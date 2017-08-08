@@ -14,6 +14,8 @@ import graphql.schema.DataFetcher
 import graphql.validation.ValidationError
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
+
 class ChainedInstrumentationStateTest extends Specification {
 
     class NamedInstrumentationState implements InstrumentationState {
@@ -83,9 +85,9 @@ class ChainedInstrumentationStateTest extends Specification {
         }
 
         @Override
-        ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        CompletableFuture<ExecutionResult> instrumentExecutionResult(CompletableFuture<ExecutionResult> executionResultFuture, InstrumentationExecutionParameters parameters) {
             assertState(parameters.getInstrumentationState())
-            return super.instrumentExecutionResult(executionResult, parameters)
+            return super.instrumentExecutionResult(executionResultFuture, parameters)
         }
     }
 
