@@ -148,13 +148,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onEnd(T result) {
-            contexts.forEach(context -> context.onEnd(result));
-        }
-
-        @Override
-        public void onEnd(Exception e) {
-            contexts.forEach(context -> context.onEnd(e));
+        public void onEnd(T result, Throwable t) {
+            contexts.forEach(context -> context.onEnd(result, t));
         }
     }
 }
