@@ -85,9 +85,9 @@ class ChainedInstrumentationStateTest extends Specification {
         }
 
         @Override
-        CompletableFuture<ExecutionResult> instrumentExecutionResult(CompletableFuture<ExecutionResult> executionResultFuture, InstrumentationExecutionParameters parameters) {
+        CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
             assertState(parameters.getInstrumentationState())
-            return super.instrumentExecutionResult(executionResultFuture, parameters)
+            return super.instrumentExecutionResult(executionResult, parameters)
         }
     }
 
