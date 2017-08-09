@@ -3,6 +3,9 @@ package graphql.execution.instrumentation
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import spock.lang.Specification
@@ -101,14 +104,17 @@ class InstrumentationTest extends Specification {
         def instrumentation = new TestingInstrumentation() {
             @Override
             DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-                throw new RuntimeException("DF BANG!")
+                return new DataFetcher<Object>() {
+                    @Override
+                    Object get(DataFetchingEnvironment environment) {
+                        throw new RuntimeException("DF BANG!")
+                    }
+                }
             }
         }
 
-        def strategy = new SimpleExecutionStrategy()
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
-                .queryExecutionStrategy(strategy)
                 .instrumentation(instrumentation)
                 .build()
 
