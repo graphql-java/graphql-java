@@ -33,13 +33,11 @@ public class TracingInstrumentation implements Instrumentation {
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(CompletableFuture<ExecutionResult> executionResultFuture, InstrumentationExecutionParameters parameters) {
-        return executionResultFuture.thenApply(er -> {
-            TracingSupport tracingSupport = parameters.getInstrumentationState();
-            Map<Object, Object> tracingMap = new LinkedHashMap<>();
-            tracingMap.put("tracing", tracingSupport.snapshotTracingData());
-            return new ExecutionResultImpl(er.getData(), er.getErrors(), tracingMap);
-        });
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        TracingSupport tracingSupport = parameters.getInstrumentationState();
+        Map<Object, Object> tracingMap = new LinkedHashMap<>();
+        tracingMap.put("tracing", tracingSupport.snapshotTracingData());
+        return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), tracingMap));
     }
 
     @Override
