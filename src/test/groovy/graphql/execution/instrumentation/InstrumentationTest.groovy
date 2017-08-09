@@ -3,6 +3,9 @@ package graphql.execution.instrumentation
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import spock.lang.Specification
@@ -84,5 +87,42 @@ class InstrumentationTest extends Specification {
         instrumentation.dfInvocations[1].getFieldTypeInfo().getPath().toList() == ['hero', 'id']
         instrumentation.dfInvocations[1].getFieldTypeInfo().getType().name == 'String'
         instrumentation.dfInvocations[1].getFieldTypeInfo().isNonNullType()
+    }
+
+    def "exceptions at field fetch will instrument exceptions correctly"() {
+
+        given:
+
+        def query = """
+        query HeroNameAndFriendsQuery {
+            hero {
+                id
+            }
+        }
+        """
+
+        def instrumentation = new TestingInstrumentation() {
+            @Override
+            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+                return new DataFetcher<Object>() {
+                    @Override
+                    Object get(DataFetchingEnvironment environment) {
+                        throw new RuntimeException("DF BANG!")
+                    }
+                }
+            }
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .build()
+
+        when:
+        graphQL.execute(query)
+
+        then:
+        instrumentation.throwableList.size() == 1
+        instrumentation.throwableList[0].getMessage() == "DF BANG!"
     }
 }
