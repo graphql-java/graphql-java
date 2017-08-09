@@ -73,10 +73,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         GraphQLExecutionNodeDatum data = new GraphQLExecutionNodeDatum(new LinkedHashMap<>(), parameters.source());
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLExecutionNode root = new GraphQLExecutionNode(type, parameters.fields(), singletonList(data));
-        return completedFuture(execute(executionContext, parameters, root));
+        return completedFuture(executeImpl(executionContext, parameters, root));
     }
 
-    private ExecutionResult execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLExecutionNode root) {
+    private ExecutionResult executeImpl(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLExecutionNode root) {
 
         Queue<GraphQLExecutionNode> nodes = new ArrayDeque<>();
         nodes.add(root);
