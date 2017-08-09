@@ -53,11 +53,7 @@ public final class NoOpInstrumentation implements Instrumentation {
 
     public static class NoOpInstrumentationContext<T> implements InstrumentationContext<T> {
         @Override
-        public void onEnd(T result) {
-        }
-
-        @Override
-        public void onEnd(Throwable t) {
+        public void onEnd(T result, Throwable t) {
         }
     }
 }

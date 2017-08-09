@@ -46,17 +46,7 @@ public class TracingInstrumentation implements Instrumentation {
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         TracingSupport tracingSupport = parameters.getInstrumentationState();
         TracingSupport.TracingContext ctx = tracingSupport.beginField(parameters.getEnvironment());
-        return new InstrumentationContext<Object>() {
-            @Override
-            public void onEnd(Object result) {
-                ctx.onEnd();
-            }
-
-            @Override
-            public void onEnd(Throwable t) {
-                ctx.onEnd();
-            }
-        };
+        return (result, t) -> ctx.onEnd();
     }
 
     @Override

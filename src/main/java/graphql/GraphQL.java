@@ -384,13 +384,7 @@ public class GraphQL {
         CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, instrumentationState);
         //
         // finish up instrumentation
-        executionResult = executionResult.whenComplete((er, throwable) -> {
-            if (throwable != null) {
-                executionInstrumentation.onEnd(throwable);
-            } else {
-                executionInstrumentation.onEnd(er);
-            }
-        });
+        executionResult = executionResult.whenComplete(executionInstrumentation::onEnd);
         //
         // allow instrumentation to tweak the result
         executionResult = instrumentation.instrumentExecutionResult(executionResult, instrumentationParameters);
@@ -432,11 +426,11 @@ public class GraphQL {
         try {
             document = parser.parseDocument(executionInput.getQuery());
         } catch (ParseCancellationException e) {
-            parseInstrumentation.onEnd(e);
+            parseInstrumentation.onEnd(null,e);
             return ParseResult.ofError((RecognitionException) e.getCause());
         }
 
-        parseInstrumentation.onEnd(document);
+        parseInstrumentation.onEnd(document,null);
         return ParseResult.of(document);
     }
 
@@ -446,7 +440,7 @@ public class GraphQL {
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
 
-        validationCtx.onEnd(validationErrors);
+        validationCtx.onEnd(validationErrors,null);
         return validationErrors;
     }
 

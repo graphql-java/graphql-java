@@ -21,13 +21,10 @@ class TestingInstrumentContext<T> implements InstrumentationContext<T> {
     }
 
     @Override
-    void onEnd(T result) {
-        end()
-    }
-
-    @Override
-    void onEnd(Throwable t) {
-        throwableList.add(t)
+    void onEnd(T result, Throwable t) {
+        if (t) {
+            throwableList.add(t)
+        }
         end()
     }
 }

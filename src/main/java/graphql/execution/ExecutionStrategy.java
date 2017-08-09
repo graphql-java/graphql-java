@@ -162,13 +162,7 @@ public abstract class ExecutionStrategy {
                 .thenCompose((fetchedValue) ->
                         completeField(executionContext, parameters, fetchedValue));
 
-        result = result.whenComplete((obj, throwable) -> {
-            if (throwable != null) {
-                fieldCtx.onEnd(throwable);
-            } else {
-                fieldCtx.onEnd(obj);
-            }
-        });
+        result.whenComplete(fieldCtx::onEnd);
         return result;
     }
 
@@ -224,8 +218,8 @@ public abstract class ExecutionStrategy {
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
         }
-        fetchedValue.thenAccept(fetchCtx::onEnd);
         return fetchedValue.handle((result, exception) -> {
+            fetchCtx.onEnd(result,exception);
             if (exception != null) {
                 handleFetchingException(executionContext, parameters, field, fieldDef, argumentValues, environment, fetchCtx, exception);
                 return null;
@@ -243,7 +237,7 @@ public abstract class ExecutionStrategy {
                                          DataFetchingEnvironment environment,
                                          InstrumentationContext<Object> fetchCtx,
                                          Throwable e) {
-        fetchCtx.onEnd(e);
+        fetchCtx.onEnd(null, e);
 
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .executionContext(executionContext)
