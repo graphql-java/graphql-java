@@ -11,12 +11,16 @@ import graphql.schema.DataFetcher;
 import graphql.validation.ValidationError;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Provides the capability to instrument the execution steps of a GraphQL query.
- * <p>
+ *
  * For example you might want to track which fields are taking the most time to fetch from the backing database
  * or log what fields are being asked for.
+ *
+ * Remember that graphql calls can cross threads so make sure you think about the thread safety of any instrumentation
+ * code when you are writing it.
  */
 public interface Instrumentation {
 
@@ -31,7 +35,7 @@ public interface Instrumentation {
     }
 
     /**
-     * This is called just before a query is executed and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
+     * This is called just before a query is executed and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
@@ -41,7 +45,7 @@ public interface Instrumentation {
     InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters);
 
     /**
-     * This is called just before a query is parsed and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
+     * This is called just before a query is parsed and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
@@ -51,7 +55,7 @@ public interface Instrumentation {
     InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters);
 
     /**
-     * This is called just before the parsed query Document is validated and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
+     * This is called just before the parsed query Document is validated and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
@@ -61,7 +65,7 @@ public interface Instrumentation {
     InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters);
 
     /**
-     * This is called just before the data fetch is started and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
+     * This is called just before the data fetch is started and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
@@ -71,7 +75,7 @@ public interface Instrumentation {
     InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters);
 
     /**
-     * This is called just before a field is resolved and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
+     * This is called just before a field is resolved and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
@@ -81,7 +85,7 @@ public interface Instrumentation {
     InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters);
 
     /**
-     * This is called just before a field {@link DataFetcher} is invoked and when this step finishes the {@link InstrumentationContext#onEnd(Object)}
+     * This is called just before a field {@link DataFetcher} is invoked and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
@@ -108,12 +112,12 @@ public interface Instrumentation {
     /**
      * This is called to allow instrumentation to instrument the execution result in some way
      *
-     * @param executionResult the result to instrument
-     * @param parameters      the parameters to this step
+     * @param executionResult {@link java.util.concurrent.CompletableFuture} of the result to instrument
+     * @param parameters            the parameters to this step
      *
-     * @return a new execution result
+     * @return a new execution result completable future
      */
-    default ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-        return executionResult;
+    default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        return CompletableFuture.completedFuture(executionResult);
     }
 }

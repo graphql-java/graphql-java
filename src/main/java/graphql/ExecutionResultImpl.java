@@ -10,8 +10,8 @@ import java.util.Map;
 @Internal
 public class ExecutionResultImpl implements ExecutionResult {
 
-    private final List<GraphQLError> errors;
     private final Object data;
+    private final List<GraphQLError> errors;
     private final transient boolean dataPresent;
     private final transient Map<Object, Object> extensions;
 
@@ -73,5 +73,15 @@ public class ExecutionResultImpl implements ExecutionResult {
             result.put("extensions", extensions);
         }
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "ExecutionResultImpl{" +
+                "data=" + data +
+                ", errors=" + errors +
+                ", dataPresent=" + dataPresent +
+                ", extensions=" + extensions +
+                '}';
     }
 }

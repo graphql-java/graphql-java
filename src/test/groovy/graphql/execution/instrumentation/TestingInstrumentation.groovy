@@ -1,11 +1,17 @@
 package graphql.execution.instrumentation
 
 import graphql.ExecutionResult
-import graphql.execution.instrumentation.parameters.*
+import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
+import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
 import graphql.language.Document
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.validation.ValidationError
+
+import java.util.concurrent.CompletableFuture
 
 class TestingInstrumentation implements Instrumentation {
 
@@ -16,7 +22,7 @@ class TestingInstrumentation implements Instrumentation {
 
     @Override
     InstrumentationState createState() {
-        return instrumentationState;
+        return instrumentationState
     }
 
     @Override
@@ -69,9 +75,9 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+    CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return executionResult
+        return CompletableFuture.completedFuture(executionResult)
     }
 }
 
