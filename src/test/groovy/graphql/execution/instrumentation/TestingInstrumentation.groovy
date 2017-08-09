@@ -75,9 +75,9 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    CompletableFuture<ExecutionResult> instrumentExecutionResult(CompletableFuture<ExecutionResult> executionResultFuture, InstrumentationExecutionParameters parameters) {
+    CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return executionResultFuture
+        return CompletableFuture.completedFuture(executionResult)
     }
 }
 
