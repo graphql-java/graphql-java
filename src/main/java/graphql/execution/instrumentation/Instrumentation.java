@@ -112,12 +112,12 @@ public interface Instrumentation {
     /**
      * This is called to allow instrumentation to instrument the execution result in some way
      *
-     * @param executionResultFuture a {@link java.util.concurrent.CompletableFuture} of the result to instrument
+     * @param executionResult {@link java.util.concurrent.CompletableFuture} of the result to instrument
      * @param parameters            the parameters to this step
      *
      * @return a new execution result completable future
      */
-    default CompletableFuture<ExecutionResult> instrumentExecutionResult(CompletableFuture<ExecutionResult> executionResultFuture, InstrumentationExecutionParameters parameters) {
-        return executionResultFuture;
+    default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        return CompletableFuture.completedFuture(executionResult);
     }
 }

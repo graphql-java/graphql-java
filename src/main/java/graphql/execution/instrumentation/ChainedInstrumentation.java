@@ -117,13 +117,30 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(CompletableFuture<ExecutionResult> executionResultFuture, InstrumentationExecutionParameters parameters) {
-        for (Instrumentation instrumentation : instrumentations) {
-            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-            executionResultFuture = instrumentation
-                    .instrumentExecutionResult(executionResultFuture, parameters.withNewState(state));
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
+
+        chainNthResult(0, executionResult, parameters, result);
+        return result;
+    }
+
+    private void chainNthResult(int index, ExecutionResult lastResult, InstrumentationExecutionParameters parameters, CompletableFuture<ExecutionResult> overallResult) {
+        if (index == instrumentations.size()) {
+            overallResult.complete(lastResult);
+            return;
         }
-        return executionResultFuture;
+        Instrumentation instrumentation = instrumentations.get(index);
+        InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+        CompletableFuture<ExecutionResult> chainedResultFuture = instrumentation.instrumentExecutionResult(lastResult, parameters.withNewState(state));
+
+        chainedResultFuture.whenComplete((newResult, exception) -> {
+            if (exception != null) {
+                overallResult.completeExceptionally(exception);
+            } else {
+                chainNthResult(index + 1, newResult, parameters, overallResult);
+            }
+        });
+
     }
 
     private static class ChainedInstrumentationState implements InstrumentationState {
