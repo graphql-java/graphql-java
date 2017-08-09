@@ -206,6 +206,7 @@ public class GraphQL {
      * @param context custom object provided to each {@link graphql.schema.DataFetcher}
      *
      * @return an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -226,6 +227,7 @@ public class GraphQL {
      * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
      *
      * @return an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -247,6 +249,7 @@ public class GraphQL {
      * @param variables variable values uses as argument
      *
      * @return an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
@@ -269,6 +272,7 @@ public class GraphQL {
      * @param variables     variable values uses as argument
      *
      * @return an {@link ExecutionResult} which can include errors
+     *
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
