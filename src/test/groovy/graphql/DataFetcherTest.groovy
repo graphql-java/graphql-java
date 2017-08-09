@@ -16,7 +16,7 @@ class DataFetcherTest extends Specification {
 
         private String privateField
         public String publicField
-        private Boolean booleanField
+        private boolean booleanField
         private Boolean booleanFieldWithGet
 
         String getProperty() {
@@ -27,7 +27,7 @@ class DataFetcherTest extends Specification {
             privateField = value
         }
 
-        Boolean isBooleanField() {
+        boolean isBooleanField() {
             return booleanField
         }
 
@@ -46,16 +46,35 @@ class DataFetcherTest extends Specification {
 
     DataHolder dataHolder
 
+    Map<String, Integer> mapHolder
+
     def setup() {
         dataHolder = new DataHolder()
         dataHolder.publicField = "publicValue"
         dataHolder.setProperty("propertyValue")
         dataHolder.setBooleanField(true)
         dataHolder.setBooleanFieldWithGet(false)
+
+        mapHolder = [
+                test: 5
+        ]
     }
 
     def env(GraphQLOutputType type) {
-        newDataFetchingEnvironment().source(dataHolder).fieldType(type).build()
+        env(type, dataHolder)
+    }
+
+    def env(GraphQLOutputType type, Object source) {
+        newDataFetchingEnvironment().source(source).fieldType(type).build()
+    }
+
+    def "get map value by key"() {
+        given:
+        def environment = env(GraphQLString, mapHolder)
+        when:
+        def result = new PropertyDataFetcher("test").get(environment)
+        then:
+        result == 5
     }
 
     def "get field value"() {
@@ -98,7 +117,7 @@ class DataFetcherTest extends Specification {
         given:
         def environment = env(GraphQLString)
         when:
-        def result = new PropertyDataFetcher("publicField").get(environment)
+        def result = new FieldDataFetcher("publicField").get(environment)
         then:
         result == "publicValue"
     }
