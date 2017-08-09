@@ -12,6 +12,7 @@ apply plugin: 'osgi'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
+def slf4jVersion = '1.7.25'
 def releaseVersion = System.properties.RELEASE_VERSION
 version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
 group = 'com.graphql-java'
@@ -29,7 +30,7 @@ jar {
 
 dependencies {
     compile 'org.antlr:antlr4-runtime:4.5.1'
-    compile 'org.slf4j:slf4j-api:1.7.22'
+    compile 'org.slf4j:slf4j-api:' + slf4jVersion
     antlr "org.antlr:antlr4:4.5.1"
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
@@ -38,7 +39,7 @@ dependencies {
     testCompile 'org.objenesis:objenesis:2.1'
     testCompile 'com.google.code.gson:gson:2.8.0'
     testCompile 'org.eclipse.jetty:jetty-server:9.4.5.v20170502'
-    testCompile 'org.slf4j:slf4j-simple:1.7.22'
+    testCompile 'org.slf4j:slf4j-simple:' + slf4jVersion
     testCompile 'org.awaitility:awaitility-groovy:3.0.0'
 
 }
