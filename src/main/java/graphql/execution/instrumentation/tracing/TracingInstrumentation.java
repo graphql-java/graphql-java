@@ -18,6 +18,7 @@ import graphql.validation.ValidationError;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * This {@link Instrumentation} implementation uses {@link TracingSupport} to
@@ -32,28 +33,18 @@ public class TracingInstrumentation implements Instrumentation {
     }
 
     @Override
-    public ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         TracingSupport tracingSupport = parameters.getInstrumentationState();
         Map<Object, Object> tracingMap = new LinkedHashMap<>();
         tracingMap.put("tracing", tracingSupport.snapshotTracingData());
-        return new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), tracingMap);
+        return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), tracingMap));
     }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         TracingSupport tracingSupport = parameters.getInstrumentationState();
         TracingSupport.TracingContext ctx = tracingSupport.beginField(parameters.getEnvironment());
-        return new InstrumentationContext<Object>() {
-            @Override
-            public void onEnd(Object result) {
-                ctx.onEnd();
-            }
-
-            @Override
-            public void onEnd(Exception e) {
-                ctx.onEnd();
-            }
-        };
+        return (result, t) -> ctx.onEnd();
     }
 
     @Override

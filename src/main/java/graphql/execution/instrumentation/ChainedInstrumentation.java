@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertNotNull;
 import static java.util.stream.Collectors.toList;
@@ -116,12 +117,30 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public ExecutionResult instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-        for (Instrumentation instrumentation : instrumentations) {
-            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-            executionResult = instrumentation.instrumentExecutionResult(executionResult, parameters.withNewState(state));
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
+
+        chainNthResult(0, executionResult, parameters, result);
+        return result;
+    }
+
+    private void chainNthResult(int index, ExecutionResult lastResult, InstrumentationExecutionParameters parameters, CompletableFuture<ExecutionResult> overallResult) {
+        if (index == instrumentations.size()) {
+            overallResult.complete(lastResult);
+            return;
         }
-        return executionResult;
+        Instrumentation instrumentation = instrumentations.get(index);
+        InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+        CompletableFuture<ExecutionResult> chainedResultFuture = instrumentation.instrumentExecutionResult(lastResult, parameters.withNewState(state));
+
+        chainedResultFuture.whenComplete((newResult, exception) -> {
+            if (exception != null) {
+                overallResult.completeExceptionally(exception);
+            } else {
+                chainNthResult(index + 1, newResult, parameters, overallResult);
+            }
+        });
+
     }
 
     private static class ChainedInstrumentationState implements InstrumentationState {
@@ -148,13 +167,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onEnd(T result) {
-            contexts.forEach(context -> context.onEnd(result));
-        }
-
-        @Override
-        public void onEnd(Exception e) {
-            contexts.forEach(context -> context.onEnd(e));
+        public void onEnd(T result, Throwable t) {
+            contexts.forEach(context -> context.onEnd(result, t));
         }
     }
 }

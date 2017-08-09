@@ -302,7 +302,7 @@ public class GraphQL {
      * Executes the graphql query using calling the builder function and giving it a new builder.
      * <p>
      * This allows a lambda style like :
-     *
+     * <p>
      * <pre>
      * {@code
      *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
@@ -349,7 +349,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      * <p>
      * This allows a lambda style like :
-     *
+     * <p>
      * <pre>
      * {@code
      *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
@@ -384,13 +384,13 @@ public class GraphQL {
         CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, instrumentationState);
         //
         // finish up instrumentation
-        executionResult = executionResult.thenApply(er -> {
-            executionInstrumentation.onEnd(er);
+        executionResult = executionResult.handle((er, throwable) -> {
+            executionInstrumentation.onEnd(er, throwable);
             return er;
         });
         //
         // allow instrumentation to tweak the result
-        executionResult = executionResult.thenApply(er -> instrumentation.instrumentExecutionResult(er, instrumentationParameters));
+        executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
         return executionResult;
     }
 
@@ -429,11 +429,11 @@ public class GraphQL {
         try {
             document = parser.parseDocument(executionInput.getQuery());
         } catch (ParseCancellationException e) {
-            parseInstrumentation.onEnd(e);
+            parseInstrumentation.onEnd(null, e);
             return ParseResult.ofError((RecognitionException) e.getCause());
         }
 
-        parseInstrumentation.onEnd(document);
+        parseInstrumentation.onEnd(document, null);
         return ParseResult.of(document);
     }
 
@@ -443,7 +443,7 @@ public class GraphQL {
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
 
-        validationCtx.onEnd(validationErrors);
+        validationCtx.onEnd(validationErrors, null);
         return validationErrors;
     }
 
