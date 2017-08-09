@@ -16,12 +16,10 @@ import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
-import graphql.language.SourceLocation;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
-import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
 
 @PublicApi
 public class GraphQL {
@@ -384,10 +383,7 @@ public class GraphQL {
         CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, instrumentationState);
         //
         // finish up instrumentation
-        executionResult = executionResult.handle((er, throwable) -> {
-            executionInstrumentation.onEnd(er, throwable);
-            return er;
-        });
+        executionResult = executionResult.whenComplete(executionInstrumentation::onEnd);
         //
         // allow instrumentation to tweak the result
         executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
@@ -430,7 +426,7 @@ public class GraphQL {
             document = parser.parseDocument(executionInput.getQuery());
         } catch (ParseCancellationException e) {
             parseInstrumentation.onEnd(null, e);
-            return ParseResult.ofError((RecognitionException) e.getCause());
+            return ParseResult.ofError(e);
         }
 
         parseInstrumentation.onEnd(document, null);
@@ -457,19 +453,11 @@ public class GraphQL {
         return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
     }
 
-    private InvalidSyntaxError toInvalidSyntaxError(RecognitionException recognitionException) {
-        SourceLocation sourceLocation = null;
-        if (recognitionException != null) {
-            sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
-        }
-        return new InvalidSyntaxError(sourceLocation);
-    }
-
     private static class ParseResult {
         private final Document document;
-        private final RecognitionException exception;
+        private final Exception exception;
 
-        private ParseResult(Document document, RecognitionException exception) {
+        private ParseResult(Document document, Exception exception) {
             this.document = document;
             this.exception = exception;
         }
@@ -482,7 +470,7 @@ public class GraphQL {
             return document;
         }
 
-        private RecognitionException getException() {
+        private Exception getException() {
             return exception;
         }
 
@@ -490,7 +478,7 @@ public class GraphQL {
             return new ParseResult(document, null);
         }
 
-        private static ParseResult ofError(RecognitionException e) {
+        private static ParseResult ofError(Exception e) {
             return new ParseResult(null, e);
         }
     }

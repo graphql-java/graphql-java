@@ -11,6 +11,7 @@ import java.util.List;
 public class ValidationError implements GraphQLError {
 
 
+    private final String msg;
     private final ValidationErrorType validationErrorType;
     private final List<SourceLocation> sourceLocations = new ArrayList<>();
     private final String description;
@@ -24,6 +25,7 @@ public class ValidationError implements GraphQLError {
         if (sourceLocation != null)
             this.sourceLocations.add(sourceLocation);
         this.description = description;
+        this.msg = mkMsg(validationErrorType, description);
     }
 
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
@@ -31,6 +33,11 @@ public class ValidationError implements GraphQLError {
         if (sourceLocations != null)
             this.sourceLocations.addAll(sourceLocations);
         this.description = description;
+        this.msg = mkMsg(validationErrorType, description);
+    }
+
+    private String mkMsg(ValidationErrorType validationErrorType, String description) {
+        return String.format("Validation error of type %s: %s", validationErrorType, description);
     }
 
     public ValidationErrorType getValidationErrorType() {
@@ -39,7 +46,7 @@ public class ValidationError implements GraphQLError {
 
     @Override
     public String getMessage() {
-        return String.format("Validation error of type %s: %s", validationErrorType, description);
+        return msg;
     }
 
     public String getDescription() {
