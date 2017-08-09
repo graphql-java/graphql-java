@@ -31,9 +31,11 @@ class ErrorsTest extends Specification {
     def "InvalidSyntaxError equals and hashcode works"() {
         expect:
 
-        def same1 = new InvalidSyntaxError(src(15,34))
-        def same2 = new InvalidSyntaxError(src(15,34))
-        def different1 = new InvalidSyntaxError([src(24,100), src(15,34)])
+        def msg = "problems at the ok corral"
+
+        def same1 = new InvalidSyntaxError(src(15, 34), msg)
+        def same2 = new InvalidSyntaxError(src(15, 34), msg)
+        def different1 = new InvalidSyntaxError([src(24, 100), src(15, 34)], msg)
 
         commonAssert(same1, same2, different1)
     }

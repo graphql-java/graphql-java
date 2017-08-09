@@ -4,10 +4,8 @@ import graphql.GraphQLError;
 import graphql.InvalidSyntaxError;
 import graphql.language.Definition;
 import graphql.language.Document;
-import graphql.language.SourceLocation;
 import graphql.parser.Parser;
 import graphql.schema.idl.errors.SchemaProblem;
-import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.io.File;
@@ -30,7 +28,9 @@ public class SchemaParser {
      * Parse a file of schema definitions and create a {@link TypeDefinitionRegistry}
      *
      * @param file the file to parse
+     *
      * @return registry of type definitions
+     *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
     public TypeDefinitionRegistry parse(File file) throws SchemaProblem {
@@ -45,7 +45,9 @@ public class SchemaParser {
      * Parse a reader of schema definitions and create a {@link TypeDefinitionRegistry}
      *
      * @param reader the reader to parse
+     *
      * @return registry of type definitions
+     *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
     public TypeDefinitionRegistry parse(Reader reader) throws SchemaProblem {
@@ -60,7 +62,9 @@ public class SchemaParser {
      * Parse a string of schema definitions and create a {@link TypeDefinitionRegistry}
      *
      * @param schemaInput the schema string to parse
+     *
      * @return registry of type definitions
+     *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
     public TypeDefinitionRegistry parse(String schemaInput) throws SchemaProblem {
@@ -75,9 +79,7 @@ public class SchemaParser {
     }
 
     private SchemaProblem handleParseException(ParseCancellationException e) throws RuntimeException {
-        RecognitionException recognitionException = (RecognitionException) e.getCause();
-        SourceLocation sourceLocation = new SourceLocation(recognitionException.getOffendingToken().getLine(), recognitionException.getOffendingToken().getCharPositionInLine());
-        InvalidSyntaxError invalidSyntaxError = new InvalidSyntaxError(sourceLocation);
+        InvalidSyntaxError invalidSyntaxError = InvalidSyntaxError.toInvalidSyntaxError(e);
         return new SchemaProblem(Collections.singletonList(invalidSyntaxError));
     }
 
@@ -86,8 +88,10 @@ public class SchemaParser {
      * useful for Introspection =&gt; IDL (Document) =&gt; TypeDefinitionRegistry
      *
      * @param document containing type definitions
-     * @throws SchemaProblem if an error occurs
+     *
      * @return the TypeDefinitionRegistry containing all type definitions from the document
+     *
+     * @throws SchemaProblem if an error occurs
      */
     public TypeDefinitionRegistry buildRegistry(Document document) {
         List<GraphQLError> errors = new ArrayList<>();
