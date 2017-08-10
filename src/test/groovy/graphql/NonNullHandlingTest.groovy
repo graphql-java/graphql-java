@@ -1,6 +1,7 @@
 package graphql
 
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.ExecutorServiceExecutionStrategy
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLSchema
@@ -86,9 +87,10 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
     }
 
     @Unroll
@@ -141,9 +143,10 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
     }
 
     @Unroll
@@ -205,9 +208,10 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
 
     }
 
@@ -270,9 +274,10 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
 
     }
 
@@ -331,9 +336,10 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
 
     }
 
@@ -392,8 +398,9 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
     }
 }
