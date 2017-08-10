@@ -431,7 +431,7 @@ been split into multiple files and merged all together just before schema genera
 
 .. code-block:: java
 
-    SchemaParser schemaParser = new SchemaCompiler();
+    SchemaParser schemaParser = new SchemaParser();
     SchemaGenerator schemaGenerator = new SchemaGenerator();
 
     File schemaFile1 = loadSchema("starWarsSchemaPart1.graphqls");
@@ -441,9 +441,9 @@ been split into multiple files and merged all together just before schema genera
     TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
 
     // each registry is merged into the main registry
-    typeRegistry.merge(schemaParser.compile(schemaFile1));
-    typeRegistry.merge(schemaParser.compile(schemaFile2));
-    typeRegistry.merge(schemaParser.compile(schemaFile3));
+    typeRegistry.merge(schemaParser.parse(schemaFile1));
+    typeRegistry.merge(schemaParser.parse(schemaFile2));
+    typeRegistry.merge(schemaParser.parse(schemaFile3));
 
     GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
 

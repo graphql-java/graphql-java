@@ -23,7 +23,7 @@ public class BatchedDataFetcherFactory {
             Method getMethod = supplied.getClass().getMethod("get", DataFetchingEnvironment.class);
             Batched batched = getMethod.getAnnotation(Batched.class);
             if (batched != null) {
-                return (BatchedDataFetcher) supplied::get;
+                return supplied::get;
             }
         } catch (NoSuchMethodException e) {
             throw new IllegalArgumentException(e);

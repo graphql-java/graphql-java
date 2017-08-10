@@ -13,11 +13,11 @@ import spock.lang.Specification
 
 import java.util.concurrent.atomic.AtomicInteger
 
-class GraphqlExecutionTest extends Specification {
+class BatchedExecutionStrategyTest extends Specification {
 
     private GraphQLSchema schema = new FunWithStringsSchemaFactory().createSchema();
 
-    private GraphQL graphQLSimple = GraphQL.newGraphQL(schema)
+    private GraphQL graphQLAsync = GraphQL.newGraphQL(schema)
             .queryExecutionStrategy(new AsyncExecutionStrategy())
             .build()
 
@@ -37,7 +37,7 @@ class GraphqlExecutionTest extends Specification {
     }
 
     private void runTestExpectErrors(String query, Exception exception) {
-        runTestSimpleExpectErrors(query, exception)
+        runTestAsyncExpectErrors(query, exception)
         runTestBatchingUnbatchedExpectErrors(query, exception)
         runTestBatchingExpectErrors(query, exception)
     }
@@ -57,8 +57,8 @@ class GraphqlExecutionTest extends Specification {
             assert exception.getMessage() == ((ExceptionWhileDataFetching) errors.get(0)).getException().getMessage()
     }
 
-    private void runTestSimpleExpectErrors(String query, Exception exception) {
-        def errors = this.graphQLSimple.execute(query).getErrors()
+    private void runTestAsyncExpectErrors(String query, Exception exception) {
+        def errors = this.graphQLAsync.execute(query).getErrors()
         assert errors.size() == 1
         assert exception.class == ((ExceptionWhileDataFetching) errors.get(0)).getException().class
         assert exception.getMessage() == ((ExceptionWhileDataFetching) errors.get(0)).getException().getMessage()
@@ -66,7 +66,7 @@ class GraphqlExecutionTest extends Specification {
 
     // Split into sub-methods so the stack trace is more useful
     private void runTest(String query, Map<String, Object> expected) {
-        runTestSimple(query, expected);
+        runTestAsync(query, expected);
         runTestBatchingUnbatched(query, expected);
         runTestBatching(query, expected);
     }
@@ -79,15 +79,15 @@ class GraphqlExecutionTest extends Specification {
         assert expected == this.graphQLBatchedValue.execute(query).getData();
     }
 
-    private void runTestSimple(String query, Map<String, Object> expected) {
-        assert expected == this.graphQLSimple.execute(query).getData();
+    private void runTestAsync(String query, Map<String, Object> expected) {
+        assert expected == this.graphQLAsync.execute(query).getData();
     }
 
     // This method is agnostic to whether errors are returned or thrown, provided they contain the desired text
     private void runTestExpectError(String query, String errorSubstring) {
 
         try {
-            ExecutionResult result = this.graphQLSimple.execute(query);
+            ExecutionResult result = this.graphQLAsync.execute(query);
             assert !result.getErrors().isEmpty(), "Simple should have errored but was: " + result.getData();
         } catch (Exception e) {
             assert e.getMessage().contains(errorSubstring), "Simple error must contain '" + errorSubstring + "'";
@@ -399,7 +399,7 @@ class GraphqlExecutionTest extends Specification {
                 }"""
 
         expect:
-        Arrays.asList(this.graphQLSimple, this.graphQLBatchedButUnbatched, this.graphQLBatchedValue).each { GraphQL graphQL ->
+        Arrays.asList(this.graphQLAsync, this.graphQLBatchedButUnbatched, this.graphQLBatchedValue).each { GraphQL graphQL ->
             Map<String, Object> response = graphQL.execute(query).getData() as Map<String, Object>;
             Map<String, Object> values = (response.get("string") as Map<String, Object>).get("append") as Map<String, Object>;
             assert Arrays.asList("v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9") == values.keySet().toList();
