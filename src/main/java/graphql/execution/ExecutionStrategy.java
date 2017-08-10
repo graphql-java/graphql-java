@@ -513,17 +513,17 @@ public abstract class ExecutionStrategy {
             return completeValue(executionContext, newParameters);
         });
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-        resultsFuture.handle((results, exception) -> {
+        resultsFuture.whenComplete((results, exception) -> {
             if (exception != null) {
                 handleNonNullException(executionContext, overallResult, exception);
-                return null;
+                return;
             }
             List<Object> completedResults = new ArrayList<>();
             for (ExecutionResult completedValue : results) {
                 completedResults.add(completedValue.getData());
             }
             overallResult.complete(new ExecutionResultImpl(completedResults, null));
-            return null;
+            return;
         });
         return overallResult;
     }
