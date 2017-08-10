@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
@@ -47,22 +46,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             futures.add(future);
         }
 
-        CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
-        CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[futures.size()]))
-                .whenComplete(futuresCompleted(executionContext, fieldNames, futures, result));
-
-        return result;
+        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        Async.each(futures).whenComplete(handleResults(executionContext, fieldNames, overallResult));
+        return overallResult;
     }
-
-    private BiConsumer<Void, Throwable> futuresCompleted(ExecutionContext executionContext,
-                                                         List<String> fieldNames,
-                                                         List<CompletableFuture<ExecutionResult>> futures,
-                                                         CompletableFuture<ExecutionResult> result) {
-        return (notUsed1, notUsed2) -> {
-            completeCompletableFuture(executionContext, fieldNames, futures, result);
-        };
-    }
-
 
 }
