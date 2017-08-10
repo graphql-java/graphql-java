@@ -618,9 +618,6 @@ public abstract class ExecutionStrategy {
 
 
     /**
-     * =======
-     * /**
-     * >>>>>>> - add helper class Async to simplify executing CFs sequentially
      * Builds the type info hierarchy for the current field
      *
      * @param parameters      contains the parameters holding the fields to be executed and source object
