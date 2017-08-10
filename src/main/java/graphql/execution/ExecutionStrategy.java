@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
@@ -615,33 +614,6 @@ public abstract class ExecutionStrategy {
         } else {
             result.completeExceptionally(e);
         }
-    }
-
-
-    /**
-     * <<<<<<< HEAD
-     * This will join all of the promises of a result as one and return a execution result that
-     * is a list of all the promised values
-     *
-     * @param completableFutures the list of futures to wait for to complete
-     *
-     * @return a new execution result of all the values in the promises
-     *
-     * @throws CompletionException if anything bad happens while waiting
-     */
-    protected ExecutionResult joinAllOf(List<CompletableFuture<ExecutionResult>> completableFutures) throws CompletionException {
-        CompletableFuture[] stages = completableFutures.toArray(new CompletableFuture[completableFutures.size()]);
-
-        CompletableFuture.allOf(stages).join();
-        // they are all now complete (or an runtime exception has been thrown)
-
-        List<Object> completedResults = new ArrayList<>();
-        completableFutures.forEach(future -> {
-            ExecutionResult completedValue = future.getNow(null);
-            Assert.assertNotNull(completedValue, "A null execution result value is not allowed");
-            completedResults.add(completedValue.getData());
-        });
-        return new ExecutionResultImpl(completedResults, null);
     }
 
 
