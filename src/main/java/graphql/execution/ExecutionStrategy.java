@@ -486,15 +486,13 @@ public abstract class ExecutionStrategy {
      * @return an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
-        List<CompletableFuture<ExecutionResult>> completedValues = new ArrayList<>();
+
         ExecutionTypeInfo typeInfo = parameters.typeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
 
-        boolean forceListToBeNull = false;
-        int idx = 0;
-        for (Object item : iterableValues) {
+        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(iterableValues, (item, index, prevResults) -> {
 
-            ExecutionPath indexedPath = parameters.path().segment(idx);
+            ExecutionPath indexedPath = parameters.path().segment(index);
 
             ExecutionTypeInfo wrappedTypeInfo = ExecutionTypeInfo.newTypeInfo()
                     .parentInfo(typeInfo)
@@ -513,25 +511,24 @@ public abstract class ExecutionStrategy {
                     .source(item)
                     .build();
 
-            CompletableFuture<ExecutionResult> completedValue;
-            try {
-                completedValue = completeValue(executionContext, newParameters);
-            } catch (NonNullableFieldWasNullException nne) {
-                assertNonNullFieldPrecondition(nne);
-                // the list becomes null if the wrapped type is non null but a null list entry is encountered
-                forceListToBeNull = true;
-                break;
+            return completeValue(executionContext, newParameters);
+        });
+        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        resultsFuture.handle((results, exception) -> {
+            if (exception != null) {
+                handleNonNullException(executionContext, overallResult, exception);
+                return null;
             }
-            completedValues.add(completedValue);
-            idx++;
-        }
-        if (forceListToBeNull) {
-            return completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
-        } else {
-            ExecutionResult executionResult = joinAllOf(completedValues);
-            return completedFuture(executionResult);
-        }
+            List<Object> completedResults = new ArrayList<>();
+            for (ExecutionResult completedValue : results) {
+                completedResults.add(completedValue.getData());
+            }
+            overallResult.complete(new ExecutionResultImpl(completedResults, null));
+            return null;
+        });
+        return overallResult;
     }
+
 
     /**
      * Called to discover the field definition give the current parameters and the AST {@link Field}
@@ -604,7 +601,25 @@ public abstract class ExecutionStrategy {
         }
     }
 
+    protected void handleNonNullException(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result, Throwable e) {
+        if (e instanceof NonNullableFieldWasNullException) {
+            assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e, result);
+            if (!result.isDone()) {
+                result.complete(new ExecutionResultImpl(null, executionContext.getErrors()));
+            }
+        } else if (e instanceof CompletionException && e.getCause() instanceof NonNullableFieldWasNullException) {
+            assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause(), result);
+            if (!result.isDone()) {
+                result.complete(new ExecutionResultImpl(null, executionContext.getErrors()));
+            }
+        } else {
+            result.completeExceptionally(e);
+        }
+    }
+
+
     /**
+     * <<<<<<< HEAD
      * This will join all of the promises of a result as one and return a execution result that
      * is a list of all the promised values
      *
@@ -631,6 +646,9 @@ public abstract class ExecutionStrategy {
 
 
     /**
+     * =======
+     * /**
+     * >>>>>>> - add helper class Async to simplify executing CFs sequentially
      * Builds the type info hierarchy for the current field
      *
      * @param parameters      contains the parameters holding the fields to be executed and source object
