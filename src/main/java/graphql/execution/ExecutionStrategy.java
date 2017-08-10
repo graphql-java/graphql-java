@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
@@ -622,7 +623,8 @@ public abstract class ExecutionStrategy {
         List<Object> completedResults = new ArrayList<>();
         completableFutures.forEach(future -> {
             ExecutionResult completedValue = future.getNow(null);
-            completedResults.add(completedValue != null ? completedValue.getData() : null);
+            Assert.assertNotNull(completedValue, "A null execution result value is not allowed");
+            completedResults.add(completedValue.getData());
         });
         return new ExecutionResultImpl(completedResults, null);
     }
