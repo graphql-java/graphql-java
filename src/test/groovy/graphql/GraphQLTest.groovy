@@ -293,14 +293,12 @@ class GraphQLTest extends Specification {
                 ))
                 .build()
         def query = "{foo}"
-        DataFetchingEnvironment dataFetchingEnvironment
         when:
         GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         1 * dataFetcher.get(_) >> {
             DataFetchingEnvironment env ->
-                dataFetchingEnvironment = env
                 assert !env.arguments.containsKey('bar')
         }
     }
