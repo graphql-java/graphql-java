@@ -9,6 +9,7 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation.NoOpInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
@@ -59,6 +60,11 @@ public class TracingInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
+        return new NoOpInstrumentationContext<>();
+    }
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         return new NoOpInstrumentationContext<>();
     }
 

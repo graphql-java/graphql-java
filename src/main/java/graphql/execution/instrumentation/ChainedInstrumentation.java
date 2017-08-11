@@ -1,8 +1,10 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
+import graphql.PublicApi;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
@@ -27,6 +29,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @see graphql.execution.instrumentation.Instrumentation
  */
+@PublicApi
 public class ChainedInstrumentation implements Instrumentation {
 
     // This class is inspired from https://github.com/leangen/graphql-spqr/blob/master/src/main/java/io/leangen/graphql/GraphQLRuntime.java#L80
@@ -83,6 +86,16 @@ public class ChainedInstrumentation implements Instrumentation {
                 .map(instrumentation -> {
                     InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
                     return instrumentation.beginDataFetch(parameters.withNewState(state));
+                })
+                .collect(toList()));
+    }
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        return new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginExecutionStrategy(parameters.withNewState(state));
                 })
                 .collect(toList()));
     }

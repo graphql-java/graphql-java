@@ -32,16 +32,24 @@ class PreparsedDocumentProviderTest extends Specification {
 
                 "start:data-fetch",
 
+                "start:execution-strategy",
+
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
+
+                "start:execution-strategy",
 
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "end:field-id",
 
+                "end:execution-strategy",
+
                 "end:field-hero",
+
+                "end:execution-strategy",
 
                 "end:data-fetch",
 
@@ -52,17 +60,21 @@ class PreparsedDocumentProviderTest extends Specification {
                 "start:execution",
 
                 "start:data-fetch",
+                "start:execution-strategy",
 
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
 
+                "start:execution-strategy",
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "end:field-id",
+                "end:execution-strategy",
 
                 "end:field-hero",
+                "end:execution-strategy",
 
                 "end:data-fetch",
 

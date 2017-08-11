@@ -12,6 +12,8 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.TypeResolutionParameters;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -70,10 +72,16 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+
+        InstrumentationContext<CompletableFuture<ExecutionResult>> executionStrategyCtx = executionContext.getInstrumentation().beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext));
+
         GraphQLExecutionNodeDatum data = new GraphQLExecutionNodeDatum(new LinkedHashMap<>(), parameters.source());
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLExecutionNode root = new GraphQLExecutionNode(type, parameters.fields(), singletonList(data));
-        return completedFuture(executeImpl(executionContext, parameters, root));
+        CompletableFuture<ExecutionResult> result = completedFuture(executeImpl(executionContext, parameters, root));
+
+        executionStrategyCtx.onEnd(result, null);
+        return result;
     }
 
     private ExecutionResult executeImpl(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLExecutionNode root) {

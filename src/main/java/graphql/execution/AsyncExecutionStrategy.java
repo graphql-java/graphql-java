@@ -1,6 +1,8 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.language.Field;
 
 import java.util.ArrayList;
@@ -33,6 +35,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
+        InstrumentationContext<CompletableFuture<ExecutionResult>> executionStrategyCtx = executionContext.getInstrumentation().beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext));
+
         Map<String, List<Field>> fields = parameters.fields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         List<CompletableFuture<ExecutionResult>> futures = new ArrayList<>();
@@ -52,6 +56,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 .allOf(futures.toArray(new CompletableFuture[futures.size()]))
                 .whenComplete(futuresCompleted(executionContext, fieldNames, futures, result));
 
+        executionStrategyCtx.onEnd(result,null);
         return result;
     }
 

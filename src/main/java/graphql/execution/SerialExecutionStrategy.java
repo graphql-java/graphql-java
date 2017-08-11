@@ -2,6 +2,8 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.language.Field;
 
 import java.util.LinkedHashMap;
@@ -24,6 +26,9 @@ public class SerialExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+
+        InstrumentationContext<CompletableFuture<ExecutionResult>> executionStrategyCtx = executionContext.getInstrumentation().beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext));
+
         Map<String, List<Field>> fields = parameters.fields();
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
@@ -47,6 +52,9 @@ public class SerialExecutionStrategy extends ExecutionStrategy {
 
             }
         }
-        return completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
+        CompletableFuture<ExecutionResult> result = completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
+
+        executionStrategyCtx.onEnd(result, null);
+        return result;
     }
 }

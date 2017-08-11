@@ -6,6 +6,7 @@ import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
@@ -58,6 +59,12 @@ class ChainedInstrumentationStateTest extends Specification {
         InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
             assertState(parameters.getInstrumentationState())
             return super.beginValidation(parameters)
+        }
+
+        @Override
+        InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+            assertState(parameters.getInstrumentationState())
+            return super.beginExecutionStrategy(parameters)
         }
 
         @Override
@@ -121,16 +128,24 @@ class ChainedInstrumentationStateTest extends Specification {
 
                 "start:data-fetch",
 
+                "start:execution-strategy",
+
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
+
+                "start:execution-strategy",
 
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "end:field-id",
 
+                "end:execution-strategy",
+
                 "end:field-hero",
+
+                "end:execution-strategy",
 
                 "end:data-fetch",
 
