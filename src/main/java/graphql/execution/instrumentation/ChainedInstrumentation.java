@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
+import graphql.execution.Async;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -131,29 +132,12 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-        CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
-
-        chainNthResult(0, executionResult, parameters, result);
-        return result;
-    }
-
-    private void chainNthResult(int index, ExecutionResult lastResult, InstrumentationExecutionParameters parameters, CompletableFuture<ExecutionResult> overallResult) {
-        if (index == instrumentations.size()) {
-            overallResult.complete(lastResult);
-            return;
-        }
-        Instrumentation instrumentation = instrumentations.get(index);
-        InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-        CompletableFuture<ExecutionResult> chainedResultFuture = instrumentation.instrumentExecutionResult(lastResult, parameters.withNewState(state));
-
-        chainedResultFuture.whenComplete((newResult, exception) -> {
-            if (exception != null) {
-                overallResult.completeExceptionally(exception);
-            } else {
-                chainNthResult(index + 1, newResult, parameters, overallResult);
-            }
+        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(instrumentations, (instrumentation, index, prevResults) -> {
+            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+            ExecutionResult lastResult = prevResults.size() > 0 ? prevResults.get(prevResults.size() - 1) : executionResult;
+            return instrumentation.instrumentExecutionResult(lastResult, parameters.withNewState(state));
         });
-
+        return resultsFuture.thenApply((results) -> results.get(results.size() - 1));
     }
 
     private static class ChainedInstrumentationState implements InstrumentationState {
