@@ -278,7 +278,7 @@ class GraphQLTest extends Specification {
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
-    def "query with missing argument results in arguments map with value null"() {
+    def "query with missing argument results in arguments map missing the key"() {
         given:
         def dataFetcher = Mock(DataFetcher)
         GraphQLSchema schema = newSchema().query(
@@ -293,19 +293,49 @@ class GraphQLTest extends Specification {
                 ))
                 .build()
         def query = "{foo}"
+        DataFetchingEnvironment dataFetchingEnvironment
         when:
         GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         1 * dataFetcher.get(_) >> {
             DataFetchingEnvironment env ->
-                assert env.arguments.size() == 0
+                dataFetchingEnvironment = env
+                assert !env.arguments.containsKey('bar')
+        }
+    }
+
+    @SuppressWarnings("GroovyAssignabilityCheck")
+    def "query with null argument results in arguments map with value null "() {
+        given:
+        def dataFetcher = Mock(DataFetcher)
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("QueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(GraphQLInt).build())
+                                .dataFetcher(dataFetcher)
+                ))
+                .build()
+        def query = "{foo(bar: null)}"
+        DataFetchingEnvironment dataFetchingEnvironment
+        when:
+        GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+        1 * dataFetcher.get(_) >> {
+            DataFetchingEnvironment env ->
+                dataFetchingEnvironment = env
+                assert env.arguments.containsKey('bar')
                 assert env.arguments['bar'] == null
         }
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
-    def "query with missing key in an input object result in a empty map"() {
+    def "query with missing key in an input object result in a map with missing key"() {
         given:
         def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
@@ -333,7 +363,136 @@ class GraphQLTest extends Specification {
                 assert env.arguments.size() == 1
                 assert env.arguments["bar"] instanceof Map
                 assert env.arguments['bar']['someKey'] == 'value'
+                assert !(env.arguments['bar'] as Map).containsKey('otherKey')
+        }
+    }
+
+    @SuppressWarnings("GroovyAssignabilityCheck")
+    def "query with null value in an input object result in a map with null as value"() {
+        given:
+        def dataFetcher = Mock(DataFetcher)
+        def inputObject = newInputObject().name("bar")
+                .field(newInputObjectField().name("someKey").type(GraphQLString).build())
+                .field(newInputObjectField().name("otherKey").type(GraphQLString).build()).build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("QueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build())
+                                .dataFetcher(dataFetcher)
+                ))
+                .build()
+        def query = "{foo(bar: {someKey: \"value\", otherKey: null})}"
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+        result.errors.size() == 0
+        1 * dataFetcher.get(_) >> {
+            DataFetchingEnvironment env ->
+                assert env.arguments.size() == 1
+                assert env.arguments["bar"] instanceof Map
+                assert env.arguments['bar']['someKey'] == 'value'
+                assert (env.arguments['bar'] as Map).containsKey('otherKey')
                 assert env.arguments['bar']['otherKey'] == null
+        }
+    }
+
+    def "query with missing List input field results in a map with a missing key"() {
+        given:
+        def dataFetcher = Mock(DataFetcher)
+        def inputObject = newInputObject().name("bar")
+                .field(newInputObjectField().name("list").type(new GraphQLList(GraphQLString)).build())
+                .build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("QueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build())
+                                .dataFetcher(dataFetcher)
+                ))
+                .build()
+        def query = "{foo(bar: {})}"
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+        result.errors.size() == 0
+        1 * dataFetcher.get(_) >> {
+            DataFetchingEnvironment env ->
+                assert env.arguments.size() == 1
+                assert env.arguments["bar"] instanceof Map
+                assert !(env.arguments['bar'] as Map).containsKey('list')
+        }
+    }
+
+    def "query with null List input field results in a map with null as key"() {
+        given:
+        def dataFetcher = Mock(DataFetcher)
+        def inputObject = newInputObject().name("bar")
+                .field(newInputObjectField().name("list").type(new GraphQLList(GraphQLString)).build())
+                .build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("QueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build())
+                                .dataFetcher(dataFetcher)
+                ))
+                .build()
+        def query = "{foo(bar: {list: null})}"
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+        result.errors.size() == 0
+        1 * dataFetcher.get(_) >> {
+            DataFetchingEnvironment env ->
+                assert env.arguments.size() == 1
+                assert env.arguments["bar"] instanceof Map
+                assert (env.arguments['bar'] as Map).containsKey('list')
+                assert env.arguments['bar']['list'] == null
+        }
+    }
+
+    def "query with List containing null input field results in a map with a list containing null"() {
+        given:
+        def dataFetcher = Mock(DataFetcher)
+        def inputObject = newInputObject().name("bar")
+                .field(newInputObjectField().name("list").type(new GraphQLList(GraphQLString)).build())
+                .build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("QueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build())
+                                .dataFetcher(dataFetcher)
+                ))
+                .build()
+        def query = "{foo(bar: {list: [null]})}"
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(query)
+
+        then:
+        result.errors.size() == 0
+        1 * dataFetcher.get(_) >> {
+            DataFetchingEnvironment env ->
+                assert env.arguments.size() == 1
+                assert env.arguments["bar"] instanceof Map
+                assert (env.arguments['bar'] as Map).containsKey('list')
+                assert env.arguments['bar']['list'] == [null]
         }
     }
 
