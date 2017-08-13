@@ -9,7 +9,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLObjectType
-import graphql.schema.StaticDataFetcher
 import graphql.schema.TypeResolver
 import graphql.schema.idl.MapEnumValuesProvider
 import graphql.schema.idl.RuntimeWiring
@@ -30,11 +29,15 @@ class TestBatchLoadingSupported extends Specification {
     static int batchFunctionLoadCount = 0
     static int naiveLoadCount = 0
 
-    static Object getRawCharacterData(String id) {
+    static Object getCharacterData(String id) {
         rawCharacterLoadCount++
         if (StarWarsData.humanData[id] != null) return StarWarsData.humanData[id]
         if (StarWarsData.droidData[id] != null) return StarWarsData.droidData[id]
         return null
+    }
+
+    static List<Object> getCharacterDataViaBatchHTTPApi(List<String> keys) {
+        keys.stream().map({ id -> getCharacterData(id) }).collect(Collectors.toList())
     }
 
     // a batch loader function that will be called with N or more keys for batch loading
@@ -45,19 +48,16 @@ class TestBatchLoadingSupported extends Specification {
 
             //
             // direct return of values
-            //CompletableFuture.completedFuture(getCharacterObjects(keys))
+            //CompletableFuture.completedFuture(getCharacterDataViaBatchHTTPApi(keys))
             //
             // or
             //
             // async supply of values
             CompletableFuture.supplyAsync({
-                return getCharacterObjects(keys)
+                return getCharacterDataViaBatchHTTPApi(keys)
             })
         }
 
-        private List getCharacterObjects(List<String> keys) {
-            keys.stream().map({ id -> getRawCharacterData(id) }).collect(Collectors.toList())
-        }
     }
 
     // a data loader for characters that points to the character batch loader
