@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -315,7 +316,7 @@ public abstract class ExecutionStrategy {
      */
     protected CompletableFuture<ExecutionResult> completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         ExecutionTypeInfo typeInfo = parameters.typeInfo();
-        Object result = parameters.source();
+        Object result = unboxPossibleOptional(parameters.source());
         GraphQLType fieldType = typeInfo.getType();
 
         if (result == null) {
@@ -376,6 +377,26 @@ public abstract class ExecutionStrategy {
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
 
         return executionContext.getQueryStrategy().execute(executionContext, newParameters);
+    }
+
+    /**
+     * We treat Optional objects as "boxed" values where an empty Optional
+     * equals a null object and a present Optional is the underlying value.
+     *
+     * @param result the incoming value
+     *
+     * @return an un-boxed result
+     */
+    private Object unboxPossibleOptional(Object result) {
+        if (result instanceof Optional) {
+            Optional optional = (Optional) result;
+            if (optional.isPresent()) {
+                result = optional.get();
+            } else {
+                result = null;
+            }
+        }
+        return result;
     }
 
     private Iterable<Object> toIterable(Object result) {
