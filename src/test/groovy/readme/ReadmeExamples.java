@@ -407,6 +407,30 @@ public class ReadmeExamples {
                 .wiringFactory(dynamicWiringFactory).build();
     }
 
+    class Wizard {
+
+    }
+
+    class Witch {
+
+    }
+
+    private void typeResolverExample() {
+        new TypeResolver() {
+            @Override
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                Object javaObject = env.getObject();
+                if (javaObject instanceof Wizard) {
+                    return (GraphQLObjectType) env.getSchema().getType("WizardType");
+                } else if (javaObject instanceof Witch) {
+                    return (GraphQLObjectType) env.getSchema().getType("WitchType");
+                } else {
+                    return (GraphQLObjectType) env.getSchema().getType("NecromancerType");
+                }
+            }
+        };
+    }
+
     private DataFetcher createDataFetcher(FieldDefinition definition, Directive directive) {
         throw new UnsupportedOperationException("Not implemented");
     }

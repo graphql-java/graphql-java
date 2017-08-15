@@ -1,6 +1,7 @@
 package graphql
 
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.ExecutorServiceExecutionStrategy
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLSchema
@@ -9,6 +10,7 @@ import spock.lang.Unroll
 
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
@@ -23,6 +25,8 @@ class NonNullHandlingTest extends Specification {
     class SimpleObject {
         String nullChild = null
         String nonNullChild = "not null"
+        List<String> nonNullListWithNull = ["foo", null, "bar"]
+        List<String> nullableListWithNull = ["foo", null, "bar"]
     }
 
     class ContainingObject {
@@ -83,9 +87,10 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
     }
 
     @Unroll
@@ -138,9 +143,10 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+//        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+//        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
     }
 
     @Unroll
@@ -202,9 +208,10 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
 
     }
 
@@ -267,11 +274,135 @@ class NonNullHandlingTest extends Specification {
 
         where:
 
-        strategyName | executionStrategy
-        'executor'   | new ExecutorServiceExecutionStrategy(commonPool())
-        'simple'     | new AsyncExecutionStrategy()
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
 
     }
 
+    @Unroll
+    def "#561 - null entry in non null list type with non null wrapper list (strategy: #strategyName)"() {
 
+        given:
+
+
+        GraphQLOutputType parentType = newObject()
+                .name("parentType")
+                .field(newFieldDefinition().name("nonNullListWithNull")
+                .type(nonNull(list(nonNull(GraphQLString)))))
+                .build()
+
+        GraphQLOutputType topType = newObject()
+                .name("topType")
+                .field(newFieldDefinition().name("nullParent")
+                .type(nonNull(parentType)))
+                .field(newFieldDefinition().name("nonNullParent")
+                .type(nonNull(parentType)))
+                .build()
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("top")
+                                .type(nonNull(topType)) // non nullable grand parent
+                                .dataFetcher({ env -> new ContainingObject() })
+
+                ))
+                .build()
+
+        def query = """
+        query { 
+            top {
+                nonNullParent {
+                    nonNullListWithNull
+                }
+            }
+        }
+        """
+
+        def result = GraphQL
+                .newGraphQL(schema)
+                .queryExecutionStrategy(executionStrategy)
+                .build()
+                .execute(executionInput(query))
+
+        expect:
+
+        result != null
+        result.errors.size() == 1
+        result.data == null
+
+        where:
+
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
+
+    }
+
+    @Unroll
+    def "#561 - null entry in non null list type with nullable wrapper list(strategy: #strategy)"() {
+
+        given:
+
+
+        GraphQLOutputType parentType = newObject()
+                .name("parentType")
+                .field(newFieldDefinition().name("nullableListWithNull")
+                .type(list(nonNull(GraphQLString))))
+                .build()
+
+        GraphQLOutputType topType = newObject()
+                .name("topType")
+                .field(newFieldDefinition().name("nullParent")
+                .type(nonNull(parentType)))
+                .field(newFieldDefinition().name("nonNullParent")
+                .type(nonNull(parentType)))
+                .build()
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(
+                        newFieldDefinition()
+                                .name("top")
+                                .type(nonNull(topType)) // non nullable grand parent
+                                .dataFetcher({ env -> new ContainingObject() })
+
+                ))
+                .build()
+
+        def query = """
+        query { 
+            top {
+                nonNullParent {
+                    nullableListWithNull
+                }
+            }
+        }
+        """
+
+        def result = GraphQL
+                .newGraphQL(schema)
+                .queryExecutionStrategy(executionStrategy)
+                .build()
+                .execute(executionInput(query))
+
+        expect:
+
+        result != null
+        result.data == ["top": ["nonNullParent": ["nullableListWithNull": null]]]
+        result.errors.size() == 1
+
+        where:
+
+        strategyName  | executionStrategy
+        'executor'    | new ExecutorServiceExecutionStrategy(commonPool())
+        'async'       | new AsyncExecutionStrategy()
+        'asyncSerial' | new AsyncSerialExecutionStrategy()
+    }
 }
