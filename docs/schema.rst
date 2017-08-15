@@ -40,7 +40,7 @@ DataFetcher and TypeResolver
 
 A ``DataFetcher`` provides the data for a field (and changes something, if it is a mutation).
 
-Every field definition has a ``DataFetcher``. When no one is configured, a
+Every field definition has a ``DataFetcher``. When one is not configured, a
 `PropertyDataFetcher <src/main/java/graphql/schema/PropertyDataFetcher.java>`_ is used.
 
 ``PropertyDataFetcher`` fetches data from ``Map`` and Java Beans. So when the field name matches the Map key or
