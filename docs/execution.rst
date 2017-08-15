@@ -7,7 +7,7 @@ Queries
 To execute a query against a schema build a new ``GraphQL`` object with the appropriate arguments and then
 call ``execute()``.
 
-The result of a query is an ``ExecutionResult`` which is the result data and/or a list of Errors.
+The result of a query is an ``ExecutionResult`` which is the query data and/or a list of errors.
 
 .. code-block:: java
 
@@ -30,10 +30,10 @@ The result of a query is an ``ExecutionResult`` which is the result data and/or 
 More complex examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
 
 Each graphql field type has a `DataFetcher <src/main/java/graphql/schema/DataFetcher.java>`_ associated with it.  Often you
-can rely on ```PropertyDataFetcher <src/main/java/graphql/schema/PropertyDataFetcher.java>`_` to examine Java objects to
+can rely on `PropertyDataFetcher <src/main/java/graphql/schema/PropertyDataFetcher.java>`_ to examine Java POJO objects to
 provide field values from them.
 
-However you will need to wire in top level domain objects via your own custom data fetchers.  This might involve making
+However you will need to wire in your top level domain objects via your own custom data fetchers.  This might involve making
 a database call or contacting another system over HTTP.
 
 graphql-java is not opinionated about how you get your domain data objects, that is very much your concern.  It is also not
@@ -51,7 +51,7 @@ A data fetcher might look like this:
         };
 
 Each ``DataFetcher`` is passed a ``graphql.schema.DataFetchingEnvironment`` object which contains what field is being fetched, what
-arguments are being supplied to the field and other information such as the field parent object, the query root object or the query
+arguments have been supplied to the field and other information such as the field's parent object, the query root object or the query
 context object.
 
 In the above example, the execution will wait for the data fetcher to return before moving on.  You can make execution of

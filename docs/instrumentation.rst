@@ -3,9 +3,9 @@ Instrumentation
 
 
 The ``graphql.execution.instrumentation.Instrumentation`` interface allows you to inject code that can observe the
-execution of a query and also change the runtime behaviour somewhat.
+execution of a query and also change the runtime behaviour.
 
-The primary use case for this to allow say performance monitoring and custom logging but it could be used for many purposes.
+The primary use case for this is to allow say performance monitoring and custom logging but it could be used for many different purposes.
 
 When you build the ```Graphql`` object you can specify what ``Instrumentation`` to use (if any).
 
@@ -19,12 +19,12 @@ When you build the ```Graphql`` object you can specify what ``Instrumentation`` 
 Custom Instrumentation
 ----------------------
 
-An implementation of ``Instrumentation`` needs to implement the "step" methods that represent the execution of a graphql query.
+An implementation of ``Instrumentation`` needs to implement the "begin" step methods that represent the execution of a graphql query.
 
 Each step must give back a non null ``graphql.execution.instrumentation.InstrumentationContext`` object which will be called back
-when the step completes, indicating that it succeeded or failed with a Throwable.
+when the step completes, and will be told that it succeeded or failed with a Throwable.
 
-The following is a basic custom ``Instrumentation`` that times overall execution time and puts it into a stateful object.
+The following is a basic custom ``Instrumentation`` that measures overall execution time and puts it into a stateful object.
 
 .. code-block:: java
 
@@ -108,7 +108,7 @@ Chaining Instrumentation
 ------------------------
 
 You can combine multiple ``Instrumentation``s together using the ``graphql.execution.instrumentation.ChainedInstrumentation`` class which
-accepts a list of ``Instrumentation`` objects and called them in that defined order.
+accepts a list of ``Instrumentation`` objects and calls them in that defined order.
 
 .. code-block:: java
 
@@ -126,10 +126,10 @@ accepts a list of ``Instrumentation`` objects and called them in that defined or
 Apollo Tracing Instrumentation
 ------------------------------
 
-``graphql.execution.instrumentation.tracing.TracingInstrumentation`` is an implementation that creates tracing information
+``graphql.execution.instrumentation.tracing.TracingInstrumentation`` is an ``Instrumentation`` implementation that creates tracing information
 about the query that is being executed.
 
-It follows the Apollo proposed tracing format defined at https://github.com/apollographql/apollo-tracing
+It follows the Apollo proposed tracing format defined at `https://github.com/apollographql/apollo-tracing <https://github.com/apollographql/apollo-tracing>`_
 
 A detailed tracing map will be created and placed in the ``extensions`` section of the result.
 
