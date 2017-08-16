@@ -49,6 +49,7 @@ graphql-java is licensed under the MIT License.
     instrumentation
     relay
     logging
+    concerns
     contributions
 
 
