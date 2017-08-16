@@ -1,5 +1,5 @@
 Contributions
-==============
+=============
 
 Every contribution to make this project better is welcome: Thank you!
 
