@@ -5,7 +5,7 @@ Getting started
 
 
 How to use the latest release with Gradle
-------------------------------------------
+-----------------------------------------
 
 Make sure ``mavenCentral`` is among your repos:
 
@@ -26,7 +26,7 @@ Dependency:
 
 
 How to use the latest release with Maven
------------------------------------------
+----------------------------------------
 
 Dependency:
 
@@ -40,7 +40,7 @@ Dependency:
 
 
 Hello World
----------------
+-----------
 
 This is the famous "hello world" in ``graphql-java``:
 
@@ -49,7 +49,7 @@ This is the famous "hello world" in ``graphql-java``:
 
 
 Using the latest development build
------------------------------------
+----------------------------------
 
 The latest development build is available on Bintray.
 
@@ -58,7 +58,7 @@ latest version value.
 
 
 How to use the latest build with Gradle
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Add the repositories:
 
@@ -81,7 +81,7 @@ Dependency:
 
 
 How to use the latest build with Maven
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 Add the repository:

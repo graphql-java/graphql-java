@@ -27,14 +27,14 @@ The result of a query is an ``ExecutionResult`` which is the query data and/or a
         List<GraphQLError> errors = executionResult.getErrors();
 
 
-More complex examples: [StarWars query tests](src/test/groovy/graphql/StarWarsQueryTest.groovy)
+More complex query examples can be found in the `StarWars query tests <https://github.com/graphql-java/graphql-java/blob/master/src/test/groovy/graphql/StarWarsQueryTest.groovy>`_
 
-Each graphql field type has a `DataFetcher <src/main/java/graphql/schema/DataFetcher.java>`_ associated with it.  Often you
-can rely on `PropertyDataFetcher <src/main/java/graphql/schema/PropertyDataFetcher.java>`_ to examine Java POJO objects to
+Each graphql field type has a ``graphql.schema.DataFetcher`` associated with it.  Often you
+can rely on ``graphql.schema.PropertyDataFetcher`` to examine Java POJO objects to
 provide field values from them.
 
 However you will need to wire in your top level domain objects via your own custom data fetchers.  This might involve making
-a database call or contacting another system over HTTP.
+a database call or contacting another system over HTTP say.
 
 graphql-java is not opinionated about how you get your domain data objects, that is very much your concern.  It is also not
 opinionated on user authorisation to that data.  You should push all that logic into your business logic layer code.
@@ -55,7 +55,7 @@ arguments have been supplied to the field and other information such as the fiel
 context object.
 
 In the above example, the execution will wait for the data fetcher to return before moving on.  You can make execution of
-the ``DataFetcher`` asynchronous by returning a promise to data, that is explained more further down this page.
+the ``DataFetcher`` asynchronous by returning a ``CompletionStage`` to data, that is explained more further down this page.
 
 
 Mutations
@@ -162,7 +162,7 @@ to the caller.
 Asynchronous Execution
 ----------------------
 
-graphql-java uses fully asynchronous execution techniques when it executes queries.  You can get the promise to results by calling
+graphql-java uses fully asynchronous execution techniques when it executes queries.  You can get the ``CompleteableFuture`` to results by calling
 ``executeAsync()`` like this
 
 .. code-block:: java
@@ -224,7 +224,7 @@ The code above is written in long form.  With Java 8 lambdas it can be written m
         DataFetcher userDataFetcher = environment -> CompletableFuture.supplyAsync(
                 () -> fetchUserViaHttp(environment.getArgument("userId")));
 
-The graphql-java engine ensures that all the promises are composed together to provide an execution result
+The graphql-java engine ensures that all the ``CompleteableFuture`` objects are composed together to provide an execution result
 that follows the graphql specification.
 
 Execution Strategies
@@ -250,11 +250,38 @@ AsyncExecutionStrategy
 ^^^^^^^^^^^^^^^^^^^^^^
 
 By default the "query" execution strategy is ``graphql.execution.AsyncExecutionStrategy`` which will dispatch
-each field as promises and not care which ones complete first.  This strategy allows for the most
+each field as ``CompleteableFuture`` objects and not care which ones complete first.  This strategy allows for the most
 performant execution.
 
-The data fetchers invoked can themselves return promises (aka `CompletionStage`) to values and this will create
+The data fetchers invoked can themselves return `CompletionStage`` values and this will create
 fully asynchronous behaviour.
+
+So imagine a query as follows
+
+.. code-block:: graphql
+
+    query {
+      hero {
+        enemies {
+          name
+        }
+        friends {
+          name
+        }
+      }
+    }
+
+
+The ``AsyncExecutionStrategy`` is free to dispatch the *enemies* field at the same time as the *friends* field.  It does not
+have to do *enemies* first followed by *friends*, which would be less efficient.
+
+It will however assemble the results in order.  The query result will follow the graphql specification and return object values
+assembled in query field order.  Only the execution of data fetching is free to be in any order.
+
+This behaviour is allowed in the graphql specification and in fact is actively encouraged http://facebook.github.io/graphql/#sec-Query
+for read only queries.
+
+See `specification <http://facebook.github.io/graphql/#sec-Normal-evaluation>`_ for details.
 
 
 AsyncSerialExecutionStrategy
@@ -264,8 +291,9 @@ The graphql specification says that mutations MUST be executed serially and in t
 query fields occur.
 
 So ``graphql.execution.AsyncSerialExecutionStrategy`` is used by default for mutations and will ensure that each
-field is completed before it processes the next one and so forth.  You can still return CompletableFuture objects
-in the mutation data fetchers, however they will be executed serially.
+field is completed before it processes the next one and so forth.  You can still return ``CompletionStage`` objects
+in the mutation data fetchers, however they will be executed serially and will be completed before the next
+mutation field data fetcher is dispatched.
 
 ExecutorServiceExecutionStrategy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -274,6 +302,8 @@ The ``graphql.execution.ExecutorServiceExecutionStrategy`` execution strategy wi
 fetch in an asynchronous manner, using the executor you give it.  It differs from ``AsyncExecutionStrategy`` in that
 it does not rely on the data fetchers to be asynchronous but rather makes the field fetch invocation asynchronous by
 submitting each field to the provided `java.util.concurrent.ExecutorService`.
+
+This behaviour makes it unsuitable to be used as a mutation execution strategy.
 
 .. code-block:: java
 
@@ -290,7 +320,6 @@ submitting each field to the provided `java.util.concurrent.ExecutorService`.
                 .build();
 
 
-See `specification <http://facebook.github.io/graphql/#sec-Normal-evaluation>`_ for details.
 
 BatchedExecutionStrategy
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -300,7 +329,7 @@ creating batched DataFetchers with get() methods annotated @Batched.
 
 
 .. This text will not be shown and if it does I have not done restructured comments right.  We should add more details
-on how BatchedExecutionStrategy works here.  Its a pretty special case that I don't know how to explain properly
+   on how BatchedExecutionStrategy works here.  Its a pretty special case that I don't know how to explain properly
 
 
 Query Caching

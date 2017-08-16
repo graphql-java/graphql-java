@@ -48,10 +48,10 @@ public class InstrumentationExamples {
     }
 
     class CustomInstrumentationState implements InstrumentationState {
-        private Map<String, Object> anyStateYourLike = new HashMap<>();
+        private Map<String, Object> anyStateYouLike = new HashMap<>();
 
         void recordTiming(String key, long time) {
-            anyStateYourLike.put(key, time);
+            anyStateYouLike.put(key, time);
         }
     }
 
