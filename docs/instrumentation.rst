@@ -28,11 +28,11 @@ The following is a basic custom ``Instrumentation`` that measures overall execut
 
 .. code-block:: java
 
-   class CustomInstrumentationState implements InstrumentationState {
-        private Map<String, Object> anyStateYourLike = new HashMap<>();
+    class CustomInstrumentationState implements InstrumentationState {
+        private Map<String, Object> anyStateYouLike = new HashMap<>();
 
         void recordTiming(String key, long time) {
-            anyStateYourLike.put(key, time);
+            anyStateYouLike.put(key, time);
         }
     }
 
@@ -107,7 +107,7 @@ The following is a basic custom ``Instrumentation`` that measures overall execut
 Chaining Instrumentation
 ------------------------
 
-You can combine multiple ``Instrumentation``s together using the ``graphql.execution.instrumentation.ChainedInstrumentation`` class which
+You can combine multiple ``Instrumentation`` objects together using the ``graphql.execution.instrumentation.ChainedInstrumentation`` class which
 accepts a list of ``Instrumentation`` objects and calls them in that defined order.
 
 .. code-block:: java
@@ -137,118 +137,118 @@ So given a query like
 
 .. code-block:: graphql
 
-query {
-  hero {
-    name
-    friends {
-      name
+    query {
+      hero {
+        name
+        friends {
+          name
+        }
+      }
     }
-  }
-}
 
 It would return a result like
 
 .. code-block:: json
 
-{
-  "data": {
-    "hero": {
-      "name": "R2-D2",
-      "friends": [
-        {
-          "name": "Luke Skywalker"
-        },
-        {
-          "name": "Han Solo"
-        },
-        {
-          "name": "Leia Organa"
+    {
+      "data": {
+        "hero": {
+          "name": "R2-D2",
+          "friends": [
+            {
+              "name": "Luke Skywalker"
+            },
+            {
+              "name": "Han Solo"
+            },
+            {
+              "name": "Leia Organa"
+            }
+          ]
         }
-      ]
-    }
-  },
-  "extensions": {
-    "tracing": {
-      "version": 1,
-      "startTime": "2017-08-14T23:13:39.362Z",
-      "endTime": "2017-08-14T23:13:39.497Z",
-      "duration": 135589186,
-      "execution": {
-        "resolvers": [
-          {
-            "path": [
-              "hero"
-            ],
-            "parentType": "Query",
-            "returnType": "Character",
-            "fieldName": "hero",
-            "startOffset": 105697585,
-            "duration": 79111240
-          },
-          {
-            "path": [
-              "hero",
-              "name"
-            ],
-            "parentType": "Droid",
-            "returnType": "String",
-            "fieldName": "name",
-            "startOffset": 125010028,
-            "duration": 20213
-          },
-          {
-            "path": [
-              "hero",
-              "friends"
-            ],
-            "parentType": "Droid",
-            "returnType": "[Character]",
-            "fieldName": "friends",
-            "startOffset": 133352819,
-            "duration": 7927560
-          },
-          {
-            "path": [
-              "hero",
-              "friends",
-              0,
-              "name"
-            ],
-            "parentType": "Human",
-            "returnType": "String",
-            "fieldName": "name",
-            "startOffset": 134105887,
-            "duration": 6783
-          },
-          {
-            "path": [
-              "hero",
-              "friends",
-              1,
-              "name"
-            ],
-            "parentType": "Human",
-            "returnType": "String",
-            "fieldName": "name",
-            "startOffset": 134725922,
-            "duration": 7016
-          },
-          {
-            "path": [
-              "hero",
-              "friends",
-              2,
-              "name"
-            ],
-            "parentType": "Human",
-            "returnType": "String",
-            "fieldName": "name",
-            "startOffset": 134875089,
-            "duration": 6342
+      },
+      "extensions": {
+        "tracing": {
+          "version": 1,
+          "startTime": "2017-08-14T23:13:39.362Z",
+          "endTime": "2017-08-14T23:13:39.497Z",
+          "duration": 135589186,
+          "execution": {
+            "resolvers": [
+              {
+                "path": [
+                  "hero"
+                ],
+                "parentType": "Query",
+                "returnType": "Character",
+                "fieldName": "hero",
+                "startOffset": 105697585,
+                "duration": 79111240
+              },
+              {
+                "path": [
+                  "hero",
+                  "name"
+                ],
+                "parentType": "Droid",
+                "returnType": "String",
+                "fieldName": "name",
+                "startOffset": 125010028,
+                "duration": 20213
+              },
+              {
+                "path": [
+                  "hero",
+                  "friends"
+                ],
+                "parentType": "Droid",
+                "returnType": "[Character]",
+                "fieldName": "friends",
+                "startOffset": 133352819,
+                "duration": 7927560
+              },
+              {
+                "path": [
+                  "hero",
+                  "friends",
+                  0,
+                  "name"
+                ],
+                "parentType": "Human",
+                "returnType": "String",
+                "fieldName": "name",
+                "startOffset": 134105887,
+                "duration": 6783
+              },
+              {
+                "path": [
+                  "hero",
+                  "friends",
+                  1,
+                  "name"
+                ],
+                "parentType": "Human",
+                "returnType": "String",
+                "fieldName": "name",
+                "startOffset": 134725922,
+                "duration": 7016
+              },
+              {
+                "path": [
+                  "hero",
+                  "friends",
+                  2,
+                  "name"
+                ],
+                "parentType": "Human",
+                "returnType": "String",
+                "fieldName": "name",
+                "startOffset": 134875089,
+                "duration": 6342
+              }
+            ]
           }
-        ]
+        }
       }
     }
-  }
-}
 
