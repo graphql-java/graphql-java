@@ -1,9 +1,9 @@
-graphql-java concerns
-=====================
+Application concerns
+====================
 
 The graphql-java library concentrates on providing an engine for the execution of queries according to the specification.
 
-It does not concern itself about other high level concerns such as follows.
+It does not concern itself about other high level application concerns such as the following :
 
 - Database access
 - Caching data
@@ -12,7 +12,6 @@ It does not concern itself about other high level concerns such as follows.
 - HTTP transfer
 - JSON endoding
 - Code wiring via dependency injection
-- ...
 
 You need to push these concerns into your business logic layers.
 
@@ -26,7 +25,7 @@ The following are great links to read more about this
 Context Objects
 ^^^^^^^^^^^^^^^
 
-You can pass in context objects during query execution that will allow you to better invoke that business logic.
+You can pass in a context object during query execution that will allow you to better invoke that business logic.
 
 For example the edge of your application could be performing user detection and you need that information inside the
 graphql execution to perform authorisation.
