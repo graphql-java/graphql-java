@@ -9,11 +9,11 @@ import java.util.Map;
 
 public class ChildDataCollector {
 
-    private final Map<String, List<GraphQLExecutionNodeDatum>> childDataByTypename = new HashMap<>();
+    private final Map<String, List<ResultContainer>> childDataByTypename = new HashMap<>();
     private final Map<String, GraphQLObjectType> childTypesByName = new HashMap<>();
 
 
-    public void putChildData(GraphQLObjectType objectType, GraphQLExecutionNodeDatum datum) {
+    public void putChildData(GraphQLObjectType objectType, ResultContainer datum) {
         childTypesByName.put(objectType.getName(), objectType);
         multimapPut(childDataByTypename, objectType.getName(), datum);
     }
@@ -38,7 +38,7 @@ public class ChildDataCollector {
         List<Entry> entries = new ArrayList<>();
         for (String childTypename : childTypesByName.keySet()) {
             GraphQLObjectType childType = childTypesByName.get(childTypename);
-            List<GraphQLExecutionNodeDatum> childData = multimapGet(childDataByTypename, childTypename);
+            List<ResultContainer> childData = multimapGet(childDataByTypename, childTypename);
             entries.add(new Entry(childType, childData));
         }
         return entries;
@@ -46,10 +46,10 @@ public class ChildDataCollector {
 
     public static class Entry {
         private final GraphQLObjectType objectType;
-        private final List<GraphQLExecutionNodeDatum> data;
+        private final List<ResultContainer> data;
 
         public Entry(GraphQLObjectType objectType,
-                     List<GraphQLExecutionNodeDatum> data) {
+                     List<ResultContainer> data) {
             this.objectType = objectType;
             this.data = data;
         }
@@ -58,7 +58,7 @@ public class ChildDataCollector {
             return objectType;
         }
 
-        public List<GraphQLExecutionNodeDatum> getData() {
+        public List<ResultContainer> getData() {
             return data;
         }
     }

@@ -10,11 +10,11 @@ class GraphQLExecutionNode {
 
     private final GraphQLObjectType parentType;
     private final Map<String, List<Field>> fields;
-    private final List<GraphQLExecutionNodeDatum> data;
+    private final List<ResultContainer> data;
 
     public GraphQLExecutionNode(GraphQLObjectType parentType,
                                 Map<String, List<Field>> fields,
-                                List<GraphQLExecutionNodeDatum> data) {
+                                List<ResultContainer> data) {
         this.parentType = parentType;
         this.fields = fields;
         this.data = data;
@@ -28,7 +28,7 @@ class GraphQLExecutionNode {
         return fields;
     }
 
-    public List<GraphQLExecutionNodeDatum> getData() {
+    public List<ResultContainer> getData() {
         return data;
     }
 }

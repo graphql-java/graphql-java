@@ -70,7 +70,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        GraphQLExecutionNodeDatum data = new GraphQLExecutionNodeDatum(new LinkedHashMap<>(), parameters.source());
+        ResultContainer data = ResultContainer.createMapResult(new LinkedHashMap<>(), parameters.source());
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLExecutionNode root = new GraphQLExecutionNode(type, parameters.fields(), singletonList(data));
         return completedFuture(executeImpl(executionContext, parameters, root));
@@ -97,20 +97,17 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 nodes.addAll(childNodes);
             }
         }
-        return new ExecutionResultImpl(getOnlyElement(root.getData()).getParentResult(), executionContext.getErrors());
+        return new ExecutionResultImpl(root.getData().get(0).getResult(), executionContext.getErrors());
 
     }
 
-    private GraphQLExecutionNodeDatum getOnlyElement(List<GraphQLExecutionNodeDatum> list) {
-        return list.get(0);
-    }
 
     // Use the data.source objects to fetch
     // Use the data.parentResult objects to put values into.  These are either primitives or empty maps
     // If they were empty maps, we need that list of nodes to process
 
     private List<GraphQLExecutionNode> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType parentType,
-                                                    List<GraphQLExecutionNodeDatum> nodeData, String fieldName, List<Field> fields) {
+                                                    List<ResultContainer> nodeData, String fieldName, List<Field> fields) {
 
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
         if (fieldDef == null) {
@@ -152,10 +149,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         List<GraphQLExecutionNodeValue> flattenedNodeValues = new ArrayList<>();
 
         for (GraphQLExecutionNodeValue value : values) {
+            ResultContainer resultContainer = value.getResultContainer();
             if (value.getValue() == null) {
-                value.getResultContainer().putResult(fieldName, null);
+                resultContainer.putResult(fieldName, null);
             } else {
-                GraphQLExecutionResultList flattenedDatum = value.getResultContainer().createAndPutEmptyChildList(
+                ResultContainer flattenedDatum = resultContainer.createAndPutEmptyChildList(
                         fieldName);
                 for (Object rawValue : (List<Object>) value.getValue()) {
                     flattenedNodeValues.add(new GraphQLExecutionNodeValue(flattenedDatum, rawValue));
@@ -196,11 +194,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                                           GraphQLType fieldType, Map<String, Object> argumentValues) {
         ChildDataCollector collector = new ChildDataCollector();
         for (GraphQLExecutionNodeValue value : values) {
+            ResultContainer resultContainer = value.getResultContainer();
             if (value.getValue() == null) {
-                // We hit a null, insert the null and do not create a child
-                value.getResultContainer().putResult(fieldName, null);
+                resultContainer.putResult(fieldName, null);
             } else {
-                GraphQLExecutionNodeDatum childDatum = value.getResultContainer().createAndPutChildDatum(fieldName, value.getValue());
+                ResultContainer childDatum = resultContainer.createAndPutChildDatum(fieldName, value.getValue());
                 GraphQLObjectType graphQLObjectType = getGraphQLObjectType(executionContext, field, fieldType, value.getValue(), argumentValues);
                 collector.putChildData(graphQLObjectType, childDatum);
             }
@@ -302,12 +300,12 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @SuppressWarnings("unchecked")
     private List<GraphQLExecutionNodeValue> fetchData(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType parentType,
-                                                      List<GraphQLExecutionNodeDatum> nodeData, List<Field> fields, GraphQLFieldDefinition fieldDef) {
+                                                      List<ResultContainer> nodeData, List<Field> fields, GraphQLFieldDefinition fieldDef) {
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
                 fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
         List<Object> sources = new ArrayList<>();
-        for (GraphQLExecutionNodeDatum n : nodeData) {
+        for (ResultContainer n : nodeData) {
             sources.add(n.getSource());
         }
 
