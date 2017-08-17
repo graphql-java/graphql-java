@@ -5,12 +5,12 @@ public class FetchedValue {
     private final MapOrList mapOrList;
     private final Object value;
 
-    public FetchedValue(MapOrList mapOrList, Object value) {
-        this.mapOrList = mapOrList;
+    public FetchedValue(MapOrList parentResult, Object value) {
+        this.mapOrList = parentResult;
         this.value = value;
     }
 
-    public MapOrList getResultContainer() {
+    public MapOrList getParenResult() {
         return mapOrList;
     }
 
