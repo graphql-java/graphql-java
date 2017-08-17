@@ -42,6 +42,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.function.BiFunction;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
@@ -332,6 +333,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
                 .build();
+
         CompletableFuture<Object> valuesFuture;
         try {
             Object rawValue = getDataFetcher(fieldDef).get(environment);
@@ -345,40 +347,46 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             valuesFuture.completeExceptionally(e);
         }
         return valuesFuture
-                .thenApply((result) -> {
-                    if (result != null && !(result instanceof List)) {
-                        throw new DataFetchingException("invalid result from DataFetcher: List expected");
-                    }
-                    List<Object> values = (List<Object>) result;
-                    if (values == null || values.size() != parentResults.size()) {
-                        throw new DataFetchingException("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
-                    }
-                    return values;
-                })
-                .handle((result, exception) -> {
-                    if (exception != null) {
-                        if (exception instanceof CompletionException) {
-                            exception = exception.getCause();
-                        }
-                        DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
-                                .executionContext(executionContext)
-                                .dataFetchingEnvironment(environment)
-                                .argumentValues(argumentValues)
-                                .field(fields.get(0))
-                                .fieldDefinition(fieldDef)
-                                .path(parameters.path())
-                                .exception(exception)
-                                .build();
-                        dataFetcherExceptionHandler.accept(handlerParameters);
-                        result = Collections.nCopies(parentResults.size(), null);
-                    }
-                    List<Object> values = result;
-                    List<FetchedValue> retVal = new ArrayList<>();
-                    for (int i = 0; i < parentResults.size(); i++) {
-                        retVal.add(new FetchedValue(parentResults.get(i), values.get(i)));
-                    }
-                    return retVal;
-                });
+                .thenApply((result) -> assertResult(parentResults, result))
+                .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
+    }
+
+    private BiFunction<List<Object>, Throwable, List<FetchedValue>> handleResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<MapOrList> parentResults, List<Field> fields, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, DataFetchingEnvironment environment) {
+        return (result, exception) -> {
+            if (exception != null) {
+                if (exception instanceof CompletionException) {
+                    exception = exception.getCause();
+                }
+                DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
+                        .executionContext(executionContext)
+                        .dataFetchingEnvironment(environment)
+                        .argumentValues(argumentValues)
+                        .field(fields.get(0))
+                        .fieldDefinition(fieldDef)
+                        .path(parameters.path())
+                        .exception(exception)
+                        .build();
+                dataFetcherExceptionHandler.accept(handlerParameters);
+                result = Collections.nCopies(parentResults.size(), null);
+            }
+            List<Object> values = result;
+            List<FetchedValue> retVal = new ArrayList<>();
+            for (int i = 0; i < parentResults.size(); i++) {
+                retVal.add(new FetchedValue(parentResults.get(i), values.get(i)));
+            }
+            return retVal;
+        };
+    }
+
+    private List<Object> assertResult(List<MapOrList> parentResults, Object result) {
+        if (result != null && !(result instanceof List)) {
+            throw new DataFetchingException("invalid result from DataFetcher: List expected");
+        }
+        List<Object> values = (List<Object>) result;
+        if (values == null || values.size() != parentResults.size()) {
+            throw new DataFetchingException("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
+        }
+        return values;
     }
 
     private BatchedDataFetcher getDataFetcher(GraphQLFieldDefinition fieldDef) {
