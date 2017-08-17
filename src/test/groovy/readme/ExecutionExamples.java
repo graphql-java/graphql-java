@@ -7,6 +7,9 @@ import graphql.GraphQLError;
 import graphql.StarWarsSchema;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.AsyncSerialExecutionStrategy;
+import graphql.execution.DataFetcherExceptionHandler;
+import graphql.execution.DataFetcherExceptionHandlerParameters;
+import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -21,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 import static graphql.StarWarsSchema.queryType;
 
-@SuppressWarnings({"unused", "UnnecessaryLocalVariable"})
+@SuppressWarnings({"unused", "UnnecessaryLocalVariable", "Convert2Lambda"})
 public class ExecutionExamples {
 
     public static void main(String[] args) throws Exception {
@@ -118,7 +121,7 @@ public class ExecutionExamples {
     }
 
     private void exampleExecutorServiceExecutionStrategy() {
-        ExecutorService  executorService = new ThreadPoolExecutor(
+        ExecutorService executorService = new ThreadPoolExecutor(
                 2, /* core pool size 2 thread */
                 2, /* max pool size 2 thread */
                 30, TimeUnit.SECONDS,
@@ -129,6 +132,17 @@ public class ExecutionExamples {
                 .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(executorService))
                 .mutationExecutionStrategy(new AsyncSerialExecutionStrategy())
                 .build();
+    }
+
+    private void exceptionHandler() {
+        DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
+            @Override
+            public void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
+                //
+                // do your custom handling here.  The parameters have all you need
+            }
+        };
+        ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
     }
 
     private class User {
