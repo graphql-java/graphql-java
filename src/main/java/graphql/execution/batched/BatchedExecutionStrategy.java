@@ -4,6 +4,7 @@ import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
+import graphql.PublicApi;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.ExecutionContext;
@@ -58,6 +59,7 @@ import static java.util.Collections.singletonList;
  * Normal DataFetchers can be used, however they will not see benefits of batching as they expect a single source object
  * at a time.
  */
+@PublicApi
 public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(BatchedExecutionStrategy.class);
@@ -74,9 +76,12 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        MapOrList data = MapOrList.createMap(new LinkedHashMap<>());
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
-        ExecutionNode root = new ExecutionNode(type, parameters.fields(), singletonList(data), Collections.singletonList(parameters.source()));
+
+        ExecutionNode root = new ExecutionNode(type,
+                parameters.fields(), singletonList(MapOrList.createMap(new LinkedHashMap<>())),
+                Collections.singletonList(parameters.source()));
+
         Queue<ExecutionNode> nodes = new ArrayDeque<>();
         CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
         executeImpl(executionContext,
@@ -129,15 +134,21 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
 
-    private CompletableFuture<List<ExecutionNode>> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, String fieldName, ExecutionNode node) {
+    private CompletableFuture<List<ExecutionNode>> resolveField(ExecutionContext executionContext,
+                                                                ExecutionStrategyParameters parameters,
+                                                                String fieldName,
+                                                                ExecutionNode node) {
         GraphQLObjectType parentType = node.getType();
         List<Field> fields = node.getFields().get(fieldName);
-        List<MapOrList> parentResults = node.getParentResults();
 
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
-        return fetchData(executionContext, parameters, parentType, parentResults, node.getSources(), fields, fieldDef).thenApply((fetchedValues) -> {
+        CompletableFuture<List<FetchedValue>> fetchedData = fetchData(executionContext, parameters, fieldName, node, fieldDef);
+
+        return fetchedData.thenApply((fetchedValues) -> {
+
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
                     fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+
             return completeValues(executionContext, parentType, fetchedValues, fieldName, fields, fieldDef.getType(), argumentValues);
         });
 
@@ -314,8 +325,14 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     @SuppressWarnings("unchecked")
-    private CompletableFuture<List<FetchedValue>> fetchData(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType parentType,
-                                                            List<MapOrList> parentResults, List<Object> sources, List<Field> fields, GraphQLFieldDefinition fieldDef) {
+    private CompletableFuture<List<FetchedValue>> fetchData(ExecutionContext executionContext,
+                                                            ExecutionStrategyParameters parameters,
+                                                            String fieldName,
+                                                            ExecutionNode node,
+                                                            GraphQLFieldDefinition fieldDef) {
+        GraphQLObjectType parentType = node.getType();
+        List<Field> fields = node.getFields().get(fieldName);
+        List<MapOrList> parentResults = node.getParentResults();
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
                 fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
@@ -324,7 +341,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
-                .source(sources)
+                .source(node.getSources())
                 .arguments(argumentValues)
                 .fieldDefinition(fieldDef)
                 .fields(fields)

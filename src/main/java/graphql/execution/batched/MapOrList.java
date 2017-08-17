@@ -1,25 +1,28 @@
 package graphql.execution.batched;
 
+import graphql.Internal;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@Internal
 public class MapOrList {
 
 
     private Map<String, Object> map;
     private List<Object> list;
 
-    public static MapOrList createList(List<Object> results) {
+    public static MapOrList createList(List<Object> list) {
         MapOrList mapOrList = new MapOrList();
-        mapOrList.list = results;
+        mapOrList.list = list;
         return mapOrList;
     }
 
-    public static MapOrList createMap(Map<String, Object> result) {
+    public static MapOrList createMap(Map<String, Object> map) {
         MapOrList mapOrList = new MapOrList();
-        mapOrList.map = result;
+        mapOrList.map = map;
         return mapOrList;
     }
 
