@@ -66,8 +66,8 @@ class BatchedExecutionStrategyTest extends Specification {
 
     // Split into sub-methods so the stack trace is more useful
     private void runTest(String query, Map<String, Object> expected) {
-//        runTestAsync(query, expected);
-//        runTestBatchingUnbatched(query, expected);
+        runTestAsync(query, expected);
+        runTestBatchingUnbatched(query, expected);
         runTestBatching(query, expected);
     }
 
@@ -369,9 +369,6 @@ class BatchedExecutionStrategyTest extends Specification {
                                           [append: [split: [null, [value: "1"]]]]]
                                 ]
         ]
-//        println JsonOutput.prettyPrint(JsonOutput.toJson(expected))
-
-//        this.graphQLBatchedValue.execute(query).toObject()
         expect:
         runTest(query, expected)
 
@@ -411,7 +408,7 @@ class BatchedExecutionStrategyTest extends Specification {
     def "Handle exception inside DataFetcher"() {
         given:
         String query = "{ string(value: \"\"){ throwException} }"
-        Map<String, Object> expected = mapOf("string", mapOf("throwException", null))
+        Map<String, Object> expected = ["string": ["throwException": null]]
         expect:
         runTest(query, expected)
         runTestExpectErrors(query, new RuntimeException("TestException"))
@@ -420,7 +417,7 @@ class BatchedExecutionStrategyTest extends Specification {
     def "Invalid batch size return does not crash whole query but generates error"() {
         given:
         String query = "{ string(value: \"\"){ returnBadList } }"
-        Map<String, Object> expected = mapOf("string", mapOf("returnBadList", null))
+        Map<String, Object> expected = ["string": ["returnBadList": null]]
         expect:
         runTestBatching(query, expected)
         runTestBatchingExpectErrors(query, new DataFetchingException(), false)

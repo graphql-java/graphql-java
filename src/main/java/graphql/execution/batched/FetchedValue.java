@@ -10,7 +10,7 @@ public class FetchedValue {
         this.value = value;
     }
 
-    public MapOrList getParenResult() {
+    public MapOrList getParentResult() {
         return mapOrList;
     }
 
