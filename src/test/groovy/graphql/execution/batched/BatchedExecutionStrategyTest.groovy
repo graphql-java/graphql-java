@@ -66,8 +66,8 @@ class BatchedExecutionStrategyTest extends Specification {
 
     // Split into sub-methods so the stack trace is more useful
     private void runTest(String query, Map<String, Object> expected) {
-        runTestAsync(query, expected);
-        runTestBatchingUnbatched(query, expected);
+//        runTestAsync(query, expected);
+//        runTestBatchingUnbatched(query, expected);
         runTestBatching(query, expected);
     }
 
@@ -371,7 +371,7 @@ class BatchedExecutionStrategyTest extends Specification {
         ]
 //        println JsonOutput.prettyPrint(JsonOutput.toJson(expected))
 
-//        this.graphQLBatchedValue.execute(query).getData()
+//        this.graphQLBatchedValue.execute(query).getResult()
         expect:
         runTest(query, expected)
 

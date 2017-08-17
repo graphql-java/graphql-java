@@ -2,16 +2,16 @@ package graphql.execution.batched;
 
 public class FetchedValue {
 
-    private final ResultContainer resultContainer;
+    private final MapOrList mapOrList;
     private final Object value;
 
-    public FetchedValue(ResultContainer resultContainer, Object value) {
-        this.resultContainer = resultContainer;
+    public FetchedValue(MapOrList mapOrList, Object value) {
+        this.mapOrList = mapOrList;
         this.value = value;
     }
 
-    public ResultContainer getResultContainer() {
-        return resultContainer;
+    public MapOrList getResultContainer() {
+        return mapOrList;
     }
 
     public Object getValue() {

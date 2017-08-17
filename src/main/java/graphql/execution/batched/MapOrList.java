@@ -5,33 +5,31 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ResultContainer {
+public class MapOrList {
 
-    private Object source;
 
     private Map<String, Object> mapResults;
     private List<Object> listResults;
 
-    public static ResultContainer createListResult(List<Object> results) {
-        ResultContainer resultContainer = new ResultContainer();
-        resultContainer.listResults = results;
-        return resultContainer;
+    public static MapOrList createListResult(List<Object> results) {
+        MapOrList mapOrList = new MapOrList();
+        mapOrList.listResults = results;
+        return mapOrList;
     }
 
-    public static ResultContainer createMapResult(Map<String, Object> result, Object source) {
-        ResultContainer resultContainer = new ResultContainer();
-        resultContainer.source = source;
-        resultContainer.mapResults = result;
-        return resultContainer;
+    public static MapOrList createMapResult(Map<String, Object> result) {
+        MapOrList mapOrList = new MapOrList();
+        mapOrList.mapResults = result;
+        return mapOrList;
     }
 
-    public ResultContainer createMapResultForField(String fieldName, Object source) {
+    public MapOrList createMapResultForField(String fieldName) {
         Map<String, Object> map = new LinkedHashMap<>();
         putResult(fieldName, map);
-        return createMapResult(map, source);
+        return createMapResult(map);
     }
 
-    public ResultContainer createListResultForField(String fieldName) {
+    public MapOrList createListResultForField(String fieldName) {
         List<Object> resultList = new ArrayList<>();
         putResult(fieldName, resultList);
         return createListResult(resultList);
@@ -45,9 +43,6 @@ public class ResultContainer {
         }
     }
 
-    public Object getSource() {
-        return source;
-    }
 
     public Object getResult() {
         if (this.mapResults != null) {

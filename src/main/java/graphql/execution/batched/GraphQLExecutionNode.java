@@ -10,14 +10,17 @@ class GraphQLExecutionNode {
 
     private final GraphQLObjectType type;
     private final Map<String, List<Field>> fields;
-    private final List<ResultContainer> data;
+    private final List<MapOrList> data;
+    private final List<Object> sources;
 
     public GraphQLExecutionNode(GraphQLObjectType type,
                                 Map<String, List<Field>> fields,
-                                List<ResultContainer> data) {
+                                List<MapOrList> data,
+                                List<Object> sources) {
         this.type = type;
         this.fields = fields;
         this.data = data;
+        this.sources = sources;
     }
 
     public GraphQLObjectType getType() {
@@ -28,7 +31,11 @@ class GraphQLExecutionNode {
         return fields;
     }
 
-    public List<ResultContainer> getData() {
+    public List<MapOrList> getResult() {
         return data;
+    }
+
+    public List<Object> getSources() {
+        return sources;
     }
 }
