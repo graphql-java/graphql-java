@@ -34,16 +34,17 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link DataFetcher}s that have
@@ -74,46 +75,70 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         MapOrList data = MapOrList.createMap(new LinkedHashMap<>());
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
         ExecutionNode root = new ExecutionNode(type, parameters.fields(), singletonList(data), Collections.singletonList(parameters.source()));
-        return completedFuture(executeImpl(executionContext, parameters, root));
-    }
-
-    private ExecutionResult executeImpl(ExecutionContext executionContext, ExecutionStrategyParameters parameters, ExecutionNode root) {
-
         Queue<ExecutionNode> nodes = new ArrayDeque<>();
-        nodes.add(root);
+        CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
+        executeImpl(executionContext,
+                parameters,
+                root,
+                root,
+                nodes,
+                root.getFields().keySet().iterator(),
+                result);
+        return result;
+    }
 
-        while (!nodes.isEmpty()) {
+    private void executeImpl(ExecutionContext executionContext,
+                             ExecutionStrategyParameters parameters,
+                             ExecutionNode root,
+                             ExecutionNode curNode,
+                             Queue<ExecutionNode> nodes,
+                             Iterator<String> curFieldNames,
+                             CompletableFuture<ExecutionResult> overallResult) {
 
-            ExecutionNode node = nodes.poll();
-
-            for (String fieldName : node.getFields().keySet()) {
-
-                ExecutionPath fieldPath = parameters.path().segment(fieldName);
-                List<Field> currentField = node.getFields().get(fieldName);
-                ExecutionStrategyParameters newParameters = parameters
-                        .transform(builder -> builder.path(fieldPath).field(currentField));
-
-                List<ExecutionNode> childNodes = resolveField(executionContext, newParameters, fieldName, node);
-
-                nodes.addAll(childNodes);
-            }
+        if (!curFieldNames.hasNext() && nodes.isEmpty()) {
+            overallResult.complete(new ExecutionResultImpl(root.getParentResults().get(0).toObject(), executionContext.getErrors()));
+            return;
         }
-        return new ExecutionResultImpl(root.getParentResults().get(0).toObject(), executionContext.getErrors());
+
+        if (!curFieldNames.hasNext()) {
+            curNode = nodes.poll();
+            curFieldNames = curNode.getFields().keySet().iterator();
+        }
+
+
+        String fieldName = curFieldNames.next();
+
+        ExecutionPath fieldPath = parameters.path().segment(fieldName);
+        List<Field> currentField = curNode.getFields().get(fieldName);
+        ExecutionStrategyParameters newParameters = parameters
+                .transform(builder -> builder.path(fieldPath).field(currentField));
+
+        ExecutionNode finalCurNode = curNode;
+        Iterator<String> finalCurFieldNames = curFieldNames;
+        resolveField(executionContext, newParameters, fieldName, curNode).whenComplete((childNodes, exception) -> {
+            if (exception != null) {
+                overallResult.completeExceptionally(exception);
+                return;
+            }
+            nodes.addAll(childNodes);
+            executeImpl(executionContext, newParameters, root, finalCurNode, nodes, finalCurFieldNames, overallResult);
+        });
 
     }
 
 
-    private List<ExecutionNode> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, String fieldName, ExecutionNode node) {
+    private CompletableFuture<List<ExecutionNode>> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, String fieldName, ExecutionNode node) {
         GraphQLObjectType parentType = node.getType();
         List<Field> fields = node.getFields().get(fieldName);
         List<MapOrList> parentResults = node.getParentResults();
 
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
-        List<FetchedValue> values = fetchData(executionContext, parameters, parentType, parentResults, node.getSources(), fields, fieldDef);
+        return fetchData(executionContext, parameters, parentType, parentResults, node.getSources(), fields, fieldDef).thenApply((fetchedValues) -> {
+            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
+                    fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+            return completeValues(executionContext, parentType, fetchedValues, fieldName, fields, fieldDef.getType(), argumentValues);
+        });
 
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
-                fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
-        return completeValues(executionContext, parentType, values, fieldName, fields, fieldDef.getType(), argumentValues);
     }
 
     private List<ExecutionNode> completeValues(ExecutionContext executionContext, GraphQLObjectType parentType,
@@ -176,9 +201,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
             GraphQLObjectType graphQLObjectType = getGraphQLObjectType(executionContext, fields.get(0), fieldType, value.getValue(), argumentValues);
             resultsByType.computeIfAbsent(graphQLObjectType, (type) -> new ArrayList<>());
+            resultsByType.get(graphQLObjectType).add(childResult);
+
             sourceByType.computeIfAbsent(graphQLObjectType, (type) -> new ArrayList<>());
             sourceByType.get(graphQLObjectType).add(value.getValue());
-            resultsByType.get(graphQLObjectType).add(childResult);
         }
 
         List<ExecutionNode> childNodes = new ArrayList<>();
@@ -286,8 +312,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     @SuppressWarnings("unchecked")
-    private List<FetchedValue> fetchData(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType parentType,
-                                         List<MapOrList> parentResults, List<Object> sources, List<Field> fields, GraphQLFieldDefinition fieldDef) {
+    private CompletableFuture<List<FetchedValue>> fetchData(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType parentType,
+                                                            List<MapOrList> parentResults, List<Object> sources, List<Field> fields, GraphQLFieldDefinition fieldDef) {
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
                 fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
@@ -305,33 +331,45 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
                 .build();
-
-        List<Object> values;
+        CompletableFuture<Object> valuesFuture;
         try {
-            values = (List<Object>) getDataFetcher(fieldDef).get(environment);
+            Object rawValue = getDataFetcher(fieldDef).get(environment);
+            if (rawValue instanceof CompletionStage) {
+                valuesFuture = ((CompletionStage) rawValue).toCompletableFuture();
+            } else {
+                valuesFuture = CompletableFuture.completedFuture(rawValue);
+            }
+        } catch (Exception e) {
+            valuesFuture = new CompletableFuture<>();
+            valuesFuture.completeExceptionally(e);
+        }
+        return valuesFuture.handle((result, exception) -> {
+            if (exception != null) {
+                DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
+                        .executionContext(executionContext)
+                        .dataFetchingEnvironment(environment)
+                        .argumentValues(argumentValues)
+                        .field(fields.get(0))
+                        .fieldDefinition(fieldDef)
+                        .path(parameters.path())
+                        .exception(exception)
+                        .build();
+                dataFetcherExceptionHandler.accept(handlerParameters);
+                return Collections.nCopies(parentResults.size(), null);
+            }
+            if (result != null && !(result instanceof List)) {
+                throw new DataFetchingException("invalid result from DataFetcher: List expected");
+            }
+            List<Object> values = (List<Object>) result;
             if (values == null || values.size() != parentResults.size()) {
                 throw new DataFetchingException("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
             }
-        } catch (Exception e) {
-            values = Collections.nCopies(parentResults.size(), null);
-
-            DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
-                    .executionContext(executionContext)
-                    .dataFetchingEnvironment(environment)
-                    .argumentValues(argumentValues)
-                    .field(fields.get(0))
-                    .fieldDefinition(fieldDef)
-                    .path(parameters.path())
-                    .exception(e)
-                    .build();
-            dataFetcherExceptionHandler.accept(handlerParameters);
-        }
-
-        List<FetchedValue> retVal = new ArrayList<>();
-        for (int i = 0; i < parentResults.size(); i++) {
-            retVal.add(new FetchedValue(parentResults.get(i), values.get(i)));
-        }
-        return retVal;
+            List<FetchedValue> retVal = new ArrayList<>();
+            for (int i = 0; i < parentResults.size(); i++) {
+                retVal.add(new FetchedValue(parentResults.get(i), values.get(i)));
+            }
+            return retVal;
+        });
     }
 
     private BatchedDataFetcher getDataFetcher(GraphQLFieldDefinition fieldDef) {
