@@ -29,14 +29,20 @@ The result of a query is an ``ExecutionResult`` which is the query data and/or a
 
 More complex query examples can be found in the `StarWars query tests <https://github.com/graphql-java/graphql-java/blob/master/src/test/groovy/graphql/StarWarsQueryTest.groovy>`_
 
-Each graphql field type has a ``graphql.schema.DataFetcher`` associated with it.  Often you
-can rely on ``graphql.schema.PropertyDataFetcher`` to examine Java POJO objects to
-provide field values from them.
 
-However you will need to wire in your top level domain objects via your own custom data fetchers.  This might involve making
+Data Fetchers
+-------------
+
+Each graphql field type has a ``graphql.schema.DataFetcher`` associated with it.  Other graphql implementations often call this
+type of code *resolvers**.
+
+Often you can rely on ``graphql.schema.PropertyDataFetcher`` to examine Java POJO objects to
+provide field values from them.  If your don't specify a data fetcher on a field, this is what will be used.
+
+However you will need to fetch your top level domain objects via your own custom data fetchers.  This might involve making
 a database call or contacting another system over HTTP say.
 
-graphql-java is not opinionated about how you get your domain data objects, that is very much your concern.  It is also not
+``graphql-java`` is not opinionated about how you get your domain data objects, that is very much your concern.  It is also not
 opinionated on user authorisation to that data.  You should push all that logic into your business logic layer code.
 
 A data fetcher might look like this:
@@ -56,6 +62,50 @@ context object.
 
 In the above example, the execution will wait for the data fetcher to return before moving on.  You can make execution of
 the ``DataFetcher`` asynchronous by returning a ``CompletionStage`` to data, that is explained more further down this page.
+
+Exceptions while fetching data
+------------------------------
+
+If an exception happens during the data fetcher call, then the execution strategy by default will make a
+``graphql.ExceptionWhileDataFetching`` error and add it to the list of errors on the result.  Remember graphql allows
+partial results with errors.
+
+Here is the code for the standard behaviour.
+
+.. code-block:: java
+
+    public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHandler {
+        private static final Logger log = LoggerFactory.getLogger(SimpleDataFetcherExceptionHandler.class);
+
+        @Override
+        public void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
+            Throwable exception = handlerParameters.getException();
+            SourceLocation sourceLocation = handlerParameters.getField().getSourceLocation();
+            ExecutionPath path = handlerParameters.getPath();
+
+            ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, exception, sourceLocation);
+            handlerParameters.getExecutionContext().addError(error);
+            log.warn(error.getMessage(), exception);
+        }
+    }
+
+You can change this behaviour by creating your own ``graphql.execution.DataFetcherExceptionHandler`` exception handling code and
+giving that to the execution strategy.
+
+For example the code above records the underlying exception and stack trace.  Some people
+may prefer not to see that in the output error list.  So you can use this mechanism to change that
+behaviour.
+
+.. code-block:: java
+
+        DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
+            @Override
+            public void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
+                //
+                // do your custom handling here.  The parameters have all you need
+            }
+        };
+        ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
 
 
 Mutations
@@ -98,7 +148,7 @@ You would create types like this to handle this mutation :
             .field(newInputObjectField()
                     .name("commentary")
                     .type(Scalars.GraphQLString))
-            .build();   
+            .build();
 
     GraphQLObjectType reviewType = newObject()
             .name("Review")
@@ -224,7 +274,7 @@ The code above is written in long form.  With Java 8 lambdas it can be written m
         DataFetcher userDataFetcher = environment -> CompletableFuture.supplyAsync(
                 () -> fetchUserViaHttp(environment.getArgument("userId")));
 
-The graphql-java engine ensures that all the ``CompleteableFuture`` objects are composed together to provide an execution result
+The graphql-java engine ensures that all the ``CompletableFuture`` objects are composed together to provide an execution result
 that follows the graphql specification.
 
 Execution Strategies
@@ -329,7 +379,7 @@ creating batched DataFetchers with get() methods annotated @Batched.
 
 
 .. This text will not be shown and if it does I have not done restructured comments right.  We should add more details
-   on how BatchedExecutionStrategy works here.  Its a pretty special case that I don't know how to explain properly
+on how BatchedExecutionStrategy works here.  Its a pretty special case that I don't know how to explain properly
 
 
 Query Caching
