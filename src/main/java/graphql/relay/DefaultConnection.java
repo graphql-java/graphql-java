@@ -1,9 +1,14 @@
 package graphql.relay;
 
+import graphql.PublicApi;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+
+@PublicApi
 public class DefaultConnection<T> implements Connection<T> {
 
     private List<Edge<T>> edges = new ArrayList<>();
@@ -18,20 +23,15 @@ public class DefaultConnection<T> implements Connection<T> {
     }
 
     /**
-     * @param edges edges
+     * @param edges    edges
      * @param pageInfo page info
+     *
      * @throws IllegalArgumentException if edges or page info is null. use {@link Collections#emptyList()} for empty edges.
      */
     public DefaultConnection(List<Edge<T>> edges, PageInfo pageInfo) {
-        if (edges == null) {
-            throw new IllegalArgumentException("edges cannot be empty");
-        }
-        if (pageInfo == null) {
-            throw new IllegalArgumentException("page info cannot be null");
-        }
         // TODO make defensive copy
-        this.edges = edges;
-        this.pageInfo = pageInfo;
+        this.edges = assertNotNull(edges, "edges cannot be null");
+        this.pageInfo = assertNotNull(pageInfo, "page info cannot be null");
     }
 
     @Override
@@ -40,8 +40,9 @@ public class DefaultConnection<T> implements Connection<T> {
     }
 
     /**
-     * @deprecated prefer {@link #DefaultConnection(List, PageInfo)} and avoid mutation
      * @param edges edges
+     *
+     * @deprecated prefer {@link #DefaultConnection(List, PageInfo)} and avoid mutation
      */
     @Deprecated
     public void setEdges(List<Edge<T>> edges) {
@@ -57,8 +58,9 @@ public class DefaultConnection<T> implements Connection<T> {
     }
 
     /**
-     * @deprecated prefer {@link #DefaultConnection(List, PageInfo)} and avoid mutation
      * @param pageInfo page info
+     *
+     * @deprecated prefer {@link #DefaultConnection(List, PageInfo)} and avoid mutation
      */
     @Deprecated
     public void setPageInfo(PageInfo pageInfo) {
@@ -67,10 +69,9 @@ public class DefaultConnection<T> implements Connection<T> {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("DefaultConnection{");
-        sb.append("edges=").append(edges);
-        sb.append(", pageInfo=").append(pageInfo);
-        sb.append('}');
-        return sb.toString();
+        return "DefaultConnection{" +
+                "edges=" + edges +
+                ", pageInfo=" + pageInfo +
+                '}';
     }
 }

@@ -1,5 +1,6 @@
 package graphql.relay;
 
+import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
@@ -26,6 +27,7 @@ import static graphql.schema.GraphQLInputObjectType.newInputObject;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static graphql.schema.GraphQLObjectType.newObject;
 
+@PublicApi
 public class Relay {
 
     public static final String NODE = "Node";

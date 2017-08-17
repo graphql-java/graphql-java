@@ -1,5 +1,6 @@
 package graphql.relay;
 
+import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -8,9 +9,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
+import static java.lang.String.format;
 import static java.util.Base64.getDecoder;
 import static java.util.Base64.getEncoder;
 
+@PublicApi
 public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
 
     static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
@@ -18,11 +23,9 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
     private final List<T> data;
 
     public SimpleListConnection(List<T> data, String prefix) {
-        if (prefix == null || prefix.length() == 0) {
-            throw new IllegalArgumentException("prefix cannot be null or empty");
-        }
+        this.data = assertNotNull(data, " data cannot be null");
+        assertTrue(prefix != null && !prefix.isEmpty(), "prefix cannot be null or empty");
         this.prefix = prefix;
-        this.data = data;
     }
 
     public SimpleListConnection(List<T> data) {
@@ -76,10 +79,10 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
         Edge<T> lastEdge = edges.get(edges.size() - 1);
 
         PageInfo pageInfo = new DefaultPageInfo(
-            firstEdge.getCursor(),
-            lastEdge.getCursor(),
-            !firstEdge.getCursor().equals(firstPresliceCursor),
-            !lastEdge.getCursor().equals(lastPresliceCursor)
+                firstEdge.getCursor(),
+                lastEdge.getCursor(),
+                !firstEdge.getCursor().equals(firstPresliceCursor),
+                !lastEdge.getCursor().equals(lastPresliceCursor)
         );
 
         return new DefaultConnection<>(
@@ -95,7 +98,9 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
 
     /**
      * find the object's cursor, or null if the object is not in this connection.
+     *
      * @param object the object in play
+     *
      * @return a connection cursor
      */
     public ConnectionCursor cursorForObjectInConnection(T object) {
@@ -111,8 +116,21 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
         if (cursor == null) {
             return defaultValue;
         }
-        String string = new String(getDecoder().decode(cursor), StandardCharsets.UTF_8);
-        return Integer.parseInt(string.substring(prefix.length()));
+        byte[] decode;
+        try {
+            decode = getDecoder().decode(cursor);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidCursorException(format("The cursor is not in base64 format : '%s'", cursor), e);
+        }
+        String string = new String(decode, StandardCharsets.UTF_8);
+        if (prefix.length() > string.length()) {
+            throw new InvalidCursorException(format("The cursor prefix is missing from the cursor : '%s'", cursor));
+        }
+        try {
+            return Integer.parseInt(string.substring(prefix.length()));
+        } catch (NumberFormatException nfe) {
+            throw new InvalidCursorException(format("The cursor was not created by this class  : '%s'", cursor), nfe);
+        }
     }
 
     private String createCursor(int offset) {
