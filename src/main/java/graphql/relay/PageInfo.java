@@ -1,8 +1,11 @@
 package graphql.relay;
 
+import graphql.PublicApi;
+
 /**
  * represents a page in relay.
  */
+@PublicApi
 public interface PageInfo {
 
     /**

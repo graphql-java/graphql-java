@@ -1,16 +1,15 @@
 package graphql.relay;
 
+import graphql.PublicApi;
+
+import static graphql.Assert.assertNotNull;
+
+@PublicApi
 public class DefaultEdge<T> implements Edge<T> {
 
     public DefaultEdge(T node, ConnectionCursor cursor) {
-        if (node == null) {
-            throw new IllegalArgumentException("node cannot be null");
-        }
-        if (cursor == null) {
-            throw new IllegalArgumentException("cursor cannot be null");
-        }
-        this.node = node;
-        this.cursor = cursor;
+        this.node = assertNotNull(node, "node cannot be null");
+        this.cursor = assertNotNull(cursor, "cursor cannot be null");
     }
 
     /**
@@ -29,8 +28,9 @@ public class DefaultEdge<T> implements Edge<T> {
     }
 
     /**
+     * @param node node
+     *
      * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)} and avoid mutation.
-     * @param  node node
      */
     @Deprecated
     public void setNode(T node) {
@@ -43,8 +43,9 @@ public class DefaultEdge<T> implements Edge<T> {
     }
 
     /**
-     * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)} and avoid mutation.
      * @param cursor cursor
+     *
+     * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)} and avoid mutation.
      */
     @Deprecated
     public void setCursor(ConnectionCursor cursor) {
@@ -53,10 +54,9 @@ public class DefaultEdge<T> implements Edge<T> {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("DefaultEdge{");
-        sb.append("node=").append(node);
-        sb.append(", cursor=").append(cursor);
-        sb.append('}');
-        return sb.toString();
+        return "DefaultEdge{" +
+                "node=" + node +
+                ", cursor=" + cursor +
+                '}';
     }
 }

@@ -1,5 +1,9 @@
 package graphql.relay;
 
+
+import graphql.PublicApi;
+
+@PublicApi
 public class DefaultPageInfo implements PageInfo {
 
     private ConnectionCursor startCursor;
@@ -83,12 +87,11 @@ public class DefaultPageInfo implements PageInfo {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("DefaultPageInfo{");
-        sb.append("startCursor=").append(startCursor);
-        sb.append(", endCursor=").append(endCursor);
-        sb.append(", hasPreviousPage=").append(hasPreviousPage);
-        sb.append(", hasNextPage=").append(hasNextPage);
-        sb.append('}');
-        return sb.toString();
+        return "DefaultPageInfo{" +
+                " startCursor=" + startCursor +
+                ", endCursor=" + endCursor +
+                ", hasPreviousPage=" + hasPreviousPage +
+                ", hasNextPage=" + hasNextPage +
+                '}';
     }
 }
