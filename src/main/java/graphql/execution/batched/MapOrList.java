@@ -8,47 +8,47 @@ import java.util.Map;
 public class MapOrList {
 
 
-    private Map<String, Object> mapResults;
-    private List<Object> listResults;
+    private Map<String, Object> map;
+    private List<Object> list;
 
-    public static MapOrList createListResult(List<Object> results) {
+    public static MapOrList createList(List<Object> results) {
         MapOrList mapOrList = new MapOrList();
-        mapOrList.listResults = results;
+        mapOrList.list = results;
         return mapOrList;
     }
 
-    public static MapOrList createMapResult(Map<String, Object> result) {
+    public static MapOrList createMap(Map<String, Object> result) {
         MapOrList mapOrList = new MapOrList();
-        mapOrList.mapResults = result;
+        mapOrList.map = result;
         return mapOrList;
     }
 
-    public MapOrList createMapResultForField(String fieldName) {
+    public MapOrList createAndPutMap(String key) {
         Map<String, Object> map = new LinkedHashMap<>();
-        putResult(fieldName, map);
-        return createMapResult(map);
+        putOrAdd(key, map);
+        return createMap(map);
     }
 
-    public MapOrList createListResultForField(String fieldName) {
+    public MapOrList createAndPutList(String key) {
         List<Object> resultList = new ArrayList<>();
-        putResult(fieldName, resultList);
-        return createListResult(resultList);
+        putOrAdd(key, resultList);
+        return createList(resultList);
     }
 
-    public void putResult(String fieldName, Object value) {
-        if (this.mapResults != null) {
-            this.mapResults.put(fieldName, value);
+    public void putOrAdd(String fieldName, Object value) {
+        if (this.map != null) {
+            this.map.put(fieldName, value);
         } else {
-            this.listResults.add(value);
+            this.list.add(value);
         }
     }
 
 
-    public Object getResult() {
-        if (this.mapResults != null) {
-            return this.mapResults;
+    public Object toObject() {
+        if (this.map != null) {
+            return this.map;
         } else {
-            return this.listResults;
+            return this.list;
         }
     }
 }

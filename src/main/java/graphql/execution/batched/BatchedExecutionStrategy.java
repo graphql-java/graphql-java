@@ -71,7 +71,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        MapOrList data = MapOrList.createMapResult(new LinkedHashMap<>());
+        MapOrList data = MapOrList.createMap(new LinkedHashMap<>());
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLExecutionNode root = new GraphQLExecutionNode(type, parameters.fields(), singletonList(data), Collections.singletonList(parameters.source()));
         return completedFuture(executeImpl(executionContext, parameters, root));
@@ -99,7 +99,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 nodes.addAll(childNodes);
             }
         }
-        return new ExecutionResultImpl(root.getResult().get(0).getResult(), executionContext.getErrors());
+        return new ExecutionResultImpl(root.getResult().get(0).toObject(), executionContext.getErrors());
 
     }
 
@@ -144,11 +144,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             MapOrList mapOrList = value.getResultContainer();
 
             if (value.getValue() == null) {
-                mapOrList.putResult(fieldName, null);
+                mapOrList.putOrAdd(fieldName, null);
                 continue;
             }
 
-            MapOrList listResult = mapOrList.createListResultForField(fieldName);
+            MapOrList listResult = mapOrList.createAndPutList(fieldName);
             for (Object rawValue : (List<Object>) value.getValue()) {
                 flattenedValues.add(new FetchedValue(listResult, rawValue));
             }
@@ -170,10 +170,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         for (FetchedValue value : values) {
             MapOrList mapOrList = value.getResultContainer();
             if (value.getValue() == null) {
-                mapOrList.putResult(fieldName, null);
+                mapOrList.putOrAdd(fieldName, null);
                 continue;
             }
-            MapOrList childResult = mapOrList.createMapResultForField(fieldName);
+            MapOrList childResult = mapOrList.createAndPutMap(fieldName);
 
             GraphQLObjectType graphQLObjectType = getGraphQLObjectType(executionContext, fields.get(0), fieldType, value.getValue(), argumentValues);
             resultsByType.computeIfAbsent(graphQLObjectType, (type) -> new ArrayList<>());
@@ -259,7 +259,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             if (coercedValue instanceof Double && ((Double) coercedValue).isNaN()) {
                 coercedValue = null;
             }
-            value.getResultContainer().putResult(fieldName, coercedValue);
+            value.getResultContainer().putOrAdd(fieldName, coercedValue);
         }
     }
 

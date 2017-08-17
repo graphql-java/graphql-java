@@ -371,7 +371,7 @@ class BatchedExecutionStrategyTest extends Specification {
         ]
 //        println JsonOutput.prettyPrint(JsonOutput.toJson(expected))
 
-//        this.graphQLBatchedValue.execute(query).getResult()
+//        this.graphQLBatchedValue.execute(query).toObject()
         expect:
         runTest(query, expected)
 
