@@ -25,13 +25,13 @@ public class ResultContainer {
         return resultContainer;
     }
 
-    public ResultContainer createAndPutChildDatum(String fieldName, Object source) {
+    public ResultContainer createMapResultForField(String fieldName, Object source) {
         Map<String, Object> map = new LinkedHashMap<>();
         putResult(fieldName, map);
         return createMapResult(map, source);
     }
 
-    public ResultContainer createAndPutEmptyChildList(String fieldName) {
+    public ResultContainer createListResultForField(String fieldName) {
         List<Object> resultList = new ArrayList<>();
         putResult(fieldName, resultList);
         return createListResult(resultList);

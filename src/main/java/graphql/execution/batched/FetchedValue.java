@@ -1,11 +1,11 @@
 package graphql.execution.batched;
 
-public class GraphQLExecutionNodeValue {
+public class FetchedValue {
 
     private final ResultContainer resultContainer;
     private final Object value;
 
-    public GraphQLExecutionNodeValue(ResultContainer resultContainer, /*Nullable*/ Object value) {
+    public FetchedValue(ResultContainer resultContainer, Object value) {
         this.resultContainer = resultContainer;
         this.value = value;
     }
@@ -14,7 +14,6 @@ public class GraphQLExecutionNodeValue {
         return resultContainer;
     }
 
-    /*Nullable*/
     public Object getValue() {
         return value;
     }

@@ -8,20 +8,20 @@ import java.util.Map;
 
 class GraphQLExecutionNode {
 
-    private final GraphQLObjectType parentType;
+    private final GraphQLObjectType type;
     private final Map<String, List<Field>> fields;
     private final List<ResultContainer> data;
 
-    public GraphQLExecutionNode(GraphQLObjectType parentType,
+    public GraphQLExecutionNode(GraphQLObjectType type,
                                 Map<String, List<Field>> fields,
                                 List<ResultContainer> data) {
-        this.parentType = parentType;
+        this.type = type;
         this.fields = fields;
         this.data = data;
     }
 
-    public GraphQLObjectType getParentType() {
-        return parentType;
+    public GraphQLObjectType getType() {
+        return type;
     }
 
     public Map<String, List<Field>> getFields() {
