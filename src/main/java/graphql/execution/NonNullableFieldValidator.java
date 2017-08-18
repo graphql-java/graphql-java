@@ -32,7 +32,7 @@ public class NonNullableFieldValidator {
             if (typeInfo.isNonNullType()) {
                 // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
                 NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(typeInfo, path);
-                executionContext.addError(nonNullException);
+                executionContext.addError(nonNullException, path);
                 throw nonNullException;
             }
         }

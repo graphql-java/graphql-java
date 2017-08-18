@@ -22,6 +22,7 @@ import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 
 import static ExecutionStrategyParameters.newParameters
 import static graphql.Scalars.GraphQLString
@@ -75,7 +76,7 @@ class ExecutionStrategyTest extends Specification {
         builder.graphQLSchema(schema)
         builder.document(new Parser().parseDocument("{someField}"))
         builder.executionId(ExecutionId.generate())
-        builder.valuesResolver(new ValuesResolver());
+        builder.valuesResolver(new ValuesResolver())
 
         def executionContext = builder.build()
         def result = new Object()
@@ -435,4 +436,49 @@ class ExecutionStrategyTest extends Specification {
         exceptionWhileDataFetching.getMessage().contains('This is the exception you are looking for')
     }
 
+    def "#522 - single error during execution - not two errors"() {
+
+        given:
+
+        def dataFetcher = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                throw new RuntimeException("bang")
+            }
+        }
+        def fieldDefinition = newFieldDefinition()
+                .name("someField")
+                .type(nonNull(GraphQLString))
+                .dataFetcher(dataFetcher)
+                .build()
+        def objectType = newObject()
+                .name("Test")
+                .field(fieldDefinition)
+                .build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
+        ExecutionContext executionContext = buildContext(schema)
+
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(objectType).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        Field field = new Field("someField")
+
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .source(null)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .field([field])
+                .fields(["someField": [field]])
+                .path(ExecutionPath.rootPath().segment("abc"))
+                .build()
+
+        when:
+        executionStrategy.resolveField(executionContext, parameters).join()
+
+        then:
+        thrown(CompletionException)
+        executionContext.errors.size() == 1 // only 1 error
+        executionContext.errors[0] instanceof ExceptionWhileDataFetching
+
+    }
 }
