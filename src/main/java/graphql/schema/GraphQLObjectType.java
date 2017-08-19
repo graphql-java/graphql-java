@@ -97,7 +97,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         return "GraphQLObjectType{" +
                 "name='" + name + '\'' +
                 ", description='" + description + '\'' +
-                ", fieldDefinitionsByName=" + fieldDefinitionsByName +
+                ", fieldDefinitionsByName=" + fieldDefinitionsByName.keySet() +
                 ", interfaces=" + interfaces +
                 '}';
     }
