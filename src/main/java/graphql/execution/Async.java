@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 @Internal
 public class Async {
@@ -34,6 +35,23 @@ public class Async {
         return overallResult;
     }
 
+    public static <T, U> CompletableFuture<List<U>> each(Iterable<T> list, BiFunction<T, Integer, CompletableFuture<U>> cfFactory) {
+        List<CompletableFuture<U>> futures = new ArrayList<>();
+        int index = 0;
+        for (T t : list) {
+            CompletableFuture<U> cf;
+            try {
+                cf = cfFactory.apply(t, index++);
+                Assert.assertNotNull(cf, "cfFactory must return a non null value");
+            } catch (Exception e) {
+                cf = new CompletableFuture<>();
+                cf.completeExceptionally(e);
+            }
+            futures.add(cf);
+        }
+        return each(futures);
+
+    }
 
     public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, CFFactory<T, U> cfFactory) {
         CompletableFuture<List<U>> result = new CompletableFuture<>();
