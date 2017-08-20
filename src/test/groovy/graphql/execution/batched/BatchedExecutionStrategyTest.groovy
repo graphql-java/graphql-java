@@ -30,12 +30,6 @@ class BatchedExecutionStrategyTest extends Specification {
             .queryExecutionStrategy(new BatchedExecutionStrategy())
             .build()
 
-    private Map<String, Object> nullValueMap = new HashMap<>();
-
-    def setup() {
-        nullValueMap.put("value", null);
-    }
-
     private void runTestExpectErrors(String query, Exception exception) {
         runTestAsyncExpectErrors(query, exception)
         runTestBatchingUnbatchedExpectErrors(query, exception)
@@ -72,15 +66,15 @@ class BatchedExecutionStrategyTest extends Specification {
     }
 
     private void runTestBatchingUnbatched(String query, Map<String, Object> expected) {
-        assert expected == this.graphQLBatchedButUnbatched.execute(query).getData();
+        assert this.graphQLBatchedButUnbatched.execute(query).getData() == expected
     }
 
     private void runTestBatching(String query, Map<String, Object> expected) {
-        assert expected == this.graphQLBatchedValue.execute(query).getData();
+        assert this.graphQLBatchedValue.execute(query).getData() == expected
     }
 
     private void runTestAsync(String query, Map<String, Object> expected) {
-        assert expected == this.graphQLAsync.execute(query).getData();
+        assert this.graphQLAsync.execute(query).getData() == expected
     }
 
     // This method is agnostic to whether errors are returned or thrown, provided they contain the desired text
@@ -115,7 +109,8 @@ class BatchedExecutionStrategyTest extends Specification {
         given:
         String query = "{ string(value: \"Basic\"){value, nonNullValue, veryNonNullValue} }";
 
-        Map<String, Object> expected = mapOf("string", mapOf("value", "Basic", "nonNullValue", "Basic", "veryNonNullValue", "Basic"));
+        def expected = [string: [veryNonNullValue: "Basic", nonNullValue: "Basic", value: "Basic"]]
+        println expected
 
         expect:
         runTest(query, expected);
@@ -125,18 +120,17 @@ class BatchedExecutionStrategyTest extends Specification {
         given:
         String query = "{ string(value: \"\"){value} }";
 
-        Map<String, Object> expected = mapOf("string", mapOf("value", ""));
+        def expected = [string: ["value": ""]]
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
     }
 
     def "Handles implicit null input"() {
         given:
         String query = "{ string{value} }";
 
-        Map<String, Object> expected = new HashMap<>();
-        expected.put("string", null);
+        def expected = [string: null]
 
         expect:
         runTest(query, expected);
@@ -146,7 +140,7 @@ class BatchedExecutionStrategyTest extends Specification {
         given:
         String query = "{ string(value: \"null\"){value} }";
 
-        Map<String, Object> expected = mapOf("string", nullValueMap);
+        def expected = [string: [value: null]]
 
         expect:
         runTest(query, expected);
@@ -177,11 +171,7 @@ class BatchedExecutionStrategyTest extends Specification {
         String query =
                 "{ string(value: \"Sh\") { shatter { append(text: \"1\") { value } } } }";
 
-        Map<String, Object> expected = mapOf(
-                "string", mapOf("shatter", Arrays.asList(
-                mapOf("append", mapOf("value", "S1")),
-                mapOf("append", mapOf("value", "h1"))
-        )));
+        def expected = [string: [shatter: [[append: [value: "S1"]], [append: [value: "h1"]]]]]
 
         expect:
         runTest(query, expected);
@@ -204,13 +194,7 @@ class BatchedExecutionStrategyTest extends Specification {
                         "} " +
                         "}";
 
-        Map<String, Object> expected = mapOf(
-                "string", mapOf("shatter", Arrays.asList(
-                mapOf("append", mapOf("split", Arrays.asList(
-                        mapOf("value", "S1")))),
-                mapOf("append", mapOf("split", Arrays.asList(
-                        null, mapOf("value", "1"))))
-        )));
+        def expected = [string: [shatter: [[append: [split: [[value: "S1"]]]], [append: [split: [null, [value: "1"]]]]]]]
 
         expect:
         runTest(query, expected);
@@ -233,14 +217,7 @@ class BatchedExecutionStrategyTest extends Specification {
                         "} " +
                         "}";
 
-        Map<String, Object> nullSplit = new HashMap<>();
-        nullSplit.put("split", null);
-
-        Map<String, Object> expected = mapOf(
-                "string", mapOf("shatter", Arrays.asList(
-                mapOf("append", nullSplit),
-                mapOf("append", nullSplit)
-        )));
+        def expected = [string: [shatter: [[append: [split: null]], [append: [split: null]]]]]
 
         expect:
         runTest(query, expected);
@@ -260,11 +237,7 @@ class BatchedExecutionStrategyTest extends Specification {
                         "} " +
                         "}";
 
-        Map<String, Object> expected = mapOf(
-                "string", mapOf("split", Arrays.asList(
-                mapOf("value", "Sh"),
-                nullValueMap
-        )));
+        def expected = [string: [split: [[value: "Sh"], [value: null]]]]
 
         expect:
         runTest(query, expected);
@@ -275,13 +248,12 @@ class BatchedExecutionStrategyTest extends Specification {
 
         given:
         String query =
-                "{ nullEnum }";
+                "{ nullEnum }"
 
-        Map<String, Object> expected = mapOf(
-                "nullEnum", null);
+        def expected = [nullEnum: null]
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
 
     }
 
@@ -317,27 +289,12 @@ class BatchedExecutionStrategyTest extends Specification {
                         "} " +
                         "}";
 
-        Map<String, Object> expected = mapOf(
-                "string", mapOf("wordsAndLetters", Arrays.asList(
-                Arrays.asList(
-                        mapOf("value", "L"),
-                        mapOf("value", "i"),
-                        mapOf("value", "s"),
-                        mapOf("value", "t")),
-                Arrays.asList(
-                        mapOf("value", "o"),
-                        mapOf("value", "f")),
-                Arrays.asList(
-                        mapOf("value", "w"),
-                        mapOf("value", "o"),
-                        mapOf("value", "r"),
-                        mapOf("value", "d"),
-                        mapOf("value", "s"))
-
-        )));
+        def expected = [string: [wordsAndLetters: [[[value: "L"], [value: "i"], [value: "s"], [value: "t"]],
+                                                   [[value: "o"], [value: "f"]],
+                                                   [[value: "w"], [value: "o"], [value: "r"], [value: "d"], [value: "s"]]]]]
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
 
     }
 
@@ -346,6 +303,9 @@ class BatchedExecutionStrategyTest extends Specification {
         given:
         String query = """
                 { string(value: "Batch") {
+                         append(text: "x") {
+                            value
+                        }
                         shatter {
                             append(text: "1") {
                                 split(regex: "h") {
@@ -356,27 +316,23 @@ class BatchedExecutionStrategyTest extends Specification {
                     }
                 }"""
 
-        Map<String, Object> expected = mapOf(
-                "string", mapOf("shatter", Arrays.asList(
-                mapOf("append", mapOf("split", Arrays.asList(
-                        mapOf("value", "B1")))),
-                mapOf("append", mapOf("split", Arrays.asList(
-                        mapOf("value", "a1")))),
-                mapOf("append", mapOf("split", Arrays.asList(
-                        mapOf("value", "t1")))),
-                mapOf("append", mapOf("split", Arrays.asList(
-                        mapOf("value", "c1")))),
-                mapOf("append", mapOf("split", Arrays.asList(
-                        null, mapOf("value", "1"))))
-        )));
-
+        def expected = [string:
+                                [append : [value: "Batchx"],
+                                 shatter:
+                                         [[append: [split: [[value: "B1"]]]],
+                                          [append: [split: [[value: "a1"]]]],
+                                          [append: [split: [[value: "t1"]]]],
+                                          [append: [split: [[value: "c1"]]]],
+                                          [append: [split: [null, [value: "1"]]]]]
+                                ]
+        ]
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
 
-        1 == this.countMap.get(FunWithStringsSchemaFactory.CallType.VALUE).get();
-        1 == this.countMap.get(FunWithStringsSchemaFactory.CallType.SHATTER).get();
-        1 == this.countMap.get(FunWithStringsSchemaFactory.CallType.APPEND).get();
-        1 == this.countMap.get(FunWithStringsSchemaFactory.CallType.SPLIT).get();
+        this.countMap.get(FunWithStringsSchemaFactory.CallType.VALUE).get() == 2
+        this.countMap.get(FunWithStringsSchemaFactory.CallType.SHATTER).get() == 1
+        this.countMap.get(FunWithStringsSchemaFactory.CallType.APPEND).get() == 2
+        this.countMap.get(FunWithStringsSchemaFactory.CallType.SPLIT).get() == 1
     }
 
 
@@ -400,16 +356,16 @@ class BatchedExecutionStrategyTest extends Specification {
 
         expect:
         Arrays.asList(this.graphQLAsync, this.graphQLBatchedButUnbatched, this.graphQLBatchedValue).each { GraphQL graphQL ->
-            Map<String, Object> response = graphQL.execute(query).getData() as Map<String, Object>;
+            Map<String, Object> response = graphQL.execute(query).getData() as Map<String, Object>
             Map<String, Object> values = (response.get("string") as Map<String, Object>).get("append") as Map<String, Object>;
-            assert Arrays.asList("v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9") == values.keySet().toList();
+            assert ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"] == values.keySet().toList()
         }
     }
 
     def "Handle exception inside DataFetcher"() {
         given:
         String query = "{ string(value: \"\"){ throwException} }"
-        Map<String, Object> expected = mapOf("string", mapOf("throwException", null))
+        Map<String, Object> expected = ["string": ["throwException": null]]
         expect:
         runTest(query, expected)
         runTestExpectErrors(query, new RuntimeException("TestException"))
@@ -418,7 +374,7 @@ class BatchedExecutionStrategyTest extends Specification {
     def "Invalid batch size return does not crash whole query but generates error"() {
         given:
         String query = "{ string(value: \"\"){ returnBadList } }"
-        Map<String, Object> expected = mapOf("string", mapOf("returnBadList", null))
+        Map<String, Object> expected = ["string": ["returnBadList": null]]
         expect:
         runTestBatching(query, expected)
         runTestBatchingExpectErrors(query, new DataFetchingException(), false)
