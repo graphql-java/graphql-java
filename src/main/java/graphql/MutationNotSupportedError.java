@@ -15,7 +15,7 @@ public class MutationNotSupportedError implements GraphQLError {
 
     @Override
     public String getMessage() {
-        return "Mutations are not supported onm this schema";
+        return "Mutations are not supported on this schema";
     }
 
     @Override
