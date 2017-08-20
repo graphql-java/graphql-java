@@ -1,5 +1,5 @@
 Creating a schema
-==================
+=================
 
 
 A schema defines your GraphQL API by defining each field that can be queried or
@@ -36,12 +36,12 @@ Java code example:
         .build();
 
 DataFetcher and TypeResolver
--------------------------------
+----------------------------
 
 A ``DataFetcher`` provides the data for a field (and changes something, if it is a mutation).
 
-Every field definition has a ``DataFetcher``. When no one is configured, a
-`PropertyDataFetcher <src/main/java/graphql/schema/PropertyDataFetcher.java>`_ is used.
+Every field definition has a ``DataFetcher``. When one is not configured, a
+`PropertyDataFetcher <https://github.com/graphql-java/graphql-java/blob/master/src/main/java/graphql/schema/PropertyDataFetcher.java>`_ is used.
 
 ``PropertyDataFetcher`` fetches data from ``Map`` and Java Beans. So when the field name matches the Map key or
 the property name of the source Object, no ``DataFetcher`` is needed.
@@ -49,9 +49,30 @@ the property name of the source Object, no ``DataFetcher`` is needed.
 A ``TypeResolver`` helps ``graphql-java`` to decide which type a concrete value belongs to.
 This is needed for ``Interface`` and ``Union``.
 
+For example imagine you have a ``Interface``` called *MagicUserType* and it resolves back to a series of Java classes
+called perhaps *Wizard*, *Witch* and *Necromancer*.  The type resolver is responsible for examining a runtime object and deciding
+what ``GraphqlObjectType`` should be used to represent it and hence what data fetchers and fields will be invoked.
+
+.. code-block:: java
+
+        new TypeResolver() {
+            @Override
+            public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                Object javaObject = env.getObject();
+                if (javaObject instanceof Wizard) {
+                    return (GraphQLObjectType) env.getSchema().getType("WizardType");
+                } else if (javaObject instanceof Witch) {
+                    return (GraphQLObjectType) env.getSchema().getType("WitchType");
+                } else {
+                    return (GraphQLObjectType) env.getSchema().getType("NecromancerType");
+                }
+            }
+        };
+
+
 
 IDL
-^^^^^
+^^^
 
 When defining a schema via IDL, you provide the needed ``DataFetcher`` and ``TypeResolver``
 when the schema is created:
@@ -199,7 +220,7 @@ definition.
     }
 
 Programmatically
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 When the schema is created programmatically you provide the ``DataFetcher`` and ``TypeResolver`` when the
 type is created:
@@ -226,7 +247,7 @@ Example:
 
 
 Types
--------------------------------
+-----
 
 The GraphQL type system supports the following kind of types:
 
@@ -240,7 +261,7 @@ The GraphQL type system supports the following kind of types:
 
 
 Scalar
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^
 
 ``graphql-java`` supports the following Scalars:
 
@@ -260,7 +281,7 @@ Scalar
 
 
 Object
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^
 
 IDL Example:
 
@@ -290,7 +311,7 @@ Java Example:
     .build();
 
 Interface
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^
 
 IDL Example:
 
@@ -314,7 +335,7 @@ Java Example:
         .build();
 
 Union
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^
 
 IDL Example:
 
@@ -349,7 +370,7 @@ Java Example:
 
 
 Enum
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^
 
 IDL Example:
 
@@ -376,7 +397,7 @@ Java Example:
 
 
 ObjectInputType
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 
 IDL Example:
 
@@ -400,7 +421,7 @@ Java Example:
 
 
 Type References (recursive types)
-------------------------------------
+---------------------------------
 
 GraphQL supports recursive types: For example a ``Person`` can contain a list of friends of the same type.
 
@@ -422,7 +443,7 @@ For example:
 When the schema is declared via IDL, no special handling of recursive types is needed.
 
 Modularising the Schema IDL
-----------------------------
+---------------------------
 
 Having one one large schema file is not always viable.  You can modularise you schema using two techniques.
 
@@ -526,7 +547,7 @@ graphql query.
 
 
 Subscription Support
----------------------
+--------------------
 
 Subscriptions are not officially specified yet: ``graphql-java`` supports currently a very basic implementation where you can define a subscription in the schema
 with ``GraphQLSchema.Builder.subscription(...)``. This enables you to handle a subscription request:
