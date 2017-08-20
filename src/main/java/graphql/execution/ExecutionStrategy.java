@@ -510,7 +510,7 @@ public abstract class ExecutionStrategy {
         ExecutionTypeInfo typeInfo = parameters.typeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
 
-        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(iterableValues, (item, index, prevResults) -> {
+        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(iterableValues, (item, index) -> {
 
             ExecutionPath indexedPath = parameters.path().segment(index);
 
