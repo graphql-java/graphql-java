@@ -46,6 +46,7 @@ public class Async {
                 Assert.assertNotNull(cf, "cfFactory must return a non null value");
             } catch (Exception e) {
                 cf = new CompletableFuture<>();
+                // Async.each makes sure that it is not a CompletionException inside a CompletionException
                 cf.completeExceptionally(new CompletionException(e));
             }
             futures.add(cf);
