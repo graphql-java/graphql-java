@@ -3,6 +3,7 @@ package graphql.execution.instrumentation;
 import graphql.ExecutionResult;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
@@ -75,6 +76,23 @@ public interface Instrumentation {
     InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters);
 
     /**
+     * This is called each time the {@link graphql.execution.ExecutionStrategy} is invoked and when the
+     * {@link java.util.concurrent.CompletableFuture} has been dispatched for the query fields the
+     * {@link graphql.execution.instrumentation.InstrumentationContext#onEnd(Object, Throwable)}
+     * is called.
+     *
+     * Note because the execution strategy execution is asynchronous, the query data is not guaranteed to be
+     * completed when this step finishes.  It is however a chance to dispatch side effects that might cause
+     * asynchronous data fetching code to actually run or attach CompletableFuture handlers onto the result
+     * via Instrumentation.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters);
+
+    /**
      * This is called just before a field is resolved and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
@@ -113,7 +131,7 @@ public interface Instrumentation {
      * This is called to allow instrumentation to instrument the execution result in some way
      *
      * @param executionResult {@link java.util.concurrent.CompletableFuture} of the result to instrument
-     * @param parameters            the parameters to this step
+     * @param parameters      the parameters to this step
      *
      * @return a new execution result completable future
      */

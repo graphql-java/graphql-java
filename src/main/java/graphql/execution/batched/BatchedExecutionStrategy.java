@@ -14,6 +14,8 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.TypeResolutionParameters;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -76,6 +78,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        InstrumentationContext<CompletableFuture<ExecutionResult>> executionStrategyCtx = executionContext.getInstrumentation().beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext));
+
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
 
         ExecutionNode root = new ExecutionNode(type,
@@ -91,6 +95,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 nodes,
                 root.getFields().keySet().iterator(),
                 result);
+
+        executionStrategyCtx.onEnd(result, null);
         return result;
     }
 

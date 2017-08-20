@@ -3,6 +3,7 @@ package graphql.execution.instrumentation
 import graphql.ExecutionResult
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
@@ -42,6 +43,12 @@ class TestingInstrumentation implements Instrumentation {
     InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
         return new TestingInstrumentContext("validation", executionList, throwableList)
+    }
+
+    @Override
+    InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        assert parameters.getInstrumentationState() == instrumentationState
+        return new TestingInstrumentContext("execution-strategy", executionList, throwableList)
     }
 
     @Override
