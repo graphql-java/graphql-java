@@ -4,6 +4,8 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.PublicApi;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.language.Field;
 
 import java.util.LinkedHashMap;
@@ -50,6 +52,9 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         if (executorService == null)
             return new AsyncExecutionStrategy().execute(executionContext, parameters);
 
+
+        InstrumentationContext<CompletableFuture<ExecutionResult>> executionStrategyCtx = executionContext.getInstrumentation().beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext));
+
         Map<String, List<Field>> fields = parameters.fields();
         Map<String, Future<CompletableFuture<ExecutionResult>>> futures = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
@@ -79,8 +84,11 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
                 }
                 results.put(fieldName, executionResult != null ? executionResult.getData() : null);
             }
-            return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
+            CompletableFuture<ExecutionResult> result = CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
+            executionStrategyCtx.onEnd(result, null);
+            return result;
         } catch (InterruptedException | ExecutionException e) {
+            executionStrategyCtx.onEnd(null, e);
             throw new GraphQLException(e);
         }
     }

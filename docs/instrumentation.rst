@@ -76,6 +76,11 @@ The following is a basic custom ``Instrumentation`` that measures overall execut
         }
 
         @Override
+        public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+            return new NoOpInstrumentation.NoOpInstrumentationContext<>();
+        }
+
+        @Override
         public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
             return new NoOpInstrumentation.NoOpInstrumentationContext<>();
         }

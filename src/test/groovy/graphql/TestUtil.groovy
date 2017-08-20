@@ -55,6 +55,15 @@ class TestUtil {
         schema(spec, RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build())
     }
 
+    static GraphQLSchema schemaFile(String fileName, RuntimeWiring wiring) {
+        def stream = TestUtil.class.getClassLoader().getResourceAsStream(fileName)
+
+        def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
+        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
+        schema
+    }
+
+
     @SuppressWarnings("GroovyMissingReturnStatement")
     static GraphQLSchema schema(String spec, RuntimeWiring runtimeWiring) {
         try {

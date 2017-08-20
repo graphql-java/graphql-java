@@ -2,6 +2,7 @@ package graphql.schema
 
 import graphql.GraphQL
 import graphql.StarWarsData
+import graphql.TestUtil
 import graphql.execution.FieldCollector
 import graphql.language.AstPrinter
 import graphql.language.Field
@@ -20,14 +21,6 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
  *  proxying or fine grained control of the fields in an object that should be returned
  */
 class DataFetcherSelectionTest extends Specification {
-
-    GraphQLSchema load(String fileName, RuntimeWiring wiring) {
-        def stream = getClass().getClassLoader().getResourceAsStream(fileName)
-
-        def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
-        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
-        schema
-    }
 
     class SelectionCapturingDataFetcher implements DataFetcher {
         final DataFetcher delegate
@@ -100,7 +93,7 @@ class DataFetcherSelectionTest extends Specification {
             .type(episodeWiring)
             .build()
 
-    def executableStarWarsSchema = load("starWarsSchema.graphqls", wiring)
+    def executableStarWarsSchema = TestUtil.schemaFile("starWarsSchema.graphqls", wiring)
 
     def "field selection can be captured via data environment"() {
 
