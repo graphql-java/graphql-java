@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.BiFunction;
 
 @Internal
@@ -45,7 +46,7 @@ public class Async {
                 Assert.assertNotNull(cf, "cfFactory must return a non null value");
             } catch (Exception e) {
                 cf = new CompletableFuture<>();
-                cf.completeExceptionally(e);
+                cf.completeExceptionally(new CompletionException(e));
             }
             futures.add(cf);
         }
@@ -69,7 +70,7 @@ public class Async {
             Assert.assertNotNull(cf, "cfFactory must return a non null value");
         } catch (Exception e) {
             cf = new CompletableFuture<>();
-            cf.completeExceptionally(e);
+            cf.completeExceptionally(new CompletionException(e));
         }
         cf.whenComplete((cfResult, exception) -> {
             if (exception != null) {

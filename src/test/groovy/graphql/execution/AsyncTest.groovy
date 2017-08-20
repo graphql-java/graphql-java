@@ -87,8 +87,8 @@ class AsyncTest extends Specification {
         result.exceptionally({ e ->
             exception = e
         })
-        exception instanceof RuntimeException
-        exception.getMessage() == "some error"
+        exception instanceof CompletionException
+        exception.getCause().getMessage() == "some error"
     }
 
     def "each works for mapping function"() {
