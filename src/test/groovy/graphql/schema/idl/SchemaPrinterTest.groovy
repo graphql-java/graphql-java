@@ -12,6 +12,7 @@ import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
@@ -84,6 +85,13 @@ class SchemaPrinterTest extends Specification {
         def typeRegistry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, RuntimeWiring.newRuntimeWiring().build())
         schema
+    }
+
+    static class MyGraphQLObjectType extends GraphQLObjectType {
+
+        MyGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
+            super(name, description, fieldDefinitions, new ArrayList<GraphQLOutputType>())
+        }
     }
 
     def "typeString"() {
@@ -267,7 +275,22 @@ type Query {
   field: String
 }
 """
+    }
 
+    def "does not print empty field description as comment"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("field").description("").type(GraphQLString).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """type Query {
+  field: String
+}
+"""
     }
 
     def "prints enum description as comment"() {
@@ -489,5 +512,22 @@ scalar Scalar
 
     }
 
+    def "prints derived object type"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
+        def queryType = new MyGraphQLObjectType("Query", "About Query\nSecond Line", Arrays.asList(fieldDefinition))
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+
+        when:
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == """#About Query
+#Second Line
+type Query {
+  field: String
+}
+"""
+    }
 
 }
