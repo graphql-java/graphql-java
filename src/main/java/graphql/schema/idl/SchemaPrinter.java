@@ -1,7 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
-import graphql.schema.GraphqlFieldVisibility;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.stream.Stream;
 
-import static graphql.schema.GraphqlFieldVisibility.DEFAULT_VISIBILITY;
+import static graphql.schema.visibility.GraphqlFieldVisibility.DEFAULT_VISIBILITY;
 
 /**
  * This can print an in memory GraphQL schema back to a logical schema definition

@@ -209,10 +209,7 @@ public class Introspection {
         Object type = environment.getSource();
         Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLEnumType) {
-            List<GraphQLEnumValueDefinition> values = environment
-                    .getGraphQLSchema()
-                    .getFieldVisibility()
-                    .getValues((GraphQLEnumType) type);
+            List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
             if (includeDeprecated) return values;
             List<GraphQLEnumValueDefinition> filtered = new ArrayList<>(values);
             for (GraphQLEnumValueDefinition valueDefinition : values) {

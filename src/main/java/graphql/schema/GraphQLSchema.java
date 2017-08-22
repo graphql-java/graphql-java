@@ -5,6 +5,7 @@ import graphql.Directives;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.schema.GraphqlFieldVisibility.DEFAULT_VISIBILITY;
+import static graphql.schema.visibility.GraphqlFieldVisibility.DEFAULT_VISIBILITY;
 
 public class GraphQLSchema {
 
