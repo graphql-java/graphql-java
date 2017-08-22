@@ -28,7 +28,7 @@ public class ExecutionResultImpl implements ExecutionResult {
     }
 
     public ExecutionResultImpl(Object data, List<? extends GraphQLError> errors, Map<Object, Object> extensions) {
-        this(data != null, data, errors, extensions);
+        this(true, data, errors, extensions);
     }
 
     private ExecutionResultImpl(boolean dataPresent, Object data, List<? extends GraphQLError> errors, Map<Object, Object> extensions) {
