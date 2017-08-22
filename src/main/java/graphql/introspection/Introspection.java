@@ -1,8 +1,8 @@
 package graphql.introspection;
 
 
-import graphql.language.AstValueHelper;
 import graphql.language.AstPrinter;
+import graphql.language.AstValueHelper;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
@@ -171,7 +171,10 @@ public class Introspection {
         Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLFieldsContainer) {
             GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
-            List<GraphQLFieldDefinition> fieldDefinitions = fieldsContainer.getFieldDefinitions();
+            List<GraphQLFieldDefinition> fieldDefinitions = environment
+                    .getGraphQLSchema()
+                    .getFieldVisibility()
+                    .getFieldDefinitions(fieldsContainer);
             if (includeDeprecated) return fieldDefinitions;
             List<GraphQLFieldDefinition> filtered = new ArrayList<>(fieldDefinitions);
             for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
@@ -181,6 +184,7 @@ public class Introspection {
         }
         return null;
     };
+
 
     public static DataFetcher interfacesFetcher = environment -> {
         Object type = environment.getSource();
@@ -205,7 +209,10 @@ public class Introspection {
         Object type = environment.getSource();
         Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLEnumType) {
-            List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
+            List<GraphQLEnumValueDefinition> values = environment
+                    .getGraphQLSchema()
+                    .getFieldVisibility()
+                    .getValues((GraphQLEnumType) type);
             if (includeDeprecated) return values;
             List<GraphQLEnumValueDefinition> filtered = new ArrayList<>(values);
             for (GraphQLEnumValueDefinition valueDefinition : values) {
