@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.schema.visibility.GraphqlFieldVisibility.DEFAULT_VISIBILITY;
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 public class GraphQLSchema {
 
@@ -40,7 +40,7 @@ public class GraphQLSchema {
     }
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary) {
-        this(queryType, mutationType, subscriptionType, dictionary, Collections.emptySet(), DEFAULT_VISIBILITY);
+        this(queryType, mutationType, subscriptionType, dictionary, Collections.emptySet(), DEFAULT_FIELD_VISIBILITY);
     }
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary, Set<GraphQLDirective> directives, GraphqlFieldVisibility fieldVisibility) {
@@ -113,7 +113,7 @@ public class GraphQLSchema {
         private GraphQLObjectType queryType;
         private GraphQLObjectType mutationType;
         private GraphQLObjectType subscriptionType;
-        private GraphqlFieldVisibility fieldVisibility = DEFAULT_VISIBILITY;
+        private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());

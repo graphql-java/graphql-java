@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
  * Remember that graphql type and fields names MUST be inside the name space "[_A-Za-z][_0-9A-Za-z]*"
  */
 @PublicApi
-public class GraphqlFieldVisibilityBlacklist implements GraphqlFieldVisibility {
+public class BlacklistGraphqlFieldVisibility implements GraphqlFieldVisibility {
 
     private final List<Pattern> patterns;
 
-    public GraphqlFieldVisibilityBlacklist(List<Pattern> patterns) {
+    public BlacklistGraphqlFieldVisibility(List<Pattern> patterns) {
         this.patterns = patterns;
     }
 
@@ -83,8 +83,8 @@ public class GraphqlFieldVisibilityBlacklist implements GraphqlFieldVisibility {
             return this;
         }
 
-        public GraphqlFieldVisibilityBlacklist build() {
-            return new GraphqlFieldVisibilityBlacklist(patterns);
+        public BlacklistGraphqlFieldVisibility build() {
+            return new BlacklistGraphqlFieldVisibility(patterns);
         }
     }
 }

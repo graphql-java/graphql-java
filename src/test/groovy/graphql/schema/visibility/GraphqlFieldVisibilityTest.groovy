@@ -7,8 +7,9 @@ import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
-import static graphql.schema.visibility.GraphqlFieldVisibility.DEFAULT_VISIBILITY
-import static graphql.schema.visibility.GraphqlFieldVisibilityBlacklist.newBlacklist
+import static BlacklistGraphqlFieldVisibility.newBlacklist
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY
+import static graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY
 
 class GraphqlFieldVisibilityTest extends Specification {
 
@@ -69,14 +70,35 @@ class GraphqlFieldVisibilityTest extends Specification {
         where:
 
         fieldVisibility                        | targetTypeName | expectedCharacterFields
-        DEFAULT_VISIBILITY                     | 'Character'    | 4
+        DEFAULT_FIELD_VISIBILITY               | 'Character'    | 4
         ban(["Character.name"])                | 'Character'    | 3
-        DEFAULT_VISIBILITY                     | 'Droid'        | 5
+        DEFAULT_FIELD_VISIBILITY               | 'Droid'        | 5
         ban(["Droid.name", "Droid.appearsIn"]) | 'Droid'        | 3
     }
 
-    private static GraphqlFieldVisibilityBlacklist ban(List<String> regex) {
+    private static BlacklistGraphqlFieldVisibility ban(List<String> regex) {
         newBlacklist().addPatterns(regex).build()
+    }
+
+    def "introspection turned off via blacklisting"() {
+        given:
+
+        def schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .fieldVisibility(NO_INTROSPECTION_FIELD_VISIBILITY)
+                .build()
+
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+
+        def result = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+
+        !result.errors.isEmpty()
+        result.data == null
+
     }
 
     def "schema printing filters on visibility"() {
@@ -84,7 +106,7 @@ class GraphqlFieldVisibilityTest extends Specification {
         when:
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
-                .fieldVisibility(DEFAULT_VISIBILITY)
+                .fieldVisibility(DEFAULT_FIELD_VISIBILITY)
                 .build()
         def result = new SchemaPrinter().print(schema)
 
@@ -159,6 +181,7 @@ enum Episode {
 }
 """
 
+        // and with specific bans
 
 
         when:

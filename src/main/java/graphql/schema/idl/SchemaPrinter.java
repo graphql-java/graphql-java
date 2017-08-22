@@ -30,7 +30,8 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.stream.Stream;
 
-import static graphql.schema.visibility.GraphqlFieldVisibility.DEFAULT_VISIBILITY;
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+
 
 /**
  * This can print an in memory GraphQL schema back to a logical schema definition
@@ -356,7 +357,7 @@ public class SchemaPrinter {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
-        printType(out, type, DEFAULT_VISIBILITY);
+        printType(out, type, DEFAULT_FIELD_VISIBILITY);
 
         return sw.toString();
     }

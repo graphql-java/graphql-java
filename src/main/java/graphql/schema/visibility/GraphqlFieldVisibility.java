@@ -33,18 +33,4 @@ public interface GraphqlFieldVisibility {
      */
     GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName);
 
-    /**
-     * A field visibility that shows all fields
-     */
-    GraphqlFieldVisibility DEFAULT_VISIBILITY = new GraphqlFieldVisibility() {
-        @Override
-        public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
-            return fieldsContainer.getFieldDefinitions();
-        }
-
-        @Override
-        public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
-            return fieldsContainer.getFieldDefinition(fieldName);
-        }
-    };
 }

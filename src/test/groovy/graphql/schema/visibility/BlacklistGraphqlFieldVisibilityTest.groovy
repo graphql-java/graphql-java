@@ -6,13 +6,13 @@ import spock.lang.Unroll
 
 import java.util.stream.Collectors
 
-class GraphqlFieldVisibilityBlacklistTest extends Specification {
+class BlacklistGraphqlFieldVisibilityTest extends Specification {
 
     @Unroll
     def "basic blacklisting '#why'"() {
 
         given:
-        def blacklist = GraphqlFieldVisibilityBlacklist.newBlacklist().addPatterns(patterns).build()
+        def blacklist = BlacklistGraphqlFieldVisibility.newBlacklist().addPatterns(patterns).build()
 
         when:
         def fields = blacklist.getFieldDefinitions(type).stream().map({ fd -> fd.getName() }).collect(Collectors.toList())
