@@ -8,9 +8,10 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ExecutionContext {
 
@@ -25,8 +26,10 @@ public class ExecutionContext {
     private final Map<String, Object> variables;
     private final Object root;
     private final Object context;
-    private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final Instrumentation instrumentation;
+    //
+    // errors is kept in order via LinkedHashMap and thread safe via synchronised guards
+    private final Map<String, GraphQLError> errors = new LinkedHashMap<>();
 
     public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
         this.graphQLSchema = graphQLSchema;
@@ -85,12 +88,21 @@ public class ExecutionContext {
         return fragmentsByName.get(name);
     }
 
-    public void addError(GraphQLError error) {
-        this.errors.add(error);
+    public void addError(GraphQLError error, ExecutionPath path) {
+        // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
+        // field errors should be handled - ie only once per field
+        synchronized (errors) {
+            String key = path.toString();
+            if (!errors.containsKey(key)) {
+                this.errors.put(key, error);
+            }
+        }
     }
 
     public List<GraphQLError> getErrors() {
-        return errors;
+        synchronized (errors) {
+            return new ArrayList<>(errors.values());
+        }
     }
 
     public ExecutionStrategy getQueryStrategy() {
