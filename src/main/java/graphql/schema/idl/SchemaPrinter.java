@@ -1,11 +1,31 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
-import graphql.schema.*;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLEnumValueDefinition;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 import java.util.stream.Stream;
 
 /**
@@ -42,6 +62,7 @@ public class SchemaPrinter {
          * This will allow you to include introspection types that are contained in a schema
          *
          * @param flag whether to include them
+         *
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
@@ -52,6 +73,7 @@ public class SchemaPrinter {
          * This will allow you to include scalar types that are contained in a schema
          *
          * @param flag whether to include them
+         *
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
@@ -81,6 +103,7 @@ public class SchemaPrinter {
      * This can print an in memory GraphQL schema back to a logical schema definition
      *
      * @param schema the schema in play
+     *
      * @return the logical schema definition
      */
     public String print(GraphQLSchema schema) {
@@ -319,7 +342,7 @@ public class SchemaPrinter {
         TypePrinter typePrinter = printers.computeIfAbsent(clazz, k -> {
             Class<?> superClazz = clazz.getSuperclass();
             TypePrinter result;
-            if(superClazz != Object.class)
+            if (superClazz != Object.class)
                 result = printer(superClazz);
             else
                 result = (out, type) -> out.println("Type not implemented : " + type);
