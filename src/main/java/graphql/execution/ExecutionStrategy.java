@@ -491,7 +491,7 @@ public abstract class ExecutionStrategy {
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
         SerializationError error = new SerializationError(parameters.path(), e);
         log.warn(error.getMessage(), e);
-        context.addError(error);
+        context.addError(error, parameters.path());
         return null;
     }
 
@@ -544,7 +544,6 @@ public abstract class ExecutionStrategy {
                 completedResults.add(completedValue.getData());
             }
             overallResult.complete(new ExecutionResultImpl(completedResults, null));
-            return;
         });
         return overallResult;
     }

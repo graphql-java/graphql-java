@@ -14,7 +14,7 @@ public interface DataFetcherExceptionHandler extends Consumer<DataFetcherExcepti
     /**
      * When an exception during a call to a {@link DataFetcher} then this handler
      * is called back to shape the error that should be placed in the list of errors
-     * via {@link ExecutionContext#addError(GraphQLError)}
+     * via {@link ExecutionContext#addError(GraphQLError, graphql.execution.ExecutionPath)}
      *
      * @param handlerParameters the parameters to this callback
      */
