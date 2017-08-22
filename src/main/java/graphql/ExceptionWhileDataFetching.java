@@ -5,13 +5,15 @@ import graphql.execution.ExecutionPath;
 import graphql.language.SourceLocation;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
 
 @PublicApi
-public class ExceptionWhileDataFetching implements GraphQLError {
+public class ExceptionWhileDataFetching implements CustomGraphQLError {
 
     private final ExecutionPath path;
     private final Throwable exception;
@@ -46,6 +48,18 @@ public class ExceptionWhileDataFetching implements GraphQLError {
      */
     public List<Object> getPath() {
         return path.toList();
+    }
+
+
+    @Override
+    public Map<String, ?> getCustomData() {
+        Map<String,Object> customData = new HashMap<>();
+        
+        if( exception instanceof CustomGraphQLErrorSupport ){
+            customData.putAll(((CustomGraphQLErrorSupport)exception).getErrors());
+        }        
+        customData.put("path",getPath());
+        return customData;
     }
 
     @Override
