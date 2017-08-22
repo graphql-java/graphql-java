@@ -70,11 +70,11 @@ class GraphqlFieldVisibilityTest extends Specification {
         List types = result.data["__schema"]["types"] as List
         Map characterType = types.find({ it -> it['name'] == targetTypeName }) as Map
         List fields = characterType['fields'] as List
-        fields.size() == expectedCharacterFields
+        fields.size() == expectedFieldCounts
 
         where:
 
-        fieldVisibility                        | targetTypeName | expectedCharacterFields
+        fieldVisibility                        | targetTypeName | expectedFieldCounts
         DEFAULT_FIELD_VISIBILITY               | 'Character'    | 4
         ban(["Character.name"])                | 'Character'    | 3
         DEFAULT_FIELD_VISIBILITY               | 'Droid'        | 5
