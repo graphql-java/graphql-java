@@ -1,8 +1,13 @@
 package graphql.schema.visibility
 
 import graphql.GraphQL
+import graphql.GraphQLException
 import graphql.StarWarsSchema
+import graphql.execution.AsyncExecutionStrategy
 import graphql.introspection.IntrospectionQuery
+import graphql.language.Field
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
@@ -254,5 +259,41 @@ enum Episode {
 }
 """
 
+    }
+
+    class TestES extends AsyncExecutionStrategy {
+
+        // gives us access to this unit tested method
+        GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
+            return super.getFieldDef(schema, parentType, field)
+        }
+    }
+
+    def "ensure execution cant get to the field"() {
+
+
+        when:
+        def schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .fieldVisibility(ban(['Droid.appearsIn']))
+                .build()
+
+
+
+        def executionStrategy = new AsyncExecutionStrategy() {
+
+            // gives us access to this unit tested method
+            GraphQLFieldDefinition getFieldDef(GraphQLSchema graphQLSchema, GraphQLObjectType parentType, Field field) {
+                return super.getFieldDef(graphQLSchema, parentType, field)
+            }
+        }
+        executionStrategy.getFieldDef(schema, StarWarsSchema.droidType, new Field("appearsIn"))
+
+        then:
+        //
+        // normally query validation would prevent us ever getting this far but for belts and braces reasons
+        // we test that should you some how invoke the execution strategy - it will follow fields visibility
+        // rules
+        thrown(GraphQLException)
     }
 }
