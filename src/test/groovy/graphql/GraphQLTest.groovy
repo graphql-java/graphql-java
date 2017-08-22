@@ -274,7 +274,7 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].description.contains("has wrong type")
+        result.errors[0].description == "argument 'bar' with value 'IntValue{value=12345678910}' is not a valid 'Int'"
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
