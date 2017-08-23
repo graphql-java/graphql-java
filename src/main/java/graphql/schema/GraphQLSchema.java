@@ -105,8 +105,27 @@ public class GraphQLSchema {
         return subscriptionType != null;
     }
 
+    /**
+     * @return a new schema builder
+     */
     public static Builder newSchema() {
         return new Builder();
+    }
+
+    /**
+     * This allows you to build a schema from an existing schema.  It copies everything from the existing
+     * schema and then allows you to replace them.
+     *
+     * @param existingSchema the existing schema
+     *
+     * @return a new schema builder
+     */
+    public static Builder newSchema(GraphQLSchema existingSchema) {
+        return new Builder()
+                .query(existingSchema.getQueryType())
+                .mutation(existingSchema.getMutationType())
+                .subscription(existingSchema.getSubscriptionType())
+                .fieldVisibility(existingSchema.getFieldVisibility());
     }
 
     public static class Builder {
