@@ -57,7 +57,7 @@ public interface GraphQLError {
     /**
      * @return a map of error extensions or null if there are none
      */
-    default Map<Object, Object> getExtensions() {
+    default Map<String, Object> getExtensions() {
         return null;
     }
 

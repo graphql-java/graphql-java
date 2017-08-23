@@ -19,7 +19,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     private final List<Object> path;
     private final Throwable exception;
     private final List<SourceLocation> locations;
-    private final Map<Object, Object> extensions;
+    private final Map<String, Object> extensions;
 
     public ExceptionWhileDataFetching(ExecutionPath path, Throwable exception, SourceLocation sourceLocation) {
         this.path = assertNotNull(path).toList();
@@ -38,10 +38,10 @@ public class ExceptionWhileDataFetching implements GraphQLError {
      * exception into the ExceptionWhileDataFetching error and hence have custom "extension attributes"
      * per error message.
      */
-    private Map<Object, Object> mkExtensions(Throwable exception) {
-        Map<Object, Object> extensions = null;
+    private Map<String, Object> mkExtensions(Throwable exception) {
+        Map<String, Object> extensions = null;
         if (exception instanceof GraphQLError) {
-            Map<Object, Object> map = ((GraphQLError) exception).getExtensions();
+            Map<String, Object> map = ((GraphQLError) exception).getExtensions();
             if (map != null) {
                 extensions = new LinkedHashMap<>();
                 extensions.putAll(map);
@@ -70,7 +70,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     }
 
     @Override
-    public Map<Object, Object> getExtensions() {
+    public Map<String, Object> getExtensions() {
         return extensions;
     }
 

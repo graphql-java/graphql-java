@@ -89,6 +89,36 @@ Here is the code for the standard behaviour.
         }
     }
 
+If the exception you throw is itself a `GraphqlError` then it will transfer the message and custom extensions attributes from that exception
+into the `ExceptionWhileDataFetching` object.  This allows you to place your own custom attributes into the graphql error that is sent back
+to the caller.
+
+For example imagine your data fetcher threw this exception.  The `foo` and `fizz` attributes would be included in the resultant
+graphql error.
+
+.. code-block:: java
+
+    class CustomRuntimeException extends RuntimeException implements GraphQLError {
+        @Override
+        public Map<String, Object> getExtensions() {
+            Map<String, Object> customAttributes = new LinkedHashMap<>();
+            customAttributes.put("foo", "bar");
+            customAttributes.put("fizz", "whizz");
+            return customAttributes;
+        }
+
+        @Override
+        public List<SourceLocation> getLocations() {
+            return null;
+        }
+
+        @Override
+        public ErrorType getErrorType() {
+            return ErrorType.DataFetchingException;
+        }
+    }
+
+
 You can change this behaviour by creating your own ``graphql.execution.DataFetcherExceptionHandler`` exception handling code and
 giving that to the execution strategy.
 
@@ -106,6 +136,31 @@ behaviour.
             }
         };
         ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
+
+Serializing results to JSON
+---------------------------
+
+The most common way to call graphql is over HTTP and to expect a JSON response back.  So you need to turn an
+`graphql.ExecutionResult` into a JSON payload.
+
+A common way to do that is use a JSON serialisation library like Jackson or GSON.  However exactly how they interpret the
+data result is particular to them.  For example `nulls` are important in graphql results and hence you must set up the json mappers
+to include them.
+
+To ensure you get a JSON result that confirms 100% to the graphql spec, you should called `toSpecification` on the result and then
+send that back as JSON.
+
+This will ensure that the result follows the specification outlined in http://facebook.github.io/graphql/#sec-Response
+
+
+.. code-block:: java
+
+        ExecutionResult executionResult = graphQL.execute(executionInput);
+
+        Map<String, Object> toSpecificationResult = executionResult.toSpecification();
+
+        sendAsJson(toSpecificationResult);
+
 
 
 Mutations
