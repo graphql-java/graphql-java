@@ -38,4 +38,17 @@ class BaseError extends GraphQLException implements GraphQLError {
     public String toString() {
         return getMessage();
     }
+
+
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+    @Override
+    public boolean equals(Object o) {
+        return Helper.equals(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return Helper.hashCode(this);
+    }
+
 }

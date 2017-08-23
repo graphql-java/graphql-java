@@ -27,4 +27,16 @@ public class InvalidCursorException extends RuntimeException implements GraphQLE
     public ErrorType getErrorType() {
         return DataFetchingException;
     }
+
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+    @Override
+    public boolean equals(Object o) {
+        return Helper.equals(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return Helper.hashCode(this);
+    }
+
 }

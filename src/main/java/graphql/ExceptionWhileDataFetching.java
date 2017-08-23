@@ -5,7 +5,9 @@ import graphql.execution.ExecutionPath;
 import graphql.language.SourceLocation;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
@@ -13,14 +15,39 @@ import static java.lang.String.format;
 @PublicApi
 public class ExceptionWhileDataFetching implements GraphQLError {
 
-    private final ExecutionPath path;
+    private final String message;
+    private final List<Object> path;
     private final Throwable exception;
-    private final SourceLocation sourceLocation;
+    private final List<SourceLocation> locations;
+    private final Map<Object, Object> extensions;
 
     public ExceptionWhileDataFetching(ExecutionPath path, Throwable exception, SourceLocation sourceLocation) {
-        this.path = assertNotNull(path);
+        this.path = assertNotNull(path).toList();
         this.exception = assertNotNull(exception);
-        this.sourceLocation = sourceLocation;
+        this.locations = Collections.singletonList(sourceLocation);
+        this.extensions = mkExtensions(exception);
+        this.message = mkMessage(path, exception);
+    }
+
+    private String mkMessage(ExecutionPath path, Throwable exception) {
+        return format("Exception while fetching data (%s) : %s", path, exception.getMessage());
+    }
+
+    /*
+     * This allows a DataFetcher to throw a graphql error and have "extension data" be transferred from that
+     * exception into the ExceptionWhileDataFetching error and hence have custom "extension attributes"
+     * per error message.
+     */
+    private Map<Object, Object> mkExtensions(Throwable exception) {
+        Map<Object, Object> extensions = null;
+        if (exception instanceof GraphQLError) {
+            Map<Object, Object> map = ((GraphQLError) exception).getExtensions();
+            if (map != null) {
+                extensions = new LinkedHashMap<>();
+                extensions.putAll(map);
+            }
+        }
+        return extensions;
     }
 
     public Throwable getException() {
@@ -30,22 +57,21 @@ public class ExceptionWhileDataFetching implements GraphQLError {
 
     @Override
     public String getMessage() {
-        return format("Exception while fetching data (%s) : %s", path, exception.getMessage());
+        return message;
     }
 
     @Override
     public List<SourceLocation> getLocations() {
-        return Collections.singletonList(sourceLocation);
+        return locations;
     }
 
-    /**
-     * The graphql spec says that that path field of any error should be a list
-     * of path entries - http://facebook.github.io/graphql/#sec-Errors
-     *
-     * @return the path in list format
-     */
     public List<Object> getPath() {
-        return path.toList();
+        return path;
+    }
+
+    @Override
+    public Map<Object, Object> getExtensions() {
+        return extensions;
     }
 
     @Override
@@ -58,7 +84,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
         return "ExceptionWhileDataFetching{" +
                 "path=" + path +
                 "exception=" + exception +
-                "sourceLocation=" + sourceLocation +
+                "locations=" + locations +
                 '}';
     }
 

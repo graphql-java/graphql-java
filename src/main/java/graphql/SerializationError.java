@@ -13,12 +13,18 @@ import static java.lang.String.format;
 @PublicApi
 public class SerializationError implements GraphQLError {
 
+    private final String message;
+    private final List<Object> path;
     private final CoercingSerializeException exception;
-    private final ExecutionPath path;
 
     public SerializationError(ExecutionPath path, CoercingSerializeException exception) {
-        this.path = assertNotNull(path);
+        this.path = assertNotNull(path).toList();
         this.exception = assertNotNull(exception);
+        this.message = mkMessage(path, exception);
+    }
+
+    private String mkMessage(ExecutionPath path, CoercingSerializeException exception) {
+        return format("Can't serialize value (%s) : %s", path, exception.getMessage());
     }
 
     public CoercingSerializeException getException() {
@@ -28,7 +34,7 @@ public class SerializationError implements GraphQLError {
 
     @Override
     public String getMessage() {
-        return format("Can't serialize value (%s) : %s", path, exception.getMessage());
+        return message;
     }
 
     @Override
@@ -41,14 +47,8 @@ public class SerializationError implements GraphQLError {
         return ErrorType.DataFetchingException;
     }
 
-    /**
-     * The graphql spec says that that path field of any error should be a list
-     * of path entries - http://facebook.github.io/graphql/#sec-Errors
-     *
-     * @return the path in list format
-     */
     public List<Object> getPath() {
-        return path.toList();
+        return path;
     }
 
     @Override
