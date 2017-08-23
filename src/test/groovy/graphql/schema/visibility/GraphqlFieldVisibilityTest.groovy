@@ -12,7 +12,7 @@ import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
-import static BlacklistGraphqlFieldVisibility.newBlacklist
+import static BlockedFields.newBlock
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY
 import static graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY
 
@@ -20,7 +20,7 @@ class GraphqlFieldVisibilityTest extends Specification {
 
     def "visibility is enforced"() {
 
-        GraphqlFieldVisibility banNameVisibility = newBlacklist().addPattern(".*\\.name").build()
+        GraphqlFieldVisibility banNameVisibility = newBlock().addPattern(".*\\.name").build()
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
                 .fieldVisibility(banNameVisibility)
@@ -81,8 +81,8 @@ class GraphqlFieldVisibilityTest extends Specification {
         ban(["Droid.name", "Droid.appearsIn"]) | 'Droid'        | 3
     }
 
-    private static BlacklistGraphqlFieldVisibility ban(List<String> regex) {
-        newBlacklist().addPatterns(regex).build()
+    private static BlockedFields ban(List<String> regex) {
+        newBlock().addPatterns(regex).build()
     }
 
     def "introspection turned off via blacklisting"() {

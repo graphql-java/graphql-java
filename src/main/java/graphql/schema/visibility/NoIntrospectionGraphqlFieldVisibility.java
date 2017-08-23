@@ -5,7 +5,7 @@ import graphql.schema.GraphQLFieldsContainer;
 
 import java.util.List;
 
-import static graphql.schema.visibility.BlacklistGraphqlFieldVisibility.newBlacklist;
+import static graphql.schema.visibility.BlockedFields.newBlock;
 
 /**
  * This field visibility will prevent Introspection queries from being performed.  Technically this puts your
@@ -17,10 +17,10 @@ public class NoIntrospectionGraphqlFieldVisibility implements GraphqlFieldVisibi
     public static NoIntrospectionGraphqlFieldVisibility NO_INTROSPECTION_FIELD_VISIBILITY = new NoIntrospectionGraphqlFieldVisibility();
 
 
-    private final BlacklistGraphqlFieldVisibility blackListUnderscoreFields;
+    private final BlockedFields blackListUnderscoreFields;
 
     public NoIntrospectionGraphqlFieldVisibility() {
-        blackListUnderscoreFields = newBlacklist().addPattern("__.*").build();
+        blackListUnderscoreFields = newBlock().addPattern("__.*").build();
     }
 
     @Override

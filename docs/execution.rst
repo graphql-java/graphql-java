@@ -381,6 +381,76 @@ creating batched DataFetchers with get() methods annotated @Batched.
 .. This text will not be shown and if it does I have not done restructured comments right.  We should add more details
 on how BatchedExecutionStrategy works here.  Its a pretty special case that I don't know how to explain properly
 
+Limiting Field Visibility
+-------------------------
+
+By default every fields defined in a `GraphqlSchema` is available.  There are cases where you may want to restrict certain fields
+depending on the user.
+
+You can do this by using a `graphql.schema.visibility.GraphqlFieldVisibility` implementation and attaching it to the schema.
+
+A simple `graphql.schema.visibility.BlockedFields` implementation based on fully qualified field name is provided.
+
+.. code-block:: java
+
+        GraphqlFieldVisibility blockedFields = BlockedFields.newBlock()
+                .addPattern("Character.id")
+                .addPattern("Droid.appearsIn")
+                .addPattern(".*\\.hero") // it uses regular expressions
+                .build();
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .fieldVisibility(blockedFields)
+                .build();
+
+There is also another implementation that prevents instrumentation from being able to be performed on your schema, if that is a requirement.
+
+Note that this puts your server in contravention of the graphql specification and expectations of most clients so use this with caution.
+
+
+.. code-block:: java
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .fieldVisibility(NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY)
+                .build();
+
+
+You can create your own derivation of `GraphqlFieldVisibility` to check what ever you need to do to work out what fields
+should be visible or not.
+
+.. code-block:: java
+
+    class CustomFieldVisibility implements GraphqlFieldVisibility {
+
+        final YourUserAccessService userAccessService;
+
+        CustomFieldVisibility(YourUserAccessService userAccessService) {
+            this.userAccessService = userAccessService;
+        }
+
+        @Override
+        public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+            if ("AdminType".equals(fieldsContainer.getName())) {
+                if (!userAccessService.isAdminUser()) {
+                    return Collections.emptyList();
+                }
+            }
+            return fieldsContainer.getFieldDefinitions();
+        }
+
+        @Override
+        public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+            if ("AdminType".equals(fieldsContainer.getName())) {
+                if (!userAccessService.isAdminUser()) {
+                    return null;
+                }
+            }
+            return fieldsContainer.getFieldDefinition(fieldName);
+        }
+    }
+
 
 Query Caching
 -------------
@@ -434,3 +504,4 @@ with variables:
     }
 
 The query is now reused regardless of variable values provided.
+
