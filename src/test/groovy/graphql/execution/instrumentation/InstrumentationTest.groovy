@@ -4,6 +4,7 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.schema.DataFetcher
@@ -24,7 +25,7 @@ class InstrumentationTest extends Specification {
         given:
 
         def query = """
-        query HeroNameAndFriendsQuery {
+        {
             hero {
                 id
             }
@@ -74,10 +75,9 @@ class InstrumentationTest extends Specification {
 
         def instrumentation = new TestingInstrumentation()
 
-        def strategy = new AsyncExecutionStrategy()
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
-                .queryExecutionStrategy(strategy)
+                .queryExecutionStrategy(new AsyncExecutionStrategy())
                 .instrumentation(instrumentation)
                 .build()
 
@@ -104,12 +104,63 @@ class InstrumentationTest extends Specification {
         instrumentation.dfInvocations[1].getFieldTypeInfo().isNonNullType()
     }
 
+    def '#630 - Instrumentation of batched execution strategy is called'() {
+        given:
+
+        def query = """
+        {
+            hero {
+                id
+            }
+        }
+        """
+
+        def expected = [
+                "start:execution",
+                "start:parse",
+                "end:parse",
+                "start:validation",
+                "end:validation",
+                "start:data-fetch",
+                "start:execution-strategy",
+
+                "start:field-hero",
+                "start:fetch-hero",
+                "end:fetch-hero",
+                "end:field-hero",
+
+                "start:field-id",
+                "start:fetch-id",
+                "end:fetch-id",
+                "end:field-id",
+
+                "end:execution-strategy",
+                "end:data-fetch",
+                "end:execution",
+        ]
+        when:
+
+        def instrumentation = new TestingInstrumentation()
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(new BatchedExecutionStrategy())
+                .instrumentation(instrumentation)
+                .build()
+
+        graphQL.execute(query)
+
+        then:
+
+        instrumentation.executionList == expected
+    }
+
     def "exceptions at field fetch will instrument exceptions correctly"() {
 
         given:
 
         def query = """
-        query HeroNameAndFriendsQuery {
+        {
             hero {
                 id
             }
@@ -194,7 +245,7 @@ class InstrumentationTest extends Specification {
         given:
 
         def query = """
-        query HeroNameAndFriendsQuery {
+        {
             artoo: hero {
                 id
             }
