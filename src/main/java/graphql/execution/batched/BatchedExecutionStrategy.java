@@ -219,10 +219,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             MapOrList childResult = mapOrList.createAndPutMap(fieldName);
 
             GraphQLObjectType graphQLObjectType = getGraphQLObjectType(executionContext, fields.get(0), fieldType, value.getValue(), argumentValues);
-            resultsByType.computeIfAbsent(graphQLObjectType, (type) -> new ArrayList<>());
+            resultsByType.putIfAbsent(graphQLObjectType, new ArrayList<>());
             resultsByType.get(graphQLObjectType).add(childResult);
 
-            sourceByType.computeIfAbsent(graphQLObjectType, (type) -> new ArrayList<>());
+            sourceByType.putIfAbsent(graphQLObjectType, new ArrayList<>());
             sourceByType.get(graphQLObjectType).add(value.getValue());
         }
 
