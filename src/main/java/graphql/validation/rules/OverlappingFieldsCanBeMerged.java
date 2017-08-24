@@ -250,10 +250,14 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         GraphQLOutputType fieldType = null;
         if (parentType instanceof GraphQLFieldsContainer) {
             GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
-            GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(field.getName());
+            GraphQLFieldDefinition fieldDefinition = getVisibleFieldDefinition(fieldsContainer, field);
             fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
         }
         fieldMap.get(responseName).add(new FieldAndType(field, fieldType, parentType));
+    }
+
+    private GraphQLFieldDefinition getVisibleFieldDefinition(GraphQLFieldsContainer fieldsContainer, Field field) {
+        return getValidationContext().getSchema().getFieldVisibility().getFieldDefinition(fieldsContainer,field.getName());
     }
 
     private static class FieldPair {

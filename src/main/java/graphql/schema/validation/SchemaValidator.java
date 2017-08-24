@@ -62,6 +62,8 @@ public class SchemaValidator {
         }
         processed.add(root);
         if (root instanceof GraphQLFieldsContainer) {
+            // this deliberately has open field visibility here since its validating the schema
+            // when completely open
             for (GraphQLFieldDefinition fieldDefinition : ((GraphQLFieldsContainer) root).getFieldDefinitions()) {
                 for (SchemaValidationRule rule : rules) {
                     rule.check(fieldDefinition, validationErrorCollector);
