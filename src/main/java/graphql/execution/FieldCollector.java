@@ -8,7 +8,6 @@ import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
-import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
@@ -119,9 +118,7 @@ public class FieldCollector {
             return;
         }
         String name = getFieldEntryKey(field);
-        if (!fields.containsKey(name)) {
-            fields.put(name, new ArrayList<>());
-        }
+        fields.putIfAbsent(name, new ArrayList<>());
         fields.get(name).add(field);
     }
 
