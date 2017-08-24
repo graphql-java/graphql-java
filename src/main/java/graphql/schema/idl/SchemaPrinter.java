@@ -1,32 +1,11 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
-import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLEnumValueDefinition;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInputObjectField;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
+import graphql.schema.*;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -113,7 +92,6 @@ public class SchemaPrinter {
         List<GraphQLType> typesAsList = new ArrayList<>(schema.getAllTypesAsList());
         typesAsList.sort(Comparator.comparing(GraphQLType::getName));
 
-        printType(out, typesAsList, GraphQLInputType.class);
         printType(out, typesAsList, GraphQLInterfaceType.class);
         printType(out, typesAsList, GraphQLUnionType.class);
         printType(out, typesAsList, GraphQLObjectType.class);
@@ -297,7 +275,7 @@ public class SchemaPrinter {
     }
 
     String argsString(List<GraphQLArgument> arguments) {
-        boolean hasDescriptions = arguments.stream().filter(arg -> arg.getDescription() != null).count() > 0;
+        boolean hasDescriptions = arguments.stream().filter(arg -> !isNullOrEmpty(arg.getDescription())).count() > 0;
         String prefix = hasDescriptions ? "  " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
@@ -311,7 +289,7 @@ public class SchemaPrinter {
                 sb.append("\n");
             }
             String description = argument.getDescription();
-            if (description != null) {
+            if (!isNullOrEmpty(description)) {
                 Stream<String> stream = Arrays.stream(description.split("\n"));
                 stream.map(s -> "  #" + s + "\n").forEach(sb::append);
             }
@@ -338,9 +316,15 @@ public class SchemaPrinter {
 
     @SuppressWarnings("unchecked")
     private <T> TypePrinter<T> printer(Class<?> clazz) {
-        TypePrinter typePrinter = printers.computeIfAbsent(clazz,
-                k -> (out, type) -> out.println("Type not implemented : " + type)
-        );
+        TypePrinter typePrinter = printers.computeIfAbsent(clazz, k -> {
+            Class<?> superClazz = clazz.getSuperclass();
+            TypePrinter result;
+            if(superClazz != Object.class)
+                result = printer(superClazz);
+            else
+                result = (out, type) -> out.println("Type not implemented : " + type);
+            return result;
+        });
         return (TypePrinter<T>) typePrinter;
     }
 
@@ -355,7 +339,7 @@ public class SchemaPrinter {
 
     private void printType(PrintWriter out, List<GraphQLType> typesAsList, Class typeClazz) {
         typesAsList.stream()
-                .filter(type -> type.getClass().equals(typeClazz))
+                .filter(type -> typeClazz.isAssignableFrom(type.getClass()))
                 .forEach(type -> printType(out, type));
     }
 
@@ -367,7 +351,7 @@ public class SchemaPrinter {
 
     private void printComments(PrintWriter out, Object graphQLType, String prefix) {
         String description = getDescription(graphQLType);
-        if (description == null) {
+        if (isNullOrEmpty(description)) {
             return;
         }
         Stream<String> stream = Arrays.stream(description.split("\n"));
@@ -398,5 +382,9 @@ public class SchemaPrinter {
         } else {
             return Assert.assertShouldNeverHappen();
         }
+    }
+
+    private static boolean isNullOrEmpty(String s) {
+        return s == null || s.isEmpty();
     }
 }
