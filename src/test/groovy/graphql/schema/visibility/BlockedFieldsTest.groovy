@@ -9,13 +9,13 @@ import java.util.stream.Collectors
 class BlockedFieldsTest extends Specification {
 
     @Unroll
-    def "basic blacklisting '#why'"() {
+    def "basic blocking '#why'"() {
 
         given:
-        def blacklist = BlockedFields.newBlock().addPatterns(patterns).build()
+        def blockedFields = BlockedFields.newBlock().addPatterns(patterns).build()
 
         when:
-        def fields = blacklist.getFieldDefinitions(type).stream().map({ fd -> fd.getName() }).collect(Collectors.toList())
+        def fields = blockedFields.getFieldDefinitions(type).stream().map({ fd -> fd.getName() }).collect(Collectors.toList())
 
         then:
         fields == expectedFieldList
@@ -24,7 +24,7 @@ class BlockedFieldsTest extends Specification {
         why                        | type                              | patterns                    | expectedFieldList
         "partial field name match" | StarWarsSchema.characterInterface | [".*\\.name"]               | ["id", "friends", "appearsIn"]
         "no match"                 | StarWarsSchema.characterInterface | ["Character.mismatched"]    | ["id", "name", "friends", "appearsIn"]
-        "all black"                | StarWarsSchema.characterInterface | [".*"]                      | []
+        "all blocked"              | StarWarsSchema.characterInterface | [".*"]                      | []
         "needs FQN to match"       | StarWarsSchema.characterInterface | ["name"]                    | ["id", "name", "friends", "appearsIn"]
         "FQN"                      | StarWarsSchema.characterInterface | ["Character.name"]          | ["id", "friends", "appearsIn"]
         "multiple patterns"        | StarWarsSchema.characterInterface | ["Character.name", ".*.id"] | ["friends", "appearsIn"]

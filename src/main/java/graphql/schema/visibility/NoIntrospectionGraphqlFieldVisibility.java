@@ -17,20 +17,20 @@ public class NoIntrospectionGraphqlFieldVisibility implements GraphqlFieldVisibi
     public static NoIntrospectionGraphqlFieldVisibility NO_INTROSPECTION_FIELD_VISIBILITY = new NoIntrospectionGraphqlFieldVisibility();
 
 
-    private final BlockedFields blackListUnderscoreFields;
+    private final BlockedFields blockedFields;
 
     public NoIntrospectionGraphqlFieldVisibility() {
-        blackListUnderscoreFields = newBlock().addPattern("__.*").build();
+        blockedFields = newBlock().addPattern("__.*").build();
     }
 
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
-        return blackListUnderscoreFields.getFieldDefinitions(fieldsContainer);
+        return blockedFields.getFieldDefinitions(fieldsContainer);
     }
 
     @Override
     public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
-        return blackListUnderscoreFields.getFieldDefinition(fieldsContainer, fieldName);
+        return blockedFields.getFieldDefinition(fieldsContainer, fieldName);
     }
 
 }

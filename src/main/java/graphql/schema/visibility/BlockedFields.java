@@ -29,7 +29,7 @@ public class BlockedFields implements GraphqlFieldVisibility {
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
         return fieldsContainer.getFieldDefinitions().stream()
-                .filter(fd -> !blackList(mkFQN(fieldsContainer, fd)))
+                .filter(fd -> !block(mkFQN(fieldsContainer, fd)))
                 .collect(Collectors.toList());
     }
 
@@ -37,14 +37,14 @@ public class BlockedFields implements GraphqlFieldVisibility {
     public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
         GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(fieldName);
         if (fieldDefinition != null) {
-            if (blackList(mkFQN(fieldsContainer, fieldDefinition))) {
+            if (block(mkFQN(fieldsContainer, fieldDefinition))) {
                 fieldDefinition = null;
             }
         }
         return fieldDefinition;
     }
 
-    private boolean blackList(String fqn) {
+    private boolean block(String fqn) {
         for (Pattern pattern : patterns) {
             if (pattern.matcher(fqn).matches()) {
                 return true;

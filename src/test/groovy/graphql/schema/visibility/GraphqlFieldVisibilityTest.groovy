@@ -85,7 +85,7 @@ class GraphqlFieldVisibilityTest extends Specification {
         newBlock().addPatterns(regex).build()
     }
 
-    def "introspection turned off via blacklisting"() {
+    def "introspection turned off via field visibility"() {
         given:
 
         def schema = GraphQLSchema.newSchema()
