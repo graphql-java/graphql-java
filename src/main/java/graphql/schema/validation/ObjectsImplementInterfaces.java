@@ -43,16 +43,18 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
 
     }
 
-    private void checkObjectImplementsInterface(GraphQLObjectType objectTyoe, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector) {
+    // this deliberately has open field visibility here since its validating the schema
+    // when completely open
+    private void checkObjectImplementsInterface(GraphQLObjectType objectType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLFieldDefinition> fieldDefinitions = interfaceType.getFieldDefinitions();
         for (GraphQLFieldDefinition interfaceFieldDef : fieldDefinitions) {
-            GraphQLFieldDefinition objectFieldDef = objectTyoe.getFieldDefinition(interfaceFieldDef.getName());
+            GraphQLFieldDefinition objectFieldDef = objectType.getFieldDefinition(interfaceFieldDef.getName());
             if (objectFieldDef == null) {
                 validationErrorCollector.addError(
                         error(format("object type '%s' does not implement interface '%s' because field '%s' is missing",
-                                objectTyoe.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
+                                objectType.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
             } else {
-                checkFieldTypeCompatibility(objectTyoe, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
+                checkFieldTypeCompatibility(objectType, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
             }
         }
     }
@@ -144,7 +146,7 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
     }
 
     boolean objectIsMemberOfUnion(GraphQLUnionType unionType, GraphQLOutputType objectType) {
-        return  unionType.getTypes().contains(objectType);
+        return unionType.getTypes().contains(objectType);
     }
 
 }

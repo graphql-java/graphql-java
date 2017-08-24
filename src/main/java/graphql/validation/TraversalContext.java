@@ -284,7 +284,7 @@ public class TraversalContext implements DocumentVisitor {
             return TypeNameMetaFieldDef;
         }
         if (parentType instanceof GraphQLFieldsContainer) {
-            return ((GraphQLFieldsContainer) parentType).getFieldDefinition(field.getName());
+            return schema.getFieldVisibility().getFieldDefinition((GraphQLFieldsContainer) parentType,field.getName());
         }
         return null;
     }

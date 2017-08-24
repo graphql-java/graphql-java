@@ -108,6 +108,7 @@ public class SchemaUtil {
         }
         result.put(interfaceType.getName(), interfaceType);
 
+        // this deliberately has open field visibility as its collecting on the whole schema
         for (GraphQLFieldDefinition fieldDefinition : interfaceType.getFieldDefinitions()) {
             collectTypes(fieldDefinition.getType(), result);
             for (GraphQLArgument fieldArgument : fieldDefinition.getArguments()) {
@@ -124,6 +125,7 @@ public class SchemaUtil {
         }
         result.put(objectType.getName(), objectType);
 
+        // this deliberately has open field visibility as its collecting on the whole schema
         for (GraphQLFieldDefinition fieldDefinition : objectType.getFieldDefinitions()) {
             collectTypes(fieldDefinition.getType(), result);
             for (GraphQLArgument fieldArgument : fieldDefinition.getArguments()) {

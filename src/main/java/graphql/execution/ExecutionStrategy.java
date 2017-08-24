@@ -585,7 +585,7 @@ public abstract class ExecutionStrategy {
             return TypeNameMetaFieldDef;
         }
 
-        GraphQLFieldDefinition fieldDefinition = parentType.getFieldDefinition(field.getName());
+        GraphQLFieldDefinition fieldDefinition = schema.getFieldVisibility().getFieldDefinition(parentType, field.getName());
         if (fieldDefinition == null) {
             throw new GraphQLException("Unknown field " + field.getName());
         }
