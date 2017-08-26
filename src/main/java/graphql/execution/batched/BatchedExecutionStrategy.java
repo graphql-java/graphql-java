@@ -416,12 +416,12 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private List<Object> assertResult(List<MapOrList> parentResults, Object result) {
         if (result != null && !(result instanceof List)) {
-            throw new DataFetchingException("invalid result from DataFetcher: List expected");
+            throw new BatchAssertionFailed("invalid result from DataFetcher: List expected");
         }
         @SuppressWarnings("unchecked")
         List<Object> values = (List<Object>) result;
         if (values == null || values.size() != parentResults.size()) {
-            throw new DataFetchingException("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
+            throw new BatchAssertionFailed("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
         }
         return values;
     }
