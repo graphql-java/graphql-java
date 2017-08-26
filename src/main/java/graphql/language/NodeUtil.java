@@ -1,7 +1,9 @@
 package graphql.language;
 
+import graphql.GraphQLException;
 import graphql.Internal;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
@@ -34,5 +36,46 @@ public class NodeUtil {
 
     private static <T> BinaryOperator<T> mergeFirst() {
         return (o1, o2) -> o1;
+    }
+
+
+    public static class GetOperationResult {
+        public OperationDefinition operationDefinition;
+        public Map<String, FragmentDefinition> fragmentsByName;
+    }
+
+    public static GetOperationResult getOperation(Document document, String operationName) {
+
+
+        Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+        Map<String, OperationDefinition> operationsByName = new LinkedHashMap<>();
+
+        for (Definition definition : document.getDefinitions()) {
+            if (definition instanceof OperationDefinition) {
+                OperationDefinition operationDefinition = (OperationDefinition) definition;
+                operationsByName.put(operationDefinition.getName(), operationDefinition);
+            }
+            if (definition instanceof FragmentDefinition) {
+                FragmentDefinition fragmentDefinition = (FragmentDefinition) definition;
+                fragmentsByName.put(fragmentDefinition.getName(), fragmentDefinition);
+            }
+        }
+        if (operationName == null && operationsByName.size() > 1) {
+            throw new GraphQLException("missing operation name");
+        }
+        OperationDefinition operation;
+
+        if (operationName == null) {
+            operation = operationsByName.values().iterator().next();
+        } else {
+            operation = operationsByName.get(operationName);
+        }
+        if (operation == null) {
+            throw new GraphQLException("no operation found");
+        }
+        GetOperationResult result = new GetOperationResult();
+        result.fragmentsByName = fragmentsByName;
+        result.operationDefinition = operation;
+        return result;
     }
 }
