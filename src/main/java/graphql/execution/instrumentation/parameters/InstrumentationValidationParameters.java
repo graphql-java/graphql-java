@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
+import graphql.schema.GraphQLSchema;
 
 /**
  * Parameters sent to {@link Instrumentation} methods
@@ -11,8 +12,8 @@ import graphql.language.Document;
 public class InstrumentationValidationParameters extends InstrumentationExecutionParameters {
     private final Document document;
 
-    public InstrumentationValidationParameters(ExecutionInput executionInput, Document document, InstrumentationState instrumentationState) {
-        super(executionInput, instrumentationState);
+    public InstrumentationValidationParameters(ExecutionInput executionInput, Document document, GraphQLSchema schema, InstrumentationState instrumentationState) {
+        super(executionInput, schema, instrumentationState);
         this.document = document;
     }
 
@@ -25,7 +26,7 @@ public class InstrumentationValidationParameters extends InstrumentationExecutio
      */
     public InstrumentationValidationParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationValidationParameters(
-                this.getExecutionInput(), document, instrumentationState);
+                this.getExecutionInput(), document, getSchema(), instrumentationState);
     }
 
 

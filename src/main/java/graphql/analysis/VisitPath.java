@@ -1,9 +1,11 @@
-package graphql.visitor;
+package graphql.analysis;
 
+import graphql.Internal;
 import graphql.language.Field;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 
+@Internal
 public class VisitPath {
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
