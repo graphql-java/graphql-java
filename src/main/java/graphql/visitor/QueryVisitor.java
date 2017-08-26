@@ -5,6 +5,6 @@ import graphql.schema.GraphQLFieldDefinition;
 
 public interface QueryVisitor {
 
-    void visitField(Field field, GraphQLFieldDefinition fieldDefinition);
+    void visitField(Field field, GraphQLFieldDefinition fieldDefinition, VisitPath visitPath);
 
 }
