@@ -28,7 +28,8 @@ class QueryTraversalTest extends Specification {
         return queryTraversal
     }
 
-    def "test "() {
+
+    def "simple query"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -48,7 +49,9 @@ class QueryTraversalTest extends Specification {
         queryTraversal.traverse()
 
         then:
-        3 * visitor.visitField(_, _)
-
+        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" })
+        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" })
+        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" })
     }
+
 }
