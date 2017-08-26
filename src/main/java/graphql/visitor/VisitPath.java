@@ -1,17 +1,20 @@
 package graphql.visitor;
 
 import graphql.language.Field;
+import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 
 public class VisitPath {
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
-    private final VisitPath parent;
+    private final GraphQLCompositeType parentType;
+    private final VisitPath parentPath;
 
-    public VisitPath(Field field, GraphQLFieldDefinition fieldDefinition, VisitPath parent) {
+    public VisitPath(Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, VisitPath parentPath) {
         this.field = field;
         this.fieldDefinition = fieldDefinition;
-        this.parent = parent;
+        this.parentType = parentType;
+        this.parentPath = parentPath;
     }
 
     public Field getField() {
@@ -22,7 +25,11 @@ public class VisitPath {
         return fieldDefinition;
     }
 
-    public VisitPath getParent() {
-        return parent;
+    public VisitPath getParentPath() {
+        return parentPath;
+    }
+
+    public GraphQLCompositeType getParentType() {
+        return parentType;
     }
 }
