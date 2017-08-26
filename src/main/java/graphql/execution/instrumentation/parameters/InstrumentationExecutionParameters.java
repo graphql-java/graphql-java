@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.schema.GraphQLSchema;
 
 import java.util.Collections;
 import java.util.Map;
@@ -19,14 +20,16 @@ public class InstrumentationExecutionParameters {
     private final Object context;
     private final Map<String, Object> variables;
     private final InstrumentationState instrumentationState;
+    private final GraphQLSchema schema;
 
-    public InstrumentationExecutionParameters(ExecutionInput executionInput, InstrumentationState instrumentationState) {
+    public InstrumentationExecutionParameters(ExecutionInput executionInput, GraphQLSchema schema, InstrumentationState instrumentationState) {
         this.executionInput = executionInput;
         this.query = executionInput.getQuery();
         this.operation = executionInput.getOperationName();
         this.context = executionInput.getContext();
         this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap();
         this.instrumentationState = instrumentationState;
+        this.schema = schema;
     }
 
     /**
@@ -37,7 +40,7 @@ public class InstrumentationExecutionParameters {
      * @return a new parameters object with the new state
      */
     public InstrumentationExecutionParameters withNewState(InstrumentationState instrumentationState) {
-        return new InstrumentationExecutionParameters(this.getExecutionInput(), instrumentationState);
+        return new InstrumentationExecutionParameters(this.getExecutionInput(), this.schema, instrumentationState);
     }
 
     public ExecutionInput getExecutionInput() {
@@ -64,6 +67,10 @@ public class InstrumentationExecutionParameters {
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked
         return (T) instrumentationState;
+    }
+
+    public GraphQLSchema getSchema() {
+        return this.schema;
     }
 
 

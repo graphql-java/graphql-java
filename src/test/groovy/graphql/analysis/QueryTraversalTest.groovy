@@ -1,4 +1,4 @@
-package graphql.visitor
+package graphql.analysis
 
 import graphql.TestUtil
 import graphql.language.Document
@@ -18,12 +18,10 @@ class QueryTraversalTest extends Specification {
     QueryTraversal createQueryTraversal(Document document, GraphQLSchema schema, QueryVisitor visitor, Map variables = [:]) {
         def operation = NodeUtil.getOperation(document, null)
         QueryTraversal queryTraversal = new QueryTraversal(
-                document,
                 operation.operationDefinition,
                 schema,
                 operation.fragmentsByName,
-                variables,
-                visitor
+                variables
         )
         return queryTraversal
     }
@@ -46,15 +44,15 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.traverse()
+        queryTraversal.visit(visitor)
 
         then:
-        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" }, {
-            it.name == "Foo"
-        }, { VisitPath path ->
-            path.field.name == "foo" && path.fieldDefinition.type.name == "Foo"
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parent.name == "Foo" &&
+                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
         })
     }
 
@@ -82,15 +80,15 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.traverse()
+        queryTraversal.visit(visitor)
 
         then:
-        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" }, {
-            it.name == "Foo"
-        }, { VisitPath path ->
-            path.field.name == "foo" && path?.fieldDefinition.type.name == "Foo"
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parent.name == "Foo" &&
+                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
         })
 
     }
@@ -119,17 +117,16 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.traverse()
+        queryTraversal.visit(visitor)
 
         then:
-        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" }, {
-            it.name == "Foo"
-        }, { VisitPath path ->
-            path.field.name == "foo" && path?.fieldDefinition.type.name == "Foo"
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parent.name == "Foo" &&
+                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
         })
-
     }
 
 
@@ -159,15 +156,15 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.traverse()
+        queryTraversal.visit(visitor)
 
         then:
-        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" }, {
-            it.name == "Foo"
-        }, { VisitPath path ->
-            path.field.name == "foo" && path?.fieldDefinition.type.name == "Foo"
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parent.name == "Foo" &&
+                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
         })
 
     }
@@ -198,10 +195,10 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.traverse()
+        queryTraversal.visit(visitor)
 
         then:
-        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, { it.name == "Query" }, null)
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
         0 * visitor.visitField(*_)
 
     }
@@ -232,10 +229,10 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor, [variableFoo: true])
         when:
-        queryTraversal.traverse()
+        queryTraversal.visit(visitor)
 
         then:
-        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, { it.name == "Query" }, null)
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
         0 * visitor.visitField(*_)
 
     }
@@ -280,19 +277,18 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor, [variableFoo: true])
         when:
-        queryTraversal.traverse()
+        queryTraversal.visit(visitor)
 
         then:
-        2 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo1" }, { it.name == "Query" }, null)
-        1 * visitor.visitField({ it.name == "string" }, { it.type.name == "String" }, { it.name == "Foo1" }, _)
-        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "Foo2" }, { it.name == "Foo1" }, _)
-        1 * visitor.visitField({ it.name == "otherString" }, { it.type.name == "String" }, { it.name == "Foo2" }, {
-            VisitPath path ->
-                VisitPath parentPath = path.parentPath
-                path.field.name == "subFoo" && path.fieldDefinition.type.name == "Foo2" && path.parentType.name == "Foo1" &&
-                        parentPath.field.name == "foo" && parentPath.fieldDefinition.type.name == "Foo1" && parentPath.parentType.name == "Query"
-
+        2 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo1" && it.parent.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "string" && it.fieldDefinition.type.name == "String" && it.parent.name == "Foo1" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "subFoo" && it.fieldDefinition.type.name == "Foo2" && it.parent.name == "Foo1" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            VisitPath parentPath = it.path.parentPath
+            it.field.name == "otherString" && it.fieldDefinition.type.name == "String" && it.parent.name == "Foo2" &&
+                    it.path.field.name == "subFoo" && it.path.fieldDefinition.type.name == "Foo2" && it.path.parentType.name == "Foo1" &&
+                    parentPath.field.name == "foo" && parentPath.fieldDefinition.type.name == "Foo1" && parentPath.parentType.name == "Query"
         })
 
     }

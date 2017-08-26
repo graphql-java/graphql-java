@@ -1,7 +1,7 @@
-package graphql.visitor;
+package graphql.analysis;
 
+import graphql.Internal;
 import graphql.execution.ConditionalNodes;
-import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -18,10 +18,10 @@ import graphql.schema.GraphQLSchema;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Internal
 public class QueryTraversal {
 
 
-    private Document document;
     private OperationDefinition operationDefinition;
     private GraphQLSchema schema;
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
@@ -29,43 +29,45 @@ public class QueryTraversal {
 
     private ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    private QueryVisitor visitor;
 
-    public QueryTraversal(Document document,
-                          OperationDefinition operationDefinition,
+    public QueryTraversal(OperationDefinition operationDefinition,
                           GraphQLSchema schema,
                           Map<String, FragmentDefinition> fragmentsByName,
-                          Map<String, Object> variables,
-                          QueryVisitor visitor) {
-        this.document = document;
+                          Map<String, Object> variables) {
         this.operationDefinition = operationDefinition;
         this.schema = schema;
         this.fragmentsByName = fragmentsByName;
         this.variables = variables;
-        this.visitor = visitor;
     }
 
-    public void traverse() {
-        visit(operationDefinition.getSelectionSet(), schema.getQueryType(), null);
+    public void visit(QueryVisitor visitor) {
+        visitImpl(visitor, operationDefinition.getSelectionSet(), schema.getQueryType(), null);
+    }
+
+    public Object reduce(QueryReducer queryReducer, Object initialValue) {
+        // compiler hack to make acc final and mutable :-)
+        final Object[] acc = {initialValue};
+        visit((env) -> acc[0] = queryReducer.reduceField(env, acc[0]));
+        return acc[0];
     }
 
 
-    private void visit(SelectionSet selectionSet, GraphQLCompositeType type, VisitPath path) {
+    private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, VisitPath path) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
                 GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(((Field) selection).getName());
-                visitField((Field) selection, fieldDefinition, type, path);
+                visitField(visitor, (Field) selection, fieldDefinition, type, path);
             } else if (selection instanceof InlineFragment) {
-                visitInlineFragment((InlineFragment) selection, type, path);
+                visitInlineFragment(visitor, (InlineFragment) selection, type, path);
             } else if (selection instanceof FragmentSpread) {
-                visitFragmentSpread((FragmentSpread) selection, path);
+                visitFragmentSpread(visitor, (FragmentSpread) selection, path);
             }
         }
     }
 
-    private void visitFragmentSpread(FragmentSpread fragmentSpread, VisitPath path) {
+    private void visitFragmentSpread(QueryVisitor visitor, FragmentSpread fragmentSpread, VisitPath path) {
         if (!conditionalNodes.shouldInclude(this.variables, fragmentSpread.getDirectives())) {
             return;
         }
@@ -75,11 +77,11 @@ public class QueryTraversal {
             return;
         }
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
-        visit(fragmentDefinition.getSelectionSet(), typeCondition, path);
+        visitImpl(visitor, fragmentDefinition.getSelectionSet(), typeCondition, path);
     }
 
 
-    private void visitInlineFragment(InlineFragment inlineFragment, GraphQLCompositeType parentType, VisitPath path) {
+    private void visitInlineFragment(QueryVisitor visitor, InlineFragment inlineFragment, GraphQLCompositeType parentType, VisitPath path) {
         if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives())) {
             return;
         }
@@ -92,17 +94,17 @@ public class QueryTraversal {
             fragmentCondition = parentType;
         }
         // for unions we only have other fragments inside
-        visit(inlineFragment.getSelectionSet(), fragmentCondition, path);
+        visitImpl(visitor, inlineFragment.getSelectionSet(), fragmentCondition, path);
     }
 
-    private void visitField(Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, VisitPath parentPath) {
+    private void visitField(QueryVisitor visitor, Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, VisitPath parentPath) {
         if (!conditionalNodes.shouldInclude(variables, field.getDirectives())) {
             return;
         }
-        visitor.visitField(field, fieldDefinition, parentType, parentPath);
+        visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentPath));
         if (fieldDefinition.getType() instanceof GraphQLCompositeType) {
             VisitPath newPath = new VisitPath(field, fieldDefinition, parentType, parentPath);
-            visit(field.getSelectionSet(), (GraphQLCompositeType) fieldDefinition.getType(), newPath);
+            visitImpl(visitor, field.getSelectionSet(), (GraphQLCompositeType) fieldDefinition.getType(), newPath);
         }
     }
 
