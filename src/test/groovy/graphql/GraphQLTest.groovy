@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.analysis.MaximumQueryDepthInstrumentation
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -9,6 +10,7 @@ import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLTypeReference
 import graphql.schema.StaticDataFetcher
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
@@ -577,6 +579,42 @@ class GraphQLTest extends Specification {
 
         then:
         result == [hello: 'world']
+    }
+
+    def "abort execution if query depth is too high"() {
+        given:
+        def foo = newObject()
+                .name("Foo")
+                .field(newFieldDefinition()
+                .name("field")
+                .type(new GraphQLTypeReference('Foo'))
+                .build())
+                .field(newFieldDefinition()
+                .name("scalar")
+                .type(GraphQLString)
+                .build())
+                .build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition()
+                        .name("field")
+                        .type(foo)
+                        .build()).build())
+                .build()
+
+        MaximumQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaximumQueryDepthInstrumentation(3);
+
+
+        def graphql = GraphQL.newGraphQL(schema).instrumentation(maximumQueryDepthInstrumentation).build()
+
+        when:
+        def result = graphql.execute('{ field {field {field {field {scalar}}}} }')
+
+        then:
+        result.errors.size() == 1
+        result.errors[0].message.contains("maximum query depth exceeded")
+
     }
 
 }

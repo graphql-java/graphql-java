@@ -1,5 +1,6 @@
 package graphql;
 
+import graphql.execution.AbortExecutionException;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.AsyncSerialExecutionStrategy;
 import graphql.execution.Execution;
@@ -381,20 +382,25 @@ public class GraphQL {
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
-        log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
+        try {
+            log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
 
-        InstrumentationState instrumentationState = instrumentation.createState();
+            InstrumentationState instrumentationState = instrumentation.createState();
 
-        InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, instrumentationState);
-        InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(instrumentationParameters);
-        CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, instrumentationState);
-        //
-        // finish up instrumentation
-        executionResult = executionResult.whenComplete(executionInstrumentation::onEnd);
-        //
-        // allow instrumentation to tweak the result
-        executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
-        return executionResult;
+            InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
+            InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(instrumentationParameters);
+            CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, instrumentationState);
+            //
+            // finish up instrumentation
+            executionResult = executionResult.whenComplete(executionInstrumentation::onEnd);
+            //
+            // allow instrumentation to tweak the result
+            executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
+            return executionResult;
+        } catch (AbortExecutionException abortException) {
+            ExecutionResultImpl executionResult = new ExecutionResultImpl(abortException);
+            return CompletableFuture.completedFuture(executionResult);
+        }
     }
 
 
@@ -425,7 +431,7 @@ public class GraphQL {
     }
 
     private ParseResult parse(ExecutionInput executionInput, InstrumentationState instrumentationState) {
-        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(new InstrumentationExecutionParameters(executionInput, instrumentationState));
+        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState));
 
         Parser parser = new Parser();
         Document document;
@@ -441,7 +447,7 @@ public class GraphQL {
     }
 
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, InstrumentationState instrumentationState) {
-        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, instrumentationState));
+        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, this.graphQLSchema, instrumentationState));
 
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);

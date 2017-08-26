@@ -72,8 +72,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     /**
      * @return This returns GraphQLInterface or GraphQLTypeReference instances, if the type
-     * references are not resolved yet. After they are resolved it contains only GraphQLInterface.
-     * Reference resolving happens when a full schema is built.
+     * references are not resolved yet. After they are resolved it contains only GraphQLInterface. * Reference resolving happens when a full schema is built.
      */
     public List<GraphQLOutputType> getInterfaces() {
         return new ArrayList<>(interfaces);
