@@ -49,9 +49,11 @@ class QueryTraversalTest extends Specification {
         queryTraversal.traverse()
 
         then:
-        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" })
-        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" })
-        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" })
+        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" }, null)
+        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, null)
+        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" }, { VisitPath path ->
+            path.field.name == "foo" && path.fieldDefinition.type.name == "Foo"
+        })
     }
 
 }
