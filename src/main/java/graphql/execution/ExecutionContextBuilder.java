@@ -1,15 +1,13 @@
 package graphql.execution;
 
-import graphql.GraphQLException;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
+import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -99,33 +97,11 @@ public class ExecutionContextBuilder {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
 
-        Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-        Map<String, OperationDefinition> operationsByName = new LinkedHashMap<>();
+        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
+        Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
+        OperationDefinition operationDefinition = getOperationResult.operationDefinition;
 
-        for (Definition definition : document.getDefinitions()) {
-            if (definition instanceof OperationDefinition) {
-                OperationDefinition operationDefinition = (OperationDefinition) definition;
-                operationsByName.put(operationDefinition.getName(), operationDefinition);
-            }
-            if (definition instanceof FragmentDefinition) {
-                FragmentDefinition fragmentDefinition = (FragmentDefinition) definition;
-                fragmentsByName.put(fragmentDefinition.getName(), fragmentDefinition);
-            }
-        }
-        if (operationName == null && operationsByName.size() > 1) {
-            throw new GraphQLException("missing operation name");
-        }
-        OperationDefinition operation;
-
-        if (operationName == null) {
-            operation = operationsByName.values().iterator().next();
-        } else {
-            operation = operationsByName.get(operationName);
-        }
-        if (operation == null) {
-            throw new GraphQLException("no operation found");
-        }
-        Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operation.getVariableDefinitions(), variables);
+        Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operationDefinition.getVariableDefinitions(), variables);
 
         return new ExecutionContext(
                 instrumentation,
@@ -136,7 +112,7 @@ public class ExecutionContextBuilder {
                 mutationStrategy,
                 subscriptionStrategy,
                 fragmentsByName,
-                operation,
+                operationDefinition,
                 variableValues,
                 context,
                 root);
