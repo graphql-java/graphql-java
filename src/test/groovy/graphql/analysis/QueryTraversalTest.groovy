@@ -293,4 +293,32 @@ class QueryTraversalTest extends Specification {
 
     }
 
+    def "simple reduce"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {bar foo { subFoo} }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryReducer reducer = Mock(QueryReducer)
+        when:
+        def result = queryTraversal.reduce(reducer, 1)
+
+        then:
+        1 * reducer.reduceField(_, 1) >> 2
+        1 * reducer.reduceField(_, 2) >> 3
+        1 * reducer.reduceField(_, 3) >> 4
+        result == 4
+
+    }
+
 }
