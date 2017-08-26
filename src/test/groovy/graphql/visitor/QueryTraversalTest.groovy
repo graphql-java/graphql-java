@@ -285,6 +285,15 @@ class QueryTraversalTest extends Specification {
         then:
         2 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, { it.name == "Query" }, null)
         1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo1" }, { it.name == "Query" }, null)
+        1 * visitor.visitField({ it.name == "string" }, { it.type.name == "String" }, { it.name == "Foo1" }, _)
+        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "Foo2" }, { it.name == "Foo1" }, _)
+        1 * visitor.visitField({ it.name == "otherString" }, { it.type.name == "String" }, { it.name == "Foo2" }, {
+            VisitPath path ->
+                VisitPath parentPath = path.parentPath
+                path.field.name == "subFoo" && path.fieldDefinition.type.name == "Foo2" && path.parentType.name == "Foo1" &&
+                        parentPath.field.name == "foo" && parentPath.fieldDefinition.type.name == "Foo1" && parentPath.parentType.name == "Query"
+
+        })
 
     }
 
