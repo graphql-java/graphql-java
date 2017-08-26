@@ -56,4 +56,113 @@ class QueryTraversalTest extends Specification {
         })
     }
 
+    def "query with inline fragment"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {
+                bar 
+                ... on Query {
+                    foo 
+                    { subFoo
+                    } 
+                }
+            }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        when:
+        queryTraversal.traverse()
+
+        then:
+        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" }, null)
+        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, null)
+        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" }, { VisitPath path ->
+            path.field.name == "foo" && path?.fieldDefinition.type.name == "Foo"
+        })
+
+    }
+
+    def "query with inline fragment without condition"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {
+                bar 
+                ... {
+                    foo 
+                    { subFoo
+                    } 
+                }
+            }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        when:
+        queryTraversal.traverse()
+
+        then:
+        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" }, null)
+        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, null)
+        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" }, { VisitPath path ->
+            path.field.name == "foo" && path?.fieldDefinition.type.name == "Foo"
+        })
+
+    }
+
+
+    def "query with fragment"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {
+                bar 
+                ...Test
+            }
+            fragment Test on Query {
+                foo 
+                { subFoo
+                } 
+            }
+            
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        when:
+        queryTraversal.traverse()
+
+        then:
+        1 * visitor.visitField({ it.name == "foo" }, { it.type.name == "Foo" }, null)
+        1 * visitor.visitField({ it.name == "bar" }, { it.type.name == "String" }, null)
+        1 * visitor.visitField({ it.name == "subFoo" }, { it.type.name == "String" }, { VisitPath path ->
+            path.field.name == "foo" && path?.fieldDefinition.type.name == "Foo"
+        })
+
+    }
+
+
 }
