@@ -15,9 +15,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLSchema;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class QueryTraversal {
@@ -48,44 +46,40 @@ public class QueryTraversal {
     }
 
     public void traverse() {
-        visit(operationDefinition.getSelectionSet(), new ArrayList<>(), schema.getQueryType());
+        visit(operationDefinition.getSelectionSet(), schema.getQueryType());
     }
 
 
-    private void visit(SelectionSet selectionSet, List<String> visitedFragments, GraphQLCompositeType type) {
+    private void visit(SelectionSet selectionSet, GraphQLCompositeType type) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
                 GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(((Field) selection).getName());
-                visitField((Field) selection, visitedFragments, fieldDefinition);
+                visitField((Field) selection, fieldDefinition);
             } else if (selection instanceof InlineFragment) {
-                visitInlineFragment(visitedFragments, (InlineFragment) selection, type);
+                visitInlineFragment((InlineFragment) selection, type);
             } else if (selection instanceof FragmentSpread) {
-                visitFragmentSpread(visitedFragments, (FragmentSpread) selection);
+                visitFragmentSpread((FragmentSpread) selection);
             }
         }
     }
 
-    private void visitFragmentSpread(List<String> visitedFragments, FragmentSpread fragmentSpread) {
-        if (visitedFragments.contains(fragmentSpread.getName())) {
-            return;
-        }
+    private void visitFragmentSpread(FragmentSpread fragmentSpread) {
         if (!conditionalNodes.shouldInclude(this.variables, fragmentSpread.getDirectives())) {
             return;
         }
-//        visitedFragments.add(fragmentSpread.getName());
         FragmentDefinition fragmentDefinition = fragmentsByName.get(fragmentSpread.getName());
 
         if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives())) {
             return;
         }
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
-        visit(fragmentDefinition.getSelectionSet(), visitedFragments, typeCondition);
+        visit(fragmentDefinition.getSelectionSet(), typeCondition);
     }
 
 
-    private void visitInlineFragment(List<String> visitedFragments, InlineFragment inlineFragment, GraphQLCompositeType parentType) {
+    private void visitInlineFragment(InlineFragment inlineFragment, GraphQLCompositeType parentType) {
         if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives())) {
             return;
         }
@@ -98,16 +92,16 @@ public class QueryTraversal {
             fragmentCondition = parentType;
         }
         // for unions we only have other fragments inside
-        visit(inlineFragment.getSelectionSet(), visitedFragments, fragmentCondition);
+        visit(inlineFragment.getSelectionSet(), fragmentCondition);
     }
 
-    private void visitField(Field field, List<String> visitedFragments, GraphQLFieldDefinition fieldDefinition) {
+    private void visitField(Field field, GraphQLFieldDefinition fieldDefinition) {
         if (!conditionalNodes.shouldInclude(variables, field.getDirectives())) {
             return;
         }
         visitor.visitField(field, fieldDefinition);
         if (fieldDefinition.getType() instanceof GraphQLCompositeType) {
-            visit(field.getSelectionSet(), visitedFragments, (GraphQLCompositeType) fieldDefinition.getType());
+            visit(field.getSelectionSet(), (GraphQLCompositeType) fieldDefinition.getType());
         }
     }
 
