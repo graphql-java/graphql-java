@@ -2,6 +2,7 @@ package graphql.execution;
 
 
 import graphql.GraphQLException;
+import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.NullValue;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Internal
 public class ValuesResolver {
 
 
