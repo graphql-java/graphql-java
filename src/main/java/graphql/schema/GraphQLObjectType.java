@@ -72,7 +72,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     /**
      * @return This returns GraphQLInterface or GraphQLTypeReference instances, if the type
-     * references are not resolved yet. After they are resolved it contains only GraphQLInterface. * Reference resolving happens when a full schema is built.
+     * references are not resolved yet. After they are resolved it contains only GraphQLInterface.
+     * Reference resolving happens when a full schema is built.
      */
     public List<GraphQLOutputType> getInterfaces() {
         return new ArrayList<>(interfaces);
@@ -144,6 +145,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLFieldDefinition.Builder> builderFunction) {
@@ -158,6 +160,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
+         *
          * @return this
          */
         public Builder field(GraphQLFieldDefinition.Builder builder) {
