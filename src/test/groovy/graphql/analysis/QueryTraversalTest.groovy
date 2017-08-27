@@ -6,6 +6,7 @@ import graphql.language.NodeUtil
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class QueryTraversalTest extends Specification {
 
@@ -26,8 +27,8 @@ class QueryTraversalTest extends Specification {
         return queryTraversal
     }
 
-
-    def "simple query"() {
+    @Unroll
+    def "simple query: (#order)"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -44,7 +45,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.visit(visitor)
+        queryTraversal."$visitFn"(visitor)
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
@@ -54,9 +55,15 @@ class QueryTraversalTest extends Specification {
                     it.parent.name == "Foo" &&
                     it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
         })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
     }
 
-    def "query with inline fragment"() {
+    @Unroll
+    def "query with inline fragment (#order)"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -80,7 +87,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.visit(visitor)
+        queryTraversal."$visitFn"(visitor)
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
@@ -91,9 +98,15 @@ class QueryTraversalTest extends Specification {
                     it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
         })
 
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
     }
 
-    def "query with inline fragment without condition"() {
+    @Unroll
+    def "query with inline fragment without condition (#order)"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -117,7 +130,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.visit(visitor)
+        queryTraversal."$visitFn"(visitor)
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
@@ -127,10 +140,16 @@ class QueryTraversalTest extends Specification {
                     it.parent.name == "Foo" &&
                     it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
         })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
     }
 
 
-    def "query with fragment"() {
+    @Unroll
+    def "query with fragment (#order)"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -156,7 +175,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.visit(visitor)
+        queryTraversal."$visitFn"(visitor)
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
@@ -167,9 +186,15 @@ class QueryTraversalTest extends Specification {
                     it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
         })
 
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
     }
 
-    def "query with skipped fields"() {
+    @Unroll
+    def "query with skipped fields (#order)"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -195,15 +220,20 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         when:
-        queryTraversal.visit(visitor)
+        queryTraversal."$visitFn"(visitor)
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
         0 * visitor.visitField(*_)
 
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
     }
 
-    def "query with skipped fields and variables"() {
+    @Unroll
+    def "query with skipped fields and variables (#order)"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -229,15 +259,20 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor, [variableFoo: true])
         when:
-        queryTraversal.visit(visitor)
+        queryTraversal."$visitFn"(visitor)
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
         0 * visitor.visitField(*_)
 
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
     }
 
-    def "nested fragments"() {
+    @Unroll
+    def "nested fragments (#order)"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -277,7 +312,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor, [variableFoo: true])
         when:
-        queryTraversal.visit(visitor)
+        queryTraversal."$visitFn"(visitor)
 
         then:
         2 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
@@ -290,6 +325,11 @@ class QueryTraversalTest extends Specification {
                     it.path.field.name == "subFoo" && it.path.fieldDefinition.type.name == "Foo2" && it.path.parentType.name == "Foo1" &&
                     parentPath.field.name == "foo" && parentPath.fieldDefinition.type.name == "Foo1" && parentPath.parentType.name == "Query"
         })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
 
     }
 
