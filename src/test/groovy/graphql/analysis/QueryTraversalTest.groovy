@@ -399,7 +399,7 @@ class QueryTraversalTest extends Specification {
     }
 
 
-    def "simple reduce"() {
+    def "reduce preOrder"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -412,17 +412,50 @@ class QueryTraversalTest extends Specification {
         """)
         def visitor = Mock(QueryVisitor)
         def query = createQuery("""
-            {bar foo { subFoo} }
+            {foo { subFoo} bar }
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
         QueryReducer reducer = Mock(QueryReducer)
         when:
-        def result = queryTraversal.reduce(reducer, 1)
+        def result = queryTraversal.reducePreOrder(reducer, 1)
 
         then:
-        1 * reducer.reduceField(_, 1) >> 2
-        1 * reducer.reduceField(_, 2) >> 3
-        1 * reducer.reduceField(_, 3) >> 4
+        1 * reducer.reduceField({ it.field.name == "foo" }, 1) >> 2
+        then:
+        1 * reducer.reduceField({ it.field.name == "subFoo" }, 2) >> 3
+        then:
+        1 * reducer.reduceField({ it.field.name == "bar" }, 3) >> 4
+        result == 4
+
+    }
+
+
+    def "reduce postOrder"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {foo { subFoo} bar }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryReducer reducer = Mock(QueryReducer)
+        when:
+        def result = queryTraversal.reducePostOrder(reducer, 1)
+
+        then:
+        1 * reducer.reduceField({ it.field.name == "subFoo" }, 1) >> 2
+        then:
+        1 * reducer.reduceField({ it.field.name == "foo" }, 2) >> 3
+        then:
+        1 * reducer.reduceField({ it.field.name == "bar" }, 3) >> 4
         result == 4
 
     }

@@ -32,7 +32,7 @@ public class MaximumQueryDepthInstrumentation extends NoOpInstrumentation {
                     getOperationResult.fragmentsByName,
                     parameters.getVariables()
             );
-            int depth = (int) queryTraversal.reduce((env, acc) -> Math.max(getPathLength(env.getPath()), (Integer) acc), 0);
+            int depth = (int) queryTraversal.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getPath()), (Integer) acc), 0);
             if (depth > maxDepth) {
                 throw new AbortExecutionException("maximum query depth exceeded " + depth + " > " + maxDepth);
             }
