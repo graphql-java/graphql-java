@@ -4,6 +4,7 @@ package graphql;
 import graphql.language.SourceLocation;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @see <a href="https://facebook.github.io/graphql/#sec-Errors">GraphQL Spec - 7.2.2 Errors</a>
@@ -22,37 +23,40 @@ public interface GraphQLError {
      */
     List<SourceLocation> getLocations();
 
+    /**
+     * @return an enum classifying this error
+     */
     ErrorType getErrorType();
 
+    /**
+     * The graphql spec says that the (optional) path field of any error should be a list
+     * of path entries - http://facebook.github.io/graphql/#sec-Errors
+     *
+     * @return the path in list format
+     */
+    default List<Object> getPath() {
+        return null;
+    }
 
     /**
-     * This little helper allows GraphQlErrors to implement
-     * common things (hashcode/ equals) more easily
+     * The graphql specification says that result of a call should be a map that follows certain rules on what items
+     * should be present.  Certain JSON serializers may or may interpret the error to spec, so this method
+     * is provided to produce a map that strictly follows the specification.
+     *
+     * See : <a href="http://facebook.github.io/graphql/#sec-Errors">http://facebook.github.io/graphql/#sec-Errors</a>
+     *
+     * @return a map of the error that strictly follows the specification
      */
-    @SuppressWarnings("SimplifiableIfStatement")
-    class Helper {
-
-        public static int hashCode(GraphQLError dis) {
-            int result = dis.getMessage() != null ? dis.getMessage().hashCode() : 0;
-            result = 31 * result + (dis.getLocations() != null ? dis.getLocations().hashCode() : 0);
-            result = 31 * result + dis.getErrorType().hashCode();
-            return result;
-        }
-
-        public static boolean equals(GraphQLError dis, Object o) {
-            if (dis == o) {
-                return true;
-            }
-            if (o == null || dis.getClass() != o.getClass()) return false;
-
-            GraphQLError dat = (GraphQLError) o;
-
-            if (dis.getMessage() != null ? !dis.getMessage().equals(dat.getMessage()) : dat.getMessage() != null)
-                return false;
-            if (dis.getLocations() != null ? !dis.getLocations().equals(dat.getLocations()) : dat.getLocations() != null)
-                return false;
-            return dis.getErrorType() == dat.getErrorType();
-        }
+    default Map<String, Object> toSpecification() {
+        return GraphqlErrorHelper.toSpecification(this);
     }
+
+    /**
+     * @return a map of error extensions or null if there are none
+     */
+    default Map<String, Object> getExtensions() {
+        return null;
+    }
+
 
 }

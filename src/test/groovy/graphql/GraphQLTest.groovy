@@ -10,6 +10,7 @@ import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.StaticDataFetcher
+import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
@@ -122,7 +123,7 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
-        errors[0].sourceLocations == [new SourceLocation(1, 8)]
+        errors[0].locations == [new SourceLocation(1, 8)]
     }
 
     def "query with invalid syntax 2"() {
@@ -139,7 +140,7 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
-        errors[0].sourceLocations == [new SourceLocation(1, 7)]
+        errors[0].locations == [new SourceLocation(1, 7)]
     }
 
     def "non null argument is missing"() {
@@ -162,8 +163,8 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.ValidationError
-        errors[0].validationErrorType == ValidationErrorType.MissingFieldArgument
-        errors[0].sourceLocations == [new SourceLocation(1, 3)]
+        errors[0].locations == [new SourceLocation(1, 3)]
+        (errors[0] as ValidationError).validationErrorType == ValidationErrorType.MissingFieldArgument
     }
 
     def "`Iterable` can be used as a `GraphQLList` field result"() {

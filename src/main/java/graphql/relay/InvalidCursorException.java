@@ -2,6 +2,7 @@ package graphql.relay;
 
 import graphql.ErrorType;
 import graphql.GraphQLError;
+import graphql.GraphqlErrorHelper;
 import graphql.language.SourceLocation;
 
 import java.util.List;
@@ -27,4 +28,16 @@ public class InvalidCursorException extends RuntimeException implements GraphQLE
     public ErrorType getErrorType() {
         return DataFetchingException;
     }
+
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+    @Override
+    public boolean equals(Object o) {
+        return GraphqlErrorHelper.equals(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return GraphqlErrorHelper.hashCode(this);
+    }
+
 }

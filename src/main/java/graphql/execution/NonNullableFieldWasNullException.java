@@ -1,11 +1,5 @@
 package graphql.execution;
 
-import graphql.ErrorType;
-import graphql.GraphQLError;
-import graphql.language.SourceLocation;
-
-import java.util.List;
-
 import static graphql.Assert.assertNotNull;
 
 /**
@@ -13,7 +7,7 @@ import static graphql.Assert.assertNotNull;
  * actually resolves to a null value and the parent type is nullable then the parent must in fact become null
  * so we use exceptions to indicate this special case
  */
-public class NonNullableFieldWasNullException extends RuntimeException implements GraphQLError {
+public class NonNullableFieldWasNullException extends RuntimeException {
 
     private final ExecutionTypeInfo typeInfo;
     private final ExecutionPath path;
@@ -21,7 +15,7 @@ public class NonNullableFieldWasNullException extends RuntimeException implement
 
     public NonNullableFieldWasNullException(ExecutionTypeInfo typeInfo, ExecutionPath path) {
         super(
-                buildMsg(assertNotNull(typeInfo),
+                mkMessage(assertNotNull(typeInfo),
                         assertNotNull(path))
         );
         this.typeInfo = typeInfo;
@@ -30,7 +24,7 @@ public class NonNullableFieldWasNullException extends RuntimeException implement
 
     public NonNullableFieldWasNullException(NonNullableFieldWasNullException previousException) {
         super(
-                buildMsg(
+                mkMessage(
                         assertNotNull(previousException.typeInfo.getParentTypeInfo()),
                         assertNotNull(previousException.typeInfo.getParentTypeInfo().getPath())
                 ),
@@ -41,37 +35,20 @@ public class NonNullableFieldWasNullException extends RuntimeException implement
     }
 
 
-    private static String buildMsg(ExecutionTypeInfo typeInfo, ExecutionPath path) {
+    private static String mkMessage(ExecutionTypeInfo typeInfo, ExecutionPath path) {
         if (typeInfo.hasParentType()) {
             return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", typeInfo.getType().getName(), typeInfo.getParentTypeInfo().getType().getName(), path);
         }
-        return String.format("Cannot return null for non-nullable type: '%s' (%s) ", typeInfo.getType().getName(), path);
+        return String.format("Cannot return null for non-nullable type: '%s' (%s)", typeInfo.getType().getName(), path);
     }
 
     public ExecutionTypeInfo getTypeInfo() {
         return typeInfo;
     }
 
-    @Override
-    public List<SourceLocation> getLocations() {
-        return null;
+    public ExecutionPath getPath() {
+        return path;
     }
-
-    @Override
-    public ErrorType getErrorType() {
-        return null;
-    }
-
-    /**
-     * The graphql spec says that that path field of any error should be a list
-     * of path entries - http://facebook.github.io/graphql/#sec-Errors
-     *
-     * @return the path in list format
-     */
-    public List<Object> getPath() {
-        return path.toList();
-    }
-
 
     @Override
     public String toString() {

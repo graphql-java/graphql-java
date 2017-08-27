@@ -54,6 +54,9 @@ public class HttpMain extends AbstractHandler {
         if ("/graphql".equals(target) || "/".equals(target)) {
             handleStarWars(request, response);
         }
+        if (target.startsWith("/executionresult")) {
+            new ExecutionResultJSONTesting(target, response);
+        }
         baseRequest.setHandled(true);
     }
 
