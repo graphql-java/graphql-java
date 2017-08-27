@@ -131,7 +131,7 @@ class ExecutionPathTest extends Specification {
         def error3 = errors.get(2) as SerializationError
         ["f3"] == error3.getPath()
 
-        def error4 = errors.get(3) as NonNullableFieldWasNullException
+        def error4 = errors.get(3) as NonNullableFieldWasNullError
         ["f4", "nonNullField"] == error4.getPath()
     }
 }

@@ -33,13 +33,14 @@ public class MutationNotSupportedError implements GraphQLError {
         return "MutationNotSupportedError";
     }
 
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object o) {
-        return Helper.equals(this, o);
+        return GraphqlErrorHelper.equals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return Helper.hashCode(this);
+        return GraphqlErrorHelper.hashCode(this);
     }
 }
