@@ -3,6 +3,7 @@ package graphql.validation;
 
 import graphql.ErrorType;
 import graphql.GraphQLError;
+import graphql.GraphqlErrorHelper;
 import graphql.language.SourceLocation;
 
 import java.util.ArrayList;
@@ -76,12 +77,12 @@ public class ValidationError implements GraphQLError {
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object o) {
-        return Helper.equals(this, o);
+        return GraphqlErrorHelper.equals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return Helper.hashCode(this);
+        return GraphqlErrorHelper.hashCode(this);
     }
 
 }

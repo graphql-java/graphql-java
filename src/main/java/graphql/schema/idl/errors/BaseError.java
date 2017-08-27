@@ -3,6 +3,7 @@ package graphql.schema.idl.errors;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
+import graphql.GraphqlErrorHelper;
 import graphql.language.Node;
 import graphql.language.SourceLocation;
 
@@ -43,12 +44,12 @@ class BaseError extends GraphQLException implements GraphQLError {
     @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object o) {
-        return Helper.equals(this, o);
+        return GraphqlErrorHelper.equals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return Helper.hashCode(this);
+        return GraphqlErrorHelper.hashCode(this);
     }
 
 }
