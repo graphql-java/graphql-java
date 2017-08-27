@@ -27,6 +27,71 @@ class QueryTraversalTest extends Specification {
         return queryTraversal
     }
 
+    def "test preOrder order"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {foo { subFoo} bar }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parent.name == "Foo" &&
+                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
+
+    }
+
+    def "test postOrder order"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {foo { subFoo} bar }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        when:
+        queryTraversal.visitPostOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parent.name == "Foo" &&
+                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parent.name == "Query" })
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parent.name == "Query" })
+
+    }
+
+
     @Unroll
     def "simple query: (#order)"() {
         given:
@@ -332,6 +397,7 @@ class QueryTraversalTest extends Specification {
         'preOrder'  | 'visitPreOrder'
 
     }
+
 
     def "simple reduce"() {
         given:
