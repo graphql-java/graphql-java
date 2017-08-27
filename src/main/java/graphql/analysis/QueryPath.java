@@ -6,13 +6,13 @@ import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 
 @Internal
-public class VisitPath {
+public class QueryPath {
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLCompositeType parentType;
-    private final VisitPath parentPath;
+    private final QueryPath parentPath;
 
-    public VisitPath(Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, VisitPath parentPath) {
+    public QueryPath(Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, QueryPath parentPath) {
         this.field = field;
         this.fieldDefinition = fieldDefinition;
         this.parentType = parentType;
@@ -27,7 +27,7 @@ public class VisitPath {
         return fieldDefinition;
     }
 
-    public VisitPath getParentPath() {
+    public QueryPath getParentPath() {
         return parentPath;
     }
 
