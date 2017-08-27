@@ -93,6 +93,34 @@ class QueryTraversalTest extends Specification {
 
 
     @Unroll
+    def "field with arguments: (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo(arg1: String, arg2: Boolean): String
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            query myQuery(\$myVar: String){foo(arg1: \$myVar, arg2: true)} 
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor, ['myVar': 'hello'])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "foo" &&
+                    it.arguments == ['arg1': 'hello', 'arg2': true]
+        })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+    }
+
+    @Unroll
     def "simple query: (#order)"() {
         given:
         def schema = TestUtil.schema("""
@@ -385,7 +413,7 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "string" && it.fieldDefinition.type.name == "String" && it.parent.name == "Foo1" })
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "subFoo" && it.fieldDefinition.type.name == "Foo2" && it.parent.name == "Foo1" })
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
-            VisitPath parentPath = it.path.parentPath
+            QueryPath parentPath = it.path.parentPath
             it.field.name == "otherString" && it.fieldDefinition.type.name == "String" && it.parent.name == "Foo2" &&
                     it.path.field.name == "subFoo" && it.path.fieldDefinition.type.name == "Foo2" && it.path.parentType.name == "Foo1" &&
                     parentPath.field.name == "foo" && parentPath.fieldDefinition.type.name == "Foo1" && parentPath.parentType.name == "Query"
