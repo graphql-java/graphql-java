@@ -377,6 +377,6 @@ class BatchedExecutionStrategyTest extends Specification {
         Map<String, Object> expected = ["string": ["returnBadList": null]]
         expect:
         runTestBatching(query, expected)
-        runTestBatchingExpectErrors(query, new DataFetchingException(), false)
+        runTestBatchingExpectErrors(query, new BatchAssertionFailed(), false)
     }
 }
