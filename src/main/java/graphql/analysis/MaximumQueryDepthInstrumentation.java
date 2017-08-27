@@ -39,7 +39,7 @@ public class MaximumQueryDepthInstrumentation extends NoOpInstrumentation {
         };
     }
 
-    private int getPathLength(VisitPath path) {
+    private int getPathLength(QueryPath path) {
         int length = 1;
         while (path != null) {
             path = path.getParentPath();
