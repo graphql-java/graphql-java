@@ -302,7 +302,6 @@ public class GraphQL {
      * Executes the graphql query using calling the builder function and giving it a new builder.
      * <p>
      * This allows a lambda style like :
-     * <p>
      * <pre>
      * {@code
      *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));
@@ -357,7 +356,6 @@ public class GraphQL {
      * which is the result of executing the provided query.
      * <p>
      * This allows a lambda style like :
-     * <p>
      * <pre>
      * {@code
      *    ExecutionResult result = graphql.execute(input -> input.query("{hello}").root(startingObj).context(contextObj));

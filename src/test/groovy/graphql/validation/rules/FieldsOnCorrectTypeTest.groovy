@@ -28,7 +28,7 @@ class FieldsOnCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.FieldUndefined)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type FieldUndefined: Field name is undefined"
+        errorCollector.errors[0].message == "Validation error of type FieldUndefined: Field 'name' in type 'parentType' is undefined"
     }
 
     def "should results in no error when field definition is filled"() {
