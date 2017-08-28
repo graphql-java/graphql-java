@@ -51,18 +51,18 @@ public class QueryTraversal {
         visitImpl(visitor, operationDefinition.getSelectionSet(), schema.getQueryType(), null, true);
     }
 
-    public Object reducePostOrder(QueryReducer queryReducer, Object initialValue) {
+    public <T> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
         // compiler hack to make acc final and mutable :-)
         final Object[] acc = {initialValue};
-        visitPostOrder((env) -> acc[0] = queryReducer.reduceField(env, acc[0]));
-        return acc[0];
+        visitPostOrder((env) -> acc[0] = queryReducer.reduceField(env, (T) acc[0]));
+        return (T) acc[0];
     }
 
-    public Object reducePreOrder(QueryReducer queryReducer, Object initialValue) {
+    public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
         // compiler hack to make acc final and mutable :-)
         final Object[] acc = {initialValue};
-        visitPreOrder((env) -> acc[0] = queryReducer.reduceField(env, acc[0]));
-        return acc[0];
+        visitPreOrder((env) -> acc[0] = queryReducer.reduceField(env, (T) acc[0]));
+        return (T) acc[0];
     }
 
 
