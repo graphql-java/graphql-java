@@ -6,17 +6,10 @@ import graphql.PublicApi;
 @PublicApi
 public class DefaultPageInfo implements PageInfo {
 
-    private ConnectionCursor startCursor;
-    private ConnectionCursor endCursor;
-    private boolean hasPreviousPage;
-    private boolean hasNextPage;
-
-    /**
-     * @deprecated prefer {@link #DefaultPageInfo(ConnectionCursor, ConnectionCursor, boolean, boolean)}
-     */
-    @Deprecated
-    public DefaultPageInfo() {
-    }
+    private final ConnectionCursor startCursor;
+    private final ConnectionCursor endCursor;
+    private final boolean hasPreviousPage;
+    private final boolean hasNextPage;
 
     public DefaultPageInfo(ConnectionCursor startCursor, ConnectionCursor endCursor, boolean hasPreviousPage, boolean hasNextPage) {
         this.startCursor = startCursor;
@@ -30,29 +23,10 @@ public class DefaultPageInfo implements PageInfo {
         return startCursor;
     }
 
-    /**
-     * @param startCursor startCursor
-     *
-     * @deprecated prefer {@link #DefaultPageInfo(ConnectionCursor, ConnectionCursor, boolean, boolean)} and avoid mutation
-     */
-    @Deprecated
-    public void setStartCursor(ConnectionCursor startCursor) {
-        this.startCursor = startCursor;
-    }
 
     @Override
     public ConnectionCursor getEndCursor() {
         return endCursor;
-    }
-
-    /**
-     * @param endCursor endCursor
-     *
-     * @deprecated prefer {@link #DefaultPageInfo(ConnectionCursor, ConnectionCursor, boolean, boolean)} and avoid mutation
-     */
-    @Deprecated
-    public void setEndCursor(ConnectionCursor endCursor) {
-        this.endCursor = endCursor;
     }
 
     @Override
@@ -60,29 +34,9 @@ public class DefaultPageInfo implements PageInfo {
         return hasPreviousPage;
     }
 
-    /**
-     * @param hasPreviousPage previous page
-     *
-     * @deprecated prefer {@link #DefaultPageInfo(ConnectionCursor, ConnectionCursor, boolean, boolean)} and avoid mutation
-     */
-    @Deprecated
-    public void setHasPreviousPage(boolean hasPreviousPage) {
-        this.hasPreviousPage = hasPreviousPage;
-    }
-
     @Override
     public boolean isHasNextPage() {
         return hasNextPage;
-    }
-
-    /**
-     * @param hasNextPage has next page
-     *
-     * @deprecated prefer {@link #DefaultPageInfo(ConnectionCursor, ConnectionCursor, boolean, boolean)}
-     */
-    @Deprecated
-    public void setHasNextPage(boolean hasNextPage) {
-        this.hasNextPage = hasNextPage;
     }
 
     @Override
