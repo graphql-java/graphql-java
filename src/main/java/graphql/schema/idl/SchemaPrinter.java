@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -27,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.stream.Stream;
+
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+
 
 /**
  * This can print an in memory GraphQL schema back to a logical schema definition
@@ -110,17 +114,19 @@ public class SchemaPrinter {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
-        printer(schema.getClass()).print(out, schema);
+        GraphqlFieldVisibility visibility = schema.getFieldVisibility();
+
+        printer(schema.getClass()).print(out, schema, visibility);
 
         List<GraphQLType> typesAsList = new ArrayList<>(schema.getAllTypesAsList());
         typesAsList.sort(Comparator.comparing(GraphQLType::getName));
 
-        printType(out, typesAsList, GraphQLInterfaceType.class);
-        printType(out, typesAsList, GraphQLUnionType.class);
-        printType(out, typesAsList, GraphQLObjectType.class);
-        printType(out, typesAsList, GraphQLEnumType.class);
-        printType(out, typesAsList, GraphQLScalarType.class);
-        printType(out, typesAsList, GraphQLInputObjectType.class);
+        printType(out, typesAsList, GraphQLInterfaceType.class, visibility);
+        printType(out, typesAsList, GraphQLUnionType.class, visibility);
+        printType(out, typesAsList, GraphQLObjectType.class, visibility);
+        printType(out, typesAsList, GraphQLEnumType.class, visibility);
+        printType(out, typesAsList, GraphQLScalarType.class, visibility);
+        printType(out, typesAsList, GraphQLInputObjectType.class, visibility);
 
         String result = sw.toString();
         if (result.endsWith("\n\n")) {
@@ -131,7 +137,7 @@ public class SchemaPrinter {
 
     private interface TypePrinter<T> {
 
-        void print(PrintWriter out, T type);
+        void print(PrintWriter out, T type, GraphqlFieldVisibility visibility);
 
     }
 
@@ -140,7 +146,7 @@ public class SchemaPrinter {
     }
 
     private TypePrinter<GraphQLScalarType> scalarPrinter() {
-        return (out, type) -> {
+        return (out, type, visibility) -> {
             if (!options.isIncludeScalars()) {
                 return;
             }
@@ -152,7 +158,7 @@ public class SchemaPrinter {
     }
 
     private TypePrinter<GraphQLEnumType> enumPrinter() {
-        return (out, type) -> {
+        return (out, type, visibility) -> {
             if (isIntrospectionType(type)) {
                 return;
             }
@@ -167,13 +173,13 @@ public class SchemaPrinter {
     }
 
     private TypePrinter<GraphQLInterfaceType> interfacePrinter() {
-        return (out, type) -> {
+        return (out, type, visibility) -> {
             if (isIntrospectionType(type)) {
                 return;
             }
             printComments(out, type, "");
             out.format("interface %s {\n", type.getName());
-            type.getFieldDefinitions().forEach(fd -> {
+            visibility.getFieldDefinitions(type).forEach(fd -> {
                 printComments(out, fd, "  ");
                 out.format("  %s%s: %s\n",
                         fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
@@ -183,7 +189,7 @@ public class SchemaPrinter {
     }
 
     private TypePrinter<GraphQLUnionType> unionPrinter() {
-        return (out, type) -> {
+        return (out, type, visibility) -> {
             if (isIntrospectionType(type)) {
                 return;
             }
@@ -203,13 +209,13 @@ public class SchemaPrinter {
 
 
     private TypePrinter<GraphQLObjectType> objectPrinter() {
-        return (out, type) -> {
+        return (out, type, visibility) -> {
             if (isIntrospectionType(type)) {
                 return;
             }
             printComments(out, type, "");
             out.format("type %s {\n", type.getName());
-            type.getFieldDefinitions().forEach(fd -> {
+            visibility.getFieldDefinitions(type).forEach(fd -> {
                 printComments(out, fd, "  ");
                 out.format("  %s%s: %s\n",
                         fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
@@ -220,7 +226,7 @@ public class SchemaPrinter {
 
 
     private TypePrinter<GraphQLInputObjectType> inputObjectPrinter() {
-        return (out, type) -> {
+        return (out, type, visibility) -> {
             if (isIntrospectionType(type)) {
                 return;
             }
@@ -236,7 +242,7 @@ public class SchemaPrinter {
     }
 
     private TypePrinter<GraphQLSchema> schemaPrinter() {
-        return (out, type) -> {
+        return (out, type, visibility) -> {
             GraphQLObjectType queryType = type.getQueryType();
             GraphQLObjectType mutationType = type.getMutationType();
             GraphQLObjectType subscriptionType = type.getSubscriptionType();
@@ -316,7 +322,7 @@ public class SchemaPrinter {
                 Stream<String> stream = Arrays.stream(description.split("\n"));
                 stream.map(s -> "  #" + s + "\n").forEach(sb::append);
             }
-            sb.append(prefix + argument.getName()).append(": ").append(typeString(argument.getType()));
+            sb.append(prefix).append(argument.getName()).append(": ").append(typeString(argument.getType()));
             Object defaultValue = argument.getDefaultValue();
             if (defaultValue != null) {
                 sb.append(" = ");
@@ -332,7 +338,7 @@ public class SchemaPrinter {
             if (hasDescriptions) {
                 sb.append("\n");
             }
-            sb.append(prefix + ")");
+            sb.append(prefix).append(")");
         }
         return sb.toString();
     }
@@ -345,7 +351,7 @@ public class SchemaPrinter {
             if (superClazz != Object.class)
                 result = printer(superClazz);
             else
-                result = (out, type) -> out.println("Type not implemented : " + type);
+                result = (out, type, visibility) -> out.println("Type not implemented : " + type);
             return result;
         });
         return (TypePrinter<T>) typePrinter;
@@ -355,20 +361,20 @@ public class SchemaPrinter {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
-        printType(out, type);
+        printType(out, type, DEFAULT_FIELD_VISIBILITY);
 
         return sw.toString();
     }
 
-    private void printType(PrintWriter out, List<GraphQLType> typesAsList, Class typeClazz) {
+    private void printType(PrintWriter out, List<GraphQLType> typesAsList, Class typeClazz, GraphqlFieldVisibility visibility) {
         typesAsList.stream()
                 .filter(type -> typeClazz.isAssignableFrom(type.getClass()))
-                .forEach(type -> printType(out, type));
+                .forEach(type -> printType(out, type, visibility));
     }
 
-    private void printType(PrintWriter out, GraphQLType type) {
+    private void printType(PrintWriter out, GraphQLType type, GraphqlFieldVisibility visibility) {
         TypePrinter<Object> printer = printer(type.getClass());
-        printer.print(out, type);
+        printer.print(out, type, visibility);
     }
 
 

@@ -7,6 +7,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.stream.Collectors.toList;
+
 @Internal
 public class ExecutionResultImpl implements ExecutionResult {
 
@@ -28,7 +30,7 @@ public class ExecutionResultImpl implements ExecutionResult {
     }
 
     public ExecutionResultImpl(Object data, List<? extends GraphQLError> errors, Map<Object, Object> extensions) {
-        this(data != null, data, errors, extensions);
+        this(true, data, errors, extensions);
     }
 
     private ExecutionResultImpl(boolean dataPresent, Object data, List<? extends GraphQLError> errors, Map<Object, Object> extensions) {
@@ -67,12 +69,16 @@ public class ExecutionResultImpl implements ExecutionResult {
             result.put("data", data);
         }
         if (errors != null && !errors.isEmpty()) {
-            result.put("errors", errors);
+            result.put("errors", errorsToSpec(errors));
         }
         if (extensions != null) {
             result.put("extensions", extensions);
         }
         return result;
+    }
+
+    private Object errorsToSpec(List<GraphQLError> errors) {
+        return errors.stream().map(GraphQLError::toSpecification).collect(toList());
     }
 
     @Override

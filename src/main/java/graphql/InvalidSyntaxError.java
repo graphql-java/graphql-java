@@ -9,36 +9,36 @@ import java.util.List;
 
 public class InvalidSyntaxError implements GraphQLError {
 
-    private final String msg;
-    private final List<SourceLocation> sourceLocations = new ArrayList<>();
+    private final String message;
+    private final List<SourceLocation> locations = new ArrayList<>();
 
     public InvalidSyntaxError(SourceLocation sourceLocation, String msg) {
-        this.msg = mkMsg(msg);
+        this.message = mkMessage(msg);
         if (sourceLocation != null) {
-            this.sourceLocations.add(sourceLocation);
+            this.locations.add(sourceLocation);
         }
     }
 
     public InvalidSyntaxError(List<SourceLocation> sourceLocations, String msg) {
-        this.msg = mkMsg(msg);
+        this.message = mkMessage(msg);
         if (sourceLocations != null) {
-            this.sourceLocations.addAll(sourceLocations);
+            this.locations.addAll(sourceLocations);
         }
     }
 
-    private String mkMsg(String msg) {
+    private String mkMessage(String msg) {
         return "Invalid Syntax" + (msg == null ? "" : " : " + msg);
     }
 
 
     @Override
     public String getMessage() {
-        return msg;
+        return message;
     }
 
     @Override
     public List<SourceLocation> getLocations() {
-        return sourceLocations;
+        return locations;
     }
 
     @Override
@@ -49,7 +49,8 @@ public class InvalidSyntaxError implements GraphQLError {
     @Override
     public String toString() {
         return "InvalidSyntaxError{" +
-                "sourceLocations=" + sourceLocations +
+                " message=" + message +
+                " ,locations=" + locations +
                 '}';
     }
 
@@ -73,13 +74,14 @@ public class InvalidSyntaxError implements GraphQLError {
     }
 
 
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
     @Override
     public boolean equals(Object o) {
-        return Helper.equals(this, o);
+        return GraphqlErrorHelper.equals(this, o);
     }
 
     @Override
     public int hashCode() {
-        return Helper.hashCode(this);
+        return GraphqlErrorHelper.hashCode(this);
     }
 }

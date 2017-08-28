@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class BatchedExecutionStrategyTest extends Specification {
 
-    private GraphQLSchema schema = new FunWithStringsSchemaFactory().createSchema();
+    private GraphQLSchema schema = new FunWithStringsSchemaFactory().createSchema()
 
     private GraphQL graphQLAsync = GraphQL.newGraphQL(schema)
             .queryExecutionStrategy(new AsyncExecutionStrategy())
@@ -25,7 +25,7 @@ class BatchedExecutionStrategyTest extends Specification {
             .queryExecutionStrategy(new BatchedExecutionStrategy())
             .build()
 
-    private Map<FunWithStringsSchemaFactory.CallType, AtomicInteger> countMap = new HashMap<>();
+    private Map<FunWithStringsSchemaFactory.CallType, AtomicInteger> countMap = new HashMap<>()
     private GraphQL graphQLBatchedValue = GraphQL.newGraphQL(FunWithStringsSchemaFactory.createBatched(countMap).createSchema())
             .queryExecutionStrategy(new BatchedExecutionStrategy())
             .build()
@@ -60,9 +60,9 @@ class BatchedExecutionStrategyTest extends Specification {
 
     // Split into sub-methods so the stack trace is more useful
     private void runTest(String query, Map<String, Object> expected) {
-        runTestAsync(query, expected);
-        runTestBatchingUnbatched(query, expected);
-        runTestBatching(query, expected);
+        runTestAsync(query, expected)
+        runTestBatchingUnbatched(query, expected)
+        runTestBatching(query, expected)
     }
 
     private void runTestBatchingUnbatched(String query, Map<String, Object> expected) {
@@ -81,44 +81,44 @@ class BatchedExecutionStrategyTest extends Specification {
     private void runTestExpectError(String query, String errorSubstring) {
 
         try {
-            ExecutionResult result = this.graphQLAsync.execute(query);
-            assert !result.getErrors().isEmpty(), "Simple should have errored but was: " + result.getData();
+            ExecutionResult result = this.graphQLAsync.execute(query)
+            assert !result.getErrors().isEmpty(), "Simple should have errored but was: " + result.getData()
         } catch (Exception e) {
-            assert e.getMessage().contains(errorSubstring), "Simple error must contain '" + errorSubstring + "'";
+            assert e.getMessage().contains(errorSubstring), "Simple error must contain '" + errorSubstring + "'"
         }
 
         try {
-            ExecutionResult result = this.graphQLBatchedButUnbatched.execute(query);
-            assert !result.getErrors().isEmpty(), "Batched should have errored, but was " + result.getData();
+            ExecutionResult result = this.graphQLBatchedButUnbatched.execute(query)
+            assert !result.getErrors().isEmpty(), "Batched should have errored, but was " + result.getData()
         } catch (Exception e) {
-            assert e.getMessage().contains(errorSubstring), "Batched but unbatched error must contain '" + errorSubstring + "'";
+            assert e.getMessage().contains(errorSubstring), "Batched but unbatched error must contain '" + errorSubstring + "'"
         }
     }
 
-    private Map<String, Object> mapOf(String firstKey, Object firstVal, Object... more) {
-        Map<String, Object> retVal = new HashMap<>();
-        retVal.put(firstKey, firstVal);
+    static Map<String, Object> mapOf(String firstKey, Object firstVal, Object... more) {
+        Map<String, Object> retVal = new HashMap<>()
+        retVal.put(firstKey, firstVal)
         for (int i = 0; i < more.length; i += 2) {
-            retVal.put((String) more[i], more[i + 1]);
+            retVal.put((String) more[i], more[i + 1])
         }
-        return retVal;
+        return retVal
     }
 
 
     def "Basic case works"() {
         given:
-        String query = "{ string(value: \"Basic\"){value, nonNullValue, veryNonNullValue} }";
+        String query = "{ string(value: \"Basic\"){value, nonNullValue, veryNonNullValue} }"
 
         def expected = [string: [veryNonNullValue: "Basic", nonNullValue: "Basic", value: "Basic"]]
         println expected
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
     }
 
     def "Empty input"() {
         given:
-        String query = "{ string(value: \"\"){value} }";
+        String query = "{ string(value: \"\"){value} }"
 
         def expected = [string: ["value": ""]]
 
@@ -128,27 +128,27 @@ class BatchedExecutionStrategyTest extends Specification {
 
     def "Handles implicit null input"() {
         given:
-        String query = "{ string{value} }";
+        String query = "{ string{value} }"
 
         def expected = [string: null]
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
     }
 
     def "Handles explicit null input"() {
         given:
-        String query = "{ string(value: \"null\"){value} }";
+        String query = "{ string(value: \"null\"){value} }"
 
         def expected = [string: [value: null]]
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
     }
 
     def "Shatter works"() {
         given:
-        String query = "{ string(value: \"Shatter\") {shatter{value}} }";
+        String query = "{ string(value: \"Shatter\") {shatter{value}} }"
 
         def expected = ["string": ["shatter": [
                 ["value": "S"],
@@ -162,19 +162,19 @@ class BatchedExecutionStrategyTest extends Specification {
 
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
 
     }
 
     def "Shatter then append"() {
         given:
         String query =
-                "{ string(value: \"Sh\") { shatter { append(text: \"1\") { value } } } }";
+                "{ string(value: \"Sh\") { shatter { append(text: \"1\") { value } } } }"
 
         def expected = [string: [shatter: [[append: [value: "S1"]], [append: [value: "h1"]]]]]
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
 
     }
 
@@ -192,12 +192,12 @@ class BatchedExecutionStrategyTest extends Specification {
                         "} " +
                         "} " +
                         "} " +
-                        "}";
+                        "}"
 
         def expected = [string: [shatter: [[append: [split: [[value: "S1"]]]], [append: [split: [null, [value: "1"]]]]]]]
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
 
     }
 
@@ -215,12 +215,12 @@ class BatchedExecutionStrategyTest extends Specification {
                         "} " +
                         "} " +
                         "} " +
-                        "}";
+                        "}"
 
         def expected = [string: [shatter: [[append: [split: null]], [append: [split: null]]]]]
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
 
     }
 
@@ -235,12 +235,12 @@ class BatchedExecutionStrategyTest extends Specification {
                         "value " +
                         "} " +
                         "} " +
-                        "}";
+                        "}"
 
         def expected = [string: [split: [[value: "Sh"], [value: null]]]]
 
         expect:
-        runTest(query, expected);
+        runTest(query, expected)
 
     }
 
@@ -270,10 +270,10 @@ class BatchedExecutionStrategyTest extends Specification {
                         "} " +
                         "} " +
                         "} " +
-                        "}";
+                        "}"
 
         expect:
-        runTestExpectError(query, "non-null");
+        runTestExpectError(query, "non-null")
 
     }
 
@@ -287,7 +287,7 @@ class BatchedExecutionStrategyTest extends Specification {
                         " value " +
                         "} " +
                         "} " +
-                        "}";
+                        "}"
 
         def expected = [string: [wordsAndLetters: [[[value: "L"], [value: "i"], [value: "s"], [value: "t"]],
                                                    [[value: "o"], [value: "f"]],
@@ -357,7 +357,7 @@ class BatchedExecutionStrategyTest extends Specification {
         expect:
         Arrays.asList(this.graphQLAsync, this.graphQLBatchedButUnbatched, this.graphQLBatchedValue).each { GraphQL graphQL ->
             Map<String, Object> response = graphQL.execute(query).getData() as Map<String, Object>
-            Map<String, Object> values = (response.get("string") as Map<String, Object>).get("append") as Map<String, Object>;
+            Map<String, Object> values = (response.get("string") as Map<String, Object>).get("append") as Map<String, Object>
             assert ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"] == values.keySet().toList()
         }
     }
@@ -377,6 +377,6 @@ class BatchedExecutionStrategyTest extends Specification {
         Map<String, Object> expected = ["string": ["returnBadList": null]]
         expect:
         runTestBatching(query, expected)
-        runTestBatchingExpectErrors(query, new DataFetchingException(), false)
+        runTestBatchingExpectErrors(query, new BatchAssertionFailed(), false)
     }
 }

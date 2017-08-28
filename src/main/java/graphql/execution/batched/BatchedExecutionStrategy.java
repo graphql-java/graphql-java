@@ -14,8 +14,11 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.TypeResolutionParameters;
+import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -31,8 +34,6 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -63,8 +64,6 @@ import static java.util.Collections.singletonList;
  */
 @PublicApi
 public class BatchedExecutionStrategy extends ExecutionStrategy {
-
-    private static final Logger log = LoggerFactory.getLogger(BatchedExecutionStrategy.class);
 
     private final BatchedDataFetcherFactory batchingFactory = new BatchedDataFetcherFactory();
 
@@ -148,15 +147,23 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         List<Field> fields = node.getFields().get(fieldName);
 
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
+
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
+                new InstrumentationFieldParameters(executionContext, fieldDef, fieldTypeInfo(parameters, fieldDef))
+        );
+
         CompletableFuture<List<FetchedValue>> fetchedData = fetchData(executionContext, parameters, fieldName, node, fieldDef);
 
-        return fetchedData.thenApply((fetchedValues) -> {
+        CompletableFuture<List<ExecutionNode>> result = fetchedData.thenApply((fetchedValues) -> {
 
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
                     fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
 
             return completeValues(executionContext, parentType, fetchedValues, fieldName, fields, fieldDef.getType(), argumentValues);
         });
+        result.whenComplete((nodes, throwable) -> fieldCtx.onEnd(null, throwable));
+        return result;
 
     }
 
@@ -219,10 +226,10 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             MapOrList childResult = mapOrList.createAndPutMap(fieldName);
 
             GraphQLObjectType graphQLObjectType = getGraphQLObjectType(executionContext, fields.get(0), fieldType, value.getValue(), argumentValues);
-            resultsByType.computeIfAbsent(graphQLObjectType, (type) -> new ArrayList<>());
+            resultsByType.putIfAbsent(graphQLObjectType, new ArrayList<>());
             resultsByType.get(graphQLObjectType).add(childResult);
 
-            sourceByType.computeIfAbsent(graphQLObjectType, (type) -> new ArrayList<>());
+            sourceByType.putIfAbsent(graphQLObjectType, new ArrayList<>());
             sourceByType.get(graphQLObjectType).add(value.getValue());
         }
 
@@ -357,6 +364,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .selectionSet(fieldCollector)
                 .build();
 
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(
+                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment)
+        );
+
         CompletableFuture<Object> valuesFuture;
         try {
             Object rawValue = getDataFetcher(fieldDef).get(environment);
@@ -371,6 +383,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
         return valuesFuture
                 .thenApply((result) -> assertResult(parentResults, result))
+                .whenComplete(fetchCtx::onEnd)
                 .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
     }
 
@@ -403,11 +416,12 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private List<Object> assertResult(List<MapOrList> parentResults, Object result) {
         if (result != null && !(result instanceof List)) {
-            throw new DataFetchingException("invalid result from DataFetcher: List expected");
+            throw new BatchAssertionFailed("invalid result from DataFetcher: List expected");
         }
+        @SuppressWarnings("unchecked")
         List<Object> values = (List<Object>) result;
         if (values == null || values.size() != parentResults.size()) {
-            throw new DataFetchingException("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
+            throw new BatchAssertionFailed("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
         }
         return values;
     }

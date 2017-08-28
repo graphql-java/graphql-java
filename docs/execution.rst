@@ -89,6 +89,36 @@ Here is the code for the standard behaviour.
         }
     }
 
+If the exception you throw is itself a `GraphqlError` then it will transfer the message and custom extensions attributes from that exception
+into the `ExceptionWhileDataFetching` object.  This allows you to place your own custom attributes into the graphql error that is sent back
+to the caller.
+
+For example imagine your data fetcher threw this exception.  The `foo` and `fizz` attributes would be included in the resultant
+graphql error.
+
+.. code-block:: java
+
+    class CustomRuntimeException extends RuntimeException implements GraphQLError {
+        @Override
+        public Map<String, Object> getExtensions() {
+            Map<String, Object> customAttributes = new LinkedHashMap<>();
+            customAttributes.put("foo", "bar");
+            customAttributes.put("fizz", "whizz");
+            return customAttributes;
+        }
+
+        @Override
+        public List<SourceLocation> getLocations() {
+            return null;
+        }
+
+        @Override
+        public ErrorType getErrorType() {
+            return ErrorType.DataFetchingException;
+        }
+    }
+
+
 You can change this behaviour by creating your own ``graphql.execution.DataFetcherExceptionHandler`` exception handling code and
 giving that to the execution strategy.
 
@@ -106,6 +136,31 @@ behaviour.
             }
         };
         ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
+
+Serializing results to JSON
+---------------------------
+
+The most common way to call graphql is over HTTP and to expect a JSON response back.  So you need to turn an
+`graphql.ExecutionResult` into a JSON payload.
+
+A common way to do that is use a JSON serialisation library like Jackson or GSON.  However exactly how they interpret the
+data result is particular to them.  For example `nulls` are important in graphql results and hence you must set up the json mappers
+to include them.
+
+To ensure you get a JSON result that confirms 100% to the graphql spec, you should call `toSpecification` on the result and then
+send that back as JSON.
+
+This will ensure that the result follows the specification outlined in http://facebook.github.io/graphql/#sec-Response
+
+
+.. code-block:: java
+
+        ExecutionResult executionResult = graphQL.execute(executionInput);
+
+        Map<String, Object> toSpecificationResult = executionResult.toSpecification();
+
+        sendAsJson(toSpecificationResult);
+
 
 
 Mutations
@@ -381,6 +436,76 @@ creating batched DataFetchers with get() methods annotated @Batched.
 .. This text will not be shown and if it does I have not done restructured comments right.  We should add more details
 on how BatchedExecutionStrategy works here.  Its a pretty special case that I don't know how to explain properly
 
+Limiting Field Visibility
+-------------------------
+
+By default every fields defined in a `GraphqlSchema` is available.  There are cases where you may want to restrict certain fields
+depending on the user.
+
+You can do this by using a `graphql.schema.visibility.GraphqlFieldVisibility` implementation and attaching it to the schema.
+
+A simple `graphql.schema.visibility.BlockedFields` implementation based on fully qualified field name is provided.
+
+.. code-block:: java
+
+        GraphqlFieldVisibility blockedFields = BlockedFields.newBlock()
+                .addPattern("Character.id")
+                .addPattern("Droid.appearsIn")
+                .addPattern(".*\\.hero") // it uses regular expressions
+                .build();
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .fieldVisibility(blockedFields)
+                .build();
+
+There is also another implementation that prevents instrumentation from being able to be performed on your schema, if that is a requirement.
+
+Note that this puts your server in contravention of the graphql specification and expectations of most clients so use this with caution.
+
+
+.. code-block:: java
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .fieldVisibility(NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY)
+                .build();
+
+
+You can create your own derivation of `GraphqlFieldVisibility` to check what ever you need to do to work out what fields
+should be visible or not.
+
+.. code-block:: java
+
+    class CustomFieldVisibility implements GraphqlFieldVisibility {
+
+        final YourUserAccessService userAccessService;
+
+        CustomFieldVisibility(YourUserAccessService userAccessService) {
+            this.userAccessService = userAccessService;
+        }
+
+        @Override
+        public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+            if ("AdminType".equals(fieldsContainer.getName())) {
+                if (!userAccessService.isAdminUser()) {
+                    return Collections.emptyList();
+                }
+            }
+            return fieldsContainer.getFieldDefinitions();
+        }
+
+        @Override
+        public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+            if ("AdminType".equals(fieldsContainer.getName())) {
+                if (!userAccessService.isAdminUser()) {
+                    return null;
+                }
+            }
+            return fieldsContainer.getFieldDefinition(fieldName);
+        }
+    }
+
 
 Query Caching
 -------------
@@ -434,3 +559,4 @@ with variables:
     }
 
 The query is now reused regardless of variable values provided.
+

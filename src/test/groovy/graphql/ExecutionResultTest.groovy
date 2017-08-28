@@ -6,6 +6,7 @@ import spock.lang.Specification
 class ExecutionResultTest extends Specification {
 
     def KNOWN_ERRORS = [new InvalidSyntaxError(new SourceLocation(666, 664), "Yikes")]
+    def EXPECTED_SPEC_ERRORS = [['message': 'Invalid Syntax : Yikes', 'locations': [[line: 666, column: 664]]]]
 
 
     def "data with no errors"() {
@@ -39,7 +40,7 @@ class ExecutionResultTest extends Specification {
 
         specMap.size() == 2
         specMap["data"] == "hello world"
-        specMap["errors"] == KNOWN_ERRORS
+        specMap["errors"] == EXPECTED_SPEC_ERRORS
     }
 
     def "errors and no data"() {
@@ -56,7 +57,7 @@ class ExecutionResultTest extends Specification {
         errors == KNOWN_ERRORS
 
         specMap.size() == 1
-        specMap["errors"] == KNOWN_ERRORS
+        specMap["errors"] == EXPECTED_SPEC_ERRORS
     }
 
     def "can have extensions"() {
@@ -79,7 +80,7 @@ class ExecutionResultTest extends Specification {
 
         specMap.size() == 3
         specMap["data"] == "hello world"
-        specMap["errors"] == KNOWN_ERRORS
+        specMap["errors"] == EXPECTED_SPEC_ERRORS
         specMap["extensions"] == extensionsObj
 
     }

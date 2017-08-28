@@ -1,5 +1,6 @@
 package readme;
 
+import graphql.ErrorType;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
@@ -11,11 +12,20 @@ import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutorServiceExecutionStrategy;
+import graphql.language.SourceLocation;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.visibility.BlockedFields;
+import graphql.schema.visibility.GraphqlFieldVisibility;
+import graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -143,6 +153,95 @@ public class ExecutionExamples {
             }
         };
         ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
+    }
+
+    private void blockedFields() {
+        GraphqlFieldVisibility blockedFields = BlockedFields.newBlock()
+                .addPattern("Character.id")
+                .addPattern("Droid.appearsIn")
+                .addPattern(".*\\.hero") // it uses regular expressions
+                .build();
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .fieldVisibility(blockedFields)
+                .build();
+    }
+
+    private void noIntrospection() {
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .fieldVisibility(NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY)
+                .build();
+    }
+
+    class YourUserAccessService {
+
+        public boolean isAdminUser() {
+            return false;
+        }
+    }
+
+    class CustomFieldVisibility implements GraphqlFieldVisibility {
+
+        final YourUserAccessService userAccessService;
+
+        CustomFieldVisibility(YourUserAccessService userAccessService) {
+            this.userAccessService = userAccessService;
+        }
+
+        @Override
+        public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+            if ("AdminType".equals(fieldsContainer.getName())) {
+                if (!userAccessService.isAdminUser()) {
+                    return Collections.emptyList();
+                }
+            }
+            return fieldsContainer.getFieldDefinitions();
+        }
+
+        @Override
+        public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+            if ("AdminType".equals(fieldsContainer.getName())) {
+                if (!userAccessService.isAdminUser()) {
+                    return null;
+                }
+            }
+            return fieldsContainer.getFieldDefinition(fieldName);
+        }
+    }
+
+    private void sendAsJson(Map<String, Object> toSpecificationResult) {
+    }
+
+    public void toSpec() throws Exception {
+
+        ExecutionResult executionResult = graphQL.execute(executionInput);
+
+        Map<String, Object> toSpecificationResult = executionResult.toSpecification();
+
+        sendAsJson(toSpecificationResult);
+    }
+
+    class CustomRuntimeException extends RuntimeException implements GraphQLError {
+        @Override
+        public Map<String, Object> getExtensions() {
+            Map<String, Object> customAttributes = new LinkedHashMap<>();
+            customAttributes.put("foo", "bar");
+            customAttributes.put("fizz", "whizz");
+            return customAttributes;
+        }
+
+        @Override
+        public List<SourceLocation> getLocations() {
+            return null;
+        }
+
+        @Override
+        public ErrorType getErrorType() {
+            return ErrorType.DataFetchingException;
+        }
     }
 
     private class User {
