@@ -8,8 +8,8 @@ import static graphql.Assert.assertNotNull;
 public class DefaultEdge<T> implements Edge<T> {
 
     public DefaultEdge(T node, ConnectionCursor cursor) {
-        this.node = assertNotNull(node, "node cannot be null");
         this.cursor = assertNotNull(cursor, "cursor cannot be null");
+        this.node = node;
     }
 
     /**

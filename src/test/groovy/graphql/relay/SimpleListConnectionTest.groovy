@@ -67,4 +67,17 @@ class SimpleListConnectionTest extends Specification {
         notThrown(InvalidCursorException)
 
     }
+
+    def "can accept a list with nulls"() {
+        given:
+        def dataWithNull = ["a", null, "b"]
+        def env = newDataFetchingEnvironment().build()
+
+        when:
+        def connection = new SimpleListConnection(dataWithNull).get(env)
+
+        then:
+        connection.getEdges().size() == 3
+        connection.getEdges().get(1).getNode() == null
+    }
 }
