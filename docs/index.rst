@@ -8,8 +8,6 @@ and the JavaScript `reference implementation <https://github.com/graphql/graphql
 
 **Status**: Version ``3.0.0`` is released.
 
-The versioning follows `Semantic Versioning <http://semver.org>`_ since ``2.0.0``.
-
 Make sure to check out the `awesome related projects <https://github.com/graphql-java/awesome-graphql-java>`_ built on ``graphql-java``.
 
 
