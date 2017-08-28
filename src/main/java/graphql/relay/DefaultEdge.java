@@ -7,49 +7,23 @@ import static graphql.Assert.assertNotNull;
 @PublicApi
 public class DefaultEdge<T> implements Edge<T> {
 
+    private final T node;
+    private final ConnectionCursor cursor;
+
     public DefaultEdge(T node, ConnectionCursor cursor) {
         this.cursor = assertNotNull(cursor, "cursor cannot be null");
         this.node = node;
     }
 
-    /**
-     * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)}
-     */
-    @Deprecated
-    public DefaultEdge() {
-    }
-
-    private T node;
-    private ConnectionCursor cursor;
 
     @Override
     public T getNode() {
         return node;
     }
 
-    /**
-     * @param node node
-     *
-     * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)} and avoid mutation.
-     */
-    @Deprecated
-    public void setNode(T node) {
-        this.node = node;
-    }
-
     @Override
     public ConnectionCursor getCursor() {
         return cursor;
-    }
-
-    /**
-     * @param cursor cursor
-     *
-     * @deprecated prefer {@link #DefaultEdge(Object, ConnectionCursor)} and avoid mutation.
-     */
-    @Deprecated
-    public void setCursor(ConnectionCursor cursor) {
-        this.cursor = cursor;
     }
 
     @Override
