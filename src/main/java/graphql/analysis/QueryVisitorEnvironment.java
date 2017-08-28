@@ -35,7 +35,7 @@ public class QueryVisitorEnvironment {
         return fieldDefinition;
     }
 
-    public GraphQLCompositeType getParent() {
+    public GraphQLCompositeType getParentType() {
         return parent;
     }
 
