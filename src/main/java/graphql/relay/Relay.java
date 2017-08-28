@@ -12,6 +12,7 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.TypeResolver;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,12 @@ import static graphql.schema.GraphQLInputObjectType.newInputObject;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static graphql.schema.GraphQLObjectType.newObject;
 
+/**
+ * This can be used to compose graphql runtime types that implement
+ * that Relay specification.
+ *
+ * See <a href="https://facebook.github.io/relay/graphql/connections.htm">https://facebook.github.io/relay/graphql/connections.htm</a>
+ */
 @PublicApi
 public class Relay {
 
@@ -202,16 +209,8 @@ public class Relay {
             this.id = id;
         }
 
-        /**
-         * @deprecated use {@link #getType()}
-         */
-        @Deprecated
-        public String type;
-        /**
-         * @deprecated use {@link #getId()}
-         */
-        @Deprecated
-        public String id;
+        private String type;
+        private String id;
 
         public String getType() {
             return type;
