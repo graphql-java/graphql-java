@@ -14,6 +14,9 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * Prevents execution if the query complexity is greater than the specified maxDepth
+ */
 @PublicApi
 public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
 
@@ -21,10 +24,21 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
     private int maxComplexity;
     private FieldComplexityCalculator fieldComplexityCalculator;
 
+    /**
+     * new Instrumentation with default complexity calculator which is `1 + childComplexity`
+     *
+     * @param maxComplexity max allowed complexity, otherwise execution will be aborted
+     */
     public MaxQueryComplexityInstrumentation(int maxComplexity) {
         this(maxComplexity, (env, childComplexity) -> 1 + childComplexity);
     }
 
+    /**
+     * new Instrumentation with custom complexity calculator
+     *
+     * @param maxComplexity             max allowed complexity, otherwise execution will be aborted
+     * @param fieldComplexityCalculator custom complexity calculator
+     */
     public MaxQueryComplexityInstrumentation(int maxComplexity, FieldComplexityCalculator fieldComplexityCalculator) {
         this.maxComplexity = maxComplexity;
         this.fieldComplexityCalculator = assertNotNull(fieldComplexityCalculator, "calculator can't be null");

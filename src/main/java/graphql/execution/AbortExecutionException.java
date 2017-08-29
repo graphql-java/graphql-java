@@ -8,6 +8,9 @@ import graphql.language.SourceLocation;
 
 import java.util.List;
 
+/**
+ * This Exception indicates that the current execution should be aborted.
+ */
 @PublicApi
 public class AbortExecutionException extends GraphQLException implements GraphQLError {
 
