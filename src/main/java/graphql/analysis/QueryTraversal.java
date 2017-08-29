@@ -3,10 +3,12 @@ package graphql.analysis;
 import graphql.Internal;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.ValuesResolver;
+import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
+import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
@@ -33,13 +35,14 @@ public class QueryTraversal {
     private ValuesResolver valuesResolver = new ValuesResolver();
 
 
-    public QueryTraversal(OperationDefinition operationDefinition,
-                          GraphQLSchema schema,
-                          Map<String, FragmentDefinition> fragmentsByName,
+    public QueryTraversal(GraphQLSchema schema,
+                          Document document,
+                          String operation,
                           Map<String, Object> variables) {
-        this.operationDefinition = operationDefinition;
+        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
+        this.operationDefinition = getOperationResult.operationDefinition;
+        this.fragmentsByName = getOperationResult.fragmentsByName;
         this.schema = schema;
-        this.fragmentsByName = fragmentsByName;
         this.variables = variables;
     }
 

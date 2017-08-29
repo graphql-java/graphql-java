@@ -5,7 +5,6 @@ import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
-import graphql.language.NodeUtil;
 import graphql.validation.ValidationError;
 
 import java.util.ArrayList;
@@ -27,11 +26,10 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         return (result, throwable) -> {
-            NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(parameters.getDocument(), parameters.getOperation());
             QueryTraversal queryTraversal = new QueryTraversal(
-                    getOperationResult.operationDefinition,
                     parameters.getSchema(),
-                    getOperationResult.fragmentsByName,
+                    parameters.getDocument(),
+                    parameters.getOperation(),
                     parameters.getVariables()
             );
 
