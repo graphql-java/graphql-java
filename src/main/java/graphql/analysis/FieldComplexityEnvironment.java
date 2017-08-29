@@ -1,30 +1,26 @@
 package graphql.analysis;
 
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.language.Field;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.Map;
 
-@Internal
-public class QueryVisitorEnvironment {
+@PublicApi
+public class FieldComplexityEnvironment {
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLCompositeType parentType;
+    private final FieldComplexityEnvironment parentEnvironment;
     private final Map<String, Object> arguments;
-    private final QueryVisitorEnvironment parentEnvironment;
 
-    public QueryVisitorEnvironment(Field field,
-                                   GraphQLFieldDefinition fieldDefinition,
-                                   GraphQLCompositeType parentType,
-                                   QueryVisitorEnvironment parentEnvironment,
-                                   Map<String, Object> arguments) {
+    public FieldComplexityEnvironment(Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, Map<String, Object> arguments, FieldComplexityEnvironment parentEnvironment) {
         this.field = field;
         this.fieldDefinition = fieldDefinition;
         this.parentType = parentType;
-        this.parentEnvironment = parentEnvironment;
         this.arguments = arguments;
+        this.parentEnvironment = parentEnvironment;
     }
 
     public Field getField() {
@@ -39,7 +35,7 @@ public class QueryVisitorEnvironment {
         return parentType;
     }
 
-    public QueryVisitorEnvironment getParentEnvironment() {
+    public FieldComplexityEnvironment getParentEnvironment() {
         return parentEnvironment;
     }
 
@@ -48,11 +44,22 @@ public class QueryVisitorEnvironment {
     }
 
     @Override
+    public String toString() {
+        return "FieldComplexityEnvironment{" +
+                "field=" + field +
+                ", fieldDefinition=" + fieldDefinition +
+                ", parentType=" + parentType +
+                ", parentEnvironment=" + parentEnvironment +
+                ", arguments=" + arguments +
+                '}';
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        QueryVisitorEnvironment that = (QueryVisitorEnvironment) o;
+        FieldComplexityEnvironment that = (FieldComplexityEnvironment) o;
 
         if (field != null ? !field.equals(that.field) : that.field != null) return false;
         if (fieldDefinition != null ? !fieldDefinition.equals(that.fieldDefinition) : that.fieldDefinition != null)
@@ -72,15 +79,6 @@ public class QueryVisitorEnvironment {
         result = 31 * result + (arguments != null ? arguments.hashCode() : 0);
         return result;
     }
-
-    @Override
-    public String toString() {
-        return "QueryVisitorEnvironment{" +
-                "field=" + field +
-                ", fieldDefinition=" + fieldDefinition +
-                ", parentType=" + parentType +
-                ", parentEnvironment=" + parentEnvironment +
-                ", arguments=" + arguments +
-                '}';
-    }
 }
+
+

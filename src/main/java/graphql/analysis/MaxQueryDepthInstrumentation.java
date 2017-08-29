@@ -30,17 +30,17 @@ public class MaxQueryDepthInstrumentation extends NoOpInstrumentation {
                     parameters.getOperation(),
                     parameters.getVariables()
             );
-            int depth = queryTraversal.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getPath()), acc), 0);
+            int depth = queryTraversal.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
             if (depth > maxDepth) {
                 throw new AbortExecutionException("maximum query depth exceeded " + depth + " > " + maxDepth);
             }
         };
     }
 
-    private int getPathLength(QueryPath path) {
+    private int getPathLength(QueryVisitorEnvironment path) {
         int length = 1;
         while (path != null) {
-            path = path.getParentPath();
+            path = path.getParentEnvironment();
             length++;
         }
         return length;
