@@ -9,7 +9,7 @@ import graphql.language.Document
 import graphql.parser.Parser
 import spock.lang.Specification
 
-class MaximumQueryDepthInstrumentationTest extends Specification {
+class MaxQueryDepthInstrumentationTest extends Specification {
 
     Document createQuery(String query) {
         Parser parser = new Parser()
@@ -32,7 +32,7 @@ class MaximumQueryDepthInstrumentationTest extends Specification {
         def query = createQuery("""
             {f1: foo {foo {foo {scalar}}} f2: foo { foo {foo {foo {foo{foo{scalar}}}}}} }
             """)
-        MaximumQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaximumQueryDepthInstrumentation(6)
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6)
         ExecutionInput executionInput = Mock(ExecutionInput)
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null);
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
@@ -58,7 +58,7 @@ class MaximumQueryDepthInstrumentationTest extends Specification {
         def query = createQuery("""
             {f1: foo {foo {foo {scalar}}} f2: foo { foo {foo {foo {foo{foo{scalar}}}}}} }
             """)
-        MaximumQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaximumQueryDepthInstrumentation(7)
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(7)
         ExecutionInput executionInput = Mock(ExecutionInput)
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null);
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)

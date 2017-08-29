@@ -1,6 +1,6 @@
 package graphql
 
-import graphql.analysis.MaximumQueryDepthInstrumentation
+import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -604,7 +604,7 @@ class GraphQLTest extends Specification {
                         .build()).build())
                 .build()
 
-        MaximumQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaximumQueryDepthInstrumentation(3);
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(3);
 
 
         def graphql = GraphQL.newGraphQL(schema).instrumentation(maximumQueryDepthInstrumentation).build()
