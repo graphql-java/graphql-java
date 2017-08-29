@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
@@ -624,6 +625,49 @@ class GraphQLTest extends Specification {
         "{ field {field {field {field {scalar}}}} }"                                | _
         "{ field {field {field {field {field { scalar}}}} }}"                       | _
         "{ f2:field {field {field {scalar}}} f1: field{scalar} f3: field {scalar}}" | _
+    }
+
+    @Unroll
+    def "abort execution if complexity is too high (#query)"() {
+        given:
+        def foo = newObject()
+                .name("Foo")
+                .field(newFieldDefinition()
+                .name("field")
+                .type(new GraphQLTypeReference('Foo'))
+                .build())
+                .field(newFieldDefinition()
+                .name("scalar")
+                .type(GraphQLString)
+                .build())
+                .build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition()
+                        .name("field")
+                        .type(foo)
+                        .build()).build())
+                .build()
+
+        MaxQueryComplexityInstrumentation maxQueryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(3);
+
+
+        def graphql = GraphQL.newGraphQL(schema).instrumentation(maxQueryComplexityInstrumentation).build()
+
+        when:
+        def result = graphql.execute(query)
+
+        then:
+        result.errors.size() == 1
+        result.errors[0].message.contains("maximum query complexity exceeded")
+
+        where:
+        query                                                       | _
+        "{ field {field {field {field {scalar}}}} }"                | _
+        "{ field {field {field {scalar}}}} "                        | _
+        "{ field {field {field {field {scalar}}}} }"                | _
+        "{ f2:field {scalar} f1: field{scalar} f3: field {scalar}}" | _
     }
 
 }
