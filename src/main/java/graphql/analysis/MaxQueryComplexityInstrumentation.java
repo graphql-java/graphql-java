@@ -12,14 +12,22 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
+
 @PublicApi
 public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
 
 
     private int maxComplexity;
+    private FieldComplexityCalculator fieldComplexityCalculator;
 
     public MaxQueryComplexityInstrumentation(int maxComplexity) {
+        this(maxComplexity, (env, childComplexity) -> 1 + childComplexity);
+    }
+
+    public MaxQueryComplexityInstrumentation(int maxComplexity, FieldComplexityCalculator fieldComplexityCalculator) {
         this.maxComplexity = maxComplexity;
+        this.fieldComplexityCalculator = assertNotNull(fieldComplexityCalculator, "calculator can't be null");
     }
 
 
@@ -33,16 +41,16 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
                     parameters.getVariables()
             );
 
-            Map<QueryPath, List<Integer>> valuesByParent = new LinkedHashMap<>();
+            Map<QueryVisitorEnvironment, List<Integer>> valuesByParent = new LinkedHashMap<>();
             queryTraversal.visitPostOrder(env -> {
                 int childsComplexity = 0;
-                QueryPath thisNodeAsParent = new QueryPath(env.getField(), env.getFieldDefinition(), env.getParentType(), env.getPath());
+                QueryVisitorEnvironment thisNodeAsParent = new QueryVisitorEnvironment(env.getField(), env.getFieldDefinition(), env.getParentType(), env.getParentEnvironment(), env.getArguments());
                 if (valuesByParent.containsKey(thisNodeAsParent)) {
                     childsComplexity = valuesByParent.get(thisNodeAsParent).stream().mapToInt(Integer::intValue).sum();
                 }
                 int value = calculateComplexity(env, childsComplexity);
-                valuesByParent.putIfAbsent(env.getPath(), new ArrayList<>());
-                valuesByParent.get(env.getPath()).add(value);
+                valuesByParent.putIfAbsent(env.getParentEnvironment(), new ArrayList<>());
+                valuesByParent.get(env.getParentEnvironment()).add(value);
             });
             int totalComplexity = valuesByParent.get(null).stream().mapToInt(Integer::intValue).sum();
             if (totalComplexity > maxComplexity) {
@@ -51,9 +59,24 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
         };
     }
 
-    private Integer calculateComplexity(QueryVisitorEnvironment environment, int childCount) {
-        // interface call here ...
-        return 1 + childCount;
+    private int calculateComplexity(QueryVisitorEnvironment queryVisitorEnvironment, int childsComplexity) {
+        FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(queryVisitorEnvironment);
+        return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childsComplexity);
     }
+
+    private FieldComplexityEnvironment convertEnv(QueryVisitorEnvironment queryVisitorEnvironment) {
+        FieldComplexityEnvironment parentEnv = null;
+        if (queryVisitorEnvironment.getParentEnvironment() != null) {
+            parentEnv = convertEnv(queryVisitorEnvironment.getParentEnvironment());
+        }
+        return new FieldComplexityEnvironment(
+                queryVisitorEnvironment.getField(),
+                queryVisitorEnvironment.getFieldDefinition(),
+                queryVisitorEnvironment.getParentType(),
+                queryVisitorEnvironment.getArguments(),
+                parentEnv
+        );
+    }
+
 
 }

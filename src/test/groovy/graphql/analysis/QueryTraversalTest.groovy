@@ -50,7 +50,7 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
                     it.parentType.name == "Foo" &&
-                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
         })
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
@@ -80,7 +80,7 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
                     it.parentType.name == "Foo" &&
-                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
         })
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
@@ -144,7 +144,7 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
                     it.parentType.name == "Foo" &&
-                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
         })
 
         where:
@@ -186,7 +186,7 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
                     it.parentType.name == "Foo" &&
-                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
         })
 
         where:
@@ -229,7 +229,7 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
                     it.parentType.name == "Foo" &&
-                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
         })
 
         where:
@@ -274,7 +274,7 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
                     it.parentType.name == "Foo" &&
-                    it.path.field.name == "foo" && it.path.fieldDefinition.type.name == "Foo"
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
         })
 
         where:
@@ -411,10 +411,10 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "string" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Foo1" })
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "subFoo" && it.fieldDefinition.type.name == "Foo2" && it.parentType.name == "Foo1" })
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
-            QueryPath parentPath = it.path.parentPath
+            QueryVisitorEnvironment secondParent = it.parentEnvironment.parentEnvironment
             it.field.name == "otherString" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Foo2" &&
-                    it.path.field.name == "subFoo" && it.path.fieldDefinition.type.name == "Foo2" && it.path.parentType.name == "Foo1" &&
-                    parentPath.field.name == "foo" && parentPath.fieldDefinition.type.name == "Foo1" && parentPath.parentType.name == "Query"
+                    it.parentEnvironment.field.name == "subFoo" && it.parentEnvironment.fieldDefinition.type.name == "Foo2" && it.parentEnvironment.parentType.name == "Foo1" &&
+                    secondParent.field.name == "foo" && secondParent.fieldDefinition.type.name == "Foo1" && secondParent.parentType.name == "Query"
         })
 
         where:

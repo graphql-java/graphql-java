@@ -69,22 +69,22 @@ public class QueryTraversal {
     }
 
 
-    private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, QueryPath path, boolean preOrder) {
+    private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, QueryVisitorEnvironment parent, boolean preOrder) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
                 GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(((Field) selection).getName());
-                visitField(visitor, (Field) selection, fieldDefinition, type, path, preOrder);
+                visitField(visitor, (Field) selection, fieldDefinition, type, parent, preOrder);
             } else if (selection instanceof InlineFragment) {
-                visitInlineFragment(visitor, (InlineFragment) selection, type, path, preOrder);
+                visitInlineFragment(visitor, (InlineFragment) selection, type, parent, preOrder);
             } else if (selection instanceof FragmentSpread) {
-                visitFragmentSpread(visitor, (FragmentSpread) selection, path, preOrder);
+                visitFragmentSpread(visitor, (FragmentSpread) selection, parent, preOrder);
             }
         }
     }
 
-    private void visitFragmentSpread(QueryVisitor visitor, FragmentSpread fragmentSpread, QueryPath path, boolean preOrder) {
+    private void visitFragmentSpread(QueryVisitor visitor, FragmentSpread fragmentSpread, QueryVisitorEnvironment parent, boolean preOrder) {
         if (!conditionalNodes.shouldInclude(this.variables, fragmentSpread.getDirectives())) {
             return;
         }
@@ -94,11 +94,11 @@ public class QueryTraversal {
             return;
         }
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
-        visitImpl(visitor, fragmentDefinition.getSelectionSet(), typeCondition, path, preOrder);
+        visitImpl(visitor, fragmentDefinition.getSelectionSet(), typeCondition, parent, preOrder);
     }
 
 
-    private void visitInlineFragment(QueryVisitor visitor, InlineFragment inlineFragment, GraphQLCompositeType parentType, QueryPath path, boolean preOrder) {
+    private void visitInlineFragment(QueryVisitor visitor, InlineFragment inlineFragment, GraphQLCompositeType parentType, QueryVisitorEnvironment parent, boolean preOrder) {
         if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives())) {
             return;
         }
@@ -111,23 +111,23 @@ public class QueryTraversal {
             fragmentCondition = parentType;
         }
         // for unions we only have other fragments inside
-        visitImpl(visitor, inlineFragment.getSelectionSet(), fragmentCondition, path, preOrder);
+        visitImpl(visitor, inlineFragment.getSelectionSet(), fragmentCondition, parent, preOrder);
     }
 
-    private void visitField(QueryVisitor visitor, Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, QueryPath parentPath, boolean preOrder) {
+    private void visitField(QueryVisitor visitor, Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, QueryVisitorEnvironment parentEnv, boolean preOrder) {
         if (!conditionalNodes.shouldInclude(variables, field.getDirectives())) {
             return;
         }
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), variables);
         if (preOrder) {
-            visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentPath, argumentValues));
+            visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues));
         }
         if (fieldDefinition.getType() instanceof GraphQLCompositeType) {
-            QueryPath newPath = new QueryPath(field, fieldDefinition, parentType, parentPath);
-            visitImpl(visitor, field.getSelectionSet(), (GraphQLCompositeType) fieldDefinition.getType(), newPath, preOrder);
+            QueryVisitorEnvironment newParentEnvironment = new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues);
+            visitImpl(visitor, field.getSelectionSet(), (GraphQLCompositeType) fieldDefinition.getType(), newParentEnvironment, preOrder);
         }
         if (!preOrder) {
-            visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentPath, argumentValues));
+            visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues));
         }
 
     }
