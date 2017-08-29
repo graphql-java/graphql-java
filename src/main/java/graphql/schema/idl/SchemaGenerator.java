@@ -545,7 +545,7 @@ public class SchemaGenerator {
         if (requiredType instanceof GraphQLScalarType) {
             result = ((GraphQLScalarType)requiredType).getCoercing().parseLiteral(value);
         } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
-            result = ((EnumValue) value).getName();
+            result = ((GraphQLEnumType)requiredType).getCoercing().parseLiteral(value);
         } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
             ArrayValue arrayValue = (ArrayValue) value;
             GraphQLType wrappedType = ((GraphQLList) requiredType).getWrappedType();
