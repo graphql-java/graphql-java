@@ -14,11 +14,11 @@ import java.util.List;
  * Prevents execution if the query depth is greater than the specified maxDepth
  */
 @PublicApi
-public class MaximumQueryDepthInstrumentation extends NoOpInstrumentation {
+public class MaxQueryDepthInstrumentation extends NoOpInstrumentation {
 
     private int maxDepth;
 
-    public MaximumQueryDepthInstrumentation(int maxDepth) {
+    public MaxQueryDepthInstrumentation(int maxDepth) {
         this.maxDepth = maxDepth;
     }
 
