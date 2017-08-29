@@ -21,7 +21,7 @@ Dependency:
 .. code-block:: groovy
 
     dependencies {
-      compile 'com.graphql-java:graphql-java:3.0.0'
+      compile 'com.graphql-java:graphql-java:4.0'
     }
 
 
@@ -35,7 +35,7 @@ Dependency:
     <dependency>
         <groupId>com.graphql-java</groupId>
         <artifactId>graphql-java</artifactId>
-        <version>3.0.0</version>
+        <version>4.0</version>
     </dependency>
 
 
