@@ -14,6 +14,7 @@ import graphql.schema.GraphQLTypeReference
 import graphql.schema.StaticDataFetcher
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.function.UnaryOperator
 
@@ -581,7 +582,8 @@ class GraphQLTest extends Specification {
         result == [hello: 'world']
     }
 
-    def "abort execution if query depth is too high"() {
+    @Unroll
+    def "abort execution if query depth is too high (#query)"() {
         given:
         def foo = newObject()
                 .name("Foo")
@@ -609,12 +611,19 @@ class GraphQLTest extends Specification {
         def graphql = GraphQL.newGraphQL(schema).instrumentation(maximumQueryDepthInstrumentation).build()
 
         when:
-        def result = graphql.execute('{ field {field {field {field {scalar}}}} }')
+        def result = graphql.execute(query)
 
         then:
         result.errors.size() == 1
         result.errors[0].message.contains("maximum query depth exceeded")
 
+        where:
+        query                                                                       | _
+        "{ field {field {field {field {scalar}}}} }"                                | _
+        "{ field {field {field {scalar}}}} "                                        | _
+        "{ field {field {field {field {scalar}}}} }"                                | _
+        "{ field {field {field {field {field { scalar}}}} }}"                       | _
+        "{ f2:field {field {field {scalar}}} f1: field{scalar} f3: field {scalar}}" | _
     }
 
 }
