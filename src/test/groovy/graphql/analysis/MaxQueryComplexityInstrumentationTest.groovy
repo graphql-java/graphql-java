@@ -17,7 +17,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
     }
 
 
-    def "throws exception"() {
+    def "default complexity calculator"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
