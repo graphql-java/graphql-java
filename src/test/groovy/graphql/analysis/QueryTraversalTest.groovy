@@ -2,7 +2,6 @@ package graphql.analysis
 
 import graphql.TestUtil
 import graphql.language.Document
-import graphql.language.NodeUtil
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -16,12 +15,11 @@ class QueryTraversalTest extends Specification {
         parser.parseDocument(query)
     }
 
-    QueryTraversal createQueryTraversal(Document document, GraphQLSchema schema, QueryVisitor visitor, Map variables = [:]) {
-        def operation = NodeUtil.getOperation(document, null)
+    QueryTraversal createQueryTraversal(Document document, GraphQLSchema schema, Map variables = [:]) {
         QueryTraversal queryTraversal = new QueryTraversal(
-                operation.operationDefinition,
                 schema,
-                operation.fragmentsByName,
+                document,
+                null,
                 variables
         )
         return queryTraversal
@@ -42,7 +40,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPreOrder(visitor)
 
@@ -74,7 +72,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal.visitPostOrder(visitor)
 
@@ -104,7 +102,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             query myQuery(\$myVar: String){foo(arg1: \$myVar, arg2: true)} 
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor, ['myVar': 'hello'])
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, ['myVar': 'hello'])
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -136,7 +134,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {bar foo { subFoo} }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -178,7 +176,7 @@ class QueryTraversalTest extends Specification {
                 }
             }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -221,7 +219,7 @@ class QueryTraversalTest extends Specification {
                 }
             }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -266,7 +264,7 @@ class QueryTraversalTest extends Specification {
             }
             
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -311,7 +309,7 @@ class QueryTraversalTest extends Specification {
             }
             
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -350,7 +348,7 @@ class QueryTraversalTest extends Specification {
             }
             
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor, [variableFoo: true])
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: true])
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -403,7 +401,7 @@ class QueryTraversalTest extends Specification {
             }
             
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor, [variableFoo: true])
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: true])
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -442,7 +440,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         QueryReducer reducer = Mock(QueryReducer)
         when:
         def result = queryTraversal.reducePreOrder(reducer, 1)
@@ -473,7 +471,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema, visitor)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         QueryReducer reducer = Mock(QueryReducer)
         when:
         def result = queryTraversal.reducePostOrder(reducer, 1)
