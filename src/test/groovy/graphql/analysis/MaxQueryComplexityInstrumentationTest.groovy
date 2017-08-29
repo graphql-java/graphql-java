@@ -43,5 +43,38 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         e.message == "maximum query complexity exceeded 11 > 10"
 
     }
+
+    def "custom calculator"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                scalar: String  
+                foo: Foo
+            }
+        """)
+        def query = createQuery("""
+            {foo {scalar }}
+            """)
+        def calculator = Mock(FieldComplexityCalculator)
+        MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(5, calculator)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null);
+        InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
+        when:
+        instrumentationContext.onEnd(null, null)
+
+        then:
+        1 * calculator.calculate({ FieldComplexityEnvironment env -> env.field.name == "scalar" }, 0) >> 10
+        1 * calculator.calculate({ FieldComplexityEnvironment env -> env.field.name == "foo" }, 10) >> 20
+        def e = thrown(AbortExecutionException)
+        e.message == "maximum query complexity exceeded 20 > 5"
+
+    }
+
 }
+
 
