@@ -15,7 +15,7 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 
 /**
- * Prevents execution if the query complexity is greater than the specified maxDepth
+ * Prevents execution if the query complexity is greater than the specified maxComplexity
  */
 @PublicApi
 public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
