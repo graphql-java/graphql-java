@@ -89,6 +89,83 @@ class QueryTraversalTest extends Specification {
 
     }
 
+    def "works for mutations()"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+              a: String
+            }
+            type Mutation{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+            schema {mutation: Mutation, query: Query}
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            mutation M{bar foo { subFoo} }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Mutation" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Mutation" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parentType.name == "Foo" &&
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
+        })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
+    def "works for subscriptions()"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+              a: String
+            }
+            type Subscription{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+            schema {subscription: Subscription, query: Query}
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            subscription S{bar foo { subFoo} }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Subscription" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Subscription" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parentType.name == "Foo" &&
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
+        })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
 
     @Unroll
     def "field with arguments: (#order)"() {
