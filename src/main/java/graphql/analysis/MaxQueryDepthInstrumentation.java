@@ -23,18 +23,25 @@ public class MaxQueryDepthInstrumentation extends NoOpInstrumentation {
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return (result, throwable) -> {
-            QueryTraversal queryTraversal = new QueryTraversal(
-                    parameters.getSchema(),
-                    parameters.getDocument(),
-                    parameters.getOperation(),
-                    parameters.getVariables()
-            );
+        return (errors, throwable) -> {
+            if ((errors != null && errors.size() > 0) || throwable != null) {
+                return;
+            }
+            QueryTraversal queryTraversal = newQueryTraversal(parameters);
             int depth = queryTraversal.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
             if (depth > maxDepth) {
                 throw new AbortExecutionException("maximum query depth exceeded " + depth + " > " + maxDepth);
             }
         };
+    }
+
+    QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
+        return new QueryTraversal(
+                parameters.getSchema(),
+                parameters.getDocument(),
+                parameters.getOperation(),
+                parameters.getVariables()
+        );
     }
 
     private int getPathLength(QueryVisitorEnvironment path) {
