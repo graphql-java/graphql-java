@@ -563,4 +563,80 @@ class QueryTraversalTest extends Specification {
 
     }
 
+    def "works for interfaces()"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+              a: Node
+            }
+            
+            interface Node {
+              id: ID!
+            }
+            
+            type Person implements Node {
+              id: ID!
+              name: String
+            }
+            
+            schema {query: Query}
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {a {id... on Person {name}}}
+        """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "a" && it.fieldDefinition.type.name == "Node" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "name" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Person" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "id" && it.fieldDefinition.type.wrappedType.name == "ID" && it.parentType.name == "Node" })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
+    def "works for unions()"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+              foo: CatOrDog
+            }
+            
+            type Cat {
+                catName: String
+            }
+            
+            type Dog {
+                dogName: String
+            }
+            union CatOrDog = Cat | Dog
+            
+            schema {query: Query}
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {foo {... on Cat {catName} ... on Dog {dogName}} }
+        """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "CatOrDog" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
 }
