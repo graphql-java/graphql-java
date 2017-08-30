@@ -16,10 +16,14 @@ import graphql.language.TypeName;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 
 @Internal
 public class QueryTraversal {
@@ -47,11 +51,23 @@ public class QueryTraversal {
     }
 
     public void visitPostOrder(QueryVisitor visitor) {
-        visitImpl(visitor, operationDefinition.getSelectionSet(), schema.getQueryType(), null, false);
+        visitImpl(visitor, operationDefinition.getSelectionSet(), getRootType(), null, false);
     }
 
     public void visitPreOrder(QueryVisitor visitor) {
-        visitImpl(visitor, operationDefinition.getSelectionSet(), schema.getQueryType(), null, true);
+        visitImpl(visitor, operationDefinition.getSelectionSet(), getRootType(), null, true);
+    }
+
+    private GraphQLObjectType getRootType() {
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+            return assertNotNull(schema.getMutationType());
+        } else if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
+            return assertNotNull(schema.getQueryType());
+        } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
+            return assertNotNull(schema.getSubscriptionType());
+        } else {
+            return assertShouldNeverHappen();
+        }
     }
 
     public <T> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
