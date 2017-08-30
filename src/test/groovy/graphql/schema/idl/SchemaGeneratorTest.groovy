@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.language.EnumValueDefinition
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
@@ -966,23 +967,34 @@ class SchemaGeneratorTest extends Specification {
         schema.getType("UnReferencedD") instanceof GraphQLUnionType
     }
 
-    def "scalar default value is parsed"() {
+    def "scalar and enum default value is parsed"() {
         def spec = """
+            enum Enum {
+                A
+                B
+                C
+            }
             type Query {
-              field(arg1 : Int! = 10, arg2 : [Int!]! = [20]) : String
+              field(intArg : Int! = 10, listArg : [Int!]! = [20], enumArg : Enum = A) : String
             }
         """
+        def enumValuesProvider = new NaturalEnumValuesProvider<ExampleEnum>(ExampleEnum.class)
 
-        def schema = schema(spec)
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Enum", { TypeRuntimeWiring.Builder it -> it.enumValues(enumValuesProvider) } as UnaryOperator)
+                .build()
+        def schema = schema(spec, wiring)
         schema.getType("Query") instanceof GraphQLObjectType
         GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
-        Object arg1 = query.getFieldDefinition("field").getArgument("arg1").defaultValue
-        Object arg2 = query.getFieldDefinition("field").getArgument("arg2").defaultValue
+        Object intValue = query.getFieldDefinition("field").getArgument("intArg").defaultValue
+        Object listValue = query.getFieldDefinition("field").getArgument("listArg").defaultValue
+        Object enumValue = query.getFieldDefinition("field").getArgument("enumArg").defaultValue;
 
         expect:
-        arg1 instanceof Integer
-        arg2 instanceof List
-        (arg2 as List).get(0) instanceof Integer
+        intValue instanceof Integer
+        listValue instanceof List
+        (listValue as List).get(0) instanceof Integer
+        enumValue == ExampleEnum.A
     }
 
     def "input object default value is parsed"() {
