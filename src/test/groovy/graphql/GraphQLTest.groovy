@@ -7,6 +7,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
@@ -670,5 +671,66 @@ class GraphQLTest extends Specification {
         "{ field {field {field {field {scalar}}}} }"                | _
         "{ f2:field {scalar} f1: field{scalar} f3: field {scalar}}" | _
     }
+
+    @Unroll
+    def "validation error with (#instrumentationName)"() {
+        given:
+        GraphQLObjectType foo = newObject()
+                .name("Foo")
+                .withInterface(new GraphQLTypeReference("Node"))
+                .field(
+                { field ->
+                    field
+                            .name("id")
+                            .type(Scalars.GraphQLID)
+                } as UnaryOperator)
+                .build()
+
+        GraphQLInterfaceType node = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(
+                { field ->
+                    field
+                            .name("id")
+                            .type(Scalars.GraphQLID)
+                } as UnaryOperator)
+                .typeResolver({ type -> foo })
+                .build()
+
+        GraphQLObjectType query = newObject()
+                .name("RootQuery")
+                .field(
+                { field ->
+                    field
+                            .name("a")
+                            .type(node)
+                } as UnaryOperator)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .query(query)
+                .build();
+
+        GraphQL graphQL = GraphQL.newGraphQL(schema)
+                .instrumentation(instrumentation)
+                .build()
+
+        ExecutionInput executionInput = newExecutionInput()
+                .query("{a}")
+                .build()
+
+        when:
+        def result = graphQL.execute(executionInput);
+
+        then:
+        result.errors.size() == 1
+        result.errors[0].message.contains("Sub selection required")
+
+        where:
+        instrumentationName    | instrumentation
+        'max query depth'      | new MaxQueryDepthInstrumentation(10)
+        'max query complexity' | new MaxQueryComplexityInstrumentation(10)
+    }
+
 
 }
