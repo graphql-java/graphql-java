@@ -47,13 +47,11 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return (result, throwable) -> {
-            QueryTraversal queryTraversal = new QueryTraversal(
-                    parameters.getSchema(),
-                    parameters.getDocument(),
-                    parameters.getOperation(),
-                    parameters.getVariables()
-            );
+        return (errors, throwable) -> {
+            if ((errors != null && errors.size() > 0) || throwable != null) {
+                return;
+            }
+            QueryTraversal queryTraversal = newQueryTraversal(parameters);
 
             Map<QueryVisitorEnvironment, List<Integer>> valuesByParent = new LinkedHashMap<>();
             queryTraversal.visitPostOrder(env -> {
@@ -71,6 +69,15 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
                 throw new AbortExecutionException("maximum query complexity exceeded " + totalComplexity + " > " + maxComplexity);
             }
         };
+    }
+
+    QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
+        return new QueryTraversal(
+                parameters.getSchema(),
+                parameters.getDocument(),
+                parameters.getOperation(),
+                parameters.getVariables()
+        );
     }
 
     private int calculateComplexity(QueryVisitorEnvironment queryVisitorEnvironment, int childsComplexity) {

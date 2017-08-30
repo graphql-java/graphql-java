@@ -8,6 +8,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
@@ -672,6 +673,7 @@ class GraphQLTest extends Specification {
         "{ field {field {field {field {scalar}}}} }"                | _
         "{ f2:field {scalar} f1: field{scalar} f3: field {scalar}}" | _
     }
+
 
     @Unroll
     def "validation error with (#instrumentationName)"() {
