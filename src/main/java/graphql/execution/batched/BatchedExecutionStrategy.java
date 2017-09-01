@@ -106,17 +106,15 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                              Queue<ExecutionNode> nodes,
                              Iterator<String> curFieldNames,
                              CompletableFuture<ExecutionResult> overallResult) {
-
-        if (!curFieldNames.hasNext() && nodes.isEmpty()) {
-            overallResult.complete(new ExecutionResultImpl(root.getParentResults().get(0).toObject(), executionContext.getErrors()));
-            return;
-        }
-
-        if (!curFieldNames.hasNext()) {
+        if (!curFieldNames.hasNext() && !nodes.isEmpty()) {
             curNode = nodes.poll();
             curFieldNames = curNode.getFields().keySet().iterator();
         }
 
+        if (!curFieldNames.hasNext()) {
+            overallResult.complete(new ExecutionResultImpl(root.getParentResults().get(0).toObject(), executionContext.getErrors()));
+            return;
+        }
 
         String fieldName = curFieldNames.next();
 
