@@ -379,4 +379,12 @@ class BatchedExecutionStrategyTest extends Specification {
         runTestBatching(query, expected)
         runTestBatchingExpectErrors(query, new BatchAssertionFailed(), false)
     }
+
+    def "Any Iterable is accepted as GraphQL list value"() {
+        given:
+        String query = "{ string(value: \"test\"){ anyIterable } }"
+        Map<String, Object> expected = ["string": ["anyIterable": ["test", "end"]]]
+        expect:
+        runTest(query, expected)
+    }
 }

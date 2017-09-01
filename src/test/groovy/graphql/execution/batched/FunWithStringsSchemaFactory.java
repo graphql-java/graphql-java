@@ -3,9 +3,7 @@ package graphql.execution.batched;
 import graphql.Scalars;
 import graphql.schema.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FunWithStringsSchemaFactory {
@@ -58,6 +56,19 @@ public class FunWithStringsSchemaFactory {
                     retVal.add("null".equals(s) ? null : s);
                 }
                 retVal.add("badValue");
+                return retVal;
+            }
+        });
+
+        factory.setAnyIterable(new DataFetcher() {
+            @Override
+            @Batched
+            @SuppressWarnings("unchecked")
+            public Object get(DataFetchingEnvironment environment) {
+                List<Iterable<String>> retVal = new ArrayList<>();
+                for (String s: (List<String>) environment.getSource()) {
+                    retVal.add(new LinkedHashSet<>(Arrays.asList(s, "end")));
+                }
                 return retVal;
             }
         });
@@ -201,6 +212,11 @@ public class FunWithStringsSchemaFactory {
         return retVal;
     };
 
+    public DataFetcher anyIterableFetcher = e -> {
+        String source = e.getSource();
+        return new LinkedHashSet<>(Arrays.asList(source, "end"));
+    };
+
     public DataFetcher appendFetcher = e -> ((String)e.getSource()) + e.getArgument("text");
 
     public void setWordsAndLettersFetcher(DataFetcher fetcher) {
@@ -231,6 +247,10 @@ public class FunWithStringsSchemaFactory {
         this.returnBadListFetcher = fetcher;
     }
 
+    public void setAnyIterable(DataFetcher fetcher) {
+        this.anyIterableFetcher = fetcher;
+    }
+
     GraphQLSchema createSchema() {
 
         GraphQLObjectType stringObjectType = GraphQLObjectType.newObject()
@@ -255,6 +275,10 @@ public class FunWithStringsSchemaFactory {
                         .name("returnBadList")
                         .type(Scalars.GraphQLString)
                         .dataFetcher(returnBadListFetcher))
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("anyIterable")
+                        .type(new GraphQLList(Scalars.GraphQLString))
+                        .dataFetcher(anyIterableFetcher))
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("shatter")
                         .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject")))))
