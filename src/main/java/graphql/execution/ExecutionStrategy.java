@@ -399,7 +399,7 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
-    private Iterable<Object> toIterable(Object result) {
+    protected Iterable<Object> toIterable(Object result) {
         if (result.getClass().isArray()) {
             result = Arrays.asList((Object[]) result);
         }

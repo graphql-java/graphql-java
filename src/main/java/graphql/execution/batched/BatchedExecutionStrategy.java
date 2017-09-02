@@ -201,7 +201,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
 
             MapOrList listResult = mapOrList.createAndPutList(fieldName);
-            for (Object rawValue : (Iterable<Object>) value.getValue()) {
+            for (Object rawValue : toIterable(value.getValue())) {
                 flattenedValues.add(new FetchedValue(listResult, rawValue));
             }
         }
