@@ -29,14 +29,15 @@ import graphql.schema.GraphQLUnionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
@@ -45,6 +46,7 @@ import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.stream.Collectors.toList;
 
 /**
  * An execution strategy is give a list of fields from the graphql query to execute and find values for using a recursive strategy.
@@ -401,7 +403,9 @@ public abstract class ExecutionStrategy {
 
     private Iterable<Object> toIterable(Object result) {
         if (result.getClass().isArray()) {
-            result = Arrays.asList((Object[]) result);
+            return IntStream.range(0, Array.getLength(result))
+                    .mapToObj(i -> Array.get(result, i))
+                    .collect(toList());
         }
         //noinspection unchecked
         return (Iterable<Object>) result;

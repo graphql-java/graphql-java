@@ -55,6 +55,7 @@ class ExecutionStrategyTest extends Specification {
         new ExecutionContext(NoOpInstrumentation.INSTANCE, executionId, schema, null, executionStrategy, executionStrategy, executionStrategy, null, null, variables, "context", "root")
     }
 
+    @SuppressWarnings("GroovyAssignabilityCheck")
     def "complete values always calls query strategy to execute more"() {
         given:
         def dataFetcher = Mock(DataFetcher)
@@ -479,6 +480,24 @@ class ExecutionStrategyTest extends Specification {
         thrown(CompletionException)
         executionContext.errors.size() == 1 // only 1 error
         executionContext.errors[0] instanceof ExceptionWhileDataFetching
+    }
 
+    def "#163 completes value for an primitive type array"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        long[] result = [1L,2L,3L]
+
+        def parameters = newParameters()
+                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(new GraphQLList(Scalars.GraphQLLong)))
+                .source(result)
+                .fields(["fld": [new Field()]])
+                .field([new Field()])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+
+        then:
+        executionResult.get().data == [1L,2L,3L]
     }
 }
