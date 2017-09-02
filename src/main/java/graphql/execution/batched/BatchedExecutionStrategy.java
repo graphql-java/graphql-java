@@ -415,15 +415,21 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     private List<Object> assertResult(List<MapOrList> parentResults, Object result) {
-        if (result != null && !(result instanceof List)) {
-            throw new BatchAssertionFailed("invalid result from DataFetcher: List expected");
+        if (result != null && !(result instanceof Iterable)) {
+            throw new BatchAssertionFailed(String.format("BatchedDataFetcher provided an invalid result: Iterable expected but got '%s'. Affected fields are set to null.", result.getClass().getName()));
         }
         @SuppressWarnings("unchecked")
-        List<Object> values = (List<Object>) result;
-        if (values == null || values.size() != parentResults.size()) {
-            throw new BatchAssertionFailed("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
+        Iterable<Object> iterableResult = (Iterable<Object>) result;
+        if (iterableResult == null) {
+            throw new BatchAssertionFailed("BatchedDataFetcher provided a null Iterable of result values. Affected fields are set to null.");
         }
-        return values;
+        long size = iterableResult.spliterator().estimateSize();
+        if (size != parentResults.size()) {
+            throw new BatchAssertionFailed(String.format("BatchedDataFetcher provided invalid number of result values, expected %d but got %d. Affected fields are set to null.", parentResults.size(), size));
+        }
+        List<Object> resultList = new ArrayList<>();
+        iterableResult.forEach(resultList::add);
+        return resultList;
     }
 
     private BatchedDataFetcher getDataFetcher(GraphQLFieldDefinition fieldDef) {
