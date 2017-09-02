@@ -100,7 +100,7 @@ public class FunWithStringsSchemaFactory {
                     splitSentence(source, sentence);
                     retVal.add(sentence);
                 }
-                return retVal;
+                return retVal.toArray();
             }
         });
 
