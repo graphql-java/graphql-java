@@ -6,6 +6,7 @@ import graphql.schema.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FunWithStringsSchemaFactory {
@@ -203,6 +204,10 @@ public class FunWithStringsSchemaFactory {
 
     public DataFetcher appendFetcher = e -> ((String)e.getSource()) + e.getArgument("text");
 
+    public DataFetcher emptyOptionalFetcher = e -> Optional.empty();
+
+    public DataFetcher optionalFetcher = e -> Optional.of("673-optional-support");
+
     public void setWordsAndLettersFetcher(DataFetcher fetcher) {
         this.wordsAndLettersFetcher = fetcher;
     }
@@ -291,6 +296,22 @@ public class FunWithStringsSchemaFactory {
                                 .name("text")
                                 .type(Scalars.GraphQLString))
                         .dataFetcher(appendFetcher))
+
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("emptyOptional")
+                        .type(Scalars.GraphQLString)
+                        .argument(GraphQLArgument.newArgument()
+                                .name("text")
+                                .type(Scalars.GraphQLString))
+                        .dataFetcher(emptyOptionalFetcher))
+
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("optional")
+                        .type(Scalars.GraphQLString)
+                        .argument(GraphQLArgument.newArgument()
+                                .name("text")
+                                .type(Scalars.GraphQLString))
+                        .dataFetcher(optionalFetcher))
 
                 .build();
 

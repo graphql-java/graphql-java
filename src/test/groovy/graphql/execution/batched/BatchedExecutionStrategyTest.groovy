@@ -379,4 +379,16 @@ class BatchedExecutionStrategyTest extends Specification {
         runTestBatching(query, expected)
         runTestBatchingExpectErrors(query, new BatchAssertionFailed(), false)
     }
+
+    def "#673 optional support"() {
+        given:
+        String query = "{ string(value: \"673-optional-support\"){emptyOptional, optional} }"
+
+        def expected = [string: [emptyOptional:null, optional:"673-optional-support"]]
+        println expected
+
+        expect:
+        runTest(query, expected)
+    }
+
 }
