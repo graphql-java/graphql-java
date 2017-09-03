@@ -12,6 +12,8 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.language.Document;
 import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -47,8 +49,15 @@ public class Execution {
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
 
+        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
+        Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
+        OperationDefinition operationDefinition = getOperationResult.operationDefinition;
+
+        ValuesResolver valuesResolver = new ValuesResolver();
+        Map<String, Object> inputVariables = executionInput.getVariables();
+        Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operationDefinition.getVariableDefinitions(), inputVariables);
+
         ExecutionContext executionContext = new ExecutionContextBuilder()
-                .valuesResolver(new ValuesResolver())
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
                 .executionId(executionId)
@@ -58,9 +67,9 @@ public class Execution {
                 .subscriptionStrategy(subscriptionStrategy)
                 .context(executionInput.getContext())
                 .root(executionInput.getRoot())
-                .document(document)
-                .operationName(executionInput.getOperationName())
-                .variables(executionInput.getVariables())
+                .fragmentsByName(fragmentsByName)
+                .variables(variableValues)
+                .operationDefinition(operationDefinition)
                 .build();
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }

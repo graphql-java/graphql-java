@@ -2,19 +2,17 @@ package graphql.execution;
 
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.language.Document;
 import graphql.language.FragmentDefinition;
-import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
 public class ExecutionContextBuilder {
 
-    private ValuesResolver valuesResolver;
     private Instrumentation instrumentation;
     private ExecutionId executionId;
     private InstrumentationState instrumentationState;
@@ -24,14 +22,9 @@ public class ExecutionContextBuilder {
     private ExecutionStrategy subscriptionStrategy;
     private Object context;
     private Object root;
-    private Document document;
-    private String operationName;
-    private Map<String, Object> variables;
-
-    public ExecutionContextBuilder valuesResolver(ValuesResolver valuesResolver) {
-        this.valuesResolver = valuesResolver;
-        return this;
-    }
+    private OperationDefinition operationDefinition;
+    private Map<String, Object> variables = new HashMap<>();
+    private Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
         this.instrumentation = instrumentation;
@@ -78,18 +71,18 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContextBuilder document(Document document) {
-        this.document = document;
-        return this;
-    }
-
-    public ExecutionContextBuilder operationName(String operationName) {
-        this.operationName = operationName;
-        return this;
-    }
-
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
         this.variables = variables;
+        return this;
+    }
+
+    public ExecutionContextBuilder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
+        this.fragmentsByName = fragmentsByName;
+        return this;
+    }
+
+    public ExecutionContextBuilder operationDefinition(OperationDefinition operationDefinition) {
+        this.operationDefinition = operationDefinition;
         return this;
     }
 
@@ -97,11 +90,6 @@ public class ExecutionContextBuilder {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
 
-        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
-        OperationDefinition operationDefinition = getOperationResult.operationDefinition;
-
-        Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operationDefinition.getVariableDefinitions(), variables);
 
         return new ExecutionContext(
                 instrumentation,
@@ -113,7 +101,7 @@ public class ExecutionContextBuilder {
                 subscriptionStrategy,
                 fragmentsByName,
                 operationDefinition,
-                variableValues,
+                variables,
                 context,
                 root);
     }
