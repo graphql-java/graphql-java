@@ -15,6 +15,7 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
+import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
@@ -55,7 +56,9 @@ public class Execution {
 
         ValuesResolver valuesResolver = new ValuesResolver();
         Map<String, Object> inputVariables = executionInput.getVariables();
-        Map<String, Object> variableValues = valuesResolver.getVariableValues(graphQLSchema, operationDefinition.getVariableDefinitions(), inputVariables);
+        List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
+
+        Map<String, Object> variableValues = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .instrumentation(instrumentation)

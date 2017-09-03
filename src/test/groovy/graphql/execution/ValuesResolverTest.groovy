@@ -2,14 +2,30 @@ package graphql.execution
 
 import graphql.GraphQLException
 import graphql.TestUtil
-import graphql.language.*
+import graphql.language.Argument
+import graphql.language.ArrayValue
+import graphql.language.BooleanValue
+import graphql.language.EnumValue
+import graphql.language.IntValue
+import graphql.language.ListType
+import graphql.language.NonNullType
+import graphql.language.ObjectField
+import graphql.language.ObjectValue
+import graphql.language.StringValue
+import graphql.language.TypeName
+import graphql.language.Value
+import graphql.language.VariableDefinition
+import graphql.language.VariableReference
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import static graphql.Scalars.*
+import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLFloat
+import static graphql.Scalars.GraphQLInt
+import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
@@ -25,7 +41,7 @@ class ValuesResolverTest extends Specification {
         def schema = TestUtil.schemaWithInputType(inputType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", variableType)
         when:
-        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
         then:
         resolvedValues['variable'] == outputValue
 
@@ -34,7 +50,7 @@ class ValuesResolverTest extends Specification {
         GraphQLInt     | new TypeName("Int")     | 100          || 100
         GraphQLString  | new TypeName("String")  | 'someString' || 'someString'
         GraphQLBoolean | new TypeName("Boolean") | 'true'       || true
-        GraphQLFloat | new TypeName("Float") | '42.43' || 42.43d
+        GraphQLFloat   | new TypeName("Float")   | '42.43'      || 42.43d
 
     }
 
@@ -55,14 +71,14 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
 
         when:
-        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
         then:
         resolvedValues['variable'] == outputValue
         where:
-        inputValue              || outputValue
-        [name: 'a', id: 123]    || [name: 'a', id: 123]
-        [id: 123]               || [id: 123]
-        [name: 'x']             || [name: 'x']
+        inputValue           || outputValue
+        [name: 'a', id: 123] || [name: 'a', id: 123]
+        [id: 123]            || [id: 123]
+        [name: 'x']          || [name: 'x']
     }
 
 
@@ -76,7 +92,7 @@ class ValuesResolverTest extends Specification {
         }
 
     }
-    
+
     def "getVariableValues: object as variable input"() {
         given:
         def nameField = newInputObjectField()
@@ -95,7 +111,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def obj = new Person('a', 123)
-        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: obj])
+        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: obj])
         then:
         resolvedValues['variable'] == obj
     }
@@ -106,7 +122,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
         String value = "world"
         when:
-        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: value])
+        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: value])
         then:
         resolvedValues['variable'] == ['world']
 
@@ -158,14 +174,14 @@ class ValuesResolverTest extends Specification {
         where:
         inputValue << [
                 buildObjectLiteral([
-                        intKey: new IntValue(BigInteger.ONE),
+                        intKey   : new IntValue(BigInteger.ONE),
                         stringKey: new StringValue("world"),
                         subObject: [
                                 subKey: new BooleanValue(true)
                         ]
                 ]),
                 buildObjectLiteral([
-                        intKey: new IntValue(BigInteger.ONE),
+                        intKey   : new IntValue(BigInteger.ONE),
                         stringKey: new StringValue("world")
                 ]),
                 buildObjectLiteral([
@@ -206,7 +222,7 @@ class ValuesResolverTest extends Specification {
         where:
         inputValue << [
                 buildObjectLiteral([
-                        intKey: new IntValue(BigInteger.ONE),
+                        intKey   : new IntValue(BigInteger.ONE),
                         stringKey: new StringValue("world")
                 ]),
                 buildObjectLiteral([
@@ -316,7 +332,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Test"))
 
         when:
-        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
         then:
         resolvedValues['variable'] == outputValue
         where:
@@ -344,7 +360,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
 
         when:
-        def resolvedValues = resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
 
         then:
         resolvedValues['variable'] == outputValue
@@ -373,7 +389,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
 
         when:
-        resolver.getVariableValues(schema, [variableDefinition], [variable: inputValue])
+        resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
 
         then:
         thrown(GraphQLException)
@@ -392,7 +408,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition barVarDef = new VariableDefinition("bar", new TypeName("String"))
 
         when:
-        def resolvedValues = resolver.getVariableValues(schema, [fooVarDef, barVarDef], InputValue)
+        def resolvedValues = resolver.coerceArgumentValues(schema, [fooVarDef, barVarDef], InputValue)
 
         then:
         resolvedValues == outputValue
@@ -403,4 +419,16 @@ class ValuesResolverTest extends Specification {
         [foo: "added"]            || [foo: "added"]
     }
 
+    def "getVariableValues: null default value for non null type"() {
+        given:
+
+        def schema = TestUtil.schemaWithInputType(GraphQLNonNull.nonNull(GraphQLString))
+        VariableDefinition fooVarDef = new VariableDefinition("foo", new NonNullType(new TypeName("String")))
+
+        when:
+        resolver.coerceArgumentValues(schema, [fooVarDef], [:])
+
+        then:
+        thrown(GraphQLException)
+    }
 }
