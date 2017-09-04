@@ -8,6 +8,7 @@ import graphql.SerializationError
 import graphql.execution.instrumentation.NoOpInstrumentation
 import graphql.language.Argument
 import graphql.language.Field
+import graphql.language.OperationDefinition
 import graphql.language.SourceLocation
 import graphql.language.StringValue
 import graphql.parser.Parser
@@ -55,6 +56,7 @@ class ExecutionStrategyTest extends Specification {
         new ExecutionContext(NoOpInstrumentation.INSTANCE, executionId, schema, null, executionStrategy, executionStrategy, executionStrategy, null, null, variables, "context", "root")
     }
 
+    @SuppressWarnings("GroovyAssignabilityCheck")
     def "complete values always calls query strategy to execute more"() {
         given:
         def dataFetcher = Mock(DataFetcher)
@@ -68,15 +70,18 @@ class ExecutionStrategyTest extends Specification {
                 .field(fieldDefinition)
                 .build()
 
+        def document = new Parser().parseDocument("{someField}")
+        def operation = document.definitions[0] as OperationDefinition
+
         GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
         def builder = new ExecutionContextBuilder()
         builder.queryStrategy(Mock(ExecutionStrategy))
         builder.mutationStrategy(Mock(ExecutionStrategy))
         builder.subscriptionStrategy(Mock(ExecutionStrategy))
         builder.graphQLSchema(schema)
-        builder.document(new Parser().parseDocument("{someField}"))
+
+        builder.operationDefinition(operation)
         builder.executionId(ExecutionId.generate())
-        builder.valuesResolver(new ValuesResolver())
 
         def executionContext = builder.build()
         def result = new Object()

@@ -15,9 +15,6 @@ class ExecutionContextBuilderTest extends Specification {
         given:
         ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder()
 
-        ValuesResolver valuesResolver = Mock(ValuesResolver)
-        executionContextBuilder.valuesResolver(valuesResolver)
-
         Instrumentation instrumentation = Mock(Instrumentation)
         executionContextBuilder.instrumentation(instrumentation)
 
@@ -45,16 +42,15 @@ class ExecutionContextBuilderTest extends Specification {
         Document document = new Parser().parseDocument("query myQuery(\$var: String){...MyFragment} fragment MyFragment on Query{foo}")
         def operation = document.definitions[0] as OperationDefinition
         def fragment = document.definitions[1] as FragmentDefinition
-        executionContextBuilder.document(document)
+        executionContextBuilder.operationDefinition(operation)
 
-        String operationName = "myQuery"
-        executionContextBuilder.operationName(operationName)
+        executionContextBuilder.fragmentsByName([MyFragment:fragment])
 
         def variables = Collections.emptyMap()
         executionContextBuilder.variables(variables)
 
+        executionContextBuilder.variables([var: 'value'])
 
-        valuesResolver.getVariableValues(schema, operation.getVariableDefinitions(), variables) >> [var: 'value']
         when:
         def executionContext = executionContextBuilder.build()
 
