@@ -401,7 +401,7 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
-    private Iterable<Object> toIterable(Object result) {
+    protected Iterable<Object> toIterable(Object result) {
         if (result.getClass().isArray()) {
             return IntStream.range(0, Array.getLength(result))
                     .mapToObj(i -> Array.get(result, i))
