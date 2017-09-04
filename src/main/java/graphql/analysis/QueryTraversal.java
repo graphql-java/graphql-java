@@ -18,12 +18,17 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLUnmodifiedType;
+import graphql.schema.SchemaUtil;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.introspection.Introspection.SchemaMetaFieldDef;
+import static graphql.introspection.Introspection.TypeMetaFieldDef;
+import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 @Internal
 public class QueryTraversal {
@@ -37,6 +42,7 @@ public class QueryTraversal {
     private ConditionalNodes conditionalNodes = new ConditionalNodes();
 
     private ValuesResolver valuesResolver = new ValuesResolver();
+    private SchemaUtil schemaUtil = new SchemaUtil();
 
 
     public QueryTraversal(GraphQLSchema schema,
@@ -90,7 +96,7 @@ public class QueryTraversal {
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
-                GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(((Field) selection).getName());
+                GraphQLFieldDefinition fieldDefinition = getFieldDef(fieldsContainer, (Field) selection);
                 visitField(visitor, (Field) selection, fieldDefinition, type, parent, preOrder);
             } else if (selection instanceof InlineFragment) {
                 visitInlineFragment(visitor, (InlineFragment) selection, type, parent, preOrder);
@@ -98,6 +104,21 @@ public class QueryTraversal {
                 visitFragmentSpread(visitor, (FragmentSpread) selection, parent, preOrder);
             }
         }
+    }
+
+    protected GraphQLFieldDefinition getFieldDef(GraphQLFieldsContainer parentType, Field field) {
+        if (schema.getQueryType() == parentType) {
+            if (field.getName().equals(SchemaMetaFieldDef.getName())) {
+                return SchemaMetaFieldDef;
+            }
+            if (field.getName().equals(TypeMetaFieldDef.getName())) {
+                return TypeMetaFieldDef;
+            }
+        }
+        if (field.getName().equals(TypeNameMetaFieldDef.getName())) {
+            return TypeNameMetaFieldDef;
+        }
+        return assertNotNull(parentType.getFieldDefinition(field.getName()), "should not happen: unknown field " + field.getName());
     }
 
     private void visitFragmentSpread(QueryVisitor visitor, FragmentSpread fragmentSpread, QueryVisitorEnvironment parent, boolean preOrder) {
@@ -138,9 +159,10 @@ public class QueryTraversal {
         if (preOrder) {
             visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues));
         }
-        if (fieldDefinition.getType() instanceof GraphQLCompositeType) {
+        GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
+        if (unmodifiedType instanceof GraphQLCompositeType) {
             QueryVisitorEnvironment newParentEnvironment = new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues);
-            visitImpl(visitor, field.getSelectionSet(), (GraphQLCompositeType) fieldDefinition.getType(), newParentEnvironment, preOrder);
+            visitImpl(visitor, field.getSelectionSet(), (GraphQLCompositeType) unmodifiedType, newParentEnvironment, preOrder);
         }
         if (!preOrder) {
             visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues));

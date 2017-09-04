@@ -3,6 +3,8 @@ package graphql.execution.instrumentation
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.AsyncSerialExecutionStrategy
+import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.tracing.TracingInstrumentation
 import spock.lang.Specification
 
@@ -13,7 +15,7 @@ class TracingInstrumentationTest extends Specification {
         given:
 
         def query = """
-        query HeroNameAndFriendsQuery {
+        {
             hero {
                 id
                 appearsIn
@@ -21,15 +23,13 @@ class TracingInstrumentationTest extends Specification {
         }
         """
 
-
         when:
 
-        def instrumentation = new TracingInstrumentation();
+        def instrumentation = new TracingInstrumentation()
 
-        def strategy = new AsyncExecutionStrategy()
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
-                .queryExecutionStrategy(strategy)
+                .queryExecutionStrategy(testExecutionStrategy)
                 .instrumentation(instrumentation)
                 .build()
 
@@ -79,5 +79,11 @@ class TracingInstrumentationTest extends Specification {
 
         total >= fieldTotals
 
+        where:
+
+        testExecutionStrategy              | _
+        new AsyncExecutionStrategy()       | _
+        new AsyncSerialExecutionStrategy() | _
+        new BatchedExecutionStrategy()     | _
     }
 }
