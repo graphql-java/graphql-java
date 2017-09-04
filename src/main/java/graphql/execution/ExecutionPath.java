@@ -48,6 +48,8 @@ public class ExecutionPath {
     /**
      * Parses an execution path from the provided path string in the format /segment1/segment2[index]/segmentN
      *
+     * @param pathString the path string
+     *
      * @return a parsed execution path
      */
     public static ExecutionPath fromString(String pathString) {
@@ -177,7 +179,7 @@ public class ExecutionPath {
     private static class StringPathSegment implements PathSegment<String> {
         private final String value;
 
-        public StringPathSegment(String value) {
+        StringPathSegment(String value) {
             assertTrue(value != null && !value.isEmpty(), "empty path component");
             this.value = value;
         }
@@ -196,7 +198,7 @@ public class ExecutionPath {
     private static class IntPathSegment implements PathSegment<Integer> {
         private final int value;
 
-        public IntPathSegment(int value) {
+        IntPathSegment(int value) {
             this.value = value;
         }
 
