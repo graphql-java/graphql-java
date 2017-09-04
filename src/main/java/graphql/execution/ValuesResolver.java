@@ -31,21 +31,74 @@ import java.util.stream.Collectors;
 @Internal
 public class ValuesResolver {
 
-
-    public Map<String, Object> getVariableValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> args) {
-        Map<String, Object> result = new LinkedHashMap<>();
+    /**
+     * The http://facebook.github.io/graphql/#sec-Coercing-Variable-Values says :
+     *
+     * <pre>
+     * 1. Let coercedValues be an empty unordered Map.
+     * 2. Let variableDefinitions be the variables defined by operation.
+     * 3. For each variableDefinition in variableDefinitions:
+     *      a. Let variableName be the name of variableDefinition.
+     *      b. Let variableType be the expected type of variableDefinition.
+     *      c. Let defaultValue be the default value for variableDefinition.
+     *      d. Let value be the value provided in variableValues for the name variableName.
+     *      e. If value does not exist (was not provided in variableValues):
+     *          i. If defaultValue exists (including null):
+     *              1. Add an entry to coercedValues named variableName with the value defaultValue.
+     *          ii. Otherwise if variableType is a Non‐Nullable type, throw a query error.
+     *          iii. Otherwise, continue to the next variable definition.
+     *      f. Otherwise, if value cannot be coerced according to the input coercion rules of variableType, throw a query error.
+     *      g. Let coercedValue be the result of coercing value according to the input coercion rules of variableType.
+     *      h. Add an entry to coercedValues named variableName with the value coercedValue.
+     * 4. Return coercedValues.
+     * </pre>
+     *
+     * @param schema              the schema
+     * @param variableDefinitions the variable definitions
+     * @param variableValues      the supplied variables
+     *
+     * @return coerced variable values as a map
+     */
+    public Map<String, Object> coerceArgumentValues(GraphQLSchema schema, List<VariableDefinition> variableDefinitions, Map<String, Object> variableValues) {
+        Map<String, Object> coercedValues = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
-            String varName = variableDefinition.getName();
-            // we transfer the variable as field arguments if its present as value
-            if (args.containsKey(varName)) {
-                Object arg = args.get(varName);
-                Object variableValue = getVariableValue(schema, variableDefinition, arg);
-                result.put(varName, variableValue);
+            String variableName = variableDefinition.getName();
+            GraphQLType variableType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
+
+            // 3.e
+            if (!variableValues.containsKey(variableName)) {
+                Value defaultValue = variableDefinition.getDefaultValue();
+                if (defaultValue != null) {
+                    // 3.e.i
+                    Object coercedValue = coerceValueAst(variableType, variableDefinition.getDefaultValue(), null);
+                    coercedValues.put(variableName, coercedValue);
+                } else if (isNonNullType(variableType)) {
+                    // 3.e.ii
+                    throw new NonNullableValueCoercedAsNullException(variableType);
+                }
+            } else {
+                Object value = variableValues.get(variableName);
+                // 3.f
+                Object coercedValue = getVariableValue(variableDefinition, variableType, value);
+                // 3.g
+                coercedValues.put(variableName, coercedValue);
             }
         }
-        return result;
+        return coercedValues;
     }
 
+    private Object getVariableValue(VariableDefinition variableDefinition, GraphQLType variableType, Object value) {
+
+        if (value == null && variableDefinition.getDefaultValue() != null) {
+            return coerceValueAst(variableType, variableDefinition.getDefaultValue(), null);
+        }
+
+        return coerceValue(variableType, value);
+    }
+
+    private boolean isNonNullType(GraphQLType variableType) {
+        return variableType instanceof GraphQLNonNull;
+    }
 
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes, List<Argument> arguments, Map<String, Object> variables) {
         if (argumentTypes.isEmpty()) {
@@ -81,25 +134,6 @@ public class ValuesResolver {
         return result;
     }
 
-
-    private Object getVariableValue(GraphQLSchema schema, VariableDefinition variableDefinition, Object inputValue) {
-        GraphQLType type = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
-
-        //noinspection ConstantConditions
-        if (!isValid(type, inputValue)) {
-            throw new GraphQLException("Invalid value for type");
-        }
-
-        if (inputValue == null && variableDefinition.getDefaultValue() != null) {
-            return coerceValueAst(type, variableDefinition.getDefaultValue(), null);
-        }
-
-        return coerceValue(type, inputValue);
-    }
-
-    private boolean isValid(GraphQLType type, Object inputValue) {
-        return true;
-    }
 
     private Object coerceValue(GraphQLType graphQLType, Object value) {
         if (graphQLType instanceof GraphQLNonNull) {

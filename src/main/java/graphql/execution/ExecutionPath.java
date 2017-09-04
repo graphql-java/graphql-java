@@ -1,10 +1,12 @@
 package graphql.execution;
 
+import graphql.AssertException;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
@@ -41,6 +43,57 @@ public class ExecutionPath {
         this.parent = assertNotNull(parent, "Must provide a parent path");
         this.segment = assertNotNull(segment, "Must provide a sub path");
         pathList = toListImpl();
+    }
+
+    /**
+     * Parses an execution path from the provided path string in the format /segment1/segment2[index]/segmentN
+     *
+     * @return a parsed execution path
+     */
+    public static ExecutionPath fromString(String pathString) {
+        pathString = pathString == null ? "" : pathString;
+        pathString = pathString.trim();
+        StringTokenizer st = new StringTokenizer(pathString, "/[]", true);
+        ExecutionPath path = ExecutionPath.rootPath();
+        while (st.hasMoreTokens()) {
+            String token = st.nextToken();
+            if ("/".equals(token)) {
+                assertTrue(st.hasMoreTokens(), mkErrMsg(pathString));
+                path = path.segment(st.nextToken());
+            } else if ("[".equals(token)) {
+                assertTrue(st.countTokens() >= 2, mkErrMsg(pathString));
+                path = path.segment(Integer.parseInt(st.nextToken()));
+                String closingBrace = st.nextToken();
+                assertTrue(closingBrace.equals("]"), mkErrMsg(pathString));
+            } else {
+                throw new AssertException(mkErrMsg(pathString));
+            }
+        }
+        return path;
+    }
+
+    /**
+     * This will create an execution path from the list of objects
+     *
+     * @param objects the path objects
+     *
+     * @return a new execution path
+     */
+    public static ExecutionPath fromList(List<?> objects) {
+        assertNotNull(objects);
+        ExecutionPath path = ExecutionPath.rootPath();
+        for (Object object : objects) {
+            if (object instanceof Number) {
+                path = path.segment(((Number) object).intValue());
+            } else {
+                path = path.segment(String.valueOf(object));
+            }
+        }
+        return path;
+    }
+
+    private static String mkErrMsg(String pathString) {
+        return "Invalid path string : '" + pathString + "'";
     }
 
     /**

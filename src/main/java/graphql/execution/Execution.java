@@ -4,21 +4,28 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.MutationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.fieldvalidation.FieldArgumentValidationSupport;
+import graphql.execution.fieldvalidation.FieldAndArgumentsValidator;
 import graphql.language.Document;
 import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
+import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -37,18 +44,37 @@ public class Execution {
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
+    private final Optional<FieldAndArgumentsValidator> fieldArgumentValidator;
 
-    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation) {
+    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation, Optional<FieldAndArgumentsValidator> fieldArgumentValidator) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
+        this.fieldArgumentValidator = fieldArgumentValidator;
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
 
+        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
+        Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
+        OperationDefinition operationDefinition = getOperationResult.operationDefinition;
+
+        ValuesResolver valuesResolver = new ValuesResolver();
+        Map<String, Object> inputVariables = executionInput.getVariables();
+        List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
+
+        Map<String, Object> coercedVariables = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
+
+        // consumers can validate their own arguments prior to query execution
+        if (fieldArgumentValidator.isPresent()) {
+            List<GraphQLError> errors = FieldArgumentValidationSupport.validateFieldsAndArguments(fieldArgumentValidator.get(), graphQLSchema, document, operationDefinition, coercedVariables);
+            if (errors != null && !errors.isEmpty()) {
+                return CompletableFuture.completedFuture(new ExecutionResultImpl(errors));
+            }
+        }
+
         ExecutionContext executionContext = new ExecutionContextBuilder()
-                .valuesResolver(new ValuesResolver())
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
                 .executionId(executionId)
@@ -58,12 +84,13 @@ public class Execution {
                 .subscriptionStrategy(subscriptionStrategy)
                 .context(executionInput.getContext())
                 .root(executionInput.getRoot())
-                .document(document)
-                .operationName(executionInput.getOperationName())
-                .variables(executionInput.getVariables())
+                .fragmentsByName(fragmentsByName)
+                .variables(coercedVariables)
+                .operationDefinition(operationDefinition)
                 .build();
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
+
 
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
