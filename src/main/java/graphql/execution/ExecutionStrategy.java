@@ -389,7 +389,7 @@ public abstract class ExecutionStrategy {
      *
      * @return an un-boxed result
      */
-    private Object unboxPossibleOptional(Object result) {
+    protected Object unboxPossibleOptional(Object result) {
         if (result instanceof Optional) {
             Optional optional = (Optional) result;
             if (optional.isPresent()) {

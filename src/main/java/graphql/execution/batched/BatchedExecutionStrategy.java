@@ -202,6 +202,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
             MapOrList listResult = mapOrList.createAndPutList(fieldName);
             for (Object rawValue : (List<Object>) value.getValue()) {
+                rawValue = unboxPossibleOptional(rawValue);
                 flattenedValues.add(new FetchedValue(listResult, rawValue));
             }
         }
@@ -408,7 +409,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             List<Object> values = result;
             List<FetchedValue> retVal = new ArrayList<>();
             for (int i = 0; i < parentResults.size(); i++) {
-                retVal.add(new FetchedValue(parentResults.get(i), values.get(i)));
+                Object value = unboxPossibleOptional(values.get(i));
+                retVal.add(new FetchedValue(parentResults.get(i), value));
             }
             return retVal;
         };
