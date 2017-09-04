@@ -196,7 +196,7 @@ class QueryTraversalTest extends Specification {
     }
 
     @Unroll
-    def "simple query: (#order)"() {
+    def "simple query (#order)"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -223,6 +223,44 @@ class QueryTraversalTest extends Specification {
                     it.parentType.name == "Foo" &&
                     it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
         })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+    }
+
+    @Unroll
+    def "query with non null and lists (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo!
+                foo2: [Foo]
+                foo3: [Foo!]
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {bar foo { subFoo} foo2 { subFoo} foo3 { subFoo}}
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.wrappedType.name == "Foo" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parentType.name == "Foo" &&
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.wrappedType.name == "Foo"
+        })
+        2 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "subFoo" })
 
         where:
         order       | visitFn
@@ -631,6 +669,41 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "CatOrDog" && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" })
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
+    def "works with introspection fields"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {foo {__typename subFoo} 
+            __schema{  types { name } }
+            __type(name: "Foo") { name } 
+            }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "__schema" && it.fieldDefinition.type.wrappedType.name == "__Schema" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "__type" && it.fieldDefinition.type.name == "__Type" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "types" })
+        2 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "name" })
 
         where:
         order       | visitFn
