@@ -235,7 +235,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
 
             MapOrList listResult = mapOrList.createAndPutList(fieldName);
-            for (Object rawValue : (List<Object>) value.getValue()) {
+            for (Object rawValue : toIterable(value.getValue())) {
                 rawValue = unboxPossibleOptional(rawValue);
                 flattenedValues.add(new FetchedValue(listResult, rawValue));
             }
@@ -461,12 +461,13 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         if (iterableResult == null) {
             throw new BatchAssertionFailed("BatchedDataFetcher provided a null Iterable of result values. Affected fields are set to null.");
         }
-        long size = iterableResult.spliterator().estimateSize();
+        List<Object> resultList = new ArrayList<>();
+        iterableResult.forEach(resultList::add);
+
+        long size = resultList.size();
         if (size != parentResults.size()) {
             throw new BatchAssertionFailed(String.format("BatchedDataFetcher provided invalid number of result values, expected %d but got %d. Affected fields are set to null.", parentResults.size(), size));
         }
-        List<Object> resultList = new ArrayList<>();
-        iterableResult.forEach(resultList::add);
         return resultList;
     }
 

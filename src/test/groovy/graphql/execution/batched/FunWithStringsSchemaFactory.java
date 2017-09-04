@@ -14,6 +14,8 @@ import graphql.schema.GraphQLTypeReference;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -69,6 +71,19 @@ public class FunWithStringsSchemaFactory {
                     retVal.add("null".equals(s) ? null : s);
                 }
                 retVal.add("badValue");
+                return retVal;
+            }
+        });
+
+        factory.setAnyIterable(new DataFetcher() {
+            @Override
+            @Batched
+            @SuppressWarnings("unchecked")
+            public Object get(DataFetchingEnvironment environment) {
+                List<Iterable<String>> retVal = new ArrayList<>();
+                for (String s : (List<String>) environment.getSource()) {
+                    retVal.add(new LinkedHashSet<>(Arrays.asList(s, "end")));
+                }
                 return retVal;
             }
         });
@@ -158,6 +173,10 @@ public class FunWithStringsSchemaFactory {
 
     }
 
+    private void setAnyIterable(DataFetcher fetcher) {
+        this.anyIterableFetcher = fetcher;
+    }
+
     private static void splitSentence(String source, List<List<String>> sentence) {
         for (String word : source.split(" ")) {
             List<String> letters = new ArrayList<>();
@@ -217,11 +236,16 @@ public class FunWithStringsSchemaFactory {
 
     private DataFetcher appendFetcher = e -> ((String) e.getSource()) + e.getArgument("text");
 
-    public DataFetcher emptyOptionalFetcher = e -> Optional.empty();
+    private DataFetcher emptyOptionalFetcher = e -> Optional.empty();
 
-    public DataFetcher optionalFetcher = e -> Optional.of("673-optional-support");
+    private DataFetcher optionalFetcher = e -> Optional.of("673-optional-support");
 
-    public void setWordsAndLettersFetcher(DataFetcher fetcher) {
+    private DataFetcher anyIterableFetcher = e -> {
+        String source = e.getSource();
+        return new LinkedHashSet<>(Arrays.asList(source, "end"));
+    };
+
+    private void setWordsAndLettersFetcher(DataFetcher fetcher) {
         this.wordsAndLettersFetcher = fetcher;
     }
 
@@ -273,6 +297,10 @@ public class FunWithStringsSchemaFactory {
                         .name("returnBadList")
                         .type(Scalars.GraphQLString)
                         .dataFetcher(returnBadListFetcher))
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("anyIterable")
+                        .type(new GraphQLList(Scalars.GraphQLString))
+                        .dataFetcher(anyIterableFetcher))
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("shatter")
                         .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject")))))

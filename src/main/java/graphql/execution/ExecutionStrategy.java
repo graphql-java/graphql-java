@@ -401,7 +401,14 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
-    private Iterable<Object> toIterable(Object result) {
+    /**
+     * Converts an object that is known to should be an Iterable into one
+     *
+     * @return an Iterable from that object
+     *
+     * @throws java.lang.ClassCastException if its not an Iterable
+     */
+    protected Iterable<Object> toIterable(Object result) {
         if (result.getClass().isArray()) {
             return IntStream.range(0, Array.getLength(result))
                     .mapToObj(i -> Array.get(result, i))

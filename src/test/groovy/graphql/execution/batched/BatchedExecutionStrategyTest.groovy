@@ -384,9 +384,18 @@ class BatchedExecutionStrategyTest extends Specification {
         given:
         String query = "{ string(value: \"673-optional-support\"){emptyOptional, optional} }"
 
-        def expected = [string: [emptyOptional:null, optional:"673-optional-support"]]
+        def expected = [string: [emptyOptional: null, optional: "673-optional-support"]]
         println expected
 
+        expect:
+        runTest(query, expected)
+    }
+
+
+    def "Any Iterable is accepted as GraphQL list value"() {
+        given:
+        String query = "{ string(value: \"test\"){ anyIterable } }"
+        Map<String, Object> expected = ["string": ["anyIterable": ["test", "end"]]]
         expect:
         runTest(query, expected)
     }
