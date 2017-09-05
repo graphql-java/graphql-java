@@ -52,7 +52,7 @@ public class ExecutionPath {
      *
      * @return a parsed execution path
      */
-    public static ExecutionPath fromString(String pathString) {
+    public static ExecutionPath parse(String pathString) {
         pathString = pathString == null ? "" : pathString;
         pathString = pathString.trim();
         StringTokenizer st = new StringTokenizer(pathString, "/[]", true);

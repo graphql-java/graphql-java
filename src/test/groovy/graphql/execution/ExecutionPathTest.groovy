@@ -140,7 +140,7 @@ class ExecutionPathTest extends Specification {
 
 
         expect:
-        ExecutionPath.fromString(pathString).toList() == expectedList
+        ExecutionPath.parse(pathString).toList() == expectedList
 
         where:
 
@@ -156,7 +156,7 @@ class ExecutionPathTest extends Specification {
     def "test worst case parsing"() {
 
         when:
-        ExecutionPath.fromString(badPathString)
+        ExecutionPath.parse(badPathString)
 
         then:
         thrown(AssertException)

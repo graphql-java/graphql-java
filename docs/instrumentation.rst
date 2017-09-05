@@ -270,16 +270,16 @@ to add simple per field checks rules.
 
 .. code-block:: java
 
-        ExecutionPath fieldPath = ExecutionPath.fromString("/user");
+        ExecutionPath fieldPath = ExecutionPath.parse("/user");
         FieldValidation fieldValidation = new SimpleFieldValidation()
-                .addRule(fieldPath, new BiFunction<FieldAndArguments, FieldValidationEnvironment, GraphQLError>() {
+                .addRule(fieldPath, new BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>>() {
                     @Override
-                    public GraphQLError apply(FieldAndArguments fieldAndArguments, FieldValidationEnvironment environment) {
+                    public Optional<GraphQLError> apply(FieldAndArguments fieldAndArguments, FieldValidationEnvironment environment) {
                         String nameArg = fieldAndArguments.getFieldArgument("name");
                         if (nameArg.length() > 255) {
-                            return environment.mkError("Invalid user name", fieldAndArguments);
+                            return Optional.of(environment.mkError("Invalid user name", fieldAndArguments));
                         }
-                        return null;
+                        return Optional.empty();
                     }
                 });
 

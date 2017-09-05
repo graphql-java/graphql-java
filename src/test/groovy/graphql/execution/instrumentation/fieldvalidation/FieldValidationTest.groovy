@@ -69,44 +69,51 @@ class FieldValidationTest extends Specification {
         def validator = new FieldValidation() {
             @Override
             List<GraphQLError> validateFields(FieldValidationEnvironment validationEnvironment) {
-                Map<String, Object> values
 
-                def fieldArguments = validationEnvironment.getFields()
+                // check we have the expected total list of fields
+                def allFields = validationEnvironment.getFields()
+                assert allFields.size() == 5
 
-                FieldAndArguments field1Args = fieldArguments.get(ExecutionPath.fromString("/field1"))
+                Map<String, Object> argValues
 
-                values = field1Args.getFieldArgumentValues()
+                def fieldArgumentsMap = validationEnvironment.getFieldsByPath()
 
-                assert values['inputData'] == [string: "string", int: 0]
-                assert values['id'] == "ID12345"
-                assert !values.containsKey('stringArg')
-                assert !values.containsKey('intArg')
+                FieldAndArguments field1Args = fieldArgumentsMap.get(ExecutionPath.parse("/field1"))[0]
+
+                argValues = field1Args.getArgumentValuesByName()
+
+                assert argValues['inputData'] == [string: "string", int: 0]
+                assert argValues['id'] == "ID12345"
+                assert !argValues.containsKey('stringArg')
+                assert !argValues.containsKey('intArg')
 
 
-                values = fieldArguments.get(ExecutionPath.fromString("/field2"))
-                        .getFieldArgumentValues()
+                argValues = fieldArgumentsMap.get(ExecutionPath.parse("/field2"))[0]
+                        .getArgumentValuesByName()
 
-                assert values['stringArg'] == "stringValue"
+                assert argValues['stringArg'] == "stringValue"
 
-                values = fieldArguments.get(ExecutionPath.fromString("/field3"))
-                        .getFieldArgumentValues()
+                argValues = fieldArgumentsMap.get(ExecutionPath.parse("/field3"))[0]
+                        .getArgumentValuesByName()
 
-                assert values['intArg'] == 666
+                assert argValues['intArg'] == 666
 
-                assert !fieldArguments.containsKey(ExecutionPath.fromString("/noArgField"))
+                assert !fieldArgumentsMap.containsKey(ExecutionPath.parse("/noArgField"))
 
-                values = fieldArguments.get(ExecutionPath.fromString("/field1/informationLink/informationString"))
-                        .getFieldArgumentValues()
+                argValues = fieldArgumentsMap.get(
+                        ExecutionPath.parse("/field1/informationLink/informationString"))[0]
+                        .getArgumentValuesByName()
 
-                assert values['fmt1'] == "inlineFmt1" // inlined from query
-                assert values['fmt2'] == "defaultFmt2" // defaulted from schema
+                assert argValues['fmt1'] == "inlineFmt1" // inlined from query
+                assert argValues['fmt2'] == "defaultFmt2" // defaulted from schema
 
-                def linkLink = fieldArguments.get(ExecutionPath.fromString("/field1/informationLink/informationLink/informationString"))
-                values = linkLink
-                        .getFieldArgumentValues()
+                def linkLink = fieldArgumentsMap.get(
+                        ExecutionPath.parse("/field1/informationLink/informationLink/informationString"))[0]
+                argValues = linkLink
+                        .getArgumentValuesByName()
 
-                assert values['fmt1'] == "fmt1Value" // from variables
-                assert values['fmt2'] == "defaultFmt2" // defaulted from schema
+                assert argValues['fmt1'] == "fmt1Value" // from variables
+                assert argValues['fmt2'] == "defaultFmt2" // defaulted from schema
 
                 // parent check
                 assert linkLink.getParentFieldAndArguments().getPath().toString() == "/field1/informationLink/informationLink"
@@ -144,17 +151,17 @@ class FieldValidationTest extends Specification {
                 fmt1Var     : "fmt1Value"
         ]
 
-        SimpleFieldValidation validator = new SimpleFieldValidation()
-                .addRule(ExecutionPath.fromString("/field1"),
+        SimpleFieldValidation validation = new SimpleFieldValidation()
+                .addRule(ExecutionPath.parse("/field1"),
                 { fieldAndArguments, env -> err("Not happy Jan!", env, fieldAndArguments) })
-                .addRule(ExecutionPath.fromString("/field1/informationLink/informationLink/informationString"),
+                .addRule(ExecutionPath.parse("/field1/informationLink/informationLink/informationString"),
                 { fieldAndArguments, env -> err("Also not happy Jan!", env, fieldAndArguments) })
-                .addRule(ExecutionPath.fromString("/does/not/exist"),
+                .addRule(ExecutionPath.parse("/does/not/exist"),
                 { fieldAndArguments, env -> err("Wont happen", env, fieldAndArguments) })
 
 
         when:
-        setupExecution(validator, query, variables)
+        setupExecution(validation, query, variables)
 
         then:
         def abortExecutionException = thrown(AbortExecutionException)
@@ -168,6 +175,101 @@ class FieldValidationTest extends Specification {
         errors[1].getMessage() == "Also not happy Jan!"
     }
 
+    def "test fragment value uniqueness support is handled"() {
+        given:
+
+        def variables = [
+                stringVar   : "stringValue",
+                intVar      : 666,
+                inputDataVar: [string: "string", int: 0],
+                idVar       : "ID12345",
+                fmt1Var     : "ok"
+        ]
+
+        def query = '''
+        query VarTest($stringVar : String, $intVar : Int, $inputDataVar : InputData, $idVar : ID, $fmt1Var : String) {
+            field1(inputData : $inputDataVar, id : $idVar) {
+                ...fragOnField 
+                ... on Information {  informationString (fmt1 : "notOK") }
+                ... on Information {  informationString (fmt1 : "alsoNotOK") }
+            }
+        }
+        
+        fragment fragOnField on Information {
+            informationString(fmt1 : $fmt1Var)
+        }
+        '''
+
+        SimpleFieldValidation validation = new SimpleFieldValidation()
+                .addRule(ExecutionPath.parse("/field1/informationString"),
+                { fieldAndArguments, env ->
+                    def value = fieldAndArguments.getArgumentValue("fmt1")
+                    if (value != "ok") {
+                        return err("Nope : " + value, env, fieldAndArguments)
+                    } else {
+                        return Optional.empty()
+                    }
+                }
+        )
+
+
+        when:
+        setupExecution(validation, query, variables)
+
+        then:
+        def abortExecutionException = thrown(AbortExecutionException)
+        def errors = abortExecutionException.getUnderlyingErrors()
+
+        errors.size() == 2
+        errors[0].getMessage() == "Nope : notOK"
+        errors[1].getMessage() == "Nope : alsoNotOK"
+    }
+
+    def "test aliased fields is handled"() {
+        given:
+
+        def variables = [
+                stringVar   : "stringValue",
+                intVar      : 666,
+                inputDataVar: [string: "string", int: 0],
+                idVar       : "ID12345",
+                fmt1Var     : "ok"
+        ]
+
+        def query = '''
+        query VarTest($stringVar : String, $intVar : Int, $inputDataVar : InputData, $idVar : ID, $fmt1Var : String) {
+            field1(inputData : $inputDataVar, id : $idVar) {
+                informationString(fmt1 : $fmt1Var)
+                alias1 : informationString(fmt1 : "alias1")
+                alias2 : informationString(fmt1 : "alias2")
+            }
+        }
+        '''
+
+        SimpleFieldValidation validation = new SimpleFieldValidation()
+                .addRule(ExecutionPath.parse("/field1/informationString"),
+                { fieldAndArguments, env ->
+                    String value = fieldAndArguments.getArgumentValue("fmt1")
+                    if (value.contains("alias")) {
+                        return err("Nope : " + value, env, fieldAndArguments)
+                    } else {
+                        return Optional.empty()
+                    }
+                }
+        )
+
+
+        when:
+        setupExecution(validation, query, variables)
+
+        then:
+        def abortExecutionException = thrown(AbortExecutionException)
+        def errors = abortExecutionException.getUnderlyingErrors()
+
+        errors.size() == 2
+        errors[0].getMessage() == "Nope : alias1"
+        errors[1].getMessage() == "Nope : alias2"
+    }
 
     def "test graphql from end to end"() {
 
@@ -193,8 +295,8 @@ class FieldValidationTest extends Specification {
     }
 
 
-    static GraphQLError err(String msg, FieldValidationEnvironment env, FieldAndArguments fieldAndArguments) {
-        env.mkError(msg, fieldAndArguments)
+    static Optional<GraphQLError> err(String msg, FieldValidationEnvironment env, FieldAndArguments fieldAndArguments) {
+        Optional.of(env.mkError(msg, fieldAndArguments))
     }
 
 

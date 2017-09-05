@@ -12,18 +12,20 @@ import graphql.language.SourceLocation;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.stream.Collectors;
 
 @Internal
 class FieldValidationSupport {
 
     static List<GraphQLError> validateFieldsAndArguments(FieldValidation fieldValidation, ExecutionContext executionContext) {
 
-        Map<ExecutionPath, FieldAndArguments> fieldArgumentsMap = new HashMap<>();
+        Map<ExecutionPath, List<FieldAndArguments>> fieldArgumentsMap = new LinkedHashMap<>();
 
         QueryTraversal queryTraversal = new QueryTraversal(
                 executionContext.getGraphQLSchema(),
@@ -38,7 +40,10 @@ class FieldValidationSupport {
                 // only fields that have arguments make any sense to placed in play
                 // since only they have variable input
                 FieldAndArguments fieldArguments = new FieldAndArgumentsImpl(traversalEnv);
-                fieldArgumentsMap.put(fieldArguments.getPath(), fieldArguments);
+                ExecutionPath path = fieldArguments.getPath();
+                List<FieldAndArguments> list = fieldArgumentsMap.getOrDefault(path, new ArrayList<>());
+                list.add(fieldArguments);
+                fieldArgumentsMap.put(path, list);
             }
         });
 
@@ -104,12 +109,12 @@ class FieldValidationSupport {
         }
 
         @Override
-        public Map<String, Object> getFieldArgumentValues() {
+        public Map<String, Object> getArgumentValuesByName() {
             return traversalEnv.getArguments();
         }
 
         @Override
-        public <T> T getFieldArgument(String argumentName) {
+        public <T> T getArgumentValue(String argumentName) {
             //noinspection unchecked
             return (T) traversalEnv.getArguments().get(argumentName);
         }
@@ -122,12 +127,15 @@ class FieldValidationSupport {
 
     private static class FieldValidationEnvironmentImpl implements FieldValidationEnvironment {
         private final ExecutionContext executionContext;
-        private final Map<ExecutionPath, FieldAndArguments> fieldArgumentsMap;
+        private final Map<ExecutionPath, List<FieldAndArguments>> fieldArgumentsMap;
+        private final List<FieldAndArguments> fieldArguments;
 
-        FieldValidationEnvironmentImpl(ExecutionContext executionContext, Map<ExecutionPath, FieldAndArguments> fieldArgumentsMap) {
+        FieldValidationEnvironmentImpl(ExecutionContext executionContext, Map<ExecutionPath, List<FieldAndArguments>> fieldArgumentsMap) {
             this.executionContext = executionContext;
             this.fieldArgumentsMap = fieldArgumentsMap;
+            this.fieldArguments = fieldArgumentsMap.values().stream().flatMap(List::stream).collect(Collectors.toList());
         }
+
 
         @Override
         public ExecutionContext getExecutionContext() {
@@ -135,7 +143,12 @@ class FieldValidationSupport {
         }
 
         @Override
-        public Map<ExecutionPath, FieldAndArguments> getFields() {
+        public List<FieldAndArguments> getFields() {
+            return fieldArguments;
+        }
+
+        @Override
+        public Map<ExecutionPath, List<FieldAndArguments>> getFieldsByPath() {
             return fieldArgumentsMap;
         }
 

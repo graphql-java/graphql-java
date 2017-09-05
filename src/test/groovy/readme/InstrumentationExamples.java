@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
@@ -159,16 +160,16 @@ public class InstrumentationExamples {
 
     private void fieldValidation() {
 
-        ExecutionPath fieldPath = ExecutionPath.fromString("/user");
+        ExecutionPath fieldPath = ExecutionPath.parse("/user");
         FieldValidation fieldValidation = new SimpleFieldValidation()
-                .addRule(fieldPath, new BiFunction<FieldAndArguments, FieldValidationEnvironment, GraphQLError>() {
+                .addRule(fieldPath, new BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>>() {
                     @Override
-                    public GraphQLError apply(FieldAndArguments fieldAndArguments, FieldValidationEnvironment environment) {
-                        String nameArg = fieldAndArguments.getFieldArgument("name");
+                    public Optional<GraphQLError> apply(FieldAndArguments fieldAndArguments, FieldValidationEnvironment environment) {
+                        String nameArg = fieldAndArguments.getArgumentValue("name");
                         if (nameArg.length() > 255) {
-                            return environment.mkError("Invalid user name", fieldAndArguments);
+                            return Optional.of(environment.mkError("Invalid user name", fieldAndArguments));
                         }
-                        return null;
+                        return Optional.empty();
                     }
                 });
 

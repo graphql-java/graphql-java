@@ -45,15 +45,15 @@ public interface FieldAndArguments {
      *
      * @return a map of argument names to values
      */
-    Map<String, Object> getFieldArgumentValues();
+    Map<String, Object> getArgumentValuesByName();
 
     /**
-     * This will return the field argument named and cast it to the desired type.
+     * This will return the named field argument value and cast it to the desired type.
      *
      * @param argumentName the name of the argument
-     * @param <T>          the type of the underlying object
+     * @param <T>          the type of the underlying value object
      *
      * @return a cast object of type T
      */
-    <T> T getFieldArgument(String argumentName);
+    <T> T getArgumentValue(String argumentName);
 }
