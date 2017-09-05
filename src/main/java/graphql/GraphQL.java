@@ -7,7 +7,6 @@ import graphql.execution.Execution;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
-import graphql.execution.fieldvalidation.FieldAndArgumentsValidator;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.UnaryOperator;
@@ -50,7 +48,6 @@ public class GraphQL {
     private final ExecutionIdProvider idProvider;
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
-    private final Optional<FieldAndArgumentsValidator> fieldArgumentValidator;
 
 
     /**
@@ -91,7 +88,7 @@ public class GraphQL {
      */
     @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE, Optional.empty());
+        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
     }
 
     /**
@@ -106,10 +103,10 @@ public class GraphQL {
      */
     @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE, Optional.empty());
+        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
     }
 
-    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider, Optional<FieldAndArgumentsValidator> fieldArgumentValidator) {
+    private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider) {
         this.graphQLSchema = assertNotNull(graphQLSchema, "queryStrategy must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
@@ -117,7 +114,6 @@ public class GraphQL {
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
         this.instrumentation = instrumentation;
         this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
-        this.fieldArgumentValidator = assertNotNull(fieldArgumentValidator);
     }
 
     /**
@@ -141,7 +137,6 @@ public class GraphQL {
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = NoOpInstrumentation.INSTANCE;
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
-        private Optional<FieldAndArgumentsValidator> fieldArgumentValidator = Optional.empty();
 
 
         public Builder(GraphQLSchema graphQLSchema) {
@@ -183,16 +178,11 @@ public class GraphQL {
             return this;
         }
 
-        public Builder fieldArgumentValidator(FieldAndArgumentsValidator fieldAndArgumentsValidator) {
-            this.fieldArgumentValidator = Optional.ofNullable(fieldAndArgumentsValidator);
-            return this;
-        }
-
         public GraphQL build() {
             assertNotNull(graphQLSchema, "queryStrategy must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
-            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation, preparsedDocumentProvider, fieldArgumentValidator);
+            return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation, preparsedDocumentProvider);
         }
     }
 
@@ -409,6 +399,9 @@ public class GraphQL {
             return executionResult;
         } catch (AbortExecutionException abortException) {
             ExecutionResultImpl executionResult = new ExecutionResultImpl(abortException);
+            if (!abortException.getUnderlyingErrors().isEmpty()) {
+                executionResult = new ExecutionResultImpl(abortException.getUnderlyingErrors());
+            }
             return CompletableFuture.completedFuture(executionResult);
         }
     }
@@ -471,7 +464,7 @@ public class GraphQL {
         String operationName = executionInput.getOperationName();
         Object context = executionInput.getContext();
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, fieldArgumentValidator);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
         ExecutionId executionId = idProvider.provide(query, operationName, context);
         return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
     }

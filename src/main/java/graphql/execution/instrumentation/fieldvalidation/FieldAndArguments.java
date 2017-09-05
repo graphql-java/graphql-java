@@ -1,4 +1,4 @@
-package graphql.execution.fieldvalidation;
+package graphql.execution.instrumentation.fieldvalidation;
 
 import graphql.PublicApi;
 import graphql.execution.ExecutionPath;
@@ -46,4 +46,14 @@ public interface FieldAndArguments {
      * @return a map of argument names to values
      */
     Map<String, Object> getFieldArgumentValues();
+
+    /**
+     * This will return the field argument named and cast it to the desired type.
+     *
+     * @param argumentName the name of the argument
+     * @param <T>          the type of the underlying object
+     *
+     * @return a cast object of type T
+     */
+    <T> T getFieldArgument(String argumentName);
 }

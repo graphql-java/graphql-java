@@ -2,11 +2,18 @@ package readme;
 
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.GraphQLError;
+import graphql.execution.ExecutionPath;
 import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.fieldvalidation.FieldAndArguments;
+import graphql.execution.instrumentation.fieldvalidation.FieldValidation;
+import graphql.execution.instrumentation.fieldvalidation.FieldValidationEnvironment;
+import graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation;
+import graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -24,10 +31,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 import static graphql.StarWarsSchema.queryType;
 
-@SuppressWarnings({"unused", "MismatchedQueryAndUpdateOfCollection"})
+@SuppressWarnings({"unused", "MismatchedQueryAndUpdateOfCollection", "Convert2Lambda"})
 public class InstrumentationExamples {
 
     private void specifyInstrumentation() {
@@ -145,6 +153,31 @@ public class InstrumentationExamples {
 
         GraphQL.newGraphQL(schema)
                 .instrumentation(chainedInstrumentation)
+                .build();
+
+    }
+
+    private void fieldValidation() {
+
+        ExecutionPath fieldPath = ExecutionPath.fromString("/user");
+        FieldValidation fieldValidation = new SimpleFieldValidation()
+                .addRule(fieldPath, new BiFunction<FieldAndArguments, FieldValidationEnvironment, GraphQLError>() {
+                    @Override
+                    public GraphQLError apply(FieldAndArguments fieldAndArguments, FieldValidationEnvironment environment) {
+                        String nameArg = fieldAndArguments.getFieldArgument("name");
+                        if (nameArg.length() > 255) {
+                            return environment.mkError("Invalid user name", fieldAndArguments);
+                        }
+                        return null;
+                    }
+                });
+
+        FieldValidationInstrumentation instrumentation = new FieldValidationInstrumentation(
+                fieldValidation
+        );
+
+        GraphQL.newGraphQL(schema)
+                .instrumentation(instrumentation)
                 .build();
 
     }

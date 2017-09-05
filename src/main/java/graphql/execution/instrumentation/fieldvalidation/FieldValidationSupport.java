@@ -1,18 +1,16 @@
-package graphql.execution.fieldvalidation;
+package graphql.execution.instrumentation.fieldvalidation;
 
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.analysis.QueryTraversal;
 import graphql.analysis.QueryVisitorEnvironment;
+import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionPath;
-import graphql.language.Document;
 import graphql.language.Field;
-import graphql.language.OperationDefinition;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLSchema;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,13 +19,18 @@ import java.util.Map;
 import java.util.Stack;
 
 @Internal
-public class FieldArgumentValidationSupport {
+class FieldValidationSupport {
 
-    public static List<GraphQLError> validateFieldsAndArguments(FieldAndArgumentsValidator fieldAndArgumentsValidator, GraphQLSchema schema, Document document, OperationDefinition operationDefinition, Map<String, Object> coercedVariables) {
+    static List<GraphQLError> validateFieldsAndArguments(FieldValidation fieldValidation, ExecutionContext executionContext) {
 
         Map<ExecutionPath, FieldAndArguments> fieldArgumentsMap = new HashMap<>();
 
-        QueryTraversal queryTraversal = new QueryTraversal(schema, document, operationDefinition.getName(), coercedVariables);
+        QueryTraversal queryTraversal = new QueryTraversal(
+                executionContext.getGraphQLSchema(),
+                executionContext.getDocument(),
+                executionContext.getOperationDefinition().getName(),
+                executionContext.getVariables()
+        );
         queryTraversal.visitPreOrder(traversalEnv -> {
             Field field = traversalEnv.getField();
             if (field.getArguments() != null && !field.getArguments().isEmpty()) {
@@ -39,10 +42,10 @@ public class FieldArgumentValidationSupport {
             }
         });
 
-        FieldAndArgumentsValidationEnvironment environment = new FieldAndArgumentsValidationEnvironmentImpl(schema, operationDefinition, fieldArgumentsMap);
+        FieldValidationEnvironment environment = new FieldValidationEnvironmentImpl(executionContext, fieldArgumentsMap);
         //
         // this will allow a consumer to plugin their own validation of fields and arguments
-        return fieldAndArgumentsValidator.validateFieldArguments(environment);
+        return fieldValidation.validateField(environment);
     }
 
     private static class FieldAndArgumentsImpl implements FieldAndArguments {
@@ -106,72 +109,77 @@ public class FieldArgumentValidationSupport {
         }
 
         @Override
+        public <T> T getFieldArgument(String argumentName) {
+            //noinspection unchecked
+            return (T) traversalEnv.getArguments().get(argumentName);
+        }
+
+        @Override
         public FieldAndArguments getParentFieldAndArguments() {
             return parentArgs;
         }
     }
 
-    private static class FieldAndArgumentsValidationEnvironmentImpl implements FieldAndArgumentsValidationEnvironment {
-        private final GraphQLSchema schema;
-        private final OperationDefinition operationDefinition;
+    private static class FieldValidationEnvironmentImpl implements FieldValidationEnvironment {
+        private final ExecutionContext executionContext;
         private final Map<ExecutionPath, FieldAndArguments> fieldArgumentsMap;
 
-        FieldAndArgumentsValidationEnvironmentImpl(GraphQLSchema schema, OperationDefinition operationDefinition, Map<ExecutionPath, FieldAndArguments> fieldArgumentsMap) {
-            this.schema = schema;
-            this.operationDefinition = operationDefinition;
+        FieldValidationEnvironmentImpl(ExecutionContext executionContext, Map<ExecutionPath, FieldAndArguments> fieldArgumentsMap) {
+            this.executionContext = executionContext;
             this.fieldArgumentsMap = fieldArgumentsMap;
         }
 
         @Override
-        public GraphQLSchema getSchema() {
-            return schema;
+        public ExecutionContext getExecutionContext() {
+            return executionContext;
         }
 
         @Override
-        public OperationDefinition getOperation() {
-            return operationDefinition;
-        }
-
-        @Override
-        public Map<ExecutionPath, FieldAndArguments> getFieldArguments() {
+        public Map<ExecutionPath, FieldAndArguments> getFields() {
             return fieldArgumentsMap;
         }
 
         @Override
-        public GraphQLError mkError(String msg, Field field, ExecutionPath path) {
-            return new FieldAndArgError(msg, field, path);
+        public GraphQLError mkError(String msg) {
+            return new FieldAndArgError(msg, null, null);
         }
 
-        private static class FieldAndArgError implements GraphQLError {
-            private final String message;
-            private final List<SourceLocation> locations;
-            private final List<Object> path;
-
-            public FieldAndArgError(String message, Field field, ExecutionPath path) {
-                this.message = message;
-                this.locations = field == null ? null : Collections.singletonList(field.getSourceLocation());
-                this.path = path == null ? null : path.toList();
-            }
-
-            @Override
-            public String getMessage() {
-                return message;
-            }
-
-            @Override
-            public ErrorType getErrorType() {
-                return ErrorType.ValidationError;
-            }
-
-            @Override
-            public List<SourceLocation> getLocations() {
-                return locations;
-            }
-
-            @Override
-            public List<Object> getPath() {
-                return path;
-            }
+        @Override
+        public GraphQLError mkError(String msg, FieldAndArguments fieldAndArguments) {
+            return new FieldAndArgError(msg, fieldAndArguments.getField(), fieldAndArguments.getPath());
         }
     }
+
+    private static class FieldAndArgError implements GraphQLError {
+        private final String message;
+        private final List<SourceLocation> locations;
+        private final List<Object> path;
+
+        FieldAndArgError(String message, Field field, ExecutionPath path) {
+            this.message = message;
+            this.locations = field == null ? null : Collections.singletonList(field.getSourceLocation());
+            this.path = path == null ? null : path.toList();
+        }
+
+        @Override
+        public String getMessage() {
+            return message;
+        }
+
+        @Override
+        public ErrorType getErrorType() {
+            return ErrorType.ValidationError;
+        }
+
+        @Override
+        public List<SourceLocation> getLocations() {
+            return locations;
+        }
+
+        @Override
+        public List<Object> getPath() {
+            return path;
+        }
+    }
+
 }

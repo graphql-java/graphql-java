@@ -1,10 +1,11 @@
-package graphql.execution.fieldvalidation
+package graphql.execution.instrumentation.fieldvalidation
 
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.GraphQLError
 import graphql.TestUtil
+import graphql.execution.AbortExecutionException
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.Execution
 import graphql.execution.ExecutionId
@@ -14,7 +15,7 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 
-class FieldAndArgumentsValidatorTest extends Specification {
+class FieldValidationTest extends Specification {
     def idl = """
             type Information {
                 informationString(fmt1 : String = "defaultFmt1", fmt2 : String = "defaultFmt2" ) : String
@@ -65,12 +66,12 @@ class FieldAndArgumentsValidatorTest extends Specification {
                 fmt1Var     : "fmt1Value"
         ]
 
-        def validator = new FieldAndArgumentsValidator() {
+        def validator = new FieldValidation() {
             @Override
-            List<GraphQLError> validateFieldArguments(FieldAndArgumentsValidationEnvironment validationEnvironment) {
+            List<GraphQLError> validateField(FieldValidationEnvironment validationEnvironment) {
                 Map<String, Object> values
 
-                def fieldArguments = validationEnvironment.getFieldArguments()
+                def fieldArguments = validationEnvironment.getFields()
 
                 FieldAndArguments field1Args = fieldArguments.get(ExecutionPath.fromString("/field1"))
 
@@ -100,45 +101,36 @@ class FieldAndArgumentsValidatorTest extends Specification {
                 assert values['fmt1'] == "inlineFmt1" // inlined from query
                 assert values['fmt2'] == "defaultFmt2" // defaulted from schema
 
-                values = fieldArguments.get(ExecutionPath.fromString("/field1/informationLink/informationLink/informationString"))
+                def linkLink = fieldArguments.get(ExecutionPath.fromString("/field1/informationLink/informationLink/informationString"))
+                values = linkLink
                         .getFieldArgumentValues()
-
 
                 assert values['fmt1'] == "fmt1Value" // from variables
                 assert values['fmt2'] == "defaultFmt2" // defaulted from schema
 
+                // parent check
+                assert linkLink.getParentFieldAndArguments().getPath().toString() == "/field1/informationLink/informationLink"
+                assert linkLink.getParentFieldAndArguments().getParentFieldAndArguments().getPath().toString() == "/field1/informationLink"
+                assert linkLink.getParentFieldAndArguments().getParentFieldAndArguments().getParentFieldAndArguments().getPath().toString() == "/field1"
+
 
                 return [
-                        validationEnvironment.mkError("Made up some error here", field1Args.getField(), field1Args.getPath())
+                        validationEnvironment.mkError("Made up some error here", field1Args)
                 ]
             }
         }
 
         when:
 
-        def result = setupExecution(validator, query, variables)
+        setupExecution(validator, query, variables)
 
         then:
-        result.get().getErrors().size() == 1
-        result.get().getErrors()[0].getMessage() == "Made up some error here"
-        result.get().getErrors()[0].getLocations().size() == 1
-        result.get().getErrors()[0].getPath() == ["field1"]
-    }
-
-    def "test graphql from end to end"() {
-
-        GraphQL graphql = GraphQL.newGraphQL(schema).fieldArgumentValidator(new FieldAndArgumentsValidator() {
-            @Override
-            List<GraphQLError> validateFieldArguments(FieldAndArgumentsValidationEnvironment validationEnvironment) {
-                return [validationEnvironment.mkError("I was called", null, null)]
-            }
-        }).build()
-
-        when:
-        def result = graphql.execute("{ field2 }")
-
-        then:
-        result.getErrors()[0].getMessage() == "I was called"
+        def abortExecutionException = thrown(AbortExecutionException)
+        def errors = abortExecutionException.getUnderlyingErrors()
+        errors.size() == 1
+        errors[0].getMessage() == "Made up some error here"
+        errors[0].getLocations().size() == 1
+        errors[0].getPath() == ["field1"]
     }
 
     def "test SimpleFieldAndArgumentsValidator"() {
@@ -152,7 +144,7 @@ class FieldAndArgumentsValidatorTest extends Specification {
                 fmt1Var     : "fmt1Value"
         ]
 
-        SimpleFieldAndArgumentsValidator validator = new SimpleFieldAndArgumentsValidator()
+        SimpleFieldValidation validator = new SimpleFieldValidation()
                 .addRule(ExecutionPath.fromString("/field1"),
                 { fieldAndArguments, env -> err("Not happy Jan!", env, fieldAndArguments) })
                 .addRule(ExecutionPath.fromString("/field1/informationLink/informationLink/informationString"),
@@ -162,27 +154,55 @@ class FieldAndArgumentsValidatorTest extends Specification {
 
 
         when:
-        def result = setupExecution(validator, query, variables)
+        setupExecution(validator, query, variables)
 
         then:
-        result.get().getErrors().size() == 2
-        result.get().getErrors()[0].getMessage() == "Not happy Jan!"
-        result.get().getErrors()[0].getLocations().size() == 1
-        result.get().getErrors()[0].getPath() == ["field1"]
+        def abortExecutionException = thrown(AbortExecutionException)
+        def errors = abortExecutionException.getUnderlyingErrors()
 
-        result.get().getErrors()[1].getMessage() == "Also not happy Jan!"
+        errors.size() == 2
+        errors[0].getMessage() == "Not happy Jan!"
+        errors[0].getLocations().size() == 1
+        errors[0].getPath() == ["field1"]
 
+        errors[1].getMessage() == "Also not happy Jan!"
     }
 
-    static GraphQLError err(String msg, FieldAndArgumentsValidationEnvironment env, FieldAndArguments fieldAndArguments) {
-        env.mkError(msg, fieldAndArguments.getField(), fieldAndArguments.getPath())
+
+    def "test graphql from end to end"() {
+
+        def validationInstrumentation = new FieldValidationInstrumentation(new FieldValidation() {
+            @Override
+            List<GraphQLError> validateField(FieldValidationEnvironment env) {
+                return [
+                        env.mkError("I was called"),
+                        env.mkError("I made 2 errors")
+                ]
+            }
+        })
+
+        GraphQL graphql = GraphQL.newGraphQL(schema).instrumentation(validationInstrumentation).build()
+
+        when:
+        def result = graphql.execute("{ field2 }")
+
+        then:
+        result.getErrors().size() == 2
+        result.getErrors()[0].getMessage() == "I was called"
+        result.getErrors()[1].getMessage() == "I made 2 errors"
     }
 
 
-    private CompletableFuture<ExecutionResult> setupExecution(FieldAndArgumentsValidator variableValidator, String query, Map<String, Object> variables) {
+    static GraphQLError err(String msg, FieldValidationEnvironment env, FieldAndArguments fieldAndArguments) {
+        env.mkError(msg, fieldAndArguments)
+    }
+
+
+    private CompletableFuture<ExecutionResult> setupExecution(FieldValidation validation, String query, Map<String, Object> variables) {
         def document = TestUtil.parseQuery(query)
         def strategy = new AsyncExecutionStrategy()
-        def execution = new Execution(strategy, strategy, strategy, NoOpInstrumentation.INSTANCE, Optional.of(variableValidator))
+        def instrumentation = new FieldValidationInstrumentation(validation)
+        def execution = new Execution(strategy, strategy, strategy, instrumentation)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
         execution.execute(document, schema, ExecutionId.generate(), executionInput, NoOpInstrumentation.INSTANCE.createState())
