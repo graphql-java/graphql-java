@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
@@ -214,7 +215,13 @@ public class SchemaPrinter {
                 return;
             }
             printComments(out, type, "");
-            out.format("type %s {\n", type.getName());
+            if (type.getInterfaces().isEmpty()) {
+                out.format("type %s {\n", type.getName());
+            } else
+                out.format("type %s implements %s {\n",
+                    type.getName(),
+                    type.getInterfaces().stream().map(GraphQLType::getName).collect(Collectors.joining(", ")));
+
             visibility.getFieldDefinitions(type).forEach(fd -> {
                 printComments(out, fd, "  ");
                 out.format("  %s%s: %s\n",
