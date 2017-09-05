@@ -68,7 +68,7 @@ class FieldValidationTest extends Specification {
 
         def validator = new FieldValidation() {
             @Override
-            List<GraphQLError> validateField(FieldValidationEnvironment validationEnvironment) {
+            List<GraphQLError> validateFields(FieldValidationEnvironment validationEnvironment) {
                 Map<String, Object> values
 
                 def fieldArguments = validationEnvironment.getFields()
@@ -173,7 +173,7 @@ class FieldValidationTest extends Specification {
 
         def validationInstrumentation = new FieldValidationInstrumentation(new FieldValidation() {
             @Override
-            List<GraphQLError> validateField(FieldValidationEnvironment env) {
+            List<GraphQLError> validateFields(FieldValidationEnvironment env) {
                 return [
                         env.mkError("I was called"),
                         env.mkError("I made 2 errors")

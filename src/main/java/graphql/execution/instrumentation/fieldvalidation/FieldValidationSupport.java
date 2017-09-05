@@ -45,7 +45,7 @@ class FieldValidationSupport {
         FieldValidationEnvironment environment = new FieldValidationEnvironmentImpl(executionContext, fieldArgumentsMap);
         //
         // this will allow a consumer to plugin their own validation of fields and arguments
-        return fieldValidation.validateField(environment);
+        return fieldValidation.validateFields(environment);
     }
 
     private static class FieldAndArgumentsImpl implements FieldAndArguments {

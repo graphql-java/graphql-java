@@ -27,5 +27,5 @@ public interface FieldValidation {
      *
      * @return a list of errors.  If this is non empty then the query will not execute.
      */
-    List<GraphQLError> validateField(FieldValidationEnvironment validationEnvironment);
+    List<GraphQLError> validateFields(FieldValidationEnvironment validationEnvironment);
 }

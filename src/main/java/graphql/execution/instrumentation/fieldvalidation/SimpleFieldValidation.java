@@ -36,7 +36,7 @@ public class SimpleFieldValidation implements FieldValidation {
     }
 
     @Override
-    public List<GraphQLError> validateField(FieldValidationEnvironment validationEnvironment) {
+    public List<GraphQLError> validateFields(FieldValidationEnvironment validationEnvironment) {
         List<GraphQLError> errors = new ArrayList<>();
         for (ExecutionPath fieldPath : rules.keySet()) {
             FieldAndArguments fieldAndArguments = validationEnvironment.getFields().get(fieldPath);
