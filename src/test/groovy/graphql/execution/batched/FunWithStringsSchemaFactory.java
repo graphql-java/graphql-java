@@ -1,9 +1,21 @@
 package graphql.execution.batched;
 
 import graphql.Scalars;
-import graphql.schema.*;
+import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeReference;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -12,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FunWithStringsSchemaFactory {
 
 
-    public static void increment(Map<CallType, AtomicInteger> callCounts, CallType type) {
+    private static void increment(Map<CallType, AtomicInteger> callCounts, CallType type) {
         if (!callCounts.containsKey(type)) {
             callCounts.put(type, new AtomicInteger(0));
         }
@@ -34,7 +46,7 @@ public class FunWithStringsSchemaFactory {
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.VALUE);
                 List<String> retVal = new ArrayList<>();
-                for (String s: (List<String>) environment.getSource()) {
+                for (String s : (List<String>) environment.getSource()) {
                     retVal.add("null".equals(s) ? null : s);
                 }
                 return retVal;
@@ -55,10 +67,23 @@ public class FunWithStringsSchemaFactory {
             @SuppressWarnings("unchecked")
             public Object get(DataFetchingEnvironment environment) {
                 List<String> retVal = new ArrayList<>();
-                for (String s: (List<String>) environment.getSource()) {
+                for (String s : (List<String>) environment.getSource()) {
                     retVal.add("null".equals(s) ? null : s);
                 }
                 retVal.add("badValue");
+                return retVal;
+            }
+        });
+
+        factory.setAnyIterable(new DataFetcher() {
+            @Override
+            @Batched
+            @SuppressWarnings("unchecked")
+            public Object get(DataFetchingEnvironment environment) {
+                List<Iterable<String>> retVal = new ArrayList<>();
+                for (String s : (List<String>) environment.getSource()) {
+                    retVal.add(new LinkedHashSet<>(Arrays.asList(s, "end")));
+                }
                 return retVal;
             }
         });
@@ -70,10 +95,11 @@ public class FunWithStringsSchemaFactory {
             public Object get(DataFetchingEnvironment environment) {
                 increment(callCounts, CallType.APPEND);
                 List<String> retVal = new ArrayList<>();
-                for (String s: (List<String>) environment.getSource()) {
+                for (String s : (List<String>) environment.getSource()) {
                     retVal.add(s + environment.getArgument("text"));
                 }
-                return retVal;
+                // make it an Iterable thing not just List
+                return new ArrayDeque<>(retVal);
             }
         });
 
@@ -87,16 +113,10 @@ public class FunWithStringsSchemaFactory {
                 List<List<List<String>>> retVal = new ArrayList<>();
                 for (String source : sources) {
                     List<List<String>> sentence = new ArrayList<>();
-                    for (String word : source.split(" ")) {
-                        List<String> letters = new ArrayList<>();
-                        for (char c : word.toCharArray()) {
-                            letters.add(Character.toString(c));
-                        }
-                        sentence.add(letters);
-                    }
+                    splitSentence(source, sentence);
                     retVal.add(sentence);
                 }
-                return retVal;
+                return retVal.toArray();
             }
         });
 
@@ -110,14 +130,14 @@ public class FunWithStringsSchemaFactory {
                 List<String> sources = environment.getSource();
                 List<List<String>> retVal = new ArrayList<>();
                 if (regex == null) {
-                    for (String source: sources) {
+                    for (String ignored : sources) {
                         retVal.add(null);
                     }
                     return retVal;
                 }
-                for (String source: sources) {
+                for (String source : sources) {
                     List<String> retItem = new ArrayList<>();
-                    for (String str: source.split(regex)) {
+                    for (String str : source.split(regex)) {
                         if (str.isEmpty()) {
                             retItem.add(null);
                         } else {
@@ -138,9 +158,9 @@ public class FunWithStringsSchemaFactory {
                 increment(callCounts, CallType.SHATTER);
                 List<String> sources = environment.getSource();
                 List<List<String>> retVal = new ArrayList<>();
-                for (String source: sources) {
+                for (String source : sources) {
                     List<String> retItem = new ArrayList<>();
-                    for (char c: source.toCharArray()) {
+                    for (char c : source.toCharArray()) {
                         retItem.add(Character.toString(c));
                     }
                     retVal.add(retItem);
@@ -153,46 +173,58 @@ public class FunWithStringsSchemaFactory {
 
     }
 
+    private void setAnyIterable(DataFetcher fetcher) {
+        this.anyIterableFetcher = fetcher;
+    }
+
+    private static void splitSentence(String source, List<List<String>> sentence) {
+        for (String word : source.split(" ")) {
+            List<String> letters = new ArrayList<>();
+            for (char c : word.toCharArray()) {
+                letters.add(Character.toString(c));
+            }
+            sentence.add(letters);
+        }
+    }
+
 
     private DataFetcher stringObjectValueFetcher = e -> "null".equals(e.getSource()) ? null : e.getSource();
 
-    private DataFetcher throwExceptionFetcher = e -> { throw new RuntimeException("TestException"); };
+    private DataFetcher throwExceptionFetcher = e -> {
+        throw new RuntimeException("TestException");
+    };
 
-    private DataFetcher returnBadListFetcher = e -> { throw new RuntimeException("This field should only be queried in batch."); };
+    private DataFetcher returnBadListFetcher = e -> {
+        throw new RuntimeException("This field should only be queried in batch.");
+    };
 
     private DataFetcher shatterFetcher = e -> {
         String source = e.getSource();
-        if(source.isEmpty()) {
+        if (source.isEmpty()) {
             return null; // trigger error
         }
         List<String> retVal = new ArrayList<>();
-        for (char c: source.toCharArray()) {
+        for (char c : source.toCharArray()) {
             retVal.add(Character.toString(c));
         }
         return retVal;
     };
 
-    public DataFetcher wordsAndLettersFetcher = e -> {
+    private DataFetcher wordsAndLettersFetcher = e -> {
         String source = e.getSource();
         List<List<String>> retVal = new ArrayList<>();
-        for (String word: source.split(" ")) {
-            List<String> retItem = new ArrayList<>();
-            for (char c: word.toCharArray()) {
-                retItem.add(Character.toString(c));
-            }
-            retVal.add(retItem);
-        }
+        splitSentence(source, retVal);
         return retVal;
     };
 
-    public DataFetcher splitFetcher = e -> {
+    private DataFetcher splitFetcher = e -> {
         String regex = e.getArgument("regex");
-        if (regex == null ) {
+        if (regex == null) {
             return null;
         }
         String source = e.getSource();
         List<String> retVal = new ArrayList<>();
-        for (String str: source.split(regex)) {
+        for (String str : source.split(regex)) {
             if (str.isEmpty()) {
                 retVal.add(null);
             } else {
@@ -202,37 +234,42 @@ public class FunWithStringsSchemaFactory {
         return retVal;
     };
 
-    public DataFetcher appendFetcher = e -> ((String)e.getSource()) + e.getArgument("text");
+    private DataFetcher appendFetcher = e -> ((String) e.getSource()) + e.getArgument("text");
 
-    public DataFetcher emptyOptionalFetcher = e -> Optional.empty();
+    private DataFetcher emptyOptionalFetcher = e -> Optional.empty();
 
-    public DataFetcher optionalFetcher = e -> Optional.of("673-optional-support");
+    private DataFetcher optionalFetcher = e -> Optional.of("673-optional-support");
 
-    public void setWordsAndLettersFetcher(DataFetcher fetcher) {
+    private DataFetcher anyIterableFetcher = e -> {
+        String source = e.getSource();
+        return new LinkedHashSet<>(Arrays.asList(source, "end"));
+    };
+
+    private void setWordsAndLettersFetcher(DataFetcher fetcher) {
         this.wordsAndLettersFetcher = fetcher;
     }
 
-    public void setShatterFetcher(DataFetcher fetcher) {
+    private void setShatterFetcher(DataFetcher fetcher) {
         this.shatterFetcher = fetcher;
     }
 
-    public void setSplitFetcher(DataFetcher splitFetcher) {
+    private void setSplitFetcher(DataFetcher splitFetcher) {
         this.splitFetcher = splitFetcher;
     }
 
-    public void setAppendFetcher(DataFetcher appendFetcher) {
+    private void setAppendFetcher(DataFetcher appendFetcher) {
         this.appendFetcher = appendFetcher;
     }
 
-    public void setStringObjectValueFetcher(DataFetcher fetcher) {
+    private void setStringObjectValueFetcher(DataFetcher fetcher) {
         this.stringObjectValueFetcher = fetcher;
     }
 
-    public void setThrowExceptionFetcher(DataFetcher fetcher) {
+    private void setThrowExceptionFetcher(DataFetcher fetcher) {
         this.throwExceptionFetcher = fetcher;
     }
 
-    public void setReturnBadList(DataFetcher fetcher) {
+    private void setReturnBadList(DataFetcher fetcher) {
         this.returnBadListFetcher = fetcher;
     }
 
@@ -261,13 +298,17 @@ public class FunWithStringsSchemaFactory {
                         .type(Scalars.GraphQLString)
                         .dataFetcher(returnBadListFetcher))
                 .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("anyIterable")
+                        .type(new GraphQLList(Scalars.GraphQLString))
+                        .dataFetcher(anyIterableFetcher))
+                .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("shatter")
                         .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject")))))
                         .dataFetcher(shatterFetcher))
 
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("wordsAndLetters")
-                        .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull( new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))))))
+                        .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))))))
                         .dataFetcher(wordsAndLettersFetcher))
 
                 .field(GraphQLFieldDefinition.newFieldDefinition()

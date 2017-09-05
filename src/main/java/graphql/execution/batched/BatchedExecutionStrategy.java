@@ -36,6 +36,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 
+import java.lang.reflect.Array;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,11 +49,13 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link DataFetcher}s that have
@@ -232,7 +235,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
 
             MapOrList listResult = mapOrList.createAndPutList(fieldName);
-            for (Object rawValue : (List<Object>) value.getValue()) {
+            for (Object rawValue : toIterable(value.getValue())) {
                 rawValue = unboxPossibleOptional(rawValue);
                 flattenedValues.add(new FetchedValue(listResult, rawValue));
             }
@@ -449,15 +452,32 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     private List<Object> assertResult(List<MapOrList> parentResults, Object result) {
-        if (result != null && !(result instanceof List)) {
-            throw new BatchAssertionFailed("invalid result from DataFetcher: List expected");
+        result = convertPossibleArray(result);
+        if (result != null && !(result instanceof Iterable)) {
+            throw new BatchAssertionFailed(String.format("BatchedDataFetcher provided an invalid result: Iterable expected but got '%s'. Affected fields are set to null.", result.getClass().getName()));
         }
         @SuppressWarnings("unchecked")
-        List<Object> values = (List<Object>) result;
-        if (values == null || values.size() != parentResults.size()) {
-            throw new BatchAssertionFailed("BatchedDataFetcher provided invalid number of result values. Affected fields are set to null.");
+        Iterable<Object> iterableResult = (Iterable<Object>) result;
+        if (iterableResult == null) {
+            throw new BatchAssertionFailed("BatchedDataFetcher provided a null Iterable of result values. Affected fields are set to null.");
         }
-        return values;
+        List<Object> resultList = new ArrayList<>();
+        iterableResult.forEach(resultList::add);
+
+        long size = resultList.size();
+        if (size != parentResults.size()) {
+            throw new BatchAssertionFailed(String.format("BatchedDataFetcher provided invalid number of result values, expected %d but got %d. Affected fields are set to null.", parentResults.size(), size));
+        }
+        return resultList;
+    }
+
+    private Object convertPossibleArray(Object result) {
+        if (result != null && result.getClass().isArray()) {
+            return IntStream.range(0, Array.getLength(result))
+                    .mapToObj(i -> Array.get(result, i))
+                    .collect(toList());
+        }
+        return result;
     }
 
     private BatchedDataFetcher getDataFetcher(GraphQLFieldDefinition fieldDef) {
