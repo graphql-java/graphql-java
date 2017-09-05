@@ -418,7 +418,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             valuesFuture.completeExceptionally(e);
         }
         return valuesFuture
-                .thenApply((result) -> assertResult(parentResults, result))
+                .thenCompose((result) -> checkAndConvertResults(parentResults, result))
                 .whenComplete(fetchCtx::onEnd)
                 .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
     }
@@ -451,7 +451,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         };
     }
 
-    private List<Object> assertResult(List<MapOrList> parentResults, Object result) {
+    private CompletableFuture<List<Object>> checkAndConvertResults(List<MapOrList> parentResults, Object result) {
         result = convertPossibleArray(result);
         if (result != null && !(result instanceof Iterable)) {
             throw new BatchAssertionFailed(String.format("BatchedDataFetcher provided an invalid result: Iterable expected but got '%s'. Affected fields are set to null.", result.getClass().getName()));
@@ -462,13 +462,41 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             throw new BatchAssertionFailed("BatchedDataFetcher provided a null Iterable of result values. Affected fields are set to null.");
         }
         List<Object> resultList = new ArrayList<>();
-        iterableResult.forEach(resultList::add);
+
+        boolean foundFuture = false;
+
+        for (Object value : iterableResult) {
+            if (value instanceof CompletionStage) {
+                foundFuture = true;
+            }
+
+            resultList.add(value);
+        }
 
         long size = resultList.size();
         if (size != parentResults.size()) {
             throw new BatchAssertionFailed(String.format("BatchedDataFetcher provided invalid number of result values, expected %d but got %d. Affected fields are set to null.", parentResults.size(), size));
         }
-        return resultList;
+
+        // fast path if return values are plain objects, not CompletionStages
+        if (!foundFuture) {
+            return CompletableFuture.completedFuture(resultList);
+        }
+
+        List<CompletableFuture<?>> futures = new ArrayList<>();
+
+        for (Object value : resultList) {
+            if (value instanceof CompletionStage) {
+                CompletionStage<?> completionStage = (CompletionStage<?>) value;
+                futures.add(completionStage.toCompletableFuture());
+            }
+            else {
+                futures.add(CompletableFuture.completedFuture(value));
+            }
+        }
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+            .thenApply(v -> futures.stream().map(CompletableFuture::join).collect(toList()));
     }
 
     private Object convertPossibleArray(Object result) {

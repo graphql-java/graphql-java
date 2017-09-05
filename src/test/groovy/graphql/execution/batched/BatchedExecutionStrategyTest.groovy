@@ -5,6 +5,7 @@
 package graphql.execution.batched
 
 import graphql.ExceptionWhileDataFetching
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.AsyncExecutionStrategy
@@ -398,6 +399,70 @@ class BatchedExecutionStrategyTest extends Specification {
         Map<String, Object> expected = ["string": ["anyIterable": ["test", "end"]]]
         expect:
         runTest(query, expected)
+    }
+
+    def "Batching works with CompletableFutures"() {
+        given:
+        String query = """
+                {
+                    string(value: "test") {
+                        futureOfList {
+                            value
+                            append(text: "X") {
+                                value
+                            }
+                        }
+                        listOfFutures {
+                            value
+                            append(text: "Y") {
+                                value
+                            }
+                        }
+                        append(text: "Z") {
+                            value
+                            futureOfList {
+                                value
+                            }
+                            listOfFutures {
+                                value
+                            }
+                        }
+                    }
+                }"""
+        Map<String, Object> expected = [
+                "string": [
+                        "futureOfList": [
+                                "value": "testasync1",
+                                "append": ["value": "testasync1X"]
+                        ],
+                        "listOfFutures": [
+                                "value": "testasync2",
+                                "append": ["value": "testasync2Y"]
+                        ],
+                        "append": [
+                                "value": "testZ",
+                                "futureOfList": ["value": "testZasync1"],
+                                "listOfFutures": ["value": "testZasync2"]
+                        ]
+                ]
+        ]
+        expect:
+        runTest(query, expected)
+    }
+
+    def "TypeResolver works with Batching and CompletableFutures"() {
+        given:
+        GraphQL graphQL = GraphQL.newGraphQL(new AsyncTypeResolverSchema().createSchema())
+                .queryExecutionStrategy(new BatchedExecutionStrategy())
+                .build()
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("{node {id}}")
+                .build()
+
+        Map<String, Object> expected = ["node": ["id": "abc"]]
+        expect:
+        graphQL.execute(executionInput).data == expected
     }
 
 }
