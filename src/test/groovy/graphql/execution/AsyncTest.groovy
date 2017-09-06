@@ -141,5 +141,4 @@ class AsyncTest extends Specification {
         result.isDone()
         result.get() == ['x', 'y', 'z']
     }
-
 }
