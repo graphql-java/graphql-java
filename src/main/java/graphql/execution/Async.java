@@ -23,7 +23,8 @@ public class Async {
     public static <U> CompletableFuture<List<U>> each(List<CompletableFuture<U>> futures) {
         CompletableFuture<List<U>> overallResult = new CompletableFuture<>();
 
-        combineAllOf(futures)
+        CompletableFuture
+                .allOf(futures.toArray(new CompletableFuture[futures.size()]))
                 .whenComplete((noUsed, exception) -> {
                     if (exception != null) {
                         overallResult.completeExceptionally(exception);
@@ -103,20 +104,4 @@ public class Async {
         }
     }
 
-    /**
-     * This combines a list of CompletableFuture each promising T into a CompletableFuture promising a list of T
-     *
-     * @param listOfFutures the list of futures
-     * @param <T> for two
-     *
-     * @return a CompletableFuture of List T
-     */
-    public static <T> CompletableFuture<List<T>> combineAllOf(List<CompletableFuture<T>> listOfFutures) {
-        CompletableFuture[] cfs = listOfFutures.toArray(new CompletableFuture[listOfFutures.size()]);
-        return CompletableFuture.allOf(cfs)
-                .thenApply(v -> listOfFutures.stream()
-                        .map(CompletableFuture::join)
-                        .collect(Collectors.toList()));
-
-    }
 }

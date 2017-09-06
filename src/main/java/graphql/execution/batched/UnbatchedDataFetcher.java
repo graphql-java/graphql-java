@@ -36,6 +36,6 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
             CompletableFuture<Object> cf = Async.toCompletableFuture(delegate.get(singleEnv));
             results.add(cf);
         }
-        return Async.combineAllOf(results);
+        return Async.each(results);
     }
 }

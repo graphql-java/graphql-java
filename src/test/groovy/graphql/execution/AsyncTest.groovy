@@ -141,13 +141,4 @@ class AsyncTest extends Specification {
         result.isDone()
         result.get() == ['x', 'y', 'z']
     }
-
-    def "combineAllOf"() {
-        given:
-        def listOfCfs = [completedFuture("x"), completedFuture('y'), completedFuture('z')]
-        when:
-        def result = Async.combineAllOf(listOfCfs)
-        then:
-        result.get() == ['x', 'y', 'z']
-    }
 }
