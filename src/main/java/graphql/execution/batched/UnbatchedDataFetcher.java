@@ -26,7 +26,7 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
 
 
     @Override
-    public Object get(DataFetchingEnvironment environment) {
+    public CompletableFuture<List<Object>> get(DataFetchingEnvironment environment) {
         List<Object> sources = environment.getSource();
         List<CompletableFuture<Object>> results = new ArrayList<>();
         for (Object source : sources) {
