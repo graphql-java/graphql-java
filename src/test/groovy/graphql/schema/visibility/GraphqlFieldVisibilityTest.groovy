@@ -133,7 +133,7 @@ interface Character {
 }
 
 #A mechanical creature in the Star Wars universe.
-type Droid {
+type Droid implements Character {
   #The id of the droid.
   id: String!
   #The name of the droid.
@@ -147,7 +147,7 @@ type Droid {
 }
 
 #A humanoid creature in the Star Wars universe.
-type Human {
+type Human implements Character {
   #The id of the human.
   id: String!
   #The name of the human.
@@ -212,7 +212,7 @@ interface Character {
 }
 
 #A mechanical creature in the Star Wars universe.
-type Droid {
+type Droid implements Character {
   #The name of the droid.
   name: String
   #The friends of the droid, or an empty list if they have none.
@@ -224,7 +224,7 @@ type Droid {
 }
 
 #A humanoid creature in the Star Wars universe.
-type Human {
+type Human implements Character {
   #The id of the human.
   id: String!
   #The name of the human.
