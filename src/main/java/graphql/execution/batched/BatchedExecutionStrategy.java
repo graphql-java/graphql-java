@@ -5,6 +5,7 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLException;
 import graphql.PublicApi;
+import graphql.execution.Async;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.ExecutionContext;
@@ -47,7 +48,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
 
@@ -160,6 +160,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         ExecutionNode finalCurNode = curNode;
         Iterator<String> finalCurFieldNames = curFieldNames;
+
         resolveField(executionContext, newParameters, fieldName, curNode)
                 .whenComplete((childNodes, exception) -> {
                     if (exception != null) {
@@ -199,6 +200,52 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         result.whenComplete((nodes, throwable) -> fieldCtx.onEnd(null, throwable));
         return result;
 
+    }
+
+    private CompletableFuture<List<FetchedValue>> fetchData(ExecutionContext executionContext,
+                                                            ExecutionStrategyParameters parameters,
+                                                            String fieldName,
+                                                            ExecutionNode node,
+                                                            GraphQLFieldDefinition fieldDef) {
+        GraphQLObjectType parentType = node.getType();
+        List<Field> fields = node.getFields().get(fieldName);
+        List<MapOrList> parentResults = node.getParentResults();
+
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
+                fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
+
+        GraphQLOutputType fieldType = fieldDef.getType();
+        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
+
+        DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
+                .source(node.getSources())
+                .arguments(argumentValues)
+                .fieldDefinition(fieldDef)
+                .fields(fields)
+                .fieldType(fieldDef.getType())
+                .fieldTypeInfo(parameters.typeInfo())
+                .parentType(parentType)
+                .selectionSet(fieldCollector)
+                .build();
+
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(
+                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment)
+        );
+
+        CompletableFuture<Object> fetchedValue;
+        try {
+            BatchedDataFetcher dataFetcher = getDataFetcher(fieldDef);
+            Object fetchedValueRaw = dataFetcher.get(environment);
+            fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
+        } catch (Exception e) {
+            fetchedValue = new CompletableFuture<>();
+            fetchedValue.completeExceptionally(e);
+        }
+        return fetchedValue
+                .thenApply((result) -> assertResult(parentResults, result))
+                .whenComplete(fetchCtx::onEnd)
+                .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
     }
 
     private List<ExecutionNode> completeValues(ExecutionContext executionContext, GraphQLObjectType parentType,
@@ -371,56 +418,6 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return type instanceof GraphQLObjectType ||
                 type instanceof GraphQLInterfaceType ||
                 type instanceof GraphQLUnionType;
-    }
-
-    @SuppressWarnings("unchecked")
-    private CompletableFuture<List<FetchedValue>> fetchData(ExecutionContext executionContext,
-                                                            ExecutionStrategyParameters parameters,
-                                                            String fieldName,
-                                                            ExecutionNode node,
-                                                            GraphQLFieldDefinition fieldDef) {
-        GraphQLObjectType parentType = node.getType();
-        List<Field> fields = node.getFields().get(fieldName);
-        List<MapOrList> parentResults = node.getParentResults();
-
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
-                fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
-
-        GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
-
-        DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
-                .source(node.getSources())
-                .arguments(argumentValues)
-                .fieldDefinition(fieldDef)
-                .fields(fields)
-                .fieldType(fieldDef.getType())
-                .fieldTypeInfo(parameters.typeInfo())
-                .parentType(parentType)
-                .selectionSet(fieldCollector)
-                .build();
-
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(
-                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment)
-        );
-
-        CompletableFuture<Object> valuesFuture;
-        try {
-            Object rawValue = getDataFetcher(fieldDef).get(environment);
-            if (rawValue instanceof CompletionStage) {
-                valuesFuture = ((CompletionStage) rawValue).toCompletableFuture();
-            } else {
-                valuesFuture = CompletableFuture.completedFuture(rawValue);
-            }
-        } catch (Exception e) {
-            valuesFuture = new CompletableFuture<>();
-            valuesFuture.completeExceptionally(e);
-        }
-        return valuesFuture
-                .thenApply((result) -> assertResult(parentResults, result))
-                .whenComplete(fetchCtx::onEnd)
-                .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
     }
 
     private BiFunction<List<Object>, Throwable, List<FetchedValue>> handleResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<MapOrList> parentResults, List<Field> fields, GraphQLFieldDefinition fieldDef, Map<String, Object> argumentValues, DataFetchingEnvironment environment) {

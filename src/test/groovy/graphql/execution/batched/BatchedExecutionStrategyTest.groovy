@@ -400,4 +400,22 @@ class BatchedExecutionStrategyTest extends Specification {
         runTest(query, expected)
     }
 
+    def "#672-683 handles completable futures ok"() {
+
+        given:
+        String query = "{ string(value: \"test\"){ completableFuture } }"
+        Map<String, Object> expected = ["string": ["completableFuture": "completableFuture"]]
+        expect:
+        runTest(query, expected)
+    }
+
+    def "#672-683 handles completable futures ok in interfaces"() {
+
+        given:
+        String query = "{ interface { value } }"
+        Map<String, Object> expected = ["interface": ["value": "interfacesHandled"]]
+        expect:
+        runTest(query, expected)
+    }
+
 }

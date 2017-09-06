@@ -8,7 +8,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 @Internal
 public class Async {
@@ -20,8 +22,8 @@ public class Async {
 
     public static <U> CompletableFuture<List<U>> each(List<CompletableFuture<U>> futures) {
         CompletableFuture<List<U>> overallResult = new CompletableFuture<>();
-        CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[futures.size()]))
+
+        combineAllOf(futures)
                 .whenComplete((noUsed, exception) -> {
                     if (exception != null) {
                         overallResult.completeExceptionally(exception);
@@ -81,5 +83,40 @@ public class Async {
             tmpResult.add(cfResult);
             eachSequentiallyImpl(iterator, cfFactory, index + 1, tmpResult, overallResult);
         });
+    }
+
+
+    /**
+     * Turns an object T into a CompletableFuture if its not already
+     *
+     * @param t   - the object to check
+     * @param <T> for two
+     *
+     * @return a CompletableFuture
+     */
+    public static <T> CompletableFuture<T> toCompletableFuture(T t) {
+        if (t instanceof CompletionStage) {
+            //noinspection unchecked
+            return ((CompletionStage<T>) t).toCompletableFuture();
+        } else {
+            return CompletableFuture.completedFuture(t);
+        }
+    }
+
+    /**
+     * This combines a list of CompletableFuture each promising T into a CompletableFuture promising a list of T
+     *
+     * @param listOfFutures the list of futures
+     * @param <T> for two
+     *
+     * @return a CompletableFuture of List T
+     */
+    public static <T> CompletableFuture<List<T>> combineAllOf(List<CompletableFuture<T>> listOfFutures) {
+        CompletableFuture[] cfs = listOfFutures.toArray(new CompletableFuture[listOfFutures.size()]);
+        return CompletableFuture.allOf(cfs)
+                .thenApply(v -> listOfFutures.stream()
+                        .map(CompletableFuture::join)
+                        .collect(Collectors.toList()));
+
     }
 }

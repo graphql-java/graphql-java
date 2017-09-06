@@ -1,11 +1,13 @@
 package graphql.execution.batched;
 
 
+import graphql.execution.Async;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 
@@ -26,13 +28,14 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
     @Override
     public Object get(DataFetchingEnvironment environment) {
         List<Object> sources = environment.getSource();
-        List<Object> results = new ArrayList<>();
+        List<CompletableFuture<Object>> results = new ArrayList<>();
         for (Object source : sources) {
 
             DataFetchingEnvironment singleEnv = newDataFetchingEnvironment(environment)
                     .source(source).build();
-            results.add(delegate.get(singleEnv));
+            CompletableFuture<Object> cf = Async.toCompletableFuture(delegate.get(singleEnv));
+            results.add(cf);
         }
-        return results;
+        return Async.combineAllOf(results);
     }
 }
