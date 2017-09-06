@@ -2,6 +2,7 @@ package graphql
 
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
+import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -18,6 +19,7 @@ import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.util.concurrent.CompletableFuture
 import java.util.function.UnaryOperator
 
 import static graphql.ExecutionInput.Builder
@@ -670,5 +672,138 @@ class GraphQLTest extends Specification {
         "{ field {field {field {field {scalar}}}} }"                | _
         "{ f2:field {scalar} f1: field{scalar} f3: field {scalar}}" | _
     }
+
+    @Unroll
+    def "validation error with (#instrumentationName)"() {
+        given:
+        GraphQLObjectType foo = newObject()
+                .name("Foo")
+                .withInterface(new GraphQLTypeReference("Node"))
+                .field(
+                { field ->
+                    field
+                            .name("id")
+                            .type(Scalars.GraphQLID)
+                } as UnaryOperator)
+                .build()
+
+        GraphQLInterfaceType node = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(
+                { field ->
+                    field
+                            .name("id")
+                            .type(Scalars.GraphQLID)
+                } as UnaryOperator)
+                .typeResolver({ type -> foo })
+                .build()
+
+        GraphQLObjectType query = newObject()
+                .name("RootQuery")
+                .field(
+                { field ->
+                    field
+                            .name("a")
+                            .type(node)
+                } as UnaryOperator)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .query(query)
+                .build();
+
+        GraphQL graphQL = GraphQL.newGraphQL(schema)
+                .instrumentation(instrumentation)
+                .build()
+
+        ExecutionInput executionInput = newExecutionInput()
+                .query("{a}")
+                .build()
+
+        when:
+        def result = graphQL.execute(executionInput);
+
+        then:
+        result.errors.size() == 1
+        result.errors[0].message.contains("Sub selection required")
+
+        where:
+        instrumentationName    | instrumentation
+        'max query depth'      | new MaxQueryDepthInstrumentation(10)
+        'max query complexity' | new MaxQueryComplexityInstrumentation(10)
+    }
+
+
+    def "batched execution with non batched DataFetcher returning CompletableFuture"() {
+        given:
+        GraphQLObjectType foo = GraphQLObjectType.newObject()
+                .name("Foo")
+                .withInterface(new GraphQLTypeReference("Node"))
+                .field(
+                { field ->
+                    field
+                            .name("id")
+                            .type(Scalars.GraphQLID)
+                } as UnaryOperator)
+                .build()
+
+        GraphQLInterfaceType node = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(
+                { field ->
+                    field
+                            .name("id")
+                            .type(Scalars.GraphQLID)
+                } as UnaryOperator)
+                .typeResolver(
+                {
+                    env ->
+                        if (env.getObject() instanceof CompletableFuture) {
+                            throw new RuntimeException("This seems bad!");
+                        }
+
+                        return foo
+                })
+                .build()
+
+        GraphQLObjectType query = GraphQLObjectType.newObject()
+                .name("RootQuery")
+                .field(
+                { field ->
+                    field
+                            .name("node")
+                            .dataFetcher(
+                            { env ->
+                                CompletableFuture.supplyAsync({ ->
+                                    Map<String, String> map = new HashMap<>()
+                                    map.put("id", "abc")
+
+                                    return map
+                                })
+                            })
+                            .type(node)
+                } as UnaryOperator)
+                .build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(query)
+                .build()
+
+        GraphQL graphQL = GraphQL.newGraphQL(schema)
+                .queryExecutionStrategy(new BatchedExecutionStrategy())
+                .mutationExecutionStrategy(new BatchedExecutionStrategy())
+                .build();
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("{node {id}}")
+                .build()
+        when:
+        def result = graphQL
+                .execute(executionInput)
+
+        then:
+        result.getData() == [node: [id: "abc"]]
+    }
+
 
 }
