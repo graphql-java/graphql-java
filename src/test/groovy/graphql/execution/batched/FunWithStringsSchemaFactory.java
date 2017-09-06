@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class FunWithStringsSchemaFactory {
@@ -169,6 +170,32 @@ public class FunWithStringsSchemaFactory {
             }
         });
 
+        factory.setFutureOfListFetcher(new DataFetcher() {
+            @Batched
+            @Override
+            @SuppressWarnings("unchecked")
+            public Object get(DataFetchingEnvironment environment) {
+                List<String> retVal = new ArrayList<>();
+                for (String s: (List<String>) environment.getSource()) {
+                    retVal.add(s + "async1");
+                }
+                return CompletableFuture.completedFuture(retVal);
+            }
+        });
+
+        factory.setListOfFuturesFetcher(new DataFetcher() {
+            @Batched
+            @Override
+            @SuppressWarnings("unchecked")
+            public Object get(DataFetchingEnvironment environment) {
+                List<CompletableFuture<String>> retVal = new ArrayList<>();
+                for (String s: (List<String>) environment.getSource()) {
+                    retVal.add(CompletableFuture.completedFuture(s + "async2"));
+                }
+                return retVal;
+            }
+        });
+
         return factory;
 
     }
@@ -245,6 +272,16 @@ public class FunWithStringsSchemaFactory {
         return new LinkedHashSet<>(Arrays.asList(source, "end"));
     };
 
+    private DataFetcher futureOfListFetcher = e -> {
+        String source = e.getSource();
+        return CompletableFuture.completedFuture(source + "async1");
+    };
+
+    private DataFetcher listOfFuturesFetcher = e -> {
+        String source = e.getSource();
+        return CompletableFuture.completedFuture(source + "async2");
+    };
+
     private void setWordsAndLettersFetcher(DataFetcher fetcher) {
         this.wordsAndLettersFetcher = fetcher;
     }
@@ -271,6 +308,14 @@ public class FunWithStringsSchemaFactory {
 
     private void setReturnBadList(DataFetcher fetcher) {
         this.returnBadListFetcher = fetcher;
+    }
+
+    private void setFutureOfListFetcher(DataFetcher fetcher) {
+        this.futureOfListFetcher = fetcher;
+    }
+
+    private void setListOfFuturesFetcher(DataFetcher fetcher) {
+        this.listOfFuturesFetcher = fetcher;
     }
 
     GraphQLSchema createSchema() {
@@ -353,6 +398,16 @@ public class FunWithStringsSchemaFactory {
                                 .name("text")
                                 .type(Scalars.GraphQLString))
                         .dataFetcher(optionalFetcher))
+
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("futureOfList")
+                        .type(new GraphQLTypeReference("StringObject"))
+                        .dataFetcher(futureOfListFetcher))
+
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("listOfFutures")
+                        .type(new GraphQLTypeReference("StringObject"))
+                        .dataFetcher(listOfFuturesFetcher))
 
                 .build();
 
