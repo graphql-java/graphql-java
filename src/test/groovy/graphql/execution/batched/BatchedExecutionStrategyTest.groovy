@@ -4,14 +4,20 @@
 
 package graphql.execution.batched
 
+import graphql.ErrorType
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.GraphQL
+import graphql.Scalars
 import graphql.execution.AsyncExecutionStrategy
+import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 import java.util.concurrent.atomic.AtomicInteger
+
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
 
 class BatchedExecutionStrategyTest extends Specification {
 
@@ -398,6 +404,43 @@ class BatchedExecutionStrategyTest extends Specification {
         Map<String, Object> expected = ["string": ["anyIterable": ["test", "end"]]]
         expect:
         runTest(query, expected)
+    }
+
+    def "#684 handles exceptions in DFs"() {
+
+        given:
+        def UserType = newObject()
+                .name("User")
+                .field(newFieldDefinition()
+                .name("id")
+                .type(new GraphQLNonNull(Scalars.GraphQLInt))
+                .dataFetcher(
+                { e -> throw new RuntimeException("Hello") }
+        )).build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                .name("user")
+                .type(UserType)
+                .dataFetcher({ environment ->
+            Map<String, Object> user = new HashMap<>()
+            user.put("id", 1)
+            return user
+        }))
+                .build())
+                .build()
+
+        GraphQL graphQL = GraphQL.newGraphQL(schema)
+                .queryExecutionStrategy(new BatchedExecutionStrategy())
+                .build()
+
+        ExecutionResult result = graphQL.execute("query { user { id } }")
+
+        expect:
+        result.getErrors().size() == 1
+        result.getErrors()[0].getErrorType() == ErrorType.DataFetchingException
     }
 
 }
