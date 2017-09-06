@@ -8,7 +8,6 @@ import graphql.schema.DataFetchingEnvironment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 
@@ -34,16 +33,9 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
 
             DataFetchingEnvironment singleEnv = newDataFetchingEnvironment(environment)
                     .source(source).build();
-            results.add(getResult(delegate.get(singleEnv)));
+            CompletableFuture<Object> cf = Async.toCompletableFuture(delegate.get(singleEnv));
+            results.add(cf);
         }
-
         return Async.each(results);
-    }
-
-    private CompletableFuture<Object> getResult(Object rawResult) {
-        if (!(rawResult instanceof CompletionStage)) {
-            return CompletableFuture.completedFuture(rawResult);
-        }
-        return ((CompletionStage) rawResult).toCompletableFuture();
     }
 }

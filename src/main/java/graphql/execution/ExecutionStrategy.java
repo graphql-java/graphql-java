@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
 import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
@@ -218,11 +217,7 @@ public abstract class ExecutionStrategy {
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
         try {
             Object fetchedValueRaw = dataFetcher.get(environment);
-            if (fetchedValueRaw instanceof CompletionStage) {
-                fetchedValue = ((CompletionStage) fetchedValueRaw).toCompletableFuture();
-            } else {
-                fetchedValue = CompletableFuture.completedFuture(fetchedValueRaw);
-            }
+            fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
@@ -403,6 +398,8 @@ public abstract class ExecutionStrategy {
 
     /**
      * Converts an object that is known to should be an Iterable into one
+     *
+     * @param result the result object
      *
      * @return an Iterable from that object
      *

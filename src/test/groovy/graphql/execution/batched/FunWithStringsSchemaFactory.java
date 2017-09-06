@@ -1,11 +1,10 @@
 package graphql.execution.batched;
 
-import graphql.Scalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
@@ -19,7 +18,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static graphql.Scalars.GraphQLString;
+import static graphql.schema.GraphQLEnumType.newEnum;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLInterfaceType.newInterface;
+import static graphql.schema.GraphQLObjectType.newObject;
 
 public class FunWithStringsSchemaFactory {
 
@@ -240,6 +246,8 @@ public class FunWithStringsSchemaFactory {
 
     private DataFetcher optionalFetcher = e -> Optional.of("673-optional-support");
 
+    private DataFetcher completableFutureFetcher = e -> CompletableFuture.completedFuture("completableFuture");
+
     private DataFetcher anyIterableFetcher = e -> {
         String source = e.getSource();
         return new LinkedHashSet<>(Arrays.asList(source, "end"));
@@ -273,112 +281,157 @@ public class FunWithStringsSchemaFactory {
         this.returnBadListFetcher = fetcher;
     }
 
+    public static class SimpleObject {
+        public String getValue() {
+            return "interfacesHandled";
+        }
+    }
+
     GraphQLSchema createSchema() {
 
-        GraphQLObjectType stringObjectType = GraphQLObjectType.newObject()
+        GraphQLObjectType stringObjectType = newObject()
                 .name("StringObject")
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("value")
-                        .type(Scalars.GraphQLString)
+                        .type(GraphQLString)
                         .dataFetcher(stringObjectValueFetcher))
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("nonNullValue")
-                        .type(new GraphQLNonNull(Scalars.GraphQLString))
+                        .type(new GraphQLNonNull(GraphQLString))
                         .dataFetcher(stringObjectValueFetcher))
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("veryNonNullValue")
-                        .type(new GraphQLNonNull(new GraphQLNonNull(Scalars.GraphQLString)))
+                        .type(new GraphQLNonNull(new GraphQLNonNull(GraphQLString)))
                         .dataFetcher(stringObjectValueFetcher))
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("throwException")
-                        .type(Scalars.GraphQLString)
+                        .type(GraphQLString)
                         .dataFetcher(throwExceptionFetcher))
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("returnBadList")
-                        .type(Scalars.GraphQLString)
+                        .type(GraphQLString)
                         .dataFetcher(returnBadListFetcher))
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("anyIterable")
-                        .type(new GraphQLList(Scalars.GraphQLString))
+                        .type(new GraphQLList(GraphQLString))
                         .dataFetcher(anyIterableFetcher))
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("shatter")
                         .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject")))))
                         .dataFetcher(shatterFetcher))
 
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("wordsAndLetters")
                         .type(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLList(new GraphQLNonNull(new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))))))
                         .dataFetcher(wordsAndLettersFetcher))
 
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("split")
                         .description("String#split(regex) but replace empty strings with nulls to help us test null behavior in lists")
                         .type(new GraphQLList(new GraphQLTypeReference("StringObject")))
                         .argument(GraphQLArgument.newArgument()
                                 .name("regex")
-                                .type(Scalars.GraphQLString))
+                                .type(GraphQLString))
                         .dataFetcher(splitFetcher))
 
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("splitNotNull")
                         .description("String#split(regex) but replace empty strings with nulls to help us test null behavior in lists")
                         .type(new GraphQLList(new GraphQLNonNull(new GraphQLTypeReference("StringObject"))))
                         .argument(GraphQLArgument.newArgument()
                                 .name("regex")
-                                .type(Scalars.GraphQLString))
+                                .type(GraphQLString))
                         .dataFetcher(splitFetcher))
 
 
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("append")
                         .type(new GraphQLTypeReference("StringObject"))
                         .argument(GraphQLArgument.newArgument()
                                 .name("text")
-                                .type(Scalars.GraphQLString))
+                                .type(GraphQLString))
                         .dataFetcher(appendFetcher))
 
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("emptyOptional")
-                        .type(Scalars.GraphQLString)
+                        .type(GraphQLString)
                         .argument(GraphQLArgument.newArgument()
                                 .name("text")
-                                .type(Scalars.GraphQLString))
+                                .type(GraphQLString))
                         .dataFetcher(emptyOptionalFetcher))
 
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("optional")
-                        .type(Scalars.GraphQLString)
+                        .type(GraphQLString)
                         .argument(GraphQLArgument.newArgument()
                                 .name("text")
-                                .type(Scalars.GraphQLString))
+                                .type(GraphQLString))
                         .dataFetcher(optionalFetcher))
+
+                .field(newFieldDefinition()
+                        .name("completableFuture")
+                        .type(GraphQLString)
+                        .argument(GraphQLArgument.newArgument()
+                                .name("text")
+                                .type(GraphQLString))
+                        .dataFetcher(completableFutureFetcher))
 
                 .build();
 
 
-        GraphQLEnumType enumDayType = GraphQLEnumType.newEnum()
+        GraphQLEnumType enumDayType = newEnum()
                 .name("Day")
                 .value("MONDAY")
                 .value("TUESDAY")
                 .description("Day of the week")
                 .build();
 
-        GraphQLObjectType queryType = GraphQLObjectType.newObject()
+
+        GraphQLObjectType simpleObjectType = newObject()
+                .name("SimpleObject")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build();
+
+
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("InterfaceType")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString)
+                )
+                .typeResolver(env -> {
+                    // always this for testing
+                    return simpleObjectType;
+                })
+                .build();
+
+        GraphQLObjectType queryType = newObject()
                 .name("StringQuery")
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                .field(newFieldDefinition()
                         .name("string")
                         .type(stringObjectType)
                         .argument(GraphQLArgument.newArgument()
                                 .name("value")
-                                .type(Scalars.GraphQLString))
-                        .dataFetcher(env -> env.getArgument("value")))
-                .name("EnumQuery")
-                .field(GraphQLFieldDefinition.newFieldDefinition()
+                                .type(GraphQLString))
+                        .dataFetcher(env -> env.getArgument("value"))
+                )
+                .field(newFieldDefinition()
+                        .name("interface")
+                        .type(interfaceType)
+                        .argument(GraphQLArgument.newArgument()
+                                .name("value")
+                                .type(GraphQLString))
+                        .dataFetcher(env -> CompletableFuture.completedFuture(new SimpleObject()))
+                )
+                .field(newFieldDefinition()
                         .name("nullEnum")
                         .type(enumDayType)
-                        .dataFetcher(env -> null))
+                        .dataFetcher(env -> null)
+                )
                 .build();
+
         return GraphQLSchema.newSchema()
                 .query(queryType)
                 .build();
