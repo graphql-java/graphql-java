@@ -10,13 +10,16 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.Scalars
 import graphql.execution.AsyncExecutionStrategy
-import graphql.schema.GraphQLNonNull
+import graphql.schema.DataFetcher
+import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 
 class BatchedExecutionStrategyTest extends Specification {
@@ -431,29 +434,36 @@ class BatchedExecutionStrategyTest extends Specification {
                 .name("User")
                 .field(newFieldDefinition()
                 .name("id")
-                .type(new GraphQLNonNull(Scalars.GraphQLInt))
+                .type(nonNull(Scalars.GraphQLInt))
                 .dataFetcher(
                 { e -> throw new RuntimeException("Hello") }
         )).build()
 
-        GraphQLSchema schema = GraphQLSchema.newSchema()
-                .query(newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                .name("user")
-                .type(UserType)
-                .dataFetcher({ environment ->
+        DataFetcher userDataFetcher = { environment ->
+            if (environment.getArgument("nullArg") == true) {
+                return null
+            }
             Map<String, Object> user = new HashMap<>()
             user.put("id", 1)
             return user
-        }))
-                .build())
+        }
+        GraphQLObjectType queryObject = newObject().name("Query")
+                .field(newFieldDefinition()
+                .name("user")
+                .type(nonNull(UserType))
+                .argument(newArgument().name("nullArg").type(Scalars.GraphQLBoolean))
+                .dataFetcher(userDataFetcher)
+        ).build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(queryObject)
                 .build()
 
         GraphQL graphQL = GraphQL.newGraphQL(schema)
                 .queryExecutionStrategy(new BatchedExecutionStrategy())
                 .build()
 
+        //ExecutionResult result = graphQL.execute("query { user(nullArg:false) { id } }")
         ExecutionResult result = graphQL.execute("query { user { id } }")
 
         expect:
