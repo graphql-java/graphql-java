@@ -229,13 +229,14 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .build();
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(
-                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment)
-        );
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParameters =
+                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment);
+        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParameters);
 
         CompletableFuture<Object> fetchedValue;
         try {
-            BatchedDataFetcher dataFetcher = getDataFetcher(fieldDef);
+            DataFetcher<?> dataFetcher = instrumentation.instrumentDataFetcher(
+                    getDataFetcher(fieldDef), instrumentationFieldFetchParameters);
             Object fetchedValueRaw = dataFetcher.get(environment);
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
