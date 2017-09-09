@@ -1,15 +1,18 @@
 package graphql.schema.idl;
 
-import graphql.Assert;
 import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.UnaryOperator;
+
+import static graphql.Assert.assertNotNull;
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 /**
  * A runtime wiring is a specification of data fetchers, type resolves and custom scalars that are needed
@@ -24,14 +27,16 @@ public class RuntimeWiring {
     private final Map<String, TypeResolver> typeResolvers;
     private final WiringFactory wiringFactory;
     private final Map<String, EnumValuesProvider> enumValuesProviders;
+    private final GraphqlFieldVisibility fieldVisibility;
 
-    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory) {
+    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory, GraphqlFieldVisibility fieldVisibility) {
         this.dataFetchers = dataFetchers;
         this.defaultDataFetchers = defaultDataFetchers;
         this.scalars = scalars;
         this.typeResolvers = typeResolvers;
         this.wiringFactory = wiringFactory;
         this.enumValuesProviders = enumValuesProviders;
+        this.fieldVisibility = fieldVisibility;
     }
 
     /**
@@ -69,6 +74,10 @@ public class RuntimeWiring {
         return wiringFactory;
     }
 
+    public GraphqlFieldVisibility getFieldVisibility() {
+        return fieldVisibility;
+    }
+
     @PublicApi
     public static class Builder {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
@@ -77,6 +86,7 @@ public class RuntimeWiring {
         private final Map<String, TypeResolver> typeResolvers = new LinkedHashMap<>();
         private final Map<String, EnumValuesProvider> enumValuesProviders = new LinkedHashMap<>();
         private WiringFactory wiringFactory = new NoopWiringFactory();
+        private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
 
         private Builder() {
             ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);
@@ -90,7 +100,7 @@ public class RuntimeWiring {
          * @return this outer builder
          */
         public Builder wiringFactory(WiringFactory wiringFactory) {
-            Assert.assertNotNull(wiringFactory, "You must provide a wiring factory");
+            assertNotNull(wiringFactory, "You must provide a wiring factory");
             this.wiringFactory = wiringFactory;
             return this;
         }
@@ -104,6 +114,18 @@ public class RuntimeWiring {
          */
         public Builder scalar(GraphQLScalarType scalarType) {
             scalars.put(scalarType.getName(), scalarType);
+            return this;
+        }
+
+        /**
+         * This allows you to add a field visibility that will be associated with the schema
+         *
+         * @param fieldVisibility the new field visibility
+         *
+         * @return the runtime wiring builder
+         */
+        public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
+            this.fieldVisibility = assertNotNull(fieldVisibility);
             return this;
         }
 
@@ -161,7 +183,7 @@ public class RuntimeWiring {
          * @return the built runtime wiring
          */
         public RuntimeWiring build() {
-            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, enumValuesProviders, wiringFactory);
+            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, enumValuesProviders, wiringFactory, fieldVisibility);
         }
 
     }

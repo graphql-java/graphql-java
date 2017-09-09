@@ -1,6 +1,8 @@
 package graphql.schema.idl
 
 import graphql.schema.GraphQLEnumType
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
@@ -11,6 +13,7 @@ import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
+import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -1004,5 +1007,32 @@ class SchemaGeneratorTest extends Specification {
         expect:
         arg["str"] instanceof String
         arg["num"] instanceof Integer
+    }
+
+    def "field visibility is used"() {
+        def spec = """
+            type Query {
+              field : String
+            }
+        """
+
+        GraphqlFieldVisibility fieldVisibility = new GraphqlFieldVisibility() {
+            @Override
+            List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+                return null
+            }
+
+            @Override
+            GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+                return null
+            }
+        }
+
+        def schema = schema(spec, RuntimeWiring.newRuntimeWiring().fieldVisibility(fieldVisibility).build());
+
+        expect:
+
+        schema.getFieldVisibility() == fieldVisibility;
+
     }
 }
