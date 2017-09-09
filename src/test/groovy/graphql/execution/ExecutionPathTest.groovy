@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.AssertException
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionInput
 import graphql.GraphQL
@@ -134,4 +135,57 @@ class ExecutionPathTest extends Specification {
         def error4 = errors.get(3) as NonNullableFieldWasNullError
         ["f4", "nonNullField"] == error4.getPath()
     }
+
+    def "test best case parsing"() {
+
+
+        expect:
+        ExecutionPath.parse(pathString).toList() == expectedList
+
+        where:
+
+        pathString     | expectedList
+        ""             | []
+        null           | []
+        "/a"           | ["a"]
+        "/a/b"         | ["a", "b"]
+        " /a/b "       | ["a", "b"]
+        "/a/b[0]/c[1]" | ["a", "b", 0, "c", 1]
+    }
+
+    def "test worst case parsing"() {
+
+        when:
+        ExecutionPath.parse(badPathString)
+
+        then:
+        thrown(AssertException)
+
+        where:
+
+        badPathString | _
+        "a"           | _
+        "a/b"         | _
+        "a/b[x]"      | _
+        "a/b[0"       | _
+        "a/b[0/c[1]"  | _
+        "a/b[0]c[1/"  | _
+        "/"           | _
+    }
+
+    def "test from test fromList"() {
+
+
+        expect:
+        ExecutionPath.fromList(inputList).toString() == expectedString
+
+        where:
+
+        expectedString | inputList
+        ""             | []
+        "/a"           | ["a"]
+        "/a/b"         | ["a", "b"]
+        "/a/b[0]/c[1]" | ["a", "b", 0, "c", 1]
+    }
+
 }

@@ -2,8 +2,10 @@ package graphql.execution;
 
 
 import graphql.GraphQLError;
+import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
@@ -13,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@PublicApi
 public class ExecutionContext {
 
     private final GraphQLSchema graphQLSchema;
@@ -23,6 +26,7 @@ public class ExecutionContext {
     private final ExecutionStrategy subscriptionStrategy;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final OperationDefinition operationDefinition;
+    private final Document document;
     private final Map<String, Object> variables;
     private final Object root;
     private final Object context;
@@ -31,7 +35,7 @@ public class ExecutionContext {
     // errors is kept in order via LinkedHashMap and thread safe via synchronised guards
     private final Map<String, GraphQLError> errors = new LinkedHashMap<>();
 
-    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
+    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -39,6 +43,7 @@ public class ExecutionContext {
         this.mutationStrategy = mutationStrategy;
         this.subscriptionStrategy = subscriptionStrategy;
         this.fragmentsByName = fragmentsByName;
+        this.document = document;
         this.operationDefinition = operationDefinition;
         this.variables = variables;
         this.context = context;
@@ -65,6 +70,10 @@ public class ExecutionContext {
 
     public Map<String, FragmentDefinition> getFragmentsByName() {
         return fragmentsByName;
+    }
+
+    public Document getDocument() {
+        return document;
     }
 
     public OperationDefinition getOperationDefinition() {

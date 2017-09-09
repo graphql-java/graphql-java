@@ -1,5 +1,7 @@
 package graphql
 
+import graphql.language.Document
+import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
@@ -116,4 +118,9 @@ class TestUtil {
             return new PropertyDataFetcher(environment.getFieldDefinition().getName())
         }
     }
+
+    static Document parseQuery(String query) {
+        new Parser().parseDocument(query)
+    }
+
 }

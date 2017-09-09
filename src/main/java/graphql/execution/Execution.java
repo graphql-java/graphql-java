@@ -58,7 +58,8 @@ public class Execution {
         Map<String, Object> inputVariables = executionInput.getVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
-        Map<String, Object> variableValues = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
+        Map<String, Object> coercedVariables = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
+
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -71,11 +72,13 @@ public class Execution {
                 .context(executionInput.getContext())
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)
-                .variables(variableValues)
+                .variables(coercedVariables)
+                .document(document)
                 .operationDefinition(operationDefinition)
                 .build();
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
+
 
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
