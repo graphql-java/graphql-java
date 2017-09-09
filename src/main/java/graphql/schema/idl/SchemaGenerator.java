@@ -1,20 +1,16 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
-import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
-import graphql.language.BooleanValue;
 import graphql.language.Comment;
 import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
 import graphql.language.FieldDefinition;
-import graphql.language.FloatValue;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
-import graphql.language.IntValue;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
 import graphql.language.NullValue;
@@ -219,6 +215,7 @@ public class SchemaGenerator {
 
         Set<GraphQLType> additionalTypes = buildAdditionalTypes(buildCtx);
 
+        schemaBuilder.fieldVisibility(buildCtx.getWiring().getFieldVisibility());
         return schemaBuilder.build(additionalTypes);
     }
 
@@ -540,22 +537,22 @@ public class SchemaGenerator {
     private Object buildValue(Value value, GraphQLType requiredType) {
         Object result = null;
         if (requiredType instanceof GraphQLNonNull) {
-            requiredType = ((GraphQLNonNull)requiredType).getWrappedType();
+            requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
         }
         if (requiredType instanceof GraphQLScalarType) {
-            result = ((GraphQLScalarType)requiredType).getCoercing().parseLiteral(value);
+            result = ((GraphQLScalarType) requiredType).getCoercing().parseLiteral(value);
         } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
             result = ((EnumValue) value).getName();
         } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
             ArrayValue arrayValue = (ArrayValue) value;
             GraphQLType wrappedType = ((GraphQLList) requiredType).getWrappedType();
             result = arrayValue.getValues().stream()
-                .map(item -> this.buildValue(item, wrappedType)).collect(Collectors.toList());
+                    .map(item -> this.buildValue(item, wrappedType)).collect(Collectors.toList());
         } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
             result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
         } else if (value != null && !(value instanceof NullValue)) {
             Assert.assertShouldNeverHappen(
-                "cannot build value of " + requiredType.getName() + " from " + String.valueOf(value));
+                    "cannot build value of " + requiredType.getName() + " from " + String.valueOf(value));
         }
         return result;
     }
@@ -563,7 +560,7 @@ public class SchemaGenerator {
     private Object buildObjectValue(ObjectValue defaultValue, GraphQLInputObjectType objectType) {
         HashMap<String, Object> map = new LinkedHashMap<>();
         defaultValue.getObjectFields().forEach(of -> map.put(of.getName(),
-            buildValue(of.getValue(), objectType.getField(of.getName()).getType())));
+                buildValue(of.getValue(), objectType.getField(of.getName()).getType())));
         return map;
     }
 
