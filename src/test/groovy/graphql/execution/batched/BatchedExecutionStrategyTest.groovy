@@ -8,6 +8,7 @@ import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.instrumentation.TestingInstrumentation
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
@@ -25,8 +26,11 @@ class BatchedExecutionStrategyTest extends Specification {
             .queryExecutionStrategy(new BatchedExecutionStrategy())
             .build()
 
+    private TestingInstrumentation testingInstrumentation = new TestingInstrumentation()
+
     private Map<FunWithStringsSchemaFactory.CallType, AtomicInteger> countMap = new HashMap<>()
     private GraphQL graphQLBatchedValue = GraphQL.newGraphQL(FunWithStringsSchemaFactory.createBatched(countMap).createSchema())
+            .instrumentation(testingInstrumentation)
             .queryExecutionStrategy(new BatchedExecutionStrategy())
             .build()
 
@@ -63,6 +67,7 @@ class BatchedExecutionStrategyTest extends Specification {
         runTestAsync(query, expected)
         runTestBatchingUnbatched(query, expected)
         runTestBatching(query, expected)
+        assert !testingInstrumentation.dfInvocations.isEmpty()
     }
 
     private void runTestBatchingUnbatched(String query, Map<String, Object> expected) {

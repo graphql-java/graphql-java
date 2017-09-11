@@ -365,13 +365,16 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .build();
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParameters = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(
-                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment)
+                instrumentationFieldFetchParameters
         );
 
         CompletableFuture<Object> valuesFuture;
         try {
-            Object rawValue = getDataFetcher(fieldDef).get(environment);
+            DataFetcher<?> dataFetcher = instrumentation.instrumentDataFetcher(
+                    getDataFetcher(fieldDef), instrumentationFieldFetchParameters);
+            Object rawValue = dataFetcher.get(environment);
             if (rawValue instanceof CompletionStage) {
                 valuesFuture = ((CompletionStage) rawValue).toCompletableFuture();
             } else {
