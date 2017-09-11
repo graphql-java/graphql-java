@@ -2,14 +2,14 @@ package graphql.parser
 
 import spock.lang.Specification
 
-class GraphqlAntlrToLanguageTest extends Specification {
+class StringValueParsingTest extends Specification {
 
     def "parsing quoted string should work"() {
         given:
         def input = '''"simple quoted"'''
 
         when:
-        String parsed = GraphqlAntlrToLanguage.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
         parsed == "simple quoted"
@@ -20,7 +20,7 @@ class GraphqlAntlrToLanguageTest extends Specification {
         def input = '''"{\"name\": \"graphql\", \"year\": 2015}"'''
 
         when:
-        String parsed = GraphqlAntlrToLanguage.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
         parsed == '''{\"name\": \"graphql\", \"year\": 2015}'''
@@ -31,7 +31,7 @@ class GraphqlAntlrToLanguageTest extends Specification {
         def input = '''"""'''
 
         when:
-        String parsed = GraphqlAntlrToLanguage.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
         parsed == '''"'''
@@ -43,7 +43,7 @@ class GraphqlAntlrToLanguageTest extends Specification {
         def input = '''"\\ud83c\\udf7a"'''
 
         when:
-        String parsed = GraphqlAntlrToLanguage.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
         parsed == '''🍺''' // contains the beer icon 	U+1F37A  : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -54,7 +54,7 @@ class GraphqlAntlrToLanguageTest extends Specification {
         def input = '''"\\u56fe"'''
 
         when:
-        String parsed = GraphqlAntlrToLanguage.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(input)
 
         then:
         parsed == '''图'''
@@ -66,7 +66,7 @@ class GraphqlAntlrToLanguageTest extends Specification {
         def input = '''"""triple quoted"""'''
 
         when:
-        String parsed = GraphqlAntlrToLanguage.parseTripleQuotedString(input)
+        String parsed = StringValueParsing.parseTripleQuotedString(input)
 
         then:
         parsed == '''triple quoted'''
@@ -89,7 +89,7 @@ class GraphqlAntlrToLanguageTest extends Specification {
         def input = '''"""| inner quoted \\""" part but with all others left as they are \\n with slash escaped chars \\b\\ud83c\\udf7a\\r\\t\\n |"""'''
 
         when:
-        String parsed = GraphqlAntlrToLanguage.parseTripleQuotedString(input)
+        String parsed = StringValueParsing.parseTripleQuotedString(input)
 
         then:
         parsed == '''| inner quoted """ part but with all others left as they are \\n with slash escaped chars \\b\\ud83c\\udf7a\\r\\t\\n |'''
@@ -113,7 +113,7 @@ class GraphqlAntlrToLanguageTest extends Specification {
 ''' // 2 empty lines at the start and end
 
         when:
-        String parsed = GraphqlAntlrToLanguage.removeIndentation(input)
+        String parsed = StringValueParsing.removeIndentation(input)
 
         then:
         def expected = '''    line A
