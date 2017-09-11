@@ -6,7 +6,7 @@ This is a GraphQL Java implementation based on the `specification <https://githu
 and the JavaScript `reference implementation <https://github.com/graphql/graphql-js>`_.
 
 
-**Status**: Version ``4.1`` is released.
+**Status**: Version ``4.2`` is released.
 
 Make sure to check out the `awesome related projects <https://github.com/graphql-java/awesome-graphql-java>`_ built on ``graphql-java``.
 
