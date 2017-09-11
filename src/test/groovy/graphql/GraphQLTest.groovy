@@ -806,5 +806,32 @@ class GraphQLTest extends Specification {
         result.getData() == [node: [id: "abc"]]
     }
 
+    def "query with triple quoted multi line strings"() {
+        given:
+        GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(newArgument().name("arg").type(GraphQLString))
+                .dataFetcher({ env -> env.getArgument("arg") }
+        )
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(fieldDefinition)
+                        .build()
+        ).build()
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute('''{ hello(arg:"""
+world
+over
+many lines""") }''')
+
+        then:
+        result.data == [hello: '''world
+over
+many lines''']
+    }
+
 
 }
