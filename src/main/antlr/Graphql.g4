@@ -62,25 +62,32 @@ typeCondition : 'on' typeName;
 name: NAME | FRAGMENT | QUERY | MUTATION | SUBSCRIPTION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
 
 value :
+stringValue |
 IntValue |
 FloatValue |
-StringValue |
 BooleanValue |
 NullValue |
 enumValue |
 arrayValue |
 objectValue;
 
+
 valueWithVariable :
 variable |
+stringValue |
 IntValue |
 FloatValue |
-StringValue |
 BooleanValue |
 NullValue |
 enumValue |
 arrayValueWithVariable |
 objectValueWithVariable;
+
+
+stringValue
+ : TripleQuotedStringValue
+ | StringValue
+ ;
 
 
 enumValue : name ;
@@ -212,7 +219,19 @@ ExponentPart : ('e'|'E') Sign? Digit+;
 Digit : '0'..'9';
 
 
-StringValue: '"' (~(["\\\n\r\u2028\u2029])|EscapedChar)* '"';
+StringValue
+ : '"' ( ~["\\\n\r\u2028\u2029] | EscapedChar )* '"'
+ ;
+
+TripleQuotedStringValue
+ : '"""' TripleQuotedStringPart? '"""'
+ ;
+
+
+// Fragments never become a token of their own: they are only used inside other lexer rules
+fragment TripleQuotedStringPart : ( EscapedTripleQuote | SourceCharacter )+?;
+fragment EscapedTripleQuote : '\\"""';
+fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\uFFFF];
 
 Comment: '#' ~[\n\r\u2028\u2029]* -> channel(2);
 

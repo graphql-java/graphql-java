@@ -1,6 +1,30 @@
 package graphql.parser
 
-import graphql.language.*
+import graphql.language.Argument
+import graphql.language.ArrayValue
+import graphql.language.AstComparator
+import graphql.language.BooleanValue
+import graphql.language.Directive
+import graphql.language.Document
+import graphql.language.Field
+import graphql.language.FloatValue
+import graphql.language.FragmentDefinition
+import graphql.language.FragmentSpread
+import graphql.language.InlineFragment
+import graphql.language.IntValue
+import graphql.language.ListType
+import graphql.language.Node
+import graphql.language.NonNullType
+import graphql.language.NullValue
+import graphql.language.ObjectField
+import graphql.language.ObjectValue
+import graphql.language.OperationDefinition
+import graphql.language.Selection
+import graphql.language.SelectionSet
+import graphql.language.StringValue
+import graphql.language.TypeName
+import graphql.language.VariableDefinition
+import graphql.language.VariableReference
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -388,9 +412,9 @@ class ParserTest extends Specification {
         document.definitions[0].operation == OperationDefinition.Operation.MUTATION
     }
 
-    def "subscription without a name"(){
+    def "subscription without a name"() {
         given:
-        def input="""
+        def input = """
         subscription { s }
         """
         when:
@@ -480,4 +504,56 @@ class ParserTest extends Specification {
         selection.arguments[0].value == NullValue.Null
 
     }
+
+    def "triple quoted strings"() {
+        given:
+        def input = '''{ field(triple : """triple
+string""", single : "single") }'''
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        OperationDefinition operationDefinition = document.definitions[0]
+        Selection selection = operationDefinition.getSelectionSet().getSelections()[0]
+        Field field = (Field) selection
+        assert field.getArguments().size() == 2
+        assert argValue(field, 0) == 'triple\nstring'
+        assert argValue(field, 1) == 'single'
+    }
+
+    def "triple quoted strings with the one special escape character"() {
+        given:
+        def input = '''{ field(
+triple : """triple
+
+string that is \\""" escaped""", 
+
+triple2 : """another string with \\""" escaping""", 
+
+triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
+
+) }'''
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        OperationDefinition operationDefinition = document.definitions[0]
+        Selection selection = operationDefinition.getSelectionSet().getSelections()[0]
+        Field field = (Field) selection
+        assert field.getArguments().size() == 3
+        assert argValue(field, 0) == 'triple\n\nstring that is """ escaped'
+        assert argValue(field, 1) == 'another string with """ escaping'
+        assert argValue(field, 2) == 'edge cases """ "" " \\"" \\" edge cases'
+    }
+
+    String argValue(Field field, Integer index) {
+        def value = (field.getArguments()[index].getValue() as StringValue).getValue()
+        value
+    }
+
+
 }
