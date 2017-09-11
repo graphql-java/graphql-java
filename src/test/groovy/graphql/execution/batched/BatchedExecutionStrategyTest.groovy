@@ -10,6 +10,7 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.Scalars
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.instrumentation.TestingInstrumentation
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
@@ -35,7 +36,10 @@ class BatchedExecutionStrategyTest extends Specification {
             .build()
 
     private Map<FunWithStringsSchemaFactory.CallType, AtomicInteger> countMap = new HashMap<>()
+    private TestingInstrumentation testingInstrumentation = new TestingInstrumentation()
+
     private GraphQL graphQLBatchedValue = GraphQL.newGraphQL(FunWithStringsSchemaFactory.createBatched(countMap).createSchema())
+            .instrumentation(testingInstrumentation)
             .queryExecutionStrategy(new BatchedExecutionStrategy())
             .build()
 
@@ -72,6 +76,8 @@ class BatchedExecutionStrategyTest extends Specification {
         runTestAsync(query, expected)
         runTestBatchingUnbatched(query, expected)
         runTestBatching(query, expected)
+        // check instrumentation recorded invocations
+        assert !testingInstrumentation.dfInvocations.isEmpty()
     }
 
     private void runTestBatchingUnbatched(String query, Map<String, Object> expected) {

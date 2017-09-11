@@ -399,6 +399,9 @@ public class GraphQL {
             return executionResult;
         } catch (AbortExecutionException abortException) {
             ExecutionResultImpl executionResult = new ExecutionResultImpl(abortException);
+            if (!abortException.getUnderlyingErrors().isEmpty()) {
+                executionResult = new ExecutionResultImpl(abortException.getUnderlyingErrors());
+            }
             return CompletableFuture.completedFuture(executionResult);
         }
     }
