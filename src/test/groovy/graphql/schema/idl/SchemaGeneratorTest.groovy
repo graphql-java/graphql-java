@@ -730,6 +730,71 @@ class SchemaGeneratorTest extends Specification {
         ((GraphQLEnumType) schema.getType("Enum")).getValue("FOO").description == " enum value"
     }
 
+    def "doc string comments are used as descriptions by preference"() {
+        given:
+        def spec = '''
+        
+        "docstring 1"
+        # description 1
+        # description 2
+        type Query {
+            # description 3
+            """docstring 3"""
+            foo: String
+            union: Union
+            interface(input: Input): Interface
+            enum: Enum
+        }
+
+        """docstring 4"""
+        # description 4
+        union Union = Query
+        
+        """docstring 5"""
+        # description 5
+        interface Interface {
+            """docstring interface field"""
+            # interface field
+            foo: String
+        }
+        
+        """docstring 6"""
+        # description 6 
+        input Input {
+            """docstring input field"""
+            # input field
+            foo: String
+        }
+        """docstring 7"""
+        # description 7
+        enum Enum {
+            "docstring enum value"
+            # enum value
+            FOO
+        }
+        schema {
+          query: Query
+        }
+        '''
+        when:
+        def schema = schema(spec)
+
+        then:
+        schema.getQueryType().description == "docstring 1"
+        schema.getQueryType().getFieldDefinition("foo").description == "docstring 3"
+        ((GraphQLUnionType) schema.getType("Union")).description == "docstring 4"
+
+        ((GraphQLInterfaceType) schema.getType("Interface")).description == "docstring 5"
+        ((GraphQLInterfaceType) schema.getType("Interface")).getFieldDefinition("foo").description == "docstring interface field"
+
+        ((GraphQLInputObjectType) schema.getType("Input")).description == "docstring 6"
+        ((GraphQLInputObjectType) schema.getType("Input")).getFieldDefinition("foo").description == "docstring input field"
+
+        ((GraphQLEnumType) schema.getType("Enum")).description == "docstring 7"
+        ((GraphQLEnumType) schema.getType("Enum")).getValue("FOO").description == "docstring enum value"
+    }
+
+
     def "comments are separated from descriptions with empty lines"() {
         given:
         def spec = """
