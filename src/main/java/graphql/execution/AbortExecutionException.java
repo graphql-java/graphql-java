@@ -15,6 +15,10 @@ import static java.util.Collections.emptyList;
 
 /**
  * This Exception indicates that the current execution should be aborted.
+ *
+ * If a {@link graphql.schema.DataFetcher} throws this exception then
+ * the execution of the query will be short circuited and any partial results
+ * up until that point will be returned.
  */
 @PublicApi
 public class AbortExecutionException extends GraphQLException implements GraphQLError {
