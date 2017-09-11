@@ -125,7 +125,9 @@ public class GraphQLSchema {
                 .query(existingSchema.getQueryType())
                 .mutation(existingSchema.getMutationType())
                 .subscription(existingSchema.getSubscriptionType())
-                .fieldVisibility(existingSchema.getFieldVisibility());
+                .fieldVisibility(existingSchema.getFieldVisibility())
+                .additionalDirectives(existingSchema.directives)
+                .additionalTypes(existingSchema.additionalTypes);
     }
 
     public static class Builder {
@@ -133,6 +135,8 @@ public class GraphQLSchema {
         private GraphQLObjectType mutationType;
         private GraphQLObjectType subscriptionType;
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
+        private Set<GraphQLType> additionalTypes = Collections.emptySet();
+        private Set<GraphQLDirective> additionalDirectives = Collections.emptySet();
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -166,8 +170,18 @@ public class GraphQLSchema {
             return this;
         }
 
+        public Builder additionalTypes(Set<GraphQLType> additionalTypes) {
+            this.additionalTypes = additionalTypes;
+            return this;
+        }
+
+        public Builder additionalDirectives(Set<GraphQLDirective> additionalDirectives) {
+            this.additionalDirectives = additionalDirectives;
+            return this;
+        }
+
         public GraphQLSchema build() {
-            return build(Collections.emptySet(), Collections.emptySet());
+            return build(additionalTypes, additionalDirectives);
         }
 
         public GraphQLSchema build(Set<GraphQLType> additionalTypes) {
