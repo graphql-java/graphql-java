@@ -89,6 +89,7 @@ stringValue
  | StringValue
  ;
 
+description : stringValue;
 
 enumValue : name ;
 
@@ -122,16 +123,16 @@ nonNullType: typeName '!' | listType '!';
 
 
 // Type System
-typeSystemDefinition:
+typeSystemDefinition: description?
 schemaDefinition |
 typeDefinition |
 typeExtensionDefinition |
 directiveDefinition
 ;
 
-schemaDefinition : SCHEMA directives? '{' operationTypeDefinition+ '}';
+schemaDefinition : description? SCHEMA directives? '{' operationTypeDefinition+ '}';
 
-operationTypeDefinition : operationType ':' typeName;
+operationTypeDefinition : description? operationType ':' typeName;
 
 typeDefinition:
 scalarTypeDefinition |
@@ -142,36 +143,40 @@ enumTypeDefinition |
 inputObjectTypeDefinition
 ;
 
-scalarTypeDefinition : SCALAR name directives?;
+scalarTypeDefinition : description? SCALAR name directives?;
 
-objectTypeDefinition : TYPE name implementsInterfaces? directives? '{' fieldDefinition+ '}';
+objectTypeDefinition : description? TYPE name implementsInterfaces? directives? '{' fieldDefinition+ '}';
 
 implementsInterfaces : IMPLEMENTS typeName+;
 
-fieldDefinition : name argumentsDefinition? ':' type directives?;
+fieldDefinition : description? name argumentsDefinition? ':' type directives?;
 
 argumentsDefinition : '(' inputValueDefinition+ ')';
 
-inputValueDefinition : name ':' type defaultValue? directives?;
+inputValueDefinition : description? name ':' type defaultValue? directives?;
 
-interfaceTypeDefinition : INTERFACE name directives? '{' fieldDefinition+ '}';
+interfaceTypeDefinition : description? INTERFACE name directives? '{' fieldDefinition+ '}';
 
-unionTypeDefinition : UNION name directives? '=' unionMembers;
+unionTypeDefinition : description? UNION name directives? '=' unionMembers;
 
 unionMembers:
 typeName |
 unionMembers '|' typeName
 ;
 
-enumTypeDefinition : ENUM name directives? '{' enumValueDefinition+ '}';
+enumTypeDefinition : description? ENUM name directives? '{' enumValueDefinition+ '}';
 
-enumValueDefinition : enumValue directives?;
+enumValueDefinition : description? enumValue directives?;
 
-inputObjectTypeDefinition : INPUT name directives? '{' inputValueDefinition+ '}';
+inputObjectTypeDefinition : description? INPUT name directives? '{' inputValueDefinition+ '}';
 
+//
+// type extensions dont get "description" strings according to reference implementation
+// https://github.com/graphql/graphql-js/pull/927/files#diff-b9370666fe8cd9ff4dd53e89e60d26afR182
+//
 typeExtensionDefinition : EXTEND objectTypeDefinition;
 
-directiveDefinition : DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
+directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
 
 directiveLocation : name;
 

@@ -10,6 +10,7 @@ import static graphql.language.NodeUtil.directivesByName;
 public class FieldDefinition extends AbstractNode {
     private String name;
     private Type type;
+    private Description description;
     private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
     private List<Directive> directives = new ArrayList<>();
 
@@ -32,6 +33,14 @@ public class FieldDefinition extends AbstractNode {
 
     public String getName() {
         return name;
+    }
+
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
@@ -67,9 +76,9 @@ public class FieldDefinition extends AbstractNode {
 
         FieldDefinition that = (FieldDefinition) o;
 
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
+        if (null == name) {
+            if (null != that.name) return false;
+        } else if (!name.equals(that.name)) {
             return false;
         }
         return true;

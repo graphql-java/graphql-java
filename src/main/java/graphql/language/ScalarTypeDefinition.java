@@ -9,6 +9,7 @@ import static graphql.language.NodeUtil.directivesByName;
 
 public class ScalarTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
+    private Description description;
     private List<Directive> directives = new ArrayList<>();
 
     public ScalarTypeDefinition(String name) {
@@ -30,6 +31,15 @@ public class ScalarTypeDefinition extends AbstractNode implements TypeDefinition
     @Override
     public String getName() {
         return name;
+    }
+
+
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
     }
 
     @Override

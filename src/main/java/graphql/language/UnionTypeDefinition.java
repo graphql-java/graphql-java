@@ -9,6 +9,7 @@ import static graphql.language.NodeUtil.directivesByName;
 
 public class UnionTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
+    private Description description;
     private List<Directive> directives = new ArrayList<>();
     private List<Type> memberTypes = new ArrayList<>();
 
@@ -36,6 +37,14 @@ public class UnionTypeDefinition extends AbstractNode implements TypeDefinition 
     @Override
     public String getName() {
         return name;
+    }
+
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
     }
 
     @Override

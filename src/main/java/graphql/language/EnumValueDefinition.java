@@ -7,6 +7,7 @@ import java.util.Map;
 
 public class EnumValueDefinition extends AbstractNode {
     private String name;
+    private Description description;
     private List<Directive> directives;
 
     public EnumValueDefinition(String name) {
@@ -20,6 +21,14 @@ public class EnumValueDefinition extends AbstractNode {
 
     public String getName() {
         return name;
+    }
+
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
     }
 
     public List<Directive> getDirectives() {

@@ -11,6 +11,7 @@ public class InputValueDefinition extends AbstractNode {
     private String name;
     private Type type;
     private Value defaultValue;
+    private Description description;
     private List<Directive> directives = new ArrayList<>();
 
     public InputValueDefinition(String name) {
@@ -37,6 +38,14 @@ public class InputValueDefinition extends AbstractNode {
 
     public String getName() {
         return name;
+    }
+
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
     }
 
     public Value getDefaultValue() {
