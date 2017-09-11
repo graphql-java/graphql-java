@@ -219,6 +219,8 @@ public abstract class ExecutionStrategy {
             Object fetchedValueRaw = dataFetcher.get(environment);
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
+            checkForAbortException(e);
+
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
         }
@@ -231,6 +233,21 @@ public abstract class ExecutionStrategy {
                 return result;
             }
         });
+    }
+
+    /**
+     * We allow the data fetchers to throw AbortExecutionException to short cut out of the
+     * execution yet still retain the results so far.
+     *
+     * @param dataFetcherEx the exception that was returned by the data fetcher
+     */
+    protected void checkForAbortException(Exception dataFetcherEx) {
+        if (dataFetcherEx instanceof AbortExecutionException) {
+            throw (AbortExecutionException) dataFetcherEx;
+        }
+        if (dataFetcherEx instanceof CompletionException && dataFetcherEx.getCause() instanceof AbortExecutionException) {
+            throw (AbortExecutionException) dataFetcherEx.getCause();
+        }
     }
 
     private void handleFetchingException(ExecutionContext executionContext,
