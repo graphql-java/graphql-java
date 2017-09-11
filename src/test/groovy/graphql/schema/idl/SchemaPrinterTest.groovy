@@ -467,7 +467,7 @@ type Query {
             Object parseLiteral(Object input) {
                 return null
             }
-        });
+        })
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(myScalar).build()
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
@@ -528,6 +528,30 @@ type Query {
   field: String
 }
 """
+    }
+
+
+    def "AST doc string entries are printed if present"() {
+        def schema = generate('''
+            # comments up here
+            """docstring"""
+            # and comments as well down here
+            type Query {
+                "field single desc"
+                field: String
+            }
+        ''')
+
+
+        def result = new SchemaPrinter().print(schema)
+
+        expect:
+        result == '''"""docstring"""
+type Query {
+  "field single desc"
+  field: String
+}
+'''
     }
 
 }
