@@ -81,7 +81,7 @@ class StringValueParsing {
         int count = 0;
         for (int i = 1; i < line.length(); i++) {
             char ch = line.charAt(i);
-            if (!Character.isWhitespace(ch)) {
+            if (ch != ' ' && ch != '\t') {
                 break;
             }
             count++;
