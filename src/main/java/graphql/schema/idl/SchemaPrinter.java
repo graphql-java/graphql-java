@@ -151,7 +151,7 @@ public class SchemaPrinter {
             if (!options.isIncludeScalars()) {
                 return;
             }
-            if (!ScalarInfo.isStandardScalar(type)) {
+            if (!ScalarInfo.isBuiltInScalar(type)) {
                 printComments(out, type, "");
                 out.format("scalar %s\n\n", type.getName());
             }
