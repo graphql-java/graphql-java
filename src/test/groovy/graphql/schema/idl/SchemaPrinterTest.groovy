@@ -1,6 +1,7 @@
 package graphql.schema.idl
 
 import graphql.Scalars
+import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
@@ -9,8 +10,6 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLInterfaceType
-import graphql.schema.GraphQLList
-import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLScalarType
@@ -23,23 +22,20 @@ import spock.lang.Specification
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.mockScalar
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInterfaceType.newInterface
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
+import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
 class SchemaPrinterTest extends Specification {
 
-    def nonNull(GraphQLType type) {
-        new GraphQLNonNull(type)
-    }
-
-    def list(GraphQLType type) {
-        new GraphQLList(type)
-    }
-
     GraphQLSchema starWarsSchema() {
-        def wiring = RuntimeWiring.newRuntimeWiring()
+        def wiring = newRuntimeWiring()
                 .type("Character", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .scalar(ASTEROID)
                 .build()
@@ -83,7 +79,7 @@ class SchemaPrinterTest extends Specification {
 
     GraphQLSchema generate(String spec) {
         def typeRegistry = new SchemaParser().parse(spec)
-        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, RuntimeWiring.newRuntimeWiring().build())
+        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, newRuntimeWiring().build())
         schema
     }
 
@@ -150,7 +146,7 @@ class SchemaPrinterTest extends Specification {
     def "starWars non default Test"() {
         GraphQLSchema schema = starWarsSchema()
 
-        def options = SchemaPrinter.Options.defaultOptions()
+        def options = defaultOptions()
                 .includeIntrospectionTypes(true)
                 .includeScalarTypes(true)
 
@@ -467,13 +463,13 @@ type Query {
             Object parseLiteral(Object input) {
                 return null
             }
-        });
+        })
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(myScalar).build()
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeScalarTypes(true)).print(schema)
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
 
         then:
         result == """type Query {
@@ -530,4 +526,37 @@ type Query {
 """
     }
 
+    def "prints extended types"() {
+        given:
+        def idl = '''
+            type Query {
+                field : CustomScalar
+                bigDecimal : BigDecimal
+            }
+            
+            scalar CustomScalar
+        '''
+
+        def schema = TestUtil.schema(idl, newRuntimeWiring().scalar(mockScalar("CustomScalar")))
+
+
+        when:
+        def result = new SchemaPrinter(options).print(schema)
+
+        then:
+
+        if (expectedStrs.isEmpty()) {
+            assert !result.contains("scalar")
+        } else {
+            expectedStrs.forEach({ s -> assert result.contains(s) })
+        }
+
+
+        where:
+        expectedStrs                                 | options
+        []                                           | defaultOptions()
+        ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
+        ["scalar BigDecimal", "scalar CustomScalar"] | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
+        ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
+    }
 }

@@ -1,7 +1,6 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
-import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -17,6 +16,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -45,10 +45,12 @@ public class SchemaPrinter {
         private final boolean includeIntrospectionTypes;
 
         private final boolean includeScalars;
+        private final boolean includeExtendedScalars;
 
-        private Options(boolean includeIntrospectionTypes, boolean includeScalars) {
+        private Options(boolean includeIntrospectionTypes, boolean includeScalars, boolean includeExtendedScalars) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
+            this.includeExtendedScalars = includeExtendedScalars;
         }
 
         public boolean isIncludeIntrospectionTypes() {
@@ -59,8 +61,12 @@ public class SchemaPrinter {
             return includeScalars;
         }
 
+        public boolean isIncludeExtendedScalars() {
+            return includeExtendedScalars;
+        }
+
         public static Options defaultOptions() {
-            return new Options(false, false);
+            return new Options(false, false, false);
         }
 
         /**
@@ -71,7 +77,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars);
+            return new Options(flag, this.includeScalars, includeExtendedScalars);
         }
 
         /**
@@ -82,7 +88,19 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag);
+            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars);
+        }
+
+        /**
+         * This will allow you to include the graphql 'extended' scalar types that come with graphql-java such as
+         * {@link graphql.Scalars#GraphQLBigDecimal } or {@link graphql.Scalars#GraphQLBigInteger }
+         *
+         * @param flag whether to include them
+         *
+         * @return options
+         */
+        public Options includeExtendedScalarTypes(boolean flag) {
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag);
         }
     }
 
@@ -151,7 +169,17 @@ public class SchemaPrinter {
             if (!options.isIncludeScalars()) {
                 return;
             }
-            if (!ScalarInfo.isGraphqlSpecifiedScalar(type)) {
+            boolean printScalar;
+            if (ScalarInfo.isStandardScalar(type)) {
+                printScalar = false;
+                //noinspection RedundantIfStatement
+                if (options.isIncludeExtendedScalars() && ! ScalarInfo.isGraphqlSpecifiedScalar(type)) {
+                    printScalar = true;
+                }
+            } else {
+                printScalar = true;
+            }
+            if (printScalar) {
                 printComments(out, type, "");
                 out.format("scalar %s\n\n", type.getName());
             }
@@ -219,8 +247,8 @@ public class SchemaPrinter {
                 out.format("type %s {\n", type.getName());
             } else
                 out.format("type %s implements %s {\n",
-                    type.getName(),
-                    type.getInterfaces().stream().map(GraphQLType::getName).collect(Collectors.joining(", ")));
+                        type.getName(),
+                        type.getInterfaces().stream().map(GraphQLType::getName).collect(Collectors.joining(", ")));
 
             visibility.getFieldDefinitions(type).forEach(fd -> {
                 printComments(out, fd, "  ");
