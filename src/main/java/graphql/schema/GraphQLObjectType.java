@@ -146,6 +146,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLFieldDefinition.Builder> builderFunction) {
@@ -160,6 +161,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
+         *
          * @return this
          */
         public Builder field(GraphQLFieldDefinition.Builder builder) {
