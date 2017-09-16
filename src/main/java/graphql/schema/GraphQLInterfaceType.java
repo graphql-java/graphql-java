@@ -13,6 +13,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static java.lang.String.format;
 
 @PublicApi
 public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
@@ -44,7 +45,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
             String name = fieldDefinition.getName();
             if (fieldDefinitionsByName.containsKey(name))
-                throw new AssertException("field " + name + " redefined");
+                throw new AssertException(format("Duplicated definition for field '%s' in interface '%s'", name, this.name));
             fieldDefinitionsByName.put(name, fieldDefinition);
         }
     }
