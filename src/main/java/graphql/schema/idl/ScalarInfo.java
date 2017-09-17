@@ -19,11 +19,22 @@ public class ScalarInfo {
     public static final List<GraphQLScalarType> STANDARD_SCALARS = new ArrayList<>();
 
     /**
+     * A list of the built-in scalar types
+     */
+    public static final List<GraphQLScalarType> BUILT_IN_SCALARS = new ArrayList<>();
+
+    /**
      * A map of scalar type definitions provided by graphql
      */
     public static final Map<String, ScalarTypeDefinition> STANDARD_SCALAR_DEFINITIONS = new LinkedHashMap<>();
 
     static {
+        BUILT_IN_SCALARS.add(Scalars.GraphQLInt);
+        BUILT_IN_SCALARS.add(Scalars.GraphQLFloat);
+        BUILT_IN_SCALARS.add(Scalars.GraphQLString);
+        BUILT_IN_SCALARS.add(Scalars.GraphQLBoolean);
+        BUILT_IN_SCALARS.add(Scalars.GraphQLID);
+
         STANDARD_SCALARS.add(Scalars.GraphQLInt);
         STANDARD_SCALARS.add(Scalars.GraphQLFloat);
         STANDARD_SCALARS.add(Scalars.GraphQLString);
@@ -57,14 +68,14 @@ public class ScalarInfo {
 
 
     /**
-     * Returns true if the scalar type is a standard one provided by graphql
+     * Returns true if the scalar type is a built‐in
      *
      * @param scalarType the type in question
      *
-     * @return true if the scalar type is a standard one provided by graphql
+     * @return true if the scalar type is a built‐in
      */
-    public static boolean isStandardScalar(GraphQLScalarType scalarType) {
-        return STANDARD_SCALARS.stream().anyMatch(sc -> sc.getName().equals(scalarType.getName()));
+    public static boolean isBuiltInScalar(GraphQLScalarType scalarType) {
+        return BUILT_IN_SCALARS.stream().anyMatch(sc -> sc.getName().equals(scalarType.getName()));
     }
 
 }
