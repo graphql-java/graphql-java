@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +16,12 @@ import java.util.stream.Collectors;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static java.lang.String.format;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 
 
 @PublicApi
-public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLMetadataSupport {
 
 
     private final String name;
@@ -26,16 +29,17 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private List<GraphQLOutputType> interfaces = new ArrayList<>();
     private final ObjectTypeDefinition definition;
+    private final Map<String, Object> metadata;
 
     @Internal
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
                              List<GraphQLOutputType> interfaces) {
-        this(name, description, fieldDefinitions, interfaces, null);
+        this(name, description, fieldDefinitions, interfaces, null, null);
     }
 
     @Internal
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
-                             List<GraphQLOutputType> interfaces, ObjectTypeDefinition definition) {
+                             List<GraphQLOutputType> interfaces, ObjectTypeDefinition definition, Map<String, Object> metadata) {
         assertValidName(name);
         assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
         assertNotNull(interfaces, "interfaces can't be null");
@@ -43,6 +47,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         this.description = description;
         this.interfaces = interfaces;
         this.definition = definition;
+        this.metadata = metadata == null ? emptyMap() : unmodifiableMap(metadata);
         buildDefinitionMap(fieldDefinitions);
     }
 
@@ -94,6 +99,11 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     }
 
     @Override
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    @Override
     public String toString() {
         return "GraphQLObjectType{" +
                 "name='" + name + '\'' +
@@ -114,6 +124,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
         private List<GraphQLOutputType> interfaces = new ArrayList<>();
         private ObjectTypeDefinition definition;
+        private Map<String, Object> metadata = new HashMap<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -201,8 +212,18 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             return this;
         }
 
+        public Builder metadata(Map<String, Object> metadata) {
+            this.metadata = metadata == null ? new HashMap<>() : metadata;
+            return this;
+        }
+
+        public Builder metadata(String key, Object metadataValue) {
+            this.metadata.put(key, metadataValue);
+            return this;
+        }
+
         public GraphQLObjectType build() {
-            return new GraphQLObjectType(name, description, fieldDefinitions, interfaces, definition);
+            return new GraphQLObjectType(name, description, fieldDefinitions, interfaces, definition, metadata);
         }
 
     }

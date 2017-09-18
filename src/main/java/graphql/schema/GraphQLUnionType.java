@@ -6,6 +6,8 @@ import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,24 +15,27 @@ import java.util.stream.Collectors;
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 
 @PublicApi
-public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLMetadataSupport {
 
     private final String name;
     private final String description;
     private List<GraphQLOutputType> types = new ArrayList<>();
     private final TypeResolver typeResolver;
     private final UnionTypeDefinition definition;
+    private final Map<String, Object> metadata;
 
 
     @Internal
     public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver) {
-        this(name, description, types, typeResolver, null);
+        this(name, description, types, typeResolver, null, null);
     }
 
     @Internal
-    public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver, UnionTypeDefinition definition) {
+    public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver, UnionTypeDefinition definition, Map<String, Object> metadata) {
         assertValidName(name);
         assertNotNull(types, "types can't be null");
         assertNotEmpty(types, "A Union type must define one or more member types.");
@@ -40,6 +45,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         this.types = types;
         this.typeResolver = typeResolver;
         this.definition = definition;
+        this.metadata = metadata == null ? emptyMap() : unmodifiableMap(metadata);
     }
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
@@ -74,6 +80,11 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         return definition;
     }
 
+    @Override
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
     public static Builder newUnionType() {
         return new Builder();
     }
@@ -85,6 +96,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         private List<GraphQLOutputType> types = new ArrayList<>();
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
+        private Map<String, Object> metadata = new HashMap<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -134,8 +146,19 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
             return this;
         }
 
+        public Builder metadata(Map<String, Object> metadata) {
+            this.metadata = metadata == null ? new HashMap<>() : metadata;
+            return this;
+        }
+
+        public Builder metadata(String key, Object metadataValue) {
+            this.metadata.put(key, metadataValue);
+            return this;
+        }
+
+
         public GraphQLUnionType build() {
-            return new GraphQLUnionType(name, description, types, typeResolver, definition);
+            return new GraphQLUnionType(name, description, types, typeResolver, definition, metadata);
         }
     }
 }

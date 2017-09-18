@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.language.InterfaceTypeDefinition;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,23 +15,26 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static java.lang.String.format;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 
 @PublicApi
-public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLMetadataSupport {
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
+    private final Map<String, Object> metadata;
 
     @Internal
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
-        this(name, description, fieldDefinitions, typeResolver, null);
+        this(name, description, fieldDefinitions, typeResolver, null, null);
     }
 
     @Internal
-    public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, InterfaceTypeDefinition definition) {
+    public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, InterfaceTypeDefinition definition, Map<String, Object> metadata) {
         assertValidName(name);
         assertNotNull(typeResolver, "typeResolver can't null");
         assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
@@ -39,6 +43,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         buildDefinitionMap(fieldDefinitions);
         this.typeResolver = typeResolver;
         this.definition = definition;
+        this.metadata = metadata == null ? emptyMap() : unmodifiableMap(metadata);
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
@@ -76,6 +81,11 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     }
 
     @Override
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    @Override
     public String toString() {
         return "GraphQLInterfaceType{" +
                 "name='" + name + '\'' +
@@ -97,6 +107,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         private List<GraphQLFieldDefinition> fields = new ArrayList<>();
         private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
+        private Map<String, Object> metadata = new HashMap<>();
 
 
         public Builder name(String name) {
@@ -129,6 +140,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLFieldDefinition.Builder> builderFunction) {
@@ -143,6 +155,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
+         *
          * @return this
          */
         public Builder field(GraphQLFieldDefinition.Builder builder) {
@@ -161,8 +174,19 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
             return this;
         }
 
+        public Builder metadata(Map<String, Object> metadata) {
+            this.metadata = metadata == null ? new HashMap<>() : metadata;
+            return this;
+        }
+
+        public Builder metadata(String key, Object metadataValue) {
+            this.metadata.put(key, metadataValue);
+            return this;
+        }
+
+
         public GraphQLInterfaceType build() {
-            return new GraphQLInterfaceType(name, description, fields, typeResolver, definition);
+            return new GraphQLInterfaceType(name, description, fields, typeResolver, definition, metadata);
         }
     }
 

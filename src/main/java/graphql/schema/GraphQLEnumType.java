@@ -8,20 +8,24 @@ import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static java.util.Collections.*;
 
 @PublicApi
-public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLMetadataSupport {
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
     private final EnumTypeDefinition definition;
+    private final Map<String, Object> metadata;
 
     private final Coercing coercing = new Coercing() {
         @Override
@@ -47,15 +51,16 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     @Internal
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
-        this(name, description, values, null);
+        this(name, description, values, null, null);
     }
 
     @Internal
-    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, EnumTypeDefinition definition) {
+    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, EnumTypeDefinition definition, Map<String, Object> metadata) {
         assertValidName(name);
         this.name = name;
         this.description = description;
         this.definition = definition;
+        this.metadata = metadata == null ? emptyMap() : unmodifiableMap(metadata);
         buildMap(values);
     }
 
@@ -65,6 +70,11 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     public GraphQLEnumValueDefinition getValue(String name) {
         return valueDefinitionMap.get(name);
+    }
+
+    @Override
+    public Map<String, Object> getMetadata() {
+        return metadata;
     }
 
     private void buildMap(List<GraphQLEnumValueDefinition> values) {
@@ -128,6 +138,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         private String description;
         private EnumTypeDefinition definition;
         private final List<GraphQLEnumValueDefinition> values = new ArrayList<>();
+        private Map<String, Object> metadata = new HashMap<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -165,9 +176,19 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             return this;
         }
 
+        public Builder metadata(Map<String, Object> metadata) {
+            this.metadata = metadata == null ? new HashMap<>() : metadata;
+            return this;
+        }
+
+        public Builder metadata(String key, Object metadataValue) {
+            this.metadata.put(key, metadataValue);
+            return this;
+        }
+
 
         public GraphQLEnumType build() {
-            return new GraphQLEnumType(name, description, values, definition);
+            return new GraphQLEnumType(name, description, values, definition, metadata);
         }
 
     }
