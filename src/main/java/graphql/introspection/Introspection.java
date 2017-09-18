@@ -292,7 +292,21 @@ public class Introspection {
         FIELD,
         FRAGMENT_DEFINITION,
         FRAGMENT_SPREAD,
-        INLINE_FRAGMENT
+        INLINE_FRAGMENT,
+        //
+        // schema IDL places
+        //
+        SCHEMA,
+        SCALAR,
+        OBJECT,
+        FIELD_DEFINITION,
+        ARGUMENT_DEFINITION,
+        INTERFACE,
+        UNION,
+        ENUM,
+        ENUM_VALUE,
+        INPUT_OBJECT,
+        INPUT_FIELD_DEFINITION
     }
 
     public static GraphQLEnumType __DirectiveLocation = GraphQLEnumType.newEnum()
@@ -304,6 +318,20 @@ public class Introspection {
             .value("FRAGMENT_DEFINITION", DirectiveLocation.FRAGMENT_DEFINITION, "Indicates the directive is valid on fragment definitions.")
             .value("FRAGMENT_SPREAD", DirectiveLocation.FRAGMENT_SPREAD, "Indicates the directive is valid on fragment spreads.")
             .value("INLINE_FRAGMENT", DirectiveLocation.INLINE_FRAGMENT, "Indicates the directive is valid on inline fragments.")
+            //
+            // from schema IDL PR  https://github.com/facebook/graphql/pull/90
+            //
+            .value("SCHEMA", DirectiveLocation.SCHEMA, "Indicates the directive is valid on a schema IDL definition.")
+            .value("SCALAR", DirectiveLocation.SCALAR, "Indicates the directive is valid on a scalar IDL definition.")
+            .value("OBJECT", DirectiveLocation.OBJECT, "Indicates the directive is valid on an object IDL definition.")
+            .value("FIELD_DEFINITION", DirectiveLocation.FIELD_DEFINITION, "Indicates the directive is valid on a field IDL definition.")
+            .value("ARGUMENT_DEFINITION", DirectiveLocation.ARGUMENT_DEFINITION, "Indicates the directive is valid on a field argument IDL definition.")
+            .value("INTERFACE", DirectiveLocation.INTERFACE, "Indicates the directive is valid on an interface IDL definition.")
+            .value("UNION", DirectiveLocation.UNION, "Indicates the directive is valid on an union IDL definition.")
+            .value("ENUM", DirectiveLocation.ENUM, "Indicates the directive is valid on an enum IDL definition.")
+            .value("INPUT_OBJECT", DirectiveLocation.INPUT_OBJECT, "Indicates the directive is valid on an input object IDL definition.")
+            .value("INPUT_FIELD_DEFINITION", DirectiveLocation.INPUT_FIELD_DEFINITION, "Indicates the directive is valid on an input object field IDL definition.")
+
             .build();
 
     public static GraphQLObjectType __Directive = newObject()
