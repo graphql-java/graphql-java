@@ -127,6 +127,27 @@ public class GraphQL {
         return new Builder(graphQLSchema);
     }
 
+    /**
+     * Helps you build a GraphQL object from a previous GraphQL object
+     *
+     * @param previousGraphQL the previous
+     *
+     * @return a builder of GraphQL objects
+     */
+    public static Builder newGraphQL(GraphQL previousGraphQL) {
+        Builder builder = new Builder(previousGraphQL.graphQLSchema);
+        return builder
+                .queryExecutionStrategy(nvl(previousGraphQL.queryStrategy, builder.queryExecutionStrategy))
+                .mutationExecutionStrategy(nvl(previousGraphQL.mutationStrategy, builder.mutationExecutionStrategy))
+                .subscriptionExecutionStrategy(nvl(previousGraphQL.subscriptionStrategy, builder.subscriptionExecutionStrategy))
+                .executionIdProvider(nvl(previousGraphQL.idProvider, builder.idProvider))
+                .instrumentation(nvl(previousGraphQL.instrumentation, builder.instrumentation))
+                .preparsedDocumentProvider(nvl(previousGraphQL.preparsedDocumentProvider, builder.preparsedDocumentProvider));
+    }
+
+    private static <T> T nvl(T obj, T elseObj) {
+        return obj == null ? elseObj : obj;
+    }
 
     @PublicApi
     public static class Builder {
