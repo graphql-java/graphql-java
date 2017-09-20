@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +53,7 @@ public class GraphQLSchema {
         this.subscriptionType = subscriptionType;
         this.fieldVisibility = fieldVisibility;
         this.additionalTypes = dictionary;
-        this.directives = new HashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
+        this.directives = new LinkedHashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
         this.directives.addAll(directives);
         typeMap = new SchemaUtil().allTypes(this, dictionary);
     }
