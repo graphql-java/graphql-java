@@ -845,8 +845,7 @@ class GraphQLTest extends Specification {
 
         when:
         // now copy it as is
-        def builder = GraphQL.newGraphQL(graphQL)
-        def newGraphQL = builder.build()
+        def newGraphQL = graphQL.transform({ builder -> })
         def result = newGraphQL.execute('{ hello }').data
 
         then:
@@ -866,8 +865,9 @@ class GraphQLTest extends Specification {
             }
         }
 
-        builder = GraphQL.newGraphQL(graphQL).executionIdProvider(newExecutionIdProvider).instrumentation(newInstrumentation)
-        newGraphQL = builder.build()
+        newGraphQL = graphQL.transform({ builder ->
+            builder.executionIdProvider(newExecutionIdProvider).instrumentation(newInstrumentation)
+        })
         result = newGraphQL.execute('{ hello }').data
 
         then:
