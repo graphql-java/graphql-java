@@ -20,7 +20,6 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -138,8 +137,10 @@ public class SchemaPrinter {
 
         printer(schema.getClass()).print(out, schema, visibility);
 
-        List<GraphQLType> typesAsList = new ArrayList<>(schema.getAllTypesAsList());
-        typesAsList.sort(Comparator.comparing(GraphQLType::getName));
+        List<GraphQLType> typesAsList = schema.getAllTypesAsList()
+                .stream()
+                .sorted(Comparator.comparing(GraphQLType::getName))
+                .collect(toList());
 
         printType(out, typesAsList, GraphQLInterfaceType.class, visibility);
         printType(out, typesAsList, GraphQLUnionType.class, visibility);
