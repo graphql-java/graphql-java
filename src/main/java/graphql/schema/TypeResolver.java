@@ -5,7 +5,7 @@ import graphql.PublicSpi;
 import graphql.TypeResolutionEnvironment;
 
 /**
- * This is called during type resolution to work out what graphql type should be used
+ * This is called during type resolution to work out what concrete {@link graphql.schema.GraphQLObjectType} should be used
  * dynamically during runtime for {@link GraphQLInterfaceType}s and {@link GraphQLUnionType}s
  */
 @PublicSpi

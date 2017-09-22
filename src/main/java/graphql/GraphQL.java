@@ -34,6 +34,14 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
 
+/**
+ * This class is where all graphql-java query execution begins.  It combines the objects that are needed
+ * to make a successful graphql query, with the most important being the {@link graphql.schema.GraphQLSchema schema}
+ * and the {@link graphql.execution.ExecutionStrategy execution strategy}
+ *
+ * Building this object is very cheap and can be done on each execution if necessary.  Building the schema is often not
+ * as cheap, especially if its parsed from graphql IDL schema format via {@link graphql.schema.idl.SchemaParser}.
+ */
 @PublicApi
 public class GraphQL {
 

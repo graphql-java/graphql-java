@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Directives;
+import graphql.PublicApi;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
@@ -19,6 +20,13 @@ import java.util.Set;
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
+/**
+ * The schema represents the combined type system of the graphql engine.  This is how the engine knows
+ * what graphql queries represent what data.
+ *
+ * See http://graphql.org/learn/schema/#type-language for more details
+ */
+@PublicApi
 public class GraphQLSchema {
 
 
