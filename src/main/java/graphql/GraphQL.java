@@ -383,7 +383,7 @@ public class GraphQL {
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         try {
-            log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
+            log.debug("Executing request. operation name: '{}'. query: '{}'. variables '{}'", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
 
             InstrumentationState instrumentationState = instrumentation.createState();
 
@@ -418,14 +418,18 @@ public class GraphQL {
     }
 
     private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, InstrumentationState instrumentationState) {
+        log.debug("Parsing query: '{}'...", executionInput.getQuery());
         ParseResult parseResult = parse(executionInput, instrumentationState);
         if (parseResult.isFailure()) {
+            log.error("Query failed to parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
         } else {
             final Document document = parseResult.getDocument();
 
+            log.debug("Validating query: '{}'", executionInput.getQuery());
             final List<ValidationError> errors = validate(executionInput, document, instrumentationState);
             if (!errors.isEmpty()) {
+                log.error("Query failed to validate : '{}'", executionInput.getQuery());
                 return new PreparsedDocumentEntry(errors);
             }
 
@@ -466,7 +470,22 @@ public class GraphQL {
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
         ExecutionId executionId = idProvider.provide(query, operationName, context);
-        return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
+
+        log.debug("Executing '{}'. operation name: '{}'. query: '{}'. variables '{}'", executionId, executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
+        CompletableFuture<ExecutionResult> future = execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
+        future.whenComplete((result, throwable) -> {
+            if (throwable != null) {
+                log.error(String.format("Execution '%s' threw exception when executing : query : '%s'. variables '%s'", executionId, executionInput.getQuery(), executionInput.getVariables()), throwable);
+            } else {
+                int errorCount = result.getErrors().size();
+                if (errorCount > 0) {
+                    log.debug("Execution '{}' completed with '{}' errors", executionId, errorCount);
+                } else {
+                    log.debug("Execution '{}' completed with zero errors", executionId);
+                }
+            }
+        });
+        return future;
     }
 
     private static class ParseResult {

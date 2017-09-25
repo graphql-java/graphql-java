@@ -18,6 +18,8 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,6 +36,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
 public class Execution {
+    private static final Logger log = LoggerFactory.getLogger(Execution.class);
 
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ExecutionStrategy queryStrategy;
@@ -119,13 +122,16 @@ public class Execution {
 
         CompletableFuture<ExecutionResult> result;
         try {
+            ExecutionStrategy executionStrategy;
             if (operation == OperationDefinition.Operation.MUTATION) {
-                result = mutationStrategy.execute(executionContext, parameters);
+                executionStrategy = mutationStrategy;
             } else if (operation == SUBSCRIPTION) {
-                result = subscriptionStrategy.execute(executionContext, parameters);
+                executionStrategy = subscriptionStrategy;
             } else {
-                result = queryStrategy.execute(executionContext, parameters);
+                executionStrategy = queryStrategy;
             }
+            log.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
+            result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non null types all the way from an offending non null type
             // up to the root object type and there was a a null value some where.
