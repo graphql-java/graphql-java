@@ -1,5 +1,8 @@
 package graphql.schema;
 
+import graphql.Internal;
+
+@Internal
 public class GraphQLTypeUtil {
 
     /**

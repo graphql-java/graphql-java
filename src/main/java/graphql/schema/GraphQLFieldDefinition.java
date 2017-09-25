@@ -14,6 +14,16 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+/**
+ * Fields are the ways you get data values in graphql and a field definition represents a field, its type, the arguments it takes
+ * and the {@link graphql.schema.DataFetcher} used to get data values for that field.
+ *
+ * Fields can be thought of as functions in graphql, they have a name, take defined arguments and return a value.
+ *
+ * Fields can also be deprecated, which indicates the consumers that a field wont be supported in the future.
+ *
+ * See http://graphql.org/learn/queries/#fields for more details on the concept.
+ */
 @PublicApi
 public class GraphQLFieldDefinition {
 
@@ -28,7 +38,7 @@ public class GraphQLFieldDefinition {
 
     @Internal
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
-        this(name,description,type, dataFetcher,arguments,deprecationReason,null);
+        this(name, description, type, dataFetcher, arguments, deprecationReason, null);
     }
 
     @Internal
@@ -189,6 +199,7 @@ public class GraphQLFieldDefinition {
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder argument(UnaryOperator<GraphQLArgument.Builder> builderFunction) {
@@ -202,6 +213,7 @@ public class GraphQLFieldDefinition {
          * from within
          *
          * @param builder an un-built/incomplete GraphQLArgument
+         *
          * @return this
          */
         public Builder argument(GraphQLArgument.Builder builder) {
