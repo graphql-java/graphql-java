@@ -1,8 +1,11 @@
 package graphql.schema.idl
 
+import graphql.GraphQL
 import graphql.Scalars
 import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
+import graphql.introspection.IntrospectionQuery
+import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
@@ -559,4 +562,60 @@ type Query {
         ["scalar BigDecimal", "scalar CustomScalar"] | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
         ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
     }
+
+
+    def "print introspection result back to IDL"() {
+        GraphQLSchema schema = starWarsSchema()
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        def schemaDefinition = new IntrospectionResultToSchema().createSchemaDefinition(executionResult)
+
+        def result = new SchemaPrinter().print(schemaDefinition)
+
+        expect:
+        result ==
+                """interface Character {
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
+}
+
+type Droid {
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
+  primaryFunction: String
+  madeOn: Planet
+}
+
+type Human {
+  id: ID!
+  name: String!
+  friends: [Character]
+  appearsIn: [Episode]!
+  homePlanet: String
+}
+
+type Planet {
+  name: String
+  hitBy: Asteroid
+}
+
+type Query {
+  hero(episode: Episode): Character
+  droid(id: ID!): Droid
+}
+
+enum Episode {
+  NEWHOPE
+  EMPIRE
+  JEDI
+}
+"""
+    }
+
 }

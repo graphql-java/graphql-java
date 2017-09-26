@@ -74,7 +74,29 @@ public class ScalarInfo {
      * @return true if the scalar type is a graphql-java provided scalar
      */
     public static boolean isStandardScalar(GraphQLScalarType scalarType) {
-        return STANDARD_SCALARS.stream().anyMatch(sc -> sc.getName().equals(scalarType.getName()));
+        return inList(STANDARD_SCALARS, scalarType.getName());
+    }
+
+    /**
+     * Returns true if the scalar type is a standard one provided by graphql-java
+     *
+     * @param scalarTypeName the name of the scalar type in question
+     *
+     * @return true if the scalar type is a graphql-java provided scalar
+     */
+    public static boolean isStandardScalar(String scalarTypeName) {
+        return inList(STANDARD_SCALARS, scalarTypeName);
+    }
+
+    /**
+     * Returns true if the scalar type is a scalar that is specified by the graphql specification
+     *
+     * @param scalarTypeName the name of the scalar type in question
+     *
+     * @return true if the scalar type is is specified by the graphql specification
+     */
+    public static boolean isGraphqlSpecifiedScalar(String scalarTypeName) {
+        return inList(GRAPHQL_SPECIFICATION_SCALARS, scalarTypeName);
     }
 
     /**
@@ -85,7 +107,11 @@ public class ScalarInfo {
      * @return true if the scalar type is is specified by the graphql specification
      */
     public static boolean isGraphqlSpecifiedScalar(GraphQLScalarType scalarType) {
-        return GRAPHQL_SPECIFICATION_SCALARS.stream().anyMatch(sc -> sc.getName().equals(scalarType.getName()));
+        return inList(GRAPHQL_SPECIFICATION_SCALARS, scalarType.getName());
+    }
+
+    private static boolean inList(List<GraphQLScalarType> scalarList, String scalarTypeName) {
+        return scalarList.stream().anyMatch(sc -> sc.getName().equals(scalarTypeName));
     }
 
 }

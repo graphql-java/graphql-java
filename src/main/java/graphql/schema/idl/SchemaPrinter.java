@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.language.Document;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -120,6 +121,22 @@ public class SchemaPrinter {
         printers.put(GraphQLInterfaceType.class, interfacePrinter());
         printers.put(GraphQLUnionType.class, unionPrinter());
         printers.put(GraphQLInputObjectType.class, inputObjectPrinter());
+    }
+
+    /**
+     * This can print an in memory GraphQL IDL document back to a logical schema definition.
+     *
+     * If you want to turn a Introspection query result into a Document (and then into a printed
+     * schema) then use {@link graphql.introspection.IntrospectionResultToSchema#createSchemaDefinition(java.util.Map)}
+     * first to get the {@link graphql.language.Document} and then print that.
+     *
+     * @param schemaIDL the parsed schema IDL
+     *
+     * @return the logical schema definition
+     */
+    public String print(Document schemaIDL) {
+        TypeDefinitionRegistry registry = new SchemaParser().buildRegistry(schemaIDL);
+        return print(UnExecutableSchemaGenerator.makeUnExecutableSchema(registry));
     }
 
     /**
