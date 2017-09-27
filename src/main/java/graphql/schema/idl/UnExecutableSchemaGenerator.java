@@ -44,6 +44,16 @@ public class UnExecutableSchemaGenerator {
             }
 
             @Override
+            public boolean providesTypeResolver(UnionWiringEnvironment environment) {
+                return true;
+            }
+
+            @Override
+            public TypeResolver getTypeResolver(UnionWiringEnvironment environment) {
+                return env -> env.getSchema().getQueryType();
+            }
+
+            @Override
             public DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
                 return env -> new PropertyDataFetcher<>(env.getFieldDefinition().getName());
             }
