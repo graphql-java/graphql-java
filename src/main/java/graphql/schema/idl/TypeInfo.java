@@ -50,6 +50,18 @@ public class TypeInfo {
         return typeName.getName();
     }
 
+    public boolean isList() {
+        return rawType instanceof ListType;
+    }
+
+    public boolean isNonNull() {
+        return rawType instanceof NonNullType;
+    }
+
+    public boolean isPlain() {
+        return !isList() && !isNonNull();
+    }
+
     /**
      * This will decorate a graphql type with the original hierarchy of non null and list'ness
      * it originally contained in its definition type
@@ -76,6 +88,26 @@ public class TypeInfo {
         // we handle both input and output graphql types
         //noinspection unchecked
         return (T) out;
+    }
+
+    public static String getAstDesc(Type type) {
+        if (type instanceof NonNullType) {
+            return getAstDesc(((NonNullType) type).getType()) + "!";
+        }
+        if (type instanceof ListType) {
+            return "[" + getAstDesc(((ListType) type).getType()) + "]";
+        }
+        return ((TypeName) type).getName();
+    }
+
+    public TypeInfo unwrapOne() {
+        if (rawType instanceof NonNullType) {
+            return typeInfo(((NonNullType) rawType).getType());
+        }
+        if (rawType instanceof ListType) {
+            return typeInfo(((ListType) rawType).getType());
+        }
+        return this;
     }
 
     @Override
