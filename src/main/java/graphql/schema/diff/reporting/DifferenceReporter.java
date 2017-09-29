@@ -1,10 +1,10 @@
-package graphql.diff.reporting;
+package graphql.schema.diff.reporting;
 
 import graphql.PublicSpi;
-import graphql.diff.DiffEvent;
+import graphql.schema.diff.DiffEvent;
 
 /**
- * This is called with each different encountered (including info ones) by a {@link graphql.diff.SchemaDiff} operation
+ * This is called with each different encountered (including info ones) by a {@link graphql.schema.diff.SchemaDiff} operation
  */
 @PublicSpi
 public interface DifferenceReporter {

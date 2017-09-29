@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Internal;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.Type;
@@ -13,6 +14,7 @@ import java.util.Stack;
 /**
  * This helper gives you access to the type info given a type definition
  */
+@Internal
 public class TypeInfo {
 
     public static TypeInfo typeInfo(Type type) {

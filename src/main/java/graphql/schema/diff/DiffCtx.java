@@ -1,7 +1,7 @@
-package graphql.diff;
+package graphql.schema.diff;
 
 import graphql.Internal;
-import graphql.diff.reporting.DifferenceReporter;
+import graphql.schema.diff.reporting.DifferenceReporter;
 import graphql.language.Document;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;

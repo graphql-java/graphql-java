@@ -1,8 +1,8 @@
-package graphql.diff.reporting;
+package graphql.schema.diff.reporting;
 
 import graphql.PublicApi;
-import graphql.diff.DiffEvent;
-import graphql.diff.DiffLevel;
+import graphql.schema.diff.DiffEvent;
+import graphql.schema.diff.DiffLevel;
 
 import java.io.PrintStream;
 

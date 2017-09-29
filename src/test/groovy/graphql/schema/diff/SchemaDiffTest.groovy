@@ -1,9 +1,6 @@
-package graphql.diff
+package graphql.schema.diff
 
 import graphql.TestUtil
-import graphql.diff.reporting.CapturingReporter
-import graphql.diff.reporting.ChainedReporter
-import graphql.diff.reporting.PrintStreamReporter
 import graphql.language.Argument
 import graphql.language.Directive
 import graphql.language.IntValue
@@ -20,6 +17,9 @@ import graphql.schema.DataFetcher
 import graphql.schema.GraphQLScalarType
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.TypeResolver
+import graphql.schema.diff.reporting.CapturingReporter
+import graphql.schema.diff.reporting.ChainedReporter
+import graphql.schema.diff.reporting.PrintStreamReporter
 import graphql.schema.idl.FieldWiringEnvironment
 import graphql.schema.idl.InterfaceWiringEnvironment
 import graphql.schema.idl.RuntimeWiring

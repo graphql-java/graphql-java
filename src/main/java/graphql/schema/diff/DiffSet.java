@@ -1,4 +1,4 @@
-package graphql.diff;
+package graphql.schema.diff;
 
 import graphql.Assert;
 import graphql.ExecutionResult;
