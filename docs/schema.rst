@@ -447,7 +447,7 @@ Modularising the Schema IDL
 
 Having one one large schema file is not always viable.  You can modularise you schema using two techniques.
 
-The first technique is to merge multiple Schema IDL files into one logic unit.  In the case below the schema as
+The first technique is to merge multiple Schema IDL files into one logic unit.  In the case below the schema has
 been split into multiple files and merged all together just before schema generation.
 
 .. code-block:: java
