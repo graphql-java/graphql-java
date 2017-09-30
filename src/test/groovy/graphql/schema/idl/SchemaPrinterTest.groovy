@@ -639,43 +639,43 @@ type TypeE {
         expect:
         result ==
                 """interface Character {
+  appearsIn: [Episode]!
+  friends: [Character]
   id: ID!
   name: String!
-  friends: [Character]
-  appearsIn: [Episode]!
 }
 
 type Droid {
-  id: ID!
-  name: String!
-  friends: [Character]
   appearsIn: [Episode]!
-  primaryFunction: String
+  friends: [Character]
+  id: ID!
   madeOn: Planet
+  name: String!
+  primaryFunction: String
 }
 
 type Human {
+  appearsIn: [Episode]!
+  friends: [Character]
+  homePlanet: String
   id: ID!
   name: String!
-  friends: [Character]
-  appearsIn: [Episode]!
-  homePlanet: String
 }
 
 type Planet {
-  name: String
   hitBy: Asteroid
+  name: String
 }
 
 type Query {
-  hero(episode: Episode): Character
   droid(id: ID!): Droid
+  hero(episode: Episode): Character
 }
 
 enum Episode {
-  NEWHOPE
   EMPIRE
   JEDI
+  NEWHOPE
 }
 """
     }
