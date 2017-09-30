@@ -39,22 +39,29 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         Map<String, List<Field>> fields = parameters.fields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         List<CompletableFuture<ExecutionResult>> futures = new ArrayList<>();
-        for (String fieldName : fieldNames) {
-            List<Field> currentField = fields.get(fieldName);
+        try {
+            for (String fieldName : fieldNames) {
+                List<Field> currentField = fields.get(fieldName);
 
-            ExecutionPath fieldPath = parameters.path().segment(fieldName);
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath));
+                ExecutionPath fieldPath = parameters.path().segment(fieldName);
+                ExecutionStrategyParameters newParameters = parameters
+                        .transform(builder -> builder.field(currentField).path(fieldPath));
 
-            CompletableFuture<ExecutionResult> future = resolveField(executionContext, newParameters);
-            futures.add(future);
+                CompletableFuture<ExecutionResult> future = resolveField(executionContext, newParameters);
+                futures.add(future);
+            }
+        } catch (AbortExecutionException abortExecution) {
+            // if some one told us to stop then we are executing then we simply deliver as much result
+            // as we currently have
+            return partialResult(executionContext, abortExecution, fieldNames, futures);
         }
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         Async.each(futures).whenComplete(handleResults(executionContext, fieldNames, overallResult));
 
-        executionStrategyCtx.onEnd(overallResult,null);
+        executionStrategyCtx.onEnd(overallResult, null);
         return overallResult;
     }
+
 
 }
