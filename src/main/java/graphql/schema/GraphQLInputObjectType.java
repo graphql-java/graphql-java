@@ -14,6 +14,12 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+/**
+ * graphql clearly delineates between the types of objects that represent the output of a query and input objects that
+ * can be fed into a graphql mutation.  You can define objects as input to graphql via this class
+ *
+ * See http://graphql.org/learn/schema/#input-types for more details on the concept
+ */
 @PublicApi
 public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer {
 
@@ -24,7 +30,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
 
     @Internal
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
-        this(name,description,fields,null);
+        this(name, description, fields, null);
     }
 
     @Internal
@@ -119,6 +125,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLInputObjectField.Builder> builderFunction) {
@@ -133,6 +140,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
          * from within
          *
          * @param builder an un-built/incomplete GraphQLFieldDefinition
+         *
          * @return this
          */
         public Builder field(GraphQLInputObjectField.Builder builder) {

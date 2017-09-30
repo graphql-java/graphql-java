@@ -1,7 +1,10 @@
 package graphql.schema;
 
 
+import graphql.PublicApi;
+
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.UnaryOperator;
@@ -10,6 +13,12 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.introspection.Introspection.DirectiveLocation;
 
+/**
+ * A directive can be used to modify the behavior of a graphql field.
+ *
+ * See http://graphql.org/learn/queries/#directives for more details on the concept.
+ */
+@PublicApi
 public class GraphQLDirective {
 
     private final String name;
@@ -22,7 +31,7 @@ public class GraphQLDirective {
 
     public GraphQLDirective(String name, String description, EnumSet<DirectiveLocation> locations,
                             List<GraphQLArgument> arguments, boolean onOperation, boolean onFragment, boolean onField) {
-    	assertValidName(name);
+        assertValidName(name);
         assertNotNull(arguments, "arguments can't be null");
         this.name = name;
         this.description = description;
@@ -53,8 +62,9 @@ public class GraphQLDirective {
     }
 
     /**
-     * @deprecated  Use {@link #validLocations()}
      * @return onOperation
+     *
+     * @deprecated Use {@link #validLocations()}
      */
     @Deprecated
     public boolean isOnOperation() {
@@ -62,8 +72,9 @@ public class GraphQLDirective {
     }
 
     /**
-     * @deprecated  Use {@link #validLocations()}
      * @return onFragment
+     *
+     * @deprecated Use {@link #validLocations()}
      */
     @Deprecated
     public boolean isOnFragment() {
@@ -71,8 +82,9 @@ public class GraphQLDirective {
     }
 
     /**
-     * @deprecated  Use {@link #validLocations()}
      * @return onField
+     *
+     * @deprecated Use {@link #validLocations()}
      */
     @Deprecated
     public boolean isOnField() {
@@ -107,10 +119,8 @@ public class GraphQLDirective {
             return this;
         }
 
-        public Builder validLocations(DirectiveLocation ...validLocations) {
-            for (DirectiveLocation location : validLocations) {
-                locations.add(location);
-            }
+        public Builder validLocations(DirectiveLocation... validLocations) {
+            Collections.addAll(locations, validLocations);
             return this;
         }
 
@@ -129,6 +139,7 @@ public class GraphQLDirective {
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder argument(UnaryOperator<GraphQLArgument.Builder> builderFunction) {
@@ -142,6 +153,7 @@ public class GraphQLDirective {
          * from within
          *
          * @param builder an un-built/incomplete GraphQLArgument
+         *
          * @return this
          */
         public Builder argument(GraphQLArgument.Builder builder) {
@@ -150,9 +162,11 @@ public class GraphQLDirective {
         }
 
         /**
-         * @deprecated  Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
          * @param onOperation onOperation
+         *
          * @return this builder
+         *
+         * @deprecated Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
          */
         @Deprecated
         public Builder onOperation(boolean onOperation) {
@@ -161,9 +175,11 @@ public class GraphQLDirective {
         }
 
         /**
-         * @deprecated  Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
          * @param onFragment onFragment
+         *
          * @return this builder
+         *
+         * @deprecated Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
          */
         @Deprecated
         public Builder onFragment(boolean onFragment) {
@@ -172,9 +188,11 @@ public class GraphQLDirective {
         }
 
         /**
-         * @deprecated  Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
          * @param onField onField
+         *
          * @return this builder
+         *
+         * @deprecated Use {@code graphql.schema.GraphQLDirective.Builder#validLocations(DirectiveLocation...)}
          */
         @Deprecated
         public Builder onField(boolean onField) {

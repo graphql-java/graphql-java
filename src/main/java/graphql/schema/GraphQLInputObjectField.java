@@ -10,6 +10,14 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+/**
+ * Input objects defined via {@link graphql.schema.GraphQLInputObjectType} contains these input fields.
+ *
+ * There are similar to {@link graphql.schema.GraphQLFieldDefinition} however they can ONLY be used on input objects, that
+ * is to describe values that are fed into a graphql mutation.
+ *
+ * See http://graphql.org/learn/schema/#input-types for more details on the concept.
+ */
 @PublicApi
 public class GraphQLInputObjectField {
 
@@ -26,7 +34,7 @@ public class GraphQLInputObjectField {
 
     @Internal
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue) {
-        this(name,description,type,defaultValue,null);
+        this(name, description, type, defaultValue, null);
     }
 
     @Internal
@@ -48,7 +56,8 @@ public class GraphQLInputObjectField {
         return name;
     }
 
-    public GraphQLInputType getType() { return type;
+    public GraphQLInputType getType() {
+        return type;
     }
 
     public Object getDefaultValue() {

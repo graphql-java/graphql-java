@@ -29,11 +29,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
 
+/**
+ * This class is where all graphql-java query execution begins.  It combines the objects that are needed
+ * to make a successful graphql query, with the most important being the {@link graphql.schema.GraphQLSchema schema}
+ * and the {@link graphql.execution.ExecutionStrategy execution strategy}
+ *
+ * Building this object is very cheap and can be done on each execution if necessary.  Building the schema is often not
+ * as cheap, especially if its parsed from graphql IDL schema format via {@link graphql.schema.idl.SchemaParser}.
+ */
 @PublicApi
 public class GraphQL {
 
@@ -128,21 +137,26 @@ public class GraphQL {
     }
 
     /**
-     * Helps you build a GraphQL object from a previous GraphQL object
+     * This helps you transform the current GraphQL object into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
      *
-     * @param previousGraphQL the previous
+     * @param builderConsumer the consumer code that will be given a builder to changee
      *
-     * @return a builder of GraphQL objects
+     * @return a new GraphQL object based on calling build on that builder
      */
-    public static Builder newGraphQL(GraphQL previousGraphQL) {
-        Builder builder = new Builder(previousGraphQL.graphQLSchema);
-        return builder
-                .queryExecutionStrategy(nvl(previousGraphQL.queryStrategy, builder.queryExecutionStrategy))
-                .mutationExecutionStrategy(nvl(previousGraphQL.mutationStrategy, builder.mutationExecutionStrategy))
-                .subscriptionExecutionStrategy(nvl(previousGraphQL.subscriptionStrategy, builder.subscriptionExecutionStrategy))
-                .executionIdProvider(nvl(previousGraphQL.idProvider, builder.idProvider))
-                .instrumentation(nvl(previousGraphQL.instrumentation, builder.instrumentation))
-                .preparsedDocumentProvider(nvl(previousGraphQL.preparsedDocumentProvider, builder.preparsedDocumentProvider));
+    public GraphQL transform(Consumer<GraphQL.Builder> builderConsumer) {
+        Builder builder = new Builder(this.graphQLSchema);
+        builder
+                .queryExecutionStrategy(nvl(this.queryStrategy, builder.queryExecutionStrategy))
+                .mutationExecutionStrategy(nvl(this.mutationStrategy, builder.mutationExecutionStrategy))
+                .subscriptionExecutionStrategy(nvl(this.subscriptionStrategy, builder.subscriptionExecutionStrategy))
+                .executionIdProvider(nvl(this.idProvider, builder.idProvider))
+                .instrumentation(nvl(this.instrumentation, builder.instrumentation))
+                .preparsedDocumentProvider(nvl(this.preparsedDocumentProvider, builder.preparsedDocumentProvider));
+
+        builderConsumer.accept(builder);
+
+        return builder.build();
     }
 
     private static <T> T nvl(T obj, T elseObj) {

@@ -7,7 +7,8 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
 /**
- * This allows you to define new scalar types.
+ * A scalar type is a leaf node in the graphql tree of types.  This class allows you to define new scalar types.
+ *
  * <blockquote>
  * GraphQL provides a number of built‐in scalars, but type systems can add additional scalars with semantic meaning,
  * for example, a GraphQL system could define a scalar called Time which, while serialized as a string, promises to
@@ -15,6 +16,10 @@ import static graphql.Assert.assertValidName;
  *
  * From the spec : http://facebook.github.io/graphql/#sec-Scalars
  * </blockquote>
+ *
+ * graphql-java ships with a set of predefined scalar types via {@link graphql.Scalars}
+ *
+ * @see graphql.Scalars
  */
 public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType {
 

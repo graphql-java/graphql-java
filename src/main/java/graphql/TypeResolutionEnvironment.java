@@ -7,6 +7,8 @@ import graphql.schema.GraphQLType;
 import java.util.Map;
 
 /**
+ * This is passed to a {@link graphql.schema.TypeResolver} to help with object type resolution.
+ *
  * See {@link graphql.schema.TypeResolver#getType(TypeResolutionEnvironment)} for how this is used
  */
 public class TypeResolutionEnvironment {
@@ -25,22 +27,38 @@ public class TypeResolutionEnvironment {
         this.schema = schema;
     }
 
+    /**
+     * @return the object that needs to be resolved into a specific graphql type
+     */
     public Object getObject() {
         return object;
     }
 
+    /**
+     * @return the runtime arguments to this the graphql field
+     */
     public Map<String, Object> getArguments() {
         return arguments;
     }
 
+    /**
+     * @return the graphql field in question
+     */
     public Field getField() {
         return field;
     }
 
+    /**
+     * @return the type of the graphql field, which still be either a {@link graphql.schema.GraphQLUnionType} or a
+     * {@link graphql.schema.GraphQLInterfaceType}
+     */
     public GraphQLType getFieldType() {
         return fieldType;
     }
 
+    /**
+     * @return the graphql schema in question
+     */
     public GraphQLSchema getSchema() {
         return schema;
     }

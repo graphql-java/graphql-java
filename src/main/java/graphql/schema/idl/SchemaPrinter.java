@@ -93,7 +93,7 @@ public class SchemaPrinter {
 
         /**
          * This will allow you to include the graphql 'extended' scalar types that come with graphql-java such as
-         * {@link graphql.Scalars#GraphQLBigDecimal } or {@link graphql.Scalars#GraphQLBigInteger }
+         * GraphQLBigDecimal or GraphQLBigInteger
          *
          * @param flag whether to include them
          *
@@ -173,7 +173,7 @@ public class SchemaPrinter {
             if (ScalarInfo.isStandardScalar(type)) {
                 printScalar = false;
                 //noinspection RedundantIfStatement
-                if (options.isIncludeExtendedScalars() && ! ScalarInfo.isGraphqlSpecifiedScalar(type)) {
+                if (options.isIncludeExtendedScalars() && !ScalarInfo.isGraphqlSpecifiedScalar(type)) {
                     printScalar = true;
                 }
             } else {
