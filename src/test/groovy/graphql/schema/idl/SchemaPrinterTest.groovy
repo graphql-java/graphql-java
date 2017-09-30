@@ -118,6 +118,17 @@ class SchemaPrinterTest extends Specification {
         argStr == "(arg1: [Int!] = 10, arg2: String, arg3: String = \"default\")"
     }
 
+    def "argsString_sorts"() {
+        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(Scalars.GraphQLInt)), 10)
+        def argument2 = new GraphQLArgument("arg2", null, GraphQLString, null)
+        def argument3 = new GraphQLArgument("arg3", null, GraphQLString, "default")
+        def argStr = new SchemaPrinter().argsString([argument2, argument1, argument3])
+
+        expect:
+
+        argStr == "(arg1: [Int!] = 10, arg2: String, arg3: String = \"default\")"
+    }
+
     def "print type direct"() {
         GraphQLSchema schema = starWarsSchema()
 
@@ -126,10 +137,10 @@ class SchemaPrinterTest extends Specification {
         expect:
         result ==
                 """interface Character {
+  appearsIn: [Episode]!
+  friends: [Character]
   id: ID!
   name: String!
-  friends: [Character]
-  appearsIn: [Episode]!
 }
 
 """
@@ -562,6 +573,57 @@ type Query {
         ["scalar BigDecimal", "scalar CustomScalar"] | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
         ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
     }
+
+
+    def "schema will be sorted"() {
+        def schema = generate("""
+            type Query {
+                fieldB(argZ : String, argY : Int, argX : String) : String
+                fieldA(argZ : String, argY : Int, argX : String) : String
+                fieldC(argZ : String, argY : Int, argX : String) : String
+                fieldE : TypeE
+                fieldD : TypeD
+            }
+            
+            type TypeE {
+                fieldA : String
+                fieldC : String
+                fieldB : String
+            }
+
+            type TypeD {
+                fieldB : String
+                fieldA : String
+                fieldC : String
+            }
+        """)
+
+
+        def result = new SchemaPrinter().print(schema)
+
+        expect:
+        result == """type Query {
+  fieldA(argX: String, argY: Int, argZ: String): String
+  fieldB(argX: String, argY: Int, argZ: String): String
+  fieldC(argX: String, argY: Int, argZ: String): String
+  fieldD: TypeD
+  fieldE: TypeE
+}
+
+type TypeD {
+  fieldA: String
+  fieldB: String
+  fieldC: String
+}
+
+type TypeE {
+  fieldA: String
+  fieldB: String
+  fieldC: String
+}
+"""
+    }
+
 
 
     def "print introspection result back to IDL"() {
