@@ -216,7 +216,7 @@ StringValue: '"' (~(["\\\n\r\u2028\u2029])|EscapedChar)* '"';
 
 Comment: '#' ~[\n\r\u2028\u2029]* -> channel(2);
 
-Ignored: (Whitespace|Comma|LineTerminator) -> skip;
+Ignored: (UnicodeBOM|Whitespace|LineTerminator|Comma) -> skip;
 
 fragment EscapedChar :   '\\' (["\\/bfnrt] | Unicode) ;
 fragment Unicode : 'u' Hex Hex Hex Hex ;
@@ -224,5 +224,6 @@ fragment Hex : [0-9a-fA-F] ;
 
 fragment LineTerminator: [\n\r\u2028\u2029];
 
-fragment Whitespace : [\t\u000b\f\u0020\u00a0];
+fragment Whitespace : [\u0009\u0020];
 fragment Comma : ',';
+fragment UnicodeBOM : [\ufeff];
