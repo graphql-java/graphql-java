@@ -15,7 +15,7 @@ class StarWarsData {
             friends   : ['1002', '1003', '2000', '2001'],
             appearsIn : [4, 5, 6],
             homePlanet: 'Tatooine'
-    ];
+    ]
 
     static def vader = [
             id        : '1001',
@@ -23,14 +23,14 @@ class StarWarsData {
             friends   : ['1004'],
             appearsIn : [4, 5, 6],
             homePlanet: 'Tatooine',
-    ];
+    ]
 
     static def han = [
             id       : '1002',
             name     : 'Han Solo',
             friends  : ['1000', '1003', '2001'],
             appearsIn: [4, 5, 6],
-    ];
+    ]
 
     static def leia = [
             id        : '1003',
@@ -38,14 +38,14 @@ class StarWarsData {
             friends   : ['1000', '1002', '2000', '2001'],
             appearsIn : [4, 5, 6],
             homePlanet: 'Alderaan',
-    ];
+    ]
 
     static def tarkin = [
             id       : '1004',
             name     : 'Wilhuff Tarkin',
             friends  : ['1001'],
             appearsIn: [4],
-    ];
+    ]
 
     static def humanData = [
             '1000': luke,
@@ -53,7 +53,7 @@ class StarWarsData {
             '1002': han,
             '1003': leia,
             '1004': tarkin,
-    ];
+    ]
 
     static def threepio = [
             id             : '2000',
@@ -61,7 +61,7 @@ class StarWarsData {
             friends        : ['1000', '1002', '1003', '2001'],
             appearsIn      : [4, 5, 6],
             primaryFunction: 'Protocol',
-    ];
+    ]
 
     static def artoo = [
             id             : '2001',
@@ -69,12 +69,16 @@ class StarWarsData {
             friends        : ['1000', '1002', '1003'],
             appearsIn      : [4, 5, 6],
             primaryFunction: 'Astromech',
-    ];
+    ]
 
     static def droidData = [
             "2000": threepio,
             "2001": artoo,
     ]
+
+    static boolean isHuman(String id) {
+        return humanData[id] != null
+    }
 
     static def getCharacter(String id) {
         if (humanData[id] != null) return humanData[id]
@@ -107,7 +111,7 @@ class StarWarsData {
                 return StarWarsSchema.humanType
             if (droidData[id] != null)
                 return StarWarsSchema.droidType
-            return null;
+            return null
         }
     }
 
@@ -124,10 +128,10 @@ class StarWarsData {
 
     static DataFetcher heroDataFetcher = new DataFetcher() {
         @Override
-        public Object get(DataFetchingEnvironment environment) {
+        Object get(DataFetchingEnvironment environment) {
             if (environment.containsArgument("episode")
-                    && 5 == environment.getArgument("episode")) return luke;
-            return artoo;
+                    && 5 == environment.getArgument("episode")) return luke
+            return artoo
         }
     }
 
@@ -139,6 +143,7 @@ class StarWarsData {
                 case "EMPIRE": return 5
                 case "JEDI": return 6
             }
+            null
         }
     }
 }

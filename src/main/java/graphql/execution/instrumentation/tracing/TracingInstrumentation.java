@@ -16,6 +16,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.language.Document;
 import graphql.validation.ValidationError;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +36,13 @@ public class TracingInstrumentation implements Instrumentation {
 
     @Override
     public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        Map<Object, Object> currentExt = executionResult.getExtensions();
+
         TracingSupport tracingSupport = parameters.getInstrumentationState();
         Map<Object, Object> tracingMap = new LinkedHashMap<>();
+        tracingMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
         tracingMap.put("tracing", tracingSupport.snapshotTracingData());
+
         return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), tracingMap));
     }
 
