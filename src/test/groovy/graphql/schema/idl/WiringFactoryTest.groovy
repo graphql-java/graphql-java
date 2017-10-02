@@ -2,6 +2,7 @@ package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetcherFactories
 import graphql.schema.DataFetcherFactory
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLInterfaceType
@@ -92,7 +93,7 @@ class WiringFactoryTest extends Specification {
 
         @Override
         <T> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
-            return DataFetcherFactory.useDataFetcher(new NamedDataFetcher(name))
+            return DataFetcherFactories.useDataFetcher(new NamedDataFetcher(name))
         }
     }
 

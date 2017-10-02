@@ -16,21 +16,10 @@ public interface DataFetcherFactory<T> {
     /**
      * Returns a {@link graphql.schema.DataFetcher}
      *
-     * @param fieldDefinition the {@link graphql.schema.GraphQLFieldDefinition} that needs the data fetcher
+     * @param environment the environment that needs the data fetcher
      *
      * @return a data fetcher
      */
-    DataFetcher<T> get(GraphQLFieldDefinition fieldDefinition);
+    DataFetcher<T> get(DataFetcherFactoryEnvironment environment);
 
-    /**
-     * Creates a {@link graphql.schema.DataFetcherFactory} that always returns the provided {@link graphql.schema.DataFetcher}
-     *
-     * @param dataFetcher the data fetcher to always return
-     * @param <DF>        the type of the data fetcher
-     *
-     * @return a data fetcher factory that always returns the provided data fetcher
-     */
-    static <DF> DataFetcherFactory<DF> useDataFetcher(DataFetcher<DF> dataFetcher) {
-        return fieldDefinition -> dataFetcher;
-    }
 }

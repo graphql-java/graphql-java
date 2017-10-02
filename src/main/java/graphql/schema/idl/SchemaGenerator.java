@@ -27,6 +27,7 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetcherFactories;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
@@ -500,7 +501,7 @@ public class SchemaGenerator {
                     }
                 }
             }
-            dataFetcherFactory = DataFetcherFactory.useDataFetcher(dataFetcher);
+            dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
         }
 
         return dataFetcherFactory;

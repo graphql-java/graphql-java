@@ -13,6 +13,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
 
 /**
  * Fields are the ways you get data values in graphql and a field definition represents a field, its type, the arguments it takes
@@ -39,13 +40,13 @@ public class GraphQLFieldDefinition {
     @Deprecated
     @Internal
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher<?> dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
-        this(name, description, type, DataFetcherFactory.useDataFetcher(dataFetcher), arguments, deprecationReason, null);
+        this(name, description, type, DataFetcherFactories.useDataFetcher(dataFetcher), arguments, deprecationReason, null);
     }
 
     @Internal
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, FieldDefinition definition) {
         assertValidName(name);
-        assertNotNull(dataFetcherFactory, "dataFetcherFactory can't be null");
+        assertNotNull(dataFetcherFactory, "you have to provide a DataFetcher (or DataFetcherFactory)");
         assertNotNull(type, "type can't be null");
         assertNotNull(arguments, "arguments can't be null");
         this.name = name;
@@ -72,7 +73,9 @@ public class GraphQLFieldDefinition {
     }
 
     public DataFetcher getDataFetcher() {
-        return dataFetcherFactory.get(this);
+        return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
+                .fieldDefinition(this)
+                .build());
     }
 
     public GraphQLArgument getArgument(String name) {
@@ -173,7 +176,7 @@ public class GraphQLFieldDefinition {
          */
         public Builder dataFetcher(DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher, "dataFetcher must be not null");
-            this.dataFetcherFactory = DataFetcherFactory.useDataFetcher(dataFetcher);
+            this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
             return this;
         }
 
@@ -198,7 +201,7 @@ public class GraphQLFieldDefinition {
          * @return this builder
          */
         public Builder staticValue(final Object value) {
-            this.dataFetcherFactory = DataFetcherFactory.useDataFetcher(environment -> value);
+            this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(environment -> value);
             return this;
         }
 
@@ -262,9 +265,9 @@ public class GraphQLFieldDefinition {
         public GraphQLFieldDefinition build() {
             if (dataFetcherFactory == null) {
                 if (isField) {
-                    dataFetcherFactory = DataFetcherFactory.useDataFetcher(new FieldDataFetcher<>(name));
+                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new FieldDataFetcher<>(name));
                 } else {
-                    dataFetcherFactory = DataFetcherFactory.useDataFetcher(new PropertyDataFetcher<>(name));
+                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(name));
                 }
             }
             return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory, arguments, deprecationReason, definition);
