@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.PublicSpi;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetcherFactory;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
@@ -60,6 +61,29 @@ public interface WiringFactory {
     }
 
     /**
+     * This is called to ask if this factory can provide a {@link graphql.schema.DataFetcherFactory} for the definition
+     *
+     * @param environment the wiring environment
+     *
+     * @return true if the factory can give out a data fetcher factory
+     */
+    default boolean providesDataFetcherFactory(FieldWiringEnvironment environment) {
+        return false;
+    }
+
+    /**
+     * Returns a {@link graphql.schema.DataFetcherFactory} given the type definition
+     *
+     * @param environment the wiring environment
+     * @param <T>         the type of the data fetcher
+     *
+     * @return a {@link graphql.schema.DataFetcherFactory}
+     */
+    default <T> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
+        return assertShouldNeverHappen();
+    }
+
+    /**
      * This is called to ask if this factory can provide a data fetcher for the definition
      *
      * @param environment the wiring environment
@@ -84,6 +108,7 @@ public interface WiringFactory {
     /**
      * All fields need a data fetcher of some sort and this  method is called to provide the data fetcher
      * that will be used if no specific one has been provided
+     *
      * @param environment the wiring environment
      *
      * @return a {@link DataFetcher}

@@ -27,6 +27,8 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetcherFactories;
+import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -458,7 +460,7 @@ public class SchemaGenerator {
         builder.description(buildDescription(fieldDef));
         builder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
 
-        builder.dataFetcher(buildDataFetcher(buildCtx, parentType, fieldDef));
+        builder.dataFetcherFactory(buildDataFetcherFactory(buildCtx, parentType, fieldDef));
 
         fieldDef.getInputValueDefinitions().forEach(inputValueDefinition ->
                 builder.argument(buildArgument(buildCtx, inputValueDefinition)));
@@ -469,7 +471,7 @@ public class SchemaGenerator {
         return builder.build();
     }
 
-    private DataFetcher buildDataFetcher(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
+    private DataFetcherFactory buildDataFetcherFactory(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
         String fieldName = fieldDef.getName();
         String parentTypeName = parentType.getName();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
@@ -478,21 +480,31 @@ public class SchemaGenerator {
 
         FieldWiringEnvironment wiringEnvironment = new FieldWiringEnvironment(typeRegistry, parentType, fieldDef);
 
-        DataFetcher dataFetcher;
-        if (wiringFactory.providesDataFetcher(wiringEnvironment)) {
-            dataFetcher = wiringFactory.getDataFetcher(wiringEnvironment);
-            assertNotNull(dataFetcher, "The WiringFactory indicated it provides a data fetcher but then returned null");
+        DataFetcherFactory<?> dataFetcherFactory;
+        if (wiringFactory.providesDataFetcherFactory(wiringEnvironment)) {
+            dataFetcherFactory = wiringFactory.getDataFetcherFactory(wiringEnvironment);
+            assertNotNull(dataFetcherFactory, "The WiringFactory indicated it provides a data fetcher factory but then returned null");
         } else {
-            dataFetcher = runtimeWiring.getDataFetcherForType(parentTypeName).get(fieldName);
-            if (dataFetcher == null) {
-                dataFetcher = runtimeWiring.getDefaultDataFetcherForType(parentTypeName);
+            //
+            // ok they provide a data fetcher directly
+            DataFetcher<?> dataFetcher;
+            if (wiringFactory.providesDataFetcher(wiringEnvironment)) {
+                dataFetcher = wiringFactory.getDataFetcher(wiringEnvironment);
+                assertNotNull(dataFetcher, "The WiringFactory indicated it provides a data fetcher but then returned null");
+            } else {
+                dataFetcher = runtimeWiring.getDataFetcherForType(parentTypeName).get(fieldName);
                 if (dataFetcher == null) {
-                    dataFetcher = wiringFactory.getDefaultDataFetcher(wiringEnvironment);
-                    assertNotNull(dataFetcher, "The WiringFactory indicated MUST provide a default data fetcher as part of its contract");
+                    dataFetcher = runtimeWiring.getDefaultDataFetcherForType(parentTypeName);
+                    if (dataFetcher == null) {
+                        dataFetcher = wiringFactory.getDefaultDataFetcher(wiringEnvironment);
+                        assertNotNull(dataFetcher, "The WiringFactory indicated MUST provide a default data fetcher as part of its contract");
+                    }
                 }
             }
+            dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
         }
-        return dataFetcher;
+
+        return dataFetcherFactory;
     }
 
     private GraphQLInputObjectType buildInputObjectType(BuildContext buildCtx, InputObjectTypeDefinition typeDefinition) {

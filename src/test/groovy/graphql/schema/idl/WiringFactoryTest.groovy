@@ -2,6 +2,8 @@ package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetcherFactories
+import graphql.schema.DataFetcherFactory
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
@@ -77,6 +79,24 @@ class WiringFactoryTest extends Specification {
         }
     }
 
+    class NamedDataFetcherFactoryWiringFactory implements WiringFactory {
+        String name
+
+        NamedDataFetcherFactoryWiringFactory(String name) {
+            this.name = name
+        }
+
+        @Override
+        boolean providesDataFetcherFactory(FieldWiringEnvironment environment) {
+            return name == environment.getFieldDefinition().getName()
+        }
+
+        @Override
+        <T> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
+            return DataFetcherFactories.useDataFetcher(new NamedDataFetcher(name))
+        }
+    }
+
 
     GraphQLSchema generateSchema(String schemaSpec, RuntimeWiring wiring) {
         def typeRegistry = new SchemaParser().parse(schemaSpec)
@@ -125,6 +145,7 @@ class WiringFactoryTest extends Specification {
         def combinedWiringFactory = new CombinedWiringFactory([
                 new NamedWiringFactory("Character"),
                 new NamedWiringFactory("Cyborg"),
+                new NamedDataFetcherFactoryWiringFactory("cyborg"),
                 new NamedWiringFactory("friends")])
 
         def wiring = RuntimeWiring.newRuntimeWiring()
@@ -150,6 +171,9 @@ class WiringFactoryTest extends Specification {
 
         def friendsDataFetcher = humanType.getFieldDefinition("friends").getDataFetcher() as NamedDataFetcher
         friendsDataFetcher.name == "friends"
+
+        def cyborgDataFetcher = humanType.getFieldDefinition("cyborg").getDataFetcher() as NamedDataFetcher
+        cyborgDataFetcher.name == "cyborg"
     }
 
     def "ensure field wiring environment makes sense"() {
@@ -238,6 +262,6 @@ class WiringFactoryTest extends Specification {
 
         expect:
 
-        fields == ["id","homePlanet"]
+        fields == ["id", "homePlanet"]
     }
 }
