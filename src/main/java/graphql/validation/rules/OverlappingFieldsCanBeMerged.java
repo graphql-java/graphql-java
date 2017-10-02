@@ -2,16 +2,32 @@ package graphql.validation.rules;
 
 
 import graphql.execution.TypeFromAST;
-import graphql.language.*;
-import graphql.schema.*;
+import graphql.language.Argument;
+import graphql.language.AstComparator;
+import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.Selection;
+import graphql.language.SelectionSet;
+import graphql.language.Value;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
 import graphql.validation.AbstractRule;
 import graphql.validation.ErrorFactory;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static graphql.language.NodeUtil.directivesByName;
 import static graphql.validation.ValidationErrorType.FieldsConflict;
 
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
@@ -66,6 +82,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return false;
     }
 
+    @SuppressWarnings("ConstantConditions")
     private Conflict findConflict(String responseName, FieldAndType fieldAndType1, FieldAndType fieldAndType2) {
 
         Field field1 = fieldAndType1.field;
@@ -114,10 +131,6 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             String reason = String.format("%s: they have differing arguments", responseName);
             return new Conflict(responseName, reason, field1, field2);
         }
-        if (!sameDirectives(field1.getDirectives(), field2.getDirectives())) {
-            String reason = String.format("%s: they have differing directives", responseName);
-            return new Conflict(responseName, reason, field1, field2);
-        }
         SelectionSet selectionSet1 = field1.getSelectionSet();
         SelectionSet selectionSet2 = field2.getSelectionSet();
         if (selectionSet1 != null && selectionSet2 != null) {
@@ -160,11 +173,13 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return result.toString();
     }
 
+    @SuppressWarnings("SimplifiableIfStatement")
     private boolean sameType(GraphQLType type1, GraphQLType type2) {
         if (type1 == null || type2 == null) return true;
         return type1.equals(type2);
     }
 
+    @SuppressWarnings("SimplifiableIfStatement")
     private boolean sameValue(Value value1, Value value2) {
         if (value1 == null && value2 == null) return true;
         if (value1 == null) return false;
@@ -189,21 +204,6 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return null;
     }
 
-    private boolean sameDirectives(List<Directive> directives1, List<Directive> directives2) {
-        if (directives1.size() != directives2.size()) return false;
-        for (Directive directive : directives1) {
-            Directive matchedDirective = getDirectiveByName(directive.getName(), directives2);
-            if (matchedDirective == null) return false;
-            if (!sameArguments(directive.getArguments(), matchedDirective.getArguments())) return false;
-        }
-        return true;
-    }
-
-    private Directive getDirectiveByName(String name, List<Directive> directives) {
-        return directivesByName(directives).get(name);
-    }
-
-
     private void collectFields(Map<String, List<FieldAndType>> fieldMap, SelectionSet selectionSet, GraphQLType parentType, Set<String> visitedFragmentSpreads) {
 
         for (Selection selection : selectionSet.getSelections()) {
@@ -220,8 +220,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
     }
 
-    private void collectFieldsForFragmentSpread(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, FragmentSpread selection) {
-        FragmentSpread fragmentSpread = selection;
+    private void collectFieldsForFragmentSpread(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, FragmentSpread fragmentSpread) {
         FragmentDefinition fragment = getValidationContext().getFragment(fragmentSpread.getName());
         if (fragment == null) return;
         if (visitedFragmentSpreads.contains(fragment.getName())) {
@@ -233,16 +232,14 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
     }
 
-    private void collectFieldsForInlineFragment(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, GraphQLType parentType, InlineFragment selection) {
-        InlineFragment inlineFragment = selection;
+    private void collectFieldsForInlineFragment(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, GraphQLType parentType, InlineFragment inlineFragment) {
         GraphQLType graphQLType = inlineFragment.getTypeCondition() != null
                 ? (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(), inlineFragment.getTypeCondition())
                 : parentType;
         collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
     }
 
-    private void collectFieldsForField(Map<String, List<FieldAndType>> fieldMap, GraphQLType parentType, Field selection) {
-        Field field = selection;
+    private void collectFieldsForField(Map<String, List<FieldAndType>> fieldMap, GraphQLType parentType, Field field) {
         String responseName = field.getAlias() != null ? field.getAlias() : field.getName();
         if (!fieldMap.containsKey(responseName)) {
             fieldMap.put(responseName, new ArrayList<>());
@@ -257,7 +254,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     private GraphQLFieldDefinition getVisibleFieldDefinition(GraphQLFieldsContainer fieldsContainer, Field field) {
-        return getValidationContext().getSchema().getFieldVisibility().getFieldDefinition(fieldsContainer,field.getName());
+        return getValidationContext().getSchema().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
     }
 
     private static class FieldPair {

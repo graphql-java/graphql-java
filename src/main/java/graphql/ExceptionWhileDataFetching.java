@@ -12,6 +12,9 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
 
+/**
+ * This graphql error will be used if a runtime exception is encountered while a data fetcher is invoked
+ */
 @PublicApi
 public class ExceptionWhileDataFetching implements GraphQLError {
 
