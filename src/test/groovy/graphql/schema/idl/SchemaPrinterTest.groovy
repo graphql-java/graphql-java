@@ -1,8 +1,11 @@
 package graphql.schema.idl
 
+import graphql.GraphQL
 import graphql.Scalars
 import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
+import graphql.introspection.IntrospectionQuery
+import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
@@ -617,6 +620,62 @@ type TypeE {
   fieldA: String
   fieldB: String
   fieldC: String
+}
+"""
+    }
+
+
+
+    def "print introspection result back to IDL"() {
+        GraphQLSchema schema = starWarsSchema()
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        def schemaDefinition = new IntrospectionResultToSchema().createSchemaDefinition(executionResult)
+
+        def result = new SchemaPrinter().print(schemaDefinition)
+
+        expect:
+        result ==
+                """interface Character {
+  appearsIn: [Episode]!
+  friends: [Character]
+  id: ID!
+  name: String!
+}
+
+type Droid {
+  appearsIn: [Episode]!
+  friends: [Character]
+  id: ID!
+  madeOn: Planet
+  name: String!
+  primaryFunction: String
+}
+
+type Human {
+  appearsIn: [Episode]!
+  friends: [Character]
+  homePlanet: String
+  id: ID!
+  name: String!
+}
+
+type Planet {
+  hitBy: Asteroid
+  name: String
+}
+
+type Query {
+  droid(id: ID!): Droid
+  hero(episode: Episode): Character
+}
+
+enum Episode {
+  EMPIRE
+  JEDI
+  NEWHOPE
 }
 """
     }

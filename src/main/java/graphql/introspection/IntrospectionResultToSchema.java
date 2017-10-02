@@ -1,5 +1,6 @@
 package graphql.introspection;
 
+import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.language.Argument;
 import graphql.language.Comment;
@@ -15,6 +16,7 @@ import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.OperationTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.SourceLocation;
 import graphql.language.StringValue;
@@ -22,9 +24,9 @@ import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.schema.idl.ScalarInfo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +39,26 @@ import static graphql.Assert.assertTrue;
 @PublicApi
 public class IntrospectionResultToSchema {
 
+    /**
+     * Returns a IDL Document that represents the schema as defined by the introspection execution result
+     *
+     * @param introspectionResult the result of an introspection query on a schema
+     *
+     * @return a IDL Document of the schema
+     */
+    public Document createSchemaDefinition(ExecutionResult introspectionResult) {
+        Map<String, Object> introspectionResultMap = introspectionResult.getData();
+        return createSchemaDefinition(introspectionResultMap);
+    }
 
+
+    /**
+     * Returns a IDL Document that reprSesents the schema as defined by the introspection result map
+     *
+     * @param introspectionResult the result of an introspection query on a schema
+     *
+     * @return a IDL Document of the schema
+     */
     @SuppressWarnings("unchecked")
     public Document createSchemaDefinition(Map<String, Object> introspectionResult) {
         assertTrue(introspectionResult.get("__schema") != null, "__schema expected");
@@ -99,11 +120,18 @@ public class IntrospectionResultToSchema {
             case "INPUT_OBJECT":
                 return createInputObject(type);
             case "SCALAR":
-                // todo don't ignore all scalars
-                return null;
+                return createScalar(type);
             default:
                 return assertShouldNeverHappen("unexpected kind " + kind);
         }
+    }
+
+    private TypeDefinition createScalar(Map<String, Object> input) {
+        String name = (String) input.get("name");
+        if (ScalarInfo.isStandardScalar(name)) {
+            return null;
+        }
+        return new ScalarTypeDefinition(name);
     }
 
 
@@ -200,7 +228,7 @@ public class IntrospectionResultToSchema {
             result.add(fieldDefinition);
         }
         return result;
-}
+    }
 
     private void createDeprecatedDirective(Map<String, Object> field, List<Directive> directives) {
         if ((Boolean) field.get("isDeprecated")) {
