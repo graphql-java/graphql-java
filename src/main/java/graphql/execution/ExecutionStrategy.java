@@ -215,10 +215,16 @@ public abstract class ExecutionStrategy {
         CompletableFuture<?> fetchedValue;
         DataFetcher dataFetcher = fieldDef.getDataFetcher();
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
+        ExecutionId executionId = executionContext.getExecutionId();
         try {
+            log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, fieldTypeInfo.getPath(), dataFetcher.getClass().getName());
             Object fetchedValueRaw = dataFetcher.get(environment);
+            log.debug("'{}' field '{}' fetch returned '{}'", executionId, fieldTypeInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
+            log.debug(String.format("'%s', field '%s' fetch threw exception", executionId, fieldTypeInfo.getPath()), e);
+
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
         }
@@ -278,6 +284,8 @@ public abstract class ExecutionStrategy {
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
         ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
+
+        log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), fieldTypeInfo.getPath());
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, fieldTypeInfo);
 

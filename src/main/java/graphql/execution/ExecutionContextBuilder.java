@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
@@ -22,6 +23,7 @@ public class ExecutionContextBuilder {
     private ExecutionStrategy subscriptionStrategy;
     private Object context;
     private Object root;
+    private Document document;
     private OperationDefinition operationDefinition;
     private Map<String, Object> variables = new HashMap<>();
     private Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
@@ -81,6 +83,11 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    public ExecutionContextBuilder document(Document document) {
+        this.document = document;
+        return this;
+    }
+
     public ExecutionContextBuilder operationDefinition(OperationDefinition operationDefinition) {
         this.operationDefinition = operationDefinition;
         return this;
@@ -100,6 +107,7 @@ public class ExecutionContextBuilder {
                 mutationStrategy,
                 subscriptionStrategy,
                 fragmentsByName,
+                document,
                 operationDefinition,
                 variables,
                 context,

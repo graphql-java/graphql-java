@@ -29,11 +29,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
 
+/**
+ * This class is where all graphql-java query execution begins.  It combines the objects that are needed
+ * to make a successful graphql query, with the most important being the {@link graphql.schema.GraphQLSchema schema}
+ * and the {@link graphql.execution.ExecutionStrategy execution strategy}
+ *
+ * Building this object is very cheap and can be done on each execution if necessary.  Building the schema is often not
+ * as cheap, especially if its parsed from graphql IDL schema format via {@link graphql.schema.idl.SchemaParser}.
+ */
 @PublicApi
 public class GraphQL {
 
@@ -127,6 +136,32 @@ public class GraphQL {
         return new Builder(graphQLSchema);
     }
 
+    /**
+     * This helps you transform the current GraphQL object into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to changee
+     *
+     * @return a new GraphQL object based on calling build on that builder
+     */
+    public GraphQL transform(Consumer<GraphQL.Builder> builderConsumer) {
+        Builder builder = new Builder(this.graphQLSchema);
+        builder
+                .queryExecutionStrategy(nvl(this.queryStrategy, builder.queryExecutionStrategy))
+                .mutationExecutionStrategy(nvl(this.mutationStrategy, builder.mutationExecutionStrategy))
+                .subscriptionExecutionStrategy(nvl(this.subscriptionStrategy, builder.subscriptionExecutionStrategy))
+                .executionIdProvider(nvl(this.idProvider, builder.idProvider))
+                .instrumentation(nvl(this.instrumentation, builder.instrumentation))
+                .preparsedDocumentProvider(nvl(this.preparsedDocumentProvider, builder.preparsedDocumentProvider));
+
+        builderConsumer.accept(builder);
+
+        return builder.build();
+    }
+
+    private static <T> T nvl(T obj, T elseObj) {
+        return obj == null ? elseObj : obj;
+    }
 
     @PublicApi
     public static class Builder {
@@ -383,7 +418,7 @@ public class GraphQL {
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         try {
-            log.debug("Executing request. operation name: {}. query: {}. variables {} ", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
+            log.debug("Executing request. operation name: '{}'. query: '{}'. variables '{}'", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
 
             InstrumentationState instrumentationState = instrumentation.createState();
 
@@ -399,6 +434,9 @@ public class GraphQL {
             return executionResult;
         } catch (AbortExecutionException abortException) {
             ExecutionResultImpl executionResult = new ExecutionResultImpl(abortException);
+            if (!abortException.getUnderlyingErrors().isEmpty()) {
+                executionResult = new ExecutionResultImpl(abortException.getUnderlyingErrors());
+            }
             return CompletableFuture.completedFuture(executionResult);
         }
     }
@@ -415,14 +453,18 @@ public class GraphQL {
     }
 
     private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, InstrumentationState instrumentationState) {
+        log.debug("Parsing query: '{}'...", executionInput.getQuery());
         ParseResult parseResult = parse(executionInput, instrumentationState);
         if (parseResult.isFailure()) {
+            log.error("Query failed to parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
         } else {
             final Document document = parseResult.getDocument();
 
+            log.debug("Validating query: '{}'", executionInput.getQuery());
             final List<ValidationError> errors = validate(executionInput, document, instrumentationState);
             if (!errors.isEmpty()) {
+                log.error("Query failed to validate : '{}'", executionInput.getQuery());
                 return new PreparsedDocumentEntry(errors);
             }
 
@@ -463,7 +505,22 @@ public class GraphQL {
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation);
         ExecutionId executionId = idProvider.provide(query, operationName, context);
-        return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
+
+        log.debug("Executing '{}'. operation name: '{}'. query: '{}'. variables '{}'", executionId, executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
+        CompletableFuture<ExecutionResult> future = execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
+        future.whenComplete((result, throwable) -> {
+            if (throwable != null) {
+                log.error(String.format("Execution '%s' threw exception when executing : query : '%s'. variables '%s'", executionId, executionInput.getQuery(), executionInput.getVariables()), throwable);
+            } else {
+                int errorCount = result.getErrors().size();
+                if (errorCount > 0) {
+                    log.debug("Execution '{}' completed with '{}' errors", executionId, errorCount);
+                } else {
+                    log.debug("Execution '{}' completed with zero errors", executionId);
+                }
+            }
+        });
+        return future;
     }
 
     private static class ParseResult {

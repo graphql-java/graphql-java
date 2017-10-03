@@ -5,9 +5,14 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNonNull;
 
 import static graphql.Scalars.GraphQLBoolean;
-import static graphql.introspection.Introspection.DirectiveLocation.*;
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
+import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
+import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.schema.GraphQLArgument.newArgument;
 
+/**
+ * The query directives that are under stood by graphql-java
+ */
 public class Directives {
 
     public static final GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()

@@ -15,6 +15,14 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+/**
+ * A graphql enumeration type has a limited set of values.
+ *
+ * This allows you to validate that any arguments of this type are one of the allowed values
+ * and communicate through the type system that a field will always be one of a finite set of values.
+ *
+ * See http://graphql.org/learn/schema/#enumeration-types for more details
+ */
 @PublicApi
 public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType {
 

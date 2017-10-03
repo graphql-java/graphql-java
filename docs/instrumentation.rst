@@ -257,3 +257,37 @@ It would return a result like
       }
     }
 
+Field Validation Instrumentation
+--------------------------------
+
+``graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation`` is an ``Instrumentation`` implementation that
+can be used to validate fields and their arguments before query execution.  If errors are returned during this process then
+the query execution is aborted and the errors will be in the query result.
+
+You can make you own custom implementation of ``FieldValidation`` or you can use the ``SimpleFieldValidation`` class
+to add simple per field checks rules.
+
+
+.. code-block:: java
+
+        ExecutionPath fieldPath = ExecutionPath.parse("/user");
+        FieldValidation fieldValidation = new SimpleFieldValidation()
+                .addRule(fieldPath, new BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>>() {
+                    @Override
+                    public Optional<GraphQLError> apply(FieldAndArguments fieldAndArguments, FieldValidationEnvironment environment) {
+                        String nameArg = fieldAndArguments.getFieldArgument("name");
+                        if (nameArg.length() > 255) {
+                            return Optional.of(environment.mkError("Invalid user name", fieldAndArguments));
+                        }
+                        return Optional.empty();
+                    }
+                });
+
+        FieldValidationInstrumentation instrumentation = new FieldValidationInstrumentation(
+                fieldValidation
+        );
+
+        GraphQL.newGraphQL(schema)
+                .instrumentation(instrumentation)
+                .build();
+

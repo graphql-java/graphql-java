@@ -5,6 +5,13 @@ import graphql.PublicApi;
 
 import static graphql.Assert.assertValidName;
 
+/**
+ * A graphql enumeration type has a limited set of values and this defines one of those unique values
+ *
+ * See http://graphql.org/learn/schema/#enumeration-types for more details
+ *
+ * @see graphql.schema.GraphQLEnumType
+ */
 @PublicApi
 public class GraphQLEnumValueDefinition {
 

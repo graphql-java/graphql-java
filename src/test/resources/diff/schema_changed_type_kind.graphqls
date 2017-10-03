@@ -1,0 +1,79 @@
+schema {
+    query : Query
+    mutation : Mutation
+}
+
+type Query {
+    being(id : ID, type : String = "wizard") : Being
+    beings(type : String) : [Being]
+
+    wizards : [Istari]
+    gods : [Ainur]
+    deities : [Deity]
+
+    allCharacters : [Character!] @deprecated(reason: "no longer supported")
+
+    customScalar : CustomScalar
+}
+
+type Mutation {
+    being(questor : Questor) : Query
+    sword(bearer : Questor, name : String, alloy : String, temperament : Temperament) : String
+}
+
+input Questor {
+    beingID : ID
+    queryTarget : String
+}
+
+scalar CustomScalar
+
+
+interface Being {
+    id : ID
+    name : String
+    nameInQuenyan : String
+    invitedBy(id : ID) : Being
+}
+
+
+type Ainur implements Being {
+    id : ID
+    name : String
+    nameInQuenyan : String
+    invitedBy(id : ID) : Being
+    loves : String
+}
+
+
+type Istari implements Being {
+    id : ID
+    name : String
+    nameInQuenyan : String
+    invitedBy(id : ID) : Being
+    colour : String
+    temperament : Temperament!
+
+}
+
+type Deity implements Being {
+    id : ID
+    name : String
+    nameInQuenyan : String
+    invitedBy(id : ID) : Being
+    outlook : String
+}
+
+# union Character = Ainur | Istari | Deity
+type Character {
+    name : String
+}
+
+enum Temperament {
+    Hero
+    Duplicitous
+    Evil
+}
+
+
+

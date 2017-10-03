@@ -1,7 +1,11 @@
 package graphql.schema.idl
 
+import graphql.GraphQL
 import graphql.Scalars
+import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
+import graphql.introspection.IntrospectionQuery
+import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
@@ -9,8 +13,6 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLInterfaceType
-import graphql.schema.GraphQLList
-import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLScalarType
@@ -23,23 +25,20 @@ import spock.lang.Specification
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.mockScalar
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInterfaceType.newInterface
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
+import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
 class SchemaPrinterTest extends Specification {
 
-    def nonNull(GraphQLType type) {
-        new GraphQLNonNull(type)
-    }
-
-    def list(GraphQLType type) {
-        new GraphQLList(type)
-    }
-
     GraphQLSchema starWarsSchema() {
-        def wiring = RuntimeWiring.newRuntimeWiring()
+        def wiring = newRuntimeWiring()
                 .type("Character", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .scalar(ASTEROID)
                 .build()
@@ -83,7 +82,7 @@ class SchemaPrinterTest extends Specification {
 
     GraphQLSchema generate(String spec) {
         def typeRegistry = new SchemaParser().parse(spec)
-        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, RuntimeWiring.newRuntimeWiring().build())
+        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, newRuntimeWiring().build())
         schema
     }
 
@@ -119,6 +118,17 @@ class SchemaPrinterTest extends Specification {
         argStr == "(arg1: [Int!] = 10, arg2: String, arg3: String = \"default\")"
     }
 
+    def "argsString_sorts"() {
+        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(Scalars.GraphQLInt)), 10)
+        def argument2 = new GraphQLArgument("arg2", null, GraphQLString, null)
+        def argument3 = new GraphQLArgument("arg3", null, GraphQLString, "default")
+        def argStr = new SchemaPrinter().argsString([argument2, argument1, argument3])
+
+        expect:
+
+        argStr == "(arg1: [Int!] = 10, arg2: String, arg3: String = \"default\")"
+    }
+
     def "print type direct"() {
         GraphQLSchema schema = starWarsSchema()
 
@@ -127,10 +137,10 @@ class SchemaPrinterTest extends Specification {
         expect:
         result ==
                 """interface Character {
+  appearsIn: [Episode]!
+  friends: [Character]
   id: ID!
   name: String!
-  friends: [Character]
-  appearsIn: [Episode]!
 }
 
 """
@@ -150,7 +160,7 @@ class SchemaPrinterTest extends Specification {
     def "starWars non default Test"() {
         GraphQLSchema schema = starWarsSchema()
 
-        def options = SchemaPrinter.Options.defaultOptions()
+        def options = defaultOptions()
                 .includeIntrospectionTypes(true)
                 .includeScalarTypes(true)
 
@@ -473,7 +483,7 @@ type Query {
         def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeScalarTypes(true)).print(schema)
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
 
         then:
         result == """type Query {
@@ -529,6 +539,147 @@ type Query {
 }
 """
     }
+
+    def "prints extended types"() {
+        given:
+        def idl = '''
+            type Query {
+                field : CustomScalar
+                bigDecimal : BigDecimal
+            }
+            
+            scalar CustomScalar
+        '''
+
+        def schema = TestUtil.schema(idl, newRuntimeWiring().scalar(mockScalar("CustomScalar")))
+
+
+        when:
+        def result = new SchemaPrinter(options).print(schema)
+
+        then:
+
+        if (expectedStrs.isEmpty()) {
+            assert !result.contains("scalar")
+        } else {
+            expectedStrs.forEach({ s -> assert result.contains(s) })
+        }
+
+
+        where:
+        expectedStrs                                 | options
+        []                                           | defaultOptions()
+        ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
+        ["scalar BigDecimal", "scalar CustomScalar"] | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(true)
+        ["scalar CustomScalar"]                      | defaultOptions().includeScalarTypes(true).includeExtendedScalarTypes(false)
+    }
+
+
+    def "schema will be sorted"() {
+        def schema = generate("""
+            type Query {
+                fieldB(argZ : String, argY : Int, argX : String) : String
+                fieldA(argZ : String, argY : Int, argX : String) : String
+                fieldC(argZ : String, argY : Int, argX : String) : String
+                fieldE : TypeE
+                fieldD : TypeD
+            }
+            
+            type TypeE {
+                fieldA : String
+                fieldC : String
+                fieldB : String
+            }
+
+            type TypeD {
+                fieldB : String
+                fieldA : String
+                fieldC : String
+            }
+        """)
+
+
+        def result = new SchemaPrinter().print(schema)
+
+        expect:
+        result == """type Query {
+  fieldA(argX: String, argY: Int, argZ: String): String
+  fieldB(argX: String, argY: Int, argZ: String): String
+  fieldC(argX: String, argY: Int, argZ: String): String
+  fieldD: TypeD
+  fieldE: TypeE
+}
+
+type TypeD {
+  fieldA: String
+  fieldB: String
+  fieldC: String
+}
+
+type TypeE {
+  fieldA: String
+  fieldB: String
+  fieldC: String
+}
+"""
+    }
+
+
+
+    def "print introspection result back to IDL"() {
+        GraphQLSchema schema = starWarsSchema()
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        def schemaDefinition = new IntrospectionResultToSchema().createSchemaDefinition(executionResult)
+
+        def result = new SchemaPrinter().print(schemaDefinition)
+
+        expect:
+        result ==
+                """interface Character {
+  appearsIn: [Episode]!
+  friends: [Character]
+  id: ID!
+  name: String!
+}
+
+type Droid {
+  appearsIn: [Episode]!
+  friends: [Character]
+  id: ID!
+  madeOn: Planet
+  name: String!
+  primaryFunction: String
+}
+
+type Human {
+  appearsIn: [Episode]!
+  friends: [Character]
+  homePlanet: String
+  id: ID!
+  name: String!
+}
+
+type Planet {
+  hitBy: Asteroid
+  name: String
+}
+
+type Query {
+  droid(id: ID!): Droid
+  hero(episode: Episode): Character
+}
+
+enum Episode {
+  EMPIRE
+  JEDI
+  NEWHOPE
+}
+"""
+    }
+
 
 
     def "AST doc string entries are printed if present"() {

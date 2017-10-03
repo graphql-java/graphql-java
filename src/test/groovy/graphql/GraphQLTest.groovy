@@ -2,7 +2,14 @@ package graphql
 
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
+import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.ExecutionContext
+import graphql.execution.ExecutionId
+import graphql.execution.ExecutionIdProvider
+import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.batched.BatchedExecutionStrategy
+import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.NoOpInstrumentation
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -610,7 +617,7 @@ class GraphQLTest extends Specification {
                         .build()).build())
                 .build()
 
-        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(3);
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(3)
 
 
         def graphql = GraphQL.newGraphQL(schema).instrumentation(maximumQueryDepthInstrumentation).build()
@@ -654,7 +661,7 @@ class GraphQLTest extends Specification {
                         .build()).build())
                 .build()
 
-        MaxQueryComplexityInstrumentation maxQueryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(3);
+        MaxQueryComplexityInstrumentation maxQueryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(3)
 
 
         def graphql = GraphQL.newGraphQL(schema).instrumentation(maxQueryComplexityInstrumentation).build()
@@ -711,7 +718,7 @@ class GraphQLTest extends Specification {
 
         GraphQLSchema schema = newSchema()
                 .query(query)
-                .build();
+                .build()
 
         GraphQL graphQL = GraphQL.newGraphQL(schema)
                 .instrumentation(instrumentation)
@@ -722,7 +729,7 @@ class GraphQLTest extends Specification {
                 .build()
 
         when:
-        def result = graphQL.execute(executionInput);
+        def result = graphQL.execute(executionInput)
 
         then:
         result.errors.size() == 1
@@ -737,7 +744,7 @@ class GraphQLTest extends Specification {
 
     def "batched execution with non batched DataFetcher returning CompletableFuture"() {
         given:
-        GraphQLObjectType foo = GraphQLObjectType.newObject()
+        GraphQLObjectType foo = newObject()
                 .name("Foo")
                 .withInterface(new GraphQLTypeReference("Node"))
                 .field(
@@ -760,14 +767,14 @@ class GraphQLTest extends Specification {
                 {
                     env ->
                         if (env.getObject() instanceof CompletableFuture) {
-                            throw new RuntimeException("This seems bad!");
+                            throw new RuntimeException("This seems bad!")
                         }
 
                         return foo
                 })
                 .build()
 
-        GraphQLObjectType query = GraphQLObjectType.newObject()
+        GraphQLObjectType query = newObject()
                 .name("RootQuery")
                 .field(
                 { field ->
@@ -786,16 +793,16 @@ class GraphQLTest extends Specification {
                 } as UnaryOperator)
                 .build()
 
-        GraphQLSchema schema = GraphQLSchema.newSchema()
+        GraphQLSchema schema = newSchema()
                 .query(query)
                 .build()
 
         GraphQL graphQL = GraphQL.newGraphQL(schema)
                 .queryExecutionStrategy(new BatchedExecutionStrategy())
                 .mutationExecutionStrategy(new BatchedExecutionStrategy())
-                .build();
+                .build()
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+        ExecutionInput executionInput = newExecutionInput()
                 .query("{node {id}}")
                 .build()
         when:
@@ -804,6 +811,69 @@ class GraphQLTest extends Specification {
 
         then:
         result.getData() == [node: [id: "abc"]]
+    }
+
+    class CaptureStrategy extends AsyncExecutionStrategy {
+        ExecutionId executionId = null
+        Instrumentation instrumentation = null
+
+        @Override
+        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+            executionId = executionContext.executionId
+            instrumentation = executionContext.instrumentation
+            return super.execute(executionContext, parameters)
+        }
+    }
+
+    def "graphql copying works as expected"() {
+
+        def instrumentation = new NoOpInstrumentation()
+        def hello = ExecutionId.from("hello")
+        def executionIdProvider = new ExecutionIdProvider() {
+            @Override
+            ExecutionId provide(String q, String operationName, Object context) {
+                return hello
+            }
+        }
+
+        def queryStrategy = new CaptureStrategy()
+        GraphQL graphQL = GraphQL.newGraphQL(simpleSchema())
+                .queryExecutionStrategy(queryStrategy)
+                .instrumentation(instrumentation)
+                .executionIdProvider(executionIdProvider)
+                .build()
+
+        when:
+        // now copy it as is
+        def newGraphQL = graphQL.transform({ builder -> })
+        def result = newGraphQL.execute('{ hello }').data
+
+        then:
+        result == [hello: 'world']
+        queryStrategy.executionId == hello
+        queryStrategy.instrumentation == instrumentation
+
+        when:
+
+        // now make some changes
+        def newInstrumentation = new NoOpInstrumentation()
+        def goodbye = ExecutionId.from("goodbye")
+        def newExecutionIdProvider = new ExecutionIdProvider() {
+            @Override
+            ExecutionId provide(String q, String operationName, Object context) {
+                return goodbye
+            }
+        }
+
+        newGraphQL = graphQL.transform({ builder ->
+            builder.executionIdProvider(newExecutionIdProvider).instrumentation(newInstrumentation)
+        })
+        result = newGraphQL.execute('{ hello }').data
+
+        then:
+        result == [hello: 'world']
+        queryStrategy.executionId == goodbye
+        queryStrategy.instrumentation == newInstrumentation
     }
 
     def "query with triple quoted multi line strings"() {
@@ -832,6 +902,4 @@ many lines""") }''')
 over
 many lines''']
     }
-
-
 }

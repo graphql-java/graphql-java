@@ -44,6 +44,7 @@ graphql-java is licensed under the MIT License.
     getting_started
     schema
     execution
+    batching
     instrumentation
     relay
     logging

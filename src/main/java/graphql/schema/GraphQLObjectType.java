@@ -14,8 +14,17 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static java.lang.String.format;
 
-
+/**
+ * This is the work horse type and represents an object with one or more field values that can be retrieved
+ * by the graphql system.
+ *
+ * Those fields can themselves by object types and so on until you reach the leaf nodes of the type tree represented
+ * by {@link graphql.schema.GraphQLScalarType}s.
+ *
+ * See http://graphql.org/learn/schema/#object-types-and-fields for more details on the concept.
+ */
 @PublicApi
 public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
 
@@ -55,7 +64,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
             String name = fieldDefinition.getName();
             if (fieldDefinitionsByName.containsKey(name))
-                throw new AssertException("field " + name + " redefined");
+                throw new AssertException(format("Duplicated definition for field '%s' in type '%s'", name, this.name));
             fieldDefinitionsByName.put(name, fieldDefinition);
         }
     }

@@ -1,10 +1,14 @@
 package graphql
 
+import graphql.language.Document
+import graphql.parser.Parser
+import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.TypeResolver
@@ -116,4 +120,29 @@ class TestUtil {
             return new PropertyDataFetcher(environment.getFieldDefinition().getName())
         }
     }
+
+    static GraphQLScalarType mockScalar(String name) {
+        new GraphQLScalarType(name, name, new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) {
+                return null
+            }
+
+            @Override
+            Object parseValue(Object input) {
+                return null
+            }
+
+            @Override
+            Object parseLiteral(Object input) {
+                return null
+            }
+        })
+    }
+
+
+    static Document parseQuery(String query) {
+        new Parser().parseDocument(query)
+    }
+
 }

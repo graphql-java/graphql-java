@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Directives;
+import graphql.PublicApi;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
@@ -11,7 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,6 +20,13 @@ import java.util.Set;
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
+/**
+ * The schema represents the combined type system of the graphql engine.  This is how the engine knows
+ * what graphql queries represent what data.
+ *
+ * See http://graphql.org/learn/schema/#type-language for more details
+ */
+@PublicApi
 public class GraphQLSchema {
 
 
@@ -53,7 +61,7 @@ public class GraphQLSchema {
         this.subscriptionType = subscriptionType;
         this.fieldVisibility = fieldVisibility;
         this.additionalTypes = dictionary;
-        this.directives = new HashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
+        this.directives = new LinkedHashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
         this.directives.addAll(directives);
         typeMap = new SchemaUtil().allTypes(this, dictionary);
     }
@@ -125,7 +133,9 @@ public class GraphQLSchema {
                 .query(existingSchema.getQueryType())
                 .mutation(existingSchema.getMutationType())
                 .subscription(existingSchema.getSubscriptionType())
-                .fieldVisibility(existingSchema.getFieldVisibility());
+                .fieldVisibility(existingSchema.getFieldVisibility())
+                .additionalDirectives(existingSchema.directives)
+                .additionalTypes(existingSchema.additionalTypes);
     }
 
     public static class Builder {
@@ -133,6 +143,8 @@ public class GraphQLSchema {
         private GraphQLObjectType mutationType;
         private GraphQLObjectType subscriptionType;
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
+        private Set<GraphQLType> additionalTypes = Collections.emptySet();
+        private Set<GraphQLDirective> additionalDirectives = Collections.emptySet();
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -166,8 +178,18 @@ public class GraphQLSchema {
             return this;
         }
 
+        public Builder additionalTypes(Set<GraphQLType> additionalTypes) {
+            this.additionalTypes = additionalTypes;
+            return this;
+        }
+
+        public Builder additionalDirectives(Set<GraphQLDirective> additionalDirectives) {
+            this.additionalDirectives = additionalDirectives;
+            return this;
+        }
+
         public GraphQLSchema build() {
-            return build(Collections.emptySet(), Collections.emptySet());
+            return build(additionalTypes, additionalDirectives);
         }
 
         public GraphQLSchema build(Set<GraphQLType> additionalTypes) {
