@@ -1,6 +1,7 @@
 package graphql.introspection;
 
 
+import graphql.Assert;
 import graphql.language.AstPrinter;
 import graphql.language.AstValueHelper;
 import graphql.schema.DataFetcher;
@@ -80,7 +81,7 @@ public class Introspection {
         } else if (type instanceof GraphQLNonNull) {
             return TypeKind.NON_NULL;
         } else {
-            throw new RuntimeException("Unknown kind of type: " + type);
+            return Assert.assertShouldNeverHappen("Unknown kind of type: " + type);
         }
     };
 
