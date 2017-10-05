@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @PublicApi
 public class ExecutionContext {
@@ -125,4 +126,26 @@ public class ExecutionContext {
     public ExecutionStrategy getSubscriptionStrategy() {
         return subscriptionStrategy;
     }
+
+
+    public ExecutionContext transform(Consumer<ExecutionContextBuilder> builderConsumer) {
+        ExecutionContextBuilder builder = new ExecutionContextBuilder()
+                .graphQLSchema(this.graphQLSchema)
+                .executionId(this.executionId)
+                .instrumentationState(instrumentationState)
+                .queryStrategy(this.queryStrategy)
+                .mutationStrategy(this.mutationStrategy)
+                .subscriptionStrategy(this.subscriptionStrategy)
+                .fragmentsByName(this.fragmentsByName)
+                .operationDefinition(this.operationDefinition)
+                .document(this.document)
+                .variables(this.variables)
+                .root(this.root)
+                .context(this.context)
+                .instrumentation(this.instrumentation);
+
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
 }

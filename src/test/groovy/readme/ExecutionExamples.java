@@ -5,6 +5,7 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.GraphQLError;
+import graphql.Scalars;
 import graphql.StarWarsSchema;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.AsyncSerialExecutionStrategy;
@@ -12,15 +13,20 @@ import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutorServiceExecutionStrategy;
+import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.visibility.BlockedFields;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -33,6 +39,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static graphql.StarWarsSchema.queryType;
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
+import static graphql.schema.GraphQLObjectType.newObject;
 
 @SuppressWarnings({"unused", "UnnecessaryLocalVariable", "Convert2Lambda"})
 public class ExecutionExamples {
@@ -176,6 +184,92 @@ public class ExecutionExamples {
                 .build();
     }
 
+    private void subscriptionExample() {
+
+        DataFetcher pubSubDataFetcher = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                int roomId = environment.getArgument("roomId");
+                Publisher<Object> publisher = new Publisher<Object>() {
+                    @Override
+                    public void subscribe(Subscriber subscriber) {
+                        //
+                        // use your pub sub system of choice to actually implement proper publish and subscribe
+                        subscribeToRoom(subscriber, roomId);
+                    }
+                };
+                return publisher;
+            }
+        };
+        GraphQLObjectType messageType = newObject().name("Message")
+                .field(newFieldDefinition().name("sender").type(Scalars.GraphQLString))
+                .field(newFieldDefinition().name("text").type(Scalars.GraphQLString))
+                .build();
+
+
+        GraphQLObjectType subscriptionType = newObject().name("Subscription")
+                .field(newFieldDefinition()
+                        .name("newMessage")
+                        .type(messageType)
+                        .dataFetcher(pubSubDataFetcher))
+                .build();
+
+        GraphQLSchema graphQLSchema = GraphQLSchema.newSchema().subscription(subscriptionType).build();
+
+        SubscriptionExecutionStrategy subscriptionES = new SubscriptionExecutionStrategy();
+        GraphQL graphql = GraphQL.newGraphQL(graphQLSchema)
+                .subscriptionExecutionStrategy(subscriptionES)
+                .build();
+
+        ExecutionResult subscriptionER = graphql.execute("" +
+                "subscription NewMessages {" +
+                "   newMessage(roomId: 123) {" +
+                "       sender" +
+                "       text" +
+                "   }" +
+                "}");
+
+        Publisher<ExecutionResult> eventStream = subscriptionER.getData();
+        //
+        // now new events will be supplied in this reactive event stream
+        //
+        // See http://www.reactive-streams.org/ for more information
+        //
+        eventStream.subscribe(new Subscriber<ExecutionResult>() {
+            private Subscription subscription;
+
+            @Override
+            public void onSubscribe(Subscription s) {
+                this.subscription = s;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(ExecutionResult executionResult) {
+                handleNewData(executionResult);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                // decide what to do if the event stream has gone into error
+            }
+
+            @Override
+            public void onComplete() {
+                // clean up any resources
+            }
+        });
+
+    }
+
+    private void subscribeToRoom(Subscriber s, int roomId) {
+
+    }
+
+    private void handleNewData(ExecutionResult executionResult) {
+
+    }
+
     class YourUserAccessService {
 
         public boolean isAdminUser() {
@@ -267,4 +361,5 @@ public class ExecutionExamples {
         return GraphQL.newGraphQL(schema)
                 .build();
     }
+
 }
