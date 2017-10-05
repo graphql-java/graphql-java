@@ -124,7 +124,7 @@ One thing to note is the above only works if you use `DataLoaderDispatcherInstru
 is called.  If this was not in place, then all the promises to data will never be dispatched ot the batch loader function
 and hence nothing would ever resolve.
 
-Pre Request Data Loaders
+Per Request Data Loaders
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you are serving web requests then the data can be specific to the user requesting it. If you have user specific data then you will not want to
