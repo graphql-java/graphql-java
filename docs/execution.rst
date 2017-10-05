@@ -428,9 +428,16 @@ This behaviour makes it unsuitable to be used as a mutation execution strategy.
 SubscriptionExecutionStrategy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using graphql subscriptions allows you to create stateful subscriptions to graphql data.  Initially it returns an execution
-result that contains a ``Publisher<ExecutionResult>`` event stream.  You then subscribe to that event stream and you will be
-given further updates as ``ExecutionResult`` objects as that stream encounters new events.
+Graphql subscriptions allows you to create stateful subscriptions to graphql data.  You uses ``SubscriptionExecutionStrategy``
+as your execution strategy as it has the support for the reactive-streams APIs.
+
+See http://www.reactive-streams.org/ for more information on the reactive ``Publisher`` and ``Subscriber`` interfaces.
+
+When you first run the subscription query you get back an ``ExecutionResult`` that contains a ``Publisher<ExecutionResult>``
+event stream in its data.
+
+If you then subscribe to that event stream and you will be given further updates mapped as graphql  ``ExecutionResult`` objects
+as the underlying event stream encounters new events.
 
 .. code-block:: java
 
