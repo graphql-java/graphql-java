@@ -2,9 +2,10 @@ Runtime Exceptions
 ==================
 
 
-Runtime exceptions can be thrown by the graphql engine if certain exceptional situations are encountered.
+Runtime exceptions can be thrown by the graphql engine if certain exceptional situations are encountered.  The following
+are a list of the exceptions that can be thrown all the way out of a ``graphql.execute(...)`` call.
 
-These are not errors in execution but rather totally unacceptable conditions in which to execute a graphql query.
+These are not graphql errors in execution but rather totally unacceptable conditions in which to execute a graphql query.
  
  -  `graphql.schema.CoercingSerializeException`
 
