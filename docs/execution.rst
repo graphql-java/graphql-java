@@ -425,6 +425,91 @@ This behaviour makes it unsuitable to be used as a mutation execution strategy.
                 .build();
 
 
+SubscriptionExecutionStrategy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Using graphql subscriptions allows you to create stateful subscriptions to graphql data.  Initially it returns an execution
+result that contains a ``Publisher<ExecutionResult>`` event stream.  You then subscribe to that event stream and you will be
+given further updates as ``ExecutionResult`` objects as that stream encounters new events.
+
+.. code-block:: java
+
+        DataFetcher pubSubDataFetcher = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                int roomId = environment.getArgument("roomId");
+                Publisher<Object> publisher = new Publisher<Object>() {
+                    @Override
+                    public void subscribe(Subscriber subscriber) {
+                        //
+                        // use your pub sub system of choice to actually implement proper publish and subscribe
+                        subscribeToRoom(subscriber, roomId);
+                    }
+                };
+                return publisher;
+            }
+        };
+
+        GraphQLObjectType messageType = newObject().name("Message")
+                .field(newFieldDefinition().name("sender").type(Scalars.GraphQLString))
+                .field(newFieldDefinition().name("text").type(Scalars.GraphQLString))
+                .build();
+
+
+        GraphQLObjectType subscriptionType = newObject().name("Subscription")
+                .field(newFieldDefinition()
+                        .name("newMessage")
+                        .type(messageType)
+                        .dataFetcher(pubSubDataFetcher))
+                .build();
+
+        GraphQLSchema graphQLSchema = GraphQLSchema.newSchema().subscription(subscriptionType).build();
+
+        SubscriptionExecutionStrategy subscriptionES = new SubscriptionExecutionStrategy();
+        GraphQL graphql = GraphQL.newGraphQL(graphQLSchema)
+                .subscriptionExecutionStrategy(subscriptionES)
+                .build();
+
+        ExecutionResult subscriptionER = graphql.execute("" +
+                "subscription NewMessages {" +
+                "   newMessage(roomId: 123) {" +
+                "       sender" +
+                "       text" +
+                "   }" +
+                "}");
+
+        Publisher<ExecutionResult> eventStream = subscriptionER.getData();
+        //
+        // now new events will be supplied in this reactive event stream
+        //
+        // See http://www.reactive-streams.org/ for more information
+        //
+        eventStream.subscribe(new Subscriber<ExecutionResult>() {
+            private Subscription subscription;
+
+            @Override
+            public void onSubscribe(Subscription s) {
+                this.subscription = s;
+                subscription.request(1);
+            }
+
+            @Override
+            public void onNext(ExecutionResult executionResult) {
+                handleNewData(executionResult);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                // decide what to do if the event stream has gone into error
+            }
+
+            @Override
+            public void onComplete() {
+                // clean up any resources
+            }
+        });
+
+
 
 BatchedExecutionStrategy
 ^^^^^^^^^^^^^^^^^^^^^^^^
