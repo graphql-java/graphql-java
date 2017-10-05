@@ -7,6 +7,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * A subscriber that captures each object for testing
+ */
 public class CapturingSubscriber<T> implements Subscriber<T> {
     private final List<T> events = new ArrayList<>();
     private final AtomicBoolean done = new AtomicBoolean();
@@ -45,7 +48,7 @@ public class CapturingSubscriber<T> implements Subscriber<T> {
         return throwable;
     }
 
-    public AtomicBoolean getDone() {
+    public AtomicBoolean isDone() {
         return done;
     }
 }

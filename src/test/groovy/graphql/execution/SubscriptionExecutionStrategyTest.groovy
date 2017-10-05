@@ -7,15 +7,15 @@ import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.Message
-import graphql.execution.pubsub.MessagePublisher
+import graphql.execution.pubsub.ReactiveStreamsMessagePublisher
+import graphql.execution.pubsub.RxJavaMessagePublisher
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
 import org.reactivestreams.Publisher
 import spock.lang.Specification
-
-import java.util.concurrent.ForkJoinPool
+import spock.lang.Unroll
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
@@ -49,13 +49,17 @@ class SubscriptionExecutionStrategyTest extends Specification {
     }
 
 
-    def "subscription query sends out a stream of events"() {
+    @Unroll
+    def "subscription query sends out a stream of events using the '#why' implementation"() {
+
+        given:
+        Publisher<Object> publisher = eventStreamPublisher
 
         DataFetcher newMessageDF = new DataFetcher() {
             @Override
             Object get(DataFetchingEnvironment environment) {
                 assert environment.getArgument("roomId") == 123
-                return new MessagePublisher(10, ForkJoinPool.commonPool())
+                return publisher
             }
         }
 
@@ -70,11 +74,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
             }
         """).build()
 
-        when:
         def executionResult = graphQL.execute(executionInput)
-
-        then:
-        executionResult != null
 
         when:
         Publisher<ExecutionResult> msgStream = executionResult.getData()
@@ -82,7 +82,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         msgStream.subscribe(capturingSubscriber)
 
         then:
-        Awaitility.await().untilTrue(capturingSubscriber.getDone())
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
 
         def messages = capturingSubscriber.events
         messages.size() == 10
@@ -90,6 +90,12 @@ class SubscriptionExecutionStrategyTest extends Specification {
             def message = messages[i].data
             message == [sender: "sender" + i, text: "text" + i]
         }
+
+        where:
+        why                       | eventStreamPublisher
+        'reactive streams stream' | new ReactiveStreamsMessagePublisher(10)
+        'rxjava stream'           | new RxJavaMessagePublisher(10)
+
     }
 
     def "subscription query will surface fetch errors"() {
@@ -126,7 +132,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         DataFetcher newMessageDF = new DataFetcher() {
             @Override
             Object get(DataFetchingEnvironment environment) {
-                return new MessagePublisher(10, ForkJoinPool.commonPool()) {
+                return new ReactiveStreamsMessagePublisher(10) {
                     //
                     // we blow up half way in
                     @Override
@@ -161,7 +167,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         msgStream.subscribe(capturingSubscriber)
 
         then:
-        Awaitility.await().untilTrue(capturingSubscriber.getDone())
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
 
         def messages = capturingSubscriber.events
         messages.size() == 5
@@ -179,9 +185,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         DataFetcher newMessageDF = new DataFetcher() {
             @Override
             Object get(DataFetchingEnvironment environment) {
-                return new MessagePublisher(10, ForkJoinPool.commonPool()) {
-                    //
-                    // we blow up half way in
+                return new ReactiveStreamsMessagePublisher(10) {
                     @Override
                     protected Message examineMessage(Message message, Integer at) {
                         if (at == 5) {
@@ -216,7 +220,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         msgStream.subscribe(capturingSubscriber)
 
         then:
-        Awaitility.await().untilTrue(capturingSubscriber.getDone())
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
 
         def messages = capturingSubscriber.events
         messages.size() == 10
@@ -234,7 +238,5 @@ class SubscriptionExecutionStrategyTest extends Specification {
                 message.data == [sender: "sender" + i, text: "text" + i]
             }
         }
-
-
     }
 }

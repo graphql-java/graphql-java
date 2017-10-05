@@ -5,19 +5,23 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.example.unicast.AsyncIterablePublisher;
 
 import java.util.Iterator;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 
-public class MessagePublisher implements Publisher<Message> {
+/**
+ * This example publisher will create count "messages" and then terminate. Its
+ * uses the reactive streams TCK as its implementation
+ */
+public class ReactiveStreamsMessagePublisher implements Publisher<Message> {
 
     private final AsyncIterablePublisher<Message> iterablePublisher;
 
-    public MessagePublisher(final int count, final Executor executor) {
+    public ReactiveStreamsMessagePublisher(final int count) {
         Iterable<Message> iterable = mkIterable(count, at -> {
             Message message = new Message("sender" + at, "text" + at);
             return examineMessage(message, at);
         });
-        iterablePublisher = new AsyncIterablePublisher<>(iterable, executor);
+        iterablePublisher = new AsyncIterablePublisher<>(iterable, ForkJoinPool.commonPool());
     }
 
     @Override

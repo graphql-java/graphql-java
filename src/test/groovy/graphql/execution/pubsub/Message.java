@@ -1,5 +1,8 @@
 package graphql.execution.pubsub;
 
+/**
+ * Our simple message object for testing
+ */
 public class Message {
     private final String sender;
     private final String text;
