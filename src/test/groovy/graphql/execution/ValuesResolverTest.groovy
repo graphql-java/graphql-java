@@ -16,6 +16,7 @@ import graphql.language.TypeName
 import graphql.language.Value
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
+import graphql.schema.CoercingParseValueException
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
@@ -111,9 +112,9 @@ class ValuesResolverTest extends Specification {
 
         when:
         def obj = new Person('a', 123)
-        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: obj])
+        resolver.coerceArgumentValues(schema, [variableDefinition], [variable: obj])
         then:
-        resolvedValues['variable'] == obj
+        thrown(CoercingParseValueException)
     }
 
     def "getVariableValues: simple value gets resolved to a list when the type is a List"() {

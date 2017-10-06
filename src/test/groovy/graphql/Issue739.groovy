@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.schema.CoercingParseValueException
 import graphql.schema.GraphQLObjectType
 import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
@@ -85,6 +86,6 @@ class Issue739 extends Specification {
                 .join()
 
         then:
-        1 == varResult.getErrors().size()
+        thrown(CoercingParseValueException)
     }
 }
