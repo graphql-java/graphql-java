@@ -1,21 +1,22 @@
 package graphql.schema;
 
 
-import java.lang.reflect.Field;
+import graphql.GraphQLException;
+import graphql.PublicApi;
+
 import java.util.Map;
 
 /**
- * Fetches data directly from a field.
+ * Fetches data directly from a named java object field.
  */
+@PublicApi
 public class FieldDataFetcher<T> implements DataFetcher<T> {
 
-    /**
-     * The name of the field.
-     */
     private final String fieldName;
 
     /**
-     * Ctor.
+     * Constructs a new data fetcher that tries to find values from the name field, using
+     * {@link DataFetchingEnvironment#getSource()} as the source object.
      *
      * @param fieldName The name of the field.
      */
@@ -31,24 +32,23 @@ public class FieldDataFetcher<T> implements DataFetcher<T> {
         if (source instanceof Map) {
             return (T) ((Map<?, ?>) source).get(fieldName);
         }
-        return (T) getFieldValue(source, environment.getFieldType());
+        return (T) getFieldValue(source);
     }
 
     /**
      * Uses introspection to get the field value.
      *
-     * @param object     The object being acted on.
-     * @param outputType The output type; ignored in this case.
+     * @param object The object being acted on.
+     *
      * @return An object, or null.
      */
-    private Object getFieldValue(Object object, GraphQLOutputType outputType) {
+    private Object getFieldValue(Object object) {
         try {
-            Field field = object.getClass().getField(fieldName);
-            return field.get(object);
+            return object.getClass().getField(fieldName).get(object);
         } catch (NoSuchFieldException e) {
             return null;
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new GraphQLException(e);
         }
     }
 }

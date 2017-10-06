@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetcherFactory;
 import graphql.schema.TypeResolver;
 
 import java.util.ArrayList;
@@ -56,6 +57,26 @@ public class CombinedWiringFactory implements WiringFactory {
         for (WiringFactory factory : factories) {
             if (factory.providesTypeResolver(environment)) {
                 return factory.getTypeResolver(environment);
+            }
+        }
+        return assertShouldNeverHappen();
+    }
+
+    @Override
+    public boolean providesDataFetcherFactory(FieldWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesDataFetcherFactory(environment)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public <T> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesDataFetcherFactory(environment)) {
+                return factory.getDataFetcherFactory(environment);
             }
         }
         return assertShouldNeverHappen();

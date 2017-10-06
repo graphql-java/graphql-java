@@ -18,6 +18,16 @@ import static graphql.Assert.assertValidName;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 
+/**
+ * A union type is a polymorphic type that dynamically represents one of more concrete object types.
+ *
+ * At runtime a {@link graphql.schema.TypeResolver} is used to take an union object value and decide what {@link graphql.schema.GraphQLObjectType}
+ * represents this union of types.
+ *
+ * Note that members of a union type need to be concrete object types; you can't create a union type out of interfaces or other unions.
+ *
+ * See http://graphql.org/learn/schema/#union-types for more details on the concept.
+ */
 @PublicApi
 public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLMetadataSupport {
 

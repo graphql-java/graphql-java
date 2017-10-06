@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 
 import java.util.Map;
@@ -8,6 +9,14 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 
+/**
+ * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.
+ *
+ * Fields can be thought of as "functions" that take arguments and return a value.
+ *
+ * See http://graphql.org/learn/queries/#arguments for more details on the concept.
+ */
+@PublicApi
 public class GraphQLArgument {
 
     private final String name;

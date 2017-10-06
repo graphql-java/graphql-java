@@ -8,3 +8,4 @@ classes
 _site
 generated-src/
 out
+docs/_build/

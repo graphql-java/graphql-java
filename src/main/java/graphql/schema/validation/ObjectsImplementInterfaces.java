@@ -116,20 +116,29 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
         return new SchemaValidationError(ObjectDoesNotImplementItsInterfaces, msg);
     }
 
-    boolean isCompatible(GraphQLOutputType a, GraphQLOutputType b) {
-        if (isSameType(a, b)) {
+    /**
+     * @return {@code true} if the specified objectType satisfies the constraintType.
+     */
+    boolean isCompatible(GraphQLOutputType constraintType, GraphQLOutputType objectType) {
+        if (isSameType(constraintType, objectType)) {
             return true;
-        } else if (a instanceof GraphQLUnionType) {
-            return objectIsMemberOfUnion((GraphQLUnionType) a, b);
-        } else if (a instanceof GraphQLInterfaceType && b instanceof GraphQLObjectType) {
-            return objectImplementsInterface((GraphQLInterfaceType) a, (GraphQLObjectType) b);
-        } else if (a instanceof GraphQLList && b instanceof GraphQLList) {
-            GraphQLOutputType wrappedA = (GraphQLOutputType) ((GraphQLList) a).getWrappedType();
-            GraphQLOutputType wrappedB = (GraphQLOutputType) ((GraphQLList) b).getWrappedType();
-            return isCompatible(wrappedA, wrappedB);
-        } else if (b instanceof GraphQLNonNull) {
-            GraphQLOutputType wrappedB = (GraphQLOutputType) ((GraphQLNonNull) b).getWrappedType();
-            return isCompatible(a, wrappedB);
+        } else if (constraintType instanceof GraphQLUnionType) {
+            return objectIsMemberOfUnion((GraphQLUnionType) constraintType, objectType);
+        } else if (constraintType instanceof GraphQLInterfaceType && objectType instanceof GraphQLObjectType) {
+            return objectImplementsInterface((GraphQLInterfaceType) constraintType, (GraphQLObjectType) objectType);
+        } else if (constraintType instanceof GraphQLList && objectType instanceof GraphQLList) {
+            GraphQLOutputType wrappedConstraintType = (GraphQLOutputType) ((GraphQLList) constraintType).getWrappedType();
+            GraphQLOutputType wrappedObjectType = (GraphQLOutputType) ((GraphQLList) objectType).getWrappedType();
+            return isCompatible(wrappedConstraintType, wrappedObjectType);
+        } else if (objectType instanceof GraphQLNonNull) {
+            GraphQLOutputType nullableConstraint;
+            if (constraintType instanceof GraphQLNonNull) {
+                nullableConstraint = (GraphQLOutputType) ((GraphQLNonNull) constraintType).getWrappedType();
+            } else {
+                nullableConstraint = constraintType;
+            }
+            GraphQLOutputType nullableObjectType = (GraphQLOutputType) ((GraphQLNonNull) objectType).getWrappedType();
+            return isCompatible(nullableConstraint, nullableObjectType);
         } else {
             return false;
         }

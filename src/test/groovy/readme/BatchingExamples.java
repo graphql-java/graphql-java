@@ -71,7 +71,7 @@ public class BatchingExamples {
         // as each level fo the graphql query is executed and hence make batched objects
         // available to the query and the associated DataFetchers
         //
-        DataLoaderDispatcherInstrumentation  dispatcherInstrumentation
+        DataLoaderDispatcherInstrumentation dispatcherInstrumentation
                 = new DataLoaderDispatcherInstrumentation(registry);
 
         //
@@ -83,6 +83,35 @@ public class BatchingExamples {
                 .instrumentation(dispatcherInstrumentation)
                 .build();
 
+    }
+
+    private void perRequestGraphQl() {
+
+        GraphQLSchema staticSchema = staticSchema_Or_MayBeFrom_IoC_Injection();
+
+        DataLoaderRegistry registry = new DataLoaderRegistry();
+        registry.register("character", getCharacterDataLoader());
+
+        DataLoaderDispatcherInstrumentation dispatcherInstrumentation
+                = new DataLoaderDispatcherInstrumentation(registry);
+
+        GraphQL graphQL = GraphQL.newGraphQL(staticSchema)
+                .instrumentation(dispatcherInstrumentation)
+                .build();
+
+        graphQL.execute("{ helloworld }");
+
+        // you can now throw away the GraphQL and hence DataLoaderDispatcherInstrumentation
+        // and DataLoaderRegistry objects since they are really cheap to build per request
+
+    }
+
+    private GraphQLSchema staticSchema_Or_MayBeFrom_IoC_Injection() {
+        return null;
+    }
+
+    private DataLoader<?, ?> getCharacterDataLoader() {
+        return null;
     }
 
     private GraphQLSchema buildSchema() {

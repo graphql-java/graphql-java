@@ -7,6 +7,11 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * A modified type that indicates there the underlying wrapped type will not be null.
+ *
+ * See http://graphql.org/learn/schema/#lists-and-non-null for more details on the concept
+ */
 @PublicApi
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
@@ -16,6 +21,7 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
      * {@code .type(nonNull(GraphQLString)) }
      *
      * @param wrappedType the type to wrap as being non null
+     *
      * @return a GraphQLNonNull of that wrapped type
      */
     public static GraphQLNonNull nonNull(GraphQLType wrappedType) {

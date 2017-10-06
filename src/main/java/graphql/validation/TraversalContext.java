@@ -1,8 +1,8 @@
 package graphql.validation;
 
 
+import graphql.Assert;
 import graphql.Internal;
-import graphql.ShouldNotHappenException;
 import graphql.execution.TypeFromAST;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -117,7 +117,7 @@ public class TraversalContext implements DocumentVisitor {
         } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
             addOutputType(schema.getSubscriptionType());
         } else {
-            throw new ShouldNotHappenException();
+            Assert.assertShouldNeverHappen();
         }
     }
 

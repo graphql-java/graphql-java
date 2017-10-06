@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionTypeInfo;
 import graphql.execution.FieldCollector;
@@ -10,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+@Internal
 public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelectionSet {
 
     private final static DataFetchingFieldSelectionSet NOOP = Collections::emptyMap;

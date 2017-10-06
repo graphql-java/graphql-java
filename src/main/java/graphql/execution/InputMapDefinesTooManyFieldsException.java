@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.GraphQLException;
+import graphql.PublicApi;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 
@@ -9,6 +10,7 @@ import graphql.schema.GraphQLTypeUtil;
  *
  *  - This unordered map should not contain any entries with names not defined by a field of this input object type, otherwise an error should be thrown.
  */
+@PublicApi
 public class InputMapDefinesTooManyFieldsException extends GraphQLException {
 
     public InputMapDefinesTooManyFieldsException(GraphQLType graphQLType, String fieldName) {

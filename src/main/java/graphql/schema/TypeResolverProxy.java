@@ -1,8 +1,10 @@
 package graphql.schema;
 
 
+import graphql.Internal;
 import graphql.TypeResolutionEnvironment;
 
+@Internal
 public class TypeResolverProxy implements TypeResolver {
 
     private TypeResolver typeResolver;

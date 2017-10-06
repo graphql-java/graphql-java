@@ -1,7 +1,6 @@
 package graphql.execution;
 
 
-import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -27,6 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static graphql.Assert.assertShouldNeverHappen;
 
 @Internal
 public class ValuesResolver {
@@ -74,7 +75,7 @@ public class ValuesResolver {
                     coercedValues.put(variableName, coercedValue);
                 } else if (isNonNullType(variableType)) {
                     // 3.e.ii
-                    throw new NonNullableValueCoercedAsNullException(variableType);
+                    throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
                 }
             } else {
                 Object value = variableValues.get(variableName);
@@ -93,7 +94,7 @@ public class ValuesResolver {
             return coerceValueAst(variableType, variableDefinition.getDefaultValue(), null);
         }
 
-        return coerceValue(variableType, value);
+        return coerceValue(variableDefinition, variableType, value);
     }
 
     private boolean isNonNullType(GraphQLType variableType) {
@@ -135,11 +136,11 @@ public class ValuesResolver {
     }
 
 
-    private Object coerceValue(GraphQLType graphQLType, Object value) {
+    private Object coerceValue(VariableDefinition variableDefinition, GraphQLType graphQLType, Object value) {
         if (graphQLType instanceof GraphQLNonNull) {
-            Object returnValue = coerceValue(((GraphQLNonNull) graphQLType).getWrappedType(), value);
+            Object returnValue = coerceValue(variableDefinition, ((GraphQLNonNull) graphQLType).getWrappedType(), value);
             if (returnValue == null) {
-                throw new NonNullableValueCoercedAsNullException(graphQLType);
+                throw new NonNullableValueCoercedAsNullException(variableDefinition, graphQLType);
             }
             return returnValue;
         }
@@ -151,18 +152,18 @@ public class ValuesResolver {
         } else if (graphQLType instanceof GraphQLEnumType) {
             return coerceValueForEnum((GraphQLEnumType) graphQLType, value);
         } else if (graphQLType instanceof GraphQLList) {
-            return coerceValueForList((GraphQLList) graphQLType, value);
+            return coerceValueForList(variableDefinition, (GraphQLList) graphQLType, value);
         } else if (graphQLType instanceof GraphQLInputObjectType && value instanceof Map) {
             //noinspection unchecked
-            return coerceValueForInputObjectType((GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
+            return coerceValueForInputObjectType(variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
             return value;
         } else {
-            throw new GraphQLException("unknown type " + graphQLType);
+            return assertShouldNeverHappen("unhandled type " + graphQLType);
         }
     }
 
-    private Object coerceValueForInputObjectType(GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
+    private Object coerceValueForInputObjectType(VariableDefinition variableDefinition, GraphQLInputObjectType inputObjectType, Map<String, Object> input) {
         Map<String, Object> result = new LinkedHashMap<>();
         List<GraphQLInputObjectField> fields = inputObjectType.getFields();
         List<String> fieldNames = fields.stream().map(GraphQLInputObjectField::getName).collect(Collectors.toList());
@@ -174,7 +175,7 @@ public class ValuesResolver {
 
         for (GraphQLInputObjectField inputField : fields) {
             if (input.containsKey(inputField.getName()) || alwaysHasValue(inputField)) {
-                Object value = coerceValue(inputField.getType(), input.get(inputField.getName()));
+                Object value = coerceValue(variableDefinition, inputField.getType(), input.get(inputField.getName()));
                 result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
             }
         }
@@ -194,15 +195,15 @@ public class ValuesResolver {
         return graphQLEnumType.getCoercing().parseValue(value);
     }
 
-    private List coerceValueForList(GraphQLList graphQLList, Object value) {
+    private List coerceValueForList(VariableDefinition variableDefinition, GraphQLList graphQLList, Object value) {
         if (value instanceof Iterable) {
             List<Object> result = new ArrayList<>();
             for (Object val : (Iterable) value) {
-                result.add(coerceValue(graphQLList.getWrappedType(), val));
+                result.add(coerceValue(variableDefinition, graphQLList.getWrappedType(), val));
             }
             return result;
         } else {
-            return Collections.singletonList(coerceValue(graphQLList.getWrappedType(), value));
+            return Collections.singletonList(coerceValue(variableDefinition, graphQLList.getWrappedType(), value));
         }
     }
 
@@ -289,7 +290,7 @@ public class ValuesResolver {
 
     private void assertNonNullInputField(GraphQLInputObjectField inputTypeField) {
         if (inputTypeField.getType() instanceof GraphQLNonNull) {
-            throw new NonNullableValueCoercedAsNullException(inputTypeField.getType());
+            throw new NonNullableValueCoercedAsNullException(inputTypeField);
         }
     }
 

@@ -95,11 +95,11 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                 .name("BoxUnion")
                 .possibleTypes(StringBox, IntBox, NonNullStringBox1, NonNullStringBox2)
                 .typeResolver(new TypeResolver() {
-                    @Override
-                    GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                        return null
-                    }
-                })
+            @Override
+            GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                return null
+            }
+        })
                 .build()
         def QueryRoot = newObject()
                 .name("QueryRoot")
@@ -297,71 +297,25 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
-    def 'conflicting directives'() {
+    //
+    // The rules have been relaxed regarding fragment uniqueness.
+    //
+    // see https://github.com/facebook/graphql/pull/120/files
+    // and https://github.com/graphql/graphql-js/pull/230/files
+    //
+    def "different skip/include directives accepted"() {
         given:
         def query = """
-        fragment conflictingDirectiveArgs on Dog {
-            name @include(if: true)
-            name @skip(if: false)
-        }
+            fragment differentDirectivesWithDifferentAliases on Dog {
+                name @include(if: true)
+                name @include(if: false)
+            }
         """
         when:
         traverse(query, null)
 
         then:
-        errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: name: they have differing directives"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
-    }
-
-    def 'conflicting directive args'() {
-        given:
-        def query = """
-        fragment conflictingDirectiveArgs on Dog {
-            name @include(if: true)
-            name @include(if: false)
-        }
-        """
-        when:
-        traverse(query, null)
-
-        then:
-        errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: name: they have differing directives"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
-    }
-
-    def 'conflicting args with matching directives'() {
-        given:
-        def query = """
-        fragment conflictingArgsWithMatchingDirectiveArgs on Dog {
-            doesKnowCommand(dogCommand: SIT) @include(if: true)
-            doesKnowCommand(dogCommand: HEEL) @include(if: true)
-        }
-        """
-        when:
-        traverse(query, null)
-
-        then:
-        errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: doesKnowCommand: they have differing arguments"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
-    }
-
-    def 'conflicting directives with matching args'() {
-        def query = """
-        fragment conflictingDirectiveArgsWithMatchingArgs on Dog {
-            doesKnowCommand(dogCommand: SIT) @include(if: true)
-            doesKnowCommand(dogCommand: SIT) @skip(if: false)
-        }
-        """
-        when:
-        traverse(query, null)
-
-        then:
-        errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: doesKnowCommand: they have differing directives"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+        errorCollector.getErrors().isEmpty()
     }
 
     def 'encounters conflict in fragments'() {

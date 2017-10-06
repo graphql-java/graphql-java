@@ -13,34 +13,46 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
 
+/**
+ * Fields are the ways you get data values in graphql and a field definition represents a field, its type, the arguments it takes
+ * and the {@link graphql.schema.DataFetcher} used to get data values for that field.
+ *
+ * Fields can be thought of as functions in graphql, they have a name, take defined arguments and return a value.
+ *
+ * Fields can also be deprecated, which indicates the consumers that a field wont be supported in the future.
+ *
+ * See http://graphql.org/learn/queries/#fields for more details on the concept.
+ */
 @PublicApi
 public class GraphQLFieldDefinition {
 
     private final String name;
     private final String description;
     private GraphQLOutputType type;
-    private final DataFetcher dataFetcher;
+    private final DataFetcherFactory dataFetcherFactory;
     private final String deprecationReason;
     private final List<GraphQLArgument> arguments;
     private final FieldDefinition definition;
 
 
+    @Deprecated
     @Internal
-    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
-        this(name,description,type, dataFetcher,arguments,deprecationReason,null);
+    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher<?> dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
+        this(name, description, type, DataFetcherFactories.useDataFetcher(dataFetcher), arguments, deprecationReason, null);
     }
 
     @Internal
-    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher dataFetcher, List<GraphQLArgument> arguments, String deprecationReason, FieldDefinition definition) {
+    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, FieldDefinition definition) {
         assertValidName(name);
-        assertNotNull(dataFetcher, "dataFetcher can't be null");
+        assertNotNull(dataFetcherFactory, "you have to provide a DataFetcher (or DataFetcherFactory)");
         assertNotNull(type, "type can't be null");
         assertNotNull(arguments, "arguments can't be null");
         this.name = name;
         this.description = description;
         this.type = type;
-        this.dataFetcher = dataFetcher;
+        this.dataFetcherFactory = dataFetcherFactory;
         this.arguments = Collections.unmodifiableList(new ArrayList<>(arguments));
         this.deprecationReason = deprecationReason;
         this.definition = definition;
@@ -61,7 +73,9 @@ public class GraphQLFieldDefinition {
     }
 
     public DataFetcher getDataFetcher() {
-        return dataFetcher;
+        return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
+                .fieldDefinition(this)
+                .build());
     }
 
     public GraphQLArgument getArgument(String name) {
@@ -96,8 +110,8 @@ public class GraphQLFieldDefinition {
         return "GraphQLFieldDefinition{" +
                 "name='" + name + '\'' +
                 ", type=" + type +
-                ", dataFetcher=" + dataFetcher +
                 ", arguments=" + arguments +
+                ", dataFetcherFactory=" + dataFetcherFactory +
                 ", description='" + description + '\'' +
                 ", deprecationReason='" + deprecationReason + '\'' +
                 ", definition=" + definition +
@@ -114,7 +128,7 @@ public class GraphQLFieldDefinition {
         private String name;
         private String description;
         private GraphQLOutputType type;
-        private DataFetcher dataFetcher;
+        private DataFetcherFactory<?> dataFetcherFactory;
         private List<GraphQLArgument> arguments = new ArrayList<>();
         private String deprecationReason;
         private boolean isField;
@@ -153,14 +167,41 @@ public class GraphQLFieldDefinition {
             return this;
         }
 
-        public Builder dataFetcher(DataFetcher dataFetcher) {
+        /**
+         * Sets the {@link graphql.schema.DataFetcher} to use with this field.
+         *
+         * @param dataFetcher the data fetcher to use
+         *
+         * @return this builder
+         */
+        public Builder dataFetcher(DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher, "dataFetcher must be not null");
-            this.dataFetcher = dataFetcher;
+            this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
             return this;
         }
 
+        /**
+         * Sets the {@link graphql.schema.DataFetcherFactory} to use with this field.
+         *
+         * @param dataFetcherFactory the factory to use
+         *
+         * @return this builder
+         */
+        public Builder dataFetcherFactory(DataFetcherFactory dataFetcherFactory) {
+            assertNotNull(dataFetcherFactory, "dataFetcherFactory must be not null");
+            this.dataFetcherFactory = dataFetcherFactory;
+            return this;
+        }
+
+        /**
+         * This will cause the data fetcher of this field to always return the supplied value
+         *
+         * @param value the value to always return
+         *
+         * @return this builder
+         */
         public Builder staticValue(final Object value) {
-            this.dataFetcher = environment -> value;
+            this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(environment -> value);
             return this;
         }
 
@@ -189,6 +230,7 @@ public class GraphQLFieldDefinition {
          * </pre>
          *
          * @param builderFunction a supplier for the builder impl
+         *
          * @return this
          */
         public Builder argument(UnaryOperator<GraphQLArgument.Builder> builderFunction) {
@@ -202,6 +244,7 @@ public class GraphQLFieldDefinition {
          * from within
          *
          * @param builder an un-built/incomplete GraphQLArgument
+         *
          * @return this
          */
         public Builder argument(GraphQLArgument.Builder builder) {
@@ -220,16 +263,14 @@ public class GraphQLFieldDefinition {
         }
 
         public GraphQLFieldDefinition build() {
-            if (dataFetcher == null) {
+            if (dataFetcherFactory == null) {
                 if (isField) {
-                    dataFetcher = new FieldDataFetcher(name);
+                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new FieldDataFetcher<>(name));
                 } else {
-                    dataFetcher = new PropertyDataFetcher(name);
+                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(name));
                 }
             }
-            return new GraphQLFieldDefinition(name, description, type, dataFetcher, arguments, deprecationReason, definition);
+            return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory, arguments, deprecationReason, definition);
         }
-
-
     }
 }

@@ -1,8 +1,8 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQLException;
 import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TypeResolutionEnvironment;
@@ -215,10 +215,16 @@ public abstract class ExecutionStrategy {
         CompletableFuture<?> fetchedValue;
         DataFetcher dataFetcher = fieldDef.getDataFetcher();
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
+        ExecutionId executionId = executionContext.getExecutionId();
         try {
+            log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, fieldTypeInfo.getPath(), dataFetcher.getClass().getName());
             Object fetchedValueRaw = dataFetcher.get(environment);
+            log.debug("'{}' field '{}' fetch returned '{}'", executionId, fieldTypeInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
+            log.debug(String.format("'%s', field '%s' fetch threw exception", executionId, fieldTypeInfo.getPath()), e);
+
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
         }
@@ -278,6 +284,8 @@ public abstract class ExecutionStrategy {
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
         ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
+
+        log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), fieldTypeInfo.getPath());
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, fieldTypeInfo);
 
@@ -426,7 +434,7 @@ public abstract class ExecutionStrategy {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema());
         GraphQLObjectType result = params.getGraphQLInterfaceType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLInterfaceType().getName());
+            throw new UnresolvedTypeException(params.getGraphQLInterfaceType());
         }
         return result;
     }
@@ -442,7 +450,7 @@ public abstract class ExecutionStrategy {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema());
         GraphQLObjectType result = params.getGraphQLUnionType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLUnionType().getName());
+            throw new UnresolvedTypeException(params.getGraphQLUnionType());
         }
         return result;
     }
@@ -594,9 +602,7 @@ public abstract class ExecutionStrategy {
         }
 
         GraphQLFieldDefinition fieldDefinition = schema.getFieldVisibility().getFieldDefinition(parentType, field.getName());
-        if (fieldDefinition == null) {
-            throw new GraphQLException("Unknown field " + field.getName());
-        }
+        Assert.assertTrue(fieldDefinition != null, "Unknown field " + field.getName());
         return fieldDefinition;
     }
 

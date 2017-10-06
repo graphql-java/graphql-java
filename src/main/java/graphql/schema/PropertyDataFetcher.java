@@ -1,14 +1,26 @@
 package graphql.schema;
 
 
+import graphql.GraphQLException;
+import graphql.PublicApi;
+
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Map;
 
 import static graphql.Scalars.GraphQLBoolean;
 
+/**
+ * This is the default data fetcher used in graphql-java.  It will examine
+ * maps and POJO java beans for values that match the desired name, typically the field name.
+ *
+ * You can write your own data fetchers to get data from some other backing system
+ *
+ * @see graphql.schema.DataFetcher
+ */
+@PublicApi
 public class PropertyDataFetcher<T> implements DataFetcher<T> {
 
     private final String propertyName;
@@ -38,8 +50,9 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
      */
     private Method findAccessibleMethod(Class root, String methodName) throws NoSuchMethodException {
         Class cur = root;
-        while(cur != null) {
-            if(Modifier.isPublic(cur.getModifiers())){
+        while (cur != null) {
+            if (Modifier.isPublic(cur.getModifiers())) {
+                @SuppressWarnings("unchecked")
                 Method m = cur.getMethod(methodName);
                 if (Modifier.isPublic(m.getModifiers())) {
                     return m;
@@ -47,6 +60,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
             }
             cur = cur.getSuperclass();
         }
+        //noinspection unchecked
         return root.getMethod(methodName);
     }
 
@@ -73,10 +87,11 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
             return method.invoke(object);
 
         } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new GraphQLException(e);
         }
     }
 
+    @SuppressWarnings("SimplifiableIfStatement")
     private boolean isBooleanProperty(GraphQLOutputType outputType) {
         if (outputType == GraphQLBoolean) return true;
         if (outputType instanceof GraphQLNonNull) {
@@ -92,7 +107,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         } catch (NoSuchFieldException e) {
             return null;
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new GraphQLException(e);
         }
     }
 }

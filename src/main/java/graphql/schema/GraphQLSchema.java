@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Directives;
+import graphql.PublicApi;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
@@ -11,14 +12,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
+/**
+ * The schema represents the combined type system of the graphql engine.  This is how the engine knows
+ * what graphql queries represent what data.
+ *
+ * See http://graphql.org/learn/schema/#type-language for more details
+ */
+@PublicApi
 public class GraphQLSchema {
 
 
@@ -53,7 +62,7 @@ public class GraphQLSchema {
         this.subscriptionType = subscriptionType;
         this.fieldVisibility = fieldVisibility;
         this.additionalTypes = dictionary;
-        this.directives = new HashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
+        this.directives = new LinkedHashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
         this.directives.addAll(directives);
         typeMap = new SchemaUtil().allTypes(this, dictionary);
     }
@@ -103,6 +112,20 @@ public class GraphQLSchema {
 
     public boolean isSupportingSubscriptions() {
         return subscriptionType != null;
+    }
+
+    /**
+     * This helps you transform the current GraphQLSchema object into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new GraphQLSchema object based on calling build on that builder
+     */
+    public GraphQLSchema transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newSchema(this);
+        builderConsumer.accept(builder);
+        return builder.build();
     }
 
     /**

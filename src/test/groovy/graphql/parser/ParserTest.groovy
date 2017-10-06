@@ -480,4 +480,20 @@ class ParserTest extends Specification {
         selection.arguments[0].value == NullValue.Null
 
     }
+
+    def "whitespace_ignored"() {
+        given:
+        def BOM = "\ufeff"
+        def ws = "\t \n"
+        def comma = ","
+        def input = "{ " + BOM + ws + comma + "foo(bar: null) }"
+
+        when:
+        def document = new Parser().parseDocument(input)
+        def operation = document.definitions[0] as OperationDefinition
+        def selection = operation.selectionSet.selections[0] as Field
+
+        then:
+        selection.name == "foo"
+    }
 }
