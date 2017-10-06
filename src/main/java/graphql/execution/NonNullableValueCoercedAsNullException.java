@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.GraphQLException;
+import graphql.PublicApi;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLType;
@@ -11,6 +12,7 @@ import static java.lang.String.format;
 /**
  * This is thrown if a non nullable value is coerced to a null value
  */
+@PublicApi
 public class NonNullableValueCoercedAsNullException extends GraphQLException {
 
     public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, GraphQLType graphQLType) {

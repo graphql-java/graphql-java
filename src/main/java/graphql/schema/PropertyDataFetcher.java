@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.GraphQLException;
 import graphql.PublicApi;
 
 import java.lang.reflect.Field;
@@ -86,7 +87,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
             return method.invoke(object);
 
         } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new GraphQLException(e);
         }
     }
 
@@ -106,7 +107,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         } catch (NoSuchFieldException e) {
             return null;
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new GraphQLException(e);
         }
     }
 }

@@ -1,7 +1,6 @@
 package graphql.execution;
 
 
-import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -27,6 +26,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static graphql.Assert.assertShouldNeverHappen;
 
 @Internal
 public class ValuesResolver {
@@ -158,7 +159,7 @@ public class ValuesResolver {
         } else if (graphQLType instanceof GraphQLInputObjectType) {
             return value;
         } else {
-            throw new GraphQLException("unknown type " + graphQLType);
+            return assertShouldNeverHappen("unhandled type " + graphQLType);
         }
     }
 
