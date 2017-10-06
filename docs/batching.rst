@@ -124,3 +124,40 @@ One thing to note is the above only works if you use `DataLoaderDispatcherInstru
 is called.  If this was not in place, then all the promises to data will never be dispatched ot the batch loader function
 and hence nothing would ever resolve.
 
+Per Request Data Loaders
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you are serving web requests then the data can be specific to the user requesting it. If you have user specific data then you will not want to
+cache data meant for user A to then later give it user B in a subsequent request.
+
+The scope of your DataLoader instances is important. You might want to create them per web request to
+ensure data is only cached within that web request and no more.
+
+If your data can be shared across web requests then you might want to scope your data loaders so they survive
+longer than the web request say.
+
+But if you are doing per request data loaders then creating a new set of ``GraphQL`` and ``DataLoader`` objects per
+request is super cheap.  Its the ``GraphQLSchema`` creation that can be expensive, especially if you are using graphql IDL parsing.
+
+Structure your code so that the schema is statically held, perhaps in a static variable or in a singleton IoC component but
+build out a new ``GraphQL`` set of objects on each request.
+
+
+.. code-block:: java
+
+        GraphQLSchema staticSchema = staticSchema_Or_MayBeFrom_IoC_Injection();
+
+        DataLoaderRegistry registry = new DataLoaderRegistry();
+        registry.register("character", getCharacterDataLoader());
+
+        DataLoaderDispatcherInstrumentation dispatcherInstrumentation
+                = new DataLoaderDispatcherInstrumentation(registry);
+
+        GraphQL graphQL = GraphQL.newGraphQL(staticSchema)
+                .instrumentation(dispatcherInstrumentation)
+                .build();
+
+        graphQL.execute("{ helloworld }");
+
+        // you can now throw away the GraphQL and hence DataLoaderDispatcherInstrumentation
+        // and DataLoaderRegistry objects since they are really cheap to build per request

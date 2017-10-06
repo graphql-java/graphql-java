@@ -140,7 +140,7 @@ public class GraphQL {
      * This helps you transform the current GraphQL object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
-     * @param builderConsumer the consumer code that will be given a builder to changee
+     * @param builderConsumer the consumer code that will be given a builder to transform
      *
      * @return a new GraphQL object based on calling build on that builder
      */
