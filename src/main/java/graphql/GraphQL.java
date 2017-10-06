@@ -42,6 +42,47 @@ import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
  *
  * Building this object is very cheap and can be done on each execution if necessary.  Building the schema is often not
  * as cheap, especially if its parsed from graphql IDL schema format via {@link graphql.schema.idl.SchemaParser}.
+ *
+ * The data for a query is returned via {@link ExecutionResult#getData()} and any errors encountered as placed in
+ * {@link ExecutionResult#getErrors()}.
+ *
+ * <h2>Runtime Exceptions</h2>
+ *
+ * Runtime exceptions can be thrown by the graphql engine if certain situations are encountered.  These are not errors
+ * in execution but rather totally unacceptable conditions in which to execute a graphql query.
+ * <ul>
+ * <li>{@link graphql.schema.CoercingSerializeException} - is thrown when a value cannot be serialised by a Scalar type, for example
+ * a String value being coerced as an Int.
+ * </li>
+ *
+ * <li>{@link graphql.schema.CoercingParseValueException} - is thrown when a value cannot be parsed by a Scalar type, for example
+ * a String input value being parsed as an Int.
+ * </li>
+ *
+ * <li>{@link graphql.execution.UnresolvedTypeException} - is thrown if a {@link graphql.schema.TypeResolver} fails to provide a concrete
+ * object type given a interface or union type.
+ * </li>
+ *
+ * <li>{@link graphql.execution.NonNullableValueCoercedAsNullException} - is thrown if a non null variable argument is coerced as a
+ * null value during execution.
+ * </li>
+ *
+ * <li>{@link graphql.execution.InputMapDefinesTooManyFieldsException} - is thrown if a map used for an input type object contains
+ * more keys than is defined in that input type.
+ * </li>
+ *
+ * <li>{@link graphql.schema.validation.InvalidSchemaException} - is thrown if the schema is not valid when built via
+ * {@link graphql.schema.GraphQLSchema.Builder#build()}
+ * </li>
+ *
+ * <li>{@link graphql.GraphQLException} - is thrown as a general purpose runtime exception, for example if the code cant
+ * access a named field when examining a POJO.
+ * </li>
+ *
+ * <li>{@link graphql.AssertException} - is thrown as a low level code assertion exception for truly unexpected code conditions
+ * </li>
+ *
+ * </ul>
  */
 @PublicApi
 public class GraphQL {
@@ -140,7 +181,7 @@ public class GraphQL {
      * This helps you transform the current GraphQL object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
-     * @param builderConsumer the consumer code that will be given a builder to changee
+     * @param builderConsumer the consumer code that will be given a builder to transform
      *
      * @return a new GraphQL object based on calling build on that builder
      */

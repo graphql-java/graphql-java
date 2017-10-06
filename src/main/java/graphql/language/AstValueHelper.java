@@ -1,6 +1,7 @@
 package graphql.language;
 
 import graphql.AssertException;
+import graphql.GraphQLException;
 import graphql.Scalars;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
@@ -193,7 +194,7 @@ public class AstValueHelper {
                     result.put(pd.getName(), reader.invoke(value));
             }
         } catch (IntrospectionException | InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new GraphQLException(e);
         }
         return result;
     }

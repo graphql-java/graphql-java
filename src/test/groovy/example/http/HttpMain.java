@@ -19,9 +19,12 @@ import graphql.schema.idl.TypeDefinitionRegistry;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.ResourceHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -58,7 +61,18 @@ public class HttpMain extends AbstractHandler {
         Server server = new Server(PORT);
         //
         // In Jetty, handlers are how your get called backed on a request
-        server.setHandler(new HttpMain());
+        HttpMain main_handler = new HttpMain();
+
+        ResourceHandler resource_handler = new ResourceHandler();
+        resource_handler.setDirectoriesListed(false);
+        resource_handler.setWelcomeFiles(new String[]{"index.html"});
+
+        resource_handler.setResourceBase("./src/test/resources/httpmain");
+
+        HandlerList handlers = new HandlerList();
+        handlers.setHandlers(new Handler[]{resource_handler, main_handler});
+        server.setHandler(handlers);
+
         server.start();
 
         server.join();
@@ -66,13 +80,17 @@ public class HttpMain extends AbstractHandler {
 
     @Override
     public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        if ("/graphql".equals(target) || "/".equals(target)) {
+        boolean handled = false;
+        if ("/graphql".equals(target)) {
             handleStarWars(request, response);
-        }
-        if (target.startsWith("/executionresult")) {
+            handled = true;
+        } else if (target.startsWith("/executionresult")) {
             new ExecutionResultJSONTesting(target, response);
+            handled = true;
         }
-        baseRequest.setHandled(true);
+        if (handled) {
+            baseRequest.setHandled(true);
+        }
     }
 
     private void handleStarWars(HttpServletRequest httpRequest, HttpServletResponse httpResponse) throws IOException {

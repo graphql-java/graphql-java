@@ -1,9 +1,24 @@
 package graphql.validation;
 
 
-import graphql.ShouldNotHappenException;
-import graphql.language.*;
-import graphql.schema.*;
+import graphql.Assert;
+import graphql.language.ArrayValue;
+import graphql.language.ListType;
+import graphql.language.NonNullType;
+import graphql.language.NullValue;
+import graphql.language.ObjectField;
+import graphql.language.ObjectValue;
+import graphql.language.Type;
+import graphql.language.TypeName;
+import graphql.language.Value;
+import graphql.language.VariableReference;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLType;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,24 +37,32 @@ public class ValidationUtil {
         } else if (type instanceof TypeName) {
             return (TypeName) type;
         }
-        throw new ShouldNotHappenException();
+        return Assert.assertShouldNeverHappen();
     }
 
-    protected void handleNullError(Value value, GraphQLType type) {}
+    protected void handleNullError(Value value, GraphQLType type) {
+    }
 
-    protected void handleScalarError(Value value, GraphQLScalarType type) {}
+    protected void handleScalarError(Value value, GraphQLScalarType type) {
+    }
 
-    protected void handleEnumError(Value value, GraphQLEnumType type) {}
+    protected void handleEnumError(Value value, GraphQLEnumType type) {
+    }
 
-    protected void handleNotObjectError(Value value, GraphQLInputObjectType type) {}
+    protected void handleNotObjectError(Value value, GraphQLInputObjectType type) {
+    }
 
-    protected void handleMissingFieldsError(Value value, GraphQLInputObjectType type, Set<String> missingFields) {}
+    protected void handleMissingFieldsError(Value value, GraphQLInputObjectType type, Set<String> missingFields) {
+    }
 
-    protected void handleExtraFieldError(Value value, GraphQLInputObjectType type, ObjectField objectField) {}
+    protected void handleExtraFieldError(Value value, GraphQLInputObjectType type, ObjectField objectField) {
+    }
 
-    protected void handleFieldNotValidError(ObjectField objectField, GraphQLInputObjectType type) {}
+    protected void handleFieldNotValidError(ObjectField objectField, GraphQLInputObjectType type) {
+    }
 
-    protected void handleFieldNotValidError(Value value, GraphQLType type, int index) {}
+    protected void handleFieldNotValidError(Value value, GraphQLType type, int index) {
+    }
 
     public boolean isValidLiteralValue(Value value, GraphQLType type) {
         if (value == null || value instanceof NullValue) {

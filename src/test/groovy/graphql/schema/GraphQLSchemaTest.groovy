@@ -40,7 +40,7 @@ class GraphQLSchemaTest extends Specification {
         def existingSchema = TestUtil.schema(idl, runtimeWiring)
 
 
-        GraphQLSchema schema = GraphQLSchema.newSchema(existingSchema).build()
+        GraphQLSchema schema = existingSchema.transform({})
 
         expect:
         assert 0 == runQuery(existingSchema).getErrors().size()

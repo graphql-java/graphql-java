@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.GraphQLException;
 import graphql.PublicApi;
 
 import java.util.Map;
@@ -47,7 +48,7 @@ public class FieldDataFetcher<T> implements DataFetcher<T> {
         } catch (NoSuchFieldException e) {
             return null;
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new GraphQLException(e);
         }
     }
 }
