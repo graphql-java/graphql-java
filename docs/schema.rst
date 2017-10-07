@@ -49,7 +49,7 @@ the property name of the source Object, no ``DataFetcher`` is needed.
 A ``TypeResolver`` helps ``graphql-java`` to decide which type a concrete value belongs to.
 This is needed for ``Interface`` and ``Union``.
 
-For example imagine you have a ``Interface``` called *MagicUserType* and it resolves back to a series of Java classes
+For example imagine you have a ``Interface`` called *MagicUserType* and it resolves back to a series of Java classes
 called perhaps *Wizard*, *Witch* and *Necromancer*.  The type resolver is responsible for examining a runtime object and deciding
 what ``GraphqlObjectType`` should be used to represent it and hence what data fetchers and fields will be invoked.
 
