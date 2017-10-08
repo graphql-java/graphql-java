@@ -2,18 +2,15 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.execution.reactive.CompletionStageMappingPublisher;
 import graphql.language.Field;
-import org.reactivestreams.Processor;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 
 /**
@@ -47,8 +44,10 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
             if (publisher == null) {
                 return new ExecutionResultImpl(null, executionContext.getErrors());
             }
-            Processor<Object, ExecutionResult> mapSourceToResponse = new ExecutionResultProcessor(executionContext, parameters);
-            publisher.subscribe(mapSourceToResponse);
+            CompletionStageMappingPublisher<ExecutionResult, Object> mapSourceToResponse = new CompletionStageMappingPublisher<>(
+                    publisher,
+                    eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload)
+            );
             return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
         });
     }
@@ -111,81 +110,4 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         return parameters.transform(builder -> builder.field(firstField).path(fieldPath));
     }
 
-    /**
-     * A simple subscription that delegates to another
-     */
-    private class DelegatingSubscription implements Subscription {
-        private final Subscription upstreamSubscription;
-
-        DelegatingSubscription(Subscription upstreamSubscription) {
-            this.upstreamSubscription = assertNotNull(upstreamSubscription);
-        }
-
-        @Override
-        public void request(long n) {
-            upstreamSubscription.request(n);
-        }
-
-        @Override
-        public void cancel() {
-            upstreamSubscription.cancel();
-        }
-    }
-
-
-    /**
-     * This class is a processor, that is it subscribes upstream and maps
-     * the returned objects into graphql {@link graphql.ExecutionResult} by
-     * completing each value from the upstream event source.
-     */
-    private class ExecutionResultProcessor implements Processor<Object, ExecutionResult> {
-
-        private final ExecutionContext executionContext;
-        private final ExecutionStrategyParameters parameters;
-        private final List<Subscriber<? super ExecutionResult>> subscribers;
-        private Subscription upstreamSubscription;
-
-        public ExecutionResultProcessor(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-            this.executionContext = executionContext;
-            this.parameters = parameters;
-            subscribers = new ArrayList<>();
-        }
-
-        @Override
-        public void onSubscribe(Subscription subscription) {
-            this.upstreamSubscription = subscription;
-        }
-
-        @Override
-        public void subscribe(Subscriber<? super ExecutionResult> subscriber) {
-            subscribers.add(subscriber);
-            //
-            // give the down stream subscribers a delegate subscription that just asks the upstream event stream
-            // for more data
-            subscriber.onSubscribe(new DelegatingSubscription(upstreamSubscription));
-        }
-
-        @Override
-        public void onNext(Object eventPayload) {
-            CompletableFuture<ExecutionResult> resultPromise = executeSubscriptionEvent(executionContext, parameters, eventPayload);
-            resultPromise.whenComplete((executionResult, throwable) -> {
-                if (throwable != null) {
-                    subscribers.forEach(subscriber -> subscriber.onError(throwable));
-                } else {
-                    subscribers.forEach(subscriber -> subscriber.onNext(executionResult));
-                }
-            });
-        }
-
-
-        @Override
-        public void onError(Throwable throwable) {
-            subscribers.forEach(subscriber -> subscriber.onError(throwable));
-        }
-
-        @Override
-        public void onComplete() {
-            subscribers.forEach(Subscriber::onComplete);
-        }
-    }
 }

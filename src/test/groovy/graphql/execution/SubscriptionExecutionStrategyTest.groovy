@@ -98,6 +98,60 @@ class SubscriptionExecutionStrategyTest extends Specification {
 
     }
 
+
+    @Unroll
+    def "multiple subscribers can get messages on a subscription query using '#why' implementation "() {
+
+        //
+        // In practice people aren't likely to use multiple subscription I think BUT since its reactive stream
+        // capability and it costs us little to support it, lets have a test for it.
+        //
+        given:
+        Publisher<Object> publisher = eventStreamPublisher
+
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                assert environment.getArgument("roomId") == 123
+                return publisher
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        when:
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber1 = new CapturingSubscriber<ExecutionResult>()
+        def capturingSubscriber2 = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber1)
+        msgStream.subscribe(capturingSubscriber2)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber1.isDone())
+        Awaitility.await().untilTrue(capturingSubscriber2.isDone())
+
+        capturingSubscriber1.events.size() == 10
+        capturingSubscriber2.events.size() == 10
+
+        where:
+        why                       | eventStreamPublisher
+        'reactive streams stream' | new ReactiveStreamsMessagePublisher(10)
+        'rxjava stream'           | new RxJavaMessagePublisher(10)
+
+    }
+
+
     def "subscription query will surface fetch errors"() {
 
         DataFetcher newMessageDF = new DataFetcher() {
