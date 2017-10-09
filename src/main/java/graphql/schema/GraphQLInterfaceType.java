@@ -79,7 +79,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         return "GraphQLInterfaceType{" +
                 "name='" + name + '\'' +
                 ", description='" + description + '\'' +
-                ", fieldDefinitionsByName=" + fieldDefinitionsByName +
+                ", fieldDefinitionsByName=" + fieldDefinitionsByName.keySet() +
                 ", typeResolver=" + typeResolver +
                 '}';
     }
