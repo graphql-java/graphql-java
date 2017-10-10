@@ -24,23 +24,29 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class TestBatchLoadingSupported extends Specification {
 
-    static int rawCharacterLoadCount = 0
-    static int batchFunctionLoadCount = 0
-    static int naiveLoadCount = 0
+    int rawCharacterLoadCount = 0
+    int batchFunctionLoadCount = 0
+    int naiveLoadCount = 0
 
-    static Object getCharacterData(String id) {
+    void setup() {
+        rawCharacterLoadCount = 0
+        batchFunctionLoadCount = 0
+        naiveLoadCount = 0
+    }
+
+    Object getCharacterData(String id) {
         rawCharacterLoadCount++
         if (StarWarsData.humanData[id] != null) return StarWarsData.humanData[id]
         if (StarWarsData.droidData[id] != null) return StarWarsData.droidData[id]
         return null
     }
 
-    static List<Object> getCharacterDataViaBatchHTTPApi(List<String> keys) {
+    List<Object> getCharacterDataViaBatchHTTPApi(List<String> keys) {
         keys.stream().map({ id -> getCharacterData(id) }).collect(Collectors.toList())
     }
 
     // a batch loader function that will be called with N or more keys for batch loading
-    static BatchLoader<String, Object> characterBatchLoader = new BatchLoader<String, Object>() {
+    BatchLoader<String, Object> characterBatchLoader = new BatchLoader<String, Object>() {
         @Override
         CompletionStage<List<Object>> load(List<String> keys) {
             batchFunctionLoadCount++
@@ -60,10 +66,10 @@ class TestBatchLoadingSupported extends Specification {
     }
 
     // a data loader for characters that points to the character batch loader
-    static def characterDataLoader = new DataLoader<String, Object>(characterBatchLoader)
+    def characterDataLoader = new DataLoader<String, Object>(characterBatchLoader)
 
     // we define the normal StarWars data fetchers so we can point them at our data loader
-    static DataFetcher humanDataFetcher = new DataFetcher() {
+    DataFetcher humanDataFetcher = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {
             String id = environment.arguments.id
@@ -73,7 +79,7 @@ class TestBatchLoadingSupported extends Specification {
     }
 
 
-    static DataFetcher droidDataFetcher = new DataFetcher() {
+    DataFetcher droidDataFetcher = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {
             String id = environment.arguments.id
@@ -82,7 +88,7 @@ class TestBatchLoadingSupported extends Specification {
         }
     }
 
-    static DataFetcher heroDataFetcher = new DataFetcher() {
+    DataFetcher heroDataFetcher = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {
             naiveLoadCount += 1
@@ -90,7 +96,7 @@ class TestBatchLoadingSupported extends Specification {
         }
     }
 
-    static DataFetcher friendsDataFetcher = new DataFetcher() {
+    DataFetcher friendsDataFetcher = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {
             List<String> friendIds = environment.source.friends
@@ -99,7 +105,7 @@ class TestBatchLoadingSupported extends Specification {
         }
     }
 
-    static TypeResolver characterTypeResolver = new TypeResolver() {
+    TypeResolver characterTypeResolver = new TypeResolver() {
         @Override
         GraphQLObjectType getType(TypeResolutionEnvironment env) {
             String id = env.getObject().id
