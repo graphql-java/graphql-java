@@ -461,7 +461,7 @@ public class Introspection {
         // make sure all TypeReferences are resolved
         GraphQLSchema.newSchema()
                 .query(GraphQLObjectType.newObject()
-                        .name("dummySchema")
+                        .name("IntrospectionQuery")
                         .field(SchemaMetaFieldDef)
                         .field(TypeMetaFieldDef)
                         .field(TypeNameMetaFieldDef)
