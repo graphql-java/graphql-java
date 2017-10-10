@@ -1,4 +1,4 @@
-package graphql.execution.dataloader;
+package graphql.execution.instrumentation.dataloader;
 
 import java.util.List;
 

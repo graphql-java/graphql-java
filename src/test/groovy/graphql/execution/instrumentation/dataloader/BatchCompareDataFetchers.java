@@ -1,4 +1,4 @@
-package graphql.execution.dataloader;
+package graphql.execution.instrumentation.dataloader;
 
 import graphql.execution.batched.Batched;
 import graphql.schema.DataFetcher;
@@ -61,10 +61,17 @@ public class BatchCompareDataFetchers {
         }
     };
 
-    static AtomicLong departmentsForShopsBatchLoaderCount = new AtomicLong();
+    static void resetState() {
+        departmentsForShopsBatchLoaderCounter.set(0);
+        productsForDepartmentsBatchLoaderCounter.set(0);
+        departmentsForShopDataLoader.clearAll();
+        productsForDepartmentDataLoader.clearAll();
+    }
+
+    static AtomicLong departmentsForShopsBatchLoaderCounter = new AtomicLong();
 
     private static BatchLoader<String, List<Department>> departmentsForShopsBatchLoader = ids -> {
-        departmentsForShopsBatchLoaderCount.incrementAndGet();
+        departmentsForShopsBatchLoaderCounter.incrementAndGet();
         List<Shop> s = ids.stream().map(shops::get).collect(Collectors.toList());
         return CompletableFuture.completedFuture(getDepartmentsForShops(s));
     };

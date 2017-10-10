@@ -1,10 +1,9 @@
-package graphql.execution.dataloader;
+package graphql.execution.instrumentation.dataloader;
 
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.execution.batched.BatchedExecutionStrategy;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
