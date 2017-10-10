@@ -281,6 +281,11 @@ public abstract class ExecutionStrategy {
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
 
+        InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteField(
+                new InstrumentationFieldParameters(executionContext, fieldDef, fieldTypeInfo(parameters, fieldDef))
+        );
+
+
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
         ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
@@ -299,7 +304,9 @@ public abstract class ExecutionStrategy {
                 .path(parameters.path())
                 .build();
 
-        return completeValue(executionContext, newParameters);
+        CompletableFuture<ExecutionResult> cf = completeValue(executionContext, newParameters);
+        ctx.onEnd(cf, null);
+        return cf;
     }
 
 
@@ -530,6 +537,11 @@ public abstract class ExecutionStrategy {
 
         ExecutionTypeInfo typeInfo = parameters.typeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
+        GraphQLFieldDefinition fieldDef = parameters.typeInfo().getFieldDefinition();
+
+        InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteFieldList(
+                new InstrumentationFieldParameters(executionContext, fieldDef, fieldTypeInfo(parameters, fieldDef))
+        );
 
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(iterableValues, (item, index) -> {
 
@@ -539,6 +551,7 @@ public abstract class ExecutionStrategy {
                     .parentInfo(typeInfo)
                     .type(fieldType.getWrappedType())
                     .path(indexedPath)
+                    .fieldDefinition(fieldDef)
                     .build();
 
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedTypeInfo);
@@ -566,6 +579,7 @@ public abstract class ExecutionStrategy {
             }
             overallResult.complete(new ExecutionResultImpl(completedResults, null));
         });
+        ctx.onEnd(overallResult, null);
         return overallResult;
     }
 

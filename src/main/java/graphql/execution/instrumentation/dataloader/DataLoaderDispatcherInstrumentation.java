@@ -3,16 +3,21 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.dataloader.stats.Statistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Stack;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -27,6 +32,8 @@ import java.util.concurrent.CompletableFuture;
  * @see org.dataloader.DataLoaderRegistry
  */
 public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
+
+    private static final Logger log = LoggerFactory.getLogger(DataLoaderDispatcherInstrumentation.class);
 
     private final DataLoaderRegistry dataLoaderRegistry;
     private final DataLoaderDispatcherInstrumentationOptions options;
@@ -53,16 +60,88 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
         this.options = options;
     }
 
+
+    /**
+     * We need to become stateful about whether we are in a list or not and this is represented
+     * by this call stack.
+     */
+    private static class CallStack implements InstrumentationState {
+        private final Stack<Boolean> stack = new Stack<>();
+
+        void enterList() {
+            stack.push(true);
+        }
+
+        void exit() {
+            if (!stack.isEmpty()) {
+                stack.pop();
+            }
+        }
+
+        boolean inList() {
+            if (stack.isEmpty()) {
+                return false;
+            } else {
+                return stack.peek();
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "inList=" + inList();
+        }
+    }
+
+    @Override
+    public InstrumentationState createState() {
+        return new CallStack();
+    }
+
+    private void dispatch() {
+        log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
+        dataLoaderRegistry.dispatchAll();
+    }
+
     @Override
     public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        CallStack callStack = parameters.getInstrumentationState();
         return (result, t) -> {
             if (t == null) {
                 // only dispatch when there are no errors
-                dataLoaderRegistry.dispatchAll();
+                if (!callStack.inList()) {
+                    dispatch();
+                }
             }
         };
     }
 
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldParameters parameters) {
+        CallStack callStack = parameters.getInstrumentationState();
+        return (result, t) -> {
+            if (t == null) {
+                // only dispatch when there are no errors
+                if (!callStack.inList()) {
+                    dispatch();
+                }
+            }
+        };
+    }
+
+    /*
+       When graphql-java enters a field list it re-cursively called the execution strategy again, which will cause an early flush
+       to the data loader - which is not efficient from a batch point of view.  We want to allow the list of field values
+       to bank up as promises and call dispatch when we are clear of a list value.
+
+       https://github.com/graphql-java/graphql-java/issues/760
+     */
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldParameters parameters) {
+        CallStack callStack = parameters.getInstrumentationState();
+        callStack.enterList();
+        return (result, t) -> callStack.exit();
+    }
 
     @Override
     public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
@@ -72,7 +151,10 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
         Map<Object, Object> currentExt = executionResult.getExtensions();
         Map<Object, Object> statsMap = new LinkedHashMap<>();
         statsMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
-        statsMap.put("dataloader", buildStatsMap());
+        Map<Object, Object> dataLoaderStats = buildStatsMap();
+        statsMap.put("dataloader", dataLoaderStats);
+
+        log.debug("Data loader stats : {}", dataLoaderStats);
 
         return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), statsMap));
     }

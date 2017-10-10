@@ -112,6 +112,33 @@ public interface Instrumentation {
      */
     InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters);
 
+
+    /**
+     * This is called just before the complete field is started and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
+     * will be called indicating that the step has finished.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldParameters parameters) {
+        return (result, t) -> {
+        };
+    }
+
+    /**
+     * This is called just before the complete field list is started and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
+     * will be called indicating that the step has finished.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldParameters parameters) {
+        return (result, t) -> {
+        };
+    }
+
     /**
      * This is called to instrument a {@link DataFetcher} just before it is used to fetch a field, allowing you
      * to adjust what information is passed back or record information about specific data fetches.  Note

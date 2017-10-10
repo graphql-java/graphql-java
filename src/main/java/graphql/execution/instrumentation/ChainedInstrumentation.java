@@ -122,6 +122,26 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldParameters parameters) {
+        return new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginCompleteField(parameters.withNewState(state));
+                })
+                .collect(toList()));
+    }
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldParameters parameters) {
+        return new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginCompleteFieldList(parameters.withNewState(state));
+                })
+                .collect(toList()));
+    }
+
+    @Override
     public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         for (Instrumentation instrumentation : instrumentations) {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());

@@ -57,8 +57,8 @@ class DataLoaderPerformanceTest extends Specification {
         ]
         //
         // 1 per level, eg 1 for shops-->departments and one for departments --> products
-        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCount.get() == 3
-        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 9
+        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCount.get() == 1
+        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
 
 }

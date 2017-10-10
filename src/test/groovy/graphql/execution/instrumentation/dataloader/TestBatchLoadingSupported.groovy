@@ -1,11 +1,9 @@
-package graphql.execution.instrumentation
+package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
-import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsData
 import graphql.TypeResolutionEnvironment
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLObjectType
@@ -14,6 +12,7 @@ import graphql.schema.idl.MapEnumValuesProvider
 import graphql.schema.idl.RuntimeWiring
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -147,19 +146,8 @@ class TestBatchLoadingSupported extends Specification {
     def "basic batch loading is possible via instrumentation interception of Execution Strategies"() {
 
         given:
-        def batchingInstrumentation = new NoOpInstrumentation() {
-            @Override
-            InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-                return new InstrumentationContext<CompletableFuture<ExecutionResult>>() {
-                    @Override
-                    void onEnd(CompletableFuture<ExecutionResult> result, Throwable t) {
-                        //
-                        // this causes "batched" futures to actually be turned into batch loads
-                        characterDataLoader.dispatch()
-                    }
-                }
-            }
-        }
+        def dlRegistry = new DataLoaderRegistry().register("characters", characterDataLoader)
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(dlRegistry)
 
         def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
 
@@ -203,4 +191,47 @@ class TestBatchLoadingSupported extends Specification {
         // if we didn't have batch loading it would have these many character load calls
         naiveLoadCount == 15
     }
+
+    def "non list queries work as expected"() {
+
+        given:
+        def dlRegistry = new DataLoaderRegistry().register("characters", characterDataLoader)
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(dlRegistry)
+
+        def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
+
+        when:
+        def query = """
+        query {
+            arToo : hero {
+                name 
+                friends {
+                    name
+                }
+            }
+
+            tinBox : hero {
+                name 
+                friends {
+                    name
+                }
+            }
+        }
+        """
+
+        def asyncResult = graphql.executeAsync(ExecutionInput.newExecutionInput().query(query))
+
+        def er = asyncResult.join()
+
+        then:
+        er.data == [arToo : [name: "R2-D2", friends: [[name: "Luke Skywalker"], [name: "Han Solo"], [name: "Leia Organa"]]],
+                    tinBox: [name: "R2-D2", friends: [[name: "Luke Skywalker"], [name: "Han Solo"], [name: "Leia Organa"]]]
+        ]
+
+        rawCharacterLoadCount == 4
+        batchFunctionLoadCount == 2
+        naiveLoadCount == 8
+    }
+
+
 }

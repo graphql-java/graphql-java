@@ -109,9 +109,12 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = new GraphQLList(GraphQLString)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+
         def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(fieldType))
+                .typeInfo(typeInfo)
                 .source(result)
                 .fields(["fld": []])
                 .build()
@@ -127,7 +130,8 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = GraphQLString
-        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).build()
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         def parameters = newParameters()
                 .typeInfo(typeInfo)
@@ -152,7 +156,8 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = nonNull(GraphQLString)
-        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).build()
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         def parameters = newParameters()
                 .typeInfo(typeInfo)
@@ -172,9 +177,10 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = new GraphQLList(GraphQLString)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(fieldType))
+                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef))
                 .source(result)
                 .fields(["fld": []])
                 .build()
@@ -492,10 +498,13 @@ class ExecutionStrategyTest extends Specification {
     def "#163 completes value for an primitive type array"() {
         given:
         ExecutionContext executionContext = buildContext()
-        long[] result = [1L,2L,3L]
+        long[] result = [1L, 2L, 3L]
+        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(new GraphQLList(Scalars.GraphQLLong)))
+                .typeInfo(typeInfo)
                 .source(result)
                 .fields(["fld": [new Field()]])
                 .field([new Field()])
@@ -505,6 +514,6 @@ class ExecutionStrategyTest extends Specification {
         def executionResult = executionStrategy.completeValue(executionContext, parameters)
 
         then:
-        executionResult.get().data == [1L,2L,3L]
+        executionResult.get().data == [1L, 2L, 3L]
     }
 }
