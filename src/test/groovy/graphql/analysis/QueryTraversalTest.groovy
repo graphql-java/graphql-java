@@ -551,7 +551,6 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
@@ -582,7 +581,6 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
@@ -755,7 +753,9 @@ class QueryTraversalTest extends Specification {
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "someObject" && it.fieldDefinition.type.name == "SomeObject" && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "someUnionType" && it.fieldDefinition.type.name == "SomeUnionType" && it.parentType.name == "SomeObject" })
-        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "__typename" && it.fieldDefinition.type.wrappedType.name == "GraphQLString"})
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "__typename" && it.fieldDefinition.type.wrappedType.name == "String"})
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "field1" && it.fieldDefinition.type.name == "String" && it.parentType.name == "TypeX" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "field2" && it.fieldDefinition.type.name == "String" && it.parentType.name == "TypeY" })
 
         where:
         order       | visitFn
