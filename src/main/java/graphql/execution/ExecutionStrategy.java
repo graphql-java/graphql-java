@@ -413,13 +413,13 @@ public abstract class ExecutionStrategy {
      *
      * @throws java.lang.ClassCastException if its not an Iterable
      */
+    @SuppressWarnings("unchecked")
     protected Iterable<Object> toIterable(Object result) {
         if (result.getClass().isArray()) {
             return IntStream.range(0, Array.getLength(result))
                     .mapToObj(i -> Array.get(result, i))
                     .collect(toList());
         }
-        //noinspection unchecked
         return (Iterable<Object>) result;
     }
 
@@ -504,6 +504,7 @@ public abstract class ExecutionStrategy {
         return completedFuture(new ExecutionResultImpl(serialized, null));
     }
 
+    @SuppressWarnings("SameReturnValue")
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
         SerializationError error = new SerializationError(parameters.path(), e);
         log.warn(error.getMessage(), e);

@@ -137,6 +137,7 @@ public class ValuesResolver {
     }
 
 
+    @SuppressWarnings("unchecked")
     private Object coerceValue(VariableDefinition variableDefinition, GraphQLType graphQLType, Object value) {
         if (graphQLType instanceof GraphQLNonNull) {
             Object returnValue = coerceValue(variableDefinition, ((GraphQLNonNull) graphQLType).getWrappedType(), value);
@@ -158,7 +159,6 @@ public class ValuesResolver {
             return coerceValueForList(variableDefinition, (GraphQLList) graphQLType, value);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
             if (value instanceof Map) {
-                //noinspection unchecked
                 return coerceValueForInputObjectType(variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
             } else {
                 throw new CoercingParseValueException("Variables for GraphQLInputObjectType must be an instance of a Map according to the graphql specification.  The offending object was a " + value.getClass().getName());

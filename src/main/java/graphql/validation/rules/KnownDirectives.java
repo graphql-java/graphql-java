@@ -32,6 +32,7 @@ public class KnownDirectives extends AbstractRule {
         }
     }
 
+    @SuppressWarnings("deprecation") // the suppression stands because its deprecated but still in graphql spec
     private boolean hasInvalidLocation(GraphQLDirective directive, Node ancestor) {
         if (ancestor instanceof OperationDefinition) {
             Operation operation = ((OperationDefinition) ancestor).getOperation();

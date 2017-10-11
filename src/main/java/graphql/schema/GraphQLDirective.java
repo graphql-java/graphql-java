@@ -18,6 +18,7 @@ import static graphql.introspection.Introspection.DirectiveLocation;
  *
  * See http://graphql.org/learn/queries/#directives for more details on the concept.
  */
+@SuppressWarnings("DeprecatedIsStillUsed") // because the graphql spec still has some of these deprecated fields
 @PublicApi
 public class GraphQLDirective {
 
