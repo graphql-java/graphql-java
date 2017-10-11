@@ -2,10 +2,20 @@ package graphql.validation.rules;
 
 
 import graphql.introspection.Introspection.DirectiveLocation;
-import graphql.language.*;
+import graphql.language.Directive;
+import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.Node;
+import graphql.language.OperationDefinition;
 import graphql.language.OperationDefinition.Operation;
 import graphql.schema.GraphQLDirective;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 import java.util.List;
 
@@ -41,7 +51,7 @@ public class KnownDirectives extends AbstractRule {
         } else if (ancestor instanceof Field) {
             return !(directive.validLocations().contains(DirectiveLocation.FIELD) || directive.isOnField());
         } else if (ancestor instanceof FragmentSpread) {
-            return  !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD) || directive.isOnFragment());
+            return !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_SPREAD) || directive.isOnFragment());
         } else if (ancestor instanceof FragmentDefinition) {
             return !(directive.validLocations().contains(DirectiveLocation.FRAGMENT_DEFINITION) || directive.isOnFragment());
         } else if (ancestor instanceof InlineFragment) {

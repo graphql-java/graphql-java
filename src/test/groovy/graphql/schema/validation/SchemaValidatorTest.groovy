@@ -29,7 +29,7 @@ class SchemaValidatorTest extends Specification {
         def dummyRule = Mock(SchemaValidationRule)
         when:
         def validator = new SchemaValidator([dummyRule])
-        validator.validateSchema(schema);
+        validator.validateSchema(schema)
 
         then:
         1 * dummyRule.check(queryType, _ as SchemaValidationErrorCollector)
@@ -50,7 +50,7 @@ class SchemaValidatorTest extends Specification {
         def dummyRule = Mock(SchemaValidationRule)
         when:
         def validator = new SchemaValidator([dummyRule])
-        validator.validateSchema(schema);
+        validator.validateSchema(schema)
 
         then:
         1 * dummyRule.check(field, _ as SchemaValidationErrorCollector)
@@ -75,7 +75,7 @@ class SchemaValidatorTest extends Specification {
                 .build()
         when:
         def validator = new SchemaValidator([dummyRule])
-        validator.validateSchema(schema);
+        validator.validateSchema(schema)
 
         then:
         1 * dummyRule.check(field, _ as SchemaValidationErrorCollector)
@@ -100,7 +100,7 @@ class SchemaValidatorTest extends Specification {
                 .build()
         when:
         def validator = new SchemaValidator([dummyRule])
-        validator.validateSchema(schema);
+        validator.validateSchema(schema)
 
         then:
         1 * dummyRule.check(field, _ as SchemaValidationErrorCollector)

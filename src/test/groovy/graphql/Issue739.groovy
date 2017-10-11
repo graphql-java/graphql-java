@@ -17,16 +17,16 @@ class Issue739 extends Specification {
                 .type(newTypeWiring("Query")
                 .dataFetcher("foo",
                 { env ->
-                    Map<String, Object> map = new HashMap<>();
+                    Map<String, Object> map = new HashMap<>()
                     map.put("id", "abc")
-                    return map;
+                    return map
 
                 })
                 .dataFetcher("bar",
                 { env ->
-                    Map<String, Object> map = new HashMap<>();
+                    Map<String, Object> map = new HashMap<>()
                     map.put("id", "def")
-                    return map;
+                    return map
                 })
         )
                 .type(newTypeWiring("Node")
@@ -79,7 +79,7 @@ class Issue739 extends Specification {
         ExecutionInput varInput = ExecutionInput.newExecutionInput()
                 .query('query Bar($input: BarInput!) {bar(input: $input) {id}}')
                 .variables(variables)
-                .build();
+                .build()
 
         ExecutionResult varResult = graphQL
                 .executeAsync(varInput)

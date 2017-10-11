@@ -38,7 +38,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
             }
         }
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null);
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onEnd([new ValidationError(ValidationErrorType.SubSelectionNotAllowed)], null)
@@ -66,7 +66,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
             }
         }
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null);
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onEnd(null, new RuntimeException())
@@ -92,7 +92,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
             """)
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null);
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onEnd(null, null)
@@ -118,7 +118,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
             """)
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(7)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null);
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
         when:
         instrumentationContext.onEnd(null, null)

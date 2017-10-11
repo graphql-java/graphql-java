@@ -298,7 +298,7 @@ class StarWarsQueryTest extends Specification {
                        homePlanet:
                                'Alderaan'
                 ]
-        ];
+        ]
 
         when:
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
@@ -333,7 +333,7 @@ class StarWarsQueryTest extends Specification {
                         name      : 'Leia Organa',
                         homePlanet: 'Alderaan'
                 ]
-        ];
+        ]
         when:
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
