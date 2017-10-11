@@ -8,9 +8,9 @@ import java.util.Map;
 import static graphql.language.NodeUtil.directivesByName;
 
 public class UnionTypeDefinition extends AbstractNode implements TypeDefinition {
-    private String name;
-    private List<Directive> directives = new ArrayList<>();
-    private List<Type> memberTypes = new ArrayList<>();
+    private final String name;
+    private final List<Directive> directives = new ArrayList<>();
+    private final List<Type> memberTypes = new ArrayList<>();
 
     public UnionTypeDefinition(String name) {
         this.name = name;

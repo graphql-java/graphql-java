@@ -12,7 +12,7 @@ import graphql.validation.ValidationErrorType;
 
 public class ScalarLeafs extends AbstractRule {
 
-    private SchemaUtil schemaUtil = new SchemaUtil();
+    private final SchemaUtil schemaUtil = new SchemaUtil();
 
     public ScalarLeafs(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);

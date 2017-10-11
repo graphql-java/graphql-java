@@ -15,7 +15,7 @@ import static graphql.Assert.assertShouldNeverHappen;
  * whether it handles a type and delegates to the first one to answer yes.
  */
 public class CombinedWiringFactory implements WiringFactory {
-    private List<WiringFactory> factories;
+    private final List<WiringFactory> factories;
 
     public CombinedWiringFactory(List<WiringFactory> factories) {
         assertNotNull(factories, "You must provide a list of wiring factories");

@@ -18,13 +18,18 @@ import java.util.Map;
 
 public class VariableTypesMatchRule extends AbstractRule {
 
-    VariablesTypesMatcher variablesTypesMatcher = new VariablesTypesMatcher();
+    final VariablesTypesMatcher variablesTypesMatcher;
 
     private Map<String, VariableDefinition> variableDefinitionMap;
 
     public VariableTypesMatchRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        this(validationContext, validationErrorCollector, new VariablesTypesMatcher());
+    }
+
+    VariableTypesMatchRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector, VariablesTypesMatcher variablesTypesMatcher) {
         super(validationContext, validationErrorCollector);
         setVisitFragmentSpreads(true);
+        this.variablesTypesMatcher = variablesTypesMatcher;
     }
 
     @Override

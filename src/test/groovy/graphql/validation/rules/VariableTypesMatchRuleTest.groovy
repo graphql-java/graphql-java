@@ -16,11 +16,10 @@ class VariableTypesMatchRuleTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    VariableTypesMatchRule variableTypesMatchRule = new VariableTypesMatchRule(validationContext, errorCollector)
+    VariableTypesMatchRule variableTypesMatchRule
 
     def setup() {
-        variableTypesMatchRule.variablesTypesMatcher = Mock(VariablesTypesMatcher)
-
+        variableTypesMatchRule = new VariableTypesMatchRule(validationContext, errorCollector, Mock(VariablesTypesMatcher))
     }
 
     def "invalid type"() {

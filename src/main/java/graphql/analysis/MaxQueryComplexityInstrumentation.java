@@ -21,8 +21,8 @@ import static graphql.Assert.assertNotNull;
 public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
 
 
-    private int maxComplexity;
-    private FieldComplexityCalculator fieldComplexityCalculator;
+    private final int maxComplexity;
+    private final FieldComplexityCalculator fieldComplexityCalculator;
 
     /**
      * new Instrumentation with default complexity calculator which is `1 + childComplexity`

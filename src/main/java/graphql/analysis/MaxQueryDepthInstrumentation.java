@@ -15,7 +15,7 @@ import java.util.List;
 @PublicApi
 public class MaxQueryDepthInstrumentation extends NoOpInstrumentation {
 
-    private int maxDepth;
+    private final int maxDepth;
 
     public MaxQueryDepthInstrumentation(int maxDepth) {
         this.maxDepth = maxDepth;

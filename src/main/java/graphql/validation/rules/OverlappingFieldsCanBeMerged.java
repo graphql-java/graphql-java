@@ -32,10 +32,10 @@ import static graphql.validation.ValidationErrorType.FieldsConflict;
 
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
 
-    ErrorFactory errorFactory = new ErrorFactory();
+    final ErrorFactory errorFactory = new ErrorFactory();
 
 
-    private List<FieldPair> alreadyChecked = new ArrayList<>();
+    private final List<FieldPair> alreadyChecked = new ArrayList<>();
 
     public OverlappingFieldsCanBeMerged(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -263,15 +263,15 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             this.field2 = field2;
         }
 
-        Field field1;
-        Field field2;
+        final Field field1;
+        final Field field2;
 
     }
 
     private static class Conflict {
-        String responseName;
-        String reason;
-        List<Field> fields = new ArrayList<>();
+        final String responseName;
+        final String reason;
+        final List<Field> fields = new ArrayList<>();
 
         public Conflict(String responseName, String reason, Field field1, Field field2) {
             this.responseName = responseName;
@@ -296,8 +296,8 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             this.parentType = parentType;
         }
 
-        Field field;
-        GraphQLType graphQLType;
-        GraphQLType parentType;
+        final Field field;
+        final GraphQLType graphQLType;
+        final GraphQLType parentType;
     }
 }

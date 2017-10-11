@@ -39,7 +39,7 @@ public class Relay {
 
     public static final String NODE = "Node";
 
-    private GraphQLObjectType pageInfoType = newObject()
+    private final GraphQLObjectType pageInfoType = newObject()
             .name("PageInfo")
             .description("Information about pagination in a connection.")
             .field(newFieldDefinition()
@@ -209,8 +209,8 @@ public class Relay {
             this.id = id;
         }
 
-        private String type;
-        private String id;
+        private final String type;
+        private final String id;
 
         public String getType() {
             return type;

@@ -8,8 +8,8 @@ import java.util.Map;
 import static graphql.language.NodeUtil.directivesByName;
 
 public class ScalarTypeDefinition extends AbstractNode implements TypeDefinition {
-    private String name;
-    private List<Directive> directives = new ArrayList<>();
+    private final String name;
+    private final List<Directive> directives = new ArrayList<>();
 
     public ScalarTypeDefinition(String name) {
         this.name = name;

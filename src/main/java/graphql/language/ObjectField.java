@@ -6,8 +6,8 @@ import java.util.List;
 
 public class ObjectField extends AbstractNode {
 
-    private String name;
-    private Value value;
+    private final String name;
+    private final Value value;
 
     public ObjectField(String name, Value value) {
         this.name = name;

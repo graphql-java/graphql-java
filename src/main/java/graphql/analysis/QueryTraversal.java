@@ -34,15 +34,15 @@ import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 public class QueryTraversal {
 
 
-    private OperationDefinition operationDefinition;
-    private GraphQLSchema schema;
+    private final OperationDefinition operationDefinition;
+    private final GraphQLSchema schema;
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-    private Map<String, Object> variables;
+    private final Map<String, Object> variables;
 
-    private ConditionalNodes conditionalNodes = new ConditionalNodes();
+    private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    private ValuesResolver valuesResolver = new ValuesResolver();
-    private SchemaUtil schemaUtil = new SchemaUtil();
+    private final ValuesResolver valuesResolver = new ValuesResolver();
+    private final SchemaUtil schemaUtil = new SchemaUtil();
 
 
     public QueryTraversal(GraphQLSchema schema,
