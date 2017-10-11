@@ -6,6 +6,8 @@ import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,25 +23,27 @@ import static graphql.Assert.assertValidName;
  * See http://graphql.org/learn/schema/#input-types for more details on the concept
  */
 @PublicApi
-public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer {
+public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer, GraphQLMetadataSupport {
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
     private final InputObjectTypeDefinition definition;
+    private final Map<String, Object> metadata;
 
     @Internal
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
-        this(name, description, fields, null);
+        this(name, description, fields, null, null);
     }
 
     @Internal
-    public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields, InputObjectTypeDefinition definition) {
+    public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields, InputObjectTypeDefinition definition, Map<String, Object> metadata) {
         assertValidName(name);
         assertNotNull(fields, "fields can't be null");
         this.name = name;
         this.description = description;
         this.definition = definition;
+        this.metadata = metadata == null ? Collections.emptyMap() : Collections.unmodifiableMap(metadata);
         buildMap(fields);
     }
 
@@ -87,12 +91,18 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         return definition;
     }
 
+    @Override
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
     @PublicApi
     public static class Builder {
         private String name;
         private String description;
         private InputObjectTypeDefinition definition;
         private List<GraphQLInputObjectField> fields = new ArrayList<>();
+        private Map<String, Object> metadata = new HashMap<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -155,8 +165,18 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
             return this;
         }
 
+        public Builder metadata(Map<String, Object> metadata) {
+            this.metadata = metadata == null ? new HashMap<>() : metadata;
+            return this;
+        }
+
+        public Builder metadata(String key, Object metadataValue) {
+            this.metadata.put(key, metadataValue);
+            return this;
+        }
+
         public GraphQLInputObjectType build() {
-            return new GraphQLInputObjectType(name, description, fields, definition);
+            return new GraphQLInputObjectType(name, description, fields, definition, metadata);
         }
 
     }
