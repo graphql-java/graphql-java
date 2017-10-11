@@ -88,8 +88,8 @@ public class ExecutionContext {
         return context;
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T getRoot() {
-        //noinspection unchecked
         return (T) root;
     }
 

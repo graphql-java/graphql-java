@@ -76,6 +76,7 @@ public class QueryTraversal {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
         // compiler hack to make acc final and mutable :-)
         final Object[] acc = {initialValue};
@@ -83,6 +84,7 @@ public class QueryTraversal {
         return (T) acc[0];
     }
 
+    @SuppressWarnings("unchecked")
     public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
         // compiler hack to make acc final and mutable :-)
         final Object[] acc = {initialValue};

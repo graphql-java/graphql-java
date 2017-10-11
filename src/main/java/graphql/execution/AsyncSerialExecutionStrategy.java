@@ -1,13 +1,11 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.language.Field;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -46,7 +44,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         BiConsumer<List<ExecutionResult>, Throwable> listThrowableBiConsumer = handleResults(executionContext, fieldNames, overallResult);
         resultsFuture.whenComplete(listThrowableBiConsumer);
 
-        executionStrategyCtx.onEnd(overallResult,null);
+        executionStrategyCtx.onEnd(overallResult, null);
         return overallResult;
     }
 

@@ -1,6 +1,5 @@
 package graphql.schema.diff;
 
-import graphql.schema.diff.reporting.DifferenceReporter;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -21,6 +20,7 @@ import graphql.language.TypeKind;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
+import graphql.schema.diff.reporting.DifferenceReporter;
 import graphql.schema.idl.TypeInfo;
 
 import java.util.Arrays;
@@ -790,11 +790,7 @@ public class SchemaDiff {
     private Optional<OperationTypeDefinition> synthOperationTypeDefinition(Function<Type, Optional<ObjectTypeDefinition>> typeReteriver, String opName) {
         TypeName type = new TypeName(capitalize(opName));
         Optional<ObjectTypeDefinition> typeDef = typeReteriver.apply(type);
-        if (typeDef.isPresent()) {
-            return Optional.of(new OperationTypeDefinition(opName, type));
-        } else {
-            return Optional.empty();
-        }
+        return typeDef.map(objectTypeDefinition -> new OperationTypeDefinition(opName, type));
     }
 
     private <T> Map<String, T> sortedMap(List<T> listOfNamedThings, Function<T, String> nameFunc) {
