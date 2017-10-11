@@ -7,7 +7,11 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLType;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

@@ -1,14 +1,9 @@
 package graphql.schema
 
+import graphql.AssertException
 import spock.lang.Specification
 
-import graphql.AssertException
-import graphql.schema.TypeResolverProxy
-
 import static graphql.schema.GraphQLUnionType.newUnionType
-
-import static graphql.Scalars.GraphQLString
-
 
 class GraphQLUnionTypeTest extends Specification {
 
@@ -17,7 +12,7 @@ class GraphQLUnionTypeTest extends Specification {
         newUnionType()
                 .name("TestUnionType")
                 .typeResolver(new TypeResolverProxy())
-                .build();
+                .build()
         then:
         thrown(AssertException)
     }

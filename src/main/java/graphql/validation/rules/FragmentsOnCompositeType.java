@@ -5,7 +5,11 @@ import graphql.language.FragmentDefinition;
 import graphql.language.InlineFragment;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLType;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 public class FragmentsOnCompositeType extends AbstractRule {
 

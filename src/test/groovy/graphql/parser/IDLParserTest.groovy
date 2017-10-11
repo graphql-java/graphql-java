@@ -1,6 +1,33 @@
 package graphql.parser
 
-import graphql.language.*
+import graphql.language.Argument
+import graphql.language.ArrayValue
+import graphql.language.AstComparator
+import graphql.language.BooleanValue
+import graphql.language.Comment
+import graphql.language.Directive
+import graphql.language.DirectiveDefinition
+import graphql.language.DirectiveLocation
+import graphql.language.EnumTypeDefinition
+import graphql.language.EnumValueDefinition
+import graphql.language.FieldDefinition
+import graphql.language.InputObjectTypeDefinition
+import graphql.language.InputValueDefinition
+import graphql.language.IntValue
+import graphql.language.InterfaceTypeDefinition
+import graphql.language.ListType
+import graphql.language.Node
+import graphql.language.NonNullType
+import graphql.language.ObjectField
+import graphql.language.ObjectTypeDefinition
+import graphql.language.ObjectValue
+import graphql.language.OperationTypeDefinition
+import graphql.language.ScalarTypeDefinition
+import graphql.language.SchemaDefinition
+import graphql.language.TypeExtensionDefinition
+import graphql.language.TypeName
+import graphql.language.UnionTypeDefinition
+import graphql.language.VariableReference
 import spock.lang.Specification
 
 import java.util.stream.Collectors

@@ -3,7 +3,11 @@ package graphql.validation.rules
 import graphql.TestUtil
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.*
+import graphql.validation.LanguageTraversal
+import graphql.validation.RulesVisitor
+import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
+import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class NoUndefinedVariablesTest extends Specification {
@@ -12,13 +16,13 @@ class NoUndefinedVariablesTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
 
-    def traverse(String query){
+    def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema,document)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
         NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, errorCollector)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
+        LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]));
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]))
     }
 
 

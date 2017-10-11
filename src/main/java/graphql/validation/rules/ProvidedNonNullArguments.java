@@ -9,7 +9,11 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLNonNull;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashMap;
 import java.util.List;

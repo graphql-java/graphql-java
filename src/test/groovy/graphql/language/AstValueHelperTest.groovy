@@ -7,7 +7,11 @@ import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
 import static AstValueHelper.astFromValue
-import static graphql.Scalars.*
+import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLFloat
+import static graphql.Scalars.GraphQLID
+import static graphql.Scalars.GraphQLInt
+import static graphql.Scalars.GraphQLString
 
 class AstValueHelperTest extends Specification {
 

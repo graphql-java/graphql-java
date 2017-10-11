@@ -1,12 +1,11 @@
 package graphql.validation
 
-import graphql.schema.GraphQLDirective;
-import graphql.schema.GraphQLSchema;
-import graphql.introspection.Introspection.DirectiveLocation;
+import graphql.introspection.Introspection.DirectiveLocation
 import graphql.parser.Parser
-import graphql.validation.ValidationError
-import graphql.validation.Validator
+import graphql.schema.GraphQLDirective
+import graphql.schema.GraphQLSchema
 import spock.lang.Specification
+
 /**
  * Test that custom directives are validated properly.
  */
@@ -16,11 +15,11 @@ class ValidateCustomDirectives extends Specification {
             .name("customDirective")
             .description("Dummy Custom Directive")
             .validLocations(DirectiveLocation.FIELD)
-            .build();
+            .build()
 
     GraphQLSchema customDirectiveSchema = GraphQLSchema.newSchema()
             .query(SpecValidationSchema.queryRoot)
-            .build(SpecValidationSchema.specValidationDictionary, [customDirective].toSet());
+            .build(SpecValidationSchema.specValidationDictionary, [customDirective].toSet())
 
     def 'Schema with custom directive validates query with same directive'() {
         def query = """
@@ -51,7 +50,7 @@ query {
         then:
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.UnknownDirective
-        validationErrors.get(0).getDescription() =='Unknown directive argument dummy'
+        validationErrors.get(0).getDescription() == 'Unknown directive argument dummy'
     }
 
     List<ValidationError> validate(String query) {

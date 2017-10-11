@@ -5,7 +5,11 @@ import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.OperationDefinition;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

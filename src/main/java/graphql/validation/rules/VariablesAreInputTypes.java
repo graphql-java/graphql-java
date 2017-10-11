@@ -5,7 +5,11 @@ import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLType;
 import graphql.schema.SchemaUtil;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 public class VariablesAreInputTypes extends AbstractRule {
 

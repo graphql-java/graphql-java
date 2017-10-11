@@ -17,7 +17,7 @@ class KnownFragmentNamesTest extends Specification {
         FragmentSpread fragmentSpread = new FragmentSpread("fragment")
         knownFragmentNames.validationContext.getFragment("fragment") >> null
         when:
-        knownFragmentNames.checkFragmentSpread(fragmentSpread);
+        knownFragmentNames.checkFragmentSpread(fragmentSpread)
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UndefinedFragment)

@@ -24,7 +24,7 @@ class KnownArgumentNamesTest extends Specification {
         given:
         Argument argument = new Argument("unknownArg", new StringValue("value"))
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString)
-                .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLString).build()).build();
+                .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLString).build()).build()
         validationContext.getFieldDef() >> fieldDefinition
         when:
         knownArgumentNames.checkArgument(argument)
@@ -36,7 +36,7 @@ class KnownArgumentNamesTest extends Specification {
         given:
         Argument argument = new Argument("knownArg", new StringValue("value"))
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString)
-                .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLString).build()).build();
+                .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLString).build()).build()
         validationContext.getFieldDef() >> fieldDefinition
         when:
         knownArgumentNames.checkArgument(argument)

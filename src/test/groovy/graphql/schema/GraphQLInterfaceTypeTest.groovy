@@ -15,7 +15,7 @@ class GraphQLInterfaceTypeTest extends Specification {
                 .typeResolver(new TypeResolverProxy())
                 .field(newFieldDefinition().name("NAME").type(GraphQLString))
                 .field(newFieldDefinition().name("NAME").type(GraphQLString))
-                .build();
+                .build()
         then:
         thrown(AssertException)
     }

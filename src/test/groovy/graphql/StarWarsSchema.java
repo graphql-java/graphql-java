@@ -1,7 +1,12 @@
 package graphql;
 
 
-import graphql.schema.*;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeReference;
+import graphql.schema.StaticDataFetcher;
 
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;
