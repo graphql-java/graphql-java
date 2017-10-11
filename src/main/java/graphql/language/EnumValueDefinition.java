@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 public class EnumValueDefinition extends AbstractNode {
-    private String name;
-    private List<Directive> directives;
+    private final String name;
+    private final List<Directive> directives;
 
     public EnumValueDefinition(String name) {
         this(name, null);

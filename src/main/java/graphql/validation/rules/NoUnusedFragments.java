@@ -22,7 +22,7 @@ public class NoUnusedFragments extends AbstractRule {
     private final List<FragmentDefinition> allDeclaredFragments = new ArrayList<>();
 
     private List<String> usedFragments = new ArrayList<>();
-    private Map<String, List<String>> spreadsInDefinition = new LinkedHashMap<>();
+    private final Map<String, List<String>> spreadsInDefinition = new LinkedHashMap<>();
     private final List<List<String>> fragmentsUsedDirectlyInOperation = new ArrayList<>();
 
     public NoUnusedFragments(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

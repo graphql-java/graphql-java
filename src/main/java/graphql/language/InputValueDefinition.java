@@ -8,10 +8,10 @@ import java.util.Map;
 import static graphql.language.NodeUtil.directivesByName;
 
 public class InputValueDefinition extends AbstractNode {
-    private String name;
+    private final String name;
     private Type type;
     private Value defaultValue;
-    private List<Directive> directives = new ArrayList<>();
+    private final List<Directive> directives = new ArrayList<>();
 
     public InputValueDefinition(String name) {
         this(name, null);

@@ -35,7 +35,7 @@ import java.util.concurrent.Future;
 @PublicApi
 public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
-    ExecutorService executorService;
+    final ExecutorService executorService;
 
     public ExecutorServiceExecutionStrategy(ExecutorService executorService) {
         this(executorService, new SimpleDataFetcherExceptionHandler());

@@ -49,7 +49,7 @@ public class Introspection {
         NON_NULL
     }
 
-    public static GraphQLEnumType __TypeKind = GraphQLEnumType.newEnum()
+    public static final GraphQLEnumType __TypeKind = GraphQLEnumType.newEnum()
             .name("__TypeKind")
             .description("An enum describing what kind of type a given __Type is")
             .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar.")
@@ -62,7 +62,7 @@ public class Introspection {
             .value("NON_NULL", TypeKind.NON_NULL, "Indicates this type is a non-null. `ofType` is a valid field.")
             .build();
 
-    public static DataFetcher kindDataFetcher = environment -> {
+    public static final DataFetcher kindDataFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLScalarType) {
             return TypeKind.SCALAR;
@@ -85,7 +85,7 @@ public class Introspection {
         }
     };
 
-    public static GraphQLObjectType __InputValue = newObject()
+    public static final GraphQLObjectType __InputValue = newObject()
             .name("__InputValue")
             .field(newFieldDefinition()
                     .name("name")
@@ -116,7 +116,7 @@ public class Introspection {
     }
 
 
-    public static GraphQLObjectType __Field = newObject()
+    public static final GraphQLObjectType __Field = newObject()
             .name("__Field")
             .field(newFieldDefinition()
                     .name("name")
@@ -147,7 +147,7 @@ public class Introspection {
             .build();
 
 
-    public static GraphQLObjectType __EnumValue = newObject()
+    public static final GraphQLObjectType __EnumValue = newObject()
             .name("__EnumValue")
             .field(newFieldDefinition()
                     .name("name")
@@ -167,7 +167,7 @@ public class Introspection {
                     .type(GraphQLString))
             .build();
 
-    public static DataFetcher fieldsFetcher = environment -> {
+    public static final DataFetcher fieldsFetcher = environment -> {
         Object type = environment.getSource();
         Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLFieldsContainer) {
@@ -187,7 +187,7 @@ public class Introspection {
     };
 
 
-    public static DataFetcher interfacesFetcher = environment -> {
+    public static final DataFetcher interfacesFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLObjectType) {
             return ((GraphQLObjectType) type).getInterfaces();
@@ -195,7 +195,7 @@ public class Introspection {
         return null;
     };
 
-    public static DataFetcher possibleTypesFetcher = environment -> {
+    public static final DataFetcher possibleTypesFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLInterfaceType) {
             return new SchemaUtil().findImplementations(environment.getGraphQLSchema(), (GraphQLInterfaceType) type);
@@ -206,7 +206,7 @@ public class Introspection {
         return null;
     };
 
-    public static DataFetcher enumValuesTypesFetcher = environment -> {
+    public static final DataFetcher enumValuesTypesFetcher = environment -> {
         Object type = environment.getSource();
         Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLEnumType) {
@@ -221,7 +221,7 @@ public class Introspection {
         return null;
     };
 
-    public static DataFetcher inputFieldsFetcher = environment -> {
+    public static final DataFetcher inputFieldsFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLInputObjectType) {
             return ((GraphQLInputObjectType) type).getFields();
@@ -229,7 +229,7 @@ public class Introspection {
         return null;
     };
 
-    public static DataFetcher OfTypeFetcher = environment -> {
+    public static final DataFetcher OfTypeFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLList) {
             return ((GraphQLList) type).getWrappedType();
@@ -241,7 +241,7 @@ public class Introspection {
     };
 
 
-    public static GraphQLObjectType __Type = newObject()
+    public static final GraphQLObjectType __Type = newObject()
             .name("__Type")
             .field(newFieldDefinition()
                     .name("kind")
@@ -310,7 +310,7 @@ public class Introspection {
         INPUT_FIELD_DEFINITION
     }
 
-    public static GraphQLEnumType __DirectiveLocation = GraphQLEnumType.newEnum()
+    public static final GraphQLEnumType __DirectiveLocation = GraphQLEnumType.newEnum()
             .name("__DirectiveLocation")
             .description("An enum describing valid locations where a directive can be placed")
             .value("QUERY", DirectiveLocation.QUERY, "Indicates the directive is valid on queries.")
@@ -336,7 +336,7 @@ public class Introspection {
             .build();
 
     @SuppressWarnings("deprecation") // because graphql spec still has the deprecated fields
-    public static GraphQLObjectType __Directive = newObject()
+    public static final GraphQLObjectType __Directive = newObject()
             .name("__Directive")
             .field(newFieldDefinition()
                     .name("name")
@@ -387,7 +387,7 @@ public class Introspection {
                     }))
             .build();
 
-    public static GraphQLObjectType __Schema = newObject()
+    public static final GraphQLObjectType __Schema = newObject()
             .name("__Schema")
             .description("A GraphQL Introspection defines the capabilities" +
                     " of a GraphQL server. It exposes all available types and directives on " +
@@ -432,13 +432,13 @@ public class Introspection {
             .build();
 
 
-    public static GraphQLFieldDefinition SchemaMetaFieldDef = newFieldDefinition()
+    public static final GraphQLFieldDefinition SchemaMetaFieldDef = newFieldDefinition()
             .name("__schema")
             .type(nonNull(__Schema))
             .description("Access the current type schema of this server.")
             .dataFetcher(DataFetchingEnvironment::getGraphQLSchema).build();
 
-    public static GraphQLFieldDefinition TypeMetaFieldDef = newFieldDefinition()
+    public static final GraphQLFieldDefinition TypeMetaFieldDef = newFieldDefinition()
             .name("__type")
             .type(__Type)
             .description("Request the type information of a single type.")
@@ -450,7 +450,7 @@ public class Introspection {
                 return environment.getGraphQLSchema().getType(name);
             }).build();
 
-    public static GraphQLFieldDefinition TypeNameMetaFieldDef = newFieldDefinition()
+    public static final GraphQLFieldDefinition TypeNameMetaFieldDef = newFieldDefinition()
             .name("__typename")
             .type(nonNull(GraphQLString))
             .description("The name of the current Object type at runtime.")

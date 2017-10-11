@@ -13,7 +13,7 @@ import java.util.List;
 class BaseError extends GraphQLException implements GraphQLError {
     protected static final SourceLocation NO_WHERE = new SourceLocation(-1, -1);
 
-    private Node node;
+    private final Node node;
 
     public BaseError(Node node, String msg) {
         super(msg);

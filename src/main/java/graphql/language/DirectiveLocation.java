@@ -13,7 +13,7 @@ import java.util.List;
 //    FRAGMENT_SPREAD
 //    INLINE_FRAGMENT
 public class DirectiveLocation extends AbstractNode {
-    private String name;
+    private final String name;
 
     public DirectiveLocation(String name) {
         this.name = name;

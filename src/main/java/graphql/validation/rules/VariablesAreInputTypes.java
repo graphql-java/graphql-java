@@ -13,7 +13,7 @@ import graphql.validation.ValidationErrorType;
 
 public class VariablesAreInputTypes extends AbstractRule {
 
-    private SchemaUtil schemaUtil = new SchemaUtil();
+    private final SchemaUtil schemaUtil = new SchemaUtil();
 
     public VariablesAreInputTypes(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);

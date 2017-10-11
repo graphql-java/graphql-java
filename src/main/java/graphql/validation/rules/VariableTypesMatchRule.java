@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class VariableTypesMatchRule extends AbstractRule {
 
-    VariablesTypesMatcher variablesTypesMatcher = new VariablesTypesMatcher();
+    final VariablesTypesMatcher variablesTypesMatcher = new VariablesTypesMatcher();
 
     private Map<String, VariableDefinition> variableDefinitionMap;
 
