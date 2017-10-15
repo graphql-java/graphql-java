@@ -42,22 +42,31 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
             @Override
             public void onNext(U u) {
-                CompletionStage<D> completionStage = mapper.apply(u);
-                completionStage.whenComplete((d, throwable) -> {
-                    if (throwable != null) {
-                        downstreamSubscriber.onError(throwable);
-                        //
-                        // reactive semantics say that IF an exception happens on a publisher
-                        // then onError is called and no more messages flow.  But since the exception happened
-                        // during the mapping, the upstream publisher does not no about this.
-                        // so we cancel to bring the semantics back together, that is as soon as an exception
-                        // has happened, no more messages flow
-                        //
-                        delegatingSubscription.cancel();
-                    } else {
-                        downstreamSubscriber.onNext(d);
-                    }
-                });
+                CompletionStage<D> completionStage;
+                try {
+                    completionStage = mapper.apply(u);
+                    completionStage.whenComplete((d, throwable) -> {
+                        if (throwable != null) {
+                            handleThrowable(throwable);
+                        } else {
+                            downstreamSubscriber.onNext(d);
+                        }
+                    });
+                } catch (RuntimeException throwable) {
+                    handleThrowable(throwable);
+                }
+            }
+
+            private void handleThrowable(Throwable throwable) {
+                downstreamSubscriber.onError(throwable);
+                //
+                // reactive semantics say that IF an exception happens on a publisher
+                // then onError is called and no more messages flow.  But since the exception happened
+                // during the mapping, the upstream publisher does not no about this.
+                // so we cancel to bring the semantics back together, that is as soon as an exception
+                // has happened, no more messages flow
+                //
+                delegatingSubscription.cancel();
             }
 
             @Override

@@ -88,4 +88,36 @@ class CompletionStageMappingPublisherTest extends Specification {
         capturingSubscriber.events.size() == 5
 
     }
+
+
+
+    def "mapper exception causes onError"() {
+        when:
+        Publisher<Integer> rxIntegers = Flowable.range(0, 10)
+
+        def mapper = new Function<Integer, CompletionStage<String>>() {
+            @Override
+            CompletionStage<String> apply(Integer integer) {
+
+                if (integer == 5) {
+                    throw new RuntimeException("Bang")
+                } else {
+                    CompletableFuture.completedFuture(String.valueOf(integer))
+                }
+            }
+        }
+        Publisher<String> rxStrings = new CompletionStageMappingPublisher<String, Integer>(rxIntegers, mapper)
+
+        def capturingSubscriber = new CapturingSubscriber<>()
+        rxStrings.subscribe(capturingSubscriber)
+
+        then:
+
+        capturingSubscriber.throwable.getMessage() == "Bang"
+        //
+        // got this far and cancelled
+        capturingSubscriber.events.size() == 5
+
+    }
+
 }
