@@ -6,10 +6,10 @@ import graphql.parser.Parser
 import graphql.validation.rules.NoUnusedVariables
 import spock.lang.Specification
 
-public class RulesVisitorTest extends Specification {
+class RulesVisitorTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
-    def traverse(String query){
+    def traverse(String query) {
         Document document = new Parser().parseDocument(query)
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
         LanguageTraversal languageTraversal = new LanguageTraversal()

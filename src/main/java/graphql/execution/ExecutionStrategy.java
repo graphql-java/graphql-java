@@ -1,8 +1,8 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQLException;
 import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TypeResolutionEnvironment;
@@ -413,13 +413,13 @@ public abstract class ExecutionStrategy {
      *
      * @throws java.lang.ClassCastException if its not an Iterable
      */
+    @SuppressWarnings("unchecked")
     protected Iterable<Object> toIterable(Object result) {
         if (result.getClass().isArray()) {
             return IntStream.range(0, Array.getLength(result))
                     .mapToObj(i -> Array.get(result, i))
                     .collect(toList());
         }
-        //noinspection unchecked
         return (Iterable<Object>) result;
     }
 
@@ -434,7 +434,7 @@ public abstract class ExecutionStrategy {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema());
         GraphQLObjectType result = params.getGraphQLInterfaceType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLInterfaceType().getName());
+            throw new UnresolvedTypeException(params.getGraphQLInterfaceType());
         }
         return result;
     }
@@ -450,7 +450,7 @@ public abstract class ExecutionStrategy {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema());
         GraphQLObjectType result = params.getGraphQLUnionType().getTypeResolver().getType(env);
         if (result == null) {
-            throw new GraphQLException("Could not determine the exact type of " + params.getGraphQLUnionType().getName());
+            throw new UnresolvedTypeException(params.getGraphQLUnionType());
         }
         return result;
     }
@@ -504,6 +504,7 @@ public abstract class ExecutionStrategy {
         return completedFuture(new ExecutionResultImpl(serialized, null));
     }
 
+    @SuppressWarnings("SameReturnValue")
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
         SerializationError error = new SerializationError(parameters.path(), e);
         log.warn(error.getMessage(), e);
@@ -602,9 +603,7 @@ public abstract class ExecutionStrategy {
         }
 
         GraphQLFieldDefinition fieldDefinition = schema.getFieldVisibility().getFieldDefinition(parentType, field.getName());
-        if (fieldDefinition == null) {
-            throw new GraphQLException("Unknown field " + field.getName());
-        }
+        Assert.assertTrue(fieldDefinition != null, "Unknown field " + field.getName());
         return fieldDefinition;
     }
 

@@ -119,8 +119,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
-        private List<GraphQLOutputType> interfaces = new ArrayList<>();
+        private final List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
+        private final List<GraphQLOutputType> interfaces = new ArrayList<>();
         private ObjectTypeDefinition definition;
 
         public Builder name(String name) {

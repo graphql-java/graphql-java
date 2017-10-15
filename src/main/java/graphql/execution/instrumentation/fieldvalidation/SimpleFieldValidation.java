@@ -21,7 +21,7 @@ import java.util.function.BiFunction;
 @PublicApi
 public class SimpleFieldValidation implements FieldValidation {
 
-    private Map<ExecutionPath, BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>>> rules = new LinkedHashMap<>();
+    private final Map<ExecutionPath, BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>>> rules = new LinkedHashMap<>();
 
     /**
      * Adds the rule against the field address path.  If the rule returns an error, it will be added to the list of errors

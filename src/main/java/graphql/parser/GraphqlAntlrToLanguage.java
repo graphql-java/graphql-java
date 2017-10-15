@@ -1,8 +1,8 @@
 package graphql.parser;
 
 
+import graphql.Assert;
 import graphql.Internal;
-import graphql.ShouldNotHappenException;
 import graphql.language.AbstractNode;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -98,8 +98,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     static class ContextEntry {
-        ContextProperty contextProperty;
-        Object value;
+        final ContextProperty contextProperty;
+        final Object value;
 
         public ContextEntry(ContextProperty contextProperty, Object value) {
             this.contextProperty = contextProperty;
@@ -107,7 +107,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         }
     }
 
-    private Deque<ContextEntry> contextStack = new ArrayDeque<>();
+    private final Deque<ContextEntry> contextStack = new ArrayDeque<>();
 
 
     private void addContextProperty(ContextProperty contextProperty, Object value) {
@@ -137,7 +137,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
                 return contextEntry.value;
             }
         }
-        if (required) throw new RuntimeException("not found" + contextProperty);
+        if (required) {
+            Assert.assertShouldNeverHappen("not found" + contextProperty);
+        }
         return null;
     }
 
@@ -200,7 +202,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         } else if (operationTypeContext.getText().equals("subscription")) {
             return OperationDefinition.Operation.SUBSCRIPTION;
         } else {
-            throw new RuntimeException("InternalError: unknown operationTypeContext=" + operationTypeContext.getText());
+            return Assert.assertShouldNeverHappen("InternalError: unknown operationTypeContext=" + operationTypeContext.getText());
         }
     }
 
@@ -703,7 +705,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             newNode(variableReference, ctx);
             return variableReference;
         }
-        throw new ShouldNotHappenException();
+        return Assert.assertShouldNeverHappen();
     }
 
     private Value getValue(GraphqlParser.ValueContext ctx) {
@@ -747,7 +749,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             }
             return objectValue;
         }
-        throw new ShouldNotHappenException();
+        return Assert.assertShouldNeverHappen();
     }
 
     static String parseString(String string) {
@@ -793,7 +795,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
                     writer.write(codepoint);
                     continue;
                 default:
-                    throw new ShouldNotHappenException();
+                    Assert.assertShouldNeverHappen();
             }
         }
         return writer.toString();

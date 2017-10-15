@@ -1,14 +1,17 @@
 package graphql;
 
 
-import graphql.schema.*;
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public class ScalarsQuerySchema {
 
@@ -29,10 +32,8 @@ public class ScalarsQuerySchema {
                     .name("floatNaN")
                     .type(Scalars.GraphQLFloat)
                     .staticValue(Double.NaN))
-            
-            
-            
-            
+
+
             /** Scalars with input of same type, value echoed back */
             .field(newFieldDefinition()
                     .name("bigIntegerInput")
@@ -63,11 +64,7 @@ public class ScalarsQuerySchema {
                             .type(new GraphQLNonNull(Scalars.GraphQLString)))
                     .dataFetcher(inputDF))
 
-            
-            
-            
-            
-            
+
             /** Scalars with input of String, cast to scalar */
             .field(newFieldDefinition()
                     .name("bigIntegerString")

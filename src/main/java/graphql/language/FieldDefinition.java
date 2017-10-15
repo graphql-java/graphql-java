@@ -8,10 +8,10 @@ import java.util.Map;
 import static graphql.language.NodeUtil.directivesByName;
 
 public class FieldDefinition extends AbstractNode {
-    private String name;
+    private final String name;
     private Type type;
-    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
-    private List<Directive> directives = new ArrayList<>();
+    private final List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+    private final List<Directive> directives = new ArrayList<>();
 
     public FieldDefinition(String name) {
         this.name = name;

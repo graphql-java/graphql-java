@@ -1,6 +1,30 @@
 package graphql.parser
 
-import graphql.language.*
+import graphql.language.Argument
+import graphql.language.ArrayValue
+import graphql.language.AstComparator
+import graphql.language.BooleanValue
+import graphql.language.Directive
+import graphql.language.Document
+import graphql.language.Field
+import graphql.language.FloatValue
+import graphql.language.FragmentDefinition
+import graphql.language.FragmentSpread
+import graphql.language.InlineFragment
+import graphql.language.IntValue
+import graphql.language.ListType
+import graphql.language.Node
+import graphql.language.NonNullType
+import graphql.language.NullValue
+import graphql.language.ObjectField
+import graphql.language.ObjectValue
+import graphql.language.OperationDefinition
+import graphql.language.Selection
+import graphql.language.SelectionSet
+import graphql.language.StringValue
+import graphql.language.TypeName
+import graphql.language.VariableDefinition
+import graphql.language.VariableReference
 import org.antlr.v4.runtime.misc.ParseCancellationException
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -214,7 +238,7 @@ class ParserTest extends Specification {
         and: "expected query"
         def skipDirective = new Directive("skip", [new Argument("if", new VariableReference("someTest"))])
         def experimentalField = new Field("experimentalField", [], [skipDirective])
-        def includeDirective = new Directive("include", [new Argument("if", new VariableReference("someTest"))]);
+        def includeDirective = new Directive("include", [new Argument("if", new VariableReference("someTest"))])
         def controlField = new Field("controlField", [], [includeDirective])
 
         def queryDefinition = new OperationDefinition("myQuery", OperationDefinition.Operation.QUERY,
@@ -388,9 +412,9 @@ class ParserTest extends Specification {
         document.definitions[0].operation == OperationDefinition.Operation.MUTATION
     }
 
-    def "subscription without a name"(){
+    def "subscription without a name"() {
         given:
-        def input="""
+        def input = """
         subscription { s }
         """
         when:

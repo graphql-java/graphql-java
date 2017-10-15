@@ -28,9 +28,9 @@ import static graphql.execution.TypeFromAST.getTypeFromAST;
 @Internal
 public class FieldCollector {
 
-    private ConditionalNodes conditionalNodes;
+    private final ConditionalNodes conditionalNodes;
 
-    private SchemaUtil schemaUtil = new SchemaUtil();
+    private final SchemaUtil schemaUtil = new SchemaUtil();
 
     public FieldCollector() {
         conditionalNodes = new ConditionalNodes();

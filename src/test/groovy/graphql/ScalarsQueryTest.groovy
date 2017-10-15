@@ -2,7 +2,7 @@ package graphql
 
 import graphql.execution.batched.BatchedExecutionStrategy
 import spock.lang.Specification
-import spock.lang.Unroll;
+import spock.lang.Unroll
 
 class ScalarsQueryTest extends Specification {
 
@@ -18,9 +18,9 @@ class ScalarsQueryTest extends Specification {
         """
         def expected = [
                 bigInteger: 9999,
-                i1: 1234567890123456789012345678901234567890,
-                i2: 1234567890123456789012345678901234567890,
-                i3: 1234567890123456789012345678901234567890
+                i1        : 1234567890123456789012345678901234567890,
+                i2        : 1234567890123456789012345678901234567890,
+                i3        : 1234567890123456789012345678901234567890
         ]
 
         when:
@@ -30,7 +30,7 @@ class ScalarsQueryTest extends Specification {
         result.data == expected
         result.errors.empty == true
     }
-    
+
     def 'Large BigDecimals'() {
         given:
         def query = """
@@ -43,9 +43,9 @@ class ScalarsQueryTest extends Specification {
         """
         def expected = [
                 bigDecimal: 1234.0,
-                d1: 1234567890123456789012345678901234567890.0,
-                d2: 1234567890123456789012345678901234567890.0,
-                d3: 1234567890123456789012345678901234567890.0,
+                d1        : 1234567890123456789012345678901234567890.0,
+                d2        : 1234567890123456789012345678901234567890.0,
+                d3        : 1234567890123456789012345678901234567890.0,
         ]
 
         when:
@@ -96,15 +96,15 @@ class ScalarsQueryTest extends Specification {
         result.data == expected
         result.errors.empty == true
     }
-    
+
     @Unroll
     def "FooBar String cannot be cast to #number"() {
         given:
         def query = "{ " + number + "String(input: \"foobar\") }"
-        
+
         when:
         def result = GraphQL.newGraphQL(ScalarsQuerySchema.scalarsQuerySchema).build().execute(query)
-        
+
         then:
         result.errors[0] instanceof SerializationError
 

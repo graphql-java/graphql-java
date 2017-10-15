@@ -20,7 +20,7 @@ import java.util.Map;
 
 public class NoFragmentCycles extends AbstractRule {
 
-    private Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
+    private final Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
 
 
     public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {

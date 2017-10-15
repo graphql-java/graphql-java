@@ -17,9 +17,9 @@ class PossibleFragmentSpreadsTest extends Specification {
         Document document = new Parser().parseDocument(query)
         ValidationContext validationContext = new ValidationContext(Harness.Schema, document)
         PossibleFragmentSpreads possibleFragmentSpreads = new PossibleFragmentSpreads(validationContext, errorCollector)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
+        LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [possibleFragmentSpreads]));
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [possibleFragmentSpreads]))
     }
 
     def 'of the same object'() {

@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DirectiveDefinition extends AbstractNode implements Definition {
-    private String name;
-    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
-    private List<DirectiveLocation> directiveLocations = new ArrayList<>();
+    private final String name;
+    private final List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+    private final List<DirectiveLocation> directiveLocations = new ArrayList<>();
 
     public DirectiveDefinition(String name) {
         this.name = name;

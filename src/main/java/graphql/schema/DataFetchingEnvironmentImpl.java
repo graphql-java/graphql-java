@@ -3,7 +3,6 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionTypeInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;

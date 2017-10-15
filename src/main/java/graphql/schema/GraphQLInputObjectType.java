@@ -92,7 +92,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         private String name;
         private String description;
         private InputObjectTypeDefinition definition;
-        private List<GraphQLInputObjectField> fields = new ArrayList<>();
+        private final List<GraphQLInputObjectField> fields = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;

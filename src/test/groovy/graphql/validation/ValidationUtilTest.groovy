@@ -1,7 +1,19 @@
 package graphql.validation
 
-import graphql.language.*
-import graphql.schema.*
+import graphql.language.ArrayValue
+import graphql.language.BooleanValue
+import graphql.language.EnumValue
+import graphql.language.ListType
+import graphql.language.NonNullType
+import graphql.language.NullValue
+import graphql.language.ObjectField
+import graphql.language.ObjectValue
+import graphql.language.StringValue
+import graphql.language.TypeName
+import graphql.language.VariableReference
+import graphql.schema.GraphQLEnumType
+import graphql.schema.GraphQLInputObjectField
+import graphql.schema.GraphQLInputObjectType
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean

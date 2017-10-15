@@ -131,8 +131,14 @@ public class ObjectsImplementInterfaces implements SchemaValidationRule {
             GraphQLOutputType wrappedObjectType = (GraphQLOutputType) ((GraphQLList) objectType).getWrappedType();
             return isCompatible(wrappedConstraintType, wrappedObjectType);
         } else if (objectType instanceof GraphQLNonNull) {
-            GraphQLOutputType wrappedObjectType = (GraphQLOutputType) ((GraphQLNonNull) objectType).getWrappedType();
-            return isCompatible(constraintType, wrappedObjectType);
+            GraphQLOutputType nullableConstraint;
+            if (constraintType instanceof GraphQLNonNull) {
+                nullableConstraint = (GraphQLOutputType) ((GraphQLNonNull) constraintType).getWrappedType();
+            } else {
+                nullableConstraint = constraintType;
+            }
+            GraphQLOutputType nullableObjectType = (GraphQLOutputType) ((GraphQLNonNull) objectType).getWrappedType();
+            return isCompatible(nullableConstraint, nullableObjectType);
         } else {
             return false;
         }

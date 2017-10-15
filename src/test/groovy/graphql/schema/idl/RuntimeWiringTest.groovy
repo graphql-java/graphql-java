@@ -1,7 +1,12 @@
 package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
-import graphql.schema.*
+import graphql.schema.Coercing
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLScalarType
+import graphql.schema.TypeResolver
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -53,7 +58,8 @@ class RuntimeWiringTest extends Specification {
 
     def "basic call structure"() {
         def wiring = RuntimeWiring.newRuntimeWiring()
-                .type("Query", { type -> type
+                .type("Query", { type ->
+            type
                     .dataFetcher("fieldX", new NamedDF("fieldX"))
                     .dataFetcher("fieldY", new NamedDF("fieldY"))
                     .dataFetcher("fieldZ", new NamedDF("fieldZ"))
@@ -61,7 +67,8 @@ class RuntimeWiringTest extends Specification {
                     .typeResolver(new NamedTR("typeResolver4Query"))
         } as UnaryOperator<TypeRuntimeWiring.Builder>)
 
-                .type("Mutation", { type -> type
+                .type("Mutation", { type ->
+            type
                     .dataFetcher("fieldX", new NamedDF("mfieldX"))
                     .dataFetcher("fieldY", new NamedDF("mfieldY"))
                     .dataFetcher("fieldZ", new NamedDF("mfieldZ"))

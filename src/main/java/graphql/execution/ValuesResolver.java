@@ -1,7 +1,6 @@
 package graphql.execution;
 
 
-import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -11,6 +10,7 @@ import graphql.language.ObjectValue;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
+import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
@@ -27,6 +27,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static graphql.Assert.assertShouldNeverHappen;
 
 @Internal
 public class ValuesResolver {
@@ -135,6 +137,7 @@ public class ValuesResolver {
     }
 
 
+    @SuppressWarnings("unchecked")
     private Object coerceValue(VariableDefinition variableDefinition, GraphQLType graphQLType, Object value) {
         if (graphQLType instanceof GraphQLNonNull) {
             Object returnValue = coerceValue(variableDefinition, ((GraphQLNonNull) graphQLType).getWrappedType(), value);
@@ -144,7 +147,9 @@ public class ValuesResolver {
             return returnValue;
         }
 
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
 
         if (graphQLType instanceof GraphQLScalarType) {
             return coerceValueForScalar((GraphQLScalarType) graphQLType, value);
@@ -152,13 +157,14 @@ public class ValuesResolver {
             return coerceValueForEnum((GraphQLEnumType) graphQLType, value);
         } else if (graphQLType instanceof GraphQLList) {
             return coerceValueForList(variableDefinition, (GraphQLList) graphQLType, value);
-        } else if (graphQLType instanceof GraphQLInputObjectType && value instanceof Map) {
-            //noinspection unchecked
-            return coerceValueForInputObjectType(variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
-            return value;
+            if (value instanceof Map) {
+                return coerceValueForInputObjectType(variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
+            } else {
+                throw new CoercingParseValueException("Variables for GraphQLInputObjectType must be an instance of a Map according to the graphql specification.  The offending object was a " + value.getClass().getName());
+            }
         } else {
-            throw new GraphQLException("unknown type " + graphQLType);
+            return assertShouldNeverHappen("unhandled type " + graphQLType);
         }
     }
 
