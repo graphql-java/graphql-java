@@ -8,15 +8,29 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Optional;
 
 import static graphql.Scalars.GraphQLBoolean;
 
 /**
  * This is the default data fetcher used in graphql-java.  It will examine
- * maps and POJO java beans for values that match the desired name, typically the field name.
+ * maps and POJO java beans for values that match the desired name.
+ *
+ * It uses the following strategies
+ * <ul>
+ * <li>If the source is null, return null</li>
+ * <li>If the source is a Map, return map.get(propertyName)</li>
+ * <li>Find a public JavaBean getter method named `propertyName`</li>
+ * <li>Find any getter method named `propertyName` and call method.setAccessible(true)</li>
+ * <li>Find a public field named `propertyName`</li>
+ * <li>Find any field named `propertyName` and call field.setAccessible(true)</li>
+ * <li>If this cant find anything, then null is returned</li>
+ * </ul>
  *
  * You can write your own data fetchers to get data from some other backing system
+ * if you need highly customised behaviour.
  *
  * @see graphql.schema.DataFetcher
  */
@@ -40,6 +54,54 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         return (T) getPropertyViaGetter(source, environment.getFieldType());
     }
 
+    private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType) {
+        try {
+            return getPropertyViaGetterMethod(object, outputType, this::findPubliclyAccessibleMethod);
+        } catch (NoSuchMethodException ignored) {
+            try {
+                return getPropertyViaGetterMethod(object, outputType, this::findViaSetAccessible);
+            } catch (NoSuchMethodException ignored2) {
+                return getPropertyViaFieldAccess(object);
+            }
+        }
+    }
+
+    @FunctionalInterface
+    private interface MethodFinder {
+        Method apply(Class aClass, String s) throws NoSuchMethodException;
+    }
+
+    private Object getPropertyViaGetterMethod(Object object, GraphQLOutputType outputType, MethodFinder methodFinder) throws NoSuchMethodException {
+        if (isBooleanProperty(outputType)) {
+            try {
+                return getPropertyViaGetterUsingPrefix(object, "is", methodFinder);
+            } catch (NoSuchMethodException e) {
+                return getPropertyViaGetterUsingPrefix(object, "get", methodFinder);
+            }
+        } else {
+            return getPropertyViaGetterUsingPrefix(object, "get", methodFinder);
+        }
+    }
+
+    private Object getPropertyViaGetterUsingPrefix(Object object, String prefix, MethodFinder methodFinder) throws NoSuchMethodException {
+        String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        try {
+            Method method = methodFinder.apply(object.getClass(), getterName);
+            return method.invoke(object);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new GraphQLException(e);
+        }
+    }
+
+    @SuppressWarnings("SimplifiableIfStatement")
+    private boolean isBooleanProperty(GraphQLOutputType outputType) {
+        if (outputType == GraphQLBoolean) return true;
+        if (outputType instanceof GraphQLNonNull) {
+            return ((GraphQLNonNull) outputType).getWrappedType() == GraphQLBoolean;
+        }
+        return false;
+    }
+
     /**
      * Invoking public methods on package-protected classes via reflection
      * causes exceptions. This method searches a class's hierarchy for
@@ -48,7 +110,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
      * which have abstract public interfaces implemented by package-protected
      * (generated) subclasses.
      */
-    private Method findAccessibleMethod(Class root, String methodName) throws NoSuchMethodException {
+    private Method findPubliclyAccessibleMethod(Class root, String methodName) throws NoSuchMethodException {
         Class cur = root;
         while (cur != null) {
             if (Modifier.isPublic(cur.getModifiers())) {
@@ -64,48 +126,38 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         return root.getMethod(methodName);
     }
 
-    private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType) {
-        try {
-            if (isBooleanProperty(outputType)) {
-                try {
-                    return getPropertyViaGetterUsingPrefix(object, "is");
-                } catch (NoSuchMethodException e) {
-                    return getPropertyViaGetterUsingPrefix(object, "get");
-                }
-            } else {
-                return getPropertyViaGetterUsingPrefix(object, "get");
+    private Method findViaSetAccessible(Class aClass, String methodName) throws NoSuchMethodException {
+        Method[] declaredMethods = aClass.getDeclaredMethods();
+        Optional<Method> m = Arrays.stream(declaredMethods)
+                .filter(method -> methodName.equals(method.getName()))
+                .findFirst();
+        if (m.isPresent()) {
+            try {
+                // few JVMs actually enforce this but it might happen
+                m.get().setAccessible(true);
+                return m.get();
+            } catch (SecurityException ignored) {
             }
-        } catch (NoSuchMethodException e1) {
-            return getPropertyViaFieldAccess(object);
         }
-    }
-
-    private Object getPropertyViaGetterUsingPrefix(Object object, String prefix) throws NoSuchMethodException {
-        String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-        try {
-            Method method = findAccessibleMethod(object.getClass(), getterName);
-            return method.invoke(object);
-
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new GraphQLException(e);
-        }
-    }
-
-    @SuppressWarnings("SimplifiableIfStatement")
-    private boolean isBooleanProperty(GraphQLOutputType outputType) {
-        if (outputType == GraphQLBoolean) return true;
-        if (outputType instanceof GraphQLNonNull) {
-            return ((GraphQLNonNull) outputType).getWrappedType() == GraphQLBoolean;
-        }
-        return false;
+        throw new NoSuchMethodException(methodName);
     }
 
     private Object getPropertyViaFieldAccess(Object object) {
+        Class<?> aClass = object.getClass();
         try {
-            Field field = object.getClass().getField(propertyName);
+            Field field = aClass.getField(propertyName);
             return field.get(object);
         } catch (NoSuchFieldException e) {
-            return null;
+            // if not public fields then try via setAccessible
+            try {
+                Field field = aClass.getDeclaredField(propertyName);
+                field.setAccessible(true);
+                return field.get(object);
+            } catch (SecurityException | NoSuchFieldException ignored2) {
+                return null;
+            } catch (IllegalAccessException e1) {
+                throw new GraphQLException(e);
+            }
         } catch (IllegalAccessException e) {
             throw new GraphQLException(e);
         }

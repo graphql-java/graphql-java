@@ -32,7 +32,7 @@ class PropertyDataFetcherTest extends Specification {
         def fetcher = new PropertyDataFetcher("privateProperty")
         def result = fetcher.get(environment)
         expect:
-        result == null
+        result == "privateValue"
     }
 
     def "fetch via public method"() {
@@ -56,6 +56,24 @@ class PropertyDataFetcherTest extends Specification {
         def fetcher = new PropertyDataFetcher("propertyOnlyDefinedOnPackageProtectedImpl")
         def result = fetcher.get(environment)
         expect:
-        result == null
+        result == "valueOnlyDefinedOnPackageProtectedIpl"
     }
+
+
+    def "fetch via public field"() {
+        def environment = env(new TestClass())
+        def fetcher = new PropertyDataFetcher("publicField")
+        def result = fetcher.get(environment)
+        expect:
+        result == "publicFieldValue"
+    }
+
+    def "fetch via private field"() {
+        def environment = env(new TestClass())
+        def fetcher = new PropertyDataFetcher("privateField")
+        def result = fetcher.get(environment)
+        expect:
+        result == "privateFieldValue"
+    }
+
 }
