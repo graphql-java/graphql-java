@@ -26,6 +26,8 @@ public class TracingSupport implements InstrumentationState {
     private final Instant startRequestTime;
     private final long startRequestNanos;
     private final ConcurrentLinkedQueue<Map<String, Object>> fieldData;
+    private final Map<String, Object> parseMap = new LinkedHashMap<>();
+    private final Map<String, Object> validationMap = new LinkedHashMap<>();
 
     /**
      * The timer starts as soon as you create this object
@@ -75,6 +77,42 @@ public class TracingSupport implements InstrumentationState {
     }
 
     /**
+     * This should be called to start the trace of query parsing, with {@link TracingContext#onEnd()} being called to
+     * end the call.
+     *
+     * @return a context to call end on
+     */
+    public TracingContext beginParse() {
+        long startParse = System.nanoTime();
+        return () -> {
+            long now = System.nanoTime();
+            long duration = now - startParse;
+            long startOffset = now - startRequestNanos;
+
+            parseMap.put("startOffset", startOffset);
+            parseMap.put("duration", duration);
+        };
+    }
+
+    /**
+     * This should be called to start the trace of query validation, with {@link TracingContext#onEnd()} being called to
+     * end the call.
+     *
+     * @return a context to call end on
+     */
+    public TracingContext beginValidation() {
+        long startValidation = System.nanoTime();
+        return () -> {
+            long now = System.nanoTime();
+            long duration = now - startValidation;
+            long startOffset = now - startRequestNanos;
+
+            validationMap.put("startOffset", startOffset);
+            validationMap.put("duration", duration);
+        };
+    }
+
+    /**
      * This will snapshot this tracing and return a map of the results
      *
      * @return a snapshot of the tracing data
@@ -86,6 +124,8 @@ public class TracingSupport implements InstrumentationState {
         traceMap.put("startTime", rfc3339(startRequestTime));
         traceMap.put("endTime", rfc3339(Instant.now()));
         traceMap.put("duration", System.nanoTime() - startRequestNanos);
+        traceMap.put("parsing", parseMap);
+        traceMap.put("validation", validationMap);
         traceMap.put("execution", executionData());
 
         return traceMap;
