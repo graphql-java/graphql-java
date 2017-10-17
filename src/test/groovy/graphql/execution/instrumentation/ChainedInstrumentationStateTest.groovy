@@ -175,6 +175,32 @@ class ChainedInstrumentationStateTest extends Specification {
 
     }
 
+    def "empty chain"() {
+        def chainedInstrumentation = new ChainedInstrumentation(Arrays.asList())
+
+        def query = """
+        query HeroNameAndFriendsQuery {
+            hero {
+                id
+            }
+        }
+        """
+
+        when:
+        def strategy = new AsyncExecutionStrategy()
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(strategy)
+                .instrumentation(chainedInstrumentation)
+                .build()
+
+        graphQL.execute(query)
+
+        then:
+        noExceptionThrown()
+
+    }
+
     private void assertCalls(NamedInstrumentation instrumentation) {
         assert instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
         assert instrumentation.dfInvocations[0].getFieldTypeInfo().getPath().toList() == ['hero']
