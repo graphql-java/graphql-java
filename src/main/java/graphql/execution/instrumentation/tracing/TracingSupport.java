@@ -83,15 +83,7 @@ public class TracingSupport implements InstrumentationState {
      * @return a context to call end on
      */
     public TracingContext beginParse() {
-        long startParse = System.nanoTime();
-        return () -> {
-            long now = System.nanoTime();
-            long duration = now - startParse;
-            long startOffset = now - startRequestNanos;
-
-            parseMap.put("startOffset", startOffset);
-            parseMap.put("duration", duration);
-        };
+        return traceToMap(parseMap);
     }
 
     /**
@@ -101,14 +93,18 @@ public class TracingSupport implements InstrumentationState {
      * @return a context to call end on
      */
     public TracingContext beginValidation() {
-        long startValidation = System.nanoTime();
+        return traceToMap(validationMap);
+    }
+
+    private TracingContext traceToMap(Map<String, Object> map) {
+        long start = System.nanoTime();
         return () -> {
             long now = System.nanoTime();
-            long duration = now - startValidation;
+            long duration = now - start;
             long startOffset = now - startRequestNanos;
 
-            validationMap.put("startOffset", startOffset);
-            validationMap.put("duration", duration);
+            map.put("startOffset", startOffset);
+            map.put("duration", duration);
         };
     }
 
@@ -124,11 +120,18 @@ public class TracingSupport implements InstrumentationState {
         traceMap.put("startTime", rfc3339(startRequestTime));
         traceMap.put("endTime", rfc3339(Instant.now()));
         traceMap.put("duration", System.nanoTime() - startRequestNanos);
-        traceMap.put("parsing", parseMap);
-        traceMap.put("validation", validationMap);
+        traceMap.put("parsing", copyMap(parseMap));
+        traceMap.put("validation", copyMap(validationMap));
         traceMap.put("execution", executionData());
 
         return traceMap;
+    }
+
+    private Object copyMap(Map<String, Object> map) {
+        Map<String, Object> mapCopy = new LinkedHashMap<>();
+        mapCopy.putAll(map);
+        return mapCopy;
+
     }
 
     private Map<String, Object> executionData() {
