@@ -4,6 +4,7 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.instrumentation.InstrumentationContext
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.schema.GraphQLSchema
 import org.dataloader.DataLoaderRegistry
@@ -84,7 +85,7 @@ class DataLoaderPerformanceTest extends Specification {
         dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
         def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry) {
             @Override
-            InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldParameters parameters) {
+            InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
                 // if we never call super.xxx() then it wont record we are in a list and it wont be efficient
                 return { e, t -> }
             }

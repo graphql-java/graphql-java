@@ -1,14 +1,17 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
+import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
 import java.util.List;
@@ -121,7 +124,7 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldParameters parameters) {
+    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
         return (result, t) -> {
         };
     }
@@ -134,10 +137,37 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldParameters parameters) {
+    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
         return (result, t) -> {
         };
     }
+
+    /**
+     * This is called to instrument a {@link graphql.schema.GraphQLSchema} before it is used to parse, validate
+     * and execute a query, allowing you to adjust what types are used.
+     *
+     * @param schema     the schema to be used
+     * @param parameters the parameters describing the field to be fetched
+     *
+     * @return a non null instrumented data fetcher, the default is to return to the same object
+     */
+    default GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
+        return schema;
+    }
+
+    /**
+     * This is called to instrument a {@link ExecutionContext} before it is used to execute a query,
+     * allowing you to adjust the base data used.
+     *
+     * @param executionContext the execution context to be used
+     * @param parameters       the parameters describing the field to be fetched
+     *
+     * @return a non null instrumented data fetcher, the default is to return to the same object
+     */
+    default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
+        return executionContext;
+    }
+
 
     /**
      * This is called to instrument a {@link DataFetcher} just before it is used to fetch a field, allowing you

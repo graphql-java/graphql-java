@@ -10,6 +10,7 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -79,6 +80,12 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .build();
+
+        InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
+                executionInput, graphQLSchema, instrumentationState
+        );
+        executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
+
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 

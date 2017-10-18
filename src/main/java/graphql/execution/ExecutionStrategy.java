@@ -8,6 +8,7 @@ import graphql.SerializationError;
 import graphql.TypeResolutionEnvironment;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.language.Field;
@@ -282,7 +283,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
 
         InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteField(
-                new InstrumentationFieldParameters(executionContext, fieldDef, fieldTypeInfo(parameters, fieldDef))
+                new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
         );
 
 
@@ -540,7 +541,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = parameters.typeInfo().getFieldDefinition();
 
         InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteFieldList(
-                new InstrumentationFieldParameters(executionContext, fieldDef, fieldTypeInfo(parameters, fieldDef))
+                new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
         );
 
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(iterableValues, (item, index) -> {

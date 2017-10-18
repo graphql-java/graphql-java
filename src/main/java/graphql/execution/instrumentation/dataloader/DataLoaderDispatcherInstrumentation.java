@@ -7,6 +7,7 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
@@ -117,7 +118,7 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
 
 
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldParameters parameters) {
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
         return (result, t) -> {
             if (t == null) {
@@ -137,7 +138,7 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
        https://github.com/graphql-java/graphql-java/issues/760
      */
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldParameters parameters) {
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
         callStack.enterList();
         return (result, t) -> callStack.exit();
