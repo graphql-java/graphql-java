@@ -97,10 +97,10 @@ public class TracingSupport implements InstrumentationState {
     }
 
     private TracingContext traceToMap(Map<String, Object> map) {
-        long startParse = System.nanoTime();
+        long start = System.nanoTime();
         return () -> {
             long now = System.nanoTime();
-            long duration = now - startParse;
+            long duration = now - start;
             long startOffset = now - startRequestNanos;
 
             map.put("startOffset", startOffset);
