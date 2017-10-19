@@ -4,6 +4,7 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.MutationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
@@ -61,8 +62,15 @@ public class Execution {
         Map<String, Object> inputVariables = executionInput.getVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
-        Map<String, Object> coercedVariables = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
-
+        Map<String, Object> coercedVariables;
+        try {
+            coercedVariables = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
+        } catch (RuntimeException rte) {
+            if (rte instanceof GraphQLError) {
+                return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
+            }
+            throw rte;
+        }
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .instrumentation(instrumentation)

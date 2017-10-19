@@ -203,17 +203,20 @@ class NullValueSupportTest extends Specification {
     }
 
     @Unroll
-    "test graphql spec examples that output exception : #testCase"() {
+    "test graphql spec examples that output errors via internally throwing exception : #testCase"() {
         def fetcher = new CapturingDataFetcher()
 
         def schema = TestUtil.schema(graphqlSpecExamples, ["Mutation": ["mutate": fetcher]])
 
         when:
-
-        GraphQL.newGraphQL(schema).build().execute(queryStr, "mutate", "ctx", variables)
+        def executionResult = GraphQL.newGraphQL(schema).build().execute(queryStr, "mutate", "ctx", variables)
 
         then:
-        thrown(expectedException)
+        executionResult.data == null
+        executionResult.errors.size() == 1
+        executionResult.errors[0].errorType == ErrorType.ValidationError
+
+
 
 
         where:
