@@ -207,6 +207,7 @@ public class AstPrinter {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s", spaced(
+                    "input",
                     node.getName(),
                     directives(node.getDirectives()),
                     block(node.getInputValueDefinitions())
@@ -291,7 +292,10 @@ public class AstPrinter {
     private static NodePrinter<ScalarTypeDefinition> scalarTypeDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
-            out.printf("%s", spaced(node.getName(), directives(node.getDirectives())));
+            out.printf("%s", spaced(
+                    "scalar",
+                    node.getName(),
+                    directives(node.getDirectives())));
         };
     }
 
@@ -461,6 +465,9 @@ public class AstPrinter {
 
     static String wrap(String start, String maybeString, String end) {
         if (isEmpty(maybeString)) {
+            if (start.equals("\"") && end.equals("\"")) {
+                return "\"\"";
+            }
             return "";
         }
         return start + maybeString + (!isEmpty(end) ? end : "");

@@ -346,7 +346,7 @@ union Everything = Character | Episode"""
 
         then:
         result == """#input for characters
-CharacterInput {
+input CharacterInput {
   #first name
   firstName: String
   lastName: String
@@ -533,7 +533,7 @@ type MutationResult {
   success: Boolean
 }
 
-CharacterInput {
+input CharacterInput {
   firstName: String
   lastName: String
   family: Boolean
