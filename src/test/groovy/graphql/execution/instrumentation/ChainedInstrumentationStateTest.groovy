@@ -133,16 +133,20 @@ class ChainedInstrumentationStateTest extends Specification {
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
+                "start:complete-hero",
 
                 "start:execution-strategy",
 
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
+                "start:complete-id",
+                "end:complete-id",
                 "end:field-id",
 
                 "end:execution-strategy",
 
+                "end:complete-hero",
                 "end:field-hero",
 
                 "end:execution-strategy",
