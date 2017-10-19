@@ -1,16 +1,19 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
-import graphql.execution.Async;
 import graphql.PublicApi;
+import graphql.execution.Async;
+import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
 import java.util.Collections;
@@ -119,6 +122,44 @@ public class ChainedInstrumentation implements Instrumentation {
                     return instrumentation.beginFieldFetch(parameters.withNewState(state));
                 })
                 .collect(toList()));
+    }
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
+        return new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginCompleteField(parameters.withNewState(state));
+                })
+                .collect(toList()));
+    }
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
+        return new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginCompleteFieldList(parameters.withNewState(state));
+                })
+                .collect(toList()));
+    }
+
+    @Override
+    public GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
+        for (Instrumentation instrumentation : instrumentations) {
+            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+            schema = instrumentation.instrumentSchema(schema, parameters.withNewState(state));
+        }
+        return schema;
+    }
+
+    @Override
+    public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
+        for (Instrumentation instrumentation : instrumentations) {
+            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+            executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters.withNewState(state));
+        }
+        return executionContext;
     }
 
     @Override

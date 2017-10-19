@@ -10,6 +10,7 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -27,6 +28,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
@@ -64,7 +66,7 @@ public class Execution {
         Map<String, Object> coercedVariables = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
 
 
-        ExecutionContext executionContext = new ExecutionContextBuilder()
+        ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
                 .executionId(executionId)
@@ -79,6 +81,12 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .build();
+
+
+        InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
+                executionInput, graphQLSchema, instrumentationState
+        );
+        executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
