@@ -24,6 +24,7 @@ class AstPrinterTest extends Specification {
 # over a number of lines
 schema {
     query: QueryType
+    mutation: Mutation
 }
 
 type QueryType {
@@ -31,6 +32,10 @@ type QueryType {
     hero(episode: Episode): Character
     human(id : String) : Human
     droid(id: ID!): Droid
+}
+
+type Mutation {
+    createReview(episode: Episode, review: ReviewInput): Review
 }
 
 enum Episode {
@@ -64,6 +69,18 @@ type Droid implements Character {
 
 union SearchResult = Human | Droid | Starship
 
+type Review {
+  id: ID!
+  stars: Int!
+  commentary: String
+}
+
+input ReviewInput {
+  stars: Int!
+  commentary: String
+}
+
+scalar DateTime
 """
 
     //-------------------------------------------------
@@ -78,6 +95,7 @@ union SearchResult = Human | Droid | Starship
 # over a number of lines
 schema {
   query: QueryType
+  mutation: Mutation
 }
 
 type QueryType {
@@ -85,6 +103,10 @@ type QueryType {
   hero(episode: Episode): Character
   human(id: String): Human
   droid(id: ID!): Droid
+}
+
+type Mutation {
+  createReview(episode: Episode, review: ReviewInput): Review
 }
 
 enum Episode {
@@ -117,6 +139,19 @@ type Droid implements Character {
 }
 
 union SearchResult = Human | Droid | Starship
+
+type Review {
+  id: ID!
+  stars: Int!
+  commentary: String
+}
+
+input ReviewInput {
+  stars: Int!
+  commentary: String
+}
+
+scalar DateTime
 """
     }
 
@@ -130,6 +165,7 @@ union SearchResult = Human | Droid | Starship
 # over a number of lines
 schema {
   query: QueryType
+  mutation: Mutation
 }"""
     }
 
@@ -343,6 +379,26 @@ query NullEpisodeQuery {
 }
 '''
     }
+//-------------------------------------------------
+    def "ast printing of empty string"() {
+        def query = '''
+query NullEpisodeQuery {
+  human(id: "") {
+    name
+  }
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''query NullEpisodeQuery {
+  human(id: "") {
+    name
+  }
+}
+'''
+    }
 
     //-------------------------------------------------
     def "ast printing of default variables with null"() {
@@ -399,6 +455,5 @@ type Query {
 '''
 
     }
-
 
 }

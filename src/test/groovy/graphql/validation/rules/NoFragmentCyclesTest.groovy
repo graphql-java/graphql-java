@@ -3,7 +3,11 @@ package graphql.validation.rules
 import graphql.TestUtil
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.*
+import graphql.validation.LanguageTraversal
+import graphql.validation.RulesVisitor
+import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
+import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class NoFragmentCyclesTest extends Specification {
@@ -14,9 +18,9 @@ class NoFragmentCyclesTest extends Specification {
         Document document = new Parser().parseDocument(query)
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
         NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, errorCollector)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
+        LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noFragmentCycles]));
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noFragmentCycles]))
     }
 
     def 'single reference is valid'() {

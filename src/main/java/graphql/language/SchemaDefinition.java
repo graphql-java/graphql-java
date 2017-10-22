@@ -8,8 +8,8 @@ import java.util.Map;
 import static graphql.language.NodeUtil.directivesByName;
 
 public class SchemaDefinition extends AbstractNode implements Definition {
-    private List<Directive> directives = new ArrayList<>();
-    private List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
+    private final List<Directive> directives = new ArrayList<>();
+    private final List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
 
     public SchemaDefinition() {
     }

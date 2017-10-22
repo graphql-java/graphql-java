@@ -32,10 +32,10 @@ class RelaySchemaTest extends Specification {
                     }
                     """
         when:
-        def result = GraphQL.newGraphQL(RelaySchema.Schema).build().execute(query);
+        def result = GraphQL.newGraphQL(RelaySchema.Schema).build().execute(query)
 
         then:
-        def nodeField = result.data["__schema"]["queryType"]["fields"][0];
+        def nodeField = result.data["__schema"]["queryType"]["fields"][0]
         nodeField == [name: "node", type: [name: "Node", kind: "INTERFACE"], args: [[name: "id", type: [kind: "NON_NULL", ofType: [name: "ID", kind: "SCALAR"]]]]]
     }
 
@@ -59,10 +59,10 @@ class RelaySchemaTest extends Specification {
                           }
                         }"""
         when:
-        def result = GraphQL.newGraphQL(RelaySchema.Schema).build().execute(query);
+        def result = GraphQL.newGraphQL(RelaySchema.Schema).build().execute(query)
 
         then:
-        def fields = result.data["__type"]["fields"];
+        def fields = result.data["__type"]["fields"]
         fields == [[name: "edges", type: [name: null, kind: "LIST", ofType: [name: "StuffEdge", kind: "OBJECT"]]], [name: "pageInfo", type: [name: null, kind: "NON_NULL", ofType: [name: "PageInfo", kind: "OBJECT"]]]]
     }
 
@@ -86,10 +86,10 @@ class RelaySchemaTest extends Specification {
                         }
                     """
         when:
-        def result = GraphQL.newGraphQL(RelaySchema.Schema).build().execute(query);
+        def result = GraphQL.newGraphQL(RelaySchema.Schema).build().execute(query)
 
         then:
-        def fields = result.data["__type"]["fields"];
+        def fields = result.data["__type"]["fields"]
         fields == [[name: "node", type: [name: "Stuff", kind: "OBJECT", ofType: null]], [name: "cursor", type: [name: null, kind: "NON_NULL", ofType: [name: "String", kind: "SCALAR"]]]]
     }
 

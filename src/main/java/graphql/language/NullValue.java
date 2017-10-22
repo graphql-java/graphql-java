@@ -6,7 +6,7 @@ import java.util.List;
 
 public class NullValue extends AbstractNode implements Value {
 
-    public static NullValue Null = new NullValue();
+    public static final NullValue Null = new NullValue();
 
     private NullValue() {
     }

@@ -1,6 +1,11 @@
 package graphql.schema.validation
 
-import graphql.schema.*
+import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLInputObjectField
+import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLNonNull
+import graphql.schema.GraphQLTypeReference
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean

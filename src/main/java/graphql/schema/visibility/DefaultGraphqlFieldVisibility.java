@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class DefaultGraphqlFieldVisibility implements GraphqlFieldVisibility {
 
-    public static DefaultGraphqlFieldVisibility DEFAULT_FIELD_VISIBILITY = new DefaultGraphqlFieldVisibility();
+    public static final DefaultGraphqlFieldVisibility DEFAULT_FIELD_VISIBILITY = new DefaultGraphqlFieldVisibility();
 
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {

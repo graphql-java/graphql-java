@@ -133,16 +133,20 @@ class ChainedInstrumentationStateTest extends Specification {
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
+                "start:complete-hero",
 
                 "start:execution-strategy",
 
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
+                "start:complete-id",
+                "end:complete-id",
                 "end:field-id",
 
                 "end:execution-strategy",
 
+                "end:complete-hero",
                 "end:field-hero",
 
                 "end:execution-strategy",
@@ -172,6 +176,32 @@ class ChainedInstrumentationStateTest extends Specification {
         assertCalls(a)
         assertCalls(b)
         assertCalls(c)
+
+    }
+
+    def "empty chain"() {
+        def chainedInstrumentation = new ChainedInstrumentation(Arrays.asList())
+
+        def query = """
+        query HeroNameAndFriendsQuery {
+            hero {
+                id
+            }
+        }
+        """
+
+        when:
+        def strategy = new AsyncExecutionStrategy()
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(strategy)
+                .instrumentation(chainedInstrumentation)
+                .build()
+
+        graphQL.execute(query)
+
+        then:
+        noExceptionThrown()
 
     }
 

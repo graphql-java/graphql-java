@@ -3,7 +3,12 @@ package graphql.validation.rules;
 
 import graphql.language.Argument;
 import graphql.schema.GraphQLArgument;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ArgumentValidationUtil;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 public class ArgumentsOfCorrectType extends AbstractRule {
 

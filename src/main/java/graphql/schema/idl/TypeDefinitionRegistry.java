@@ -67,10 +67,10 @@ public class TypeDefinitionRegistry {
         this.scalarTypes.putAll(tempScalarTypes);
         //
         // merge type extensions since they can be redefined by design
-        typeRegistry.typeExtensions.entrySet().forEach(newEntry -> {
+        typeRegistry.typeExtensions.forEach((key, value) -> {
             List<TypeExtensionDefinition> currentList = this.typeExtensions
-                    .computeIfAbsent(newEntry.getKey(), k -> new ArrayList<>());
-            currentList.addAll(newEntry.getValue());
+                    .computeIfAbsent(key, k -> new ArrayList<>());
+            currentList.addAll(value);
         });
 
         return this;

@@ -28,10 +28,15 @@ public class TypeResolutionEnvironment {
     }
 
     /**
-     * @return the object that needs to be resolved into a specific graphql type
+     * You will be passed the specific source object that needs to be resolve into a concrete graphql object type
+     *
+     * @param <T> you decide what type it is
+     *
+     * @return the object that needs to be resolved into a specific graphql object type
      */
-    public Object getObject() {
-        return object;
+    @SuppressWarnings("unchecked")
+    public <T> T getObject() {
+        return (T) object;
     }
 
     /**

@@ -216,16 +216,22 @@ public class ReadmeExamples {
 
     }
 
-    class Episode {
+    static class EpisodeInput {
 
+        public static EpisodeInput fromMap(Map<String, Object> episodeInput) {
+            return null;
+        }
     }
 
-    class ReviewInput {
+    static class ReviewInput {
+        public static ReviewInput fromMap(Map<String, Object> reviewInput) {
+            return null;
+        }
 
     }
 
     class ReviewStore {
-        Review update(Episode episode, ReviewInput reviewInput) {
+        Review update(EpisodeInput episodeInput, ReviewInput reviewInput) {
             return null;
         }
     }
@@ -289,11 +295,24 @@ public class ReadmeExamples {
         return new DataFetcher() {
             @Override
             public Review get(DataFetchingEnvironment environment) {
-                Episode episode = environment.getArgument("episode");
-                ReviewInput review = environment.getArgument("review");
+                //
+                // The graphql specification dictates that input object arguments MUST
+                // be maps.  You can convert them to POJOs inside the data fetcher if that
+                // suits your code better
+                //
+                // See http://facebook.github.io/graphql/October2016/#sec-Input-Objects
+                //
+                Map<String, Object> episodeInputMap = environment.getArgument("episode");
+                Map<String, Object> reviewInputMap = environment.getArgument("review");
+
+                //
+                // in this case we have type safe Java objects to call our backing code with
+                //
+                EpisodeInput episodeInput = EpisodeInput.fromMap(episodeInputMap);
+                ReviewInput reviewInput = ReviewInput.fromMap(reviewInputMap);
 
                 // make a call to your store to mutate your database
-                Review updatedReview = reviewStore().update(episode, review);
+                Review updatedReview = reviewStore().update(episodeInput, reviewInput);
 
                 // this returns a new view of the data
                 return updatedReview;

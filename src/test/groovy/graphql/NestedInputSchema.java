@@ -1,14 +1,14 @@
 package graphql;
 
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+
 import java.util.Map;
+
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLInt;
 
@@ -25,6 +25,7 @@ public class NestedInputSchema {
                 .build();
     }
 
+    @SuppressWarnings("unchecked")
     public static GraphQLObjectType rootType() {
         return GraphQLObjectType.newObject()
 
@@ -38,9 +39,9 @@ public class NestedInputSchema {
                             if (filter != null) {
                                 if (filter.containsKey("even")) {
                                     Boolean even = (Boolean) filter.get("even");
-                                    if (even && (initialValue%2 != 0)) {
+                                    if (even && (initialValue % 2 != 0)) {
                                         return 0;
-                                    } else if (!even && (initialValue%2 == 0)) {
+                                    } else if (!even && (initialValue % 2 == 0)) {
                                         return 0;
                                     }
                                 }

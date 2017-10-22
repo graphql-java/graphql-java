@@ -55,20 +55,8 @@ import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
  * a String value being coerced as an Int.
  * </li>
  *
- * <li>{@link graphql.schema.CoercingParseValueException} - is thrown when a value cannot be parsed by a Scalar type, for example
- * a String input value being parsed as an Int.
- * </li>
- *
  * <li>{@link graphql.execution.UnresolvedTypeException} - is thrown if a {@link graphql.schema.TypeResolver} fails to provide a concrete
  * object type given a interface or union type.
- * </li>
- *
- * <li>{@link graphql.execution.NonNullableValueCoercedAsNullException} - is thrown if a non null variable argument is coerced as a
- * null value during execution.
- * </li>
- *
- * <li>{@link graphql.execution.InputMapDefinesTooManyFieldsException} - is thrown if a map used for an input type object contains
- * more keys than is defined in that input type.
  * </li>
  *
  * <li>{@link graphql.schema.validation.InvalidSchemaException} - is thrown if the schema is not valid when built via
@@ -465,7 +453,10 @@ public class GraphQL {
 
             InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
             InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(instrumentationParameters);
-            CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, instrumentationState);
+
+            GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters);
+
+            CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, graphQLSchema, instrumentationState);
             //
             // finish up instrumentation
             executionResult = executionResult.whenComplete(executionInstrumentation::onEnd);
@@ -483,19 +474,19 @@ public class GraphQL {
     }
 
 
-    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, InstrumentationState instrumentationState) {
-        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, instrumentationState));
+    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, graphQLSchema, instrumentationState));
 
         if (preparsedDoc.hasErrors()) {
             return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
         }
 
-        return execute(executionInput, preparsedDoc.getDocument(), instrumentationState);
+        return execute(executionInput, preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
     }
 
-    private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, InstrumentationState instrumentationState) {
+    private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         log.debug("Parsing query: '{}'...", executionInput.getQuery());
-        ParseResult parseResult = parse(executionInput, instrumentationState);
+        ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
             log.error("Query failed to parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
@@ -503,7 +494,7 @@ public class GraphQL {
             final Document document = parseResult.getDocument();
 
             log.debug("Validating query: '{}'", executionInput.getQuery());
-            final List<ValidationError> errors = validate(executionInput, document, instrumentationState);
+            final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
             if (!errors.isEmpty()) {
                 log.error("Query failed to validate : '{}'", executionInput.getQuery());
                 return new PreparsedDocumentEntry(errors);
@@ -513,8 +504,8 @@ public class GraphQL {
         }
     }
 
-    private ParseResult parse(ExecutionInput executionInput, InstrumentationState instrumentationState) {
-        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState));
+    private ParseResult parse(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(new InstrumentationExecutionParameters(executionInput, graphQLSchema, instrumentationState));
 
         Parser parser = new Parser();
         Document document;
@@ -529,8 +520,8 @@ public class GraphQL {
         return ParseResult.of(document);
     }
 
-    private List<ValidationError> validate(ExecutionInput executionInput, Document document, InstrumentationState instrumentationState) {
-        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, this.graphQLSchema, instrumentationState));
+    private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState));
 
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
@@ -539,7 +530,7 @@ public class GraphQL {
         return validationErrors;
     }
 
-    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, InstrumentationState instrumentationState) {
+    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         String query = executionInput.getQuery();
         String operationName = executionInput.getOperationName();
         Object context = executionInput.getContext();

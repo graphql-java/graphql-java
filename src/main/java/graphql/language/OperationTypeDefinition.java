@@ -8,7 +8,7 @@ import java.util.List;
 
 @Internal
 public class OperationTypeDefinition extends AbstractNode {
-    private String name;
+    private final String name;
     private Type type;
 
     public OperationTypeDefinition() {
