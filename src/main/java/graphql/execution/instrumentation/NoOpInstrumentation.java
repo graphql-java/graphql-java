@@ -2,13 +2,17 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
 import graphql.PublicApi;
+import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
 import java.util.List;
@@ -62,6 +66,41 @@ public class NoOpInstrumentation implements Instrumentation {
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         return new NoOpInstrumentationContext<>();
+    }
+
+    @Override
+    public InstrumentationState createState() {
+        return null;
+    }
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
+        return new NoOpInstrumentationContext<>();
+    }
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
+        return new NoOpInstrumentationContext<>();
+    }
+
+    @Override
+    public GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
+        return schema;
+    }
+
+    @Override
+    public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
+        return executionContext;
+    }
+
+    @Override
+    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+        return dataFetcher;
+    }
+
+    @Override
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        return CompletableFuture.completedFuture(executionResult);
     }
 
     public static class NoOpInstrumentationContext<T> implements InstrumentationContext<T> {
