@@ -5,7 +5,7 @@ import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionContextBuilder
 import graphql.execution.ExecutionId
 import graphql.execution.instrumentation.InstrumentationContext
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
@@ -45,7 +45,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         ExecutionContext executionContext = ExecutionContextBuilder.newInstance()
                 .executionId(ExecutionId.generate())
                 .instrumentationState(dispatcher.createState()).build()
-        InstrumentationFieldParameters parameters = new InstrumentationFieldParameters(executionContext, null, null)
+        InstrumentationFieldCompleteParameters parameters = new InstrumentationFieldCompleteParameters(executionContext, null, null, null)
         InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginCompleteField(parameters)
 
         // cause some activity
@@ -76,7 +76,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         ExecutionContext executionContext = ExecutionContextBuilder.newInstance()
                 .executionId(ExecutionId.generate())
                 .instrumentationState(dispatcher.createState()).build()
-        InstrumentationFieldParameters parameters = new InstrumentationFieldParameters(executionContext, null, null)
+        InstrumentationFieldCompleteParameters parameters = new InstrumentationFieldCompleteParameters(executionContext, null, null, null)
         InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginCompleteField(parameters)
 
         // cause some activity
