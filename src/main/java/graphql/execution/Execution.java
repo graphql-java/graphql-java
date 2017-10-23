@@ -95,11 +95,13 @@ public class Execution {
                 executionInput, graphQLSchema, instrumentationState
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
-        return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
+        return executeOperation(executionContext, parameters, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
 
-    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
+    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, InstrumentationExecutionParameters instrumentationExecutionParameters, Object root, OperationDefinition operationDefinition) {
+
+        InstrumentationContext<CompletableFuture<ExecutionResult>> executionDispatchCtx = instrumentation.beginExecutionDispatch(instrumentationExecutionParameters);
 
         InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(new InstrumentationDataFetchParameters(executionContext));
 
@@ -112,7 +114,9 @@ public class Execution {
         // for the record earlier code has asserted that we have a query type in the schema since the spec says this is
         // ALWAYS required
         if (operation == MUTATION && operationRootType == null) {
-            return completedFuture(new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError())));
+            CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError())));
+            executionDispatchCtx.onEnd(resultCompletableFuture, null);
+            return resultCompletableFuture;
         }
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
@@ -160,6 +164,8 @@ public class Execution {
         }
 
         result = result.whenComplete(dataFetchCtx::onEnd);
+
+        executionDispatchCtx.onEnd(result, null);
 
         return result;
     }

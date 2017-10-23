@@ -46,10 +46,12 @@ class InstrumentationTest extends Specification {
                 "start:validation",
                 "end:validation",
 
+                "start:execution-dispatch",
                 "start:data-fetch",
 
                 "start:execution-strategy",
 
+                "start:fields",
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
@@ -58,22 +60,26 @@ class InstrumentationTest extends Specification {
 
                 "start:execution-strategy",
 
+                "start:fields",
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
                 "end:complete-id",
                 "end:field-id",
+                "end:fields",
 
                 "end:execution-strategy",
 
                 "end:complete-hero",
                 "end:field-hero",
+                "end:fields",
 
                 "end:execution-strategy",
 
                 "end:data-fetch",
 
+                "end:execution-dispatch",
                 "end:execution",
         ]
         when:
@@ -126,6 +132,7 @@ class InstrumentationTest extends Specification {
                 "end:parse",
                 "start:validation",
                 "end:validation",
+                "start:execution-dispatch",
                 "start:data-fetch",
                 "start:execution-strategy",
 
@@ -141,6 +148,7 @@ class InstrumentationTest extends Specification {
 
                 "end:execution-strategy",
                 "end:data-fetch",
+                "end:execution-dispatch",
                 "end:execution",
         ]
         when:

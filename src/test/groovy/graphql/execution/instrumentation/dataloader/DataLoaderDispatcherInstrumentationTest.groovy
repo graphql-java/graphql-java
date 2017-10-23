@@ -1,10 +1,13 @@
 package graphql.execution.instrumentation.dataloader
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionContextBuilder
 import graphql.execution.ExecutionId
 import graphql.execution.instrumentation.InstrumentationContext
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
@@ -42,11 +45,11 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
                 .register("c", dlC)
 
         DataLoaderDispatcherInstrumentation dispatcher = new DataLoaderDispatcherInstrumentation(registry)
-        ExecutionContext executionContext = ExecutionContextBuilder.newInstance()
-                .executionId(ExecutionId.generate())
-                .instrumentationState(dispatcher.createState()).build()
-        InstrumentationFieldCompleteParameters parameters = new InstrumentationFieldCompleteParameters(executionContext, null, null, null)
-        InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginCompleteField(parameters)
+        def instrumentationState = dispatcher.createState()
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query("{x}").build()
+        InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(executionInput, null, instrumentationState)
+        InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginExecutionDispatch(parameters)
 
         // cause some activity
         dlA.load("A")
@@ -62,29 +65,5 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
 
         // will be [[A],[B],[C]]
         assert batchLoader.loadedKeys == [["A"], ["B"], ["C"]]
-    }
-
-    void exceptions_wont_cause_dispatches() throws Exception {
-        given:
-        final CountingLoader batchLoader = new CountingLoader()
-
-        DataLoader<Object, Object> dlA = new DataLoader<>(batchLoader)
-        DataLoaderRegistry registry = new DataLoaderRegistry()
-                .register("a", dlA)
-
-        DataLoaderDispatcherInstrumentation dispatcher = new DataLoaderDispatcherInstrumentation(registry)
-        ExecutionContext executionContext = ExecutionContextBuilder.newInstance()
-                .executionId(ExecutionId.generate())
-                .instrumentationState(dispatcher.createState()).build()
-        InstrumentationFieldCompleteParameters parameters = new InstrumentationFieldCompleteParameters(executionContext, null, null, null)
-        InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginCompleteField(parameters)
-
-        // cause some activity
-        dlA.load("A")
-
-        context.onEnd(null, new RuntimeException("Should not run"))
-
-        expect:
-        assert batchLoader.invocationCount == 0
     }
 }

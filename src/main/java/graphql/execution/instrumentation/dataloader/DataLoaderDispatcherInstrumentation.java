@@ -8,17 +8,23 @@ import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.language.Field;
+import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.dataloader.stats.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * This graphql {@link graphql.execution.instrumentation.Instrumentation} will dispatch
@@ -62,35 +68,61 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
 
 
     /**
-     * We need to become stateful about whether we are in a list or not and this is represented
-     * by this call stack.
+     * We need to become stateful about whether we are in a list or not  as well as keep a queue of
+     * barrier promises that cause dispatching to happen  when we want it to.
      */
     private static class CallStack implements InstrumentationState {
-        private final Stack<Boolean> stack = new Stack<>();
+        private final Deque<Boolean> stack = new ArrayDeque<>();
+        private final Deque<CompletableFuture<Object>> barrierPromises = new ArrayDeque<>();
 
-        void enterList() {
-            stack.push(true);
-        }
-
-        void exit() {
-            if (!stack.isEmpty()) {
-                stack.pop();
+        private void enterList() {
+            synchronized (this) {
+                stack.push(true);
             }
         }
 
-        boolean inList() {
-            if (stack.isEmpty()) {
-                return false;
-            } else {
-                return stack.peek();
+        private void exitList() {
+            synchronized (this) {
+                if (!stack.isEmpty()) {
+                    stack.pop();
+                }
+            }
+        }
+
+        private boolean isInList() {
+            synchronized (this) {
+                if (stack.isEmpty()) {
+                    return false;
+                } else {
+                    return stack.peek();
+                }
+            }
+        }
+
+        private CompletableFuture<Object> raiseBarrierPromise() {
+            CompletableFuture<Object> barrierCF = new CompletableFuture<>();
+            synchronized (this) {
+                barrierPromises.push(barrierCF);
+            }
+            return barrierCF;
+        }
+
+        private void lowerBarrierPromises() {
+            synchronized (this) {
+                while (!barrierPromises.isEmpty()) {
+                    CompletableFuture<Object> future = barrierPromises.pop();
+                    // any value will do we throw it away later anyway
+                    future.complete(this);
+                }
             }
         }
 
         @Override
         public String toString() {
-            return "inList=" + inList();
+            return "isInList=" + isInList() + "; barrierSize=" + barrierPromises.size();
         }
     }
+
 
     @Override
     public InstrumentationState createState() {
@@ -102,28 +134,62 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
         dataLoaderRegistry.dispatchAll();
     }
 
+
+    private void dispatchAndLowerBarriers(CallStack callStack) {
+        //
+        // we are now ready.  Make the dataloader dispatch their calls so that multiple key loads
+        // will be coalesced into fewer batch calls
+        //
+        dispatch();
+        //
+        // lower the barriers so these dataloader calls can actually complete
+        //
+        callStack.lowerBarrierPromises();
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        return (result, t) -> {
-            if (t == null) {
-                // only dispatch when there are no errors
-                if (!callStack.inList()) {
-                    dispatch();
-                }
+        return (DataFetcher<Object>) environment -> {
+            //
+            // this will hold up any actual dispatching until we are ready, allowing us to be as efficient
+            // as we can
+            //
+            Object result = dataFetcher.get(environment);
+            if (!(result instanceof CompletionStage)) {
+                //
+                // if the value is a POJO then there is no need to wrap it in a barrier CF
+                // since its already resolved.  This is a minor optimisation in how many barriers
+                // we lower later
+                return result;
             }
+            CompletableFuture<Object> realValue = ((CompletionStage<Object>) result).toCompletableFuture();
+
+            //
+            // we use an uncompleted CF to hold up the resolution of the actual value
+            // until we decide its optimal to make that happen
+            //
+            CompletableFuture<Object> barrierCF = callStack.raiseBarrierPromise();
+            //
+            // later this CF will be completed and we make it use the underlying real value at that time
+            //
+            return barrierCF.thenCompose(ignored -> realValue);
         };
     }
 
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionDispatch(InstrumentationExecutionParameters parameters) {
+        CallStack callStack = parameters.getInstrumentationState();
+        return (result, t) -> dispatchAndLowerBarriers(callStack);
+    }
+
+    @Override
+    public InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
         return (result, t) -> {
-            if (t == null) {
-                // only dispatch when there are no errors
-                if (!callStack.inList()) {
-                    dispatch();
-                }
+            if (!callStack.isInList()) {
+                dispatchAndLowerBarriers(callStack);
             }
         };
     }
@@ -135,12 +201,16 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
 
        https://github.com/graphql-java/graphql-java/issues/760
      */
-
     @Override
     public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
         callStack.enterList();
-        return (result, t) -> callStack.exit();
+        return (result, t) -> {
+            callStack.exitList();
+            if (!callStack.isInList()) {
+                dispatchAndLowerBarriers(callStack);
+            }
+        };
     }
 
     @Override

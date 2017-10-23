@@ -12,6 +12,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
+import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -100,6 +101,26 @@ public class ChainedInstrumentation implements Instrumentation {
                 .map(instrumentation -> {
                     InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
                     return instrumentation.beginExecutionStrategy(parameters.withNewState(state));
+                })
+                .collect(toList()));
+    }
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionDispatch(InstrumentationExecutionParameters parameters) {
+        return new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginExecutionDispatch(parameters.withNewState(state));
+                })
+                .collect(toList()));
+    }
+
+    @Override
+    public InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
+        return new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginFields(parameters.withNewState(state));
                 })
                 .collect(toList()));
     }

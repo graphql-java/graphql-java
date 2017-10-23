@@ -69,7 +69,7 @@ class DataLoaderPerformanceTest extends Specification {
         then:
         result.data == expectedData
         //
-        // 1 per level, eg 1 for shops-->departments and one for departments --> products
+        //  eg 1 for shops-->departments and one for departments --> products
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }

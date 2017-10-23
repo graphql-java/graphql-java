@@ -36,7 +36,8 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         type Product { 
           id: Int! 
           name: String! 
-          suppliedBy: Person! 
+          suppliedBy: Person!
+          madeBy: [Person] 
         } 
         type QueryType { 
           products: [Product!]! 
@@ -90,8 +91,12 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         DataFetcher productsDF = new DataFetcher() {
             @Override
             Object get(DataFetchingEnvironment environment) {
-                return IntStream.rangeClosed(0, 99)
-                        .mapToObj({ id -> new Product(id.toString(), faker.commerce().productName(), id + 200) })
+                return IntStream.range(0, 5)
+                        .mapToObj(
+                        { id ->
+                            List<Integer> madeBy = [id*10001, id*10002, id*10003, id*10004, id*10005]
+                            new Product(id.toString(), faker.commerce().productName(), id + 200, madeBy)
+                        })
                         .collect(Collectors.toList())
             }
         }
@@ -101,6 +106,14 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
             Object get(DataFetchingEnvironment environment) {
                 Product source = environment.getSource()
                 return personDataLoader.load(source.getSuppliedById())
+            }
+        }
+
+        DataFetcher madeByDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                Product source = environment.getSource()
+                return personDataLoader.loadMany(source.getMadeByIds())
             }
         }
 
@@ -116,6 +129,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         RuntimeWiring runtimeWiring = newRuntimeWiring()
                 .type("QueryType", { builder -> builder.dataFetcher("products", productsDF) })
                 .type("Product", { builder -> builder.dataFetcher("suppliedBy", suppliedByDF) })
+                .type("Product", { builder -> builder.dataFetcher("madeBy", madeByDF) })
                 .type("Person", { builder -> builder.dataFetcher("company", companyDF) })
                 .build()
 
@@ -138,6 +152,14 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
                         name 
                     } 
                 } 
+                madeBy { 
+                    id 
+                    name 
+                    company { 
+                        id 
+                        name 
+                    } 
+                } 
             } 
         }
         """)
@@ -145,14 +167,13 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         then:
 
         executionResult.data != null
-        personBatchLoadKeyCount == 100
+
+        personBatchLoadKeyCount == 26
         personBatchLoadInvocationCount == 1
 
-        companyBatchLoadKeyCount == 100
-        //
-        // ideally we get this down to 1 but at the moment its 100.  We need to work on this
-        //companyBatchLoadInvocationCount == 1
-        companyBatchLoadInvocationCount == 100
+        companyBatchLoadKeyCount == 26
+
+        companyBatchLoadInvocationCount == 10
 
     }
 }
