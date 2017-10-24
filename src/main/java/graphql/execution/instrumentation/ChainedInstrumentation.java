@@ -106,11 +106,11 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionDispatch(InstrumentationExecutionParameters parameters) {
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
         return new ChainedInstrumentationContext<>(instrumentations.stream()
                 .map(instrumentation -> {
                     InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-                    return instrumentation.beginExecutionDispatch(parameters.withNewState(state));
+                    return instrumentation.beginDataFetchDispatch(parameters.withNewState(state));
                 })
                 .collect(toList()));
     }

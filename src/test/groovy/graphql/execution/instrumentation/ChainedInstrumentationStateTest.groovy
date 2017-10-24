@@ -126,7 +126,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "start:validation",
                 "end:validation",
 
-                "start:execution-dispatch",
+                "start:data-fetch-dispatch",
 
                 "start:data-fetch",
 
@@ -158,7 +158,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:execution-strategy",
 
                 "end:data-fetch",
-                "end:execution-dispatch",
+                "end:data-fetch-dispatch",
 
                 "end:execution",
         ]

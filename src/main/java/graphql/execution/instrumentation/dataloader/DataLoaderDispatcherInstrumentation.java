@@ -2,13 +2,18 @@ package graphql.execution.instrumentation.dataloader;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.execution.AsyncExecutionStrategy;
+import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.language.Field;
+import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.dataloader.stats.Statistics;
@@ -68,7 +73,16 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
      * We need to become stateful about whether we are in a list or not
      */
     private static class CallStack implements InstrumentationState {
+        private boolean aggressivelyBatching = true;
         private final Deque<Boolean> stack = new ArrayDeque<>();
+
+        private boolean isAggressivelyBatching() {
+            return aggressivelyBatching;
+        }
+
+        private void setAggressivelyBatching(boolean aggressivelyBatching) {
+            this.aggressivelyBatching = aggressivelyBatching;
+        }
 
         private void enterList() {
             synchronized (this) {
@@ -111,20 +125,48 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
         dataLoaderRegistry.dispatchAll();
     }
 
+    private void dispatchIfNeeded(CallStack callStack) {
+        if (!callStack.isInList()) {
+            dispatch();
+        }
+    }
 
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionDispatch(InstrumentationExecutionParameters parameters) {
+    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+        CallStack callStack = parameters.getInstrumentationState();
+        if (callStack.isAggressivelyBatching()) {
+            return dataFetcher;
+        }
+        //
+        // currently only AsyncExecutionStrategy with DataLoader and hence this allows us to "dispatch"
+        // on every object if its not using aggressive batching for other execution strategies
+        // which allows them to work if used.
+        return (DataFetcher<Object>) environment -> {
+            Object obj = dataFetcher.get(environment);
+            dispatch();
+            return obj;
+        };
+    }
+
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
+        ExecutionStrategy queryStrategy = parameters.getExecutionContext().getQueryStrategy();
+        if (!(queryStrategy instanceof AsyncExecutionStrategy)) {
+            CallStack callStack = parameters.getInstrumentationState();
+            callStack.setAggressivelyBatching(false);
+        }
         return (result, t) -> dispatch();
+    }
+
+    @Override
+    public InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
+        return super.beginDataFetch(parameters);
     }
 
     @Override
     public InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        return (result, t) -> {
-            if (!callStack.isInList()) {
-                dispatch();
-            }
-        };
+        return (result, t) -> dispatchIfNeeded(callStack);
     }
 
     /*
@@ -140,9 +182,7 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
         callStack.enterList();
         return (result, t) -> {
             callStack.exitList();
-            if (!callStack.isInList()) {
-                dispatch();
-            }
+            dispatchIfNeeded(callStack);
         };
     }
 

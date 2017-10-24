@@ -19,7 +19,7 @@ class PreparsedDocumentProviderTest extends Specification {
 
                 "start:validation",
                 "end:validation",
-                "start:execution-dispatch",
+                "start:data-fetch-dispatch",
 
                 "start:data-fetch",
 
@@ -51,7 +51,7 @@ class PreparsedDocumentProviderTest extends Specification {
                 "end:execution-strategy",
 
                 "end:data-fetch",
-                "end:execution-dispatch",
+                "end:data-fetch-dispatch",
                 "end:execution",
         ]
         given:
@@ -68,7 +68,7 @@ class PreparsedDocumentProviderTest extends Specification {
         def expectedPreparsed = [
                 "start:execution",
 
-                "start:execution-dispatch",
+                "start:data-fetch-dispatch",
                 "start:data-fetch",
                 "start:execution-strategy",
 
@@ -97,7 +97,7 @@ class PreparsedDocumentProviderTest extends Specification {
 
                 "end:data-fetch",
 
-                "end:execution-dispatch",
+                "end:data-fetch-dispatch",
                 "end:execution",
         ]
 

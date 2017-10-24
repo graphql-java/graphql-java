@@ -51,20 +51,6 @@ public interface Instrumentation {
     InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters);
 
     /**
-     * This is called just before a query is executed and finishes as soon as the query is dispatched ready for completion.  This
-     * is different to {@link #beginExecution(graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters)}
-     * in that this step does not wait for the values to be completed, only dispatched for completion.
-     *
-     * @param parameters the parameters to this step
-     *
-     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     */
-    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionDispatch(InstrumentationExecutionParameters parameters) {
-        return (result, t) -> {
-        };
-    }
-
-    /**
      * This is called just before a query is parsed and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
@@ -85,7 +71,21 @@ public interface Instrumentation {
     InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters);
 
     /**
-     * This is called just before the data fetch is started and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
+     * This is called just before the data fetching stage is started and finishes as soon as the query is dispatched ready for completion.  This
+     * is different to {@link #beginDataFetch(graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters)}
+     * in that this step does not wait for the values to be completed, only dispatched for completion.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
+        return (result, t) -> {
+        };
+    }
+
+    /**
+     * This is called just before the data fetching stage is started, waits for all data to be completed and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step

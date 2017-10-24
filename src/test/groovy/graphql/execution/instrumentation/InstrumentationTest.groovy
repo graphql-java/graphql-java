@@ -46,7 +46,7 @@ class InstrumentationTest extends Specification {
                 "start:validation",
                 "end:validation",
 
-                "start:execution-dispatch",
+                "start:data-fetch-dispatch",
                 "start:data-fetch",
 
                 "start:execution-strategy",
@@ -79,7 +79,7 @@ class InstrumentationTest extends Specification {
 
                 "end:data-fetch",
 
-                "end:execution-dispatch",
+                "end:data-fetch-dispatch",
                 "end:execution",
         ]
         when:
@@ -132,7 +132,7 @@ class InstrumentationTest extends Specification {
                 "end:parse",
                 "start:validation",
                 "end:validation",
-                "start:execution-dispatch",
+                "start:data-fetch-dispatch",
                 "start:data-fetch",
                 "start:execution-strategy",
 
@@ -148,7 +148,7 @@ class InstrumentationTest extends Specification {
 
                 "end:execution-strategy",
                 "end:data-fetch",
-                "end:execution-dispatch",
+                "end:data-fetch-dispatch",
                 "end:execution",
         ]
         when:

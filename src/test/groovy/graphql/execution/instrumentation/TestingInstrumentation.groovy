@@ -56,9 +56,9 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionDispatch(InstrumentationExecutionParameters parameters) {
+    InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("execution-dispatch", executionList, throwableList)
+        return new TestingInstrumentContext("data-fetch-dispatch", executionList, throwableList)
     }
 
     @Override

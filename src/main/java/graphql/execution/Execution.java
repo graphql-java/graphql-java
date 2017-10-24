@@ -101,9 +101,9 @@ public class Execution {
 
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, InstrumentationExecutionParameters instrumentationExecutionParameters, Object root, OperationDefinition operationDefinition) {
 
-        InstrumentationContext<CompletableFuture<ExecutionResult>> executionDispatchCtx = instrumentation.beginExecutionDispatch(instrumentationExecutionParameters);
-
-        InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(new InstrumentationDataFetchParameters(executionContext));
+        InstrumentationDataFetchParameters dataFetchParameters = new InstrumentationDataFetchParameters(executionContext);
+        InstrumentationContext<CompletableFuture<ExecutionResult>> executionDispatchCtx = instrumentation.beginDataFetchDispatch(dataFetchParameters);
+        InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(dataFetchParameters);
 
         OperationDefinition.Operation operation = operationDefinition.getOperation();
         GraphQLObjectType operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operation);
@@ -165,6 +165,7 @@ public class Execution {
 
         result = result.whenComplete(dataFetchCtx::onEnd);
 
+        // note this happens NOW - not when the result completes
         executionDispatchCtx.onEnd(result, null);
 
         return result;

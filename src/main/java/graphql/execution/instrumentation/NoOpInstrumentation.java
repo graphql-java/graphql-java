@@ -51,7 +51,7 @@ public class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionDispatch(InstrumentationExecutionParameters parameters) {
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
         return new NoOpInstrumentationContext<>();
     }
 

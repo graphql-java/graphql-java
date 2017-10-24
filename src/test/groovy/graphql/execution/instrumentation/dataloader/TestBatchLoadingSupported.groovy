@@ -4,6 +4,9 @@ import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.StarWarsData
 import graphql.TypeResolutionEnvironment
+import graphql.execution.AsyncSerialExecutionStrategy
+import graphql.execution.ExecutorServiceExecutionStrategy
+import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLObjectType
@@ -14,9 +17,11 @@ import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.ForkJoinPool
 import java.util.stream.Collectors
 
 import static graphql.TestUtil.schemaFile
@@ -149,16 +154,7 @@ class TestBatchLoadingSupported extends Specification {
     def schema = schemaFile("starWarsSchema.graphqls", starWarsWiring())
 
 
-    def "basic batch loading is possible via instrumentation interception of Execution Strategies"() {
-
-        given:
-        def dlRegistry = new DataLoaderRegistry().register("characters", characterDataLoader)
-        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(dlRegistry)
-
-        def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
-
-        when:
-        def query = """
+    def query = """
         query {
             hero {
                 name 
@@ -171,6 +167,16 @@ class TestBatchLoadingSupported extends Specification {
             }
         }
         """
+
+    def "basic batch loading is possible via instrumentation interception of Execution Strategies"() {
+
+        given:
+        def dlRegistry = new DataLoaderRegistry().register("characters", characterDataLoader)
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(dlRegistry)
+
+        def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
+
+        when:
 
         def asyncResult = graphql.executeAsync(ExecutionInput.newExecutionInput().query(query))
 
@@ -197,6 +203,44 @@ class TestBatchLoadingSupported extends Specification {
         // if we didn't have batch loading it would have these many character load calls
         naiveLoadCount == 15
     }
+
+    @Unroll
+    def "ensure  DataLoaderDispatcherInstrumentation works for  #name"() {
+
+        given:
+        def dlRegistry = new DataLoaderRegistry().register("characters", characterDataLoader)
+
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(dlRegistry)
+
+        def graphql = GraphQL.newGraphQL(schema)
+                .queryExecutionStrategy(executionStrategy)
+                .instrumentation(batchingInstrumentation).build()
+
+        when:
+
+        def asyncResult = graphql.executeAsync(ExecutionInput.newExecutionInput().query(query))
+
+        def er = asyncResult.join()
+
+        then:
+        er.data == [hero: [name: 'R2-D2', friends: [
+                [name: 'Luke Skywalker', friends: [
+                        [name: 'Han Solo'], [name: 'Leia Organa'], [name: 'C-3PO'], [name: 'R2-D2']]],
+                [name: 'Han Solo', friends: [
+                        [name: 'Luke Skywalker'], [name: 'Leia Organa'], [name: 'R2-D2']]],
+                [name: 'Leia Organa', friends: [
+                        [name: 'Luke Skywalker'], [name: 'Han Solo'], [name: 'C-3PO'], [name: 'R2-D2']]]]]
+        ]
+
+        where:
+        name                               | executionStrategy                                               || _
+        "AsyncExecutionStrategy"           | new AsyncSerialExecutionStrategy()                              || _
+        "AsyncSerialExecutionStrategy"     | new AsyncSerialExecutionStrategy()                              || _
+        "BatchedExecutionStrategy"         | new BatchedExecutionStrategy()                                  || _
+        "ExecutorServiceExecutionStrategy" | new ExecutorServiceExecutionStrategy(ForkJoinPool.commonPool()) || _
+
+    }
+
 
     def "non list queries work as expected"() {
 
