@@ -28,7 +28,7 @@ class PropertyDataFetcherTest extends Specification {
     def "function based fetcher works with non null source"() {
         def environment = env(new SomeObject(value: "aValue"))
         Function<Object, String> f = { obj -> obj['value'] }
-        def fetcher = new PropertyDataFetcher(f)
+        def fetcher = PropertyDataFetcher.fetching(f)
         expect:
         fetcher.get(environment) == "aValue"
     }
@@ -36,14 +36,14 @@ class PropertyDataFetcherTest extends Specification {
     def "function based fetcher works with null source"() {
         def environment = env(null)
         Function<Object, String> f = { obj -> obj['value'] }
-        def fetcher = new PropertyDataFetcher(f)
+        def fetcher = PropertyDataFetcher.fetching(f)
         expect:
         fetcher.get(environment) == null
     }
 
     def "fetch via map lookup"() {
         def environment = env(["mapProperty": "aValue"])
-        def fetcher = new PropertyDataFetcher("mapProperty")
+        def fetcher = PropertyDataFetcher.fetching("mapProperty")
         expect:
         fetcher.get(environment) == "aValue"
     }

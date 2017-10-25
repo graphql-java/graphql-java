@@ -4,6 +4,7 @@ package graphql.schema;
 import graphql.Assert;
 import graphql.GraphQLException;
 import graphql.PublicApi;
+import graphql.schema.idl.TypeRuntimeWiring;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -40,8 +41,36 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         this.function = null;
     }
 
+    @SuppressWarnings("unchecked")
+    private <O> PropertyDataFetcher(Function<O, T> function) {
+        this.function = (Function<Object, Object>) Assert.assertNotNull(function);
+        this.propertyName = null;
+    }
+
     /**
-     * This constructor will present the {@link DataFetchingEnvironment#getSource()} object to the supplied
+     * Returns a data fetcher that will use the property name to examine the {@link DataFetchingEnvironment#getSource()} object
+     * for a getter method or field with that name, or if its a map, it will look up a value using
+     * property name as a key.
+     *
+     * For example :
+     * <pre>
+     * {@code
+     *
+     *      DataFetcher functionDataFetcher = fetching("pojoPropertyName");
+     *
+     * }
+     * </pre>
+     *
+     * @param propertyName the name of the property to retrieve
+     *
+     * @return a new PropertyDataFetcher using the provided function as its source of values
+     */
+    public static <T> PropertyDataFetcher<T> fetching(String propertyName) {
+        return new PropertyDataFetcher<>(propertyName);
+    }
+
+    /**
+     * Returns a data fetcher that will present the {@link DataFetchingEnvironment#getSource()} object to the supplied
      * function to obtain a value, which allows you to use Java 8 method references say obtain values in a
      * more type safe way.
      *
@@ -49,19 +78,20 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
      * <pre>
      * {@code
      *
-     *      DataFetcher functionDataFetcher = new PropertyDataFetcher(Thing::getId);
+     *      DataFetcher functionDataFetcher = fetching(Thing::getId);
      *
      * }
      * </pre>
      *
      * @param function the function to use to obtain a value from the source object
      * @param <O>      the type of the source object
+     *
+     * @return a new PropertyDataFetcher using the provided function as its source of values
      */
-    @SuppressWarnings("unchecked")
-    public <O> PropertyDataFetcher(Function<O, T> function) {
-        this.propertyName = null;
-        this.function = (Function<Object, Object>) Assert.assertNotNull(function);
+    public static <T, O> PropertyDataFetcher<T> fetching(Function<O, T> function) {
+        return new PropertyDataFetcher<>(function);
     }
+
 
     @SuppressWarnings("unchecked")
     @Override
