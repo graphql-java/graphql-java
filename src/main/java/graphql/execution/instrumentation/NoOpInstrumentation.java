@@ -11,11 +11,13 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
+import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -49,6 +51,11 @@ public class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
+        return new NoOpInstrumentationContext<>();
+    }
+
+    @Override
     public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         return new NoOpInstrumentationContext<>();
     }
@@ -75,6 +82,11 @@ public class NoOpInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
+        return new NoOpInstrumentationContext<>();
+    }
+
+    @Override
+    public InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
         return new NoOpInstrumentationContext<>();
     }
 

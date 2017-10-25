@@ -10,6 +10,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
 import graphql.language.Document
+import graphql.language.Field
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLSchema
@@ -55,9 +56,21 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
+    InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
+        assert parameters.getInstrumentationState() == instrumentationState
+        return new TestingInstrumentContext("data-fetch-dispatch", executionList, throwableList)
+    }
+
+    @Override
     InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
         return new TestingInstrumentContext("data-fetch", executionList, throwableList)
+    }
+
+    @Override
+    InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
+        assert parameters.getInstrumentationState() == instrumentationState
+        return new TestingInstrumentContext("fields", executionList, throwableList)
     }
 
     @Override
