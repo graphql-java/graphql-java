@@ -18,13 +18,15 @@ public class TypeResolutionEnvironment {
     private final Field field;
     private final GraphQLType fieldType;
     private final GraphQLSchema schema;
+    private final Object context;
 
-    public TypeResolutionEnvironment(Object object, Map<String, Object> arguments, Field field, GraphQLType fieldType, GraphQLSchema schema) {
+    public TypeResolutionEnvironment(Object object, Map<String, Object> arguments, Field field, GraphQLType fieldType, GraphQLSchema schema, final Object context) {
         this.object = object;
         this.arguments = arguments;
         this.field = field;
         this.fieldType = fieldType;
         this.schema = schema;
+        this.context = context;
     }
 
     /**
@@ -66,5 +68,9 @@ public class TypeResolutionEnvironment {
      */
     public GraphQLSchema getSchema() {
         return schema;
+    }
+
+    public <T> T getContext() {
+        return (T) context;
     }
 }

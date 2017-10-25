@@ -415,6 +415,7 @@ public abstract class ExecutionStrategy {
                     .field(parameters.field().get(0))
                     .value(parameters.source())
                     .argumentValues(parameters.arguments())
+                    .context(executionContext.getContext())
                     .schema(executionContext.getGraphQLSchema()).build();
             resolvedType = resolveTypeForInterface(resolutionParams);
 
@@ -424,6 +425,7 @@ public abstract class ExecutionStrategy {
                     .field(parameters.field().get(0))
                     .value(parameters.source())
                     .argumentValues(parameters.arguments())
+                    .context(executionContext.getContext())
                     .schema(executionContext.getGraphQLSchema()).build();
             resolvedType = resolveTypeForUnion(resolutionParams);
         } else {
@@ -440,7 +442,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLObjectType}
      */
     protected GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
-        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema());
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema(), params.getContext());
         GraphQLObjectType result = params.getGraphQLInterfaceType().getTypeResolver().getType(env);
         if (result == null) {
             throw new UnresolvedTypeException(params.getGraphQLInterfaceType());
@@ -456,7 +458,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLObjectType}
      */
     protected GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
-        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema());
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema(), params.getContext());
         GraphQLObjectType result = params.getGraphQLUnionType().getTypeResolver().getType(env);
         if (result == null) {
             throw new UnresolvedTypeException(params.getGraphQLUnionType());
