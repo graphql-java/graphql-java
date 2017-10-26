@@ -323,17 +323,35 @@ threading strategy you use is up to your data fetcher code.
 The following code uses the standard Java ``java.util.concurrent.ForkJoinPool.commonPool()`` thread executor to supply values in another
 thread.
 
-You can use ``graphql.schema.AsynchronousDataFetcher.async(DataFetcher<T>)`` to wrap a ``DataFetcher`` so that it runs asynchronously.
+.. code-block:: java
 
-This is designed to be used with static imports to produce more readable code.
+        DataFetcher userDataFetcher = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                CompletableFuture<User> userPromise = CompletableFuture.supplyAsync(() -> {
+                    return fetchUserViaHttp(environment.getArgument("userId"));
+                });
+                return userPromise;
+            }
+        };
+
+The code above is written in long form.  With Java 8 lambdas it can be written more succinctly as follows
 
 .. code-block:: java
 
-        GraphQLFieldDefinition.newFieldDefinition()
-                .dataFetcher(async(fooDataFetcher))
+        DataFetcher userDataFetcher = environment -> CompletableFuture.supplyAsync(
+                () -> fetchUserViaHttp(environment.getArgument("userId")));
 
 The graphql-java engine ensures that all the ``CompletableFuture`` objects are composed together to provide an execution result
 that follows the graphql specification.
+
+There is a helpful shortcut in graphql-java to create asynchronous data fetchers. 
+Use ``graphql.schema.AsynchronousDataFetcher.async(DataFetcher<T>)`` to wrap a 
+``DataFetcher``. This can be used with static imports to produce more readable code.
+
+.. code-block:: java
+
+        DataFetcher userDataFetcher = async(environment -> fetchUserViaHttp(environment.getArgument("userId")));
 
 Execution Strategies
 --------------------
