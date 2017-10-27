@@ -345,6 +345,14 @@ The code above is written in long form.  With Java 8 lambdas it can be written m
 The graphql-java engine ensures that all the ``CompletableFuture`` objects are composed together to provide an execution result
 that follows the graphql specification.
 
+There is a helpful shortcut in graphql-java to create asynchronous data fetchers. 
+Use ``graphql.schema.AsynchronousDataFetcher.async(DataFetcher<T>)`` to wrap a 
+``DataFetcher``. This can be used with static imports to produce more readable code.
+
+.. code-block:: java
+
+        DataFetcher userDataFetcher = async(environment -> fetchUserViaHttp(environment.getArgument("userId")));
+
 Execution Strategies
 --------------------
 
