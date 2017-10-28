@@ -4,16 +4,14 @@ import spock.lang.Specification
 
 class SkipAndInclude extends Specification {
 
-    def "@skip and @include"() {
-        when:
-        def schema = TestUtil.schema("""
+    private def graphQL = GraphQL.newGraphQL(TestUtil.schema("""
             type Query {
                 field: Int
             }
-        """)
+        """)).build()
 
-        def graphQL = GraphQL.newGraphQL(schema).build()
-
+    def "@skip and @include"() {
+        when:
         def executionInput = ExecutionInput.newExecutionInput()
                 .query('''
                     query QueryWithSkipAndInclude($skip: Boolean!, $include: Boolean!) {
@@ -26,13 +24,58 @@ class SkipAndInclude extends Specification {
         def executionResult = graphQL.execute(executionInput)
 
         then:
-        ((Map) executionResult.data).containsKey("field") == quaried
+        ((Map) executionResult.data).containsKey("field") == queried
 
         where:
-        skip    | include | quaried
+        skip    | include | queried
         true    | true    | false
         true    | false   | false
         false   | true    | true
         false   | false   | false
+
+    }
+
+    def "@skip"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query('''
+                    query QueryWithSkip($skip: Boolean!) {
+                        field @skip(if: $skip)
+                    }   
+                    ''')
+                .variables([skip: skip])
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        ((Map) executionResult.data).containsKey("field") == queried
+
+        where:
+        skip    | queried
+        true    | false
+        false   | true
+    }
+
+    def "@include"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query('''
+                    query QueryWithInclude($include: Boolean!) {
+                        field @include(if: $include)
+                    }   
+                    ''')
+                .variables([include: include])
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        ((Map) executionResult.data).containsKey("field") == queried
+
+        where:
+        include | queried
+        true    | true
+        false   | false
     }
 }
