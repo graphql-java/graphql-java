@@ -451,6 +451,9 @@ public class GraphQL {
 
             InstrumentationState instrumentationState = instrumentation.createState();
 
+            InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
+            executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters);
+
             InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
             InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(instrumentationParameters);
 

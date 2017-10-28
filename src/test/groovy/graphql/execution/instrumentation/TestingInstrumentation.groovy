@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.execution.ExecutionContext
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
@@ -101,6 +102,12 @@ class TestingInstrumentation implements Instrumentation {
     GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
         return schema
+    }
+
+    @Override
+    ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
+        assert parameters.getInstrumentationState() == instrumentationState
+        return executionInput
     }
 
     @Override
