@@ -1,9 +1,12 @@
 package graphql.execution.instrumentation.export;
 
-import java.util.List;
+import graphql.execution.instrumentation.InstrumentationState;
+
 import java.util.Map;
 
-public interface ExportedVariablesReducer {
+public interface ExportedVariablesCollector extends InstrumentationState {
 
-    Map<String, Object> reduceCollectedVariables(Map<String, List<Object>> collectedVariables);
+    Map<String, Object> getVariables();
+
+    void collect(ExportedVariablesCollectionEnvironment env);
 }

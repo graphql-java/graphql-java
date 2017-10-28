@@ -5,9 +5,9 @@ import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.Scalars;
 import graphql.execution.ExecutionContext;
-import graphql.execution.ExecutionContextBuilder;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
@@ -20,16 +20,15 @@ import graphql.language.Value;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
+import static graphql.execution.instrumentation.export.ExportedVariablesCollectionEnvironment.*;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLDirective.newDirective;
 
@@ -66,7 +65,7 @@ import static graphql.schema.GraphQLDirective.newDirective;
  * The list of of id values would be exported as the variable named 'ids' ready to be used as input to another query
  */
 @ExperimentalApi
-public class ExportVariablesInstrumentation extends NoOpInstrumentation {
+public class ExportedVariablesInstrumentation extends NoOpInstrumentation {
 
     /**
      * A directive that represents the @export(as:"someName") directive
@@ -78,10 +77,19 @@ public class ExportVariablesInstrumentation extends NoOpInstrumentation {
             .build();
 
 
-    private final Map<String, List<Object>> exportedVariables;
+    private final Supplier<ExportedVariablesCollector> collectorSupplier;
 
-    public ExportVariablesInstrumentation() {
-        this.exportedVariables = new ConcurrentHashMap<>();
+    public ExportedVariablesInstrumentation() {
+        this(null);
+    }
+
+    public ExportedVariablesInstrumentation(Supplier<ExportedVariablesCollector> collectorSupplier) {
+        this.collectorSupplier = collectorSupplier;
+    }
+
+    @Override
+    public InstrumentationState createState() {
+        return collectorSupplier.get();
     }
 
     @Override
@@ -100,31 +108,22 @@ public class ExportVariablesInstrumentation extends NoOpInstrumentation {
 
     @Override
     public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
-        if (exportedVariables.size() > 0) {
+        ExportedVariablesCollector collector = parameters.getInstrumentationState();
+        Map<String, Object> collectedVariables = collector.getVariables();
+        if (collectedVariables.size() > 0) {
 
             Map<String, Object> extraVariables = new HashMap<>();
             extraVariables.putAll(executionContext.getVariables());
-            extraVariables.putAll(exportedVariables);
-            executionContext = new ExecutionContextBuilder()
-                    .variables(extraVariables)
-                    // TODO - have a transform function for this
-                    .root(executionContext.getRoot())
-                    .instrumentation(executionContext.getInstrumentation())
-                    .context(executionContext.getContext())
-                    .document(executionContext.getDocument())
-                    .operationDefinition(executionContext.getOperationDefinition())
-                    .fragmentsByName(executionContext.getFragmentsByName())
-                    .subscriptionStrategy(executionContext.getSubscriptionStrategy())
-                    .mutationStrategy(executionContext.getMutationStrategy())
-                    .queryStrategy(executionContext.getQueryStrategy())
-                    .instrumentationState(executionContext.getInstrumentationState())
-                    .build();
+            extraVariables.putAll(collectedVariables);
+
+            executionContext = executionContext.transform(builder -> builder.variables(extraVariables));
         }
         return executionContext;
     }
 
     @Override
     public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
+        ExportedVariablesCollector collector = parameters.getInstrumentationState();
         ExecutionStrategyParameters executionStrategyParameters = parameters.getExecutionStrategyParameters();
         return (result, throwable) -> {
             List<Field> fields = executionStrategyParameters.field();
@@ -142,24 +141,18 @@ public class ExportVariablesInstrumentation extends NoOpInstrumentation {
                 Assert.assertTrue(value instanceof StringValue, "The export directive MUST return a string value");
                 final String exportAsName = ((StringValue) value).getValue();
                 result.thenApply(executionResult -> {
-                    synchronized (exportedVariables) {
-                        List<Object> exportedList = exportedVariables.getOrDefault(exportAsName, new ArrayList<>());
-                        exportedList.add(executionResult.getData());
-                        exportedVariables.put(exportAsName, exportedList);
-                    }
+
+                    ExportedVariablesCollectionEnvironment environment = newCollectionEnvironment()
+                            .variableName(exportAsName)
+                            .variableValue(executionResult.getData())
+                            .executionStrategyParameters(executionStrategyParameters)
+                            .build();
+
+                    collector.collect(environment);
                     return executionResult;
                 });
             }
         };
-    }
-
-    /**
-     * @return all the variables that have been @exported(as) up this point
-     */
-    public Map<String, List<Object>> getExportedVariables() {
-        Map<String, List<Object>> snapshot = new LinkedHashMap<>();
-        snapshot.putAll(exportedVariables);
-        return snapshot;
     }
 
 }
