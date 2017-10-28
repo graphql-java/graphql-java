@@ -24,6 +24,7 @@ public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
      * your own {@link Executor} with {@link #async(DataFetcher)} (DataFetcher, Executor)}
      *
      * @param wrappedDataFetcher the data fetcher to run asynchronously
+     * @param <T>                the type of data
      *
      * @return a {@link DataFetcher} that will run the wrappedDataFetcher asynchronously
      */
@@ -40,6 +41,7 @@ public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
      *
      * @param wrappedDataFetcher the data fetcher to run asynchronously
      * @param executor           the executor to run the asynchronous data fetcher in
+     * @param <T>                the type of data
      *
      * @return a {@link DataFetcher} that will run the wrappedDataFetcher asynchronously in
      * the given {@link Executor}
