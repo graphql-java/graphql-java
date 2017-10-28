@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
@@ -172,13 +173,26 @@ public interface Instrumentation {
     }
 
     /**
+     * This is called to instrument a {@link graphql.ExecutionInput} before it is used to parse, validate
+     * and execute a query, allowing you to adjust what query input parameters are used
+     *
+     * @param executionInput the execution input to be used
+     * @param parameters     the parameters describing the field to be fetched
+     *
+     * @return a non null instrumented ExecutionInput, the default is to return to the same object
+     */
+    default ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
+        return executionInput;
+    }
+
+    /**
      * This is called to instrument a {@link graphql.schema.GraphQLSchema} before it is used to parse, validate
      * and execute a query, allowing you to adjust what types are used.
      *
      * @param schema     the schema to be used
      * @param parameters the parameters describing the field to be fetched
      *
-     * @return a non null instrumented data fetcher, the default is to return to the same object
+     * @return a non null instrumented GraphQLSchema, the default is to return to the same object
      */
     default GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
         return schema;
@@ -191,7 +205,7 @@ public interface Instrumentation {
      * @param executionContext the execution context to be used
      * @param parameters       the parameters describing the field to be fetched
      *
-     * @return a non null instrumented data fetcher, the default is to return to the same object
+     * @return a non null instrumented ExecutionContext, the default is to return to the same object
      */
     default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
         return executionContext;
@@ -207,7 +221,7 @@ public interface Instrumentation {
      * @param dataFetcher the data fetcher about to be used
      * @param parameters  the parameters describing the field to be fetched
      *
-     * @return a non null instrumented data fetcher, the default is to return to the same object
+     * @return a non null instrumented DataFetcher, the default is to return to the same object
      */
     default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         return dataFetcher;

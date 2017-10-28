@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.Async;
@@ -163,6 +164,15 @@ public class ChainedInstrumentation implements Instrumentation {
                     return instrumentation.beginCompleteFieldList(parameters.withNewState(state));
                 })
                 .collect(toList()));
+    }
+
+    @Override
+    public ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
+        for (Instrumentation instrumentation : instrumentations) {
+            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+            executionInput = instrumentation.instrumentExecutionInput(executionInput, parameters.withNewState(state));
+        }
+        return executionInput;
     }
 
     @Override
