@@ -12,7 +12,7 @@ import static graphql.language.NodeUtil.directivesByName;
 
 public class ConditionalNodes {
 
-    ValuesResolver valuesResolver;
+    final ValuesResolver valuesResolver;
 
     public ConditionalNodes() {
         valuesResolver = new ValuesResolver();

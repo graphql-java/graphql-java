@@ -36,7 +36,7 @@ class StarWarsIntrospectionTests extends Specification {
                                     [name: '__DirectiveLocation']]
                 ]
 
-        ];
+        ]
 
         when:
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
@@ -109,7 +109,7 @@ class StarWarsIntrospectionTests extends Specification {
                         name: 'Droid',
                         kind: 'OBJECT'
                 ]
-        ];
+        ]
         when:
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
@@ -132,7 +132,7 @@ class StarWarsIntrospectionTests extends Specification {
                         name: 'Character',
                         kind: 'INTERFACE'
                 ]
-        ];
+        ]
         when:
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
@@ -198,7 +198,7 @@ class StarWarsIntrospectionTests extends Specification {
                                 ]
                         ]
                 ]
-        ];
+        ]
         when:
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
@@ -377,7 +377,7 @@ class StarWarsIntrospectionTests extends Specification {
                                 ]
                         ]
                 ]
-        ];
+        ]
 
         when:
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query)
@@ -401,7 +401,7 @@ class StarWarsIntrospectionTests extends Specification {
                         name       : 'Droid',
                         description: 'A mechanical creature in the Star Wars universe.'
                 ]
-        ];
+        ]
 
         when:
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query)

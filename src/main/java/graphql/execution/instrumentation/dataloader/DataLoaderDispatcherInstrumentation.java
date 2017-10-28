@@ -2,23 +2,30 @@ package graphql.execution.instrumentation.dataloader;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.execution.AsyncExecutionStrategy;
+import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.language.Field;
+import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.dataloader.stats.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -63,35 +70,50 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
 
 
     /**
-     * We need to become stateful about whether we are in a list or not and this is represented
-     * by this call stack.
+     * We need to become stateful about whether we are in a list or not
      */
     private static class CallStack implements InstrumentationState {
-        private final Stack<Boolean> stack = new Stack<>();
+        private boolean aggressivelyBatching = true;
+        private final Deque<Boolean> stack = new ArrayDeque<>();
 
-        void enterList() {
-            stack.push(true);
+        private boolean isAggressivelyBatching() {
+            return aggressivelyBatching;
         }
 
-        void exit() {
-            if (!stack.isEmpty()) {
-                stack.pop();
+        private void setAggressivelyBatching(boolean aggressivelyBatching) {
+            this.aggressivelyBatching = aggressivelyBatching;
+        }
+
+        private void enterList() {
+            synchronized (this) {
+                stack.push(true);
             }
         }
 
-        boolean inList() {
-            if (stack.isEmpty()) {
-                return false;
-            } else {
-                return stack.peek();
+        private void exitList() {
+            synchronized (this) {
+                if (!stack.isEmpty()) {
+                    stack.pop();
+                }
+            }
+        }
+
+        private boolean isInList() {
+            synchronized (this) {
+                if (stack.isEmpty()) {
+                    return false;
+                } else {
+                    return stack.peek();
+                }
             }
         }
 
         @Override
         public String toString() {
-            return "inList=" + inList();
+            return "isInList=" + isInList();
         }
     }
+
 
     @Override
     public InstrumentationState createState() {
@@ -103,31 +125,48 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
         dataLoaderRegistry.dispatchAll();
     }
 
+    private void dispatchIfNeeded(CallStack callStack) {
+        if (!callStack.isInList()) {
+            dispatch();
+        }
+    }
+
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        return (result, t) -> {
-            if (t == null) {
-                // only dispatch when there are no errors
-                if (!callStack.inList()) {
-                    dispatch();
-                }
-            }
+        if (callStack.isAggressivelyBatching()) {
+            return dataFetcher;
+        }
+        //
+        // currently only AsyncExecutionStrategy with DataLoader and hence this allows us to "dispatch"
+        // on every object if its not using aggressive batching for other execution strategies
+        // which allows them to work if used.
+        return (DataFetcher<Object>) environment -> {
+            Object obj = dataFetcher.get(environment);
+            dispatch();
+            return obj;
         };
     }
 
+    @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
+        ExecutionStrategy queryStrategy = parameters.getExecutionContext().getQueryStrategy();
+        if (!(queryStrategy instanceof AsyncExecutionStrategy)) {
+            CallStack callStack = parameters.getInstrumentationState();
+            callStack.setAggressivelyBatching(false);
+        }
+        return (result, t) -> dispatch();
+    }
 
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
+        return super.beginDataFetch(parameters);
+    }
+
+    @Override
+    public InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        return (result, t) -> {
-            if (t == null) {
-                // only dispatch when there are no errors
-                if (!callStack.inList()) {
-                    dispatch();
-                }
-            }
-        };
+        return (result, t) -> dispatchIfNeeded(callStack);
     }
 
     /*
@@ -141,7 +180,10 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
     public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
         callStack.enterList();
-        return (result, t) -> callStack.exit();
+        return (result, t) -> {
+            callStack.exitList();
+            dispatchIfNeeded(callStack);
+        };
     }
 
     @Override

@@ -18,6 +18,7 @@ import static graphql.introspection.Introspection.DirectiveLocation;
  *
  * See http://graphql.org/learn/queries/#directives for more details on the concept.
  */
+@SuppressWarnings("DeprecatedIsStillUsed") // because the graphql spec still has some of these deprecated fields
 @PublicApi
 public class GraphQLDirective {
 
@@ -102,7 +103,7 @@ public class GraphQLDirective {
     public static class Builder {
 
         private String name;
-        private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
+        private final EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
         private final List<GraphQLArgument> arguments = new ArrayList<>();
         private String description;
         private boolean onOperation;

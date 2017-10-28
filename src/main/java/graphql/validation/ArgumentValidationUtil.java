@@ -14,12 +14,12 @@ import java.util.Set;
 
 public class ArgumentValidationUtil extends ValidationUtil {
 
-    private List<String> argumentNames = new ArrayList<>();
+    private final List<String> argumentNames = new ArrayList<>();
     private Value argumentValue;
     private String errorMessage;
-    private List<Object> arguments = new ArrayList<>();
+    private final List<Object> arguments = new ArrayList<>();
 
-    private String argumentName;
+    private final String argumentName;
 
     public ArgumentValidationUtil(Argument argument) {
         argumentName = argument.getName();

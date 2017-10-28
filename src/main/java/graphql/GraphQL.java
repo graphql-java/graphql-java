@@ -55,20 +55,8 @@ import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
  * a String value being coerced as an Int.
  * </li>
  *
- * <li>{@link graphql.schema.CoercingParseValueException} - is thrown when a value cannot be parsed by a Scalar type, for example
- * a String input value being parsed as an Int.
- * </li>
- *
  * <li>{@link graphql.execution.UnresolvedTypeException} - is thrown if a {@link graphql.schema.TypeResolver} fails to provide a concrete
  * object type given a interface or union type.
- * </li>
- *
- * <li>{@link graphql.execution.NonNullableValueCoercedAsNullException} - is thrown if a non null variable argument is coerced as a
- * null value during execution.
- * </li>
- *
- * <li>{@link graphql.execution.InputMapDefinesTooManyFieldsException} - is thrown if a map used for an input type object contains
- * more keys than is defined in that input type.
  * </li>
  *
  * <li>{@link graphql.schema.validation.InvalidSchemaException} - is thrown if the schema is not valid when built via

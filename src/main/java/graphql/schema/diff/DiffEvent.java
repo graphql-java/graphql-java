@@ -94,7 +94,7 @@ public class DiffEvent {
         TypeKind typeOfType;
         String reasonMsg;
         String fieldName;
-        List<String> components = new ArrayList<>();
+        final List<String> components = new ArrayList<>();
 
         public Builder level(DiffLevel level) {
             this.level = level;

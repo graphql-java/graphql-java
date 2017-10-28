@@ -9,9 +9,9 @@ import static graphql.language.NodeUtil.directivesByName;
 
 public class ObjectTypeDefinition extends AbstractNode implements TypeDefinition {
     private String name;
-    private List<Type> implementz = new ArrayList<>();
-    private List<Directive> directives = new ArrayList<>();
-    private List<FieldDefinition> fieldDefinitions = new ArrayList<>();
+    private final List<Type> implementz = new ArrayList<>();
+    private final List<Directive> directives = new ArrayList<>();
+    private final List<FieldDefinition> fieldDefinitions = new ArrayList<>();
 
     public ObjectTypeDefinition(String name) {
         this.name = name;

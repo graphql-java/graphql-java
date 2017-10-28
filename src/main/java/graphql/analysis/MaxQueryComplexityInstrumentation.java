@@ -21,8 +21,8 @@ import static graphql.Assert.assertNotNull;
 public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
 
 
-    private int maxComplexity;
-    private FieldComplexityCalculator fieldComplexityCalculator;
+    private final int maxComplexity;
+    private final FieldComplexityCalculator fieldComplexityCalculator;
 
     /**
      * new Instrumentation with default complexity calculator which is `1 + childComplexity`
@@ -66,9 +66,21 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
             });
             int totalComplexity = valuesByParent.get(null).stream().mapToInt(Integer::intValue).sum();
             if (totalComplexity > maxComplexity) {
-                throw new AbortExecutionException("maximum query complexity exceeded " + totalComplexity + " > " + maxComplexity);
+                throw mkAbortException(totalComplexity, maxComplexity);
             }
         };
+    }
+
+    /**
+     * Called to generate your own error message or custom exception class
+     *
+     * @param totalComplexity the complexity of the query
+     * @param maxComplexity   the maximum complexity allowed
+     *
+     * @return a instance of AbortExecutionException
+     */
+    protected AbortExecutionException mkAbortException(int totalComplexity, int maxComplexity) {
+        return new AbortExecutionException("maximum query complexity exceeded " + totalComplexity + " > " + maxComplexity);
     }
 
     QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {

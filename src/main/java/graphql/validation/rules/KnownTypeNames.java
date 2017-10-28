@@ -2,7 +2,11 @@ package graphql.validation.rules;
 
 
 import graphql.language.TypeName;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 public class KnownTypeNames extends AbstractRule {
 

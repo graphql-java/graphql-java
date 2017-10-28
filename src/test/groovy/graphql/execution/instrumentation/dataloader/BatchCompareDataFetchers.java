@@ -92,15 +92,15 @@ public class BatchCompareDataFetchers {
     private static Map<String, Product> products = new HashMap<>();
 
     static {
-        products.put("product-1", new Product("product-1", "Product 1"));
-        products.put("product-2", new Product("product-2", "Product 2"));
-        products.put("product-3", new Product("product-3", "Product 3"));
-        products.put("product-4", new Product("product-4", "Product 4"));
-        products.put("product-5", new Product("product-5", "Product 5"));
-        products.put("product-6", new Product("product-6", "Product 6"));
-        products.put("product-7", new Product("product-7", "Product 7"));
-        products.put("product-8", new Product("product-8", "Product 8"));
-        products.put("product-9", new Product("product-9", "Product 9"));
+        products.put("product-1", new Product("product-1", "Product 1", 0));
+        products.put("product-2", new Product("product-2", "Product 2", 0));
+        products.put("product-3", new Product("product-3", "Product 3", 0));
+        products.put("product-4", new Product("product-4", "Product 4", 0));
+        products.put("product-5", new Product("product-5", "Product 5", 0));
+        products.put("product-6", new Product("product-6", "Product 6", 0));
+        products.put("product-7", new Product("product-7", "Product 7", 0));
+        products.put("product-8", new Product("product-8", "Product 8", 0));
+        products.put("product-9", new Product("product-9", "Product 9", 0));
     }
 
     private static List<Product> getProductsForDepartment(Department department) {

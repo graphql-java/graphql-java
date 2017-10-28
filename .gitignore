@@ -9,3 +9,7 @@ _site
 generated-src/
 out
 docs/_build/
+/bin/
+\.classpath
+\.project
+\.settings/

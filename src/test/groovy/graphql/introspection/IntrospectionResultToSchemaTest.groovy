@@ -346,7 +346,7 @@ union Everything = Character | Episode"""
 
         then:
         result == """#input for characters
-CharacterInput {
+input CharacterInput {
   #first name
   firstName: String
   lastName: String
@@ -533,7 +533,7 @@ type MutationResult {
   success: Boolean
 }
 
-CharacterInput {
+input CharacterInput {
   firstName: String
   lastName: String
   family: Boolean
@@ -551,7 +551,7 @@ CharacterInput {
         when:
         def printedSchema = new SchemaPrinter().print(graphQLSchema)
         def typeRegistry = new SchemaParser().parse(printedSchema)
-        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build();
+        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build()
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
 
         def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())

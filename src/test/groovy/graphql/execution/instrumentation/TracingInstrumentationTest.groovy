@@ -49,6 +49,14 @@ class TracingInstrumentationTest extends Specification {
         tracing["endTime"] != null
         tracing["duration"] > 0L
 
+        def parsing = tracing['parsing']
+        parsing['startOffset'] > 0L
+        parsing['duration'] > 0L
+
+        def validation = tracing['validation']
+        parsing['startOffset'] > 0L
+        parsing['duration'] > 0L
+
         List resolvers = tracing['execution']['resolvers'] as List
         resolvers.size() == 3
         resolvers[0]['fieldName'] == "hero"
@@ -76,8 +84,9 @@ class TracingInstrumentationTest extends Specification {
         long total = tracing["duration"] as long
         long fieldTotals = 0
         resolvers.each { fieldTotals += it['duration'] }
+        long partTotals = parsing["duration"] + validation["duration"] + fieldTotals
 
-        total >= fieldTotals
+        total >= partTotals
 
         where:
 

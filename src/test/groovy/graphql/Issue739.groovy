@@ -17,16 +17,16 @@ class Issue739 extends Specification {
                 .type(newTypeWiring("Query")
                 .dataFetcher("foo",
                 { env ->
-                    Map<String, Object> map = new HashMap<>();
+                    Map<String, Object> map = new HashMap<>()
                     map.put("id", "abc")
-                    return map;
+                    return map
 
                 })
                 .dataFetcher("bar",
                 { env ->
-                    Map<String, Object> map = new HashMap<>();
+                    Map<String, Object> map = new HashMap<>()
                     map.put("id", "def")
-                    return map;
+                    return map
                 })
         )
                 .type(newTypeWiring("Node")
@@ -79,13 +79,16 @@ class Issue739 extends Specification {
         ExecutionInput varInput = ExecutionInput.newExecutionInput()
                 .query('query Bar($input: BarInput!) {bar(input: $input) {id}}')
                 .variables(variables)
-                .build();
+                .build()
 
         ExecutionResult varResult = graphQL
                 .executeAsync(varInput)
                 .join()
 
         then:
-        thrown(CoercingParseValueException)
+        varResult.data == null
+        varResult.errors.size() == 1
+        varResult.errors[0].errorType == ErrorType.ValidationError
+        varResult.errors[0].message == "Variables for GraphQLInputObjectType must be an instance of a Map according to the graphql specification.  The offending object was a java.lang.Integer"
     }
 }

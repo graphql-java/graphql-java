@@ -4,6 +4,7 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.MutationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
@@ -62,10 +64,17 @@ public class Execution {
         Map<String, Object> inputVariables = executionInput.getVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
-        Map<String, Object> coercedVariables = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
+        Map<String, Object> coercedVariables;
+        try {
+            coercedVariables = valuesResolver.coerceArgumentValues(graphQLSchema, variableDefinitions, inputVariables);
+        } catch (RuntimeException rte) {
+            if (rte instanceof GraphQLError) {
+                return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
+            }
+            throw rte;
+        }
 
-
-        ExecutionContext executionContext = new ExecutionContextBuilder()
+        ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
                 .executionId(executionId)
@@ -81,18 +90,20 @@ public class Execution {
                 .operationDefinition(operationDefinition)
                 .build();
 
+
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
                 executionInput, graphQLSchema, instrumentationState
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
-
-        return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
+        return executeOperation(executionContext, parameters, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
 
-    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
+    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, InstrumentationExecutionParameters instrumentationExecutionParameters, Object root, OperationDefinition operationDefinition) {
 
-        InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(new InstrumentationDataFetchParameters(executionContext));
+        InstrumentationDataFetchParameters dataFetchParameters = new InstrumentationDataFetchParameters(executionContext);
+        InstrumentationContext<CompletableFuture<ExecutionResult>> executionDispatchCtx = instrumentation.beginDataFetchDispatch(dataFetchParameters);
+        InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(dataFetchParameters);
 
         OperationDefinition.Operation operation = operationDefinition.getOperation();
         GraphQLObjectType operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operation);
@@ -103,7 +114,9 @@ public class Execution {
         // for the record earlier code has asserted that we have a query type in the schema since the spec says this is
         // ALWAYS required
         if (operation == MUTATION && operationRootType == null) {
-            return completedFuture(new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError())));
+            CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError())));
+            executionDispatchCtx.onEnd(resultCompletableFuture, null);
+            return resultCompletableFuture;
         }
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
@@ -151,6 +164,9 @@ public class Execution {
         }
 
         result = result.whenComplete(dataFetchCtx::onEnd);
+
+        // note this happens NOW - not when the result completes
+        executionDispatchCtx.onEnd(result, null);
 
         return result;
     }

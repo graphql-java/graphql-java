@@ -5,7 +5,6 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.schema.GraphQLSchema
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
@@ -70,7 +69,7 @@ class DataLoaderPerformanceTest extends Specification {
         then:
         result.data == expectedData
         //
-        // 1 per level, eg 1 for shops-->departments and one for departments --> products
+        //  eg 1 for shops-->departments and one for departments --> products
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }

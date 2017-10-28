@@ -2,7 +2,12 @@ package graphql.validation.rules
 
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.*
+import graphql.validation.LanguageTraversal
+import graphql.validation.RulesVisitor
+import graphql.validation.TraversalContext
+import graphql.validation.ValidationContext
+import graphql.validation.ValidationErrorCollector
+import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class NoUnusedFragmentsTest extends Specification {
@@ -40,10 +45,10 @@ class NoUnusedFragmentsTest extends Specification {
                 """
 
         Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
+        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]));
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
 
         then:
         errorCollector.getErrors().isEmpty()
@@ -74,10 +79,10 @@ class NoUnusedFragmentsTest extends Specification {
         """
 
         Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
+        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]));
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
 
         then:
         errorCollector.getErrors().isEmpty()
@@ -115,10 +120,10 @@ class NoUnusedFragmentsTest extends Specification {
                 """
 
         Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
+        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]));
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedFragment)
@@ -160,10 +165,10 @@ class NoUnusedFragmentsTest extends Specification {
         """
 
         Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal();
+        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]));
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedFragment)

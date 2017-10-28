@@ -7,20 +7,29 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLType;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class VariableTypesMatchRule extends AbstractRule {
 
-    VariablesTypesMatcher variablesTypesMatcher = new VariablesTypesMatcher();
+    final VariablesTypesMatcher variablesTypesMatcher;
 
     private Map<String, VariableDefinition> variableDefinitionMap;
 
     public VariableTypesMatchRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+        this(validationContext, validationErrorCollector, new VariablesTypesMatcher());
+    }
+
+    VariableTypesMatchRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector, VariablesTypesMatcher variablesTypesMatcher) {
         super(validationContext, validationErrorCollector);
         setVisitFragmentSpreads(true);
+        this.variablesTypesMatcher = variablesTypesMatcher;
     }
 
     @Override

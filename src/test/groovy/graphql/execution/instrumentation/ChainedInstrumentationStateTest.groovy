@@ -126,28 +126,39 @@ class ChainedInstrumentationStateTest extends Specification {
                 "start:validation",
                 "end:validation",
 
+                "start:data-fetch-dispatch",
+
                 "start:data-fetch",
 
                 "start:execution-strategy",
 
+                "start:fields",
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
+                "start:complete-hero",
 
                 "start:execution-strategy",
 
+                "start:fields",
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
+                "start:complete-id",
+                "end:complete-id",
                 "end:field-id",
+                "end:fields",
 
                 "end:execution-strategy",
 
+                "end:complete-hero",
                 "end:field-hero",
+                "end:fields",
 
                 "end:execution-strategy",
 
                 "end:data-fetch",
+                "end:data-fetch-dispatch",
 
                 "end:execution",
         ]
@@ -172,6 +183,32 @@ class ChainedInstrumentationStateTest extends Specification {
         assertCalls(a)
         assertCalls(b)
         assertCalls(c)
+
+    }
+
+    def "empty chain"() {
+        def chainedInstrumentation = new ChainedInstrumentation(Arrays.asList())
+
+        def query = """
+        query HeroNameAndFriendsQuery {
+            hero {
+                id
+            }
+        }
+        """
+
+        when:
+        def strategy = new AsyncExecutionStrategy()
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(strategy)
+                .instrumentation(chainedInstrumentation)
+                .build()
+
+        graphQL.execute(query)
+
+        then:
+        noExceptionThrown()
 
     }
 

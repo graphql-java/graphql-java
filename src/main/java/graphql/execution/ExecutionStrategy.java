@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicSpi;
@@ -11,6 +10,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.introspection.Introspection;
 import graphql.language.Field;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
@@ -41,9 +41,6 @@ import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
@@ -286,7 +283,6 @@ public abstract class ExecutionStrategy {
                 new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
         );
 
-
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
         ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
@@ -401,13 +397,13 @@ public abstract class ExecutionStrategy {
      *
      * @throws java.lang.ClassCastException if its not an Iterable
      */
+    @SuppressWarnings("unchecked")
     protected Iterable<Object> toIterable(Object result) {
         if (result.getClass().isArray()) {
             return IntStream.range(0, Array.getLength(result))
                     .mapToObj(i -> Array.get(result, i))
                     .collect(toList());
         }
-        //noinspection unchecked
         return (Iterable<Object>) result;
     }
 
@@ -419,6 +415,7 @@ public abstract class ExecutionStrategy {
                     .field(parameters.field().get(0))
                     .value(parameters.source())
                     .argumentValues(parameters.arguments())
+                    .context(executionContext.getContext())
                     .schema(executionContext.getGraphQLSchema()).build();
             resolvedType = resolveTypeForInterface(resolutionParams);
 
@@ -428,6 +425,7 @@ public abstract class ExecutionStrategy {
                     .field(parameters.field().get(0))
                     .value(parameters.source())
                     .argumentValues(parameters.arguments())
+                    .context(executionContext.getContext())
                     .schema(executionContext.getGraphQLSchema()).build();
             resolvedType = resolveTypeForUnion(resolutionParams);
         } else {
@@ -444,7 +442,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLObjectType}
      */
     protected GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
-        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema());
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema(), params.getContext());
         GraphQLObjectType result = params.getGraphQLInterfaceType().getTypeResolver().getType(env);
         if (result == null) {
             throw new UnresolvedTypeException(params.getGraphQLInterfaceType());
@@ -460,7 +458,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLObjectType}
      */
     protected GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
-        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema());
+        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema(), params.getContext());
         GraphQLObjectType result = params.getGraphQLUnionType().getTypeResolver().getType(env);
         if (result == null) {
             throw new UnresolvedTypeException(params.getGraphQLUnionType());
@@ -517,6 +515,7 @@ public abstract class ExecutionStrategy {
         return completedFuture(new ExecutionResultImpl(serialized, null));
     }
 
+    @SuppressWarnings("SameReturnValue")
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
         SerializationError error = new SerializationError(parameters.path(), e);
         log.warn(error.getMessage(), e);
@@ -609,21 +608,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
-        if (schema.getQueryType() == parentType) {
-            if (field.getName().equals(SchemaMetaFieldDef.getName())) {
-                return SchemaMetaFieldDef;
-            }
-            if (field.getName().equals(TypeMetaFieldDef.getName())) {
-                return TypeMetaFieldDef;
-            }
-        }
-        if (field.getName().equals(TypeNameMetaFieldDef.getName())) {
-            return TypeNameMetaFieldDef;
-        }
-
-        GraphQLFieldDefinition fieldDefinition = schema.getFieldVisibility().getFieldDefinition(parentType, field.getName());
-        Assert.assertTrue(fieldDefinition != null, "Unknown field " + field.getName());
-        return fieldDefinition;
+        return Introspection.getFieldDef(schema, parentType, field.getName());
     }
 
     /**

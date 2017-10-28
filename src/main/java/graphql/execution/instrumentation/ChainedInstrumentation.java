@@ -12,6 +12,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
+import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -105,6 +106,26 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
+    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
+        return new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginDataFetchDispatch(parameters.withNewState(state));
+                })
+                .collect(toList()));
+    }
+
+    @Override
+    public InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
+        return new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginFields(parameters.withNewState(state));
+                })
+                .collect(toList()));
+    }
+
+    @Override
     public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
         return new ChainedInstrumentationContext<>(instrumentations.stream()
                 .map(instrumentation -> {
@@ -178,7 +199,7 @@ public class ChainedInstrumentation implements Instrumentation {
             ExecutionResult lastResult = prevResults.size() > 0 ? prevResults.get(prevResults.size() - 1) : executionResult;
             return instrumentation.instrumentExecutionResult(lastResult, parameters.withNewState(state));
         });
-        return resultsFuture.thenApply((results) -> results.get(results.size() - 1));
+        return resultsFuture.thenApply((results) -> results.isEmpty() ? executionResult : results.get(results.size() - 1));
     }
 
     private static class ChainedInstrumentationState implements InstrumentationState {
