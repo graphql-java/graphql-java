@@ -1,6 +1,8 @@
 package graphql;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -10,15 +12,19 @@ import java.util.function.Consumer;
 @PublicApi
 public class ExecutionInput {
     private final String query;
-    private final String operationName;
+    private final List<String> operationNames;
     private final Object context;
     private final Object root;
     private final Map<String, Object> variables;
 
 
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
+        this(query, Collections.singletonList(operationName), context, root, variables);
+    }
+
+    public ExecutionInput(String query, List<String> operationNames, Object context, Object root, Map<String, Object> variables) {
         this.query = query;
-        this.operationName = operationName;
+        this.operationNames = operationNames == null ? Collections.emptyList() : operationNames;
         this.context = context;
         this.root = root;
         this.variables = variables;
@@ -35,7 +41,17 @@ public class ExecutionInput {
      * @return the name of the query operation
      */
     public String getOperationName() {
-        return operationName;
+        if (operationNames == null || operationNames.isEmpty()) {
+            return null;
+        }
+        return operationNames.get(0);
+    }
+
+    /**
+     * @return the names of the query operations
+     */
+    public List<String> getOperationNames() {
+        return operationNames;
     }
 
     /**
@@ -70,7 +86,7 @@ public class ExecutionInput {
     public ExecutionInput transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder()
                 .query(this.query)
-                .operationName(this.operationName)
+                .operationNames(this.operationNames)
                 .context(this.context)
                 .root(this.root)
                 .variables(this.variables);
@@ -85,7 +101,7 @@ public class ExecutionInput {
     public String toString() {
         return "ExecutionInput{" +
                 "query='" + query + '\'' +
-                ", operationName='" + operationName + '\'' +
+                ", operationName='" + getOperationName() + '\'' +
                 ", context=" + context +
                 ", root=" + root +
                 ", variables=" + variables +
@@ -102,7 +118,7 @@ public class ExecutionInput {
     public static class Builder {
 
         private String query;
-        private String operationName;
+        private List<String> operationNames = new ArrayList<>();
         private Object context;
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
@@ -113,7 +129,14 @@ public class ExecutionInput {
         }
 
         public Builder operationName(String operationName) {
-            this.operationName = operationName;
+            this.operationNames.clear();
+            this.operationNames.add(operationName);
+            return this;
+        }
+
+        public Builder operationNames(List<String> operationNames) {
+            this.operationNames.clear();
+            this.operationNames.addAll(operationNames);
             return this;
         }
 
@@ -133,7 +156,7 @@ public class ExecutionInput {
         }
 
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables);
+            return new ExecutionInput(query, operationNames, context, root, variables);
         }
     }
 }
