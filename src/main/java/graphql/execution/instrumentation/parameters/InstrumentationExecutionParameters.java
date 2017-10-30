@@ -19,28 +19,28 @@ public class InstrumentationExecutionParameters {
     private final String operation;
     private final Object context;
     private final Map<String, Object> variables;
-    private final InstrumentationPreExecutionState instrumentationState;
+    private final InstrumentationPreExecutionState preExecutionState;
     private final GraphQLSchema schema;
 
-    public InstrumentationExecutionParameters(ExecutionInput executionInput, GraphQLSchema schema, InstrumentationPreExecutionState instrumentationState) {
+    public InstrumentationExecutionParameters(ExecutionInput executionInput, GraphQLSchema schema, InstrumentationPreExecutionState preExecutionState) {
         this.executionInput = executionInput;
         this.query = executionInput.getQuery();
         this.operation = executionInput.getOperationName();
         this.context = executionInput.getContext();
         this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap();
-        this.instrumentationState = instrumentationState;
+        this.preExecutionState = preExecutionState;
         this.schema = schema;
     }
 
     /**
      * Returns a cloned parameters object with the new state
      *
-     * @param instrumentationState the new state for this parameters object
+     * @param preExecutionState the new state for this parameters object
      *
      * @return a new parameters object with the new state
      */
-    public InstrumentationExecutionParameters withNewState(InstrumentationPreExecutionState instrumentationState) {
-        return new InstrumentationExecutionParameters(this.getExecutionInput(), this.schema, instrumentationState);
+    public InstrumentationExecutionParameters withNewState(InstrumentationPreExecutionState preExecutionState) {
+        return new InstrumentationExecutionParameters(this.getExecutionInput(), this.schema, preExecutionState);
     }
 
     public ExecutionInput getExecutionInput() {
@@ -64,9 +64,9 @@ public class InstrumentationExecutionParameters {
         return variables;
     }
 
-    public <T extends InstrumentationPreExecutionState> T getInstrumentationState() {
+    public <T extends InstrumentationPreExecutionState> T getPreExecutionState() {
         //noinspection unchecked
-        return (T) instrumentationState;
+        return (T) preExecutionState;
     }
 
     public GraphQLSchema getSchema() {

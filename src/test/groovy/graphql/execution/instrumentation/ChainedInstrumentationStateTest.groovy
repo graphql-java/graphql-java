@@ -35,7 +35,7 @@ class ChainedInstrumentationStateTest extends Specification {
 
         NamedInstrumentation(String name) {
             instrumentationState = new NamedInstrumentationState(name: name)
-            instrumentationPreExecutionState = new NamedInstrumentationPreExecutionState(name: name)
+            preExecutionState = new NamedInstrumentationPreExecutionState(name: name)
             this.name = name
         }
 
@@ -44,26 +44,26 @@ class ChainedInstrumentationStateTest extends Specification {
             assert (instrumentationState as NamedInstrumentationState).name == this.name
         }
 
-        def assertPreExecutionState(InstrumentationPreExecutionState instrumentationState) {
-            assert instrumentationState instanceof NamedInstrumentationPreExecutionState
-            assert (instrumentationState as NamedInstrumentationPreExecutionState).name == this.name
+        def assertPreExecutionState(InstrumentationPreExecutionState preExecutionState) {
+            assert preExecutionState instanceof NamedInstrumentationPreExecutionState
+            assert (preExecutionState as NamedInstrumentationPreExecutionState).name == this.name
         }
 
         @Override
         InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-            assertPreExecutionState(parameters.getInstrumentationState())
+            assertPreExecutionState(parameters.getPreExecutionState())
             return super.beginExecution(parameters)
         }
 
         @Override
         InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-            assertPreExecutionState(parameters.getInstrumentationState())
+            assertPreExecutionState(parameters.getPreExecutionState())
             return super.beginParse(parameters)
         }
 
         @Override
         InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-            assertPreExecutionState(parameters.getInstrumentationState())
+            assertPreExecutionState(parameters.getPreExecutionState())
             return super.beginValidation(parameters)
         }
 
@@ -105,7 +105,7 @@ class ChainedInstrumentationStateTest extends Specification {
 
         @Override
         CompletableFuture<ExecutionResult> instrumentFinalExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-            assertPreExecutionState(parameters.getInstrumentationState())
+            assertPreExecutionState(parameters.getPreExecutionState())
             return super.instrumentFinalExecutionResult(executionResult, parameters)
         }
     }

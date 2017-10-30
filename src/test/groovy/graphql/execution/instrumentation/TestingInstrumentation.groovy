@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture
 
 class TestingInstrumentation implements Instrumentation {
 
-    def instrumentationPreExecutionState = new InstrumentationPreExecutionState() {}
+    def preExecutionState = new InstrumentationPreExecutionState() {}
     def instrumentationState = new InstrumentationState() {}
     def executionList = []
     List<Throwable> throwableList = []
@@ -34,7 +34,7 @@ class TestingInstrumentation implements Instrumentation {
 
     @Override
     InstrumentationPreExecutionState createPreExecutionState(InstrumentationCreatePreExecutionStateParameters parameters) {
-        return instrumentationPreExecutionState
+        return preExecutionState
     }
 
     @Override
@@ -44,19 +44,19 @@ class TestingInstrumentation implements Instrumentation {
 
     @Override
     InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationPreExecutionState
+        assert parameters.getPreExecutionState() == preExecutionState
         new TestingInstrumentContext("execution", executionList, throwableList)
     }
 
     @Override
     InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationPreExecutionState
+        assert parameters.getPreExecutionState() == preExecutionState
         return new TestingInstrumentContext("parse", executionList, throwableList)
     }
 
     @Override
     InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationPreExecutionState
+        assert parameters.getPreExecutionState() == preExecutionState
         return new TestingInstrumentContext("validation", executionList, throwableList)
     }
 
@@ -110,13 +110,13 @@ class TestingInstrumentation implements Instrumentation {
 
     @Override
     GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationPreExecutionState
+        assert parameters.getPreExecutionState() == preExecutionState
         return schema
     }
 
     @Override
     ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationPreExecutionState
+        assert parameters.getPreExecutionState() == preExecutionState
         return executionInput
     }
 
@@ -147,7 +147,7 @@ class TestingInstrumentation implements Instrumentation {
 
     @Override
     CompletableFuture<ExecutionResult> instrumentFinalExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationPreExecutionState
+        assert parameters.getPreExecutionState() == preExecutionState
         return CompletableFuture.completedFuture(executionResult)
     }
 }
