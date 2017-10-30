@@ -491,7 +491,7 @@ public class GraphQL {
             return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
         }
 
-        return execute(executionInput, preparsedDoc.getDocument(), graphQLSchema, preExecutionState);
+        return executeImpl(executionInput, preparsedDoc.getDocument(), graphQLSchema, preExecutionState);
     }
 
     private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState instrumentationState) {
@@ -540,7 +540,7 @@ public class GraphQL {
         return validationErrors;
     }
 
-    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState instrumentationPreExecutionState) {
+    private CompletableFuture<ExecutionResult> executeImpl(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState instrumentationPreExecutionState) {
         String query = executionInput.getQuery();
         List<String> operationNames = executionInput.getOperationNames();
         if (operationNames.size() > 1) {
@@ -554,6 +554,9 @@ public class GraphQL {
     }
 
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionInput startingExecutionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState preExecutionState, String query, String operationName) {
+
+        InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(startingExecutionInput, this.graphQLSchema, preExecutionState);
+        startingExecutionInput = instrumentation.instrumentExecutionInput(startingExecutionInput, inputInstrumentationParameters);
 
         InstrumentationCreateStateParameters stateParameters = new InstrumentationCreateStateParameters(startingExecutionInput, graphQLSchema, preExecutionState);
         InstrumentationState instrumentationState = instrumentation.createState(stateParameters);
