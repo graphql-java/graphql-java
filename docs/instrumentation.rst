@@ -38,7 +38,7 @@ The following is a basic custom ``Instrumentation`` that measures overall execut
 
     class CustomInstrumentation implements Instrumentation {
         @Override
-        public InstrumentationState createState() {
+        public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
             //
             // instrumentation state is passed during each invocation of an Instrumentation method
             // and allows you to put stateful data away and reference it during the query execution
@@ -100,7 +100,7 @@ The following is a basic custom ``Instrumentation`` that measures overall execut
         }
 
         @Override
-        public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionResultParameters parameters) {
             //
             // this allows you to instrument the execution result some how.  For example the Tracing support uses this to put
             // the `extensions` map of data in place

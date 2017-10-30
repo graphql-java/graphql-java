@@ -7,8 +7,9 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionResultParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -116,7 +117,7 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
 
 
     @Override
-    public InstrumentationState createState() {
+    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
         return new CallStack();
     }
 
@@ -187,7 +188,7 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionResultParameters parameters) {
         if (!options.isIncludeStatistics()) {
             return CompletableFuture.completedFuture(executionResult);
         }

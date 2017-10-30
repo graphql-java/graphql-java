@@ -2,6 +2,7 @@ package graphql.execution.instrumentation.tracing;
 
 import graphql.PublicApi;
 import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.instrumentation.InstrumentationPreExecutionState;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * instrumentation code.
  */
 @PublicApi
-public class TracingSupport implements InstrumentationState {
+public class TracingSupport implements InstrumentationState, InstrumentationPreExecutionState {
 
     private final Instant startRequestTime;
     private final long startRequestNanos;

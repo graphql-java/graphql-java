@@ -6,6 +6,7 @@ import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionResultParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
@@ -23,6 +24,10 @@ class ChainedInstrumentationStateTest extends Specification {
         String name
     }
 
+    class NamedInstrumentationPreExecutionState implements InstrumentationPreExecutionState {
+        String name
+    }
+
     // each implementation gives out a state object with its name
     // and then asserts it gets it back with that name
     class NamedInstrumentation extends TestingInstrumentation {
@@ -30,12 +35,8 @@ class ChainedInstrumentationStateTest extends Specification {
 
         NamedInstrumentation(String name) {
             instrumentationState = new NamedInstrumentationState(name: name)
+            instrumentationPreExecutionState = new NamedInstrumentationPreExecutionState(name: name)
             this.name = name
-        }
-
-        @Override
-        InstrumentationState createState() {
-            return instrumentationState
         }
 
         def assertState(InstrumentationState instrumentationState) {
@@ -43,21 +44,26 @@ class ChainedInstrumentationStateTest extends Specification {
             assert (instrumentationState as NamedInstrumentationState).name == this.name
         }
 
+        def assertPreExecutionState(InstrumentationPreExecutionState instrumentationState) {
+            assert instrumentationState instanceof NamedInstrumentationPreExecutionState
+            assert (instrumentationState as NamedInstrumentationPreExecutionState).name == this.name
+        }
+
         @Override
         InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-            assertState(parameters.getInstrumentationState())
+            assertPreExecutionState(parameters.getInstrumentationState())
             return super.beginExecution(parameters)
         }
 
         @Override
         InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-            assertState(parameters.getInstrumentationState())
+            assertPreExecutionState(parameters.getInstrumentationState())
             return super.beginParse(parameters)
         }
 
         @Override
         InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-            assertState(parameters.getInstrumentationState())
+            assertPreExecutionState(parameters.getInstrumentationState())
             return super.beginValidation(parameters)
         }
 
@@ -92,9 +98,15 @@ class ChainedInstrumentationStateTest extends Specification {
         }
 
         @Override
-        CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionResultParameters parameters) {
             assertState(parameters.getInstrumentationState())
             return super.instrumentExecutionResult(executionResult, parameters)
+        }
+
+        @Override
+        CompletableFuture<ExecutionResult> instrumentFinalExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+            assertPreExecutionState(parameters.getInstrumentationState())
+            return super.instrumentFinalExecutionResult(executionResult, parameters)
         }
     }
 

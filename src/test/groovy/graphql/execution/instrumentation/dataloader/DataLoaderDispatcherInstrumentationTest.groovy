@@ -42,7 +42,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
                 .register("c", dlC)
 
         DataLoaderDispatcherInstrumentation dispatcher = new DataLoaderDispatcherInstrumentation(registry)
-        def instrumentationState = dispatcher.createState()
+        def instrumentationState = dispatcher.createState(null)
 
         ExecutionContext executionContext = ExecutionContextBuilder.newInstance()
                 .executionId(ExecutionId.generate())
