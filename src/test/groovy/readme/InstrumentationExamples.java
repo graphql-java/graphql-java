@@ -83,7 +83,7 @@ public class InstrumentationExamples {
             long startNanos = System.nanoTime();
             return (result, throwable) -> {
 
-                CustomInstrumentationState state = parameters.getInstrumentationState();
+                CustomInstrumentationState state = parameters.getPreExecutionState();
                 state.recordTiming(parameters.getQuery(), System.nanoTime() - startNanos);
             };
         }

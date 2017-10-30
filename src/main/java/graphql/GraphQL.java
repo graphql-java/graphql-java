@@ -494,9 +494,9 @@ public class GraphQL {
         return executeImpl(executionInput, preparsedDoc.getDocument(), graphQLSchema, preExecutionState);
     }
 
-    private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState instrumentationState) {
+    private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState preExecutionState) {
         log.debug("Parsing query: '{}'...", executionInput.getQuery());
-        ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
+        ParseResult parseResult = parse(executionInput, graphQLSchema, preExecutionState);
         if (parseResult.isFailure()) {
             log.error("Query failed to parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
@@ -504,7 +504,7 @@ public class GraphQL {
             final Document document = parseResult.getDocument();
 
             log.debug("Validating query: '{}'", executionInput.getQuery());
-            final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
+            final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, preExecutionState);
             if (!errors.isEmpty()) {
                 log.error("Query failed to validate : '{}'", executionInput.getQuery());
                 return new PreparsedDocumentEntry(errors);

@@ -39,14 +39,14 @@ public class TracingInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return parameters.getInstrumentationState();
+        return parameters.getPreExecutionState();
     }
 
     @Override
     public CompletableFuture<ExecutionResult> instrumentFinalExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         Map<Object, Object> currentExt = executionResult.getExtensions();
 
-        TracingSupport tracingSupport = parameters.getInstrumentationState();
+        TracingSupport tracingSupport = parameters.getPreExecutionState();
         Map<Object, Object> tracingMap = new LinkedHashMap<>();
         tracingMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
         tracingMap.put("tracing", tracingSupport.snapshotTracingData());
@@ -68,14 +68,14 @@ public class TracingInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        TracingSupport tracingSupport = parameters.getInstrumentationState();
+        TracingSupport tracingSupport = parameters.getPreExecutionState();
         TracingSupport.TracingContext ctx = tracingSupport.beginParse();
         return (result, t) -> ctx.onEnd();
     }
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        TracingSupport tracingSupport = parameters.getInstrumentationState();
+        TracingSupport tracingSupport = parameters.getPreExecutionState();
         TracingSupport.TracingContext ctx = tracingSupport.beginValidation();
         return (result, t) -> ctx.onEnd();
     }
