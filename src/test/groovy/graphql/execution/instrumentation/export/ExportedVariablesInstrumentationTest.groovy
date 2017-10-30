@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.export
 
+import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import spock.lang.Specification
@@ -58,8 +59,7 @@ class ExportedVariablesInstrumentationTest extends Specification {
                 .instrumentation(exportVariablesInstrumentation)
                 .build()
 
-        given:
-        graphQL.execute('''
+        def query = '''
             query A {
                 hero 
                 {
@@ -71,24 +71,26 @@ class ExportedVariablesInstrumentationTest extends Specification {
                     }
                 }
             }
-        ''')
-        def executionResult = graphQL.execute('''
+            
             query B($droidId : String!) {
                 droid (id : $droidId ) {
                     name
                 }
             }
-        ''')
+        '''
+        given:
+
+        ExecutionInput input = ExecutionInput.newExecutionInput().query(query).operationNames(["A","B"]).build()
+
+        def executionResult = graphQL.execute(input)
 
         expect:
         executionResult.getErrors().size() == 0
 
-        executionResult.data == [
+        executionResult.data["B"] == [
                 droid: [
-                        name: "r2d2"
+                        name: "R2-D2"
                 ]
         ]
-
-
     }
 }

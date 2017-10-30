@@ -1,14 +1,16 @@
 package graphql.execution.instrumentation.export;
 
-import graphql.Assert;
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.Scalars;
-import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.InstrumentationPreExecutionState;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationCreatePreExecutionStateParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.introspection.Introspection;
@@ -20,17 +22,19 @@ import graphql.language.Value;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-import static graphql.execution.instrumentation.export.ExportedVariablesCollectionEnvironment.*;
+import static graphql.Assert.assertTrue;
+import static graphql.execution.instrumentation.export.ExportedVariablesCollectionEnvironment.newCollectionEnvironment;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLDirective.newDirective;
+import static java.util.Optional.ofNullable;
 
 /**
  * This class is experimental and allows an graphql query to @export values as named objects, which would allow
@@ -62,7 +66,7 @@ import static graphql.schema.GraphQLDirective.newDirective;
  * }
  * </pre>
  *
- * The list of of id values would be exported as the variable named 'ids' ready to be used as input to another query
+ * The list of id values would be exported as the variable named 'ids' ready to be used as input to another query
  */
 @ExperimentalApi
 public class ExportedVariablesInstrumentation extends NoOpInstrumentation {
@@ -79,17 +83,34 @@ public class ExportedVariablesInstrumentation extends NoOpInstrumentation {
 
     private final Supplier<ExportedVariablesCollector> collectorSupplier;
 
-    public ExportedVariablesInstrumentation() {
-        this(null);
-    }
-
+    /**
+     * This will use the supplier to give it collectors each time a new query is run
+     *
+     * @param collectorSupplier the supplier of collectors
+     */
     public ExportedVariablesInstrumentation(Supplier<ExportedVariablesCollector> collectorSupplier) {
         this.collectorSupplier = collectorSupplier;
     }
 
     @Override
-    public InstrumentationState createState() {
+    public InstrumentationPreExecutionState createPreExecutionState(InstrumentationCreatePreExecutionStateParameters parameters) {
         return collectorSupplier.get();
+    }
+
+    @Override
+    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+        return parameters.getPreExecutionState();
+    }
+
+    @Override
+    public ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
+        ExportedVariablesCollector collector = parameters.getPreExecutionState();
+        Map<String, Object> variables = ofNullable(executionInput.getVariables()).orElse(new LinkedHashMap<>());
+
+        Map<String, Object> newVariables = new LinkedHashMap<>(variables);
+        newVariables.putAll(collector.getVariables());
+
+        return executionInput.transform(builder -> builder.variables(newVariables));
     }
 
     @Override
@@ -104,21 +125,6 @@ public class ExportedVariablesInstrumentation extends NoOpInstrumentation {
             schema = schema.transform(builder -> builder.additionalDirectives(directives));
         }
         return schema;
-    }
-
-    @Override
-    public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
-        ExportedVariablesCollector collector = parameters.getInstrumentationState();
-        Map<String, Object> collectedVariables = collector.getVariables();
-        if (collectedVariables.size() > 0) {
-
-            Map<String, Object> extraVariables = new HashMap<>();
-            extraVariables.putAll(executionContext.getVariables());
-            extraVariables.putAll(collectedVariables);
-
-            executionContext = executionContext.transform(builder -> builder.variables(extraVariables));
-        }
-        return executionContext;
     }
 
     @Override
@@ -138,7 +144,8 @@ public class ExportedVariablesInstrumentation extends NoOpInstrumentation {
                 }
                 // we have an export directive - what do they want to export it as
                 Value value = as.getValue();
-                Assert.assertTrue(value instanceof StringValue, "The export directive MUST return a string value");
+                assertTrue(value instanceof StringValue, "The export directive MUST return a string value");
+
                 final String exportAsName = ((StringValue) value).getValue();
                 result.thenApply(executionResult -> {
 
