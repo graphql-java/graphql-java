@@ -2,27 +2,26 @@ package graphql.execution.instrumentation.parameters;
 
 import graphql.ExecutionInput;
 import graphql.PublicApi;
-import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationPreExecutionState;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.GraphQLSchema;
 
 import java.util.Collections;
 import java.util.Map;
 
 /**
- * Parameters sent to {@link Instrumentation} methods
+ * Parameters sent to {@link graphql.execution.instrumentation.Instrumentation} methods
  */
 @PublicApi
-public class InstrumentationExecutionParameters {
+public class InstrumentationExecutionResultParameters {
     private final ExecutionInput executionInput;
     private final String query;
     private final String operation;
     private final Object context;
     private final Map<String, Object> variables;
-    private final InstrumentationPreExecutionState instrumentationState;
+    private final InstrumentationState instrumentationState;
     private final GraphQLSchema schema;
 
-    public InstrumentationExecutionParameters(ExecutionInput executionInput, GraphQLSchema schema, InstrumentationPreExecutionState instrumentationState) {
+    public InstrumentationExecutionResultParameters(ExecutionInput executionInput, GraphQLSchema schema, InstrumentationState instrumentationState) {
         this.executionInput = executionInput;
         this.query = executionInput.getQuery();
         this.operation = executionInput.getOperationName();
@@ -39,8 +38,8 @@ public class InstrumentationExecutionParameters {
      *
      * @return a new parameters object with the new state
      */
-    public InstrumentationExecutionParameters withNewState(InstrumentationPreExecutionState instrumentationState) {
-        return new InstrumentationExecutionParameters(this.getExecutionInput(), this.schema, instrumentationState);
+    public InstrumentationExecutionResultParameters withNewState(InstrumentationState instrumentationState) {
+        return new InstrumentationExecutionResultParameters(this.getExecutionInput(), this.schema, instrumentationState);
     }
 
     public ExecutionInput getExecutionInput() {
@@ -64,7 +63,7 @@ public class InstrumentationExecutionParameters {
         return variables;
     }
 
-    public <T extends InstrumentationPreExecutionState> T getInstrumentationState() {
+    public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked
         return (T) instrumentationState;
     }

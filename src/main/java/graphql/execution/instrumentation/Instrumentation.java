@@ -3,8 +3,12 @@ package graphql.execution.instrumentation;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.execution.ExecutionContext;
+import graphql.execution.instrumentation.parameters.InstrumentationCreatePreExecutionStateParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionContextParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionResultParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -35,9 +39,23 @@ public interface Instrumentation {
      * This will be called just before execution to create an object that is given back to all instrumentation methods
      * to allow them to have per execution request state
      *
+     * @param parameters the parameters to this step
+     *
      * @return a state object that is passed to each method
      */
-    default InstrumentationState createState() {
+    default InstrumentationPreExecutionState createPreExecutionState(InstrumentationCreatePreExecutionStateParameters parameters) {
+        return null;
+    }
+
+    /**
+     * This will be called just before execution to create an object that is given back to all instrumentation methods
+     * to allow them to have per execution request state
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a state object that is passed to each method
+     */
+    default InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
         return null;
     }
 
@@ -207,7 +225,7 @@ public interface Instrumentation {
      *
      * @return a non null instrumented ExecutionContext, the default is to return to the same object
      */
-    default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
+    default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionContextParameters parameters) {
         return executionContext;
     }
 
@@ -235,7 +253,19 @@ public interface Instrumentation {
      *
      * @return a new execution result completable future
      */
-    default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+    default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionResultParameters parameters) {
+        return CompletableFuture.completedFuture(executionResult);
+    }
+
+    /**
+     * This is called to allow instrumentation to instrument the final execution result in some way
+     *
+     * @param executionResult {@link java.util.concurrent.CompletableFuture} of the result to instrument
+     * @param parameters      the parameters to this step
+     *
+     * @return a new execution result completable future
+     */
+    default CompletableFuture<ExecutionResult> instrumentFinalExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         return CompletableFuture.completedFuture(executionResult);
     }
 }

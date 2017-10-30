@@ -307,7 +307,7 @@ class FieldValidationTest extends Specification {
         def execution = new Execution(strategy, strategy, strategy, instrumentation)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, NoOpInstrumentation.INSTANCE.createState())
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, null)
     }
 
 }

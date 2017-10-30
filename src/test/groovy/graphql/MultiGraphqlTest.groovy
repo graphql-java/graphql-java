@@ -1,7 +1,7 @@
 package graphql
 
 import graphql.execution.instrumentation.NoOpInstrumentation
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionResultParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -61,7 +61,7 @@ class MultiGraphqlTest extends Specification {
             }
 
             @Override
-            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionResultParameters parameters) {
                 def ext = ["extensionKey": parameters.operation]
                 def er = new ExecutionResultImpl(executionResult.data, executionResult.errors, ext)
                 return CompletableFuture.completedFuture(er)

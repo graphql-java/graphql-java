@@ -14,8 +14,10 @@ import graphql.execution.instrumentation.fieldvalidation.FieldValidation;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidationEnvironment;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation;
 import graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionResultParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
@@ -66,8 +68,9 @@ public class InstrumentationExamples {
     }
 
     class CustomInstrumentation implements Instrumentation {
+
         @Override
-        public InstrumentationState createState() {
+        public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
             //
             // instrumentation state is passed during each invocation of an Instrumentation method
             // and allows you to put stateful data away and reference it during the query execution
@@ -129,7 +132,7 @@ public class InstrumentationExamples {
         }
 
         @Override
-        public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionResultParameters parameters) {
             //
             // this allows you to instrument the execution result some how.  For example the Tracing support uses this to put
             // the `extensions` map of data in place

@@ -2,7 +2,7 @@ package graphql.execution.instrumentation.parameters;
 
 import graphql.ExecutionInput;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.InstrumentationPreExecutionState;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 
@@ -12,7 +12,7 @@ import graphql.schema.GraphQLSchema;
 public class InstrumentationValidationParameters extends InstrumentationExecutionParameters {
     private final Document document;
 
-    public InstrumentationValidationParameters(ExecutionInput executionInput, Document document, GraphQLSchema schema, InstrumentationState instrumentationState) {
+    public InstrumentationValidationParameters(ExecutionInput executionInput, Document document, GraphQLSchema schema, InstrumentationPreExecutionState instrumentationState) {
         super(executionInput, schema, instrumentationState);
         this.document = document;
     }
@@ -24,7 +24,7 @@ public class InstrumentationValidationParameters extends InstrumentationExecutio
      *
      * @return a new parameters object with the new state
      */
-    public InstrumentationValidationParameters withNewState(InstrumentationState instrumentationState) {
+    public InstrumentationValidationParameters withNewState(InstrumentationPreExecutionState instrumentationState) {
         return new InstrumentationValidationParameters(
                 this.getExecutionInput(), document, getSchema(), instrumentationState);
     }

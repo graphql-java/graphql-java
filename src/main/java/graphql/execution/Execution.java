@@ -11,7 +11,7 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionContextParameters;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -91,15 +91,15 @@ public class Execution {
                 .build();
 
 
-        InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
+        InstrumentationExecutionContextParameters parameters = new InstrumentationExecutionContextParameters(
                 executionInput, graphQLSchema, instrumentationState
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
-        return executeOperation(executionContext, parameters, executionInput.getRoot(), executionContext.getOperationDefinition());
+        return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
 
-    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, InstrumentationExecutionParameters instrumentationExecutionParameters, Object root, OperationDefinition operationDefinition) {
+    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         InstrumentationDataFetchParameters dataFetchParameters = new InstrumentationDataFetchParameters(executionContext);
         InstrumentationContext<CompletableFuture<ExecutionResult>> executionDispatchCtx = instrumentation.beginDataFetchDispatch(dataFetchParameters);
