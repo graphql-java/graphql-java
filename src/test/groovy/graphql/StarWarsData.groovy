@@ -6,6 +6,8 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
 import graphql.schema.idl.EnumValuesProvider
 
+import static java.util.stream.Collectors.toList
+
 class StarWarsData {
 
 
@@ -91,6 +93,14 @@ class StarWarsData {
         Object get(DataFetchingEnvironment environment) {
             def id = environment.arguments.id
             humanData[id]
+        }
+    }
+
+    static DataFetcher humansDataFetcher = new DataFetcher() {
+        @Override
+        Object get(DataFetchingEnvironment environment) {
+            List ids = environment.arguments.ids
+            return ids.stream().map({ id -> humanData[id] }).collect(toList())
         }
     }
 

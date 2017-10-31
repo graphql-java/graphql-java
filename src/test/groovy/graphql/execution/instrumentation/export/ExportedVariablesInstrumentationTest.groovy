@@ -93,4 +93,45 @@ class ExportedVariablesInstrumentationTest extends Specification {
                 ]
         ]
     }
+
+    def "lists are handled as expected"() {
+        def collector = new PluralExportedVariablesCollector()
+        def exportVariablesInstrumentation = new ExportedVariablesInstrumentation({ -> collector })
+
+        def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(exportVariablesInstrumentation)
+                .build()
+
+        def query = '''
+            query A {
+                hero 
+                {
+                    id @export(as:"droidId")
+                    name 
+                    friends   
+                    {
+                        id @export(as:"r2d2Friends")
+                    }
+                }
+            }
+            
+            query B ($r2d2Friends : [String]!) {
+                humans (ids : $r2d2Friends ) {
+                    name
+                }
+            }
+        '''
+        given:
+
+        ExecutionInput input = ExecutionInput.newExecutionInput().query(query).operationNames(["A","B"]).build()
+
+        def executionResult = graphQL.execute(input)
+
+        expect:
+        executionResult.getErrors().size() == 0
+
+        executionResult.data["B"] == [
+                humans: [[name:"Luke Skywalker"], [name:"Han Solo"], [name:"Leia Organa"]]
+        ]
+    }
 }
