@@ -78,6 +78,12 @@ class StarWarsData {
             "2001": artoo,
     ]
 
+    static def characterData = [:]
+    static {
+        characterData.putAll(humanData)
+        characterData.putAll(droidData)
+    }
+
     static boolean isHuman(String id) {
         return humanData[id] != null
     }
@@ -99,8 +105,22 @@ class StarWarsData {
     static DataFetcher humansDataFetcher = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {
+            if (!environment.containsArgument("ids")) {
+                return humanData.values()
+            }
             List ids = environment.arguments.ids
             return ids.stream().map({ id -> humanData[id] }).collect(toList())
+        }
+    }
+
+    static DataFetcher characterDataFetcher = new DataFetcher() {
+        @Override
+        Object get(DataFetchingEnvironment environment) {
+            if (!environment.containsArgument("ids")) {
+                return characterData
+            }
+            List ids = environment.arguments.ids
+            return ids.stream().map({ id -> characterData[id] }).collect(toList())
         }
     }
 
