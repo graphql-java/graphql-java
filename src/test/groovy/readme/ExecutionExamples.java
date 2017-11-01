@@ -267,4 +267,5 @@ public class ExecutionExamples {
         return GraphQL.newGraphQL(schema)
                 .build();
     }
+
 }
