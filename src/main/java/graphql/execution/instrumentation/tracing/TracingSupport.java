@@ -61,7 +61,7 @@ public class TracingSupport implements InstrumentationState {
         return () -> {
             long now = System.nanoTime();
             long duration = now - startFieldFetch;
-            long startOffset = now - startRequestNanos;
+            long startOffset = startFieldFetch - startRequestNanos;
             ExecutionTypeInfo typeInfo = dataFetchingEnvironment.getFieldTypeInfo();
 
             Map<String, Object> fetchMap = new LinkedHashMap<>();
