@@ -2,6 +2,7 @@ package graphql;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * This represents the series of values that can be input on a graphql query execution
@@ -57,6 +58,28 @@ public class ExecutionInput {
     public Map<String, Object> getVariables() {
         return variables;
     }
+
+    /**
+     * This helps you transform the current ExecutionInput object into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new ExecutionInput object based on calling build on that builder
+     */
+    public ExecutionInput transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder()
+                .query(this.query)
+                .operationName(this.operationName)
+                .context(this.context)
+                .root(this.root)
+                .variables(this.variables);
+
+        builderConsumer.accept(builder);
+
+        return builder.build();
+    }
+
 
     @Override
     public String toString() {

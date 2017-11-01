@@ -30,9 +30,21 @@ public class MaxQueryDepthInstrumentation extends NoOpInstrumentation {
             QueryTraversal queryTraversal = newQueryTraversal(parameters);
             int depth = queryTraversal.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
             if (depth > maxDepth) {
-                throw new AbortExecutionException("maximum query depth exceeded " + depth + " > " + maxDepth);
+                throw mkAbortException(depth, maxDepth);
             }
         };
+    }
+
+    /**
+     * Called to generate your own error message or custom exception class
+     *
+     * @param depth    the depth of the query
+     * @param maxDepth the maximum depth allowed
+     *
+     * @return a instance of AbortExecutionException
+     */
+    protected AbortExecutionException mkAbortException(int depth, int maxDepth) {
+        return new AbortExecutionException("maximum query depth exceeded " + depth + " > " + maxDepth);
     }
 
     QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {

@@ -7,6 +7,7 @@ import graphql.language.AstValueHelper;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -28,6 +29,7 @@ import graphql.schema.SchemaUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+import static graphql.Assert.assertTrue;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -462,11 +464,42 @@ public class Introspection {
         // make sure all TypeReferences are resolved
         GraphQLSchema.newSchema()
                 .query(GraphQLObjectType.newObject()
-                        .name("dummySchema")
+                        .name("IntrospectionQuery")
                         .field(SchemaMetaFieldDef)
                         .field(TypeMetaFieldDef)
                         .field(TypeNameMetaFieldDef)
                         .build())
                 .build();
+    }
+
+    /**
+     * This will look up a field definition by name, and understand that fields like __typename and __schema are special
+     * and take precedence in field resolution
+     *
+     * @param schema     the schema to use
+     * @param parentType the type of the parent object
+     * @param fieldName  the field to look up
+     *
+     * @return a field definition otherwise throws an assertion exception if its null
+     */
+    public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
+
+        if (schema.getQueryType() == parentType) {
+            if (fieldName.equals(SchemaMetaFieldDef.getName())) {
+                return SchemaMetaFieldDef;
+            }
+            if (fieldName.equals(TypeMetaFieldDef.getName())) {
+                return TypeMetaFieldDef;
+            }
+        }
+        if (fieldName.equals(TypeNameMetaFieldDef.getName())) {
+            return TypeNameMetaFieldDef;
+        }
+
+        assertTrue(parentType instanceof GraphQLFieldsContainer, "should not happen : parent type must be an object or interface : " + parentType);
+        GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
+        GraphQLFieldDefinition fieldDefinition = schema.getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
+        Assert.assertTrue(fieldDefinition != null, "Unknown field " + fieldName);
+        return fieldDefinition;
     }
 }

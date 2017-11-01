@@ -24,10 +24,13 @@ class Issue743 extends Specification {
                 .variables([:])
                 .build()
 
-        graphQL.execute(executionInput)
+        def executionResult = graphQL.execute(executionInput)
 
         then:
 
-        thrown(NonNullableValueCoercedAsNullException)
+        executionResult.data == null
+        executionResult.errors.size() == 1
+        executionResult.errors[0].errorType == ErrorType.ValidationError
+        executionResult.errors[0].message == "Variable 'isTrue' has coerced Null value for NonNull type 'Boolean!'"
     }
 }

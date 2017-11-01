@@ -11,6 +11,7 @@ import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,10 @@ public class ExecutionContext {
     private final Map<String, GraphQLError> errors = new LinkedHashMap<>();
 
     public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
+        this(instrumentation, executionId, graphQLSchema, instrumentationState, queryStrategy, mutationStrategy, subscriptionStrategy, fragmentsByName, document, operationDefinition, variables, context, root, Collections.emptyMap());
+    }
+
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, Map<String, GraphQLError> startingErrors) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -50,6 +55,7 @@ public class ExecutionContext {
         this.context = context;
         this.root = root;
         this.instrumentation = instrumentation;
+        this.errors.putAll(startingErrors);
     }
 
 
@@ -115,6 +121,11 @@ public class ExecutionContext {
         }
     }
 
+    // access for builder only
+    Map<String, GraphQLError> getErrorMap() {
+        return errors;
+    }
+
     public ExecutionStrategy getQueryStrategy() {
         return queryStrategy;
     }
@@ -128,24 +139,17 @@ public class ExecutionContext {
     }
 
 
+    /**
+     * This helps you transform the current ExecutionContext object into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new ExecutionContext object based on calling build on that builder
+     */
     public ExecutionContext transform(Consumer<ExecutionContextBuilder> builderConsumer) {
-        ExecutionContextBuilder builder = new ExecutionContextBuilder()
-                .graphQLSchema(this.graphQLSchema)
-                .executionId(this.executionId)
-                .instrumentationState(instrumentationState)
-                .queryStrategy(this.queryStrategy)
-                .mutationStrategy(this.mutationStrategy)
-                .subscriptionStrategy(this.subscriptionStrategy)
-                .fragmentsByName(this.fragmentsByName)
-                .operationDefinition(this.operationDefinition)
-                .document(this.document)
-                .variables(this.variables)
-                .root(this.root)
-                .context(this.context)
-                .instrumentation(this.instrumentation);
-
+        ExecutionContextBuilder builder = ExecutionContextBuilder.newExecutionContextBuilder(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
-
 }

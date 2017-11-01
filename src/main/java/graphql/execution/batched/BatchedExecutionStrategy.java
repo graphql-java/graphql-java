@@ -416,6 +416,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                     .field(field)
                     .value(value)
                     .argumentValues(argumentValues)
+                    .context(executionContext.getContext())
                     .schema(executionContext.getGraphQLSchema())
                     .build());
         } else if (fieldType instanceof GraphQLUnionType) {
@@ -424,6 +425,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                     .field(field)
                     .value(value)
                     .argumentValues(argumentValues)
+                    .context(executionContext.getContext())
                     .schema(executionContext.getGraphQLSchema())
                     .build());
         } else if (fieldType instanceof GraphQLObjectType) {

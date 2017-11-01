@@ -3,6 +3,7 @@ package graphql.analysis;
 import graphql.Internal;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.ValuesResolver;
+import graphql.introspection.Introspection;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -15,7 +16,6 @@ import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
@@ -26,9 +26,6 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.introspection.Introspection.SchemaMetaFieldDef;
-import static graphql.introspection.Introspection.TypeMetaFieldDef;
-import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 @Internal
 public class QueryTraversal {
@@ -97,8 +94,7 @@ public class QueryTraversal {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
-                GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
-                GraphQLFieldDefinition fieldDefinition = getFieldDef(fieldsContainer, (Field) selection);
+                GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, type, ((Field) selection).getName());
                 visitField(visitor, (Field) selection, fieldDefinition, type, parent, preOrder);
             } else if (selection instanceof InlineFragment) {
                 visitInlineFragment(visitor, (InlineFragment) selection, type, parent, preOrder);
@@ -106,21 +102,6 @@ public class QueryTraversal {
                 visitFragmentSpread(visitor, (FragmentSpread) selection, parent, preOrder);
             }
         }
-    }
-
-    protected GraphQLFieldDefinition getFieldDef(GraphQLFieldsContainer parentType, Field field) {
-        if (schema.getQueryType() == parentType) {
-            if (field.getName().equals(SchemaMetaFieldDef.getName())) {
-                return SchemaMetaFieldDef;
-            }
-            if (field.getName().equals(TypeMetaFieldDef.getName())) {
-                return TypeMetaFieldDef;
-            }
-        }
-        if (field.getName().equals(TypeNameMetaFieldDef.getName())) {
-            return TypeNameMetaFieldDef;
-        }
-        return assertNotNull(parentType.getFieldDefinition(field.getName()), "should not happen: unknown field " + field.getName());
     }
 
     private void visitFragmentSpread(QueryVisitor visitor, FragmentSpread fragmentSpread, QueryVisitorEnvironment parent, boolean preOrder) {
