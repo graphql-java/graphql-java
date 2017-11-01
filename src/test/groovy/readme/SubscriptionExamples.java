@@ -2,6 +2,7 @@ package readme;
 
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.reactivestreams.Publisher;
@@ -18,6 +19,7 @@ public class SubscriptionExamples {
     void basicSubscriptionExample() {
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
+                .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy())
                 .build();
 
         String query = "" +

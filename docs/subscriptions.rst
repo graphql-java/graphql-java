@@ -28,10 +28,17 @@ graphql subscriptions allow a stream of ``ExecutionResult`` objects to be sent d
 changes.  The field selection set will applied to the underlying data and are represented just like any other
 graphql query.
 
-What is special is that the initial result of a subscription query is a Reactive Streams ``Publisher`` object which you
+What is special is that the initial result of a subscription query is a reactive-streams ``Publisher`` object which you
 need to use to get the future values.
 
+You need to use ``SubscriptionExecutionStrategy`` as your execution strategy as it has the support for the reactive-streams APIs.
+
 .. code-block:: java
+
+        GraphQL graphQL = GraphQL
+                .newGraphQL(schema)
+                .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy())
+                .build();
 
         ExecutionResult executionResult = graphQL.execute(query);
 
@@ -45,6 +52,7 @@ code which will look something like the following
 
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
+                .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy())
                 .build();
 
         String query = "" +
@@ -100,10 +108,10 @@ code which will look something like the following
             }
         });
 
-You are now writing reactive streams code to consume a series of ``ExecutionResults``.  You can see
-more details on reactive streams code here http://www.reactive-streams.org/
+You are now writing reactive-streams code to consume a series of ``ExecutionResults``.  You can see
+more details on reactive-streams code here http://www.reactive-streams.org/
 
-``RxJava`` is a popular implementation of reactive streams.  Check out http://reactivex.io/intro.html to find out more
+``RxJava`` is a popular implementation of reactive-streams.  Check out http://reactivex.io/intro.html to find out more
 about creating Publishers of data and Subscriptions to that data.
 
 graphql-java only produces a stream of results.  It does not concern itself with sending these over the network on things
