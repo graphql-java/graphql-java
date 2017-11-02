@@ -1,17 +1,23 @@
 package graphql.execution.instrumentation;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
+import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
+import graphql.language.Field;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -66,7 +72,21 @@ public interface Instrumentation {
     InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters);
 
     /**
-     * This is called just before the data fetch is started and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
+     * This is called just before the data fetching stage is started and finishes as soon as the query is dispatched ready for completion.  This
+     * is different to {@link #beginDataFetch(graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters)}
+     * in that this step does not wait for the values to be completed, only dispatched for completion.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
+        return (result, t) -> {
+        };
+    }
+
+    /**
+     * This is called just before the data fetching stage is started, waits for all data to be completed and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
      * @param parameters the parameters to this step
@@ -93,6 +113,19 @@ public interface Instrumentation {
     InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters);
 
     /**
+     * This is called just before a selection set of fields is resolved and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
+     * will be called indicating that the step has finished.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    default InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
+        return (result, t) -> {
+        };
+    }
+
+    /**
      * This is called just before a field is resolved and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
      * will be called indicating that the step has finished.
      *
@@ -112,6 +145,73 @@ public interface Instrumentation {
      */
     InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters);
 
+
+    /**
+     * This is called just before the complete field is started and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
+     * will be called indicating that the step has finished.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
+        return (result, t) -> {
+        };
+    }
+
+    /**
+     * This is called just before the complete field list is started and when this step finishes the {@link InstrumentationContext#onEnd(Object, Throwable)}
+     * will be called indicating that the step has finished.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    default InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
+        return (result, t) -> {
+        };
+    }
+
+    /**
+     * This is called to instrument a {@link graphql.ExecutionInput} before it is used to parse, validate
+     * and execute a query, allowing you to adjust what query input parameters are used
+     *
+     * @param executionInput the execution input to be used
+     * @param parameters     the parameters describing the field to be fetched
+     *
+     * @return a non null instrumented ExecutionInput, the default is to return to the same object
+     */
+    default ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
+        return executionInput;
+    }
+
+    /**
+     * This is called to instrument a {@link graphql.schema.GraphQLSchema} before it is used to parse, validate
+     * and execute a query, allowing you to adjust what types are used.
+     *
+     * @param schema     the schema to be used
+     * @param parameters the parameters describing the field to be fetched
+     *
+     * @return a non null instrumented GraphQLSchema, the default is to return to the same object
+     */
+    default GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
+        return schema;
+    }
+
+    /**
+     * This is called to instrument a {@link ExecutionContext} before it is used to execute a query,
+     * allowing you to adjust the base data used.
+     *
+     * @param executionContext the execution context to be used
+     * @param parameters       the parameters describing the field to be fetched
+     *
+     * @return a non null instrumented ExecutionContext, the default is to return to the same object
+     */
+    default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
+        return executionContext;
+    }
+
+
     /**
      * This is called to instrument a {@link DataFetcher} just before it is used to fetch a field, allowing you
      * to adjust what information is passed back or record information about specific data fetches.  Note
@@ -121,7 +221,7 @@ public interface Instrumentation {
      * @param dataFetcher the data fetcher about to be used
      * @param parameters  the parameters describing the field to be fetched
      *
-     * @return a non null instrumented data fetcher, the default is to return to the same object
+     * @return a non null instrumented DataFetcher, the default is to return to the same object
      */
     default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         return dataFetcher;

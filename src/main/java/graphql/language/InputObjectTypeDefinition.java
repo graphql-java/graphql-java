@@ -8,9 +8,9 @@ import java.util.Map;
 import static graphql.language.NodeUtil.directivesByName;
 
 public class InputObjectTypeDefinition extends AbstractNode implements TypeDefinition {
-    private String name;
-    private List<Directive> directives = new ArrayList<>();
-    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+    private final String name;
+    private final List<Directive> directives = new ArrayList<>();
+    private final List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
 
     public InputObjectTypeDefinition(String name) {
         this.name = name;

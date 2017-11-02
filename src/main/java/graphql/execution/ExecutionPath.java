@@ -18,7 +18,7 @@ import static graphql.Assert.assertTrue;
  */
 @PublicApi
 public class ExecutionPath {
-    private static ExecutionPath ROOT_PATH = new ExecutionPath();
+    private static final ExecutionPath ROOT_PATH = new ExecutionPath();
 
     /**
      * All paths start from here

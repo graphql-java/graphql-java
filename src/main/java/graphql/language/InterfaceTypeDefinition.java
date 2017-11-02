@@ -8,9 +8,9 @@ import java.util.Map;
 import static graphql.language.NodeUtil.directivesByName;
 
 public class InterfaceTypeDefinition extends AbstractNode implements TypeDefinition {
-    private String name;
-    private List<FieldDefinition> definitions = new ArrayList<>();
-    private List<Directive> directives = new ArrayList<>();
+    private final String name;
+    private final List<FieldDefinition> definitions = new ArrayList<>();
+    private final List<Directive> directives = new ArrayList<>();
 
     public InterfaceTypeDefinition(String name) {
         this.name = name;

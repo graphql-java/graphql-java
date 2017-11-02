@@ -86,6 +86,9 @@ class Issue739 extends Specification {
                 .join()
 
         then:
-        thrown(CoercingParseValueException)
+        varResult.data == null
+        varResult.errors.size() == 1
+        varResult.errors[0].errorType == ErrorType.ValidationError
+        varResult.errors[0].message == "Variables for GraphQLInputObjectType must be an instance of a Map according to the graphql specification.  The offending object was a java.lang.Integer"
     }
 }

@@ -1,0 +1,24 @@
+schema {
+    query: Query
+}
+
+type Query {
+    shops: [Shop]!
+}
+
+type Shop {
+    id: ID!
+    name: String!
+    departments: [Department]!
+}
+
+type Department {
+    id: ID!
+    name: String!
+    products: [Product]!
+}
+
+type Product {
+    id: ID!
+    name: String!
+}

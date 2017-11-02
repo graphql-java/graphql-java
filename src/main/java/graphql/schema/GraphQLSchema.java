@@ -19,7 +19,9 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static java.lang.String.format;
 
 /**
  * The schema represents the combined type system of the graphql engine.  This is how the engine knows
@@ -73,6 +75,24 @@ public class GraphQLSchema {
 
     public GraphQLType getType(String typeName) {
         return typeMap.get(typeName);
+    }
+
+    /**
+     * Called to return a named {@link graphql.schema.GraphQLObjectType} from the schema
+     *
+     * @param typeName the name of the type
+     *
+     * @return a graphql object type or null if there is one
+     *
+     * @throws graphql.GraphQLException if the type is NOT a object type
+     */
+    public GraphQLObjectType getObjectType(String typeName) {
+        GraphQLType graphQLType = typeMap.get(typeName);
+        if (graphQLType != null) {
+            assertTrue(graphQLType instanceof GraphQLObjectType,
+                    format("You have asked for named object type '%s' but its not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
+        }
+        return (GraphQLObjectType) graphQLType;
     }
 
     public List<GraphQLType> getAllTypesAsList() {

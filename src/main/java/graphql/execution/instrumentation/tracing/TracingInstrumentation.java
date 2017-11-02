@@ -60,12 +60,16 @@ public class TracingInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        return new NoOpInstrumentationContext<>();
+        TracingSupport tracingSupport = parameters.getInstrumentationState();
+        TracingSupport.TracingContext ctx = tracingSupport.beginParse();
+        return (result, t) -> ctx.onEnd();
     }
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return new NoOpInstrumentationContext<>();
+        TracingSupport tracingSupport = parameters.getInstrumentationState();
+        TracingSupport.TracingContext ctx = tracingSupport.beginValidation();
+        return (result, t) -> ctx.onEnd();
     }
 
     @Override
