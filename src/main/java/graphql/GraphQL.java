@@ -8,6 +8,7 @@ import graphql.execution.Execution;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationPreExecutionState;
@@ -155,7 +156,7 @@ public class GraphQL {
         this.graphQLSchema = assertNotNull(graphQLSchema, "queryStrategy must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
-        this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
+        this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SubscriptionExecutionStrategy();
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
         this.instrumentation = instrumentation;
         this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
@@ -204,7 +205,7 @@ public class GraphQL {
         private GraphQLSchema graphQLSchema;
         private ExecutionStrategy queryExecutionStrategy = new AsyncExecutionStrategy();
         private ExecutionStrategy mutationExecutionStrategy = new AsyncSerialExecutionStrategy();
-        private ExecutionStrategy subscriptionExecutionStrategy = new AsyncExecutionStrategy();
+        private ExecutionStrategy subscriptionExecutionStrategy = new SubscriptionExecutionStrategy();
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = NoOpInstrumentation.INSTANCE;
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;

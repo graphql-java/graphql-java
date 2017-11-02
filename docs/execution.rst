@@ -446,6 +446,16 @@ This behaviour makes it unsuitable to be used as a mutation execution strategy.
                 .build();
 
 
+SubscriptionExecutionStrategy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Graphql subscriptions allows you to create stateful subscriptions to graphql data.  You uses ``SubscriptionExecutionStrategy``
+as your execution strategy as it has the support for the reactive-streams APIs.
+
+See http://www.reactive-streams.org/ for more information on the reactive ``Publisher`` and ``Subscriber`` interfaces.
+
+Also see the page on subscriptions for more details on how to write a subscription based graphql service.
+
 
 BatchedExecutionStrategy
 ^^^^^^^^^^^^^^^^^^^^^^^^

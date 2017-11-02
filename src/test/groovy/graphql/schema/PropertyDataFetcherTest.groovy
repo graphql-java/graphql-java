@@ -4,12 +4,48 @@ import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
 
+import java.util.function.Function
+
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment
 
 class PropertyDataFetcherTest extends Specification {
 
     def env(obj) {
         newDataFetchingEnvironment().source(obj).build()
+    }
+
+    class SomeObject {
+        String value
+    }
+
+    def "null source is always null"() {
+        def environment = env(null)
+        def fetcher = new PropertyDataFetcher("someProperty")
+        expect:
+        fetcher.get(environment) == null
+    }
+
+    def "function based fetcher works with non null source"() {
+        def environment = env(new SomeObject(value: "aValue"))
+        Function<Object, String> f = { obj -> obj['value'] }
+        def fetcher = PropertyDataFetcher.fetching(f)
+        expect:
+        fetcher.get(environment) == "aValue"
+    }
+
+    def "function based fetcher works with null source"() {
+        def environment = env(null)
+        Function<Object, String> f = { obj -> obj['value'] }
+        def fetcher = PropertyDataFetcher.fetching(f)
+        expect:
+        fetcher.get(environment) == null
+    }
+
+    def "fetch via map lookup"() {
+        def environment = env(["mapProperty": "aValue"])
+        def fetcher = PropertyDataFetcher.fetching("mapProperty")
+        expect:
+        fetcher.get(environment) == "aValue"
     }
 
     def "fetch via public getter with private subclass"() {
@@ -32,7 +68,7 @@ class PropertyDataFetcherTest extends Specification {
         def fetcher = new PropertyDataFetcher("privateProperty")
         def result = fetcher.get(environment)
         expect:
-        result == null
+        result == "privateValue"
     }
 
     def "fetch via public method"() {
@@ -56,6 +92,24 @@ class PropertyDataFetcherTest extends Specification {
         def fetcher = new PropertyDataFetcher("propertyOnlyDefinedOnPackageProtectedImpl")
         def result = fetcher.get(environment)
         expect:
-        result == null
+        result == "valueOnlyDefinedOnPackageProtectedIpl"
     }
+
+
+    def "fetch via public field"() {
+        def environment = env(new TestClass())
+        def fetcher = new PropertyDataFetcher("publicField")
+        def result = fetcher.get(environment)
+        expect:
+        result == "publicFieldValue"
+    }
+
+    def "fetch via private field"() {
+        def environment = env(new TestClass())
+        def fetcher = new PropertyDataFetcher("privateField")
+        def result = fetcher.get(environment)
+        expect:
+        result == "privateFieldValue"
+    }
+
 }
