@@ -39,8 +39,14 @@ class MultiGraphqlTest extends Specification {
 
         then:
         er.errors.size() == 0
-        er.data["A"] == [hero: [name: "R2-D2"]]
-        er.data["B"] == [human: [name: "Luke Skywalker"]]
+        List<CompletableFuture<ExecutionResult>> results = er.getData()
+        results.size() == 2
+
+        def erA = results[0].join()
+        def erB = results[1].join()
+
+        erA.data == [hero: [name: "R2-D2"]]
+        erB.data == [human: [name: "Luke Skywalker"]]
     }
 
     def "errors and extensions are handled"() {
@@ -91,11 +97,18 @@ class MultiGraphqlTest extends Specification {
 
 
         then:
-        er.errors.size() == 2
-        er.data["A"] == [hero: [name: "R2-D2", appearsIn: null]]
-        er.data["B"] == [human: [name: "Luke Skywalker", appearsIn: null]]
+        List<CompletableFuture<ExecutionResult>> results = er.getData()
+        results.size() == 2
+        def erA = results[0].join()
+        def erB = results[1].join()
 
-        er.extensions["A"] == [extensionKey: "A"]
-        er.extensions["B"] == [extensionKey: "B"]
+        erA.data == [hero: [name: "R2-D2", appearsIn: null]]
+        erB.data == [human: [name: "Luke Skywalker", appearsIn: null]]
+
+        erA.errors.size() == 1
+        erB.errors.size() == 1
+
+        erA.extensions == [extensionKey: "A"]
+        erB.extensions == [extensionKey: "B"]
     }
 }

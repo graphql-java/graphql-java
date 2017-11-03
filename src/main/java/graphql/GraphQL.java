@@ -1,7 +1,7 @@
 package graphql;
 
+import graphql.analysis.OperationDependencyChecker;
 import graphql.execution.AbortExecutionException;
-import graphql.execution.Async;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.AsyncSerialExecutionStrategy;
 import graphql.execution.Execution;
@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -531,6 +531,37 @@ public class GraphQL {
         return ParseResult.of(document);
     }
 
+    private static class ParseResult {
+        private final Document document;
+        private final Exception exception;
+
+        private ParseResult(Document document, Exception exception) {
+            this.document = document;
+            this.exception = exception;
+        }
+
+        private boolean isFailure() {
+            return document == null;
+        }
+
+        private Document getDocument() {
+            return document;
+        }
+
+        private Exception getException() {
+            return exception;
+        }
+
+        private static ParseResult of(Document document) {
+            return new ParseResult(document, null);
+        }
+
+        private static ParseResult ofError(Exception e) {
+            return new ParseResult(null, e);
+        }
+    }
+
+
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState preExecutionState) {
         InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, preExecutionState));
 
@@ -545,16 +576,14 @@ public class GraphQL {
         String query = executionInput.getQuery();
         List<String> operationNames = executionInput.getOperationNames();
         if (operationNames.size() > 1) {
-            CompletableFuture<List<ExecutionResult>> results = Async.each(operationNames, (operationName, index) ->
-                    executeOperation(executionInput, document, graphQLSchema, instrumentationPreExecutionState, query, operationName));
-            return results.thenApply(executionResults -> combineMultipleResults(operationNames, executionResults));
+            return executeMultipleOperations(executionInput, document, graphQLSchema, instrumentationPreExecutionState, query, operationNames);
         } else {
             // with a single operation name
-            return executeOperation(executionInput, document, graphQLSchema, instrumentationPreExecutionState, query, executionInput.getOperationName());
+            return executeSingleOperation(executionInput, document, graphQLSchema, instrumentationPreExecutionState, query, executionInput.getOperationName());
         }
     }
 
-    private CompletableFuture<ExecutionResult> executeOperation(ExecutionInput startingExecutionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState preExecutionState, String query, String operationName) {
+    private CompletableFuture<ExecutionResult> executeSingleOperation(ExecutionInput startingExecutionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState preExecutionState, String query, String operationName) {
 
         InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(startingExecutionInput, this.graphQLSchema, preExecutionState);
         startingExecutionInput = instrumentation.instrumentExecutionInput(startingExecutionInput, inputInstrumentationParameters);
@@ -589,55 +618,35 @@ public class GraphQL {
         return executionResult;
     }
 
-    private ExecutionResult combineMultipleResults(List<String> operationNames, List<ExecutionResult> executionResults) {
-        List<GraphQLError> errors = new ArrayList<>();
-        Map<Object, Object> extensions = new LinkedHashMap<>();
-        Map<String, Object> results = new LinkedHashMap<>();
-        for (int i = 0; i < operationNames.size(); i++) {
-            String operationName = operationNames.get(i);
-            ExecutionResult executionResult = executionResults.get(i);
-            Object data = executionResult.getData();
-            results.put(operationName, data);
-            errors.addAll(executionResult.getErrors());
-            Map<Object, Object> ext = executionResult.getExtensions();
-            if (ext != null) {
-                extensions.put(operationName, ext);
+    private CompletableFuture<ExecutionResult> executeMultipleOperations(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationPreExecutionState instrumentationPreExecutionState, String query, List<String> operationNames) {
+
+        OperationDependencyChecker dependencyChecker = new OperationDependencyChecker(graphQLSchema, document, executionInput.getVariables());
+
+        List<CompletableFuture<ExecutionResult>> operationResults = new ArrayList<>(operationNames.size());
+
+        int i = 0;
+        String operationName = operationNames.get(i);
+        CompletableFuture<ExecutionResult> previousResult = executeSingleOperation(executionInput, document, graphQLSchema, instrumentationPreExecutionState, query, operationName);
+        operationResults.add(previousResult);
+
+        String previousOperationName = operationName;
+        i++;
+        while (i < operationNames.size()) {
+            operationName = operationNames.get(i);
+            if (dependencyChecker.currentIsDependentOnPrevious(operationName, previousOperationName)) {
+                //
+                // the previous operation influences this one so we must wait for the previous CF to finish
+                // so we can allow the influence to occur (say via Instrumentation) into the next one
+                //
+                previousResult.join();
             }
+            CompletableFuture<ExecutionResult> result = executeSingleOperation(executionInput, document, graphQLSchema, instrumentationPreExecutionState, query, operationName);
+            operationResults.add(result);
+            previousOperationName = operationName;
+            previousResult = result;
+            i++;
         }
-        if (extensions.isEmpty()) {
-            // keep the semantics that null extensions if there are not any
-            extensions = null;
-        }
-        return new ExecutionResultImpl(results, errors, extensions);
-    }
-
-    private static class ParseResult {
-        private final Document document;
-        private final Exception exception;
-
-        private ParseResult(Document document, Exception exception) {
-            this.document = document;
-            this.exception = exception;
-        }
-
-        private boolean isFailure() {
-            return document == null;
-        }
-
-        private Document getDocument() {
-            return document;
-        }
-
-        private Exception getException() {
-            return exception;
-        }
-
-        private static ParseResult of(Document document) {
-            return new ParseResult(document, null);
-        }
-
-        private static ParseResult ofError(Exception e) {
-            return new ParseResult(null, e);
-        }
+        ExecutionResultImpl overAllResult = new ExecutionResultImpl(operationResults, Collections.emptyList());
+        return CompletableFuture.completedFuture(overAllResult);
     }
 }
