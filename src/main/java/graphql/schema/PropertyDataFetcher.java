@@ -77,6 +77,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
      * </pre>
      *
      * @param propertyName the name of the property to retrieve
+     * @param <T>          the type of result
      *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
@@ -100,6 +101,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
      *
      * @param function the function to use to obtain a value from the source object
      * @param <O>      the type of the source object
+     * @param <T>      the type of result
      *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
