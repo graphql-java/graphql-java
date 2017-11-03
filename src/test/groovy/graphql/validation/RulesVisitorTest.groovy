@@ -6,6 +6,8 @@ import graphql.parser.Parser
 import graphql.validation.rules.NoUnusedVariables
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class RulesVisitorTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
@@ -16,7 +18,7 @@ class RulesVisitorTest extends Specification {
         // this is one of the rules which checks inside fragment spreads, so it's needed to test this
         NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, errorCollector)
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedVariables]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedVariables]), newEnvironment().build())
     }
 
     def "RulesVisitor does not repeatedly spread directly recursive fragments leading to a stackoverflow"() {

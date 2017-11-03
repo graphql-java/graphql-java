@@ -9,6 +9,8 @@ import graphql.validation.ValidationError;
 
 import java.util.List;
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment;
+
 /**
  * Prevents execution if the query depth is greater than the specified maxDepth
  */
@@ -28,7 +30,7 @@ public class MaxQueryDepthInstrumentation extends NoOpInstrumentation {
                 return;
             }
             QueryTraversal queryTraversal = newQueryTraversal(parameters);
-            int depth = queryTraversal.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
+            int depth = queryTraversal.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0, newEnvironment().setContext(parameters.getContext()).build());
             if (depth > maxDepth) {
                 throw mkAbortException(depth, maxDepth);
             }

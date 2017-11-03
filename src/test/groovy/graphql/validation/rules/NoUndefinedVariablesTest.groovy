@@ -10,6 +10,8 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class NoUndefinedVariablesTest extends Specification {
 
 
@@ -22,7 +24,7 @@ class NoUndefinedVariablesTest extends Specification {
         NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]), newEnvironment().build())
     }
 
 

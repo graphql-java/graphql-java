@@ -6,6 +6,8 @@ import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 /**
  * Test that custom directives are validated properly.
  */
@@ -55,6 +57,6 @@ query {
 
     List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(customDirectiveSchema, document)
+        return new Validator().validateDocument(customDirectiveSchema, document, newEnvironment().build())
     }
 }

@@ -15,6 +15,7 @@ import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -54,8 +55,8 @@ public class RulesVisitor implements DocumentVisitor {
     }
 
     @Override
-    public void enter(Node node, List<Node> ancestors) {
-        validationContext.getTraversalContext().enter(node, ancestors);
+    public void enter(Node node, List<Node> ancestors, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
+        validationContext.getTraversalContext().enter(node, ancestors, fieldVisibilityEnvironment);
         Set<AbstractRule> tmpRulesSet = new LinkedHashSet<>(this.rules);
         tmpRulesSet.removeAll(rulesToSkip);
         List<AbstractRule> rulesToConsider = new ArrayList<>(tmpRulesSet);
@@ -72,7 +73,7 @@ public class RulesVisitor implements DocumentVisitor {
         } else if (node instanceof Directive) {
             checkDirective((Directive) node, ancestors, rulesToConsider);
         } else if (node instanceof FragmentSpread) {
-            checkFragmentSpread((FragmentSpread) node, rulesToConsider, ancestors);
+            checkFragmentSpread((FragmentSpread) node, rulesToConsider, ancestors, fieldVisibilityEnvironment);
         } else if (node instanceof FragmentDefinition) {
             checkFragmentDefinition((FragmentDefinition) node, rulesToConsider);
         } else if (node instanceof OperationDefinition) {
@@ -123,7 +124,7 @@ public class RulesVisitor implements DocumentVisitor {
         }
     }
 
-    private void checkFragmentSpread(FragmentSpread fragmentSpread, List<AbstractRule> rules, List<Node> ancestors) {
+    private void checkFragmentSpread(FragmentSpread fragmentSpread, List<AbstractRule> rules, List<Node> ancestors, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         for (AbstractRule rule : rules) {
             rule.checkFragmentSpread(fragmentSpread);
         }
@@ -131,7 +132,7 @@ public class RulesVisitor implements DocumentVisitor {
         if (rulesVisitingFragmentSpreads.size() > 0) {
             FragmentDefinition fragment = validationContext.getFragment(fragmentSpread.getName());
             if (fragment != null && !ancestors.contains(fragment)) {
-                new LanguageTraversal(ancestors).traverse(fragment, new RulesVisitor(validationContext, rulesVisitingFragmentSpreads, true));
+                new LanguageTraversal(ancestors).traverse(fragment, new RulesVisitor(validationContext, rulesVisitingFragmentSpreads, true), fieldVisibilityEnvironment);
             }
         }
     }
@@ -179,15 +180,15 @@ public class RulesVisitor implements DocumentVisitor {
 
 
     @Override
-    public void leave(Node node, List<Node> ancestors) {
-        validationContext.getTraversalContext().leave(node, ancestors);
+    public void leave(Node node, List<Node> ancestors, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
+        validationContext.getTraversalContext().leave(node, ancestors, fieldVisibilityEnvironment);
 
         if (node instanceof Document) {
             documentFinished((Document) node);
         } else if (node instanceof OperationDefinition) {
             leaveOperationDefinition((OperationDefinition) node);
         } else if (node instanceof SelectionSet) {
-            leaveSelectionSet((SelectionSet) node);
+            leaveSelectionSet((SelectionSet) node, fieldVisibilityEnvironment);
         }
 
         if (rulesToSkipByUntilNode.containsKey(node)) {
@@ -198,9 +199,9 @@ public class RulesVisitor implements DocumentVisitor {
 
     }
 
-    private void leaveSelectionSet(SelectionSet selectionSet) {
+    private void leaveSelectionSet(SelectionSet selectionSet, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         for (AbstractRule rule : rules) {
-            rule.leaveSelectionSet(selectionSet);
+            rule.leaveSelectionSet(selectionSet, fieldVisibilityEnvironment);
         }
     }
 

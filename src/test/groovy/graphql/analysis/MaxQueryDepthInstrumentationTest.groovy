@@ -11,6 +11,8 @@ import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class MaxQueryDepthInstrumentationTest extends Specification {
 
     Document createQuery(String query) {

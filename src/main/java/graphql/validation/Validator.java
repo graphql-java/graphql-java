@@ -4,6 +4,7 @@ package graphql.validation;
 import graphql.Internal;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 import graphql.validation.rules.ArgumentsOfCorrectType;
 import graphql.validation.rules.FieldsOnCorrectType;
 import graphql.validation.rules.FragmentsOnCompositeType;
@@ -27,22 +28,24 @@ import graphql.validation.rules.VariablesAreInputTypes;
 import java.util.ArrayList;
 import java.util.List;
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment;
+
 @Internal
 public class Validator {
 
-    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         ValidationContext validationContext = new ValidationContext(schema, document);
 
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();
-        List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
+        List<AbstractRule> rules = createRules(validationContext, validationErrorCollector, fieldVisibilityEnvironment);
         LanguageTraversal languageTraversal = new LanguageTraversal();
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, rules));
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, rules), fieldVisibilityEnvironment);
 
         return validationErrorCollector.getErrors();
     }
 
-    private List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+    private List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         List<AbstractRule> rules = new ArrayList<>();
 
         ArgumentsOfCorrectType argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, validationErrorCollector);
@@ -62,7 +65,7 @@ public class Validator {
         KnownTypeNames knownTypeNames = new KnownTypeNames(validationContext, validationErrorCollector);
         rules.add(knownTypeNames);
 
-        NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, validationErrorCollector);
+        NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, validationErrorCollector, fieldVisibilityEnvironment);
         rules.add(noFragmentCycles);
         NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, validationErrorCollector);
         rules.add(noUndefinedVariables);

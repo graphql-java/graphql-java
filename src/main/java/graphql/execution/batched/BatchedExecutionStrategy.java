@@ -53,6 +53,7 @@ import java.util.stream.IntStream;
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -141,7 +142,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .build();
 
         ExecutionPath fieldPath = curNode.getTypeInfo().getPath().segment(fieldName);
-        GraphQLFieldDefinition fieldDefinition = getFieldDef(executionContext.getGraphQLSchema(), curNode.getType(), currentField.get(0));
+        GraphQLFieldDefinition fieldDefinition = getFieldDef(executionContext.getGraphQLSchema(), curNode.getType(), currentField.get(0), newEnvironment().setContext(executionContext.getContext()).build());
 
         ExecutionTypeInfo typeInfo = newTypeInfo()
                 .type(fieldDefinition.getType())
@@ -179,7 +180,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         GraphQLObjectType parentType = node.getType();
         List<Field> fields = node.getFields().get(fieldName);
 
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0), newEnvironment().setContext(executionContext.getContext()).build());
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         ExecutionTypeInfo typeInfo = parameters.typeInfo();

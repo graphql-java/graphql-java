@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.stream.Collectors;
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment;
+
 @Internal
 class FieldValidationSupport {
 
@@ -45,7 +47,7 @@ class FieldValidationSupport {
                 list.add(fieldArguments);
                 fieldArgumentsMap.put(path, list);
             }
-        });
+        }, newEnvironment().setContext(executionContext.getContext()).build());
 
         FieldValidationEnvironment environment = new FieldValidationEnvironmentImpl(executionContext, fieldArgumentsMap);
         //

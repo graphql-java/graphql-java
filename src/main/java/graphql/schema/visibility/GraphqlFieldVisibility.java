@@ -17,20 +17,22 @@ public interface GraphqlFieldVisibility {
     /**
      * Called to get the list of fields from an object type or interface
      *
-     * @param fieldsContainer the type in play
+     * @param fieldsContainer   the type in play
+     * @param graphqlFieldVisibilityEnvironment context variables that influence the field visibility
      *
      * @return a non null list of {@link graphql.schema.GraphQLFieldDefinition}s
      */
-    List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer);
+    List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer, GraphqlFieldVisibilityEnvironment graphqlFieldVisibilityEnvironment);
 
     /**
      * Called to get a named field from an object type or interface
      *
-     * @param fieldsContainer the type in play
-     * @param fieldName       the name of the desired field
+     * @param fieldsContainer   the type in play
+     * @param fieldName         the name of the desired field
+     * @param graphqlFieldVisibilityEnvironment context variables that influence the field visibility
      *
      * @return a {@link graphql.schema.GraphQLFieldDefinition} or null if its not visible
      */
-    GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName);
+    GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName, GraphqlFieldVisibilityEnvironment graphqlFieldVisibilityEnvironment);
 
 }

@@ -10,6 +10,8 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class NoUnusedVariablesTest extends Specification {
 
 
@@ -22,7 +24,7 @@ class NoUnusedVariablesTest extends Specification {
         NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedVariables]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedVariables]), newEnvironment().build())
     }
 
 

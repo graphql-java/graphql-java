@@ -20,6 +20,7 @@ import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.visibility.BlockedFields;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 import graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility;
 
 import java.util.Collections;
@@ -192,7 +193,7 @@ public class ExecutionExamples {
         }
 
         @Override
-        public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+        public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer, GraphqlFieldVisibilityEnvironment environment) {
             if ("AdminType".equals(fieldsContainer.getName())) {
                 if (!userAccessService.isAdminUser()) {
                     return Collections.emptyList();
@@ -202,7 +203,7 @@ public class ExecutionExamples {
         }
 
         @Override
-        public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+        public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName, GraphqlFieldVisibilityEnvironment environment) {
             if ("AdminType".equals(fieldsContainer.getName())) {
                 if (!userAccessService.isAdminUser()) {
                     return null;

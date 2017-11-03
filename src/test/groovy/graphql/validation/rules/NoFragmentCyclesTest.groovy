@@ -10,6 +10,8 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class NoFragmentCyclesTest extends Specification {
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
@@ -17,10 +19,10 @@ class NoFragmentCyclesTest extends Specification {
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
-        NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, errorCollector)
+        NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, errorCollector, newEnvironment().build())
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noFragmentCycles]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noFragmentCycles]), newEnvironment().build())
     }
 
     def 'single reference is valid'() {

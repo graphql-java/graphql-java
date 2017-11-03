@@ -5,6 +5,7 @@ import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.NoOpInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 import graphql.validation.ValidationError;
 
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
                 int value = calculateComplexity(env, childsComplexity);
                 valuesByParent.putIfAbsent(env.getParentEnvironment(), new ArrayList<>());
                 valuesByParent.get(env.getParentEnvironment()).add(value);
-            });
+            }, GraphqlFieldVisibilityEnvironment.newEnvironment().setContext(parameters.getContext()).build());
             int totalComplexity = valuesByParent.get(null).stream().mapToInt(Integer::intValue).sum();
             if (totalComplexity > maxComplexity) {
                 throw mkAbortException(totalComplexity, maxComplexity);

@@ -7,6 +7,8 @@ import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class QueryTraversalTest extends Specification {
 
 
@@ -42,7 +44,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal.visitPreOrder(visitor)
+        queryTraversal.visitPreOrder(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
@@ -74,7 +76,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal.visitPostOrder(visitor)
+        queryTraversal.visitPostOrder(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
@@ -110,7 +112,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Mutation" })
@@ -149,7 +151,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Subscription" })
@@ -181,7 +183,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, ['myVar': 'hello'])
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
@@ -213,7 +215,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
@@ -250,7 +252,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.wrappedType.name == "Foo" && it.parentType.name == "Query" })
@@ -293,7 +295,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
@@ -336,7 +338,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
@@ -381,7 +383,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
@@ -426,7 +428,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
@@ -465,7 +467,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: true])
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
@@ -518,7 +520,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: true])
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         2 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
@@ -557,7 +559,7 @@ class QueryTraversalTest extends Specification {
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         QueryReducer reducer = Mock(QueryReducer)
         when:
-        def result = queryTraversal.reducePreOrder(reducer, 1)
+        def result = queryTraversal.reducePreOrder(reducer, 1, newEnvironment().build())
 
         then:
         1 * reducer.reduceField({ it.field.name == "foo" }, 1) >> 2
@@ -587,7 +589,7 @@ class QueryTraversalTest extends Specification {
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         QueryReducer reducer = Mock(QueryReducer)
         when:
-        def result = queryTraversal.reducePostOrder(reducer, 1)
+        def result = queryTraversal.reducePostOrder(reducer, 1, newEnvironment().build())
 
         then:
         1 * reducer.reduceField({ it.field.name == "subFoo" }, 1) >> 2
@@ -623,7 +625,8 @@ class QueryTraversalTest extends Specification {
         """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
+
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "a" && it.fieldDefinition.type.name == "Node" && it.parentType.name == "Query" })
@@ -661,7 +664,7 @@ class QueryTraversalTest extends Specification {
         """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor,newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "CatOrDog" && it.parentType.name == "Query" })
@@ -694,7 +697,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
@@ -748,7 +751,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         when:
-        queryTraversal."$visitFn"(visitor)
+        queryTraversal."$visitFn"(visitor, newEnvironment().build())
 
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "someObject" && it.fieldDefinition.type.name == "SomeObject" && it.parentType.name == "Query" })

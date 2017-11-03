@@ -18,6 +18,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -30,6 +31,7 @@ import java.util.Stack;
 import java.util.stream.Stream;
 
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -47,11 +49,13 @@ public class SchemaPrinter {
 
         private final boolean includeScalars;
         private final boolean includeExtendedScalars;
+        private final GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment;
 
-        private Options(boolean includeIntrospectionTypes, boolean includeScalars, boolean includeExtendedScalars) {
+        private Options(boolean includeIntrospectionTypes, boolean includeScalars, boolean includeExtendedScalars, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
+            this.fieldVisibilityEnvironment = fieldVisibilityEnvironment;
         }
 
         public boolean isIncludeIntrospectionTypes() {
@@ -66,8 +70,12 @@ public class SchemaPrinter {
             return includeExtendedScalars;
         }
 
+        public GraphqlFieldVisibilityEnvironment getFieldVisibilityEnvironment() {
+            return fieldVisibilityEnvironment;
+        }
+
         public static Options defaultOptions() {
-            return new Options(false, false, false);
+            return new Options(false, false, false, newEnvironment().build());
         }
 
         /**
@@ -78,7 +86,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars, includeExtendedScalars);
+            return new Options(flag, this.includeScalars, includeExtendedScalars, fieldVisibilityEnvironment);
         }
 
         /**
@@ -89,7 +97,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars);
+            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars, fieldVisibilityEnvironment);
         }
 
         /**
@@ -101,7 +109,11 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeExtendedScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, fieldVisibilityEnvironment);
+        }
+
+        public Options setFieldVisibilityEnvironment(GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
+            return new Options(includeIntrospectionTypes, includeScalars, includeExtendedScalars, fieldVisibilityEnvironment);
         }
     }
 
@@ -231,7 +243,7 @@ public class SchemaPrinter {
             }
             printComments(out, type, "");
             out.format("interface %s {\n", type.getName());
-            visibility.getFieldDefinitions(type)
+            visibility.getFieldDefinitions(type, options.getFieldVisibilityEnvironment())
                     .stream()
                     .sorted(Comparator.comparing(GraphQLFieldDefinition::getName))
                     .forEach(fd -> {
@@ -284,7 +296,7 @@ public class SchemaPrinter {
                         interfaceNames.collect(joining(", ")));
             }
 
-            visibility.getFieldDefinitions(type)
+            visibility.getFieldDefinitions(type, options.getFieldVisibilityEnvironment())
                     .stream()
                     .sorted(Comparator.comparing(GraphQLFieldDefinition::getName))
                     .forEach(fd -> {

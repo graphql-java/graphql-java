@@ -27,14 +27,14 @@ public class BlockedFields implements GraphqlFieldVisibility {
     }
 
     @Override
-    public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+    public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer, GraphqlFieldVisibilityEnvironment graphqlFieldVisibilityEnvironment) {
         return fieldsContainer.getFieldDefinitions().stream()
                 .filter(fd -> !block(mkFQN(fieldsContainer, fd)))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+    public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName, GraphqlFieldVisibilityEnvironment graphqlFieldVisibilityEnvironment) {
         GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(fieldName);
         if (fieldDefinition != null) {
             if (block(mkFQN(fieldsContainer, fieldDefinition))) {
