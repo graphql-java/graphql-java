@@ -5,6 +5,7 @@ import graphql.language.Definition;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.Node;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 import graphql.validation.AbstractRule;
 import graphql.validation.DocumentVisitor;
 import graphql.validation.ErrorFactory;
@@ -23,39 +24,39 @@ public class NoFragmentCycles extends AbstractRule {
     private final Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
 
 
-    public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+    public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         super(validationContext, validationErrorCollector);
-        prepareFragmentMap();
+        prepareFragmentMap(fieldVisibilityEnvironment);
     }
 
-    private void prepareFragmentMap() {
+    private void prepareFragmentMap(GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         List<Definition> definitions = getValidationContext().getDocument().getDefinitions();
         for (Definition definition : definitions) {
             if (definition instanceof FragmentDefinition) {
                 FragmentDefinition fragmentDefinition = (FragmentDefinition) definition;
-                fragmentSpreads.put(fragmentDefinition.getName(), gatherSpreads(fragmentDefinition));
+                fragmentSpreads.put(fragmentDefinition.getName(), gatherSpreads(fragmentDefinition, fieldVisibilityEnvironment));
             }
         }
     }
 
 
-    private List<FragmentSpread> gatherSpreads(FragmentDefinition fragmentDefinition) {
+    private List<FragmentSpread> gatherSpreads(FragmentDefinition fragmentDefinition, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         final List<FragmentSpread> fragmentSpreads = new ArrayList<>();
         DocumentVisitor visitor = new DocumentVisitor() {
             @Override
-            public void enter(Node node, List<Node> path) {
+            public void enter(Node node, List<Node> path, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
                 if (node instanceof FragmentSpread) {
                     fragmentSpreads.add((FragmentSpread) node);
                 }
             }
 
             @Override
-            public void leave(Node node, List<Node> path) {
+            public void leave(Node node, List<Node> path, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
 
             }
         };
 
-        new LanguageTraversal().traverse(fragmentDefinition, visitor);
+        new LanguageTraversal().traverse(fragmentDefinition, visitor, fieldVisibilityEnvironment);
         return fragmentSpreads;
     }
 

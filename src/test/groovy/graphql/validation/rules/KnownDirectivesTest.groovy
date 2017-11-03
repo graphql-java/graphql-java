@@ -11,6 +11,8 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class KnownDirectivesTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
@@ -36,7 +38,7 @@ class KnownDirectivesTest extends Specification {
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]), newEnvironment().build())
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
@@ -55,7 +57,7 @@ class KnownDirectivesTest extends Specification {
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]), newEnvironment().build())
 
         then:
         errorCollector.errors.isEmpty()

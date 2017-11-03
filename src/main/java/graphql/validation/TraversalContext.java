@@ -35,6 +35,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.SchemaUtil;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,13 +62,13 @@ public class TraversalContext implements DocumentVisitor {
     }
 
     @Override
-    public void enter(Node node, List<Node> path) {
+    public void enter(Node node, List<Node> path, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         if (node instanceof OperationDefinition) {
             enterImpl((OperationDefinition) node);
         } else if (node instanceof SelectionSet) {
             enterImpl((SelectionSet) node);
         } else if (node instanceof Field) {
-            enterImpl((Field) node);
+            enterImpl((Field) node, fieldVisibilityEnvironment);
         } else if (node instanceof Directive) {
             enterImpl((Directive) node);
         } else if (node instanceof InlineFragment) {
@@ -95,11 +96,11 @@ public class TraversalContext implements DocumentVisitor {
         addParentType(parentType);
     }
 
-    private void enterImpl(Field field) {
+    private void enterImpl(Field field, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         GraphQLCompositeType parentType = getParentType();
         GraphQLFieldDefinition fieldDefinition = null;
         if (parentType != null) {
-            fieldDefinition = getFieldDef(schema, parentType, field);
+            fieldDefinition = getFieldDef(schema, parentType, field, fieldVisibilityEnvironment);
         }
         addFieldDef(fieldDefinition);
         addOutputType(fieldDefinition != null ? fieldDefinition.getType() : null);
@@ -183,7 +184,7 @@ public class TraversalContext implements DocumentVisitor {
 
 
     @Override
-    public void leave(Node node, List<Node> ancestors) {
+    public void leave(Node node, List<Node> ancestors, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         if (node instanceof OperationDefinition) {
             outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof SelectionSet) {
@@ -268,7 +269,7 @@ public class TraversalContext implements DocumentVisitor {
     }
 
 
-    private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field) {
+    private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field, GraphqlFieldVisibilityEnvironment environment) {
         if (schema.getQueryType().equals(parentType)) {
             if (field.getName().equals(SchemaMetaFieldDef.getName())) {
                 return SchemaMetaFieldDef;
@@ -284,7 +285,7 @@ public class TraversalContext implements DocumentVisitor {
             return TypeNameMetaFieldDef;
         }
         if (parentType instanceof GraphQLFieldsContainer) {
-            return schema.getFieldVisibility().getFieldDefinition((GraphQLFieldsContainer) parentType,field.getName());
+            return schema.getFieldVisibility().getFieldDefinition((GraphQLFieldsContainer) parentType,field.getName(), environment);
         }
         return null;
     }

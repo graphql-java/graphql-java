@@ -27,6 +27,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,7 @@ import java.util.stream.IntStream;
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.toList;
 
@@ -187,7 +189,7 @@ public abstract class ExecutionStrategy {
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         Field field = parameters.field().get(0);
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field, newEnvironment().setContext(executionContext.getContext()).build());
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
@@ -277,7 +279,7 @@ public abstract class ExecutionStrategy {
     protected CompletableFuture<ExecutionResult> completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
         Field field = parameters.field().get(0);
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field, newEnvironment().setContext(executionContext.getContext()).build());
 
         InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteField(
                 new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
@@ -595,7 +597,7 @@ public abstract class ExecutionStrategy {
      */
     protected GraphQLFieldDefinition getFieldDef(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Field field) {
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
-        return getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        return getFieldDef(executionContext.getGraphQLSchema(), parentType, field, newEnvironment().setContext(executionContext.getContext()).build());
     }
 
     /**
@@ -604,11 +606,12 @@ public abstract class ExecutionStrategy {
      * @param schema     the schema in play
      * @param parentType the parent type of the field
      * @param field      the field to find the definition of
+     * @param environment the environment to determine the field is visible
      *
      * @return a {@link GraphQLFieldDefinition}
      */
-    protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
-        return Introspection.getFieldDef(schema, parentType, field.getName());
+    protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field, GraphqlFieldVisibilityEnvironment environment) {
+        return Introspection.getFieldDef(schema, parentType, field.getName(), environment);
     }
 
     /**

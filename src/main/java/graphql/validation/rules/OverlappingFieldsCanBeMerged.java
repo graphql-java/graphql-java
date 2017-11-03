@@ -16,6 +16,7 @@ import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 import graphql.validation.AbstractRule;
 import graphql.validation.ErrorFactory;
 import graphql.validation.ValidationContext;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment;
 import static graphql.validation.ValidationErrorType.FieldsConflict;
 
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
@@ -42,11 +44,11 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     @Override
-    public void leaveSelectionSet(SelectionSet selectionSet) {
+    public void leaveSelectionSet(SelectionSet selectionSet, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         Map<String, List<FieldAndType>> fieldMap = new LinkedHashMap<>();
         Set<String> visitedFragmentSpreads = new LinkedHashSet<>();
-        collectFields(fieldMap, selectionSet, getValidationContext().getOutputType(), visitedFragmentSpreads);
-        List<Conflict> conflicts = findConflicts(fieldMap);
+        collectFields(fieldMap, selectionSet, getValidationContext().getOutputType(), visitedFragmentSpreads, fieldVisibilityEnvironment);
+        List<Conflict> conflicts = findConflicts(fieldMap, fieldVisibilityEnvironment);
         for (Conflict conflict : conflicts) {
             addError(errorFactory.newError(FieldsConflict, conflict.fields, conflict.reason));
         }
@@ -54,13 +56,13 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
 
-    private List<Conflict> findConflicts(Map<String, List<FieldAndType>> fieldMap) {
+    private List<Conflict> findConflicts(Map<String, List<FieldAndType>> fieldMap, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         List<Conflict> result = new ArrayList<>();
         for (String name : fieldMap.keySet()) {
             List<FieldAndType> fieldAndTypes = fieldMap.get(name);
             for (int i = 0; i < fieldAndTypes.size(); i++) {
                 for (int j = i + 1; j < fieldAndTypes.size(); j++) {
-                    Conflict conflict = findConflict(name, fieldAndTypes.get(i), fieldAndTypes.get(j));
+                    Conflict conflict = findConflict(name, fieldAndTypes.get(i), fieldAndTypes.get(j), fieldVisibilityEnvironment);
                     if (conflict != null) {
                         result.add(conflict);
                     }
@@ -83,7 +85,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     @SuppressWarnings("ConstantConditions")
-    private Conflict findConflict(String responseName, FieldAndType fieldAndType1, FieldAndType fieldAndType2) {
+    private Conflict findConflict(String responseName, FieldAndType fieldAndType1, FieldAndType fieldAndType2, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
 
         Field field1 = fieldAndType1.field;
         Field field2 = fieldAndType2.field;
@@ -136,9 +138,9 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         if (selectionSet1 != null && selectionSet2 != null) {
             Set<String> visitedFragmentSpreads = new LinkedHashSet<>();
             Map<String, List<FieldAndType>> subFieldMap = new LinkedHashMap<>();
-            collectFields(subFieldMap, selectionSet1, type1, visitedFragmentSpreads);
-            collectFields(subFieldMap, selectionSet2, type2, visitedFragmentSpreads);
-            List<Conflict> subConflicts = findConflicts(subFieldMap);
+            collectFields(subFieldMap, selectionSet1, type1, visitedFragmentSpreads, fieldVisibilityEnvironment);
+            collectFields(subFieldMap, selectionSet2, type2, visitedFragmentSpreads, fieldVisibilityEnvironment);
+            List<Conflict> subConflicts = findConflicts(subFieldMap, fieldVisibilityEnvironment);
             if (subConflicts.size() > 0) {
                 String reason = String.format("%s: %s", responseName, joinReasons(subConflicts));
                 List<Field> fields = new ArrayList<>();
@@ -204,23 +206,23 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         return null;
     }
 
-    private void collectFields(Map<String, List<FieldAndType>> fieldMap, SelectionSet selectionSet, GraphQLType parentType, Set<String> visitedFragmentSpreads) {
+    private void collectFields(Map<String, List<FieldAndType>> fieldMap, SelectionSet selectionSet, GraphQLType parentType, Set<String> visitedFragmentSpreads, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
-                collectFieldsForField(fieldMap, parentType, (Field) selection);
+                collectFieldsForField(fieldMap, parentType, (Field) selection, fieldVisibilityEnvironment);
 
             } else if (selection instanceof InlineFragment) {
-                collectFieldsForInlineFragment(fieldMap, visitedFragmentSpreads, parentType, (InlineFragment) selection);
+                collectFieldsForInlineFragment(fieldMap, visitedFragmentSpreads, parentType, (InlineFragment) selection, fieldVisibilityEnvironment);
 
             } else if (selection instanceof FragmentSpread) {
-                collectFieldsForFragmentSpread(fieldMap, visitedFragmentSpreads, (FragmentSpread) selection);
+                collectFieldsForFragmentSpread(fieldMap, visitedFragmentSpreads, (FragmentSpread) selection, fieldVisibilityEnvironment);
             }
         }
 
     }
 
-    private void collectFieldsForFragmentSpread(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, FragmentSpread fragmentSpread) {
+    private void collectFieldsForFragmentSpread(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, FragmentSpread fragmentSpread, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         FragmentDefinition fragment = getValidationContext().getFragment(fragmentSpread.getName());
         if (fragment == null) return;
         if (visitedFragmentSpreads.contains(fragment.getName())) {
@@ -229,17 +231,17 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         visitedFragmentSpreads.add(fragment.getName());
         GraphQLOutputType graphQLType = (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(),
                 fragment.getTypeCondition());
-        collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
+        collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragmentSpreads, fieldVisibilityEnvironment);
     }
 
-    private void collectFieldsForInlineFragment(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, GraphQLType parentType, InlineFragment inlineFragment) {
+    private void collectFieldsForInlineFragment(Map<String, List<FieldAndType>> fieldMap, Set<String> visitedFragmentSpreads, GraphQLType parentType, InlineFragment inlineFragment, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         GraphQLType graphQLType = inlineFragment.getTypeCondition() != null
                 ? (GraphQLOutputType) TypeFromAST.getTypeFromAST(getValidationContext().getSchema(), inlineFragment.getTypeCondition())
                 : parentType;
-        collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragmentSpreads);
+        collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragmentSpreads, fieldVisibilityEnvironment);
     }
 
-    private void collectFieldsForField(Map<String, List<FieldAndType>> fieldMap, GraphQLType parentType, Field field) {
+    private void collectFieldsForField(Map<String, List<FieldAndType>> fieldMap, GraphQLType parentType, Field field, GraphqlFieldVisibilityEnvironment environment) {
         String responseName = field.getAlias() != null ? field.getAlias() : field.getName();
         if (!fieldMap.containsKey(responseName)) {
             fieldMap.put(responseName, new ArrayList<>());
@@ -247,14 +249,14 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         GraphQLOutputType fieldType = null;
         if (parentType instanceof GraphQLFieldsContainer) {
             GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
-            GraphQLFieldDefinition fieldDefinition = getVisibleFieldDefinition(fieldsContainer, field);
+            GraphQLFieldDefinition fieldDefinition = getVisibleFieldDefinition(fieldsContainer, field, environment);
             fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
         }
         fieldMap.get(responseName).add(new FieldAndType(field, fieldType, parentType));
     }
 
-    private GraphQLFieldDefinition getVisibleFieldDefinition(GraphQLFieldsContainer fieldsContainer, Field field) {
-        return getValidationContext().getSchema().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
+    private GraphQLFieldDefinition getVisibleFieldDefinition(GraphQLFieldsContainer fieldsContainer, Field field, GraphqlFieldVisibilityEnvironment environment) {
+        return getValidationContext().getSchema().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName(), environment);
     }
 
     private static class FieldPair {

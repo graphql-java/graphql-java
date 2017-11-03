@@ -25,6 +25,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaUtil;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,7 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment;
 
 public class Introspection {
 
@@ -177,7 +179,7 @@ public class Introspection {
             List<GraphQLFieldDefinition> fieldDefinitions = environment
                     .getGraphQLSchema()
                     .getFieldVisibility()
-                    .getFieldDefinitions(fieldsContainer);
+                    .getFieldDefinitions(fieldsContainer, newEnvironment().setContext(environment.getContext()).build());
             if (includeDeprecated) return fieldDefinitions;
             List<GraphQLFieldDefinition> filtered = new ArrayList<>(fieldDefinitions);
             for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
@@ -479,10 +481,11 @@ public class Introspection {
      * @param schema     the schema to use
      * @param parentType the type of the parent object
      * @param fieldName  the field to look up
+     * @param environment the environment to determine if the field is visible
      *
      * @return a field definition otherwise throws an assertion exception if its null
      */
-    public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
+    public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName, GraphqlFieldVisibilityEnvironment environment) {
 
         if (schema.getQueryType() == parentType) {
             if (fieldName.equals(SchemaMetaFieldDef.getName())) {
@@ -498,7 +501,7 @@ public class Introspection {
 
         assertTrue(parentType instanceof GraphQLFieldsContainer, "should not happen : parent type must be an object or interface : " + parentType);
         GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
-        GraphQLFieldDefinition fieldDefinition = schema.getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
+        GraphQLFieldDefinition fieldDefinition = schema.getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName, environment);
         Assert.assertTrue(fieldDefinition != null, "Unknown field " + fieldName);
         return fieldDefinition;
     }

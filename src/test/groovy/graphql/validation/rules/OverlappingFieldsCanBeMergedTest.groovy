@@ -19,6 +19,7 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLUnionType.newUnionType
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
 
 class OverlappingFieldsCanBeMergedTest extends Specification {
 
@@ -40,7 +41,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [overlappingFieldsCanBeMerged]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [overlappingFieldsCanBeMerged]), newEnvironment().build())
     }
 
     def "identical fields are ok"() {

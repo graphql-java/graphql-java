@@ -14,6 +14,7 @@ import spock.lang.Specification
 
 import static BlockedFields.newBlock
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
 import static graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY
 
 class GraphqlFieldVisibilityTest extends Specification {
@@ -264,8 +265,8 @@ enum Episode {
     class TestES extends AsyncExecutionStrategy {
 
         // gives us access to this unit tested method
-        GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
-            return super.getFieldDef(schema, parentType, field)
+        GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field, GraphqlFieldVisibilityEnvironment environment) {
+            return super.getFieldDef(schema, parentType, field, environment)
         }
     }
 
@@ -283,11 +284,11 @@ enum Episode {
         def executionStrategy = new AsyncExecutionStrategy() {
 
             // gives us access to this unit tested method
-            GraphQLFieldDefinition getFieldDef(GraphQLSchema graphQLSchema, GraphQLObjectType parentType, Field field) {
-                return super.getFieldDef(graphQLSchema, parentType, field)
+            GraphQLFieldDefinition getFieldDef(GraphQLSchema graphQLSchema, GraphQLObjectType parentType, Field field, GraphqlFieldVisibilityEnvironment environment) {
+                return super.getFieldDef(graphQLSchema, parentType, field, environment)
             }
         }
-        executionStrategy.getFieldDef(schema, StarWarsSchema.droidType, new Field("appearsIn"))
+        executionStrategy.getFieldDef(schema, StarWarsSchema.droidType, new Field("appearsIn"), newEnvironment().build())
 
         then:
         //

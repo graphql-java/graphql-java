@@ -35,6 +35,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment;
 
 /**
  * This class is where all graphql-java query execution begins.  It combines the objects that are needed
@@ -528,7 +529,7 @@ public class GraphQL {
         InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState));
 
         Validator validator = new Validator();
-        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
+        List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document, newEnvironment().setContext(executionInput.getContext()).build());
 
         validationCtx.onEnd(validationErrors, null);
         return validationErrors;

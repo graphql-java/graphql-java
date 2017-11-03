@@ -20,6 +20,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.SchemaUtil;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -53,12 +54,12 @@ public class QueryTraversal {
         this.variables = variables;
     }
 
-    public void visitPostOrder(QueryVisitor visitor) {
-        visitImpl(visitor, operationDefinition.getSelectionSet(), getRootType(), null, false);
+    public void visitPostOrder(QueryVisitor visitor, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
+        visitImpl(visitor, operationDefinition.getSelectionSet(), getRootType(), null, false, fieldVisibilityEnvironment);
     }
 
-    public void visitPreOrder(QueryVisitor visitor) {
-        visitImpl(visitor, operationDefinition.getSelectionSet(), getRootType(), null, true);
+    public void visitPreOrder(QueryVisitor visitor, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
+        visitImpl(visitor, operationDefinition.getSelectionSet(), getRootType(), null, true, fieldVisibilityEnvironment);
     }
 
     private GraphQLObjectType getRootType() {
@@ -74,37 +75,37 @@ public class QueryTraversal {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
+    public <T> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         // compiler hack to make acc final and mutable :-)
         final Object[] acc = {initialValue};
-        visitPostOrder((env) -> acc[0] = queryReducer.reduceField(env, (T) acc[0]));
+        visitPostOrder((env) -> acc[0] = queryReducer.reduceField(env, (T) acc[0]), fieldVisibilityEnvironment);
         return (T) acc[0];
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
+    public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         // compiler hack to make acc final and mutable :-)
         final Object[] acc = {initialValue};
-        visitPreOrder((env) -> acc[0] = queryReducer.reduceField(env, (T) acc[0]));
+        visitPreOrder((env) -> acc[0] = queryReducer.reduceField(env, (T) acc[0]), fieldVisibilityEnvironment);
         return (T) acc[0];
     }
 
 
-    private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, QueryVisitorEnvironment parent, boolean preOrder) {
+    private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, QueryVisitorEnvironment parent, boolean preOrder, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
-                GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, type, ((Field) selection).getName());
-                visitField(visitor, (Field) selection, fieldDefinition, type, parent, preOrder);
+                GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, type, ((Field) selection).getName(), fieldVisibilityEnvironment);
+                visitField(visitor, (Field) selection, fieldDefinition, type, parent, preOrder, fieldVisibilityEnvironment);
             } else if (selection instanceof InlineFragment) {
-                visitInlineFragment(visitor, (InlineFragment) selection, type, parent, preOrder);
+                visitInlineFragment(visitor, (InlineFragment) selection, type, parent, preOrder, fieldVisibilityEnvironment);
             } else if (selection instanceof FragmentSpread) {
-                visitFragmentSpread(visitor, (FragmentSpread) selection, parent, preOrder);
+                visitFragmentSpread(visitor, (FragmentSpread) selection, parent, preOrder, fieldVisibilityEnvironment);
             }
         }
     }
 
-    private void visitFragmentSpread(QueryVisitor visitor, FragmentSpread fragmentSpread, QueryVisitorEnvironment parent, boolean preOrder) {
+    private void visitFragmentSpread(QueryVisitor visitor, FragmentSpread fragmentSpread, QueryVisitorEnvironment parent, boolean preOrder, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         if (!conditionalNodes.shouldInclude(this.variables, fragmentSpread.getDirectives())) {
             return;
         }
@@ -114,11 +115,11 @@ public class QueryTraversal {
             return;
         }
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
-        visitImpl(visitor, fragmentDefinition.getSelectionSet(), typeCondition, parent, preOrder);
+        visitImpl(visitor, fragmentDefinition.getSelectionSet(), typeCondition, parent, preOrder, fieldVisibilityEnvironment);
     }
 
 
-    private void visitInlineFragment(QueryVisitor visitor, InlineFragment inlineFragment, GraphQLCompositeType parentType, QueryVisitorEnvironment parent, boolean preOrder) {
+    private void visitInlineFragment(QueryVisitor visitor, InlineFragment inlineFragment, GraphQLCompositeType parentType, QueryVisitorEnvironment parent, boolean preOrder, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
         if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives())) {
             return;
         }
@@ -131,10 +132,10 @@ public class QueryTraversal {
             fragmentCondition = parentType;
         }
         // for unions we only have other fragments inside
-        visitImpl(visitor, inlineFragment.getSelectionSet(), fragmentCondition, parent, preOrder);
+        visitImpl(visitor, inlineFragment.getSelectionSet(), fragmentCondition, parent, preOrder, fieldVisibilityEnvironment);
     }
 
-    private void visitField(QueryVisitor visitor, Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, QueryVisitorEnvironment parentEnv, boolean preOrder) {
+    private void visitField(QueryVisitor visitor, Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, QueryVisitorEnvironment parentEnv, boolean preOrder, GraphqlFieldVisibilityEnvironment environment) {
         if (!conditionalNodes.shouldInclude(variables, field.getDirectives())) {
             return;
         }
@@ -145,7 +146,7 @@ public class QueryTraversal {
         GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
         if (unmodifiedType instanceof GraphQLCompositeType) {
             QueryVisitorEnvironment newParentEnvironment = new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues);
-            visitImpl(visitor, field.getSelectionSet(), (GraphQLCompositeType) unmodifiedType, newParentEnvironment, preOrder);
+            visitImpl(visitor, field.getSelectionSet(), (GraphQLCompositeType) unmodifiedType, newParentEnvironment, preOrder, environment);
         }
         if (!preOrder) {
             visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues));

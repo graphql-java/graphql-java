@@ -14,6 +14,7 @@ import graphql.schema.GraphQLUnionType
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.visibility.GraphqlFieldVisibility
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -1018,12 +1019,12 @@ class SchemaGeneratorTest extends Specification {
 
         GraphqlFieldVisibility fieldVisibility = new GraphqlFieldVisibility() {
             @Override
-            List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+            List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer, GraphqlFieldVisibilityEnvironment environment) {
                 return null
             }
 
             @Override
-            GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+            GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName, GraphqlFieldVisibilityEnvironment environment) {
                 return null
             }
         }

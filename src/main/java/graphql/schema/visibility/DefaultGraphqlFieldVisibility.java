@@ -13,12 +13,12 @@ public class DefaultGraphqlFieldVisibility implements GraphqlFieldVisibility {
     public static final DefaultGraphqlFieldVisibility DEFAULT_FIELD_VISIBILITY = new DefaultGraphqlFieldVisibility();
 
     @Override
-    public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+    public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer, GraphqlFieldVisibilityEnvironment graphqlFieldVisibilityEnvironment) {
         return fieldsContainer.getFieldDefinitions();
     }
 
     @Override
-    public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+    public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName, GraphqlFieldVisibilityEnvironment graphqlFieldVisibilityEnvironment) {
         return fieldsContainer.getFieldDefinition(fieldName);
     }
 }

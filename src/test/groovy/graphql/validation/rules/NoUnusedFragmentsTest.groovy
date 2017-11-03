@@ -10,6 +10,8 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class NoUnusedFragmentsTest extends Specification {
 
     ValidationContext validationContext = Mock(ValidationContext)
@@ -48,7 +50,7 @@ class NoUnusedFragmentsTest extends Specification {
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]), newEnvironment().build())
 
         then:
         errorCollector.getErrors().isEmpty()
@@ -82,7 +84,7 @@ class NoUnusedFragmentsTest extends Specification {
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]), newEnvironment().build())
 
         then:
         errorCollector.getErrors().isEmpty()
@@ -123,7 +125,7 @@ class NoUnusedFragmentsTest extends Specification {
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]), newEnvironment().build())
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedFragment)
@@ -168,7 +170,7 @@ class NoUnusedFragmentsTest extends Specification {
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]), newEnvironment().build())
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedFragment)

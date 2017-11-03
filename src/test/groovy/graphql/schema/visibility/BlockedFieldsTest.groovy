@@ -6,6 +6,8 @@ import spock.lang.Unroll
 
 import java.util.stream.Collectors
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class BlockedFieldsTest extends Specification {
 
     @Unroll
@@ -15,7 +17,7 @@ class BlockedFieldsTest extends Specification {
         def blockedFields = BlockedFields.newBlock().addPatterns(patterns).build()
 
         when:
-        def fields = blockedFields.getFieldDefinitions(type).stream().map({ fd -> fd.getName() }).collect(Collectors.toList())
+        def fields = blockedFields.getFieldDefinitions(type, newEnvironment().build()).stream().map({ fd -> fd.getName() }).collect(Collectors.toList())
 
         then:
         fields == expectedFieldList

@@ -15,6 +15,7 @@ import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
+import graphql.schema.visibility.GraphqlFieldVisibilityEnvironment;
 
 import java.util.List;
 
@@ -108,7 +109,7 @@ public class AbstractRule {
 
     }
 
-    public void leaveSelectionSet(SelectionSet selectionSet) {
+    public void leaveSelectionSet(SelectionSet selectionSet, GraphqlFieldVisibilityEnvironment fieldVisibilityEnvironment) {
 
     }
 

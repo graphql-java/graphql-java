@@ -24,13 +24,13 @@ public class NoIntrospectionGraphqlFieldVisibility implements GraphqlFieldVisibi
     }
 
     @Override
-    public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
-        return blockedFields.getFieldDefinitions(fieldsContainer);
+    public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer, GraphqlFieldVisibilityEnvironment graphqlFieldVisibilityEnvironment) {
+        return blockedFields.getFieldDefinitions(fieldsContainer, graphqlFieldVisibilityEnvironment);
     }
 
     @Override
-    public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
-        return blockedFields.getFieldDefinition(fieldsContainer, fieldName);
+    public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName, GraphqlFieldVisibilityEnvironment graphqlFieldVisibilityEnvironment) {
+        return blockedFields.getFieldDefinition(fieldsContainer, fieldName, graphqlFieldVisibilityEnvironment);
     }
 
 }

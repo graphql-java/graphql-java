@@ -5,12 +5,14 @@ import graphql.validation.ValidationError
 import graphql.validation.Validator
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class StarWarsValidationTest extends Specification {
 
 
     List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(StarWarsSchema.starWarsSchema, document)
+        return new Validator().validateDocument(StarWarsSchema.starWarsSchema, document, newEnvironment().build())
     }
 
     def 'Validates a complex but valid query'() {

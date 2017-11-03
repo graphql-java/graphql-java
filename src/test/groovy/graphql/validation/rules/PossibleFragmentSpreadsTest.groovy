@@ -8,6 +8,8 @@ import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import spock.lang.Specification
 
+import static graphql.schema.visibility.GraphqlFieldVisibilityEnvironment.newEnvironment
+
 class PossibleFragmentSpreadsTest extends Specification {
 
 
@@ -19,7 +21,7 @@ class PossibleFragmentSpreadsTest extends Specification {
         PossibleFragmentSpreads possibleFragmentSpreads = new PossibleFragmentSpreads(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [possibleFragmentSpreads]))
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [possibleFragmentSpreads]), newEnvironment().build())
     }
 
     def 'of the same object'() {
