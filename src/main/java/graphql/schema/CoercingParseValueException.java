@@ -5,9 +5,11 @@ import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.language.SourceLocation;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class CoercingParseValueException extends GraphQLException implements GraphQLError {
+    private List<SourceLocation> sourceLocations;
 
     public CoercingParseValueException() {
     }
@@ -20,13 +22,18 @@ public class CoercingParseValueException extends GraphQLException implements Gra
         super(message, cause);
     }
 
+    public CoercingParseValueException(String message, Throwable cause, SourceLocation sourceLocation) {
+        super(message, cause);
+        this.sourceLocations = Arrays.asList(sourceLocation);
+    }
+
     public CoercingParseValueException(Throwable cause) {
         super(cause);
     }
 
     @Override
     public List<SourceLocation> getLocations() {
-        return null;
+        return sourceLocations;
     }
 
     @Override

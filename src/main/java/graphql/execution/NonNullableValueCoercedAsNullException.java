@@ -10,6 +10,7 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 
+import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -19,10 +20,12 @@ import static java.lang.String.format;
  */
 @PublicApi
 public class NonNullableValueCoercedAsNullException extends GraphQLException implements GraphQLError {
+    private List<SourceLocation> sourceLocations;
 
     public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, GraphQLType graphQLType) {
         super(format("Variable '%s' has coerced Null value for NonNull type '%s'",
                 variableDefinition.getName(), GraphQLTypeUtil.getUnwrappedTypeName(graphQLType)));
+        this.sourceLocations = Arrays.asList(variableDefinition.getSourceLocation());
     }
 
     public NonNullableValueCoercedAsNullException(GraphQLInputObjectField inputTypeField) {
