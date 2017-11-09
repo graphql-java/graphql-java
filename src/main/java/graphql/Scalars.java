@@ -69,7 +69,7 @@ public class Scalars {
         public Integer serialize(Object input) {
             Integer result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid value '" + input + "' for Int");
+                throw new CoercingSerializeException("Expected type 'Int'.");
             }
             return result;
         }
@@ -78,7 +78,7 @@ public class Scalars {
         public Integer parseValue(Object input) {
             Integer result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid value '" + input + "' for Int");
+                throw new CoercingParseValueException("Expected type 'Int'.");
             }
             return result;
         }
@@ -120,7 +120,7 @@ public class Scalars {
         public Double serialize(Object input) {
             Double result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Float");
+                throw new CoercingSerializeException("Expected type 'Float'.");
             }
             return result;
 
@@ -130,7 +130,7 @@ public class Scalars {
         public Double parseValue(Object input) {
             Double result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Float");
+                throw new CoercingParseValueException("Expected type 'Float'.");
             }
             return result;
         }
@@ -197,7 +197,7 @@ public class Scalars {
         public Boolean serialize(Object input) {
             Boolean result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Boolean");
+                throw new CoercingSerializeException("Expected type 'Boolean'.");
             }
             return result;
         }
@@ -206,7 +206,7 @@ public class Scalars {
         public Boolean parseValue(Object input) {
             Boolean result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Boolean");
+                throw new CoercingParseValueException("Expected type 'Boolean'.");
             }
             return result;
         }
@@ -245,7 +245,7 @@ public class Scalars {
         public String serialize(Object input) {
             String result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for ID");
+                throw new CoercingSerializeException("Expected type 'ID'.");
             }
             return result;
         }
@@ -254,7 +254,7 @@ public class Scalars {
         public String parseValue(Object input) {
             String result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for ID");
+                throw new CoercingParseValueException("Expected type 'ID'.");
             }
             return result;
         }
@@ -301,7 +301,7 @@ public class Scalars {
         public Long serialize(Object input) {
             Long result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Long");
+                throw new CoercingSerializeException("Expected type 'Long'.");
             }
             return result;
         }
@@ -310,7 +310,7 @@ public class Scalars {
         public Long parseValue(Object input) {
             Long result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Long");
+                throw new CoercingParseValueException("Expected type 'Long'.");
             }
             return result;
         }
@@ -364,7 +364,7 @@ public class Scalars {
         public Short serialize(Object input) {
             Short result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Short");
+                throw new CoercingSerializeException("Expected type 'Short'.");
             }
             return result;
         }
@@ -373,7 +373,7 @@ public class Scalars {
         public Short parseValue(Object input) {
             Short result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Short");
+                throw new CoercingParseValueException("Expected type 'Short'.");
             }
             return result;
         }
@@ -419,7 +419,7 @@ public class Scalars {
         public Byte serialize(Object input) {
             Byte result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Byte");
+                throw new CoercingSerializeException("Expected type 'Byte'.");
             }
             return result;
         }
@@ -428,7 +428,7 @@ public class Scalars {
         public Byte parseValue(Object input) {
             Byte result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Byte");
+                throw new CoercingParseValueException("Expected type 'Byte'.");
             }
             return result;
         }
@@ -472,7 +472,7 @@ public class Scalars {
         public BigInteger serialize(Object input) {
             BigInteger result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for BigInteger");
+                throw new CoercingSerializeException("Expected type 'BigInteger'.");
             }
             return result;
         }
@@ -481,7 +481,7 @@ public class Scalars {
         public BigInteger parseValue(Object input) {
             BigInteger result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for BigInteger");
+                throw new CoercingParseValueException("Expected type 'BigInteger'.");
             }
             return result;
         }
@@ -528,7 +528,7 @@ public class Scalars {
         public BigDecimal serialize(Object input) {
             BigDecimal result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for BigDecimal");
+                throw new CoercingSerializeException("Expected type 'BigDecimal'.");
             }
             return result;
         }
@@ -537,7 +537,7 @@ public class Scalars {
         public BigDecimal parseValue(Object input) {
             BigDecimal result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for BigDecimal");
+                throw new CoercingParseValueException("Expected type 'BigDecimal'.");
             }
             return result;
         }
@@ -580,7 +580,7 @@ public class Scalars {
         public Character serialize(Object input) {
             Character result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Char");
+                throw new CoercingSerializeException("Expected type 'Char'.");
             }
             return result;
         }
@@ -589,7 +589,7 @@ public class Scalars {
         public Character parseValue(Object input) {
             Character result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Char");
+                throw new CoercingParseValueException("Expected type 'Char'.");
             }
             return result;
         }
