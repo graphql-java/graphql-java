@@ -87,7 +87,11 @@ public class ValuesResolver {
                     coercedValues.put(variableName, coercedValue);
                 }
             } catch (CoercingParseValueException e) {
-                throw new CoercingParseValueException(e.getMessage(), e.getCause(), variableDefinition.getSourceLocation());
+                throw new CoercingParseValueException(
+                  "Variable '" + variableName + "' has an invalid value. " + e.getMessage(),
+                  e.getCause(),
+                  variableDefinition.getSourceLocation()
+                );
             }
         }
 
@@ -166,7 +170,7 @@ public class ValuesResolver {
             if (value instanceof Map) {
                 return coerceValueForInputObjectType(variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
             } else {
-                throw new CoercingParseValueException("Variables for GraphQLInputObjectType must be an instance of a Map according to the graphql specification.  The offending object was a " + value.getClass().getName());
+                throw new CoercingParseValueException("Expected type 'Map'.");
             }
         } else {
             return assertShouldNeverHappen("unhandled type " + graphQLType);

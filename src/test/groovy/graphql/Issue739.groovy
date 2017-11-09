@@ -1,7 +1,6 @@
 package graphql
 
-import graphql.language.SourceLocation;
-import graphql.schema.CoercingParseValueException
+import graphql.language.SourceLocation
 import graphql.schema.GraphQLObjectType
 import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
@@ -90,7 +89,7 @@ class Issue739 extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Variables for GraphQLInputObjectType must be an instance of a Map according to the graphql specification.  The offending object was a java.lang.Integer"
+        varResult.errors[0].message == "Variable 'input' has an invalid value. Expected type 'Map'."
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }
