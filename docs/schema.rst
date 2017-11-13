@@ -49,9 +49,9 @@ the property name of the source Object, no ``DataFetcher`` is needed.
 A ``TypeResolver`` helps ``graphql-java`` to decide which type a concrete value belongs to.
 This is needed for ``Interface`` and ``Union``.
 
-For example imagine you have a ``Interface`` called *MagicUserType* and it resolves back to a series of Java classes
-called perhaps *Wizard*, *Witch* and *Necromancer*.  The type resolver is responsible for examining a runtime object and deciding
-what ``GraphqlObjectType`` should be used to represent it and hence what data fetchers and fields will be invoked.
+For example imagine you have an ``Interface`` called *MagicUserType* which resolves back to a series of Java classes
+called *Wizard*, *Witch* and *Necromancer*.  The type resolver is responsible for examining a runtime object and deciding
+what ``GraphqlObjectType`` should be used to represent it, and hence what data fetchers and fields will be invoked.
 
 .. code-block:: java
 
@@ -71,13 +71,13 @@ what ``GraphqlObjectType`` should be used to represent it and hence what data fe
 
 
 
-IDL
-^^^
+Creating a schema using the IDL
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 When defining a schema via IDL, you provide the needed ``DataFetcher`` and ``TypeResolver``
-when the schema is created:
+when the executable schema is created.
 
-Example:
+Take for example the following static schema definition file called ``starWarsSchema.graphqls``:
 
 .. code-block:: graphql
 
@@ -122,25 +122,10 @@ Example:
     }
 
 
+The static schema definition file ``starWarsSchema.graphqls`` contains the field and type definitions, but you need a
+runtime wiring to make it a truly executable schema.
 
-You could generate an executable schema via
-
-.. code-block:: java
-
-        SchemaParser schemaParser = new SchemaParser();
-        SchemaGenerator schemaGenerator = new SchemaGenerator();
-
-        File schemaFile = loadSchema("starWarsSchema.graphqls");
-
-        TypeDefinitionRegistry typeRegistry = schemaParser.parse(schemaFile);
-        RuntimeWiring wiring = buildRuntimeWiring();
-        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
-
-
-The static schema definition file has the field and type definitions but you need a runtime wiring to make
-it a truly executable schema.
-
-The runtime wiring contains ``DataFetcher``s, ``TypeResolvers``s and custom ``Scalar``s that are needed to make a fully
+The runtime wiring contains ``DataFetcher`` s, ``TypeResolvers`` s and custom ``Scalar`` s that are needed to make a fully
 executable schema.
 
 You wire this together using this builder pattern
@@ -173,10 +158,25 @@ You wire this together using this builder pattern
     }
 
 
-There is a another way to wiring in type resolvers and data fetchers and that is via the ``WiringFactory`` interface.  This
-allow for a more dynamic runtime wiring since the IDL definitions can be examined in order to decide what to wire in.
-You could for example look at IDL directives to help you decide what runtime to create or some other aspect of the IDL
-definition.
+Finally, you can generate an executable schema by combining the static schema and the wiring together as shown in this
+example:
+
+.. code-block:: java
+
+        SchemaParser schemaParser = new SchemaParser();
+        SchemaGenerator schemaGenerator = new SchemaGenerator();
+
+        File schemaFile = loadSchema("starWarsSchema.graphqls");
+
+        TypeDefinitionRegistry typeRegistry = schemaParser.parse(schemaFile);
+        RuntimeWiring wiring = buildRuntimeWiring();
+        GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, wiring);
+
+
+In addition to the builder style shown above, ``TypeResolver`` s and ``DataFetcher`` s can also be wired in using the
+``WiringFactory`` interface.  This allows for a more dynamic runtime wiring since the IDL definitions can be examined in
+order to decide what to wire in.  You could for example look at IDL directives, or some other aspect of the IDL
+definition to help you decide what runtime to create.
 
 .. code-block:: java
 
@@ -219,11 +219,10 @@ definition.
                 .wiringFactory(dynamicWiringFactory).build();
     }
 
-Programmatically
-^^^^^^^^^^^^^^^^
+Creating a schema programmatically
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When the schema is created programmatically you provide the ``DataFetcher`` and ``TypeResolver`` when the
-type is created:
+When the schema is created programmatically ``DataFetcher`` s and ``TypeResolver`` s are provided at type creation:
 
 Example:
 
@@ -313,6 +312,8 @@ Java Example:
 Interface
 ^^^^^^^^^
 
+Interfaces are abstract definitions of types.
+
 IDL Example:
 
 .. code-block:: graphql
@@ -327,7 +328,7 @@ Java Example:
 
     GraphQLInterfaceType comicCharacter = newInterface()
         .name("ComicCharacter")
-        .description("A abstract comic character.")
+        .description("An abstract comic character.")
         .field(newFieldDefinition()
                 .name("name")
                 .description("The name of the character.")
@@ -341,9 +342,17 @@ IDL Example:
 
 .. code-block:: graphql
 
-    interface ComicCharacter {
+    interface Cat {
         name: String;
+        lives: Int;
     }
+
+    interface Dog {
+        name: String;
+        bonesOwned: int;
+    }
+
+    union Pet = Cat | Dog
 
 
 Java Example:
@@ -468,7 +477,7 @@ been split into multiple files and merged all together just before schema genera
 
     GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
 
-The Graphql IDL type system has another construct for modularising your schema.  You can use `type extensions` to add
+The Graphql IDL type system has another construct for modularising a schema.  You can use `type extensions` to add
 extra fields and interfaces to a type.
 
 Imagine you start with a type like this in one schema file.
@@ -526,22 +535,22 @@ graphql query.
     }
 
     type CombinedQueryFromMultipleTeams {
-        createdTimestamp : String
+        createdTimestamp: String
     }
 
     # maybe the invoicing system team puts in this set of attributes
     extend type CombinedQueryFromMultipleTeams {
-        invoicing : Invoicing
+        invoicing: Invoicing
     }
 
     # and the billing system team puts in this set of attributes
     extend type CombinedQueryFromMultipleTeams {
-        billing : Billing
+        billing: Billing
     }
 
     # and so and so forth
     extend type CombinedQueryFromMultipleTeams {
-        auditing : Auditing
+        auditing: Auditing
     }
 
 
