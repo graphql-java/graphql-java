@@ -170,7 +170,10 @@ public class ValuesResolver {
             if (value instanceof Map) {
                 return coerceValueForInputObjectType(variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
             } else {
-                throw new CoercingParseValueException("Expected type 'Map'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'Map' but was '" + value.getClass().getSimpleName() +
+                  "'. Variables for input objects must be an instance of a 'Map'."
+                );
             }
         } else {
             return assertShouldNeverHappen("unhandled type " + graphQLType);

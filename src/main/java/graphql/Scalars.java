@@ -69,7 +69,9 @@ public class Scalars {
         public Integer serialize(Object input) {
             Integer result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'Int'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'Int' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -78,7 +80,9 @@ public class Scalars {
         public Integer parseValue(Object input) {
             Integer result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'Int'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'Int' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -120,7 +124,9 @@ public class Scalars {
         public Double serialize(Object input) {
             Double result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'Float'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'Float' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
 
@@ -130,7 +136,9 @@ public class Scalars {
         public Double parseValue(Object input) {
             Double result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'Float'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'Float' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -197,7 +205,9 @@ public class Scalars {
         public Boolean serialize(Object input) {
             Boolean result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'Boolean'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'Boolean' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -206,7 +216,9 @@ public class Scalars {
         public Boolean parseValue(Object input) {
             Boolean result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'Boolean'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'Boolean' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -245,7 +257,9 @@ public class Scalars {
         public String serialize(Object input) {
             String result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'ID'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'ID' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -254,7 +268,9 @@ public class Scalars {
         public String parseValue(Object input) {
             String result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'ID'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'ID' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -301,7 +317,9 @@ public class Scalars {
         public Long serialize(Object input) {
             Long result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'Long'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'Long' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -310,7 +328,9 @@ public class Scalars {
         public Long parseValue(Object input) {
             Long result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'Long'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'Long' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -364,7 +384,9 @@ public class Scalars {
         public Short serialize(Object input) {
             Short result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'Short'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'Short' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -373,7 +395,9 @@ public class Scalars {
         public Short parseValue(Object input) {
             Short result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'Short'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'Short' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -419,7 +443,9 @@ public class Scalars {
         public Byte serialize(Object input) {
             Byte result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'Byte'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'Byte' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -428,7 +454,9 @@ public class Scalars {
         public Byte parseValue(Object input) {
             Byte result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'Byte'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'Byte' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -472,7 +500,9 @@ public class Scalars {
         public BigInteger serialize(Object input) {
             BigInteger result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'BigInteger'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'BigInteger' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -481,7 +511,9 @@ public class Scalars {
         public BigInteger parseValue(Object input) {
             BigInteger result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'BigInteger'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'BigInteger' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -528,7 +560,9 @@ public class Scalars {
         public BigDecimal serialize(Object input) {
             BigDecimal result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'BigDecimal'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'BigDecimal' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -537,7 +571,9 @@ public class Scalars {
         public BigDecimal parseValue(Object input) {
             BigDecimal result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'BigDecimal'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'BigDecimal' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -580,7 +616,9 @@ public class Scalars {
         public Character serialize(Object input) {
             Character result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Expected type 'Char'.");
+                throw new CoercingSerializeException(
+                  "Expected type 'Char' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
@@ -589,7 +627,9 @@ public class Scalars {
         public Character parseValue(Object input) {
             Character result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Expected type 'Char'.");
+                throw new CoercingParseValueException(
+                  "Expected type 'Char' but was '" + input.getClass().getSimpleName() + "'."
+                );
             }
             return result;
         }
