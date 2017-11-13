@@ -6,16 +6,16 @@ A schema defines your GraphQL API by defining each field that can be queried or
 mutated.
 
 ``graphql-java`` offers two different ways of defining the schema: Programmatically as Java code or
-via a special graphql dsl (called IDL).
+via a special graphql dsl (called SDL).
 
-NOTE: IDL is not currently part of the `formal graphql spec <https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document>`_.
+NOTE: SDL is not currently part of the `formal graphql spec <https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document>`_.
 The implementation in this library is based off the `reference implementation <https://github.com/graphql/graphql-js>`_.  However plenty of
-code out there is based on this IDL syntax and hence you can be fairly confident that you are building on solid technology ground.
+code out there is based on this SDL syntax and hence you can be fairly confident that you are building on solid technology ground.
 
 
-If you are unsure which option to use we recommend the IDL.
+If you are unsure which option to use we recommend the SDL.
 
-IDL example:
+SDL example:
 
 .. code-block:: graphql
 
@@ -71,10 +71,10 @@ what ``GraphqlObjectType`` should be used to represent it, and hence what data f
 
 
 
-Creating a schema using the IDL
+Creating a schema using the SDL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When defining a schema via IDL, you provide the needed ``DataFetcher`` and ``TypeResolver``
+When defining a schema via SDL, you provide the needed ``DataFetcher`` and ``TypeResolver``
 when the executable schema is created.
 
 Take for example the following static schema definition file called ``starWarsSchema.graphqls``:
@@ -174,8 +174,8 @@ example:
 
 
 In addition to the builder style shown above, ``TypeResolver`` s and ``DataFetcher`` s can also be wired in using the
-``WiringFactory`` interface.  This allows for a more dynamic runtime wiring since the IDL definitions can be examined in
-order to decide what to wire in.  You could for example look at IDL directives, or some other aspect of the IDL
+``WiringFactory`` interface.  This allows for a more dynamic runtime wiring since the SDL definitions can be examined in
+order to decide what to wire in.  You could for example look at SDL directives, or some other aspect of the SDL
 definition to help you decide what runtime to create.
 
 .. code-block:: java
@@ -282,7 +282,7 @@ Scalar
 Object
 ^^^^^^
 
-IDL Example:
+SDL Example:
 
 .. code-block:: graphql
 
@@ -314,7 +314,7 @@ Interface
 
 Interfaces are abstract definitions of types.
 
-IDL Example:
+SDL Example:
 
 .. code-block:: graphql
 
@@ -338,7 +338,7 @@ Java Example:
 Union
 ^^^^^
 
-IDL Example:
+SDL Example:
 
 .. code-block:: graphql
 
@@ -381,7 +381,7 @@ Java Example:
 Enum
 ^^^^
 
-IDL Example:
+SDL Example:
 
 .. code-block:: graphql
 
@@ -408,7 +408,7 @@ Java Example:
 ObjectInputType
 ^^^^^^^^^^^^^^^
 
-IDL Example:
+SDL Example:
 
 .. code-block:: graphql
 
@@ -449,14 +449,14 @@ For example:
                 .type(new GraphQLList(new GraphQLTypeReference("Person"))))
         .build();
 
-When the schema is declared via IDL, no special handling of recursive types is needed.
+When the schema is declared via SDL, no special handling of recursive types is needed.
 
-Modularising the Schema IDL
+Modularising the Schema SDL
 ---------------------------
 
 Having one large schema file is not always viable.  You can modularise you schema using two techniques.
 
-The first technique is to merge multiple Schema IDL files into one logic unit.  In the case below the schema has
+The first technique is to merge multiple Schema SDL files into one logic unit.  In the case below the schema has
 been split into multiple files and merged all together just before schema generation.
 
 .. code-block:: java
@@ -477,7 +477,7 @@ been split into multiple files and merged all together just before schema genera
 
     GraphQLSchema graphQLSchema = schemaGenerator.makeExecutableSchema(typeRegistry, buildRuntimeWiring());
 
-The Graphql IDL type system has another construct for modularising a schema.  You can use `type extensions` to add
+The Graphql SDL type system has another construct for modularising a schema.  You can use `type extensions` to add
 extra fields and interfaces to a type.
 
 Imagine you start with a type like this in one schema file.

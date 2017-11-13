@@ -137,7 +137,7 @@ If your data can be shared across web requests then you might want to scope your
 longer than the web request say.
 
 But if you are doing per request data loaders then creating a new set of ``GraphQL`` and ``DataLoader`` objects per
-request is super cheap.  Its the ``GraphQLSchema`` creation that can be expensive, especially if you are using graphql IDL parsing.
+request is super cheap.  Its the ``GraphQLSchema`` creation that can be expensive, especially if you are using graphql SDL parsing.
 
 Structure your code so that the schema is statically held, perhaps in a static variable or in a singleton IoC component but
 build out a new ``GraphQL`` set of objects on each request.
