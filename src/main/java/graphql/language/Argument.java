@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Argument extends AbstractNode {
+public class Argument extends AbstractNode<Argument> {
 
     private final String name;
     private final Value value;
@@ -35,12 +35,16 @@ public class Argument extends AbstractNode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Argument argument = (Argument) o;
+        Argument that = (Argument) o;
 
-        return !(name != null ? !name.equals(argument.name) : argument.name != null);
+        return isEqualTo(this.name, that.name);
 
     }
 
+    @Override
+    public Argument deepCopy() {
+        return new Argument(name, deepCopy(value, Value::deepCopy));
+    }
 
     @Override
     public String toString() {

@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class EnumValueDefinition extends AbstractNode {
+public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> {
     private final String name;
     private final List<Directive> directives;
 
@@ -48,16 +48,14 @@ public class EnumValueDefinition extends AbstractNode {
 
         EnumValueDefinition that = (EnumValueDefinition) o;
 
-        if (null == name) {
-            if (null != that.name) return false;
-        } else if (!name.equals(that.name)) {
-            return false;
-        }
-
-        return true;
+        return isEqualTo(this.name, that.name);
 
     }
 
+    @Override
+    public EnumValueDefinition deepCopy() {
+        return new EnumValueDefinition(name, deepCopy(directives));
+    }
 
     @Override
     public String toString() {

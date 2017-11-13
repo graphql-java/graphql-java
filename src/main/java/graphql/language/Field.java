@@ -14,46 +14,46 @@ import static graphql.language.NodeUtil.directivesByName;
 * This might change in the future.
  */
 @PublicApi
-public class Field extends AbstractNode implements Selection {
+public class Field extends AbstractNode<Field> implements Selection<Field> {
 
     private String name;
     private String alias;
-
-    private List<Argument> arguments = new ArrayList<>();
-    private List<Directive> directives = new ArrayList<>();
+    private List<Argument> arguments;
+    private List<Directive> directives;
     private SelectionSet selectionSet;
 
     public Field() {
-
+        this(null, null, new ArrayList<>(), new ArrayList<>(), null);
     }
 
     public Field(String name) {
-        this.name = name;
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null);
     }
 
     public Field(String name, SelectionSet selectionSet) {
-        this.name = name;
-        this.selectionSet = selectionSet;
+        this(name, null, new ArrayList<>(), new ArrayList<>(), selectionSet);
     }
 
 
     public Field(String name, List<Argument> arguments) {
-        this.name = name;
-        this.arguments = arguments;
+        this(name, null, arguments, new ArrayList<>(), null);
     }
 
     public Field(String name, List<Argument> arguments, List<Directive> directives) {
-        this.name = name;
-        this.arguments = arguments;
-        this.directives = directives;
+        this(name, null, arguments, directives, null);
     }
 
     public Field(String name, List<Argument> arguments, SelectionSet selectionSet) {
-        this.name = name;
-        this.arguments = arguments;
-        this.selectionSet = selectionSet;
+        this(name, null, arguments, new ArrayList<>(), selectionSet);
     }
 
+    public Field(String name, String alias, List<Argument> arguments, List<Directive> directives, SelectionSet selectionSet) {
+        this.name = name;
+        this.alias = alias;
+        this.arguments = arguments;
+        this.directives = directives;
+        this.selectionSet = selectionSet;
+    }
 
     @Override
     public List<Node> getChildren() {
@@ -119,13 +119,20 @@ public class Field extends AbstractNode implements Selection {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Field field = (Field) o;
+        Field that = (Field) o;
 
-        if (name != null ? !name.equals(field.name) : field.name != null) return false;
-        return !(alias != null ? !alias.equals(field.alias) : field.alias != null);
-
+        return isEqualTo(this.name, that.name) && isEqualTo(this.alias, that.alias);
     }
 
+    @Override
+    public Field deepCopy() {
+        return new Field(name,
+                alias,
+                deepCopy(arguments),
+                deepCopy(directives),
+                deepCopy(selectionSet, SelectionSet::deepCopy)
+        );
+    }
 
     @Override
     public String toString() {

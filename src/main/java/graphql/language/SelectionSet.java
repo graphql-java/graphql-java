@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SelectionSet extends AbstractNode {
+public class SelectionSet extends AbstractNode<SelectionSet> {
 
     private final List<Selection> selections = new ArrayList<>();
 
@@ -37,6 +37,10 @@ public class SelectionSet extends AbstractNode {
 
     }
 
+    @Override
+    public SelectionSet deepCopy() {
+        return new SelectionSet(deepCopy(selections));
+    }
 
     @Override
     public String toString() {

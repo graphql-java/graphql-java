@@ -7,14 +7,21 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class ObjectTypeDefinition extends AbstractNode implements TypeDefinition {
+public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> implements TypeDefinition<ObjectTypeDefinition> {
     private String name;
-    private final List<Type> implementz = new ArrayList<>();
-    private final List<Directive> directives = new ArrayList<>();
-    private final List<FieldDefinition> fieldDefinitions = new ArrayList<>();
+    private final List<Type> implementz;
+    private final List<Directive> directives;
+    private final List<FieldDefinition> fieldDefinitions;
 
     public ObjectTypeDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+    }
+
+    public ObjectTypeDefinition(String name, List<Type> implementz, List<Directive> directives, List<FieldDefinition> fieldDefinitions) {
         this.name = name;
+        this.implementz = implementz;
+        this.directives = directives;
+        this.fieldDefinitions = fieldDefinitions;
     }
 
     public List<Type> getImplements() {
@@ -61,15 +68,17 @@ public class ObjectTypeDefinition extends AbstractNode implements TypeDefinition
         if (o == null || getClass() != o.getClass()) return false;
 
         ObjectTypeDefinition that = (ObjectTypeDefinition) o;
-
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
-            return false;
-        }
-        return true;
+        return isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public ObjectTypeDefinition deepCopy() {
+        return new ObjectTypeDefinition(name,
+                deepCopy(implementz),
+                deepCopy(directives),
+                deepCopy(fieldDefinitions)
+        );
+    }
 
     @Override
     public String toString() {

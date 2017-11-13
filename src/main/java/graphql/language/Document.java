@@ -4,12 +4,12 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Document extends AbstractNode {
+public class Document extends AbstractNode<Document> {
 
-    private List<Definition> definitions = new ArrayList<>();
+    private List<Definition> definitions;
 
     public Document() {
-
+        this(new ArrayList<>());
     }
 
     public Document(List<Definition> definitions) {
@@ -36,11 +36,13 @@ public class Document extends AbstractNode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-
         return true;
-
     }
 
+    @Override
+    public Document deepCopy() {
+        return new Document(deepCopy(definitions));
+    }
 
     @Override
     public String toString() {

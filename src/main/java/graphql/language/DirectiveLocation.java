@@ -12,7 +12,7 @@ import java.util.List;
 //    FRAGMENT_DEFINITION
 //    FRAGMENT_SPREAD
 //    INLINE_FRAGMENT
-public class DirectiveLocation extends AbstractNode {
+public class DirectiveLocation extends AbstractNode<DirectiveLocation> {
     private final String name;
 
     public DirectiveLocation(String name) {
@@ -25,8 +25,7 @@ public class DirectiveLocation extends AbstractNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        return result;
+        return new ArrayList<>();
     }
 
     @Override
@@ -36,14 +35,13 @@ public class DirectiveLocation extends AbstractNode {
 
         DirectiveLocation that = (DirectiveLocation) o;
 
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
-            return false;
-        }
-        return true;
+        return isEqualTo(this.name,that.name);
     }
 
+    @Override
+    public DirectiveLocation deepCopy() {
+        return new DirectiveLocation(name);
+    }
 
     @Override
     public String toString() {

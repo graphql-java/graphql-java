@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FloatValue extends AbstractNode implements Value {
+public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatValue> {
 
     private BigDecimal value;
 
@@ -45,4 +45,8 @@ public class FloatValue extends AbstractNode implements Value {
 
     }
 
+    @Override
+    public FloatValue deepCopy() {
+        return new FloatValue(value);
+    }
 }

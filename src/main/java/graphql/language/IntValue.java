@@ -5,7 +5,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
-public class IntValue extends AbstractNode implements Value {
+public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> {
 
     private BigInteger value;
 
@@ -37,6 +37,10 @@ public class IntValue extends AbstractNode implements Value {
 
     }
 
+    @Override
+    public IntValue deepCopy() {
+        return new IntValue(value);
+    }
 
     @Override
     public String toString() {

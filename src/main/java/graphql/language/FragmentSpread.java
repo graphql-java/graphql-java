@@ -7,7 +7,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class FragmentSpread extends AbstractNode implements Selection {
+public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread> {
 
     private String name;
     private List<Directive> directives = new ArrayList<>();
@@ -17,6 +17,11 @@ public class FragmentSpread extends AbstractNode implements Selection {
 
     public FragmentSpread(String name) {
         this.name = name;
+    }
+
+    public FragmentSpread(String name, List<Directive> directives) {
+        this.name = name;
+        this.directives = directives;
     }
 
     public String getName() {
@@ -51,8 +56,7 @@ public class FragmentSpread extends AbstractNode implements Selection {
 
         FragmentSpread that = (FragmentSpread) o;
 
-        return !(name != null ? !name.equals(that.name) : that.name != null);
-
+        return isEqualTo(this.name,that.name);
     }
 
 
@@ -61,6 +65,11 @@ public class FragmentSpread extends AbstractNode implements Selection {
         List<Node> result = new ArrayList<>();
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public FragmentSpread deepCopy() {
+        return new FragmentSpread(name, deepCopy(directives));
     }
 
     @Override

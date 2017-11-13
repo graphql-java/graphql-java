@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TypeName extends AbstractNode implements Type {
+public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
 
     private String name;
 
@@ -30,13 +30,15 @@ public class TypeName extends AbstractNode implements Type {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TypeName namedType = (TypeName) o;
+        TypeName that = (TypeName) o;
 
-        if (name != null ? !name.equals(namedType.name) : namedType.name != null) return false;
-
-        return true;
+        return isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public TypeName deepCopy() {
+        return new TypeName(name);
+    }
 
     @Override
     public String toString() {

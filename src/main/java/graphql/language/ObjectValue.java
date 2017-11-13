@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ObjectValue extends AbstractNode implements Value {
+public class ObjectValue extends AbstractNode<ObjectValue> implements Value<ObjectValue> {
 
     private final List<ObjectField> objectFields = new ArrayList<>();
 
@@ -35,6 +35,11 @@ public class ObjectValue extends AbstractNode implements Value {
 
         return true;
 
+    }
+
+    @Override
+    public ObjectValue deepCopy() {
+        return new ObjectValue(deepCopy(objectFields));
     }
 
 

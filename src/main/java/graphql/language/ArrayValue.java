@@ -4,11 +4,12 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ArrayValue extends AbstractNode implements Value {
+public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayValue> {
 
     private List<Value> values = new ArrayList<>();
 
     public ArrayValue() {
+        this(new ArrayList<>());
     }
 
     public ArrayValue(List<Value> values) {
@@ -42,5 +43,10 @@ public class ArrayValue extends AbstractNode implements Value {
         return "ArrayValue{" +
                 "values=" + values +
                 '}';
+    }
+
+    @Override
+    public ArrayValue deepCopy() {
+        return new ArrayValue(deepCopy(values));
     }
 }

@@ -3,7 +3,7 @@ package graphql.language;
 
 import java.util.List;
 
-public interface TypeDefinition extends Node, Definition {
+public interface TypeDefinition<T extends TypeDefinition> extends Definition<T> {
     /**
      * @return the name of the type being defined.
      */
@@ -13,4 +13,9 @@ public interface TypeDefinition extends Node, Definition {
      * @return the directives of this type being defined
      */
     List<Directive> getDirectives();
+
+    /**
+     * @return a deep copy of this type definition
+     */
+    T deepCopy();
 }
