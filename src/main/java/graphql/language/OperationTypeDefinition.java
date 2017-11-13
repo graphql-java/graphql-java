@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Internal
-public class OperationTypeDefinition extends AbstractNode {
+public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinition> {
     private final String name;
     private Type type;
 
@@ -50,14 +50,13 @@ public class OperationTypeDefinition extends AbstractNode {
 
         OperationTypeDefinition that = (OperationTypeDefinition) o;
 
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
-            return false;
-        }
-        return true;
+        return isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public OperationTypeDefinition deepCopy() {
+        return new OperationTypeDefinition(name, deepCopy(type, Type::deepCopy));
+    }
 
     @Override
     public String toString() {

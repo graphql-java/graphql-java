@@ -4,20 +4,18 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VariableDefinition extends AbstractNode {
+public class VariableDefinition extends AbstractNode<VariableDefinition> {
 
     private String name;
     private Type type;
     private Value defaultValue;
 
     public VariableDefinition() {
-
+        this(null, null, null);
     }
 
-
     public VariableDefinition(String name, Type type) {
-        this.name = name;
-        this.type = type;
+        this(name, type, null);
     }
 
     public VariableDefinition(String name, Type type, Value defaultValue) {
@@ -65,10 +63,17 @@ public class VariableDefinition extends AbstractNode {
 
         VariableDefinition that = (VariableDefinition) o;
 
-        return !(name != null ? !name.equals(that.name) : that.name != null);
+        return isEqualTo(this.name, that.name);
 
     }
 
+    @Override
+    public VariableDefinition deepCopy() {
+        return new VariableDefinition(name,
+                deepCopy(type, Type::deepCopy),
+                deepCopy(defaultValue, Value::deepCopy)
+        );
+    }
 
     @Override
     public String toString() {

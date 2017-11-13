@@ -48,7 +48,7 @@ class FragmentsOnCompositeTypeTest extends Specification {
     }
 
     private InlineFragment getInlineFragmentWithTypeConditionNull() {
-        Mock(InlineFragment)
+        new InlineFragment()
     }
 
     private InlineFragment getInlineFragmentWithConditionWithStrangeType() {

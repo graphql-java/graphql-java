@@ -7,7 +7,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class OperationDefinition extends AbstractNode implements Definition {
+public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition> {
 
     public enum Operation {
         QUERY, MUTATION, SUBSCRIPTION
@@ -113,6 +113,16 @@ public class OperationDefinition extends AbstractNode implements Definition {
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
         return operation == that.operation;
 
+    }
+
+    @Override
+    public OperationDefinition deepCopy() {
+        return new OperationDefinition(name,
+                operation,
+                deepCopy(variableDefinitions),
+                deepCopy(directives),
+                deepCopy(selectionSet, SelectionSet::deepCopy)
+        );
     }
 
     @Override

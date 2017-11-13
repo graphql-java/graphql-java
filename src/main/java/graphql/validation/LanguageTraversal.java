@@ -29,7 +29,7 @@ public class LanguageTraversal {
     }
 
 
-    private void traverseImpl(Node root, DocumentVisitor documentVisitor, List<Node> path) {
+    private void traverseImpl(Node<?> root, DocumentVisitor documentVisitor, List<Node> path) {
         documentVisitor.enter(root, path);
         path.add(root);
         for (Node child : root.getChildren()) {

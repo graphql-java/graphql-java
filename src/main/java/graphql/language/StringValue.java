@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class StringValue extends AbstractNode implements Value {
+public class StringValue extends AbstractNode<StringValue> implements Value<StringValue> {
 
     private String value;
 
@@ -44,4 +44,8 @@ public class StringValue extends AbstractNode implements Value {
 
     }
 
+    @Override
+    public StringValue deepCopy() {
+        return new StringValue(value);
+    }
 }

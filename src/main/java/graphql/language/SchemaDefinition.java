@@ -7,11 +7,17 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class SchemaDefinition extends AbstractNode implements Definition {
-    private final List<Directive> directives = new ArrayList<>();
-    private final List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
+public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements Definition<SchemaDefinition> {
+    private final List<Directive> directives;
+    private final List<OperationTypeDefinition> operationTypeDefinitions;
 
     public SchemaDefinition() {
+        this(new ArrayList<>(), new ArrayList<>());
+    }
+
+    public SchemaDefinition(List<Directive> directives, List<OperationTypeDefinition> operationTypeDefinitions) {
+        this.directives = directives;
+        this.operationTypeDefinitions = operationTypeDefinitions;
     }
 
     public List<Directive> getDirectives() {
@@ -49,6 +55,10 @@ public class SchemaDefinition extends AbstractNode implements Definition {
         return true;
     }
 
+    @Override
+    public SchemaDefinition deepCopy() {
+        return new SchemaDefinition(deepCopy(directives), deepCopy(operationTypeDefinitions));
+    }
 
     @Override
     public String toString() {

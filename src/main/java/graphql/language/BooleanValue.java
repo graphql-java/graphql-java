@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BooleanValue extends AbstractNode implements Value {
+public class BooleanValue extends AbstractNode<BooleanValue> implements Value<BooleanValue> {
 
     private boolean value;
 
@@ -35,6 +35,11 @@ public class BooleanValue extends AbstractNode implements Value {
 
         return value == that.value;
 
+    }
+
+    @Override
+    public BooleanValue deepCopy() {
+        return new BooleanValue(value);
     }
 
     @Override

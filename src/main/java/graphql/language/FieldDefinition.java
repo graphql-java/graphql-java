@@ -7,19 +7,25 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class FieldDefinition extends AbstractNode {
+public class FieldDefinition extends AbstractNode<FieldDefinition> {
     private final String name;
     private Type type;
-    private final List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
-    private final List<Directive> directives = new ArrayList<>();
+    private final List<InputValueDefinition> inputValueDefinitions;
+    private final List<Directive> directives;
 
     public FieldDefinition(String name) {
-        this.name = name;
+        this(name, null, new ArrayList<>(), new ArrayList<>());
     }
 
     public FieldDefinition(String name, Type type) {
+        this(name, type, new ArrayList<>(), new ArrayList<>());
+    }
+
+    public FieldDefinition(String name, Type type, List<InputValueDefinition> inputValueDefinitions, List<Directive> directives) {
         this.name = name;
         this.type = type;
+        this.inputValueDefinitions = inputValueDefinitions;
+        this.directives = directives;
     }
 
     public Type getType() {
@@ -67,14 +73,17 @@ public class FieldDefinition extends AbstractNode {
 
         FieldDefinition that = (FieldDefinition) o;
 
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
-            return false;
-        }
-        return true;
+        return isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public FieldDefinition deepCopy() {
+        return new FieldDefinition(name,
+                deepCopy(type, Type::deepCopy),
+                deepCopy(inputValueDefinitions),
+                deepCopy(directives)
+        );
+    }
 
     @Override
     public String toString() {
