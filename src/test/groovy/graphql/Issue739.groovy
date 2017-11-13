@@ -89,7 +89,8 @@ class Issue739 extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Variable 'input' has an invalid value. Expected type 'Map'."
+        varResult.errors[0].message == "Variable 'input' has an invalid value. Expected type 'Map' but was 'Integer'." +
+          " Variables for input objects must be an instance of a 'Map'.";
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }
