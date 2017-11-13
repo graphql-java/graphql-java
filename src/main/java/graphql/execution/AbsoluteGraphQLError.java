@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static com.sun.tools.javac.util.Assert.checkNonNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A {@link GraphQLError} that has been changed from a {@link DataFetcher} relative error to an absolute one.
@@ -22,8 +22,8 @@ class AbsoluteGraphQLError implements GraphQLError {
     private final GraphQLError relativeError;
 
     AbsoluteGraphQLError(ExecutionStrategyParameters executionStrategyParameters, GraphQLError relativeError) {
-        checkNonNull(executionStrategyParameters);
-        this.relativeError = checkNonNull(relativeError);
+        requireNonNull(executionStrategyParameters);
+        this.relativeError = requireNonNull(relativeError);
         List<Object> path = new ArrayList<>();
         path.addAll(executionStrategyParameters.path().toList());
         path.addAll(relativeError.getPath());
