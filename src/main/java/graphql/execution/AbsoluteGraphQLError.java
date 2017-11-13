@@ -24,10 +24,14 @@ class AbsoluteGraphQLError implements GraphQLError {
     AbsoluteGraphQLError(ExecutionStrategyParameters executionStrategyParameters, GraphQLError relativeError) {
         requireNonNull(executionStrategyParameters);
         this.relativeError = requireNonNull(relativeError);
-        List<Object> path = new ArrayList<>();
-        path.addAll(executionStrategyParameters.path().toList());
-        path.addAll(relativeError.getPath());
-        this.absolutePath = path;
+        this.absolutePath = Optional.ofNullable(relativeError.getPath())
+                .map(originalPath -> {
+                    List<Object> path = new ArrayList<>();
+                    path.addAll(executionStrategyParameters.path().toList());
+                    path.addAll(relativeError.getPath());
+                    return path;
+                })
+                .orElse(null);
 
         Optional<SourceLocation> baseLocation;
         if (!executionStrategyParameters.field().isEmpty()) {
