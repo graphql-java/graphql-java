@@ -1,0 +1,64 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr "Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-11 19:21+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../relay.rst:2
+msgid "Relay Support"
+msgstr "关于 Relay 支持"
+
+#: ../../relay.rst:5
+msgid ""
+"Very basic support for `Relay <https://github.com/facebook/relay>`_ is "
+"included."
+msgstr "包含了一些基础的 `Relay <https://github.com/facebook/relay>`_  特性的支持。"
+
+#: ../../relay.rst:7
+msgid ""
+"**Note**: Relay refers here to \"Relay Classic\", there is no support for"
+" \"Relay Modern\"."
+msgstr "**注意**： 这里的 Relay 指 \"Relay Classic\", 暂不支持 \"Relay Modern\"."
+
+#: ../../relay.rst:9
+msgid ""
+"Please look at https://github.com/graphql-java/todomvc-relay-java for a "
+"full example project,"
+msgstr "完整的例子，见  https://github.com/graphql-java/todomvc-relay-java 。"
+
+#: ../../relay.rst:11
+msgid ""
+"Relay send queries to the GraphQL server as JSON containing a ``query`` "
+"field and a ``variables`` field. The ``query`` field is a JSON string, "
+"and the ``variables`` field is a map of variable definitions. A relay-"
+"compatible server will need to parse this JSON and pass the ``query`` "
+"string to this library as the query and the ``variables`` map as the "
+"third argument to ``execute`` as shown below."
+msgstr "Relay  以 JSON 格式，向服务器发送 ``query`` 和 ``variables`` 两个字段。``query`` 字段是一个 JSON 格式的字符串， ``variables`` 字段是一个 变量定义（ variable definitions) 的 map。relay 兼容的服务器，需要解释 JSON 然后传 ``query`` 字符串到本框架。包括 ``variables`` map 作为 ``execute`` 方法的第3个参数。如下："
+
+#: ../../relay.rst:37
+msgid "Apollo Support"
+msgstr "Apollo 支持"
+
+#: ../../relay.rst:39
+msgid ""
+"There is no special support for `Apollo <https://github.com/apollographql"
+"/apollo-client>`_ included: Apollo works with any schema."
+msgstr "没有为对接 `Apollo <https://github.com/apollographql/apollo-client>`_   客户端做什么。因它兼容所有schema。"
+
+#: ../../relay.rst:41
+msgid "The Controller example shown above works with Apollo too."
+msgstr "上面的 Controller 例子一样可以与 Apollo 客户端交互。"
+

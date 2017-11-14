@@ -1,0 +1,123 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr "Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-11 19:21+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../exceptions.rst:2
+msgid "Runtime Exceptions"
+msgstr "运行期异常（Runtime Exceptions ）"
+
+#: ../../exceptions.rst:5
+msgid ""
+"Runtime exceptions can be thrown by the graphql engine if certain "
+"exceptional situations are encountered.  The following are a list of the "
+"exceptions that can be thrown all the way out of a "
+"``graphql.execute(...)`` call."
+msgstr "在一些异常的情况下， graphql engine 有可能抛出 Runtime exceptions。下面是调用 ``graphql.execute(...)`` 期间可能出现的异常。"
+
+#: ../../exceptions.rst:8
+msgid ""
+"These are not graphql errors in execution but rather totally unacceptable"
+" conditions in which to execute a graphql query."
+msgstr "他们不是执行 graphql 查询中发生的异常。 但还是不能被忽略。"
+
+#: ../../exceptions.rst:10
+msgid "`graphql.schema.CoercingSerializeException`"
+msgstr ""
+
+#: ../../exceptions.rst:12
+msgid ""
+"is thrown when a value cannot be serialised by a Scalar type, for example"
+" a String value being coerced as an Int."
+msgstr "发生这类型的异常，原因是序列化Scalar时出错。如 Int 字段获取到 String 值。"
+
+#: ../../exceptions.rst:16
+msgid "`graphql.schema.CoercingParseValueException`"
+msgstr ""
+
+#: ../../exceptions.rst:18
+msgid ""
+"is thrown when a value cannot be parsed by a Scalar type, for example a "
+"String input value being parsed as an Int."
+msgstr "发生这类型的异常，原因是解释输入的 Scalar 时出错 ，如 int 参数的实际输入值是一个 String。"
+
+#: ../../exceptions.rst:22
+msgid "`graphql.execution.UnresolvedTypeException`"
+msgstr ""
+
+#: ../../exceptions.rst:24
+msgid ""
+"is thrown if a  graphql.schema.TypeResolver` fails to provide a concrete "
+"object type given a interface or union type."
+msgstr "当  graphql.schema.TypeResolver` 不能判断抽象对象（ interface or union type）  的实际类型（ concrete object type） 时发生这个异常。"
+
+#: ../../exceptions.rst:28
+msgid "`graphql.execution.NonNullableValueCoercedAsNullException`"
+msgstr ""
+
+#: ../../exceptions.rst:30
+msgid ""
+"is thrown if a non null variable argument is coerced as a null value "
+"during execution."
+msgstr "如果 个不允许为 null 的参数，被赋值为 null。会抛出上面异常。."
+
+#: ../../exceptions.rst:34
+msgid "`graphql.execution.InputMapDefinesTooManyFieldsException`"
+msgstr ""
+
+#: ../../exceptions.rst:36
+msgid ""
+"is thrown if a map used for an input type object contains more keys than "
+"is defined in that input type."
+msgstr "可以输入对象（ input type object ）包含了未在Schema中定义的field。就会发生上面异常。"
+
+#: ../../exceptions.rst:40
+msgid "`graphql.schema.validation.InvalidSchemaException`"
+msgstr ""
+
+#: ../../exceptions.rst:44
+msgid "is thrown if the schema is not valid when built via"
+msgstr "表示在运行下面函数时， Schema 校验失败。"
+
+#: ../../exceptions.rst:43
+msgid "graphql.schema.GraphQLSchema.Builder#build()`"
+msgstr ""
+
+#: ../../exceptions.rst:46
+msgid "`graphql.GraphQLException`"
+msgstr ""
+
+#: ../../exceptions.rst:48
+msgid ""
+"is thrown as a general purpose runtime exception, for example if the code"
+" cant access a named field when examining a POJO, it is analogous to a "
+"RuntimeException if you will."
+msgstr "这个是通用的异常。如不能访问 POJO 的 field。这可以等同于 RuntimeException。"
+
+#: ../../exceptions.rst:52
+msgid "`graphql.AssertException`"
+msgstr ""
+
+#: ../../exceptions.rst:54
+msgid ""
+"is thrown as a low level code assertion exception for truly unexpected "
+"code conditions, things we assert"
+msgstr "这是内部断言的预计外异常"
+
+#: ../../exceptions.rst:55
+msgid "should never happen in practice."
+msgstr "事实上不应该发生【译注：如果抛出了，可能是框架有BUG了。】"
+
