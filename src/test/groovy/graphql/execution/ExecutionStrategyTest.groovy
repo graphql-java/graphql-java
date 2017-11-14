@@ -1,6 +1,7 @@
 package graphql.execution
 
 import graphql.Assert
+import graphql.DataFetchingErrorGraphQLError
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.Scalars
@@ -22,6 +23,7 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
+import javax.xml.transform.Source
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 
@@ -515,5 +517,61 @@ class ExecutionStrategyTest extends Specification {
 
         then:
         executionResult.get().data == [1L, 2L, 3L]
+    }
+
+    def "#820 processes DataFetcherResult"() {
+        given:
+
+        ExecutionContext executionContext = buildContext()
+        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        def field = new Field("parent")
+        field.setSourceLocation(new SourceLocation(5, 10))
+        def parameters = newParameters()
+            .path(ExecutionPath.fromList(["parent"]))
+            .field([field])
+            .fields(["parent":[field]])
+            .typeInfo(typeInfo)
+            .build()
+
+        def executionData = ["child": [:]]
+        when:
+        def executionResult = executionStrategy.processPossibleDataFetcherResult(executionContext, parameters,
+                new DataFetcherResult(executionData, [new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"])]))
+
+        then:
+        executionResult == executionData
+        executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
+        executionContext.getErrors()[0].message == "bad foo"
+        executionContext.getErrors()[0].path == ["parent", "child", "foo"]
+    }
+
+    def "#820 processes DataFetcherResult just message"() {
+        given:
+
+        ExecutionContext executionContext = buildContext()
+        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        def field = new Field("parent")
+        field.setSourceLocation(new SourceLocation(5, 10))
+        def parameters = newParameters()
+                .path(ExecutionPath.fromList(["parent"]))
+                .field([field])
+                .fields(["parent":[field]])
+                .typeInfo(typeInfo)
+                .build()
+
+        def executionData = ["child": [:]]
+        when:
+        def executionResult = executionStrategy.processPossibleDataFetcherResult(executionContext, parameters,
+                new DataFetcherResult(executionData, [new DataFetchingErrorGraphQLError("bad foo")]))
+
+        then:
+        executionResult == executionData
+        executionContext.getErrors()[0].locations == null
+        executionContext.getErrors()[0].message == "bad foo"
+        executionContext.getErrors()[0].path == null
     }
 }
