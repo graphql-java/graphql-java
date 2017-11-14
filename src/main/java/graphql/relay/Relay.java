@@ -181,14 +181,14 @@ public class Relay {
                 .name(name + "Input")
                 .field(newInputObjectField()
                         .name("clientMutationId")
-                        .type(new GraphQLNonNull(GraphQLString)))
+                        .type(GraphQLString))
                 .fields(inputFields)
                 .build();
         GraphQLObjectType outputType = newObject()
                 .name(name + "Payload")
                 .field(newFieldDefinition()
                         .name("clientMutationId")
-                        .type(new GraphQLNonNull(GraphQLString)))
+                        .type(GraphQLString))
                 .fields(outputFields)
                 .build();
 
