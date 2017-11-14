@@ -1,0 +1,132 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr "Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-11 19:21+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../subscriptions.rst:2
+msgid "Subscriptions"
+msgstr "订阅（Subscriptions）"
+
+#: ../../subscriptions.rst:5
+msgid "Subscription Queries"
+msgstr "订阅查询（Subscription Queries）"
+
+#: ../../subscriptions.rst:7
+msgid ""
+"Graphql subscriptions allow you subscribe to a reactive source and as new"
+" data arrives then a graphql query is applied over that data and the "
+"results are passed on."
+msgstr "Graphql 订阅（subscriptions）使你可以让你订阅响应式数据源（reactive source） 。当有新数据时，会发送给订阅者。"
+
+#: ../../subscriptions.rst:10
+msgid ""
+"See http://graphql.org/blog/subscriptions-in-graphql-and-relay/ for more "
+"general details on graphql subscriptions."
+msgstr "可以阅读 http://graphql.org/blog/subscriptions-in-graphql-and-relay/ 来了解订阅的背景知识。"
+
+#: ../../subscriptions.rst:14
+msgid ""
+"Imagine you have an stock market pricing service and you make a graphql "
+"subscription to it like this"
+msgstr "假设你有一个股票服务。可以用这个 graphql 语句来订阅它的数据："
+
+#: ../../subscriptions.rst:27
+msgid ""
+"graphql subscriptions allow a stream of ``ExecutionResult`` objects to be"
+" sent down each time the stock price changes.  The field selection set "
+"will applied to the underlying data and are represented just like any "
+"other graphql query."
+msgstr "股票价格变化时，graphql 订阅 可以把 ``ExecutionResult`` 对象以流的方式传送给订阅者。和其它 graphql 查询一样，只会发送指定的字段 。"
+
+#: ../../subscriptions.rst:31
+msgid ""
+"What is special is that the initial result of a subscription query is a "
+"reactive-streams ``Publisher`` object which you need to use to get the "
+"future values."
+msgstr "不同的是，一开始的查询结果是一个响应式流（reactive-streams） ``Publisher（流发布者）`` 对象。通过对象可以获取未来的数据。"
+
+#: ../../subscriptions.rst:34
+msgid ""
+"You need to use ``SubscriptionExecutionStrategy`` as your execution "
+"strategy as it has the support for the reactive-streams APIs."
+msgstr "你需要使用 ``SubscriptionExecutionStrategy`` 策略作为执行策略（execution strategy）。因为它支持 reactive-streams APIs."
+
+#: ../../subscriptions.rst:47
+msgid ""
+"The ``Publisher<ExecutionResult>`` here is the publisher of a stream of "
+"events.  You need to subscribe to this with your processing code which "
+"will look something like the following"
+msgstr "这里的 ``Publisher<ExecutionResult>`` 就是流事件的发布者【译注：原文 publisher of a stream of events】。你需要编写你自己的流处理代码，如："
+
+#: ../../subscriptions.rst:111
+msgid ""
+"You are now writing reactive-streams code to consume a series of "
+"``ExecutionResults``.  You can see more details on reactive-streams code "
+"here http://www.reactive-streams.org/"
+msgstr "需要编写 reactive-streams 代码去消费一源源不断的 ``ExecutionResults``。你可以在 http://www.reactive-streams.org/ 中看到更 reactive-streams 代码的编写细节。"
+
+#: ../../subscriptions.rst:114
+msgid ""
+"``RxJava`` is a popular implementation of reactive-streams.  Check out "
+"http://reactivex.io/intro.html to find out more about creating Publishers"
+" of data and Subscriptions to that data."
+msgstr "``RxJava``是这个流行的 reactive-streams 实现。在 http://reactivex.io/intro.html 中可以看到更多创建Publishers 数据 和 Subscriptions 数据的细节。"
+
+#: ../../subscriptions.rst:117
+msgid ""
+"graphql-java only produces a stream of results.  It does not concern "
+"itself with sending these over the network on things like web sockets and"
+" so on.  That is important but not a concern of the base graphql-java "
+"library."
+msgstr "graphql-java 只是产出一个流对象。它不关心如何在网络上用 web sockets 或其它手段发送流数据 。虽然这很重要，但不是作为基础 graphql-java 库应该做的。"
+
+#: ../../subscriptions.rst:120
+msgid ""
+"We have put together a basic example of using websockets (backed by "
+"Jetty) with a simulated stock price application that is built using "
+"RxJava."
+msgstr "我们编写了一个 websockets 的(基于 Jetty)  模拟股票报价的示例应用。它使用了 RxJava。"
+
+#: ../../subscriptions.rst:123
+msgid ""
+"See https://github.com/graphql-java/graphql-java-subscription-example for"
+" more detailed code on handling network concerns and the like."
+msgstr "详见 https://github.com/graphql-java/graphql-java-subscription-example"
+
+#: ../../subscriptions.rst:128
+msgid "Subscription Data Fetchers"
+msgstr "关于订阅服务的 Data Fetchers"
+
+#: ../../subscriptions.rst:130
+msgid ""
+"The ``DataFetcher`` behind a subscription field is responsible for "
+"creating the ``Publisher`` of data.  The objects return by this Publisher"
+" will be mapped over the graphql query as each arrives and then sent back"
+" out as an execution result."
+msgstr "订阅字段的 ``DataFetcher`` 的职责是生成一个 ``Publisher``。这个 Publisher 输出的每一个对象，将会通过 graphql 查询来映射。然后作为执行结果返回。"
+
+#: ../../subscriptions.rst:133
+msgid "You data fetcher is going to look something like this."
+msgstr "你会像这样子去编写Data Fetcher："
+
+#: ../../subscriptions.rst:146
+msgid ""
+"Now the exact details of how you get that stream of events is up to you "
+"and you're reactive code.  graphql-java gives you a way to map the "
+"graphql query fields over that stream of objects just like a standard "
+"graphql query."
+msgstr "如何获取流事件，就由你的 reactive code 来决定 了。graphql-java 会帮助你从流对象中获取 graphql 字段（fields）。像一般的 graphql 查询一样。"
+

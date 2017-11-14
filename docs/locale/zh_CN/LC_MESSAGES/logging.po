@@ -1,0 +1,29 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr "Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-11 19:21+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../logging.rst:2
+msgid "Logging"
+msgstr "日志（Logging）"
+
+#: ../../logging.rst:4
+msgid ""
+"Logging is done with `SLF4J <http://www.slf4j.org/>`_. Please have a look"
+" at the `Manual <http://www.slf4j.org/manual.html>`_ for details. The "
+"``graphql-java`` root Logger name is ``graphql``."
+msgstr "我们使用 `SLF4J <http://www.slf4j.org/>`_ 来记录日志。详情可以见 `手册 <http://www.slf4j.org/manual.html>`_ 。``graphql-java`` 的 root Logger 名字是 ``graphql``。"
+

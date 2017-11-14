@@ -1,0 +1,89 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr "Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-14 18:16+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../index.rst:2
+msgid "Welcome to graphql-java"
+msgstr "欢迎使用 graphql-java"
+
+#: ../../index.rst:10
+msgid ""
+"This is a GraphQL Java implementation based on the `specification "
+"<https://github.com/facebook/graphql>`_ and the JavaScript `reference "
+"implementation <https://github.com/graphql/graphql-js>`_."
+msgstr "这是一个用Java实现的GraphQL。基于 `GraphQL规范 <https://github.com/facebook/graphql>`_ 和  `JavaScript参考实现 <https://github.com/graphql/graphql-js>`_."
+
+#: ../../index.rst:14
+msgid "**Status**: Version ``6.0`` is released."
+msgstr ""
+
+#: ../../index.rst:16
+msgid ""
+"Make sure to check out the `awesome related projects <https://github.com"
+"/graphql-java/awesome-graphql-java>`_ built on ``graphql-java``."
+msgstr "强烈推荐你关注一下 基于  ``graphql-java`` 开发的  `相关项目 <https://github.com/graphql-java/awesome-graphql-java>`_ ."
+
+#: ../../index.rst:21
+msgid "Code of Conduct"
+msgstr "贡献或编码的行为规范"
+
+#: ../../index.rst:23
+msgid ""
+"Please note that this project is released with a `Contributor Code of "
+"Conduct <https://github.com/graphql-java/graphql-"
+"java/blob/master/CODE_OF_CONDUCT.md>`_. By contributing to this project "
+"(commenting or opening PR/Issues etc) you are agreeing to follow this "
+"conduct, so please take the time to read it."
+msgstr "请注意，这个项目的发行条款，包括了  `贡献或编码的行为规范 <https://github.com/graphql-java/graphql-java/blob/master/CODE_OF_CONDUCT.md>`_为本项目作贡献（提交代码和问题等【译注原文：commenting or opening PR/Issues etc】）的同时，你即同意遵守这个行为规范，所以请你花时间认真阅读它."
+
+#: ../../index.rst:29
+msgid "Questions and discussions"
+msgstr "问题与讨论"
+
+#: ../../index.rst:31
+msgid ""
+"If you have a question or want to discuss anything else related to this "
+"project:"
+msgstr "如果你有问题或想讨论与本项目相关的事:"
+
+#: ../../index.rst:33
+msgid ""
+"Feel free to open a new `Issue <https://github.com/graphql-java/graphql-"
+"java/issues>`_"
+msgstr "请随时提出新 `Issue <https://github.com/graphql-java/graphql-java/issues>`_"
+
+#: ../../index.rst:35
+msgid ""
+"We have a public chat room (Gitter.im) for graphql-java: "
+"https://gitter.im/graphql-java/graphql-java"
+msgstr "我们为graphql-java，准备了一个公开的聊天室 (Gitter.im) : https://gitter.im/graphql-java/graphql-java"
+
+#: ../../index.rst:39
+msgid "License"
+msgstr "发行授权"
+
+#: ../../index.rst:41
+msgid "graphql-java is licensed under the MIT License."
+msgstr ""
+
+#: ../../index.rst:44
+msgid "Documentation"
+msgstr "文档"
+
+#~ msgid "**Status**: Version ``5.0.0`` is released."
+#~ msgstr ""
+

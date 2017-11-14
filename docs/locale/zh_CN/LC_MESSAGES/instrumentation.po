@@ -1,0 +1,129 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr "Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-11 19:21+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../instrumentation.rst:2
+msgid "Instrumentation"
+msgstr "拦截器Instrumentation"
+
+#: ../../instrumentation.rst:5
+msgid ""
+"The ``graphql.execution.instrumentation.Instrumentation`` interface "
+"allows you to inject code that can observe the execution of a query and "
+"also change the runtime behaviour."
+msgstr "通过实现 ``graphql.execution.instrumentation.Instrumentation`` 接口，你可以在执行查询的过程中注入定制代码。并可以修改运行期的行为。"
+
+#: ../../instrumentation.rst:8
+msgid ""
+"The primary use case for this is to allow say performance monitoring and "
+"custom logging but it could be used for many different purposes."
+msgstr "它的主要用途是性能监控和定制日志，但也可以完成其它任务。"
+
+#: ../../instrumentation.rst:10
+msgid ""
+"When you build the ```Graphql`` object you can specify what "
+"``Instrumentation`` to use (if any)."
+msgstr "当创建 ```Graphql`` 对象时，可以绑定相关的 ``Instrumentation`` 。"
+
+#: ../../instrumentation.rst:20
+msgid "Custom Instrumentation"
+msgstr "定制拦截器（Custom Instrumentation）"
+
+#: ../../instrumentation.rst:22
+msgid ""
+"An implementation of ``Instrumentation`` needs to implement the \"begin\""
+" step methods that represent the execution of a graphql query."
+msgstr "要实现 ``Instrumentation`` ，需要实现多个 \"begin\" 开头的方法。这方法会在查询执行过程中，每一步骤开始前被调用。"
+
+#: ../../instrumentation.rst:24
+msgid ""
+"Each step must give back a non null "
+"``graphql.execution.instrumentation.InstrumentationContext`` object which"
+" will be called back when the step completes, and will be told that it "
+"succeeded or failed with a Throwable."
+msgstr "所有回调方法，都应该返回 ``graphql.execution.instrumentation.InstrumentationContext`` 对象，这个对象会在本步骤完成时被回调用，回调用时会告知数据的获取结果，如果出错，可以获取 Throwable 对象。."
+
+#: ../../instrumentation.rst:27
+msgid ""
+"The following is a basic custom ``Instrumentation`` that measures overall"
+" execution time and puts it into a stateful object."
+msgstr "下面是一个定制的 ``Instrumentation`` 。作用是测量执行时间。"
+
+#: ../../instrumentation.rst:113
+msgid "Chaining Instrumentation"
+msgstr "链式拦截（Chaining Instrumentation）"
+
+#: ../../instrumentation.rst:115
+msgid ""
+"You can combine multiple ``Instrumentation`` objects together using the "
+"``graphql.execution.instrumentation.ChainedInstrumentation`` class which "
+"accepts a list of ``Instrumentation`` objects and calls them in that "
+"defined order."
+msgstr "你可以用  ``graphql.execution.instrumentation.ChainedInstrumentation``  把多个 ``Instrumentation`` 连接起来。这些 ``Instrumentation`` 对象会按顺序被调用。"
+
+#: ../../instrumentation.rst:132
+msgid "Apollo Tracing Instrumentation"
+msgstr "Apollo跟踪与拦截（ Tracing Instrumentation）"
+
+#: ../../instrumentation.rst:134
+msgid ""
+"``graphql.execution.instrumentation.tracing.TracingInstrumentation`` is "
+"an ``Instrumentation`` implementation that creates tracing information "
+"about the query that is being executed."
+msgstr "``graphql.execution.instrumentation.tracing.TracingInstrumentation`` 是一个可以收集跟踪信息的拦截器。"
+
+#: ../../instrumentation.rst:137
+msgid ""
+"It follows the Apollo proposed tracing format defined at "
+"`https://github.com/apollographql/apollo-tracing "
+"<https://github.com/apollographql/apollo-tracing>`_"
+msgstr "它按照 Apollo 跟踪格式  `https://github.com/apollographql/apollo-tracing <https://github.com/apollographql/apollo-tracing>`_ 来收集跟踪信息。"
+
+#: ../../instrumentation.rst:139
+msgid ""
+"A detailed tracing map will be created and placed in the ``extensions`` "
+"section of the result."
+msgstr "详细的跟踪信息（ tracing map）会放在查询结果的 ``extensions（扩展）`` 部分。"
+
+#: ../../instrumentation.rst:141
+msgid "So given a query like"
+msgstr "如以下的查询："
+
+#: ../../instrumentation.rst:154
+msgid "It would return a result like"
+msgstr "会返回如下的结果："
+
+#: ../../instrumentation.rst:261
+msgid "Field Validation Instrumentation"
+msgstr "字段校验拦截器（Field Validation Instrumentation）"
+
+#: ../../instrumentation.rst:263
+msgid ""
+"``graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation``"
+" is an ``Instrumentation`` implementation that can be used to validate "
+"fields and their arguments before query execution.  If errors are "
+"returned during this process then the query execution is aborted and the "
+"errors will be in the query result."
+msgstr "``graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation`` 拦截器，可以在执行查询前校验字段和字段参数。如果校验失败，查询将停止，并返回错误信息。"
+
+#: ../../instrumentation.rst:267
+msgid ""
+"You can make you own custom implementation of ``FieldValidation`` or you "
+"can use the ``SimpleFieldValidation`` class to add simple per field "
+"checks rules."
+msgstr "你可以编写自己的``FieldValidation`` 实现，或者直接用 ``SimpleFieldValidation`` 去为每个field定义校验逻辑。"
+
