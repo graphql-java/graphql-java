@@ -1,9 +1,7 @@
 package graphql.execution;
 
-import graphql.ErrorType;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQLError;
 import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TypeResolutionEnvironment;
@@ -14,7 +12,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.introspection.Introspection;
 import graphql.language.Field;
-import graphql.language.SourceLocation;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -40,7 +37,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
@@ -230,15 +226,34 @@ public abstract class ExecutionStrategy {
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
         }
-        return fetchedValue.handle((result, exception) -> {
-            fetchCtx.onEnd(result, exception);
-            if (exception != null) {
-                handleFetchingException(executionContext, parameters, field, fieldDef, argumentValues, environment, exception);
-                return null;
-            } else {
-                return result;
-            }
-        });
+        return fetchedValue
+            .thenApply(result -> processPossibleDataFetcherResult(executionContext, parameters, result))
+            .handle((result, exception) -> {
+                fetchCtx.onEnd(result, exception);
+                if (exception != null) {
+                    handleFetchingException(executionContext, parameters, field, fieldDef, argumentValues, environment, exception);
+                    return null;
+                } else {
+                    return result;
+                }
+            });
+    }
+
+    Object processPossibleDataFetcherResult(ExecutionContext executionContext,
+                                            ExecutionStrategyParameters parameters,
+                                            Object result) {
+        if (result != null && result instanceof DataFetcherResult) {
+            //noinspection unchecked
+            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult)result;
+            dataFetcherResult.getErrors().stream()
+                    .map(relError -> new AbsoluteGraphQLError(parameters, relError))
+                    .forEach(e -> executionContext.addError(e, Optional.ofNullable(e.getPath())
+                            .map(path -> ExecutionPath.fromList(e.getPath()))
+                            .orElse(parameters.path())));
+            return dataFetcherResult.getData();
+        } else {
+            return result;
+        }
     }
 
     private void handleFetchingException(ExecutionContext executionContext,
@@ -331,15 +346,6 @@ public abstract class ExecutionStrategy {
         ExecutionTypeInfo typeInfo = parameters.typeInfo();
         Object result = unboxPossibleOptional(parameters.source());
         GraphQLType fieldType = typeInfo.getType();
-
-        if (result != null && result instanceof DataFetcherResult) {
-            //noinspection unchecked
-            DataFetcherResult<Object> dataFetcherResult = (DataFetcherResult)result;
-            result = dataFetcherResult.getData();
-            dataFetcherResult.getErrors().stream()
-                    .map(relError -> new AbsoluteGraphQLError(parameters, relError))
-                    .forEach(e -> executionContext.addError(e, ExecutionPath.fromList(e.getPath())));
-        }
 
         if (result == null) {
             return completedFuture(new ExecutionResultImpl(parameters.nonNullFieldValidator().validate(parameters.path(), null), null));

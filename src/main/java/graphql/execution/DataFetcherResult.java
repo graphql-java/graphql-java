@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.GraphQLError;
+import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @param <T> The type of the data fetched
  */
+@PublicApi
 public class DataFetcherResult<T> {
 
     private final T data;
