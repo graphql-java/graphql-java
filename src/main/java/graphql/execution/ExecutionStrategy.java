@@ -230,13 +230,14 @@ public abstract class ExecutionStrategy {
                         return result;
                     }
                 })
-                .thenApply(result -> processPossibleDataFetcherResult(executionContext, parameters, result));
+                .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result))
+                .thenApply(this::unboxPossibleOptional);
     }
 
-    Object processPossibleDataFetcherResult(ExecutionContext executionContext,
-                                            ExecutionStrategyParameters parameters,
-                                            Object result) {
-        if (result != null && result instanceof DataFetcherResult) {
+    Object unboxPossibleDataFetcherResult(ExecutionContext executionContext,
+                                          ExecutionStrategyParameters parameters,
+                                          Object result) {
+        if (result instanceof DataFetcherResult) {
             //noinspection unchecked
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
             dataFetcherResult.getErrors().stream()

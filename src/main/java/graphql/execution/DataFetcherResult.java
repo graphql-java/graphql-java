@@ -11,7 +11,8 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * An object that can be returned from a {@link DataFetcher} that contains both data and errors to be relativized and
- * added to the final result.
+ * added to the final result. This is a useful when your ``DataFetcher`` retrieves data from multiple sources
+ * or from another GraphQL resource.
  *
  * @param <T> The type of the data fetched
  */
