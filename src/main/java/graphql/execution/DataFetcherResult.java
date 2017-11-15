@@ -27,14 +27,14 @@ public class DataFetcherResult<T> {
     }
 
     /**
-     * @return The data fetched. May be null
+     * @return The data fetched. May be null.
      */
     public T getData() {
         return data;
     }
 
     /**
-     * @return errors encountered when fetching data.  Must not be null.
+     * @return errors encountered when fetching data.  This will be non null but possibly empty.
      */
     public List<GraphQLError> getErrors() {
         return errors;

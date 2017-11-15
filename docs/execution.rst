@@ -137,6 +137,29 @@ behaviour.
         };
         ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
 
+Returning data and errors
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is also possible to return both data and multiple errors in a ``DataFetcher`` implementation by returning
+`graphql.execution.DataFetcherResult` either directly or wrapped in a ``CompletableFuture`` instance for asynchronous
+execution.  This is a useful when your ``DataFetcher`` may need to retrieve data from multiple sources or from another
+GraphQL resource.
+
+In this example, the ``DataFetcher`` retrieves a user from another GraphQL resource and returns its data and errors.
+
+.. code-block:: java
+
+        DataFetcher userDataFetcher = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                Map response = fetchUserFromRemoteGraphQLResource(environment.getArgument("userId"));
+                List<GraphQLError> errors = ((List)response.get("errors")).stream()
+                    .map(MyMapGraphQLError::new)
+                    .collect(Collectors.toList());
+                return new DataFetcherResult(response.get("data"), errors);
+            }
+        };
+
 Serializing results to JSON
 ---------------------------
 
