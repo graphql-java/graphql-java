@@ -167,6 +167,6 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-language = 'es' # language supported
+language = 'en' # language supported
 locale_dirs = ['locale/']   # path is example but recommended.
 gettext_compact = False     # optional.
