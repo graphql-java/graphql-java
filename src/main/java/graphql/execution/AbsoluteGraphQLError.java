@@ -20,6 +20,8 @@ class AbsoluteGraphQLError implements GraphQLError {
     private final List<SourceLocation> locations;
     private final List<Object> absolutePath;
     private final GraphQLError relativeError;
+    private final String message;
+    private final ErrorType errorType;
 
     AbsoluteGraphQLError(ExecutionStrategyParameters executionStrategyParameters, GraphQLError relativeError) {
         requireNonNull(executionStrategyParameters);
@@ -35,7 +37,7 @@ class AbsoluteGraphQLError implements GraphQLError {
 
         Optional<SourceLocation> baseLocation;
         if (!executionStrategyParameters.field().isEmpty()) {
-            baseLocation = Optional.of(executionStrategyParameters.field().get(0).getSourceLocation());
+            baseLocation = Optional.ofNullable(executionStrategyParameters.field().get(0).getSourceLocation());
         } else {
             baseLocation = Optional.empty();
         }
@@ -49,11 +51,13 @@ class AbsoluteGraphQLError implements GraphQLError {
                                         .orElse(null))
                         .collect(Collectors.toList()))
                 .orElse(null);
+        this.message = relativeError.getMessage();
+        this.errorType = relativeError.getErrorType();
     }
 
     @Override
     public String getMessage() {
-        return relativeError.getMessage();
+        return message;
     }
 
     @Override
@@ -63,7 +67,7 @@ class AbsoluteGraphQLError implements GraphQLError {
 
     @Override
     public ErrorType getErrorType() {
-        return relativeError.getErrorType();
+        return errorType;
     }
 
     @Override
