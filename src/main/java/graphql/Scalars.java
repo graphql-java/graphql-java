@@ -38,6 +38,14 @@ public class Scalars {
         return input instanceof Number || input instanceof String;
     }
 
+    private static String typeName(Object input) {
+        if (input == null) {
+            return "null";
+        }
+
+        return input.getClass().getSimpleName();
+    }
+
     /**
      * This represents the "Int" type as defined in the graphql specification : http://facebook.github.io/graphql/#sec-Int
      *
@@ -70,7 +78,7 @@ public class Scalars {
             Integer result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Int' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Int' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -81,7 +89,7 @@ public class Scalars {
             Integer result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Int' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Int' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -125,7 +133,7 @@ public class Scalars {
             Double result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Float' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Float' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -137,7 +145,7 @@ public class Scalars {
             Double result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Float' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Float' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -206,7 +214,7 @@ public class Scalars {
             Boolean result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Boolean' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Boolean' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -217,7 +225,7 @@ public class Scalars {
             Boolean result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Boolean' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Boolean' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -258,7 +266,7 @@ public class Scalars {
             String result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'ID' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'ID' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -269,7 +277,7 @@ public class Scalars {
             String result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'ID' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'ID' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -318,7 +326,7 @@ public class Scalars {
             Long result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Long' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Long' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -329,7 +337,7 @@ public class Scalars {
             Long result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Long' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Long' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -385,7 +393,7 @@ public class Scalars {
             Short result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Short' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Short' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -396,7 +404,7 @@ public class Scalars {
             Short result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Short' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Short' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -444,7 +452,7 @@ public class Scalars {
             Byte result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Byte' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Byte' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -455,7 +463,7 @@ public class Scalars {
             Byte result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Byte' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Byte' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -501,7 +509,7 @@ public class Scalars {
             BigInteger result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'BigInteger' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'BigInteger' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -512,7 +520,7 @@ public class Scalars {
             BigInteger result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'BigInteger' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'BigInteger' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -561,7 +569,7 @@ public class Scalars {
             BigDecimal result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'BigDecimal' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -572,7 +580,7 @@ public class Scalars {
             BigDecimal result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'BigDecimal' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -617,7 +625,7 @@ public class Scalars {
             Character result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Char' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Char' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -628,7 +636,7 @@ public class Scalars {
             Character result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Char' but was '" + input.getClass().getSimpleName() + "'."
+                  "Expected type 'Char' but was '" + typeName(input) + "'."
                 );
             }
             return result;
