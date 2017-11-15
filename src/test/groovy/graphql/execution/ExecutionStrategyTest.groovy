@@ -23,7 +23,6 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
-import javax.xml.transform.Source
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 
@@ -537,7 +536,7 @@ class ExecutionStrategyTest extends Specification {
 
         def executionData = ["child": [:]]
         when:
-        def executionResult = executionStrategy.processPossibleDataFetcherResult(executionContext, parameters,
+        def executionResult = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
                 new DataFetcherResult(executionData, [new DataFetchingErrorGraphQLError("bad foo", ["child", "foo"])]))
 
         then:
@@ -565,7 +564,7 @@ class ExecutionStrategyTest extends Specification {
 
         def executionData = ["child": [:]]
         when:
-        def executionResult = executionStrategy.processPossibleDataFetcherResult(executionContext, parameters,
+        def executionResult = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters,
                 new DataFetcherResult(executionData, [new DataFetchingErrorGraphQLError("bad foo")]))
 
         then:
