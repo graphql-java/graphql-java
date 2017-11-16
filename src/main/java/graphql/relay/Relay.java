@@ -172,23 +172,39 @@ public class Relay {
                 .build();
     }
 
-
     public GraphQLFieldDefinition mutationWithClientMutationId(String name, String fieldName,
                                                                List<GraphQLInputObjectField> inputFields,
                                                                List<GraphQLFieldDefinition> outputFields,
                                                                DataFetcher dataFetcher) {
+        GraphQLInputObjectField clientMutationIdInputField = newInputObjectField()
+                .name("clientMutationId")
+                .type(GraphQLString)
+                .build();
+        GraphQLFieldDefinition clientMutationIdPayloadField = newFieldDefinition()
+                .name("clientMutationId")
+                .type(GraphQLString)
+                .build();
+
+        return mutation(name, fieldName, addElementToList(inputFields, clientMutationIdInputField), 
+                addElementToList(outputFields, clientMutationIdPayloadField), dataFetcher);
+    }
+    
+    private static <T> List<T> addElementToList(List<T> list, T element) {
+        ArrayList<T> result = new ArrayList<>(list);
+        result.add(element);
+        return result;
+    }
+
+    public GraphQLFieldDefinition mutation(String name, String fieldName,
+                                           List<GraphQLInputObjectField> inputFields,
+                                           List<GraphQLFieldDefinition> outputFields,
+                                           DataFetcher dataFetcher) {
         GraphQLInputObjectType inputObjectType = newInputObject()
                 .name(name + "Input")
-                .field(newInputObjectField()
-                        .name("clientMutationId")
-                        .type(GraphQLString))
                 .fields(inputFields)
                 .build();
         GraphQLObjectType outputType = newObject()
                 .name(name + "Payload")
-                .field(newFieldDefinition()
-                        .name("clientMutationId")
-                        .type(GraphQLString))
                 .fields(outputFields)
                 .build();
 
