@@ -33,7 +33,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
 
         EnumValue that = (EnumValue) o;
 
-        return isEqualTo(this.name,that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override

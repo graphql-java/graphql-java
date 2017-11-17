@@ -51,7 +51,7 @@ public class Directive extends AbstractNode<Directive> {
 
         Directive that = (Directive) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
 
     }
 

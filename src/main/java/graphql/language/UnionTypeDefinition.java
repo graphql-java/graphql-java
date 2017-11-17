@@ -59,7 +59,7 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
 
         UnionTypeDefinition that = (UnionTypeDefinition) o;
 
-        return isEqualTo(this.name,that.name);
+        return NodeUtil.isEqualTo(this.name,that.name);
     }
 
     @Override

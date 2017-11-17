@@ -45,7 +45,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
 
     @Override
     public NonNullType deepCopy() {
-        return new NonNullType(deepCopy(type, Type::deepCopy));
+        return new NonNullType(deepCopy(type));
     }
 
     @Override

@@ -32,22 +32,12 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
         this.comments = comments;
     }
 
-    protected boolean isEqualTo(String thisStr, String thatStr) {
-        if (null == thisStr) {
-            if (null != thatStr) {
-                return false;
-            }
-        } else if (!thisStr.equals(thatStr)) {
-            return false;
-        }
-        return true;
-    }
-
-    protected <V> V deepCopy(V nullableObj, Function<V, V> copyFunction) {
+    @SuppressWarnings("unchecked")
+    protected <V extends Node> V deepCopy(V nullableObj) {
         if (nullableObj == null) {
             return null;
         }
-        return copyFunction.apply(nullableObj);
+        return (V) nullableObj.deepCopy();
     }
 
     @SuppressWarnings("unchecked")

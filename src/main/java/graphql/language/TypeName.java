@@ -32,7 +32,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
 
         TypeName that = (TypeName) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override

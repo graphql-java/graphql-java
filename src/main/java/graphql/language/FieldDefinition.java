@@ -73,13 +73,13 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> {
 
         FieldDefinition that = (FieldDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override
     public FieldDefinition deepCopy() {
         return new FieldDefinition(name,
-                deepCopy(type, Type::deepCopy),
+                deepCopy(type),
                 deepCopy(inputValueDefinitions),
                 deepCopy(directives)
         );

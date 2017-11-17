@@ -68,7 +68,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
         if (o == null || getClass() != o.getClass()) return false;
 
         ObjectTypeDefinition that = (ObjectTypeDefinition) o;
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override

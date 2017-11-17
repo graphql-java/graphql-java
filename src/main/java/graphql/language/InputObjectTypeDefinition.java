@@ -58,7 +58,7 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
 
         InputObjectTypeDefinition that = (InputObjectTypeDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override

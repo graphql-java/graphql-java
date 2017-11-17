@@ -121,7 +121,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field> {
 
         Field that = (Field) o;
 
-        return isEqualTo(this.name, that.name) && isEqualTo(this.alias, that.alias);
+        return NodeUtil.isEqualTo(this.name, that.name) && NodeUtil.isEqualTo(this.alias, that.alias);
     }
 
     @Override
@@ -130,7 +130,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field> {
                 alias,
                 deepCopy(arguments),
                 deepCopy(directives),
-                deepCopy(selectionSet, SelectionSet::deepCopy)
+                deepCopy(selectionSet)
         );
     }
 

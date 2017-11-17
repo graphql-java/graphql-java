@@ -50,12 +50,12 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
         OperationTypeDefinition that = (OperationTypeDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override
     public OperationTypeDefinition deepCopy() {
-        return new OperationTypeDefinition(name, deepCopy(type, Type::deepCopy));
+        return new OperationTypeDefinition(name, deepCopy(type));
     }
 
     @Override

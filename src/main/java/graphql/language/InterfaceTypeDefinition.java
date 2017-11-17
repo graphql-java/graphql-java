@@ -58,7 +58,7 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
 
         InterfaceTypeDefinition that = (InterfaceTypeDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override

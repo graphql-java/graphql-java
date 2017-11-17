@@ -62,7 +62,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
 
         EnumTypeDefinition that = (EnumTypeDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override

@@ -48,7 +48,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> {
 
         EnumValueDefinition that = (EnumValueDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
 
     }
 

@@ -63,15 +63,15 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> {
 
         VariableDefinition that = (VariableDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
 
     }
 
     @Override
     public VariableDefinition deepCopy() {
         return new VariableDefinition(name,
-                deepCopy(type, Type::deepCopy),
-                deepCopy(defaultValue, Value::deepCopy)
+                deepCopy(type),
+                deepCopy(defaultValue)
         );
     }
 

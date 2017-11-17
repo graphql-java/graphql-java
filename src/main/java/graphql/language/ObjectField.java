@@ -42,7 +42,7 @@ public class ObjectField extends AbstractNode<ObjectField> {
 
     @Override
     public ObjectField deepCopy() {
-        return new ObjectField(name, deepCopy(this.value, Value::deepCopy));
+        return new ObjectField(name, deepCopy(this.value));
     }
 
     @Override
