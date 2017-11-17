@@ -4,8 +4,8 @@ import graphql.language.SourceLocation
 
 class DataFetchingErrorGraphQLError implements GraphQLError {
 
-    private final List<Object> path
-    private final String message
+    List<Object> path
+    String message
     List<SourceLocation> locations
 
     DataFetchingErrorGraphQLError(String message) {

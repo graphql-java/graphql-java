@@ -6,7 +6,8 @@ import graphql.schema.DataFetcher;
 
 import java.util.List;
 
-import static java.util.Objects.requireNonNull;
+import static graphql.Assert.assertNotNull;
+import static java.util.Collections.unmodifiableList;
 
 
 /**
@@ -24,7 +25,7 @@ public class DataFetcherResult<T> {
 
     public DataFetcherResult(T data, List<GraphQLError> errors) {
         this.data = data;
-        this.errors = requireNonNull(errors);
+        this.errors = unmodifiableList(assertNotNull(errors));
     }
 
     /**
