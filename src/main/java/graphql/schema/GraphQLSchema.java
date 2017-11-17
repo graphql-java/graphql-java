@@ -50,12 +50,12 @@ public class GraphQLSchema {
         this(queryType, mutationType, null, additionalTypes);
     }
 
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary) {
-        this(queryType, mutationType, subscriptionType, dictionary, Collections.emptySet(), DEFAULT_FIELD_VISIBILITY);
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
+        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), DEFAULT_FIELD_VISIBILITY);
     }
 
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary, Set<GraphQLDirective> directives, GraphqlFieldVisibility fieldVisibility) {
-        assertNotNull(dictionary, "dictionary can't be null");
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphqlFieldVisibility fieldVisibility) {
+        assertNotNull(additionalTypes, "additionalTypes can't be null");
         assertNotNull(queryType, "queryType can't be null");
         assertNotNull(directives, "directives can't be null");
         assertNotNull(fieldVisibility, "fieldVisibility can't be null");
@@ -63,10 +63,10 @@ public class GraphQLSchema {
         this.mutationType = mutationType;
         this.subscriptionType = subscriptionType;
         this.fieldVisibility = fieldVisibility;
-        this.additionalTypes = dictionary;
+        this.additionalTypes = additionalTypes;
         this.directives = new LinkedHashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
         this.directives.addAll(directives);
-        typeMap = new SchemaUtil().allTypes(this, dictionary);
+        typeMap = new SchemaUtil().allTypes(this, additionalTypes);
     }
 
     public Set<GraphQLType> getAdditionalTypes() {
