@@ -86,9 +86,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     @Override
     public InlineFragment deepCopy() {
         return new InlineFragment(
-                deepCopy(typeCondition, TypeName::deepCopy),
+                deepCopy(typeCondition),
                 deepCopy(directives),
-                deepCopy(selectionSet, SelectionSet::deepCopy)
+                deepCopy(selectionSet)
         );
     }
 

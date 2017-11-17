@@ -95,15 +95,15 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
         FragmentDefinition that = (FragmentDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override
     public FragmentDefinition deepCopy() {
         return new FragmentDefinition(name,
-                deepCopy(typeCondition, TypeName::deepCopy),
+                deepCopy(typeCondition),
                 deepCopy(directives),
-                deepCopy(selectionSet, SelectionSet::deepCopy)
+                deepCopy(selectionSet)
         );
     }
 

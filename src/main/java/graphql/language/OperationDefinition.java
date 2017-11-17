@@ -110,8 +110,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
         OperationDefinition that = (OperationDefinition) o;
 
-        if (name != null ? !name.equals(that.name) : that.name != null) return false;
-        return operation == that.operation;
+        return NodeUtil.isEqualTo(this.name, that.name) && operation == that.operation;
 
     }
 
@@ -121,7 +120,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 operation,
                 deepCopy(variableDefinitions),
                 deepCopy(directives),
-                deepCopy(selectionSet, SelectionSet::deepCopy)
+                deepCopy(selectionSet)
         );
     }
 

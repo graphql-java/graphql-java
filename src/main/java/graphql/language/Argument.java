@@ -37,13 +37,13 @@ public class Argument extends AbstractNode<Argument> {
 
         Argument that = (Argument) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
 
     }
 
     @Override
     public Argument deepCopy() {
-        return new Argument(name, deepCopy(value, Value::deepCopy));
+        return new Argument(name, deepCopy(value));
     }
 
     @Override

@@ -40,7 +40,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     @Override
     public ListType deepCopy() {
-        return new ListType(deepCopy(type, Type::deepCopy));
+        return new ListType(deepCopy(type));
     }
 
     @Override

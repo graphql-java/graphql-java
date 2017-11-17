@@ -35,7 +35,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> {
 
         DirectiveLocation that = (DirectiveLocation) o;
 
-        return isEqualTo(this.name,that.name);
+        return NodeUtil.isEqualTo(this.name,that.name);
     }
 
     @Override

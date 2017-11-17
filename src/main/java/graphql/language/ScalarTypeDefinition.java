@@ -51,7 +51,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
         ScalarTypeDefinition that = (ScalarTypeDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override

@@ -81,14 +81,14 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> {
 
         InputValueDefinition that = (InputValueDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override
     public InputValueDefinition deepCopy() {
         return new InputValueDefinition(name,
-                deepCopy(type, Type::deepCopy),
-                deepCopy(defaultValue, Value::deepCopy),
+                deepCopy(type),
+                deepCopy(defaultValue),
                 deepCopy(directives)
         );
     }

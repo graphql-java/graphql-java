@@ -32,7 +32,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
 
         VariableReference that = (VariableReference) o;
 
-        return isEqualTo(this.name,that.name);
+        return NodeUtil.isEqualTo(this.name,that.name);
     }
 
     @Override

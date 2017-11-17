@@ -46,7 +46,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
 
         DirectiveDefinition that = (DirectiveDefinition) o;
 
-        return isEqualTo(this.name, that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override
