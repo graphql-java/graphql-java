@@ -1,0 +1,131 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-15 10:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../instrumentation.rst:2
+msgid "Instrumentation"
+msgstr ""
+
+#: ../../instrumentation.rst:5
+msgid ""
+"The ``graphql.execution.instrumentation.Instrumentation`` interface "
+"allows you to inject code that can observe the execution of a query and "
+"also change the runtime behaviour."
+msgstr ""
+
+#: ../../instrumentation.rst:8
+msgid ""
+"The primary use case for this is to allow say performance monitoring and "
+"custom logging but it could be used for many different purposes."
+msgstr ""
+
+#: ../../instrumentation.rst:10
+msgid ""
+"When you build the ```Graphql`` object you can specify what "
+"``Instrumentation`` to use (if any)."
+msgstr ""
+
+#: ../../instrumentation.rst:20
+msgid "Custom Instrumentation"
+msgstr ""
+
+#: ../../instrumentation.rst:22
+msgid ""
+"An implementation of ``Instrumentation`` needs to implement the \"begin\""
+" step methods that represent the execution of a graphql query."
+msgstr ""
+
+#: ../../instrumentation.rst:24
+msgid ""
+"Each step must give back a non null "
+"``graphql.execution.instrumentation.InstrumentationContext`` object which"
+" will be called back when the step completes, and will be told that it "
+"succeeded or failed with a Throwable."
+msgstr ""
+
+#: ../../instrumentation.rst:27
+msgid ""
+"The following is a basic custom ``Instrumentation`` that measures overall"
+" execution time and puts it into a stateful object."
+msgstr ""
+
+#: ../../instrumentation.rst:113
+msgid "Chaining Instrumentation"
+msgstr ""
+
+#: ../../instrumentation.rst:115
+msgid ""
+"You can combine multiple ``Instrumentation`` objects together using the "
+"``graphql.execution.instrumentation.ChainedInstrumentation`` class which "
+"accepts a list of ``Instrumentation`` objects and calls them in that "
+"defined order."
+msgstr ""
+
+#: ../../instrumentation.rst:132
+msgid "Apollo Tracing Instrumentation"
+msgstr ""
+
+#: ../../instrumentation.rst:134
+msgid ""
+"``graphql.execution.instrumentation.tracing.TracingInstrumentation`` is "
+"an ``Instrumentation`` implementation that creates tracing information "
+"about the query that is being executed."
+msgstr ""
+
+#: ../../instrumentation.rst:137
+msgid ""
+"It follows the Apollo proposed tracing format defined at "
+"`https://github.com/apollographql/apollo-tracing "
+"<https://github.com/apollographql/apollo-tracing>`_"
+msgstr ""
+
+#: ../../instrumentation.rst:139
+msgid ""
+"A detailed tracing map will be created and placed in the ``extensions`` "
+"section of the result."
+msgstr ""
+
+#: ../../instrumentation.rst:141
+msgid "So given a query like"
+msgstr ""
+
+#: ../../instrumentation.rst:154
+msgid "It would return a result like"
+msgstr ""
+
+#: ../../instrumentation.rst:261
+msgid "Field Validation Instrumentation"
+msgstr ""
+
+#: ../../instrumentation.rst:263
+msgid ""
+"``graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation``"
+" is an ``Instrumentation`` implementation that can be used to validate "
+"fields and their arguments before query execution.  If errors are "
+"returned during this process then the query execution is aborted and the "
+"errors will be in the query result."
+msgstr ""
+
+#: ../../instrumentation.rst:267
+msgid ""
+"You can make you own custom implementation of ``FieldValidation`` or you "
+"can use the ``SimpleFieldValidation`` class to add simple per field "
+"checks rules."
+msgstr ""
+

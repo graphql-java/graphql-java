@@ -1,0 +1,81 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr "Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-11 19:21+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../getting_started.rst:2
+msgid "Getting started"
+msgstr "入门"
+
+#: ../../getting_started.rst:4
+msgid "``graphql-java`` requires at least Java 8."
+msgstr "``graphql-java`` 需要运行于 Java 8 或更高版本."
+
+#: ../../getting_started.rst:8
+msgid "How to use the latest release with Gradle"
+msgstr "如何在 Gradle 中使用最新正式版本"
+
+#: ../../getting_started.rst:10
+msgid "Make sure ``mavenCentral`` is among your repos:"
+msgstr "首先，保证 ``mavenCentral`` 在你的 repos 库列表中:"
+
+#: ../../getting_started.rst:19 ../../getting_started.rst:31
+#: ../../getting_started.rst:73 ../../getting_started.rst:100
+msgid "Dependency:"
+msgstr "依赖:"
+
+#: ../../getting_started.rst:29
+msgid "How to use the latest release with Maven"
+msgstr "如果在 Maven 中使用最新正式版本"
+
+#: ../../getting_started.rst:43
+msgid "Hello World"
+msgstr "Hello World【译注：这个用不翻译了吧 :) 】"
+
+#: ../../getting_started.rst:45
+msgid "This is the famous \"hello world\" in ``graphql-java``:"
+msgstr "下面就用 ``graphql-java`` 来实现经典的  \"hello world\"  :"
+
+#: ../../getting_started.rst:52
+msgid "Using the latest development build"
+msgstr "如何使用最新的开发中版本"
+
+#: ../../getting_started.rst:54
+msgid "The latest development build is available on Bintray."
+msgstr "最近的开发中版本，可以在 Bintray 上获取."
+
+#: ../../getting_started.rst:56
+msgid ""
+"Please look at `Latest Build <https://bintray.com/andimarek/graphql-java"
+"/graphql-java/_latestVersion>`_ for the latest version value."
+msgstr "可以从 `最新版本 <https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion>`_ 中看到最新的版本号."
+
+#: ../../getting_started.rst:61
+msgid "How to use the latest build with Gradle"
+msgstr "如果在 Gradle 中使用最新的开发中版本"
+
+#: ../../getting_started.rst:63
+msgid "Add the repositories:"
+msgstr "增加 repositories:"
+
+#: ../../getting_started.rst:84
+msgid "How to use the latest build with Maven"
+msgstr "如果在 Maven 中使用最新的开发中版本"
+
+#: ../../getting_started.rst:87
+msgid "Add the repository:"
+msgstr "增加 repository:"
+

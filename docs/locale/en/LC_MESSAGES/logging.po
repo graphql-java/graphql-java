@@ -1,0 +1,31 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-15 10:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../logging.rst:2
+msgid "Logging"
+msgstr ""
+
+#: ../../logging.rst:4
+msgid ""
+"Logging is done with `SLF4J <http://www.slf4j.org/>`_. Please have a look"
+" at the `Manual <http://www.slf4j.org/manual.html>`_ for details. The "
+"``graphql-java`` root Logger name is ``graphql``."
+msgstr ""
+

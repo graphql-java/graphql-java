@@ -1,0 +1,88 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-15 10:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../index.rst:2
+msgid "Welcome to graphql-java"
+msgstr ""
+
+#: ../../index.rst:10
+msgid ""
+"This is a GraphQL Java implementation based on the `specification "
+"<https://github.com/facebook/graphql>`_ and the JavaScript `reference "
+"implementation <https://github.com/graphql/graphql-js>`_."
+msgstr ""
+
+#: ../../index.rst:14
+msgid "**Status**: Version ``6.0`` is released."
+msgstr ""
+
+#: ../../index.rst:16
+msgid ""
+"Make sure to check out the `awesome related projects <https://github.com"
+"/graphql-java/awesome-graphql-java>`_ built on ``graphql-java``."
+msgstr ""
+
+#: ../../index.rst:21
+msgid "Code of Conduct"
+msgstr ""
+
+#: ../../index.rst:23
+msgid ""
+"Please note that this project is released with a `Contributor Code of "
+"Conduct <https://github.com/graphql-java/graphql-"
+"java/blob/master/CODE_OF_CONDUCT.md>`_. By contributing to this project "
+"(commenting or opening PR/Issues etc) you are agreeing to follow this "
+"conduct, so please take the time to read it."
+msgstr ""
+
+#: ../../index.rst:29
+msgid "Questions and discussions"
+msgstr ""
+
+#: ../../index.rst:31
+msgid ""
+"If you have a question or want to discuss anything else related to this "
+"project:"
+msgstr ""
+
+#: ../../index.rst:33
+msgid ""
+"Feel free to open a new `Issue <https://github.com/graphql-java/graphql-"
+"java/issues>`_"
+msgstr ""
+
+#: ../../index.rst:35
+msgid ""
+"We have a public chat room (Gitter.im) for graphql-java: "
+"https://gitter.im/graphql-java/graphql-java"
+msgstr ""
+
+#: ../../index.rst:39
+msgid "License"
+msgstr ""
+
+#: ../../index.rst:41
+msgid "graphql-java is licensed under the MIT License."
+msgstr ""
+
+#: ../../index.rst:44
+msgid "Documentation"
+msgstr ""
+

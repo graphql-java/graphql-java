@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.language.SourceLocation;
 import graphql.schema.CoercingParseValueException
 import graphql.schema.GraphQLObjectType
 import graphql.schema.idl.RuntimeWiring
@@ -90,5 +91,6 @@ class Issue739 extends Specification {
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
         varResult.errors[0].message == "Variables for GraphQLInputObjectType must be an instance of a Map according to the graphql specification.  The offending object was a java.lang.Integer"
+        varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }

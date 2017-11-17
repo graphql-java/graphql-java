@@ -67,25 +67,30 @@ public class ValuesResolver {
             String variableName = variableDefinition.getName();
             GraphQLType variableType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
 
-            // 3.e
-            if (!variableValues.containsKey(variableName)) {
-                Value defaultValue = variableDefinition.getDefaultValue();
-                if (defaultValue != null) {
-                    // 3.e.i
-                    Object coercedValue = coerceValueAst(variableType, variableDefinition.getDefaultValue(), null);
+            try {
+                // 3.e
+                if (!variableValues.containsKey(variableName)) {
+                    Value defaultValue = variableDefinition.getDefaultValue();
+                    if (defaultValue != null) {
+                        // 3.e.i
+                        Object coercedValue = coerceValueAst(variableType, variableDefinition.getDefaultValue(), null);
+                        coercedValues.put(variableName, coercedValue);
+                    } else if (isNonNullType(variableType)) {
+                        // 3.e.ii
+                        throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
+                    }
+                } else {
+                    Object value = variableValues.get(variableName);
+                    // 3.f
+                    Object coercedValue = getVariableValue(variableDefinition, variableType, value);
+                    // 3.g
                     coercedValues.put(variableName, coercedValue);
-                } else if (isNonNullType(variableType)) {
-                    // 3.e.ii
-                    throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
                 }
-            } else {
-                Object value = variableValues.get(variableName);
-                // 3.f
-                Object coercedValue = getVariableValue(variableDefinition, variableType, value);
-                // 3.g
-                coercedValues.put(variableName, coercedValue);
+            } catch (CoercingParseValueException e) {
+                throw new CoercingParseValueException(e.getMessage(), e.getCause(), variableDefinition.getSourceLocation());
             }
         }
+
         return coercedValues;
     }
 

@@ -1,0 +1,111 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-15 10:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../concerns.rst:2
+msgid "Application concerns"
+msgstr ""
+
+#: ../../concerns.rst:4
+msgid ""
+"The graphql-java library concentrates on providing an engine for the "
+"execution of queries according to the specification."
+msgstr ""
+
+#: ../../concerns.rst:6
+msgid ""
+"It does not concern itself about other high level application concerns "
+"such as the following :"
+msgstr ""
+
+#: ../../concerns.rst:8
+msgid "Database access"
+msgstr ""
+
+#: ../../concerns.rst:9
+msgid "Caching data"
+msgstr ""
+
+#: ../../concerns.rst:10
+msgid "Data authorisation"
+msgstr ""
+
+#: ../../concerns.rst:11
+msgid "Data pagination"
+msgstr ""
+
+#: ../../concerns.rst:12
+msgid "HTTP transfer"
+msgstr ""
+
+#: ../../concerns.rst:13
+msgid "JSON endoding"
+msgstr ""
+
+#: ../../concerns.rst:14
+msgid "Code wiring via dependency injection"
+msgstr ""
+
+#: ../../concerns.rst:16
+msgid "You need to push these concerns into your business logic layers."
+msgstr ""
+
+#: ../../concerns.rst:18
+msgid "The following are great links to read more about this"
+msgstr ""
+
+#: ../../concerns.rst:20
+msgid "http://graphql.org/learn/serving-over-http/"
+msgstr ""
+
+#: ../../concerns.rst:21
+msgid "http://graphql.org/learn/authorization/"
+msgstr ""
+
+#: ../../concerns.rst:22
+msgid "http://graphql.org/learn/pagination/"
+msgstr ""
+
+#: ../../concerns.rst:23
+msgid "http://graphql.org/learn/caching/"
+msgstr ""
+
+#: ../../concerns.rst:26
+msgid "Context Objects"
+msgstr ""
+
+#: ../../concerns.rst:28
+msgid ""
+"You can pass in a context object during query execution that will allow "
+"you to better invoke that business logic."
+msgstr ""
+
+#: ../../concerns.rst:30
+msgid ""
+"For example the edge of your application could be performing user "
+"detection and you need that information inside the graphql execution to "
+"perform authorisation."
+msgstr ""
+
+#: ../../concerns.rst:33
+msgid ""
+"This made up example shows how you can pass yourself information to help "
+"execute your queries."
+msgstr ""
+
