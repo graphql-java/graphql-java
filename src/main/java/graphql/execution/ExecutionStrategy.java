@@ -133,6 +133,7 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
      * @return an {@link ExecutionResult}
+     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     public abstract CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException;
@@ -150,6 +151,7 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
      * @return an {@link ExecutionResult}
+     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -179,6 +181,7 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
      * @return a fetched object
+     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -288,6 +291,7 @@ public abstract class ExecutionStrategy {
      * @param fetchedValue     the fetched raw value
      *
      * @return an {@link ExecutionResult}
+     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
@@ -336,6 +340,7 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
      * @return an {@link ExecutionResult}
+     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
@@ -409,6 +414,7 @@ public abstract class ExecutionStrategy {
      * @param result the result object
      *
      * @return an Iterable from that object
+     *
      * @throws java.lang.ClassCastException if its not an Iterable
      */
     @SuppressWarnings("unchecked")
