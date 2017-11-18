@@ -1,10 +1,10 @@
 package graphql.schema.diff;
 
 import graphql.Internal;
-import graphql.schema.diff.reporting.DifferenceReporter;
 import graphql.language.Document;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
+import graphql.schema.diff.reporting.DifferenceReporter;
 
 import java.util.ArrayList;
 import java.util.List;

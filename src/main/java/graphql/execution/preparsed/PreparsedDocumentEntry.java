@@ -38,7 +38,7 @@ public class PreparsedDocumentEntry {
     public List<? extends GraphQLError> getErrors() {
         return errors;
     }
-    
+
     public boolean hasErrors() {
         return errors != null && !errors.isEmpty();
     }

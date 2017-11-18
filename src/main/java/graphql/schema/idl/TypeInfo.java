@@ -69,7 +69,7 @@ public class TypeInfo {
      * it originally contained in its definition type
      *
      * @param objectType this should be a graphql type that was originally built from this raw type
-     * @param <T> the type
+     * @param <T>        the type
      *
      * @return the decorated type
      */

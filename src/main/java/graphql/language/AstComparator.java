@@ -1,8 +1,8 @@
 package graphql.language;
 
 
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 
 public class AstComparator {
 
@@ -20,7 +20,7 @@ public class AstComparator {
     }
 
     public boolean isEqual(List<Node> nodes1, List<Node> nodes2) {
-        if ( nodes1.size() != nodes2.size() ) return false;
+        if (nodes1.size() != nodes2.size()) return false;
         Iterator<Node> iter1 = nodes1.iterator();
         Iterator<Node> iter2 = nodes2.iterator();
         while (iter1.hasNext()) {

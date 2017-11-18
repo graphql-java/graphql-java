@@ -68,11 +68,10 @@ public class ArgumentValidationUtil extends ValidationUtil {
 
     public String getMessage() {
         StringBuilder argument = new StringBuilder(argumentName);
-        for (String name: argumentNames) {
+        for (String name : argumentNames) {
             if (name.startsWith("[")) {
                 argument.append(name);
-            }
-            else {
+            } else {
                 argument.append(".").append(name);
             }
         }

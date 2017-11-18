@@ -55,12 +55,12 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             CompletableFuture<ExecutionResult> future = resolveField(executionContext, newParameters);
             futures.add(future);
         }
-        beginFieldsCtx.onEnd(fields,null);
+        beginFieldsCtx.onEnd(fields, null);
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         Async.each(futures).whenComplete(handleResults(executionContext, fieldNames, overallResult));
 
-        executionStrategyCtx.onEnd(overallResult,null);
+        executionStrategyCtx.onEnd(overallResult, null);
         return overallResult;
     }
 

@@ -88,9 +88,9 @@ public class ValuesResolver {
                 }
             } catch (CoercingParseValueException e) {
                 throw new CoercingParseValueException(
-                  "Variable '" + variableName + "' has an invalid value. " + e.getMessage(),
-                  e.getCause(),
-                  variableDefinition.getSourceLocation()
+                        "Variable '" + variableName + "' has an invalid value. " + e.getMessage(),
+                        e.getCause(),
+                        variableDefinition.getSourceLocation()
                 );
             }
         }
@@ -171,8 +171,8 @@ public class ValuesResolver {
                 return coerceValueForInputObjectType(variableDefinition, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value);
             } else {
                 throw new CoercingParseValueException(
-                  "Expected type 'Map' but was '" + value.getClass().getSimpleName() +
-                  "'. Variables for input objects must be an instance of a 'Map'."
+                        "Expected type 'Map' but was '" + value.getClass().getSimpleName() +
+                                "'. Variables for input objects must be an instance of a 'Map'."
                 );
             }
         } else {
