@@ -1,11 +1,20 @@
 package graphql;
 
-import graphql.schema.*;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeReference;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.TypeResolverProxy;
 
 import java.util.Arrays;
 import java.util.HashSet;
 
-import static graphql.GarfieldSchema.*;
+import static graphql.GarfieldSchema.CatType;
+import static graphql.GarfieldSchema.DogType;
+import static graphql.GarfieldSchema.NamedType;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
@@ -22,14 +31,14 @@ public class TypeReferenceSchema {
             .possibleType(new GraphQLTypeReference(DogType.getName()))
             .typeResolver(new TypeResolverProxy())
             .build();
-    
+
     public static GraphQLInputObjectType PersonInputType = newInputObject()
             .name("Person_Input")
             .field(newInputObjectField()
                     .name("name")
                     .type(GraphQLString))
             .build();
-    
+
     public static GraphQLObjectType PersonType = newObject()
             .name("Person")
             .field(newFieldDefinition()
@@ -48,7 +57,7 @@ public class TypeReferenceSchema {
                     .name("person")
                     .type(new GraphQLTypeReference("Person_Input")))
             .build();
-    
+
     public static GraphQLFieldDefinition find = newFieldDefinition()
             .name("find")
             .type(new GraphQLTypeReference("Person"))

@@ -12,7 +12,7 @@ class AstPrinterTest extends Specification {
     String printAst(String input) {
         Document document = parse(input)
 
-       AstPrinter.printAst(document)
+        AstPrinter.printAst(document)
     }
 
     String printAst(Node node) {

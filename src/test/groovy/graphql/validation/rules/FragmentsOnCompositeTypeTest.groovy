@@ -61,7 +61,7 @@ class FragmentsOnCompositeTypeTest extends Specification {
 
     def "fragment type condition must refer to a composite type"() {
         given:
-        FragmentDefinition fragmentDefinition = new FragmentDefinition("fragment",new TypeName("String"))
+        FragmentDefinition fragmentDefinition = new FragmentDefinition("fragment", new TypeName("String"))
         validationContext.getSchema() >> StarWarsSchema.starWarsSchema
 
         when:

@@ -11,7 +11,7 @@ import spock.lang.Specification
 class ErrorsTest extends Specification {
 
     def src(int line, int col) {
-        new SourceLocation(line,col)
+        new SourceLocation(line, col)
     }
 
 
@@ -43,9 +43,9 @@ class ErrorsTest extends Specification {
     def "ValidationError equals and hashcode works"() {
         expect:
 
-        def same1 = new ValidationError(ValidationErrorType.BadValueForDefaultArg,[src(15,34),src(23,567)],"bad ju ju")
-        def same2 = new ValidationError(ValidationErrorType.BadValueForDefaultArg,[src(15,34),src(23,567)],"bad ju ju")
-        def different1 = new ValidationError(ValidationErrorType.FieldsConflict,[src(15,34),src(23,567)],"bad ju ju")
+        def same1 = new ValidationError(ValidationErrorType.BadValueForDefaultArg, [src(15, 34), src(23, 567)], "bad ju ju")
+        def same2 = new ValidationError(ValidationErrorType.BadValueForDefaultArg, [src(15, 34), src(23, 567)], "bad ju ju")
+        def different1 = new ValidationError(ValidationErrorType.FieldsConflict, [src(15, 34), src(23, 567)], "bad ju ju")
 
         commonAssert(same1, same2, different1)
     }
@@ -53,13 +53,12 @@ class ErrorsTest extends Specification {
     def "ExceptionWhileDataFetching equals and hashcode works"() {
         expect:
 
-        def same1 = new ExceptionWhileDataFetching(ExecutionPath.rootPath(),new RuntimeException("bad ju ju"),null)
-        def same2 = new ExceptionWhileDataFetching(ExecutionPath.rootPath(),new RuntimeException("bad ju ju"), null)
-        def different1 = new ExceptionWhileDataFetching(ExecutionPath.rootPath(),new RuntimeException("unexpected ju ju"), null)
+        def same1 = new ExceptionWhileDataFetching(ExecutionPath.rootPath(), new RuntimeException("bad ju ju"), null)
+        def same2 = new ExceptionWhileDataFetching(ExecutionPath.rootPath(), new RuntimeException("bad ju ju"), null)
+        def different1 = new ExceptionWhileDataFetching(ExecutionPath.rootPath(), new RuntimeException("unexpected ju ju"), null)
 
         commonAssert(same1, same2, different1)
     }
-
 
 
 }

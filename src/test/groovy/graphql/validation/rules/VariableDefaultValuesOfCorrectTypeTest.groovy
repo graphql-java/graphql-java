@@ -32,7 +32,7 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
 
     }
 
-    def "default value has wrong type"(){
+    def "default value has wrong type"() {
         given:
         BooleanValue defaultValue = new BooleanValue(false)
         VariableDefinition variableDefinition = new VariableDefinition("var", new TypeName("String"), defaultValue)

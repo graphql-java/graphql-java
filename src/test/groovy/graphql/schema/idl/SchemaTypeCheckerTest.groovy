@@ -2,8 +2,6 @@ package graphql.schema.idl
 
 import graphql.GraphQLError
 import graphql.TypeResolutionEnvironment
-import graphql.language.InterfaceTypeDefinition
-import graphql.language.UnionTypeDefinition
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver

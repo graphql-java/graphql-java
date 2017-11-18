@@ -51,7 +51,7 @@ class EchoingWiringFactoryTest extends Specification {
         then:
         result.data == [
                 hero: [
-                        id : "id_id",
+                        id   : "id_id",
                         name : "name",
                         power: [
                                 name    : "name",

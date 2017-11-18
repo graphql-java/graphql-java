@@ -27,11 +27,11 @@ class SkipAndInclude extends Specification {
         ((Map) executionResult.data).containsKey("field") == queried
 
         where:
-        skip    | include | queried
-        true    | true    | false
-        true    | false   | false
-        false   | true    | true
-        false   | false   | false
+        skip  | include | queried
+        true  | true    | false
+        true  | false   | false
+        false | true    | true
+        false | false   | false
 
     }
 
@@ -52,9 +52,9 @@ class SkipAndInclude extends Specification {
         ((Map) executionResult.data).containsKey("field") == queried
 
         where:
-        skip    | queried
-        true    | false
-        false   | true
+        skip  | queried
+        true  | false
+        false | true
     }
 
     def "@include"() {

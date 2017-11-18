@@ -1,6 +1,5 @@
 package graphql
 
-import graphql.execution.NonNullableValueCoercedAsNullException
 import spock.lang.Specification
 
 class Issue743 extends Specification {

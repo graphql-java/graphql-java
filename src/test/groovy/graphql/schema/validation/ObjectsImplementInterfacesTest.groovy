@@ -309,7 +309,7 @@ class ObjectsImplementInterfacesTest extends Specification {
                 .field(newFieldDefinition().name("field").type(new GraphQLNonNull(memberInterfaceImpl)).build())
                 .withInterface(testInterface)
                 .build()
-        
+
         SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
 
         when:

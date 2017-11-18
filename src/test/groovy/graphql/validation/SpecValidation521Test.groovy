@@ -1,16 +1,9 @@
 package graphql.validation
-
-import graphql.validation.SpecValidationSchema
-import graphql.parser.Parser
-import graphql.validation.ValidationError
-import graphql.validation.Validator
-import spock.lang.Specification
-
 /**
  * validation examples used in the spec in given section
  * http://facebook.github.io/graphql/#sec-Validation
  * @author dwinsor
- *        
+ *
  */
 class SpecValidation521Test extends SpecValidationBase {
 
@@ -33,7 +26,7 @@ fragment fieldNotDefined on Dog {
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.FieldUndefined
     }
-    
+
     def '5.2.1 Field Selections on ... aliasedLyingFieldTargetNotDefined'() {
         def query = """
 {
@@ -53,7 +46,7 @@ fragment aliasedLyingFieldTargetNotDefined on Dog {
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.FieldUndefined
     }
-    
+
     def '5.2.1 Field Selections on ... interfaceFieldSelection'() {
         def query = """
 {
@@ -71,7 +64,7 @@ fragment interfaceFieldSelection on Pet {
         then:
         validationErrors.empty
     }
-    
+
     def '5.2.1 Field Selections on ... definedOnImplementorsButNotInterface'() {
         def query = """
 {
@@ -91,7 +84,7 @@ fragment definedOnImplementorsButNotInterface on Pet {
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.FieldUndefined
     }
-    
+
     def '5.2.1 Field Selections on ... inDirectFieldSelectionOnUnion'() {
         def query = """
 {

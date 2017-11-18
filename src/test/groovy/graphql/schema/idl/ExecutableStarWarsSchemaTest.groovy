@@ -9,8 +9,8 @@ import spock.lang.Specification
 import static TypeRuntimeWiring.newTypeWiring
 
 /**
-  This reruns some of the tests in graphql.StarWarsQueryTest but with the schema being
-  built by via the schema generator
+ This reruns some of the tests in graphql.StarWarsQueryTest but with the schema being
+ built by via the schema generator
  */
 class ExecutableStarWarsSchemaTest extends Specification {
 

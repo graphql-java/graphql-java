@@ -90,7 +90,6 @@ class CompletionStageMappingPublisherTest extends Specification {
     }
 
 
-
     def "mapper exception causes onError"() {
         when:
         Publisher<Integer> rxIntegers = Flowable.range(0, 10)
