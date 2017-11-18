@@ -14,7 +14,7 @@ public class LoneAnonymousOperation extends AbstractRule {
     int count = 0;
 
     public LoneAnonymousOperation(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
-        super(validationContext,validationErrorCollector);
+        super(validationContext, validationErrorCollector);
     }
 
     @Override
@@ -23,18 +23,18 @@ public class LoneAnonymousOperation extends AbstractRule {
         String name = operationDefinition.getName();
         String message = null;
 
-        if(name == null) {
+        if (name == null) {
             hasAnonymousOp = true;
-            if(count > 0) {
+            if (count > 0) {
                 message = "Anonymous operation with other operations.";
             }
         } else {
-            if(hasAnonymousOp) {
-              message = "Operation " + name + " is following anonymous operation.";
+            if (hasAnonymousOp) {
+                message = "Operation " + name + " is following anonymous operation.";
             }
         }
         count++;
-        if(message != null) {
+        if (message != null) {
             addError(new ValidationError(ValidationErrorType.LoneAnonymousOperationViolation, operationDefinition.getSourceLocation(), message));
         }
     }

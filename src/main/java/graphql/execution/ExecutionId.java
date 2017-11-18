@@ -11,6 +11,7 @@ public class ExecutionId {
 
     /**
      * Create an unique identifier from the given string
+     *
      * @return a query execution identifier
      */
     public static ExecutionId generate() {
@@ -19,7 +20,9 @@ public class ExecutionId {
 
     /**
      * Create an identifier from the given string
+     *
      * @param id the string to wrap
+     *
      * @return a query identifier
      */
     public static ExecutionId from(String id) {

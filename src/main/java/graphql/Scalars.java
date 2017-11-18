@@ -78,7 +78,7 @@ public class Scalars {
             Integer result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Int' but was '" + typeName(input) + "'."
+                        "Expected type 'Int' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -89,7 +89,7 @@ public class Scalars {
             Integer result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Int' but was '" + typeName(input) + "'."
+                        "Expected type 'Int' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -133,7 +133,7 @@ public class Scalars {
             Double result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Float' but was '" + typeName(input) + "'."
+                        "Expected type 'Float' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -145,7 +145,7 @@ public class Scalars {
             Double result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Float' but was '" + typeName(input) + "'."
+                        "Expected type 'Float' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -214,7 +214,7 @@ public class Scalars {
             Boolean result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Boolean' but was '" + typeName(input) + "'."
+                        "Expected type 'Boolean' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -225,7 +225,7 @@ public class Scalars {
             Boolean result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Boolean' but was '" + typeName(input) + "'."
+                        "Expected type 'Boolean' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -266,7 +266,7 @@ public class Scalars {
             String result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'ID' but was '" + typeName(input) + "'."
+                        "Expected type 'ID' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -277,7 +277,7 @@ public class Scalars {
             String result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'ID' but was '" + typeName(input) + "'."
+                        "Expected type 'ID' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -326,7 +326,7 @@ public class Scalars {
             Long result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Long' but was '" + typeName(input) + "'."
+                        "Expected type 'Long' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -337,7 +337,7 @@ public class Scalars {
             Long result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Long' but was '" + typeName(input) + "'."
+                        "Expected type 'Long' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -393,7 +393,7 @@ public class Scalars {
             Short result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Short' but was '" + typeName(input) + "'."
+                        "Expected type 'Short' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -404,7 +404,7 @@ public class Scalars {
             Short result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Short' but was '" + typeName(input) + "'."
+                        "Expected type 'Short' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -452,7 +452,7 @@ public class Scalars {
             Byte result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Byte' but was '" + typeName(input) + "'."
+                        "Expected type 'Byte' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -463,7 +463,7 @@ public class Scalars {
             Byte result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Byte' but was '" + typeName(input) + "'."
+                        "Expected type 'Byte' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -509,7 +509,7 @@ public class Scalars {
             BigInteger result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'BigInteger' but was '" + typeName(input) + "'."
+                        "Expected type 'BigInteger' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -520,7 +520,7 @@ public class Scalars {
             BigInteger result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'BigInteger' but was '" + typeName(input) + "'."
+                        "Expected type 'BigInteger' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -569,7 +569,7 @@ public class Scalars {
             BigDecimal result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
+                        "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -580,7 +580,7 @@ public class Scalars {
             BigDecimal result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
+                        "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -625,7 +625,7 @@ public class Scalars {
             Character result = convertImpl(input);
             if (result == null) {
                 throw new CoercingSerializeException(
-                  "Expected type 'Char' but was '" + typeName(input) + "'."
+                        "Expected type 'Char' but was '" + typeName(input) + "'."
                 );
             }
             return result;
@@ -636,7 +636,7 @@ public class Scalars {
             Character result = convertImpl(input);
             if (result == null) {
                 throw new CoercingParseValueException(
-                  "Expected type 'Char' but was '" + typeName(input) + "'."
+                        "Expected type 'Char' but was '" + typeName(input) + "'."
                 );
             }
             return result;

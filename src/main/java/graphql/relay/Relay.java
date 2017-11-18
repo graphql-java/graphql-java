@@ -185,10 +185,10 @@ public class Relay {
                 .type(GraphQLString)
                 .build();
 
-        return mutation(name, fieldName, addElementToList(inputFields, clientMutationIdInputField), 
+        return mutation(name, fieldName, addElementToList(inputFields, clientMutationIdInputField),
                 addElementToList(outputFields, clientMutationIdPayloadField), dataFetcher);
     }
-    
+
     private static <T> List<T> addElementToList(List<T> list, T element) {
         ArrayList<T> result = new ArrayList<>(list);
         result.add(element);

@@ -1,11 +1,11 @@
 package graphql.execution;
 
-import java.util.Map;
-
 import graphql.language.Field;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
+
+import java.util.Map;
 
 public class TypeResolutionParameters {
 

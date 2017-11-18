@@ -56,7 +56,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
         FragmentSpread that = (FragmentSpread) o;
 
-        return NodeUtil.isEqualTo(this.name,that.name);
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
 
