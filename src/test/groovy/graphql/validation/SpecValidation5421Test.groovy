@@ -3,7 +3,7 @@ package graphql.validation
  * validation examples used in the spec in given section
  * http://facebook.github.io/graphql/#sec-Validation
  * @author dwinsor
- *        
+ *
  */
 class SpecValidation5421Test extends SpecValidationBase {
 

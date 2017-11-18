@@ -625,7 +625,6 @@ type TypeE {
     }
 
 
-
     def "print introspection result back to IDL"() {
         GraphQLSchema schema = starWarsSchema()
         def graphQL = GraphQL.newGraphQL(schema).build()

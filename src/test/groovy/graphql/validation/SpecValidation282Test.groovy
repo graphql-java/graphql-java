@@ -26,5 +26,5 @@ query {
         then:
         validationErrors.empty
     }
-    
+
 }

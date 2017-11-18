@@ -44,7 +44,7 @@ class ExecutionContextBuilderTest extends Specification {
         def fragment = document.definitions[1] as FragmentDefinition
         executionContextBuilder.operationDefinition(operation)
 
-        executionContextBuilder.fragmentsByName([MyFragment:fragment])
+        executionContextBuilder.fragmentsByName([MyFragment: fragment])
 
         def variables = Collections.emptyMap()
         executionContextBuilder.variables(variables)

@@ -2,9 +2,9 @@ package graphql.execution
 
 import spock.lang.Specification
 
+import static ExecutionTypeInfo.newTypeInfo
 import static graphql.Scalars.GraphQLString
 import static graphql.execution.ExecutionStrategyParameters.newParameters
-import static ExecutionTypeInfo.newTypeInfo
 
 class ExecutionStrategyParametersTest extends Specification {
 

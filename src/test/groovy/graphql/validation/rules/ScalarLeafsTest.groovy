@@ -24,8 +24,8 @@ class ScalarLeafsTest extends Specification {
 
         then:
         errorCollector.containsValidationError(
-            ValidationErrorType.SubSelectionNotAllowed,
-            "Sub selection not allowed on leaf type String of field hello"
+                ValidationErrorType.SubSelectionNotAllowed,
+                "Sub selection not allowed on leaf type String of field hello"
         )
     }
 
@@ -38,8 +38,8 @@ class ScalarLeafsTest extends Specification {
 
         then:
         errorCollector.containsValidationError(
-            ValidationErrorType.SubSelectionRequired,
-            "Sub selection required for type objectType of field hello"
+                ValidationErrorType.SubSelectionRequired,
+                "Sub selection required for type objectType of field hello"
         )
     }
 }
