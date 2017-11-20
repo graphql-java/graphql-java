@@ -37,4 +37,15 @@ public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, List
      * @return a map of the fields that represent the selection set
      */
     Map<String, List<Field>> get();
+
+    /**
+     * @return a map of the arguments for each field in the selection set
+     */
+    Map<String, Map<String, Object>> getArguments();
+
+    /**
+     * @return a map of the {@link graphql.schema.GraphQLFieldDefinition}s for each field in the selection set
+     */
+    Map<String, GraphQLFieldDefinition> getDefinitions();
+
 }
