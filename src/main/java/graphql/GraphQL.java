@@ -492,7 +492,7 @@ public class GraphQL {
         log.debug("Parsing query: '{}'...", executionInput.getQuery());
         ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
-            log.error("Query failed to parse : '{}'", executionInput.getQuery());
+            log.warn("Query failed to parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
         } else {
             final Document document = parseResult.getDocument();
@@ -500,7 +500,7 @@ public class GraphQL {
             log.debug("Validating query: '{}'", executionInput.getQuery());
             final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
             if (!errors.isEmpty()) {
-                log.error("Query failed to validate : '{}'", executionInput.getQuery());
+                log.warn("Query failed to validate : '{}'", executionInput.getQuery());
                 return new PreparsedDocumentEntry(errors);
             }
 
