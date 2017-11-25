@@ -77,7 +77,7 @@ public class NodeUtil {
         }
         OperationDefinition operation;
 
-        if (operationName == null) {
+        if (operationName == null || operationName == "") {
             operation = operationsByName.values().iterator().next();
         } else {
             operation = operationsByName.get(operationName);
