@@ -59,6 +59,10 @@ class TestUtil {
         schema(spec, RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build())
     }
 
+    static GraphQLSchema schemaFile(String fileName) {
+        return schemaFile(fileName, RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build())
+    }
+
     static GraphQLSchema schemaFile(String fileName, RuntimeWiring wiring) {
         def stream = TestUtil.class.getClassLoader().getResourceAsStream(fileName)
 

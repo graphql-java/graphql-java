@@ -159,6 +159,7 @@ class DataFetcherSelectionTest extends Specification {
                         "    name\n" +
                         "  }\n" +
                         "}\n" +
+                        "name\n"+
                         "homePlanet",
 
                 "/luke/friends": "name\n" +
