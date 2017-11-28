@@ -58,16 +58,22 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
             return emptyConnection();
         }
 
-        Integer first = environment.<Integer>getArgument("first");
-        Integer last = environment.<Integer>getArgument("last");
+        Integer first = environment.getArgument("first");
+        Integer last = environment.getArgument("last");
 
         ConnectionCursor firstPresliceCursor = edges.get(0).getCursor();
         ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
 
         if (first != null) {
+            if (first < 0) {
+                throw new InvalidPageSizeException(format("The page size must not be negative: 'first'=%s", first));
+            }
             edges = edges.subList(0, first <= edges.size() ? first : edges.size());
         }
         if (last != null) {
+            if (last < 0) {
+                throw new InvalidPageSizeException(format("The page size must not be negative: 'last'=%s", last));
+            }
             edges = edges.subList(last > edges.size() ? 0 : edges.size() - last, edges.size());
         }
 
