@@ -42,8 +42,8 @@ import static graphql.Scalars.GraphQLBoolean;
 @PublicApi
 public class PropertyDataFetcher<T> implements DataFetcher<T> {
 
-    private final String propertyName;
-    private final Function<Object, Object> function;
+    protected final String propertyName;
+    protected final Function<Object, Object> function;
 
     /**
      * This constructor will use the property name and examine the {@link DataFetchingEnvironment#getSource()}
