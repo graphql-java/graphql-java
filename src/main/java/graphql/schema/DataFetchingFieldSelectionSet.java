@@ -58,6 +58,7 @@ public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, List
      * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
      * match an invoice field with child fields that start with 'customer'.
      *
+     * @param fieldGlobPattern the glob pattern to match fields against
      * @return true if the selection set contains these fields
      *
      * @see java.nio.file.FileSystem#getPathMatcher(String)

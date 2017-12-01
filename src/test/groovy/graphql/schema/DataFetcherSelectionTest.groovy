@@ -48,20 +48,18 @@ class DataFetcherSelectionTest extends Specification {
             captureFieldArgs.add(arguments)
 
             if (!selectionSet.isEmpty()) {
-                String subSelection = captureSubSelection(selectionSet)
-                def path = environment.getFieldTypeInfo().getPath().toString()
-                captureMap.put(path, subSelection)
+                for (String fieldName : selectionSet.keySet()) {
+                    String ast = captureFields(selectionSet.get(fieldName))
+                    captureMap.put(fieldName, ast)
+                }
             }
 
             return delegate.get(environment)
         }
 
-        String captureSubSelection(Map<String, List<Field>> fields) {
-            return fields.values().stream().map({ f -> captureFields(f) }).collect(Collectors.joining("\n"))
-        }
-
         String captureFields(List<Field> fields) {
-            return fields.stream().map({ f -> AstPrinter.printAst(f) }).collect(Collectors.joining("\n"))
+            def collect = fields.stream().map({ f -> AstPrinter.printAst(f) }).collect(Collectors.joining(";"))
+            return collect
         }
     }
 
@@ -152,28 +150,19 @@ class DataFetcherSelectionTest extends Specification {
 
         // captures each stage as it descends
         captureMap == [
-                "/luke"        : "name\n" +
-                        "friends {\n" +
-                        "  name\n" +
-                        "  friends {\n" +
-                        "    name\n" +
-                        "  }\n" +
-                        "}\n" +
-                        "name\n"+
-                        "homePlanet",
-
-                "/luke/friends": "name\n" +
-                        "friends {\n" +
+                "appearsIn"           : "appearsIn",
+                "friends/friends/name": "name",
+                "friends/friends"     : "friends {\n" +
                         "  name\n" +
                         "}",
-
-                "/leia"        : "id\n" +
-                        "friends {\n" +
+                "friends/name"        : "name",
+                "friends"             : "friends {\n" +
                         "  name\n" +
-                        "}\n" +
-                        "appearsIn",
+                        "}",
+                "homePlanet"          : "homePlanet",
+                "id"                  : "id",
+                "name"                : "name"
 
-                "/leia/friends": "name",
         ]
     }
 
@@ -199,15 +188,13 @@ class DataFetcherSelectionTest extends Specification {
         then:
 
         captureMap == [
-                "/luke"        : "name\n" +
-                        "friends {\n" +
+                "name"        : "name",
+                "friends"     : "friends {\n" +
                         "  name\n" +
-                        "}\n" +
-                        "homePlanet",
-
-                "/luke/friends": "name"
+                        "}",
+                "friends/name": "name",
+                "homePlanet"  : "homePlanet",
         ]
-
     }
 
     def "#832 - field selection captures field arguments"() {
@@ -266,7 +253,7 @@ class DataFetcherSelectionTest extends Specification {
                                 locale      : "AU"
                         ]
                 ],
-                [name: [:], friends: [separationCount: 4]],
+                [name: [:], friends: [separationCount: 4], "friends/id": [:]],
                 [id: [:]]
         ]
 
