@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertTrue;
+import static java.util.Collections.singletonMap;
 
 /**
  * An execution strategy that implements graphql subscriptions by using reactive-streams
@@ -97,7 +98,16 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
-        return completeField(newExecutionContext, newParameters, eventPayload);
+        return completeField(newExecutionContext, newParameters, eventPayload)
+                .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
+    }
+
+    private ExecutionResult wrapWithRootFieldName(ExecutionStrategyParameters parameters, ExecutionResult executionResult) {
+        String rootFieldName = parameters.field().get(0).getName();
+        return new ExecutionResultImpl(
+                singletonMap(rootFieldName, executionResult.getData()),
+                executionResult.getErrors()
+        );
     }
 
     private ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionStrategyParameters parameters) {

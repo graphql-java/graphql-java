@@ -88,7 +88,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         messages.size() == 10
         for (int i = 0; i < messages.size(); i++) {
             def message = messages[i].data
-            message == [sender: "sender" + i, text: "text" + i]
+            assert message == ["newMessage": [sender: "sender" + i, text: "text" + i]]
         }
 
         where:
@@ -227,7 +227,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         messages.size() == 5
         for (int i = 0; i < messages.size(); i++) {
             def message = messages[i].data
-            message == [sender: "sender" + i, text: "text" + i]
+            assert message == ["newMessage": [sender: "sender" + i, text: "text" + i]]
         }
 
         capturingSubscriber.getThrowable().getMessage() == "Bang!"
@@ -282,14 +282,14 @@ class SubscriptionExecutionStrategyTest extends Specification {
             def message = messages[i]
             if (i == 5) {
                 message.data == null
-                message.errors.size() == 2
-                message.errors[0].errorType == ErrorType.DataFetchingException
-                message.errors[0].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/sender)"
+                assert message.errors.size() == 2
+                assert message.errors[0].errorType == ErrorType.DataFetchingException
+                assert message.errors[0].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/sender)"
 
-                message.errors[1].errorType == ErrorType.DataFetchingException
-                message.errors[1].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/text)"
+                assert message.errors[1].errorType == ErrorType.DataFetchingException
+                assert message.errors[1].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/text)"
             } else {
-                message.data == [sender: "sender" + i, text: "text" + i]
+                assert message.data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
             }
         }
     }
