@@ -313,7 +313,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         } else if (isList(unwrappedFieldType)) {
             return handleList(executionContext, argumentValues, fetchedValues, fieldName, fields, typeInfo);
         } else {
-            return Assert.assertShouldNeverHappen("can't handle type: " + unwrappedFieldType);
+            return Assert.assertShouldNeverHappen("can't handle type: %s", unwrappedFieldType);
         }
     }
 

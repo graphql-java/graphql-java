@@ -122,7 +122,7 @@ public class IntrospectionResultToSchema {
             case "SCALAR":
                 return createScalar(type);
             default:
-                return assertShouldNeverHappen("unexpected kind " + kind);
+                return assertShouldNeverHappen("unexpected kind %s", kind);
         }
     }
 
@@ -275,7 +275,7 @@ public class IntrospectionResultToSchema {
             case "LIST":
                 return new ListType(createTypeIndirection((Map<String, Object>) type.get("ofType")));
             default:
-                return assertShouldNeverHappen("Unknown kind " + kind);
+                return assertShouldNeverHappen("Unknown kind %s", kind);
         }
     }
 
