@@ -2,12 +2,14 @@ package graphql;
 
 import java.util.Collection;
 
+import static java.lang.String.format;
+
 @Internal
 public class Assert {
 
-    public static <T> T assertNotNull(T object, String errorMessage) {
+    public static <T> T assertNotNull(T object, String format, Object... args) {
         if (object != null) return object;
-        throw new AssertException(errorMessage);
+        throw new AssertException(format(format, args));
     }
 
     public static <T> T assertNotNull(T object) {
@@ -19,22 +21,23 @@ public class Assert {
         throw new AssertException("Should never been called");
     }
 
-    public static <T> T assertShouldNeverHappen(String errorMessage) {
-        throw new AssertException("Internal error: should never happen: " + errorMessage);
+    public static <T> T assertShouldNeverHappen(String format, Object... args) {
+        throw new AssertException("Internal error: should never happen: " + format(format, args));
     }
 
     public static <T> T assertShouldNeverHappen() {
         throw new AssertException("Internal error: should never happen");
     }
 
-    public static <T> Collection<T> assertNotEmpty(Collection<T> c, String errorMessage) {
-        if (c == null || c.isEmpty()) throw new AssertException(errorMessage);
+    public static <T> Collection<T> assertNotEmpty(Collection<T> c, String format, Object... args) {
+        if (c == null || c.isEmpty())
+            throw new AssertException(format(format, args));
         return c;
     }
 
-    public static void assertTrue(boolean condition, String errorMessage) {
+    public static void assertTrue(boolean condition, String format, Object... args) {
         if (condition) return;
-        throw new AssertException(errorMessage);
+        throw new AssertException(format(format, args));
     }
 
     private static final String invalidNameErrorMessage = "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]*";

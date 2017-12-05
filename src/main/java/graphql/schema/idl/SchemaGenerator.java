@@ -440,7 +440,7 @@ public class SchemaGenerator {
             Object value;
             if (enumValuesProvider != null) {
                 value = enumValuesProvider.getValue(evd.getName());
-                assertNotNull(value, String.format("EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName()));
+                assertNotNull(value, "EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName());
             } else {
                 value = evd.getName();
             }
@@ -564,7 +564,7 @@ public class SchemaGenerator {
             result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
         } else if (value != null && !(value instanceof NullValue)) {
             Assert.assertShouldNeverHappen(
-                    "cannot build value of " + requiredType.getName() + " from " + String.valueOf(value));
+                    "cannot build value of %s from %s", requiredType.getName(), String.valueOf(value));
         }
         return result;
     }

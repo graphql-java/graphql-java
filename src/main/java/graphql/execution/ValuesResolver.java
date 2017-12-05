@@ -176,7 +176,7 @@ public class ValuesResolver {
                 );
             }
         } else {
-            return assertShouldNeverHappen("unhandled type " + graphQLType);
+            return assertShouldNeverHappen("unhandled type %s", graphQLType);
         }
     }
 
