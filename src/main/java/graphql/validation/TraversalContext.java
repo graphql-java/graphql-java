@@ -167,7 +167,8 @@ public class TraversalContext implements DocumentVisitor {
         GraphQLUnmodifiedType objectType = schemaUtil.getUnmodifiedType(getInputType());
         GraphQLInputType inputType = null;
         if (objectType instanceof GraphQLInputObjectType) {
-            GraphQLInputObjectField inputField = ((GraphQLInputObjectType) objectType).getField(objectField.getName());
+            GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) objectType;
+            GraphQLInputObjectField inputField = schema.getFieldVisibility().getFieldDefinition(inputObjectType, objectField.getName());
             if (inputField != null)
                 inputType = inputField.getType();
         }

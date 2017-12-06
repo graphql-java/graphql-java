@@ -27,7 +27,7 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
             addError(new ValidationError(ValidationErrorType.DefaultForNonNullArgument, variableDefinition.getSourceLocation(), message));
         }
         if (variableDefinition.getDefaultValue() != null
-                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType)) {
+                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema())) {
             String message = String.format("Bad default value %s for type %s", variableDefinition.getDefaultValue(), inputType.getName());
             addError(new ValidationError(ValidationErrorType.BadValueForDefaultArg, variableDefinition.getSourceLocation(), message));
         }

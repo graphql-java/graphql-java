@@ -25,6 +25,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaUtil;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -226,7 +227,10 @@ public class Introspection {
     public static final DataFetcher inputFieldsFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLInputObjectType) {
-            return ((GraphQLInputObjectType) type).getFields();
+            GraphqlFieldVisibility fieldVisibility = environment
+                    .getGraphQLSchema()
+                    .getFieldVisibility();
+            return fieldVisibility.getFieldDefinitions((GraphQLInputObjectType) type);
         }
         return null;
     };

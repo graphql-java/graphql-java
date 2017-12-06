@@ -35,6 +35,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
@@ -191,7 +192,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         CompletableFuture<List<ExecutionNode>> result = fetchedData.thenApply((fetchedValues) -> {
 
+            GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
+                    fieldVisibility,
                     fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
 
             return completeValues(executionContext, fetchedValues, typeInfo, fieldName, fields, argumentValues);
@@ -210,7 +213,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         List<Field> fields = node.getFields().get(fieldName);
         List<MapOrList> parentResults = node.getParentResults();
 
+        GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
+                fieldVisibility,
                 fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();

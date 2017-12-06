@@ -21,6 +21,7 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLBigDecimal
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLString
+import static graphql.StarWarsSchema.starWarsSchema
 
 class ArgumentsOfCorrectTypeTest extends Specification {
 
@@ -65,6 +66,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def graphQLArgument = new GraphQLArgument("arg", GraphQLInputObjectType.newInputObject().name("ArgumentObjectType").field(GraphQLInputObjectField.newInputObjectField().name("foo").type(GraphQLBoolean)).build())
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
+        argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
         then:
@@ -83,6 +85,8 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def graphQLArgument = new GraphQLArgument("arg", GraphQLList.list(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType").field(GraphQLInputObjectField.newInputObjectField().name("foo").type(GraphQLBoolean)).build()))
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
+        argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
+
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
         then:
@@ -101,6 +105,8 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         def graphQLArgument = new GraphQLArgument("arg", GraphQLList.list(GraphQLInputObjectType.newInputObject().name("ArgumentObjectType").field(GraphQLInputObjectField.newInputObjectField().name("foo").type(GraphQLList.list(GraphQLBoolean))).build()))
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
+        argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
+
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
         then:
@@ -139,6 +145,8 @@ class ArgumentsOfCorrectTypeTest extends Specification {
                 .build())
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
+        argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
+
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
         then:
@@ -179,6 +187,8 @@ class ArgumentsOfCorrectTypeTest extends Specification {
                 .build())
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
+        argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
+
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
         then:
@@ -199,6 +209,8 @@ class ArgumentsOfCorrectTypeTest extends Specification {
                 .build())
 
         argumentsOfCorrectType.validationContext.getArgument() >> graphQLArgument
+        argumentsOfCorrectType.validationContext.getSchema() >> starWarsSchema
+
         when:
         argumentsOfCorrectType.checkArgument(argumentLiteral)
         then:
