@@ -103,11 +103,16 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     }
 
     private ExecutionResult wrapWithRootFieldName(ExecutionStrategyParameters parameters, ExecutionResult executionResult) {
-        String rootFieldName = parameters.field().get(0).getName();
+        String rootFieldName = getRootFieldName(parameters);
         return new ExecutionResultImpl(
                 singletonMap(rootFieldName, executionResult.getData()),
                 executionResult.getErrors()
         );
+    }
+
+    private String getRootFieldName(ExecutionStrategyParameters parameters) {
+        Field rootField = parameters.field().get(0);
+        return rootField.getAlias() != null ? rootField.getAlias() : rootField.getName();
     }
 
     private ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionStrategyParameters parameters) {
