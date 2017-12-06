@@ -98,6 +98,51 @@ class SubscriptionExecutionStrategyTest extends Specification {
 
     }
 
+    @Unroll
+    def "subscription alias is correctly used in response messages using '#why' implementation"() {
+
+        given:
+        Publisher<Object> publisher = eventStreamPublisher
+
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                assert environment.getArgument("roomId") == 123
+                return publisher
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newsFeed: newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        when:
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 1
+        messages[0].data == ["newsFeed": [sender: "sender0", text: "text0"]]
+
+        where:
+        why                       | eventStreamPublisher
+        'reactive streams stream' | new ReactiveStreamsMessagePublisher(1)
+        'rxjava stream'           | new RxJavaMessagePublisher(1)
+    }
+
 
     @Unroll
     def "multiple subscribers can get messages on a subscription query using '#why' implementation "() {
