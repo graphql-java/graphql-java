@@ -46,6 +46,7 @@ class Issue739 extends Specification {
             
             input BarInput {
               baz: String!
+              boom: Int
             }
             
             interface Node {
@@ -77,11 +78,31 @@ class Issue739 extends Specification {
         def variables = ["input": 123]
 
         ExecutionInput varInput = ExecutionInput.newExecutionInput()
+            .query('query Bar($input: BarInput!) {bar(input: $input) {id}}')
+            .variables(variables)
+            .build()
+
+        ExecutionResult varResult = graphQL
+            .executeAsync(varInput)
+            .join()
+
+        then:
+        varResult.data == null
+        varResult.errors.size() == 1
+        varResult.errors[0].errorType == ErrorType.ValidationError
+        varResult.errors[0].message == "Variable 'input' has an invalid value. Expected type 'Map' but was 'Integer'." +
+                " Variables for input objects must be an instance of type 'Map'.";
+        varResult.errors[0].locations == [new SourceLocation(1, 11)]
+
+        when:
+        variables = ["input": ["baz": "hi", "boom": "hi"]]
+
+        varInput = ExecutionInput.newExecutionInput()
                 .query('query Bar($input: BarInput!) {bar(input: $input) {id}}')
                 .variables(variables)
                 .build()
 
-        ExecutionResult varResult = graphQL
+        varResult = graphQL
                 .executeAsync(varInput)
                 .join()
 
@@ -89,8 +110,7 @@ class Issue739 extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Variable 'input' has an invalid value. Expected type 'Map' but was 'Integer'." +
-                " Variables for input objects must be an instance of a 'Map'.";
+        varResult.errors[0].message == "Variable 'boom' has an invalid value. Expected type 'Int' but was 'String'."
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }
