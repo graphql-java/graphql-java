@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -206,6 +207,13 @@ public class IntrospectionResultToSchema {
 
         ObjectTypeDefinition objectTypeDefinition = new ObjectTypeDefinition((String) input.get("name"));
         objectTypeDefinition.setComments(toComment((String) input.get("description")));
+        if (input.containsKey("interfaces")) {
+            objectTypeDefinition.getImplements().addAll(
+                    ((List<Map<String, Object>>)input.get("interfaces")).stream()
+                            .map(this::createTypeIndirection)
+                            .collect(Collectors.toList())
+            );
+        }
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
 
         objectTypeDefinition.getFieldDefinitions().addAll(createFields(fields));

@@ -74,7 +74,11 @@ class IntrospectionResultToSchemaTest extends Specification {
               }
             ],
             "inputFields": null,
-            "interfaces": [],
+            "interfaces": [{
+                    "kind": "INTERFACE",
+                    "name": "Query",
+                    "ofType": null
+                }],
             "enumValues": null,
             "possibleTypes": null
       }
@@ -87,7 +91,7 @@ class IntrospectionResultToSchemaTest extends Specification {
         def result = astPrinter.printAst(objectTypeDefinition)
 
         then:
-        result == """type QueryType {
+        result == """type QueryType implements Query {
   hero(
   #comment about episode
   episode: Episode
@@ -437,7 +441,7 @@ enum Episode {
 }
 
 #A humanoid creature in the Star Wars universe.
-type Human {
+type Human implements Character {
   #The id of the human.
   id: String!
   #The name of the human.
@@ -451,7 +455,7 @@ type Human {
 }
 
 #A mechanical creature in the Star Wars universe.
-type Droid {
+type Droid implements Character {
   #The id of the droid.
   id: String!
   #The name of the droid.
