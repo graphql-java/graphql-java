@@ -21,10 +21,8 @@ public class ArgumentsOfCorrectType extends AbstractRule {
         GraphQLArgument fieldArgument = getValidationContext().getArgument();
         if (fieldArgument == null) return;
         ArgumentValidationUtil validationUtil = new ArgumentValidationUtil(argument);
-        if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType())) {
+        if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(), getValidationContext().getSchema())) {
             addError(new ValidationError(ValidationErrorType.WrongType, argument.getSourceLocation(), validationUtil.getMessage()));
         }
     }
-
-
 }

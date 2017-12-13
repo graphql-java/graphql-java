@@ -13,6 +13,11 @@ import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
 import static BlockedFields.newBlock
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.schema.GraphQLInputObjectType.newInputObject
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY
 import static graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY
 
@@ -295,5 +300,137 @@ enum Episode {
         // we test that should you some how invoke the execution strategy - it will follow fields visibility
         // rules
         thrown(GraphQLException)
+    }
+
+    def inputType = newInputObject().name("InputType")
+            .field(newInputObjectField().name("openField").type(GraphQLString))
+            .field(newInputObjectField().name("closedField").type(GraphQLString))
+            .build()
+
+    def inputQueryType = GraphQLObjectType.newObject().name("InputQuery")
+            .field(newFieldDefinition().name("hello").type(GraphQLString)
+            .argument(newArgument().name("arg").type(inputType))
+            .dataFetcher({ env -> return "world" })
+    )
+            .build()
+
+    def "ensure input field are blocked"() {
+
+        when:
+        def schema = GraphQLSchema.newSchema()
+                .query(inputQueryType)
+                .build()
+
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def er = graphQL.execute('''
+            {
+                hello(arg : {
+                    openField: "open", 
+                    closedField:"closed"
+                    })
+            }
+        ''')
+
+        then:
+        er.getErrors().isEmpty()
+        er.getData() == ["hello": "world"]
+
+        when:
+        schema = GraphQLSchema.newSchema()
+                .query(inputQueryType)
+                .fieldVisibility(ban(['InputType.closedField']))
+                .build()
+
+        graphQL = GraphQL.newGraphQL(schema).build()
+
+        er = graphQL.execute('''
+            {
+                hello(arg : {
+                    openField: "open", 
+                    closedField:"closed"
+                    })
+            }
+        ''')
+
+        then:
+        !er.getErrors().isEmpty()
+        er.getErrors()[0].message.contains("contains a field not in 'InputType': 'closedField'")
+        er.data == null
+    }
+
+    def "input introspection is blocked"() {
+
+        given:
+
+        def schema = GraphQLSchema.newSchema()
+                .query(inputQueryType)
+                .fieldVisibility(fieldVisibility)
+                .build()
+
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+
+        def result = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+
+        List types = result.data["__schema"]["types"] as List
+        Map typeMap = types.find({ it -> it['name'] == targetTypeName }) as Map
+        List fields = typeMap['inputFields'] as List
+        fields.size() == expectedFieldCounts
+
+        where:
+
+        fieldVisibility                | targetTypeName | expectedFieldCounts
+        DEFAULT_FIELD_VISIBILITY       | 'InputType'    | 2
+        ban(["InputType.closedField"]) | 'InputType'    | 1
+    }
+
+    def "input schema print is blocked"() {
+        when:
+        def schema = GraphQLSchema.newSchema()
+                .query(inputQueryType)
+                .fieldVisibility(DEFAULT_FIELD_VISIBILITY)
+                .build()
+        def result = new SchemaPrinter().print(schema)
+
+        then:
+        result == '''schema {
+  query: InputQuery
+}
+
+type InputQuery {
+  hello(arg: InputType): String
+}
+
+input InputType {
+  closedField: String
+  openField: String
+}
+'''
+
+        when:
+        schema = GraphQLSchema.newSchema()
+                .query(inputQueryType)
+                .fieldVisibility(ban(["InputType.closedField"]))
+                .build()
+        result = new SchemaPrinter().print(schema)
+
+        then:
+        result == '''schema {
+  query: InputQuery
+}
+
+type InputQuery {
+  hello(arg: InputType): String
+}
+
+input InputType {
+  openField: String
+}
+'''
+
     }
 }

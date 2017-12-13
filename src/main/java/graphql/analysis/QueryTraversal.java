@@ -138,7 +138,7 @@ public class QueryTraversal {
         if (!conditionalNodes.shouldInclude(variables, field.getDirectives())) {
             return;
         }
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), variables);
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
         if (preOrder) {
             visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues));
         }

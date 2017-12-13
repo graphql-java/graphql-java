@@ -304,7 +304,7 @@ public class SchemaPrinter {
             }
             printComments(out, type, "");
             out.format("input %s {\n", type.getName());
-            type.getFieldDefinitions()
+            visibility.getFieldDefinitions(type)
                     .stream()
                     .sorted(Comparator.comparing(GraphQLInputObjectField::getName))
                     .forEach(fd -> {
