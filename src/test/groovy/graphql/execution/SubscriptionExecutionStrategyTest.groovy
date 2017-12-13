@@ -88,7 +88,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         messages.size() == 10
         for (int i = 0; i < messages.size(); i++) {
             def message = messages[i].data
-            message == [sender: "sender" + i, text: "text" + i]
+            assert message == ["newMessage": [sender: "sender" + i, text: "text" + i]]
         }
 
         where:
@@ -96,6 +96,51 @@ class SubscriptionExecutionStrategyTest extends Specification {
         'reactive streams stream' | new ReactiveStreamsMessagePublisher(10)
         'rxjava stream'           | new RxJavaMessagePublisher(10)
 
+    }
+
+    @Unroll
+    def "subscription alias is correctly used in response messages using '#why' implementation"() {
+
+        given:
+        Publisher<Object> publisher = eventStreamPublisher
+
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                assert environment.getArgument("roomId") == 123
+                return publisher
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newsFeed: newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        when:
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 1
+        messages[0].data == ["newsFeed": [sender: "sender0", text: "text0"]]
+
+        where:
+        why                       | eventStreamPublisher
+        'reactive streams stream' | new ReactiveStreamsMessagePublisher(1)
+        'rxjava stream'           | new RxJavaMessagePublisher(1)
     }
 
 
@@ -227,7 +272,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         messages.size() == 5
         for (int i = 0; i < messages.size(); i++) {
             def message = messages[i].data
-            message == [sender: "sender" + i, text: "text" + i]
+            assert message == ["newMessage": [sender: "sender" + i, text: "text" + i]]
         }
 
         capturingSubscriber.getThrowable().getMessage() == "Bang!"
@@ -282,14 +327,14 @@ class SubscriptionExecutionStrategyTest extends Specification {
             def message = messages[i]
             if (i == 5) {
                 message.data == null
-                message.errors.size() == 2
-                message.errors[0].errorType == ErrorType.DataFetchingException
-                message.errors[0].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/sender)"
+                assert message.errors.size() == 2
+                assert message.errors[0].errorType == ErrorType.DataFetchingException
+                assert message.errors[0].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/sender)"
 
-                message.errors[1].errorType == ErrorType.DataFetchingException
-                message.errors[1].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/text)"
+                assert message.errors[1].errorType == ErrorType.DataFetchingException
+                assert message.errors[1].message == "Cannot return null for non-nullable type: 'String' within parent 'Message' (/newMessage/text)"
             } else {
-                message.data == [sender: "sender" + i, text: "text" + i]
+                assert message.data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
             }
         }
     }

@@ -52,7 +52,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
      * @param propertyName the name of the property to retrieve
      */
     public PropertyDataFetcher(String propertyName) {
-        this.propertyName = propertyName;
+        this.propertyName = Assert.assertNotNull(propertyName);
         this.function = null;
     }
 
@@ -109,6 +109,12 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         return new PropertyDataFetcher<>(function);
     }
 
+    /**
+     * @return the property that this is fetching for
+     */
+    public String getPropertyName() {
+        return propertyName;
+    }
 
     @SuppressWarnings("unchecked")
     @Override

@@ -84,7 +84,7 @@ public class Introspection {
         } else if (type instanceof GraphQLNonNull) {
             return TypeKind.NON_NULL;
         } else {
-            return Assert.assertShouldNeverHappen("Unknown kind of type: " + type);
+            return Assert.assertShouldNeverHappen("Unknown kind of type: %s", type);
         }
     };
 
@@ -500,10 +500,10 @@ public class Introspection {
             return TypeNameMetaFieldDef;
         }
 
-        assertTrue(parentType instanceof GraphQLFieldsContainer, "should not happen : parent type must be an object or interface : " + parentType);
+        assertTrue(parentType instanceof GraphQLFieldsContainer, "should not happen : parent type must be an object or interface %s", parentType);
         GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
         GraphQLFieldDefinition fieldDefinition = schema.getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
-        Assert.assertTrue(fieldDefinition != null, "Unknown field " + fieldName);
+        Assert.assertTrue(fieldDefinition != null, "Unknown field '%s'", fieldName);
         return fieldDefinition;
     }
 }

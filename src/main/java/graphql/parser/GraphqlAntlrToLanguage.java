@@ -138,7 +138,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             }
         }
         if (required) {
-            Assert.assertShouldNeverHappen("not found" + contextProperty);
+            Assert.assertShouldNeverHappen("not found %s", contextProperty);
         }
         return null;
     }
@@ -202,7 +202,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         } else if (operationTypeContext.getText().equals("subscription")) {
             return OperationDefinition.Operation.SUBSCRIPTION;
         } else {
-            return Assert.assertShouldNeverHappen("InternalError: unknown operationTypeContext=" + operationTypeContext.getText());
+            return Assert.assertShouldNeverHappen("InternalError: unknown operationTypeContext=%s", operationTypeContext.getText());
         }
     }
 
