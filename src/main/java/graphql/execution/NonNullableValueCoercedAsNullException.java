@@ -35,7 +35,7 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
 
     @Override
     public List<SourceLocation> getLocations() {
-        return null;
+        return sourceLocations;
     }
 
     @Override
