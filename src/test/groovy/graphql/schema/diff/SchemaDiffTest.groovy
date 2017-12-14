@@ -228,7 +228,7 @@ class SchemaDiffTest extends Specification {
         diff.diffSchema(diffSet, chainedReporter)
 
         expect:
-        reporter.breakageCount == 2 // 2 fields removed
+        reporter.breakageCount == 8 // 2 fields removed from interface, affecting 3 types
         reporter.breakages[0].category == DiffCategory.MISSING
         reporter.breakages[0].typeKind == TypeKind.Interface
 
