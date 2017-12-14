@@ -644,7 +644,7 @@ type TypeE {
   name: String!
 }
 
-type Droid {
+type Droid implements Character {
   appearsIn: [Episode]!
   friends: [Character]
   id: ID!
@@ -653,7 +653,7 @@ type Droid {
   primaryFunction: String
 }
 
-type Human {
+type Human implements Character {
   appearsIn: [Episode]!
   friends: [Character]
   homePlanet: String
