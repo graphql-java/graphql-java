@@ -1,6 +1,8 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.language.AstPrinter;
+import graphql.language.AstValueHelper;
 import graphql.language.Document;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
@@ -8,6 +10,7 @@ import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
@@ -309,12 +312,23 @@ public class SchemaPrinter {
                     .sorted(Comparator.comparing(GraphQLInputObjectField::getName))
                     .forEach(fd -> {
                         printComments(out, fd, "  ");
-                        out.format("  %s: %s\n",
+                        out.format("  %s: %s",
                                 fd.getName(), typeString(fd.getType()));
+                        Object defaultValue = fd.getDefaultValue();
+                        if (defaultValue != null) {
+                            String astValue = printAst(defaultValue, fd.getType());
+                            out.format(" = %s", astValue);
+                        }
+                        out.format("\n");
                     });
             out.format("}\n\n");
         };
     }
+
+    private static String printAst(Object value, GraphQLInputType type) {
+        return AstPrinter.printAst(AstValueHelper.astFromValue(value, type));
+    }
+
 
     private TypePrinter<GraphQLSchema> schemaPrinter() {
         return (out, type, visibility) -> {
@@ -405,11 +419,7 @@ public class SchemaPrinter {
             Object defaultValue = argument.getDefaultValue();
             if (defaultValue != null) {
                 sb.append(" = ");
-                if (defaultValue instanceof Number) {
-                    sb.append(defaultValue);
-                } else {
-                    sb.append('"').append(defaultValue).append('"');
-                }
+                sb.append(printAst(defaultValue,argument.getType()));
             }
             count++;
         }

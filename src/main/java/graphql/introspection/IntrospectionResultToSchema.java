@@ -3,6 +3,7 @@ package graphql.introspection;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.language.Argument;
+import graphql.language.AstValueHelper;
 import graphql.language.Comment;
 import graphql.language.Directive;
 import graphql.language.Document;
@@ -24,6 +25,7 @@ import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.language.Value;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.ArrayList;
@@ -250,8 +252,9 @@ public class IntrospectionResultToSchema {
             InputValueDefinition inputValueDefinition = new InputValueDefinition((String) arg.get("name"), argType);
             inputValueDefinition.setComments(toComment((String) arg.get("description")));
 
-            if (arg.get("defaultValue") != null) {
-                StringValue defaultValue = new StringValue((String) arg.get("defaultValue"));
+            String valueLiteral = (String) arg.get("defaultValue");
+            if (valueLiteral != null) {
+                Value defaultValue = AstValueHelper.valueFromAst(valueLiteral);
                 inputValueDefinition.setDefaultValue(defaultValue);
             }
             result.add(inputValueDefinition);
