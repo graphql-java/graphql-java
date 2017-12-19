@@ -6,6 +6,7 @@ import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.Scalars
 import graphql.SerializationError
+import graphql.TypeMismatchError
 import graphql.execution.instrumentation.NoOpInstrumentation
 import graphql.language.Argument
 import graphql.language.Field
@@ -112,11 +113,14 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = new GraphQLList(GraphQLString)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+
 
         def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
                 .typeInfo(typeInfo)
                 .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": []])
                 .build()
 
@@ -179,10 +183,13 @@ class ExecutionStrategyTest extends Specification {
         ExecutionContext executionContext = buildContext()
         def fieldType = new GraphQLList(GraphQLString)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef))
+                .typeInfo(typeInfo)
                 .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": []])
                 .build()
 
@@ -503,10 +510,12 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = new GraphQLList(Scalars.GraphQLLong)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
 
         def parameters = newParameters()
                 .typeInfo(typeInfo)
                 .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": [new Field()]])
                 .field([new Field()])
                 .build()
@@ -572,5 +581,55 @@ class ExecutionStrategyTest extends Specification {
         executionContext.getErrors()[0].locations == null
         executionContext.getErrors()[0].message == "bad foo"
         executionContext.getErrors()[0].path == null
+    }
+
+    def "completes value for an iterable"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        List<Long> result = [1L, 2L, 3L]
+        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .fields(["fld": [new Field()]])
+                .field([new Field()])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+
+        then:
+        executionResult.get().data == [1L, 2L, 3L]
+    }
+
+    def "when completeValue expects GraphQLList and non iterable or non array is passed then it should yield a TypeMismatch error"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        Map<String, Object> result = new HashMap<>()
+        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .source(result)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .fields(["fld": [new Field()]])
+                .field([new Field()])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+
+        then:
+        executionResult.data == null
+        executionContext.errors.size() == 1
+        executionContext.errors[0] instanceof TypeMismatchError
     }
 }

@@ -1,9 +1,21 @@
 package graphql.execution;
 
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.IntStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicSpi;
 import graphql.SerializationError;
+import graphql.TypeMismatchError;
 import graphql.TypeResolutionEnvironment;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -28,17 +40,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
@@ -354,7 +355,7 @@ public abstract class ExecutionStrategy {
         if (result == null) {
             return completedFuture(new ExecutionResultImpl(parameters.nonNullFieldValidator().validate(parameters.path(), null), null));
         } else if (fieldType instanceof GraphQLList) {
-            return completeValueForList(executionContext, parameters, toIterable(result));
+            return completeValueForList(executionContext, parameters, result);
         } else if (fieldType instanceof GraphQLScalarType) {
             return completeValueForScalar(executionContext, parameters, (GraphQLScalarType) fieldType, result);
         } else if (fieldType instanceof GraphQLEnumType) {
@@ -552,7 +553,41 @@ public abstract class ExecutionStrategy {
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
-     * @param iterableValues   the values to complete
+     * @param result           the result to complete, raw result
+     *
+     * @return an {@link ExecutionResult}
+     */
+    protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
+        Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
+        resultIterable = parameters.nonNullFieldValidator().validate(parameters.path(), resultIterable);
+        if (resultIterable == null) {
+            return completedFuture(new ExecutionResultImpl(null, null));
+        }
+        return completeValueForList(executionContext, parameters, resultIterable);
+    }
+
+    protected Iterable<Object> toIterable(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
+        if (result.getClass().isArray() || result instanceof Iterable) {
+            return toIterable(result);
+        }
+
+        handleTypeMismatchProblem(context, parameters, result);
+        return null;
+    }
+
+    private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
+        TypeMismatchError error = new TypeMismatchError(parameters.path(), parameters.typeInfo().getType());
+        log.warn("{} got {}", error.getMessage(), result.getClass());
+        context.addError(error, parameters.path());
+    }
+
+    /**
+     * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
+     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param iterableValues   the values to complete, can't be null
      *
      * @return an {@link ExecutionResult}
      */
