@@ -73,7 +73,15 @@ public class DiffEvent {
                 '}';
     }
 
+    /**
+     * @deprecated use {@link DiffEvent#apiInfo()} instead
+     */
+    @Deprecated
     public static Builder newInfo() {
+        return new Builder().level(DiffLevel.INFO);
+    }
+
+    public static Builder apiInfo() {
         return new Builder().level(DiffLevel.INFO);
     }
 

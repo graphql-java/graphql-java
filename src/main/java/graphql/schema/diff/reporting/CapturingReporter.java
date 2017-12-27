@@ -13,17 +13,20 @@ import java.util.List;
 @PublicApi
 public class CapturingReporter implements DifferenceReporter {
     private final List<DiffEvent> events = new ArrayList<>();
+    private final List<DiffEvent> infos = new ArrayList<>();
     private final List<DiffEvent> breakages = new ArrayList<>();
     private final List<DiffEvent> dangers = new ArrayList<>();
 
     @Override
     public void report(DiffEvent differenceEvent) {
         events.add(differenceEvent);
+
         if (differenceEvent.getLevel() == DiffLevel.BREAKING) {
             breakages.add(differenceEvent);
-        }
-        if (differenceEvent.getLevel() == DiffLevel.DANGEROUS) {
+        } else if (differenceEvent.getLevel() == DiffLevel.DANGEROUS) {
             dangers.add(differenceEvent);
+        } else if (differenceEvent.getLevel() == DiffLevel.INFO) {
+            infos.add(differenceEvent);
         }
     }
 
@@ -35,12 +38,20 @@ public class CapturingReporter implements DifferenceReporter {
         return new ArrayList<>(events);
     }
 
+    public List<DiffEvent> getInfos() {
+        return new ArrayList<>(infos);
+    }
+
     public List<DiffEvent> getBreakages() {
         return new ArrayList<>(breakages);
     }
 
     public List<DiffEvent> getDangers() {
         return new ArrayList<>(dangers);
+    }
+
+    public int getInfoCount() {
+        return infos.size();
     }
 
     public int getBreakageCount() {
