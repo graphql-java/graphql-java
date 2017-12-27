@@ -163,7 +163,7 @@ public class SchemaDiff {
             return;
         }
 
-        ctx.report(DiffEvent.newInfo()
+        ctx.report(DiffEvent.apiInfo()
                 .typeName(capitalize(opName))
                 .typeKind(TypeKind.Operation)
                 .components(opName)
@@ -211,7 +211,7 @@ public class SchemaDiff {
         Optional<TypeDefinition> newTD = ctx.getNewTypeDef(newType, TypeDefinition.class);
 
         if (!oldTD.isPresent()) {
-            ctx.report(DiffEvent.newInfo()
+            ctx.report(DiffEvent.apiInfo()
                     .typeName(typeName)
                     .reasonMsg("Type '%s' is missing", typeName)
                     .build());
@@ -220,7 +220,7 @@ public class SchemaDiff {
         }
         TypeDefinition oldDef = oldTD.get();
 
-        ctx.report(DiffEvent.newInfo()
+        ctx.report(DiffEvent.apiInfo()
                 .typeName(typeName)
                 .typeKind(getTypeKind(oldDef))
                 .reasonMsg("Examining type '%s' ...", typeName)
@@ -298,7 +298,7 @@ public class SchemaDiff {
         Map<String, FieldDefinition> oldFields = sortedMap(oldDef.getFieldDefinitions(), FieldDefinition::getName);
         Map<String, FieldDefinition> newFields = sortedMap(newDef.getFieldDefinitions(), FieldDefinition::getName);
 
-        checkFields(ctx, oldDef, oldFields, newFields);
+        checkFields(ctx, oldDef, oldFields, newDef, newFields);
 
         checkImplements(ctx, oldDef, oldDef.getImplements(), newDef.getImplements());
 
@@ -309,7 +309,7 @@ public class SchemaDiff {
         Map<String, FieldDefinition> oldFields = sortedMap(oldDef.getFieldDefinitions(), FieldDefinition::getName);
         Map<String, FieldDefinition> newFields = sortedMap(newDef.getFieldDefinitions(), FieldDefinition::getName);
 
-        checkFields(ctx, oldDef, oldFields, newFields);
+        checkFields(ctx, oldDef, oldFields, newDef, newFields);
 
         checkDirectives(ctx, oldDef, newDef);
     }
@@ -361,7 +361,7 @@ public class SchemaDiff {
             InputValueDefinition oldField = oldDefinitionMap.get(inputFieldName);
             Optional<InputValueDefinition> newField = Optional.ofNullable(newDefinitionMap.get(inputFieldName));
 
-            ctx.report(DiffEvent.newInfo()
+            ctx.report(DiffEvent.apiInfo()
                     .typeName(old.getName())
                     .typeKind(getTypeKind(old))
                     .fieldName(oldField.getName())
@@ -475,11 +475,27 @@ public class SchemaDiff {
     }
 
 
-    private void checkFields(DiffCtx ctx, TypeDefinition oldDef, Map<String, FieldDefinition> oldFields, Map<String, FieldDefinition> newFields) {
+    private void checkFields(
+            DiffCtx ctx,
+            TypeDefinition oldDef,
+            Map<String, FieldDefinition> oldFields,
+            TypeDefinition newDef,
+            Map<String, FieldDefinition> newFields) {
+
+        checkFieldRemovals(ctx, oldDef, oldFields, newFields);
+        checkFieldAdditions(ctx, newDef, oldFields, newFields);
+    }
+
+    private void checkFieldRemovals(
+            DiffCtx ctx,
+            TypeDefinition oldDef,
+            Map<String, FieldDefinition> oldFields,
+            Map<String, FieldDefinition> newFields) {
+
         for (Map.Entry<String, FieldDefinition> entry : oldFields.entrySet()) {
 
             String fieldName = entry.getKey();
-            ctx.report(DiffEvent.newInfo()
+            ctx.report(DiffEvent.apiInfo()
                     .typeName(oldDef.getName())
                     .typeKind(getTypeKind(oldDef))
                     .fieldName(fieldName)
@@ -497,6 +513,35 @@ public class SchemaDiff {
                         .build());
             } else {
                 checkField(ctx, oldDef, entry.getValue(), newField);
+            }
+        }
+    }
+
+    private void checkFieldAdditions(
+            DiffCtx ctx,
+            TypeDefinition newDef,
+            Map<String, FieldDefinition> oldFields,
+            Map<String, FieldDefinition> newFields) {
+
+        for (Map.Entry<String, FieldDefinition> entry : newFields.entrySet()) {
+
+            String fieldName = entry.getKey();
+            ctx.report(DiffEvent.apiInfo()
+                    .typeName(newDef.getName())
+                    .typeKind(getTypeKind(newDef))
+                    .fieldName(fieldName)
+                    .reasonMsg("\tExamining field '%s' ...", mkDotName(newDef.getName(), fieldName))
+                    .build());
+
+            FieldDefinition oldField = oldFields.get(fieldName);
+            if (oldField == null) {
+                ctx.report(DiffEvent.apiInfo()
+                        .category(DiffCategory.ADDITION)
+                        .typeName(newDef.getName())
+                        .typeKind(getTypeKind(newDef))
+                        .fieldName(fieldName)
+                        .reasonMsg("The new API adds the field '%s'", mkDotName(newDef.getName(), fieldName))
+                        .build());
             }
         }
     }
@@ -545,7 +590,7 @@ public class SchemaDiff {
         for (Map.Entry<String, InputValueDefinition> entry : oldArgsMap.entrySet()) {
 
             String argName = entry.getKey();
-            ctx.report(DiffEvent.newInfo()
+            ctx.report(DiffEvent.apiInfo()
                     .typeName(oldDef.getName())
                     .typeKind(getTypeKind(oldDef))
                     .fieldName(oldField.getName())
