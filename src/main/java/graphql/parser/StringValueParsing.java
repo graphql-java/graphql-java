@@ -1,6 +1,6 @@
 package graphql.parser;
 
-import graphql.ShouldNotHappenException;
+import graphql.Assert;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -132,7 +132,7 @@ class StringValueParsing {
                     writer.write(codepoint);
                     continue;
                 default:
-                    throw new ShouldNotHappenException();
+                    Assert.assertShouldNeverHappen();
             }
         }
         return writer.toString();

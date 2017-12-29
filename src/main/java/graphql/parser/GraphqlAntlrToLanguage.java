@@ -767,54 +767,6 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return Assert.assertShouldNeverHappen();
     }
 
-    static String parseString(String string) {
-        StringWriter writer = new StringWriter(string.length() - 2);
-        int end = string.length() - 1;
-        for (int i = 1; i < end; i++) {
-            char c = string.charAt(i);
-            if (c != '\\') {
-                writer.write(c);
-                continue;
-            }
-            char escaped = string.charAt(i + 1);
-            i += 1;
-            switch (escaped) {
-                case '"':
-                    writer.write('"');
-                    continue;
-                case '/':
-                    writer.write('/');
-                    continue;
-                case '\\':
-                    writer.write('\\');
-                    continue;
-                case 'b':
-                    writer.write('\b');
-                    continue;
-                case 'f':
-                    writer.write('\f');
-                    continue;
-                case 'n':
-                    writer.write('\n');
-                    continue;
-                case 'r':
-                    writer.write('\r');
-                    continue;
-                case 't':
-                    writer.write('\t');
-                    continue;
-                case 'u':
-                    String hexStr = string.substring(i + 1, i + 5);
-                    int codepoint = Integer.parseInt(hexStr, 16);
-                    i += 4;
-                    writer.write(codepoint);
-                    continue;
-                default:
-                    Assert.assertShouldNeverHappen();
-            }
-        }
-    }
-
     static String quotedString(GraphqlParser.StringValueContext ctx) {
         boolean multiLine = ctx.TripleQuotedStringValue() != null;
         String strText = ctx.getText();
