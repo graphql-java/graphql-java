@@ -13,10 +13,10 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.InvalidSyntaxError;
-import graphql.OperationNotSupportedError;
 import graphql.SerializationError;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.MissingRootTypeException;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.introspection.Introspection;
@@ -71,7 +71,7 @@ public class ExecutionResultJSONTesting {
         List<GraphQLError> errors = new ArrayList<>();
 
         errors.add(new ValidationError(ValidationErrorType.UnknownType, mkLocations(), "Test ValidationError"));
-        errors.add(new OperationNotSupportedError("Mutations are not supported.", null));
+        errors.add(new MissingRootTypeException("Mutations are not supported.", null));
         errors.add(new InvalidSyntaxError(mkLocations(), "Not good syntax m'kay"));
         errors.add(new NonNullableFieldWasNullError(new NonNullableFieldWasNullException(mkTypeInfo(), mkPath())));
         errors.add(new SerializationError(mkPath(), new CoercingSerializeException("Bad coercing")));

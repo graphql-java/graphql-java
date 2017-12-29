@@ -7,6 +7,7 @@ import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
 import graphql.execution.ExecutionStrategyParameters
+import graphql.execution.MissingRootTypeException
 import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.NoOpInstrumentation
@@ -266,10 +267,10 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].class == OperationNotSupportedError
+        result.errors[0].class == MissingRootTypeException
     }
 
-    def "a subscription query against a schema that doesn't support subscriptions should result in a GraphQL error"() {
+    def "#875 a subscription query against a schema that doesn't support subscriptions should result in a GraphQL error"() {
         given:
 
         GraphQLSchema schema = newSchema().query(
@@ -283,7 +284,7 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].class == OperationNotSupportedError
+        result.errors[0].class == MissingRootTypeException
     }
 
     def "query with int literal too large"() {
