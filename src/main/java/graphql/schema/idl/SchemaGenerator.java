@@ -64,6 +64,7 @@ import java.util.Stack;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.schema.GraphQLTypeReference.typeRef;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
@@ -275,7 +276,7 @@ public class SchemaGenerator {
         if (buildCtx.stackContains(typeInfo)) {
             // we have circled around so put in a type reference and fix it up later
             // otherwise we will go into an infinite loop
-            return typeInfo.decorate(new GraphQLTypeReference(typeInfo.getName()));
+            return typeInfo.decorate(typeRef(typeInfo.getName()));
         }
 
         buildCtx.push(typeInfo);
@@ -312,7 +313,7 @@ public class SchemaGenerator {
 
         if (buildCtx.stackContains(typeInfo)) {
             // we have circled around so put in a type reference and fix it later
-            return typeInfo.decorate(new GraphQLTypeReference(typeInfo.getName()));
+            return typeInfo.decorate(typeRef(typeInfo.getName()));
         }
 
         buildCtx.push(typeInfo);

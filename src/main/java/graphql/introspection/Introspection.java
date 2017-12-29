@@ -22,7 +22,6 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaUtil;
 import graphql.schema.visibility.GraphqlFieldVisibility;
@@ -38,6 +37,7 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
+import static graphql.schema.GraphQLTypeReference.typeRef;
 
 public class Introspection {
 
@@ -98,7 +98,7 @@ public class Introspection {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("type")
-                    .type(nonNull(new GraphQLTypeReference("__Type"))))
+                    .type(nonNull(typeRef("__Type"))))
             .field(newFieldDefinition()
                     .name("defaultValue")
                     .type(GraphQLString)
@@ -136,7 +136,7 @@ public class Introspection {
                     }))
             .field(newFieldDefinition()
                     .name("type")
-                    .type(nonNull(new GraphQLTypeReference("__Type"))))
+                    .type(nonNull(typeRef("__Type"))))
             .field(newFieldDefinition()
                     .name("isDeprecated")
                     .type(nonNull(GraphQLBoolean))
@@ -269,11 +269,11 @@ public class Introspection {
                     .dataFetcher(fieldsFetcher))
             .field(newFieldDefinition()
                     .name("interfaces")
-                    .type(list(nonNull(new GraphQLTypeReference("__Type"))))
+                    .type(list(nonNull(typeRef("__Type"))))
                     .dataFetcher(interfacesFetcher))
             .field(newFieldDefinition()
                     .name("possibleTypes")
-                    .type(list(nonNull(new GraphQLTypeReference("__Type"))))
+                    .type(list(nonNull(typeRef("__Type"))))
                     .dataFetcher(possibleTypesFetcher))
             .field(newFieldDefinition()
                     .name("enumValues")
@@ -289,7 +289,7 @@ public class Introspection {
                     .dataFetcher(inputFieldsFetcher))
             .field(newFieldDefinition()
                     .name("ofType")
-                    .type(new GraphQLTypeReference("__Type"))
+                    .type(typeRef("__Type"))
                     .dataFetcher(OfTypeFetcher))
             .build();
 

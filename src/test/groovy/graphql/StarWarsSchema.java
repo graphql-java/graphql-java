@@ -5,7 +5,6 @@ import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeReference;
 import graphql.schema.StaticDataFetcher;
 
 import static graphql.Scalars.GraphQLString;
@@ -16,6 +15,7 @@ import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
+import static graphql.schema.GraphQLTypeReference.typeRef;
 
 public class StarWarsSchema {
 
@@ -43,7 +43,7 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("friends")
                     .description("The friends of the character, or an empty list if they have none.")
-                    .type(list(new GraphQLTypeReference("Character"))))
+                    .type(list(typeRef("Character"))))
             .field(newFieldDefinition()
                     .name("appearsIn")
                     .description("Which movies they appear in.")
