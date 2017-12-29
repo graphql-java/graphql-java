@@ -13,7 +13,6 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.OperationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -106,24 +105,17 @@ public class Execution {
         InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(dataFetchParameters);
 
         OperationDefinition.Operation operation = operationDefinition.getOperation();
-        GraphQLObjectType operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operation);
+        GraphQLObjectType operationRootType;
 
-        //
-        // do we have a mutation operation root type.  The spec says if we don't then mutations are not allowed to be executed
-        //
-        // for the record earlier code has asserted that we have a query type in the schema since the spec says this is
-        // ALWAYS required
-        if (operation == MUTATION && operationRootType == null) {
-            OperationNotSupportedError mutationNotSupportedError = new OperationNotSupportedError("Schema is not configured for mutations.", operationDefinition.getSourceLocation());
-            CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(
-                new ExecutionResultImpl(Collections.singletonList(mutationNotSupportedError)));
-            executionDispatchCtx.onEnd(resultCompletableFuture, null);
-            return resultCompletableFuture;
-        } else if (operation == SUBSCRIPTION && operationRootType == null) {
-            OperationNotSupportedError subscriptionNotSupportedError = new OperationNotSupportedError("Schema is not configured for subscriptions.", operationDefinition.getSourceLocation());
-            CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(new ExecutionResultImpl(Collections.singletonList(subscriptionNotSupportedError)));
-            executionDispatchCtx.onEnd(resultCompletableFuture, null);
-            return resultCompletableFuture;
+        try {
+            operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
+        } catch (RuntimeException rte) {
+            if (rte instanceof GraphQLError) {
+                CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte)));
+                executionDispatchCtx.onEnd(resultCompletableFuture, null);
+                return resultCompletableFuture;
+            }
+            throw rte;
         }
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
@@ -178,13 +170,26 @@ public class Execution {
         return result;
     }
 
-    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition.Operation operation) {
+    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
+        OperationDefinition.Operation operation = operationDefinition.getOperation();
         if (operation == MUTATION) {
-            return graphQLSchema.getMutationType();
+            GraphQLObjectType mutationType = graphQLSchema.getMutationType();
+            if (mutationType == null) {
+                throw new MissingRootTypeException("Schema is not configured for mutations.", operationDefinition.getSourceLocation());
+            }
+            return mutationType;
         } else if (operation == QUERY) {
-            return graphQLSchema.getQueryType();
+            GraphQLObjectType queryType = graphQLSchema.getQueryType();
+            if (queryType == null) {
+                throw new MissingRootTypeException("Schema does not define the required query root type.", operationDefinition.getSourceLocation());
+            }
+            return queryType;
         } else if (operation == SUBSCRIPTION) {
-            return graphQLSchema.getSubscriptionType();
+            GraphQLObjectType subscriptionType = graphQLSchema.getSubscriptionType();
+            if (subscriptionType == null) {
+                throw new MissingRootTypeException("Schema is not configured for subscriptions.", operationDefinition.getSourceLocation());
+            }
+            return subscriptionType;
         } else {
             return assertShouldNeverHappen("Unhandled case.  An extra operation enum has been added without code support");
         }

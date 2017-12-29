@@ -2,6 +2,7 @@ package graphql
 
 import graphql.execution.ExecutionPath
 import graphql.execution.ExecutionTypeInfo
+import graphql.execution.MissingRootTypeException
 import graphql.execution.NonNullableFieldWasNullError
 import graphql.execution.NonNullableFieldWasNullException
 import graphql.introspection.Introspection
@@ -30,7 +31,7 @@ class GraphQLErrorTest extends Specification {
                         message  : "Validation error of type UnknownType: Test ValidationError",
                 ]
 
-        new OperationNotSupportedError("Mutations are not supported on this schema", null)                                                                |
+        new MissingRootTypeException("Mutations are not supported on this schema", null)               |
                 [
                         message: "Mutations are not supported on this schema",
                 ]
