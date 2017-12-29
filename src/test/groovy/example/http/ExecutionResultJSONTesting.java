@@ -1,14 +1,19 @@
 package example.http;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.InvalidSyntaxError;
-import graphql.MutationNotSupportedError;
+import graphql.OperationNotSupportedError;
 import graphql.SerializationError;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionTypeInfo;
@@ -19,11 +24,6 @@ import graphql.language.SourceLocation;
 import graphql.schema.CoercingSerializeException;
 import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorType;
-
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
@@ -71,7 +71,7 @@ public class ExecutionResultJSONTesting {
         List<GraphQLError> errors = new ArrayList<>();
 
         errors.add(new ValidationError(ValidationErrorType.UnknownType, mkLocations(), "Test ValidationError"));
-        errors.add(new MutationNotSupportedError());
+        errors.add(new OperationNotSupportedError("Mutations are not supported.", null));
         errors.add(new InvalidSyntaxError(mkLocations(), "Not good syntax m'kay"));
         errors.add(new NonNullableFieldWasNullError(new NonNullableFieldWasNullException(mkTypeInfo(), mkPath())));
         errors.add(new SerializationError(mkPath(), new CoercingSerializeException("Bad coercing")));

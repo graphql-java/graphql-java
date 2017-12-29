@@ -266,9 +266,25 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].class == MutationNotSupportedError
+        result.errors[0].class == OperationNotSupportedError
     }
 
+    def "a subscription query against a schema that doesn't support subscriptions should result in a GraphQL error"() {
+        given:
+
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("Query")
+        )
+                .build()
+
+        when:
+        def result = new GraphQL(schema).execute("subscription { doesNotExist }")
+
+        then:
+        result.errors.size() == 1
+        result.errors[0].class == OperationNotSupportedError
+    }
 
     def "query with int literal too large"() {
         given:
