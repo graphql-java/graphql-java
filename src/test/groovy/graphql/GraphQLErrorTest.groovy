@@ -30,7 +30,7 @@ class GraphQLErrorTest extends Specification {
                         message  : "Validation error of type UnknownType: Test ValidationError",
                 ]
 
-        new MutationNotSupportedError()                                                                |
+        new OperationNotSupportedError("Mutations are not supported on this schema", null)                                                                |
                 [
                         message: "Mutations are not supported on this schema",
                 ]

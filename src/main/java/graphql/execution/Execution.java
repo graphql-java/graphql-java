@@ -1,12 +1,19 @@
 package graphql.execution;
 
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.MutationNotSupportedError;
+import graphql.OperationNotSupportedError;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -20,13 +27,6 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
@@ -114,7 +114,14 @@ public class Execution {
         // for the record earlier code has asserted that we have a query type in the schema since the spec says this is
         // ALWAYS required
         if (operation == MUTATION && operationRootType == null) {
-            CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(new ExecutionResultImpl(Collections.singletonList(new MutationNotSupportedError())));
+            OperationNotSupportedError mutationNotSupportedError = new OperationNotSupportedError("Schema is not configured for mutations.", operationDefinition.getSourceLocation());
+            CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(
+                new ExecutionResultImpl(Collections.singletonList(mutationNotSupportedError)));
+            executionDispatchCtx.onEnd(resultCompletableFuture, null);
+            return resultCompletableFuture;
+        } else if (operation == SUBSCRIPTION && operationRootType == null) {
+            OperationNotSupportedError subscriptionNotSupportedError = new OperationNotSupportedError("Schema is not configured for subscriptions.", operationDefinition.getSourceLocation());
+            CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(new ExecutionResultImpl(Collections.singletonList(subscriptionNotSupportedError)));
             executionDispatchCtx.onEnd(resultCompletableFuture, null);
             return resultCompletableFuture;
         }
