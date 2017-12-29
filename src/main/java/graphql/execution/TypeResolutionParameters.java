@@ -1,11 +1,11 @@
 package graphql.execution;
 
-import java.util.Map;
-
 import graphql.language.Field;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
+
+import java.util.Map;
 
 public class TypeResolutionParameters {
 
@@ -15,15 +15,17 @@ public class TypeResolutionParameters {
     private final Object value;
     private final Map<String, Object> argumentValues;
     private final GraphQLSchema schema;
+    private final Object context;
 
     private TypeResolutionParameters(GraphQLInterfaceType graphQLInterfaceType, GraphQLUnionType graphQLUnionType,
-                                     Field field, Object value, Map<String, Object> argumentValues, GraphQLSchema schema) {
+                                     Field field, Object value, Map<String, Object> argumentValues, GraphQLSchema schema, final Object context) {
         this.graphQLInterfaceType = graphQLInterfaceType;
         this.graphQLUnionType = graphQLUnionType;
         this.field = field;
         this.value = value;
         this.argumentValues = argumentValues;
         this.schema = schema;
+        this.context = context;
     }
 
     public GraphQLInterfaceType getGraphQLInterfaceType() {
@@ -54,6 +56,10 @@ public class TypeResolutionParameters {
         return new Builder();
     }
 
+    public Object getContext() {
+        return context;
+    }
+
     public static class Builder {
 
         private Field field;
@@ -62,6 +68,7 @@ public class TypeResolutionParameters {
         private Object value;
         private Map<String, Object> argumentValues;
         private GraphQLSchema schema;
+        private Object context;
 
         public Builder field(Field field) {
             this.field = field;
@@ -93,8 +100,13 @@ public class TypeResolutionParameters {
             return this;
         }
 
+        public Builder context(Object context) {
+            this.context = context;
+            return this;
+        }
+
         public TypeResolutionParameters build() {
-            return new TypeResolutionParameters(graphQLInterfaceType, graphQLUnionType, field, value, argumentValues, schema);
+            return new TypeResolutionParameters(graphQLInterfaceType, graphQLUnionType, field, value, argumentValues, schema, context);
         }
     }
 }

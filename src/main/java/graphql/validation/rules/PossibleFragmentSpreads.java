@@ -1,13 +1,23 @@
 package graphql.validation.rules;
 
 
-import graphql.ShouldNotHappenException;
+import graphql.Assert;
 import graphql.execution.TypeFromAST;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
-import graphql.schema.*;
-import graphql.validation.*;
+import graphql.schema.GraphQLCompositeType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.SchemaUtil;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 import java.util.Collections;
 import java.util.List;
@@ -52,17 +62,15 @@ public class PossibleFragmentSpreads extends AbstractRule {
             return true;
         }
 
-        List<? extends GraphQLType> possibleParentTypes;
-        if (parent instanceof GraphQLObjectType) {
-            possibleParentTypes = Collections.<GraphQLType>singletonList(parent);
-        } else if (parent instanceof GraphQLInterfaceType) {
-            possibleParentTypes = new SchemaUtil().findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) parent);
-        } else if (parent instanceof GraphQLUnionType) {
-            possibleParentTypes = ((GraphQLUnionType) parent).getTypes();
-        } else {
-            throw new ShouldNotHappenException();
-        }
-        List<? extends GraphQLType> possibleConditionTypes;
+        List<? extends GraphQLType> possibleParentTypes = getPossibleType(parent);
+        List<? extends GraphQLType> possibleConditionTypes = getPossibleType(type);
+
+        return !Collections.disjoint(possibleParentTypes, possibleConditionTypes);
+
+    }
+
+    private List<? extends GraphQLType> getPossibleType(GraphQLType type) {
+        List<? extends GraphQLType> possibleConditionTypes = null;
         if (type instanceof GraphQLObjectType) {
             possibleConditionTypes = Collections.singletonList(type);
         } else if (type instanceof GraphQLInterfaceType) {
@@ -70,10 +78,8 @@ public class PossibleFragmentSpreads extends AbstractRule {
         } else if (type instanceof GraphQLUnionType) {
             possibleConditionTypes = ((GraphQLUnionType) type).getTypes();
         } else {
-            throw new ShouldNotHappenException();
+            Assert.assertShouldNeverHappen();
         }
-
-        return !Collections.disjoint(possibleParentTypes, possibleConditionTypes);
-
+        return possibleConditionTypes;
     }
 }

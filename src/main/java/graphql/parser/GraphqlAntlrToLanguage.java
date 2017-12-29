@@ -1,8 +1,8 @@
 package graphql.parser;
 
 
+import graphql.Assert;
 import graphql.Internal;
-import graphql.ShouldNotHappenException;
 import graphql.language.AbstractNode;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -50,6 +50,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
@@ -100,8 +101,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     static class ContextEntry {
-        ContextProperty contextProperty;
-        Object value;
+        final ContextProperty contextProperty;
+        final Object value;
 
         public ContextEntry(ContextProperty contextProperty, Object value) {
             this.contextProperty = contextProperty;
@@ -109,7 +110,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         }
     }
 
-    private Deque<ContextEntry> contextStack = new ArrayDeque<>();
+    private final Deque<ContextEntry> contextStack = new ArrayDeque<>();
 
 
     private void addContextProperty(ContextProperty contextProperty, Object value) {
@@ -140,7 +141,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
                 return contextEntry.value;
             }
         }
-        if (required) throw new RuntimeException("not found" + contextProperty);
+        if (required) {
+            Assert.assertShouldNeverHappen("not found %s", contextProperty);
+        }
         return null;
     }
 
@@ -203,7 +206,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         } else if (operationTypeContext.getText().equals("subscription")) {
             return OperationDefinition.Operation.SUBSCRIPTION;
         } else {
-            throw new RuntimeException("InternalError: unknown operationTypeContext=" + operationTypeContext.getText());
+            return Assert.assertShouldNeverHappen("InternalError: unknown operationTypeContext=%s", operationTypeContext.getText());
         }
     }
 
@@ -717,7 +720,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             newNode(variableReference, ctx);
             return variableReference;
         }
-        throw new ShouldNotHappenException();
+        return Assert.assertShouldNeverHappen();
     }
 
     private Value getValue(GraphqlParser.ValueContext ctx) {
@@ -761,7 +764,55 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             }
             return objectValue;
         }
-        throw new ShouldNotHappenException();
+        return Assert.assertShouldNeverHappen();
+    }
+
+    static String parseString(String string) {
+        StringWriter writer = new StringWriter(string.length() - 2);
+        int end = string.length() - 1;
+        for (int i = 1; i < end; i++) {
+            char c = string.charAt(i);
+            if (c != '\\') {
+                writer.write(c);
+                continue;
+            }
+            char escaped = string.charAt(i + 1);
+            i += 1;
+            switch (escaped) {
+                case '"':
+                    writer.write('"');
+                    continue;
+                case '/':
+                    writer.write('/');
+                    continue;
+                case '\\':
+                    writer.write('\\');
+                    continue;
+                case 'b':
+                    writer.write('\b');
+                    continue;
+                case 'f':
+                    writer.write('\f');
+                    continue;
+                case 'n':
+                    writer.write('\n');
+                    continue;
+                case 'r':
+                    writer.write('\r');
+                    continue;
+                case 't':
+                    writer.write('\t');
+                    continue;
+                case 'u':
+                    String hexStr = string.substring(i + 1, i + 5);
+                    int codepoint = Integer.parseInt(hexStr, 16);
+                    i += 4;
+                    writer.write(codepoint);
+                    continue;
+                default:
+                    Assert.assertShouldNeverHappen();
+            }
+        }
     }
 
     static String quotedString(GraphqlParser.StringValueContext ctx) {

@@ -11,7 +11,7 @@ class NoOpPreparsedDocumentProviderTest extends Specification {
         def documentEntry = new PreparsedDocumentEntry(new Document())
 
         when:
-        def actual = provider.get("{}", { return documentEntry})
+        def actual = provider.get("{}", { return documentEntry })
 
         then:
         actual == documentEntry

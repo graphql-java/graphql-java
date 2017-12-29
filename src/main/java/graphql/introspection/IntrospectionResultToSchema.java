@@ -3,6 +3,7 @@ package graphql.introspection;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.language.Argument;
+import graphql.language.AstValueHelper;
 import graphql.language.Comment;
 import graphql.language.Directive;
 import graphql.language.Document;
@@ -24,12 +25,14 @@ import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.language.Value;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -122,7 +125,7 @@ public class IntrospectionResultToSchema {
             case "SCALAR":
                 return createScalar(type);
             default:
-                return assertShouldNeverHappen("unexpected kind " + kind);
+                return assertShouldNeverHappen("unexpected kind %s", kind);
         }
     }
 
@@ -206,6 +209,13 @@ public class IntrospectionResultToSchema {
 
         ObjectTypeDefinition objectTypeDefinition = new ObjectTypeDefinition((String) input.get("name"));
         objectTypeDefinition.setComments(toComment((String) input.get("description")));
+        if (input.containsKey("interfaces")) {
+            objectTypeDefinition.getImplements().addAll(
+                    ((List<Map<String, Object>>)input.get("interfaces")).stream()
+                            .map(this::createTypeIndirection)
+                            .collect(Collectors.toList())
+            );
+        }
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
 
         objectTypeDefinition.getFieldDefinitions().addAll(createFields(fields));
@@ -250,8 +260,9 @@ public class IntrospectionResultToSchema {
             InputValueDefinition inputValueDefinition = new InputValueDefinition((String) arg.get("name"), argType);
             inputValueDefinition.setComments(toComment((String) arg.get("description")));
 
-            if (arg.get("defaultValue") != null) {
-                StringValue defaultValue = new StringValue((String) arg.get("defaultValue"));
+            String valueLiteral = (String) arg.get("defaultValue");
+            if (valueLiteral != null) {
+                Value defaultValue = AstValueHelper.valueFromAst(valueLiteral);
                 inputValueDefinition.setDefaultValue(defaultValue);
             }
             result.add(inputValueDefinition);
@@ -275,7 +286,7 @@ public class IntrospectionResultToSchema {
             case "LIST":
                 return new ListType(createTypeIndirection((Map<String, Object>) type.get("ofType")));
             default:
-                return assertShouldNeverHappen("Unknown kind " + kind);
+                return assertShouldNeverHappen("Unknown kind %s", kind);
         }
     }
 

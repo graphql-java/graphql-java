@@ -48,8 +48,8 @@ public class FieldCollectorParameters {
 
     public static class Builder {
         private GraphQLSchema graphQLSchema;
-        private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-        private Map<String, Object> variables = new LinkedHashMap<>();
+        private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+        private final Map<String, Object> variables = new LinkedHashMap<>();
         private GraphQLObjectType objectType;
 
         /**

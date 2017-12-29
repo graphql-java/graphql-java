@@ -1,8 +1,8 @@
 package graphql.validation;
 
 
+import graphql.Assert;
 import graphql.Internal;
-import graphql.ShouldNotHappenException;
 import graphql.execution.TypeFromAST;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -45,15 +45,15 @@ import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 
 @Internal
 public class TraversalContext implements DocumentVisitor {
-    GraphQLSchema schema;
-    List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
-    List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
-    List<GraphQLInputType> inputTypeStack = new ArrayList<>();
-    List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
+    final GraphQLSchema schema;
+    final List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
+    final List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
+    final List<GraphQLInputType> inputTypeStack = new ArrayList<>();
+    final List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
     GraphQLDirective directive;
     GraphQLArgument argument;
 
-    SchemaUtil schemaUtil = new SchemaUtil();
+    final SchemaUtil schemaUtil = new SchemaUtil();
 
 
     public TraversalContext(GraphQLSchema graphQLSchema) {
@@ -117,7 +117,7 @@ public class TraversalContext implements DocumentVisitor {
         } else if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
             addOutputType(schema.getSubscriptionType());
         } else {
-            throw new ShouldNotHappenException();
+            Assert.assertShouldNeverHappen();
         }
     }
 
@@ -167,7 +167,8 @@ public class TraversalContext implements DocumentVisitor {
         GraphQLUnmodifiedType objectType = schemaUtil.getUnmodifiedType(getInputType());
         GraphQLInputType inputType = null;
         if (objectType instanceof GraphQLInputObjectType) {
-            GraphQLInputObjectField inputField = ((GraphQLInputObjectType) objectType).getField(objectField.getName());
+            GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) objectType;
+            GraphQLInputObjectField inputField = schema.getFieldVisibility().getFieldDefinition(inputObjectType, objectField.getName());
             if (inputField != null)
                 inputType = inputField.getType();
         }
@@ -284,7 +285,7 @@ public class TraversalContext implements DocumentVisitor {
             return TypeNameMetaFieldDef;
         }
         if (parentType instanceof GraphQLFieldsContainer) {
-            return schema.getFieldVisibility().getFieldDefinition((GraphQLFieldsContainer) parentType,field.getName());
+            return schema.getFieldVisibility().getFieldDefinition((GraphQLFieldsContainer) parentType, field.getName());
         }
         return null;
     }

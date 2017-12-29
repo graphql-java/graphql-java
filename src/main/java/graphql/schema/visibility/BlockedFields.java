@@ -3,6 +3,8 @@ package graphql.schema.visibility;
 import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputFieldsContainer;
+import graphql.schema.GraphQLInputObjectField;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +31,7 @@ public class BlockedFields implements GraphqlFieldVisibility {
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
         return fieldsContainer.getFieldDefinitions().stream()
-                .filter(fd -> !block(mkFQN(fieldsContainer, fd)))
+                .filter(fieldDefinition -> !block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName())))
                 .collect(Collectors.toList());
     }
 
@@ -37,7 +39,25 @@ public class BlockedFields implements GraphqlFieldVisibility {
     public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
         GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(fieldName);
         if (fieldDefinition != null) {
-            if (block(mkFQN(fieldsContainer, fieldDefinition))) {
+            if (block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName()))) {
+                fieldDefinition = null;
+            }
+        }
+        return fieldDefinition;
+    }
+
+    @Override
+    public List<GraphQLInputObjectField> getFieldDefinitions(GraphQLInputFieldsContainer fieldsContainer) {
+        return fieldsContainer.getFieldDefinitions().stream()
+                .filter(fieldDefinition -> !block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public GraphQLInputObjectField getFieldDefinition(GraphQLInputFieldsContainer fieldsContainer, String fieldName) {
+        GraphQLInputObjectField fieldDefinition = fieldsContainer.getFieldDefinition(fieldName);
+        if (fieldDefinition != null) {
+            if (block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName()))) {
                 fieldDefinition = null;
             }
         }
@@ -53,8 +73,8 @@ public class BlockedFields implements GraphqlFieldVisibility {
         return false;
     }
 
-    private String mkFQN(GraphQLFieldsContainer fieldsContainer, GraphQLFieldDefinition fieldDefinition) {
-        return fieldsContainer.getName() + "." + fieldDefinition.getName();
+    private String mkFQN(String containerName, String fieldName) {
+        return containerName + "." + fieldName;
     }
 
     public static Builder newBlock() {

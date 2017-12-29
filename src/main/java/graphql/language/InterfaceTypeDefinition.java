@@ -7,14 +7,20 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class InterfaceTypeDefinition extends AbstractNode implements TypeDefinition {
-    private String name;
+public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition> {
+    private final String name;
     private Description description;
-    private List<FieldDefinition> definitions = new ArrayList<>();
-    private List<Directive> directives = new ArrayList<>();
+    private final List<FieldDefinition> definitions;
+    private final List<Directive> directives;
 
     public InterfaceTypeDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>());
+    }
+
+    public InterfaceTypeDefinition(String name, List<FieldDefinition> definitions, List<Directive> directives) {
         this.name = name;
+        this.definitions = definitions;
+        this.directives = directives;
     }
 
     public List<FieldDefinition> getFieldDefinitions() {
@@ -61,14 +67,16 @@ public class InterfaceTypeDefinition extends AbstractNode implements TypeDefinit
 
         InterfaceTypeDefinition that = (InterfaceTypeDefinition) o;
 
-        if (null == name) {
-            if (null != that.name) return false;
-        } else if (!name.equals(that.name)) {
-            return false;
-        }
-        return true;
+         return NodeUtil.isEqualTo(this.name,that.name) ;
     }
 
+    @Override
+    public InterfaceTypeDefinition deepCopy() {
+        return new InterfaceTypeDefinition(name,
+                deepCopy(definitions),
+                deepCopy(directives)
+        );
+    }
 
     @Override
     public String toString() {

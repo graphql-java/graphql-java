@@ -7,25 +7,30 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class InputValueDefinition extends AbstractNode {
-    private String name;
+public class InputValueDefinition extends AbstractNode<InputValueDefinition> {
+    private final String name;
     private Type type;
     private Value defaultValue;
     private Description description;
-    private List<Directive> directives = new ArrayList<>();
+    private final List<Directive> directives;
 
     public InputValueDefinition(String name) {
-        this(name, null);
+        this(name, null, null, new ArrayList<>());
     }
 
     public InputValueDefinition(String name, Type type) {
-        this(name, type, null);
+        this(name, type, null, new ArrayList<>());
     }
 
     public InputValueDefinition(String name, Type type, Value defaultValue) {
+        this(name, type, defaultValue, new ArrayList<>());
+    }
+
+    public InputValueDefinition(String name, Type type, Value defaultValue, List<Directive> directives) {
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
+        this.directives = directives;
     }
 
     public Type getType() {
@@ -85,14 +90,17 @@ public class InputValueDefinition extends AbstractNode {
 
         InputValueDefinition that = (InputValueDefinition) o;
 
-        if (null == name) {
-            if (null != that.name) return false;
-        } else if (!name.equals(that.name)) {
-            return false;
-        }
-        return true;
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public InputValueDefinition deepCopy() {
+        return new InputValueDefinition(name,
+                deepCopy(type),
+                deepCopy(defaultValue),
+                deepCopy(directives)
+        );
+    }
 
     @Override
     public String toString() {

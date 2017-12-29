@@ -5,7 +5,7 @@ If you are using ``graphql``, you are likely to making queries on a graph of dat
 to implement inefficient code with naive loading of a graph of data.
 
 Using ``java-dataloader`` will help you to make this a more efficient process by both caching and batching requests for that graph of data items.  If ``dataloader``
-has previously see a data item before, it will cached the value and will return it without having to ask for it again.
+has seen a data item before, it will have cached the value and will return it without having to ask for it again.
 
 Imagine we have the StarWars query outlined below.  It asks us to find a hero and their friend's names and their friend's friend's
 names.  It is likely that many of these people will be friends in common.
@@ -25,7 +25,7 @@ names.  It is likely that many of these people will be friends in common.
             }
         }
 
-The result of this query is displayed below. You can see that Han, Leia, Luke and R2-D2 are tight knit bunch of friends and
+The result of this query is displayed below. You can see that Han, Leia, Luke and R2-D2 are a tight knit bunch of friends and
 share many friends in common.
 
 .. code-block:: json
@@ -103,7 +103,7 @@ Here is how you might put this in place:
         registry.register("character", characterDataLoader);
 
         //
-        // this instrumentation implementation will dispatched all the dataloaders
+        // this instrumentation implementation will dispatch all the dataloaders
         // as each level fo the graphql query is executed and hence make batched objects
         // available to the query and the associated DataFetchers
         //
@@ -124,3 +124,40 @@ One thing to note is the above only works if you use `DataLoaderDispatcherInstru
 is called.  If this was not in place, then all the promises to data will never be dispatched ot the batch loader function
 and hence nothing would ever resolve.
 
+Per Request Data Loaders
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you are serving web requests then the data can be specific to the user requesting it. If you have user specific data then you will not want to
+cache data meant for user A to then later give it to user B in a subsequent request.
+
+The scope of your DataLoader instances is important. You might want to create them per web request to
+ensure data is only cached within that web request and no more.
+
+If your data can be shared across web requests then you might want to scope your data loaders so they survive
+longer than the web request say.
+
+But if you are doing per request data loaders then creating a new set of ``GraphQL`` and ``DataLoader`` objects per
+request is super cheap.  Its the ``GraphQLSchema`` creation that can be expensive, especially if you are using graphql SDL parsing.
+
+Structure your code so that the schema is statically held, perhaps in a static variable or in a singleton IoC component but
+build out a new ``GraphQL`` set of objects on each request.
+
+
+.. code-block:: java
+
+        GraphQLSchema staticSchema = staticSchema_Or_MayBeFrom_IoC_Injection();
+
+        DataLoaderRegistry registry = new DataLoaderRegistry();
+        registry.register("character", getCharacterDataLoader());
+
+        DataLoaderDispatcherInstrumentation dispatcherInstrumentation
+                = new DataLoaderDispatcherInstrumentation(registry);
+
+        GraphQL graphQL = GraphQL.newGraphQL(staticSchema)
+                .instrumentation(dispatcherInstrumentation)
+                .build();
+
+        graphQL.execute("{ helloworld }");
+
+        // you can now throw away the GraphQL and hence DataLoaderDispatcherInstrumentation
+        // and DataLoaderRegistry objects since they are really cheap to build per request

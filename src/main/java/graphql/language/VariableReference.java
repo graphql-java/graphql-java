@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VariableReference extends AbstractNode implements Value {
+public class VariableReference extends AbstractNode<VariableReference> implements Value<VariableReference> {
 
     private String name;
 
@@ -32,8 +32,12 @@ public class VariableReference extends AbstractNode implements Value {
 
         VariableReference that = (VariableReference) o;
 
-        return !(name != null ? !name.equals(that.name) : that.name != null);
+        return NodeUtil.isEqualTo(this.name, that.name);
+    }
 
+    @Override
+    public VariableReference deepCopy() {
+        return new VariableReference(name);
     }
 
     @Override

@@ -7,7 +7,11 @@ import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
 import static AstValueHelper.astFromValue
-import static graphql.Scalars.*
+import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLFloat
+import static graphql.Scalars.GraphQLID
+import static graphql.Scalars.GraphQLInt
+import static graphql.Scalars.GraphQLString
 
 class AstValueHelperTest extends Specification {
 
@@ -156,4 +160,17 @@ class AstValueHelperTest extends Specification {
         )
     }
 
+    def 'parse ast literals'() {
+        expect:
+        AstValueHelper.valueFromAst(valueLiteral) in expectedValue
+
+        where:
+        valueLiteral                                  | expectedValue
+        '"s"'                                         | StringValue.class
+        'true'                                        | BooleanValue.class
+        '666'                                         | IntValue.class
+        '666.6'                                       | FloatValue.class
+        '["A", "B", "C"]'                             | ArrayValue.class
+        '{string : "s", integer : 1, boolean : true}' | ObjectValue.class
+    }
 }

@@ -1,12 +1,17 @@
 Welcome to graphql-java
 =======================
 
+.. image:: https://avatars1.githubusercontent.com/u/14289921?s=200&v=4
+    :align: center
+        :height: 100px
+        :alt: graphql-java-logo
+
 
 This is a GraphQL Java implementation based on the `specification <https://github.com/facebook/graphql>`_
 and the JavaScript `reference implementation <https://github.com/graphql/graphql-js>`_.
 
 
-**Status**: Version ``3.0.0`` is released.
+**Status**: Version ``6.0`` is released.
 
 Make sure to check out the `awesome related projects <https://github.com/graphql-java/awesome-graphql-java>`_ built on ``graphql-java``.
 
@@ -44,6 +49,8 @@ graphql-java is licensed under the MIT License.
     getting_started
     schema
     execution
+    subscriptions
+    exceptions
     batching
     instrumentation
     relay

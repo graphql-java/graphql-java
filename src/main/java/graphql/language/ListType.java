@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ListType extends AbstractNode implements Type {
+public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     private Type type;
 
@@ -38,6 +38,10 @@ public class ListType extends AbstractNode implements Type {
         return true;
     }
 
+    @Override
+    public ListType deepCopy() {
+        return new ListType(deepCopy(type));
+    }
 
     @Override
     public String toString() {

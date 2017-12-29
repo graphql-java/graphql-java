@@ -4,10 +4,10 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ObjectField extends AbstractNode {
+public class ObjectField extends AbstractNode<ObjectField> {
 
-    private String name;
-    private Value value;
+    private final String name;
+    private final Value value;
 
     public ObjectField(String name, Value value) {
         this.name = name;
@@ -38,6 +38,11 @@ public class ObjectField extends AbstractNode {
 
         return !(name != null ? !name.equals(that.name) : that.name != null);
 
+    }
+
+    @Override
+    public ObjectField deepCopy() {
+        return new ObjectField(name, deepCopy(this.value));
     }
 
     @Override

@@ -1,5 +1,10 @@
 package graphql.language;
 
 
-public interface Definition extends Node {
+public interface Definition<T extends Definition> extends Node<T> {
+
+    /**
+     * @return a deep copy of this definition
+     */
+    T deepCopy();
 }

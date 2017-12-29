@@ -551,7 +551,6 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
@@ -582,7 +581,6 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
@@ -712,4 +710,57 @@ class QueryTraversalTest extends Specification {
 
     }
 
+    def "#763 handles union types"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                someObject: SomeObject
+            }
+            type SomeObject {
+                someUnionType: SomeUnionType  
+            }
+            
+            union SomeUnionType = TypeX | TypeY
+            
+            type TypeX {
+                field1 : String
+            }
+
+            type TypeY {
+                field2 : String
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {
+            someObject {
+                someUnionType {
+                    __typename
+                    ... on TypeX {
+                        field1
+                    }
+                    ... on TypeY {
+                        field2
+                    }
+                }
+            }
+        }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "someObject" && it.fieldDefinition.type.name == "SomeObject" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "someUnionType" && it.fieldDefinition.type.name == "SomeUnionType" && it.parentType.name == "SomeObject" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "__typename" && it.fieldDefinition.type.wrappedType.name == "String" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "field1" && it.fieldDefinition.type.name == "String" && it.parentType.name == "TypeX" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "field2" && it.fieldDefinition.type.name == "String" && it.parentType.name == "TypeY" })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
 }

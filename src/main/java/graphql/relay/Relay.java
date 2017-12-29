@@ -39,7 +39,7 @@ public class Relay {
 
     public static final String NODE = "Node";
 
-    private GraphQLObjectType pageInfoType = newObject()
+    private final GraphQLObjectType pageInfoType = newObject()
             .name("PageInfo")
             .description("Information about pagination in a connection.")
             .field(newFieldDefinition()
@@ -172,23 +172,39 @@ public class Relay {
                 .build();
     }
 
-
     public GraphQLFieldDefinition mutationWithClientMutationId(String name, String fieldName,
                                                                List<GraphQLInputObjectField> inputFields,
                                                                List<GraphQLFieldDefinition> outputFields,
                                                                DataFetcher dataFetcher) {
+        GraphQLInputObjectField clientMutationIdInputField = newInputObjectField()
+                .name("clientMutationId")
+                .type(GraphQLString)
+                .build();
+        GraphQLFieldDefinition clientMutationIdPayloadField = newFieldDefinition()
+                .name("clientMutationId")
+                .type(GraphQLString)
+                .build();
+
+        return mutation(name, fieldName, addElementToList(inputFields, clientMutationIdInputField),
+                addElementToList(outputFields, clientMutationIdPayloadField), dataFetcher);
+    }
+
+    private static <T> List<T> addElementToList(List<T> list, T element) {
+        ArrayList<T> result = new ArrayList<>(list);
+        result.add(element);
+        return result;
+    }
+
+    public GraphQLFieldDefinition mutation(String name, String fieldName,
+                                           List<GraphQLInputObjectField> inputFields,
+                                           List<GraphQLFieldDefinition> outputFields,
+                                           DataFetcher dataFetcher) {
         GraphQLInputObjectType inputObjectType = newInputObject()
                 .name(name + "Input")
-                .field(newInputObjectField()
-                        .name("clientMutationId")
-                        .type(new GraphQLNonNull(GraphQLString)))
                 .fields(inputFields)
                 .build();
         GraphQLObjectType outputType = newObject()
                 .name(name + "Payload")
-                .field(newFieldDefinition()
-                        .name("clientMutationId")
-                        .type(new GraphQLNonNull(GraphQLString)))
                 .fields(outputFields)
                 .build();
 
@@ -209,8 +225,8 @@ public class Relay {
             this.id = id;
         }
 
-        private String type;
-        private String id;
+        private final String type;
+        private final String id;
 
         public String getType() {
             return type;

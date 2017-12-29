@@ -1,8 +1,8 @@
 package graphql.schema;
 
 
+import graphql.Assert;
 import graphql.AssertException;
-import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.introspection.Introspection;
 
@@ -63,7 +63,7 @@ public class SchemaUtil {
         } else if (root instanceof GraphQLTypeReference) {
             // nothing to do
         } else {
-            throw new RuntimeException("Unknown type " + root);
+            Assert.assertShouldNeverHappen("Unknown type %s", root);
         }
     }
 
@@ -218,9 +218,7 @@ public class SchemaUtil {
     GraphQLType resolveTypeReference(GraphQLType type, Map<String, GraphQLType> typeMap) {
         if (type instanceof GraphQLTypeReference || typeMap.containsKey(type.getName())) {
             GraphQLType resolvedType = typeMap.get(type.getName());
-            if (resolvedType == null) {
-                throw new GraphQLException("type " + type.getName() + " not found in schema");
-            }
+            Assert.assertTrue(resolvedType != null, "type %s not found in schema", type.getName());
             return resolvedType;
         }
         if (type instanceof GraphQLList) {

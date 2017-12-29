@@ -25,7 +25,7 @@ public interface ExecutionResult {
     /**
      * @return a map of extensions or null if there are none
      */
-    Map<Object,Object> getExtensions();
+    Map<Object, Object> getExtensions();
 
 
     /**

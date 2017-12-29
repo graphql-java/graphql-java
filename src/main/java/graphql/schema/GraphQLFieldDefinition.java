@@ -129,7 +129,7 @@ public class GraphQLFieldDefinition {
         private String description;
         private GraphQLOutputType type;
         private DataFetcherFactory<?> dataFetcherFactory;
-        private List<GraphQLArgument> arguments = new ArrayList<>();
+        private final List<GraphQLArgument> arguments = new ArrayList<>();
         private String deprecationReason;
         private boolean isField;
         private FieldDefinition definition;

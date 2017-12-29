@@ -27,11 +27,11 @@ import java.util.Set;
 public class RulesVisitor implements DocumentVisitor {
 
     private final List<AbstractRule> rules = new ArrayList<>();
-    private ValidationContext validationContext;
+    private final ValidationContext validationContext;
     private boolean subVisitor;
-    private List<AbstractRule> rulesVisitingFragmentSpreads = new ArrayList<>();
-    private Map<Node, List<AbstractRule>> rulesToSkipByUntilNode = new IdentityHashMap<>();
-    private Set<AbstractRule> rulesToSkip = new LinkedHashSet<>();
+    private final List<AbstractRule> rulesVisitingFragmentSpreads = new ArrayList<>();
+    private final Map<Node, List<AbstractRule>> rulesToSkipByUntilNode = new IdentityHashMap<>();
+    private final Set<AbstractRule> rulesToSkip = new LinkedHashSet<>();
 
     public RulesVisitor(ValidationContext validationContext, List<AbstractRule> rules) {
         this(validationContext, rules, false);

@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NonNullType extends AbstractNode implements Type {
+public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNullType> {
 
     private Type type;
 
@@ -41,6 +41,11 @@ public class NonNullType extends AbstractNode implements Type {
 
         return true;
 
+    }
+
+    @Override
+    public NonNullType deepCopy() {
+        return new NonNullType(deepCopy(type));
     }
 
     @Override

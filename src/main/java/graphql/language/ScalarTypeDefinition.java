@@ -7,13 +7,18 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class ScalarTypeDefinition extends AbstractNode implements TypeDefinition {
-    private String name;
+public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition> {
+    private final String name;
     private Description description;
-    private List<Directive> directives = new ArrayList<>();
+    private final List<Directive> directives;
 
     public ScalarTypeDefinition(String name) {
+        this(name, new ArrayList<>());
+    }
+
+    public ScalarTypeDefinition(String name, List<Directive> directives) {
         this.name = name;
+        this.directives = directives;
     }
 
     public List<Directive> getDirectives() {
@@ -56,14 +61,13 @@ public class ScalarTypeDefinition extends AbstractNode implements TypeDefinition
 
         ScalarTypeDefinition that = (ScalarTypeDefinition) o;
 
-        if ( null == name ) {
-            if ( null != that.name ) return false;
-        } else if ( !name.equals(that.name) ) {
-            return false;
-        }
-        return true;
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public ScalarTypeDefinition deepCopy() {
+        return new ScalarTypeDefinition(name, deepCopy(directives));
+    }
 
     @Override
     public String toString() {

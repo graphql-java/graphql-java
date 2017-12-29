@@ -1,0 +1,158 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr "Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-14 18:16+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../batching.rst:2
+msgid "Using Dataloader"
+msgstr "使用 Dataloader"
+
+#: ../../batching.rst:4
+msgid ""
+"If you are using ``graphql``, you are likely to making queries on a graph"
+" of data (surprise surprise).  But its easy to implement inefficient code"
+" with naive loading of a graph of data."
+msgstr "使用 ``graphql``, 你很可能会去查询图结构的数据（graph of data ） (这可能是句废话).  如果用简单直接的方法去获取每个field的数据，可能会效率很低。"
+
+#: ../../batching.rst:7
+msgid ""
+"Using ``java-dataloader`` will help you to make this a more efficient "
+"process by both caching and batching requests for that graph of data "
+"items.  If ``dataloader`` has seen a data item before, it will have "
+"cached the value and will return it without having to ask for it again."
+msgstr "使用 ``java-dataloader`` 可以帮助你更有效地缓存和批量化数据加载操作。 ``dataloader``会缓存所有加载过的数据，使再次使用相同数据时，不需要再加载。 "
+
+#: ../../batching.rst:10
+msgid ""
+"Imagine we have the StarWars query outlined below.  It asks us to find a "
+"hero and their friend's names and their friend's friend's names.  It is "
+"likely that many of these people will be friends in common."
+msgstr "假设我们用以下的 StarWars 查询。这查询了一个英雄（ hero）和他朋友的名字，和他朋友的朋友的名字。很多时候，他们有共同的朋友。"
+
+#: ../../batching.rst:28
+msgid ""
+"The result of this query is displayed below. You can see that Han, Leia, "
+"Luke and R2-D2 are a tight knit bunch of friends and share many friends "
+"in common."
+msgstr "下面是查询的结果。你可以看到，Han, Leia, Luke 和 R2-D2 是一群紧密的朋友。他们有很多共同的朋友。"
+
+#: ../../batching.rst:42
+msgid ""
+"A naive implementation would called a `DataFetcher` to retrieved a person"
+" object every time it was invoked."
+msgstr "一个直接的实现是为每个人物对象（person object）调用一次 `DataFetcher` 去获取数据。"
+
+#: ../../batching.rst:44
+msgid ""
+"In this case it would be *15* calls over the network.  Even though the "
+"group of people have a lot of common friends. With `dataloader` you can "
+"make the `graphql` query much more efficient."
+msgstr "这样你需要 *15* 次网络调用 。即使这群有有很多相同的朋友。使用 `dataloader` 可以让 `graphql` 查询更高效。"
+
+#: ../../batching.rst:47
+msgid ""
+"As `graphql` descends each level of the query ( eg as it processes `hero`"
+" and then `friends` and then for each their `friends`), the data loader "
+"is called to \"promise\" to deliver a person object.  At each level "
+"`dataloader.dispatch()` will be called to fire off the batch requests for"
+" that part of the query. With caching turned on (the default) then any "
+"previously returned person will be returned as is for no cost."
+msgstr "因 `graphql` 会批量化每个层级的查询。 ( 如先是 `hero` 之后是 `friends` 之后是他们的 `friends`), Data loader 返回了一个 \" 期约（promise）\"，期约会返回一个 person object.（人物对象）。在查询的每个层级， `dataloader.dispatch()` 方法均会被调用一次，以获取真实的数据。当开启了缓存功能时 (默认开启)，将直接返回之前加载过的 person，而不会再发起一次查询。"
+
+#: ../../batching.rst:52
+msgid ""
+"In the above example there are only *5* unique people mentioned but with "
+"caching and batching retrieval in place their will be only *3* calls to "
+"the batch loader function.  *3* calls over the network or to a database "
+"is much better than *15* calls you will agree."
+msgstr "上例中，共有 *5* 个独立的 people。但当缓存和批量化开启后，只发起了 *3* 次调用 batch loader 方法的查询操作。*3* 次网络或DB访问，当然比 *15* 次牛B多了。【译者补】"
+
+#: ../../batching.rst:55
+msgid ""
+"If you use capabilities like "
+"`java.util.concurrent.CompletableFuture.supplyAsync()` then you can make "
+"it even more efficient by making the the remote calls asynchronous to the"
+" rest of the query.  This will make it even more timely since multiple "
+"calls can happen at once if need be."
+msgstr "如果你使用了如 `java.util.concurrent.CompletableFuture.supplyAsync()` 的异步程序方式 。多个field的远程加载数据就可以并发进行了。.  这可以让查询更快，因一次并发了多个远程调用。"
+
+#: ../../batching.rst:59
+msgid "Here is how you might put this in place:"
+msgstr "下面就是示例代码："
+
+#: ../../batching.rst:121
+msgid "```"
+msgstr ""
+
+#: ../../batching.rst:123
+msgid ""
+"One thing to note is the above only works if you use "
+"`DataLoaderDispatcherInstrumentation` which makes sure "
+"`dataLoader.dispatch()` is called.  If this was not in place, then all "
+"the promises to data will never be dispatched ot the batch loader "
+"function and hence nothing would ever resolve."
+msgstr "需要注意的是，只有你使用了 `DataLoaderDispatcherInstrumentation` ，上面说的才会生效。由它来调用  `dataLoader.dispatch()` 。不然，期约（ promises ） 将不会被执行，就更不会有数据获取了。"
+
+#: ../../batching.rst:128
+msgid "Per Request Data Loaders"
+msgstr "查询范围的 Data Loaders"
+
+#: ../../batching.rst:130
+msgid ""
+"If you are serving web requests then the data can be specific to the user"
+" requesting it. If you have user specific data then you will not want to "
+"cache data meant for user A to then later give it to user B in a "
+"subsequent request."
+msgstr "对于 Web 请求，请求的结果可能会因不同用户而不同的。如果是特定用户的数据，你一定不希望用户A的数据，被用户B查询到。"
+
+#: ../../batching.rst:133
+msgid ""
+"The scope of your DataLoader instances is important. You might want to "
+"create them per web request to ensure data is only cached within that web"
+" request and no more."
+msgstr "所以 DataLoader 实例的范围很重要。这时，你需要对每个 Request 创建一个新的 DataLoader，来保证它只在当前请求中生效。"
+
+#: ../../batching.rst:136
+msgid ""
+"If your data can be shared across web requests then you might want to "
+"scope your data loaders so they survive longer than the web request say."
+msgstr "如果你需要的是不同请求间共享数据，所以你会希望 DataLoader 的生命周期更长。"
+
+#: ../../batching.rst:139
+msgid ""
+"But if you are doing per request data loaders then creating a new set of "
+"``GraphQL`` and ``DataLoader`` objects per request is super cheap.  Its "
+"the ``GraphQLSchema`` creation that can be expensive, especially if you "
+"are using graphql SDL parsing."
+msgstr "但如用你用请求级的 data loaders ，为每个请求创建 ``GraphQL`` and ``DataLoader`` 是花费很少资源的。Its the ``GraphQLSchema`` creation that can be expensive, especially if you are using graphql SDL parsing."
+
+#: ../../batching.rst:142
+msgid ""
+"Structure your code so that the schema is statically held, perhaps in a "
+"static variable or in a singleton IoC component but build out a new "
+"``GraphQL`` set of objects on each request."
+msgstr "i在代码中静态引用 schema 。可以是静态变量或 IoC 单件组件。但每次处理请求时，都需要创建 ``GraphQL`` 对象。"
+
+#~ msgid ""
+#~ "But if you are doing per request"
+#~ " data loaders then creating a new "
+#~ "set of ``GraphQL`` and ``DataLoader`` "
+#~ "objects per request is super cheap.  "
+#~ "Its the ``GraphQLSchema`` creation that "
+#~ "can be expensive, especially if you "
+#~ "are using graphql IDL parsing."
+#~ msgstr ""
+

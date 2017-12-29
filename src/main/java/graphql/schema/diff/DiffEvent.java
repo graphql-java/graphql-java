@@ -73,7 +73,15 @@ public class DiffEvent {
                 '}';
     }
 
+    /**
+     * @deprecated use {@link DiffEvent#apiInfo()} instead
+     */
+    @Deprecated
     public static Builder newInfo() {
+        return new Builder().level(DiffLevel.INFO);
+    }
+
+    public static Builder apiInfo() {
         return new Builder().level(DiffLevel.INFO);
     }
 
@@ -94,7 +102,7 @@ public class DiffEvent {
         TypeKind typeOfType;
         String reasonMsg;
         String fieldName;
-        List<String> components = new ArrayList<>();
+        final List<String> components = new ArrayList<>();
 
         public Builder level(DiffLevel level) {
             this.level = level;

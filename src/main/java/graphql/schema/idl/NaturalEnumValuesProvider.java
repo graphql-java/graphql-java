@@ -5,7 +5,6 @@ import graphql.PublicApi;
 
 /**
  * Simple EnumValuesProvided which maps the GraphQL Enum name to the Java Enum instance.
- *
  */
 @PublicApi
 public class NaturalEnumValuesProvider<T extends Enum<T>> implements EnumValuesProvider {

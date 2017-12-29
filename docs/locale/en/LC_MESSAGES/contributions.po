@@ -1,0 +1,92 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-15 10:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../contributions.rst:2
+msgid "Contributions"
+msgstr ""
+
+#: ../../contributions.rst:4
+msgid "Every contribution to make this project better is welcome: Thank you!"
+msgstr ""
+
+#: ../../contributions.rst:6
+msgid ""
+"In order to make this a pleasant as possible for everybody involved, here"
+" are some tips:"
+msgstr ""
+
+#: ../../contributions.rst:8
+msgid "Respect the [Code of Conduct](#code-of-conduct)"
+msgstr ""
+
+#: ../../contributions.rst:10
+msgid ""
+"Before opening an Issue to report a bug, please try the latest "
+"development version. It can happen that the problem is already solved."
+msgstr ""
+
+#: ../../contributions.rst:12
+msgid ""
+"Please use  Markdown to format your comments properly. If you are not "
+"familiar with that: `Getting started with writing and formatting on "
+"GitHub <https://help.github.com/articles/getting-started-with-writing-"
+"and-formatting-on-github/>`_"
+msgstr ""
+
+#: ../../contributions.rst:14
+msgid ""
+"For Pull Requests: * Here are some `general tips "
+"<https://github.com/blog/1943-how-to-write-the-perfect-pull-request>`_"
+msgstr ""
+
+#: ../../contributions.rst:17
+msgid ""
+"Please be a as focused and clear as possible  and don't mix concerns. "
+"This includes refactorings mixed with bug-fixes/features, see [Open "
+"Source Contribution "
+"Etiquette](http://tirania.org/blog/archive/2010/Dec-31.html)"
+msgstr ""
+
+#: ../../contributions.rst:19
+msgid ""
+"It would be good to add a automatic test. All tests are written in `Spock"
+" <http://spockframework.github.io/spock/docs/1.0/index.html>`_."
+msgstr ""
+
+#: ../../contributions.rst:23
+msgid "Build and test locally"
+msgstr ""
+
+#: ../../contributions.rst:25
+msgid "Just clone the repo and type"
+msgstr ""
+
+#: ../../contributions.rst:31
+msgid "In ``build/libs`` you will find the jar file."
+msgstr ""
+
+#: ../../contributions.rst:33
+msgid "Running the tests:"
+msgstr ""
+
+#: ../../contributions.rst:39
+msgid "Installing in the local Maven repository:"
+msgstr ""
+

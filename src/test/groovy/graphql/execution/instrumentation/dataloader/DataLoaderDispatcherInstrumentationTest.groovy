@@ -1,7 +1,11 @@
 package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionResult
+import graphql.execution.ExecutionContext
+import graphql.execution.ExecutionContextBuilder
+import graphql.execution.ExecutionId
 import graphql.execution.instrumentation.InstrumentationContext
+import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
@@ -24,7 +28,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         }
     }
 
-    def basic_invocation() {
+    def "basic invocation of data fetch dispatch"() {
         given:
 
         final CountingLoader batchLoader = new CountingLoader()
@@ -38,7 +42,14 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
                 .register("c", dlC)
 
         DataLoaderDispatcherInstrumentation dispatcher = new DataLoaderDispatcherInstrumentation(registry)
-        InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginExecutionStrategy(null)
+        def instrumentationState = dispatcher.createState()
+
+        ExecutionContext executionContext = ExecutionContextBuilder.newInstance()
+                .executionId(ExecutionId.generate())
+                .instrumentationState(instrumentationState)
+                .build()
+        def parameters = new InstrumentationDataFetchParameters(executionContext)
+        InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginDataFetchDispatch(parameters)
 
         // cause some activity
         dlA.load("A")
@@ -54,25 +65,5 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
 
         // will be [[A],[B],[C]]
         assert batchLoader.loadedKeys == [["A"], ["B"], ["C"]]
-    }
-
-    void exceptions_wont_cause_dispatches() throws Exception {
-        given:
-        final CountingLoader batchLoader = new CountingLoader()
-
-        DataLoader<Object, Object> dlA = new DataLoader<>(batchLoader)
-        DataLoaderRegistry registry = new DataLoaderRegistry()
-                .register("a", dlA)
-
-        DataLoaderDispatcherInstrumentation dispatcher = new DataLoaderDispatcherInstrumentation(registry)
-        InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginExecutionStrategy(null)
-
-        // cause some activity
-        dlA.load("A")
-
-        context.onEnd(null, new RuntimeException("Should not run"))
-
-        expect:
-        assert batchLoader.invocationCount == 0
     }
 }

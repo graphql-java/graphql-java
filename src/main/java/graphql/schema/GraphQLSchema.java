@@ -16,9 +16,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static java.lang.String.format;
 
 /**
  * The schema represents the combined type system of the graphql engine.  This is how the engine knows
@@ -47,12 +50,12 @@ public class GraphQLSchema {
         this(queryType, mutationType, null, additionalTypes);
     }
 
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary) {
-        this(queryType, mutationType, subscriptionType, dictionary, Collections.emptySet(), DEFAULT_FIELD_VISIBILITY);
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
+        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), DEFAULT_FIELD_VISIBILITY);
     }
 
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> dictionary, Set<GraphQLDirective> directives, GraphqlFieldVisibility fieldVisibility) {
-        assertNotNull(dictionary, "dictionary can't be null");
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphqlFieldVisibility fieldVisibility) {
+        assertNotNull(additionalTypes, "additionalTypes can't be null");
         assertNotNull(queryType, "queryType can't be null");
         assertNotNull(directives, "directives can't be null");
         assertNotNull(fieldVisibility, "fieldVisibility can't be null");
@@ -60,10 +63,10 @@ public class GraphQLSchema {
         this.mutationType = mutationType;
         this.subscriptionType = subscriptionType;
         this.fieldVisibility = fieldVisibility;
-        this.additionalTypes = dictionary;
+        this.additionalTypes = additionalTypes;
         this.directives = new LinkedHashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
         this.directives.addAll(directives);
-        typeMap = new SchemaUtil().allTypes(this, dictionary);
+        typeMap = new SchemaUtil().allTypes(this, additionalTypes);
     }
 
     public Set<GraphQLType> getAdditionalTypes() {
@@ -72,6 +75,24 @@ public class GraphQLSchema {
 
     public GraphQLType getType(String typeName) {
         return typeMap.get(typeName);
+    }
+
+    /**
+     * Called to return a named {@link graphql.schema.GraphQLObjectType} from the schema
+     *
+     * @param typeName the name of the type
+     *
+     * @return a graphql object type or null if there is one
+     *
+     * @throws graphql.GraphQLException if the type is NOT a object type
+     */
+    public GraphQLObjectType getObjectType(String typeName) {
+        GraphQLType graphQLType = typeMap.get(typeName);
+        if (graphQLType != null) {
+            assertTrue(graphQLType instanceof GraphQLObjectType,
+                    format("You have asked for named object type '%s' but its not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
+        }
+        return (GraphQLObjectType) graphQLType;
     }
 
     public List<GraphQLType> getAllTypesAsList() {
@@ -111,6 +132,20 @@ public class GraphQLSchema {
 
     public boolean isSupportingSubscriptions() {
         return subscriptionType != null;
+    }
+
+    /**
+     * This helps you transform the current GraphQLSchema object into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new GraphQLSchema object based on calling build on that builder
+     */
+    public GraphQLSchema transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newSchema(this);
+        builderConsumer.accept(builder);
+        return builder.build();
     }
 
     /**

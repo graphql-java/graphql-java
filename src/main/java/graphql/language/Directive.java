@@ -8,7 +8,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.argumentsByName;
 
-public class Directive extends AbstractNode {
+public class Directive extends AbstractNode<Directive> {
     private final String name;
     private final List<Argument> arguments = new ArrayList<>();
 
@@ -49,10 +49,15 @@ public class Directive extends AbstractNode {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Directive directive = (Directive) o;
+        Directive that = (Directive) o;
 
-        return !(name != null ? !name.equals(directive.name) : directive.name != null);
+        return NodeUtil.isEqualTo(this.name, that.name);
 
+    }
+
+    @Override
+    public Directive deepCopy() {
+        return new Directive(name, deepCopy(arguments));
     }
 
     @Override

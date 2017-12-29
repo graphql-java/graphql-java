@@ -22,7 +22,7 @@ public class ValidationContext {
     private final GraphQLSchema schema;
     private final Document document;
 
-    private TraversalContext traversalContext;
+    private final TraversalContext traversalContext;
     private final Map<String, FragmentDefinition> fragmentDefinitionMap = new LinkedHashMap<>();
 
 

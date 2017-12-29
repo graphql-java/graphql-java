@@ -46,6 +46,9 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
 
         List<Edge<T>> edges = buildEdges();
 
+        ConnectionCursor firstPresliceCursor = edges.get(0).getCursor();
+        ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
+
         int afterOffset = getOffsetFromCursor(environment.getArgument("after"), -1);
         int begin = Math.max(afterOffset, -1) + 1;
         int beforeOffset = getOffsetFromCursor(environment.getArgument("before"), edges.size());
@@ -58,16 +61,19 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
             return emptyConnection();
         }
 
-        Integer first = environment.<Integer>getArgument("first");
-        Integer last = environment.<Integer>getArgument("last");
-
-        ConnectionCursor firstPresliceCursor = edges.get(0).getCursor();
-        ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
+        Integer first = environment.getArgument("first");
+        Integer last = environment.getArgument("last");
 
         if (first != null) {
+            if (first < 0) {
+                throw new InvalidPageSizeException(format("The page size must not be negative: 'first'=%s", first));
+            }
             edges = edges.subList(0, first <= edges.size() ? first : edges.size());
         }
         if (last != null) {
+            if (last < 0) {
+                throw new InvalidPageSizeException(format("The page size must not be negative: 'last'=%s", last));
+            }
             edges = edges.subList(last > edges.size() ? 0 : edges.size() - last, edges.size());
         }
 

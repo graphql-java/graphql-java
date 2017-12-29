@@ -20,12 +20,15 @@ import java.util.function.Supplier;
  *          name
  *          age
  *          weight
+ *          friends {
+ *              name
+ *          }
  *      }
  *  }
  * }
  * </pre>
  *
- * The selection set in the case above consists of the fields "name, age and weight".
+ * The selection set in the case above consists of the fields "name, age, weight, friends and friends/name".
  *
  * You can use this selection set perhaps to "peek" ahead and decide that field values you might need
  * from the underlying data system.  Imagine a SQL system where this might represent the SQL 'projection'
@@ -37,4 +40,29 @@ public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, List
      * @return a map of the fields that represent the selection set
      */
     Map<String, List<Field>> get();
+
+    /**
+     * @return a map of the arguments for each field in the selection set
+     */
+    Map<String, Map<String, Object>> getArguments();
+
+    /**
+     * @return a map of the {@link graphql.schema.GraphQLFieldDefinition}s for each field in the selection set
+     */
+    Map<String, GraphQLFieldDefinition> getDefinitions();
+
+    /**
+     * This will return true if the field selection set matches a specified "glob" pattern matching ie
+     * the glob pattern matching supported by {@link java.nio.file.FileSystem#getPathMatcher}.
+     *
+     * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
+     * match an invoice field with child fields that start with 'customer'.
+     *
+     * @param fieldGlobPattern the glob pattern to match fields against
+     * @return true if the selection set contains these fields
+     *
+     * @see java.nio.file.FileSystem#getPathMatcher(String)
+     */
+    boolean contains(String fieldGlobPattern);
+
 }

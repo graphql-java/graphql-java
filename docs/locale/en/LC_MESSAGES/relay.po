@@ -1,0 +1,66 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-15 10:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../relay.rst:2
+msgid "Relay Support"
+msgstr ""
+
+#: ../../relay.rst:5
+msgid ""
+"Very basic support for `Relay <https://github.com/facebook/relay>`_ is "
+"included."
+msgstr ""
+
+#: ../../relay.rst:7
+msgid ""
+"**Note**: Relay refers here to \"Relay Classic\", there is no support for"
+" \"Relay Modern\"."
+msgstr ""
+
+#: ../../relay.rst:9
+msgid ""
+"Please look at https://github.com/graphql-java/todomvc-relay-java for a "
+"full example project,"
+msgstr ""
+
+#: ../../relay.rst:11
+msgid ""
+"Relay send queries to the GraphQL server as JSON containing a ``query`` "
+"field and a ``variables`` field. The ``query`` field is a JSON string, "
+"and the ``variables`` field is a map of variable definitions. A relay-"
+"compatible server will need to parse this JSON and pass the ``query`` "
+"string to this library as the query and the ``variables`` map as the "
+"third argument to ``execute`` as shown below."
+msgstr ""
+
+#: ../../relay.rst:37
+msgid "Apollo Support"
+msgstr ""
+
+#: ../../relay.rst:39
+msgid ""
+"There is no special support for `Apollo <https://github.com/apollographql"
+"/apollo-client>`_ included: Apollo works with any schema."
+msgstr ""
+
+#: ../../relay.rst:41
+msgid "The Controller example shown above works with Apollo too."
+msgstr ""
+

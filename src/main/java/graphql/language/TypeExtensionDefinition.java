@@ -1,7 +1,6 @@
 package graphql.language;
 
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class TypeExtensionDefinition extends ObjectTypeDefinition {
@@ -13,13 +12,26 @@ public class TypeExtensionDefinition extends ObjectTypeDefinition {
         super(name);
     }
 
+    public TypeExtensionDefinition(String name, List<Type> implementz, List<Directive> directives, List<FieldDefinition> fieldDefinitions) {
+        super(name, implementz, directives, fieldDefinitions);
+    }
+
+    public TypeExtensionDefinition deepCopy() {
+        return new TypeExtensionDefinition(getName(),
+                deepCopy(getImplements()),
+                deepCopy(getDirectives()),
+                deepCopy(getFieldDefinitions())
+        );
+    }
+
+
     @Override
     public String toString() {
         return "TypeExtensionDefinition{" +
-               "name='" + getName() + '\'' +
-               ", implements=" + getImplements() +
-               ", directives=" + getDirectives() +
-               ", fieldDefinitions=" + getFieldDefinitions() +
-               '}';
+                "name='" + getName() + '\'' +
+                ", implements=" + getImplements() +
+                ", directives=" + getDirectives() +
+                ", fieldDefinitions=" + getFieldDefinitions() +
+                '}';
     }
 }

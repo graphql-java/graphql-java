@@ -7,27 +7,26 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class InlineFragment extends AbstractNode implements Selection {
+public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment> {
     private TypeName typeCondition;
-    private List<Directive> directives = new ArrayList<>();
+    private List<Directive> directives;
     private SelectionSet selectionSet;
 
     public InlineFragment() {
-
+        this(null, new ArrayList<>(), null);
     }
 
     public InlineFragment(TypeName typeCondition) {
-        this.typeCondition = typeCondition;
+        this(typeCondition, new ArrayList<>(), null);
+    }
+
+    public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
+        this(typeCondition, new ArrayList<>(), selectionSet);
     }
 
     public InlineFragment(TypeName typeCondition, List<Directive> directives, SelectionSet selectionSet) {
         this.typeCondition = typeCondition;
         this.directives = directives;
-        this.selectionSet = selectionSet;
-    }
-
-    public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
-        this.typeCondition = typeCondition;
         this.selectionSet = selectionSet;
     }
 
@@ -82,9 +81,16 @@ public class InlineFragment extends AbstractNode implements Selection {
         if (o == null || getClass() != o.getClass()) return false;
 
         return true;
-
     }
 
+    @Override
+    public InlineFragment deepCopy() {
+        return new InlineFragment(
+                deepCopy(typeCondition),
+                deepCopy(directives),
+                deepCopy(selectionSet)
+        );
+    }
 
     @Override
     public String toString() {

@@ -1,16 +1,19 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.language.AstPrinter;
+import graphql.language.AstValueHelper;
 import graphql.language.Comment;
 import graphql.language.Description;
-import graphql.language.Node;
 import graphql.language.Document;
+import graphql.language.Node;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
@@ -31,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
@@ -285,8 +287,9 @@ public class SchemaPrinter {
                         .map(GraphQLType::getName)
                         .sorted(Comparator.naturalOrder());
                 out.format("type %s implements %s {\n",
-                    type.getName(),
-                    interfaceNames.collect(joining(", ")));}
+                        type.getName(),
+                        interfaceNames.collect(joining(", ")));
+            }
 
             visibility.getFieldDefinitions(type)
                     .stream()
@@ -308,17 +311,28 @@ public class SchemaPrinter {
             }
             printComments(out, type, "");
             out.format("input %s {\n", type.getName());
-            type.getFieldDefinitions()
+            visibility.getFieldDefinitions(type)
                     .stream()
                     .sorted(Comparator.comparing(GraphQLInputObjectField::getName))
                     .forEach(fd -> {
                         printComments(out, fd, "  ");
-                        out.format("  %s: %s\n",
+                        out.format("  %s: %s",
                                 fd.getName(), typeString(fd.getType()));
+                        Object defaultValue = fd.getDefaultValue();
+                        if (defaultValue != null) {
+                            String astValue = printAst(defaultValue, fd.getType());
+                            out.format(" = %s", astValue);
+                        }
+                        out.format("\n");
                     });
             out.format("}\n\n");
         };
     }
+
+    private static String printAst(Object value, GraphQLInputType type) {
+        return AstPrinter.printAst(AstValueHelper.astFromValue(value, type));
+    }
+
 
     private TypePrinter<GraphQLSchema> schemaPrinter() {
         return (out, type, visibility) -> {
@@ -409,11 +423,7 @@ public class SchemaPrinter {
             Object defaultValue = argument.getDefaultValue();
             if (defaultValue != null) {
                 sb.append(" = ");
-                if (defaultValue instanceof Number) {
-                    sb.append(defaultValue);
-                } else {
-                    sb.append('"').append(defaultValue).append('"');
-                }
+                sb.append(printAst(defaultValue, argument.getType()));
             }
             count++;
         }

@@ -6,20 +6,24 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class EnumTypeDefinition extends AbstractNode implements TypeDefinition {
-    private String name;
+public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition> {
+    private final String name;
     private Description description;
-    private List<EnumValueDefinition> enumValueDefinitions;
-    private List<Directive> directives;
+    private final List<EnumValueDefinition> enumValueDefinitions;
+    private final List<Directive> directives;
 
     public EnumTypeDefinition(String name) {
         this(name, null);
     }
 
     public EnumTypeDefinition(String name, List<Directive> directives) {
+        this(name, new ArrayList<>(), directives);
+    }
+
+    public EnumTypeDefinition(String name, List<EnumValueDefinition> enumValueDefinitions, List<Directive> directives) {
         this.name = name;
         this.directives = (null == directives) ? new ArrayList<>() : directives;
-        this.enumValueDefinitions = new ArrayList<>();
+        this.enumValueDefinitions = enumValueDefinitions;
     }
 
     public List<EnumValueDefinition> getEnumValueDefinitions() {
@@ -67,15 +71,16 @@ public class EnumTypeDefinition extends AbstractNode implements TypeDefinition {
 
         EnumTypeDefinition that = (EnumTypeDefinition) o;
 
-        if (null == name) {
-            if (null != that.name) return false;
-        } else if (!name.equals(that.name)) {
-            return false;
-        }
-        return true;
-
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public EnumTypeDefinition deepCopy() {
+        return new EnumTypeDefinition(name,
+                deepCopy(enumValueDefinitions),
+                deepCopy(directives)
+        );
+    }
 
     @Override
     public String toString() {

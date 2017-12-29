@@ -3,7 +3,11 @@ package graphql.validation.rules;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLNonNull;
-import graphql.validation.*;
+import graphql.validation.AbstractRule;
+import graphql.validation.ValidationContext;
+import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorCollector;
+import graphql.validation.ValidationErrorType;
 
 
 public class VariableDefaultValuesOfCorrectType extends AbstractRule {
@@ -23,7 +27,7 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
             addError(new ValidationError(ValidationErrorType.DefaultForNonNullArgument, variableDefinition.getSourceLocation(), message));
         }
         if (variableDefinition.getDefaultValue() != null
-                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType)) {
+                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema())) {
             String message = String.format("Bad default value %s for type %s", variableDefinition.getDefaultValue(), inputType.getName());
             addError(new ValidationError(ValidationErrorType.BadValueForDefaultArg, variableDefinition.getSourceLocation(), message));
         }

@@ -27,6 +27,8 @@ import graphql.schema.idl.UnionWiringEnvironment
 import graphql.schema.idl.WiringFactory
 import spock.lang.Specification
 
+import java.util.stream.Collectors
+
 class SchemaDiffTest extends Specification {
     private CapturingReporter reporter
     private ChainedReporter chainedReporter
@@ -221,6 +223,26 @@ class SchemaDiffTest extends Specification {
         reporter.breakageCount == 0
     }
 
+    def "additional field"() {
+        DiffSet diffSet = diffSet("schema_with_additional_field.graphqls")
+
+        def diff = new SchemaDiff()
+        diff.diffSchema(diffSet, chainedReporter)
+
+        expect:
+        reporter.breakageCount == 0
+
+        List<DiffEvent> newFieldEvents = reporter.infos.stream()
+                .filter{de -> de.typeName == "Ainur" && de.fieldName == "surname"}
+                .collect(Collectors.toList())
+
+        newFieldEvents.size() == 2
+
+        newFieldEvents[0].level == DiffLevel.INFO
+        newFieldEvents[1].level == DiffLevel.INFO
+        newFieldEvents[1].category == DiffCategory.ADDITION
+    }
+
     def "missing fields on interface"() {
         DiffSet diffSet = diffSet("schema_interface_fields_missing.graphqls")
 
@@ -228,7 +250,7 @@ class SchemaDiffTest extends Specification {
         diff.diffSchema(diffSet, chainedReporter)
 
         expect:
-        reporter.breakageCount == 2 // 2 fields removed
+        reporter.breakageCount == 8 // 2 fields removed from interface, affecting 3 types
         reporter.breakages[0].category == DiffCategory.MISSING
         reporter.breakages[0].typeKind == TypeKind.Interface
 

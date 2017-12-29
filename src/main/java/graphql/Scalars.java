@@ -38,12 +38,20 @@ public class Scalars {
         return input instanceof Number || input instanceof String;
     }
 
+    private static String typeName(Object input) {
+        if (input == null) {
+            return "null";
+        }
+
+        return input.getClass().getSimpleName();
+    }
+
     /**
      * This represents the "Int" type as defined in the graphql specification : http://facebook.github.io/graphql/#sec-Int
      *
      * The Int scalar type represents a signed 32‐bit numeric non‐fractional value.
      */
-    public static GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing<Integer, Integer>() {
+    public static final GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing<Integer, Integer>() {
 
         private Integer convertImpl(Object input) {
             if (input instanceof Integer) {
@@ -69,7 +77,9 @@ public class Scalars {
         public Integer serialize(Object input) {
             Integer result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid value '" + input + "' for Int");
+                throw new CoercingSerializeException(
+                        "Expected type 'Int' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -78,7 +88,9 @@ public class Scalars {
         public Integer parseValue(Object input) {
             Integer result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid value '" + input + "' for Int");
+                throw new CoercingParseValueException(
+                        "Expected type 'Int' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -99,7 +111,7 @@ public class Scalars {
      *
      * Note: The Float type in GraphQL is equivalent to Double in Java. (double precision IEEE 754)
      */
-    public static GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing<Double, Double>() {
+    public static final GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing<Double, Double>() {
 
         private Double convertImpl(Object input) {
             if (isNumberIsh(input)) {
@@ -120,7 +132,9 @@ public class Scalars {
         public Double serialize(Object input) {
             Double result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Float");
+                throw new CoercingSerializeException(
+                        "Expected type 'Float' but was '" + typeName(input) + "'."
+                );
             }
             return result;
 
@@ -130,7 +144,9 @@ public class Scalars {
         public Double parseValue(Object input) {
             Double result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Float");
+                throw new CoercingParseValueException(
+                        "Expected type 'Float' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -150,7 +166,7 @@ public class Scalars {
     /**
      * This represents the "String" type as defined in the graphql specification : http://facebook.github.io/graphql/#sec-String
      */
-    public static GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing<String, String>() {
+    public static final GraphQLScalarType GraphQLString = new GraphQLScalarType("String", "Built-in String", new Coercing<String, String>() {
         @Override
         public String serialize(Object input) {
             return input.toString();
@@ -171,7 +187,7 @@ public class Scalars {
     /**
      * This represents the "Boolean" type as defined in the graphql specification : http://facebook.github.io/graphql/#sec-Boolean
      */
-    public static GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing<Boolean, Boolean>() {
+    public static final GraphQLScalarType GraphQLBoolean = new GraphQLScalarType("Boolean", "Built-in Boolean", new Coercing<Boolean, Boolean>() {
 
         private Boolean convertImpl(Object input) {
             if (input instanceof Boolean) {
@@ -197,7 +213,9 @@ public class Scalars {
         public Boolean serialize(Object input) {
             Boolean result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Boolean");
+                throw new CoercingSerializeException(
+                        "Expected type 'Boolean' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -206,7 +224,9 @@ public class Scalars {
         public Boolean parseValue(Object input) {
             Boolean result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Boolean");
+                throw new CoercingParseValueException(
+                        "Expected type 'Boolean' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -225,7 +245,7 @@ public class Scalars {
      * ID type is serialized in the same way as a String; however, it is not intended to be human‐readable. While it is
      * often numeric, it should always serialize as a String.
      */
-    public static GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing<Object, Object>() {
+    public static final GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing<Object, Object>() {
 
         private String convertImpl(Object input) {
             if (input instanceof String) {
@@ -245,7 +265,9 @@ public class Scalars {
         public String serialize(Object input) {
             String result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for ID");
+                throw new CoercingSerializeException(
+                        "Expected type 'ID' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -254,7 +276,9 @@ public class Scalars {
         public String parseValue(Object input) {
             String result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for ID");
+                throw new CoercingParseValueException(
+                        "Expected type 'ID' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -274,7 +298,7 @@ public class Scalars {
     /**
      * This represents the "Long" type which is a representation of java.lang.Long
      */
-    public static GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new Coercing<Long, Long>() {
+    public static final GraphQLScalarType GraphQLLong = new GraphQLScalarType("Long", "Long type", new Coercing<Long, Long>() {
 
         private Long convertImpl(Object input) {
             if (input instanceof Long) {
@@ -301,7 +325,9 @@ public class Scalars {
         public Long serialize(Object input) {
             Long result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Long");
+                throw new CoercingSerializeException(
+                        "Expected type 'Long' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -310,7 +336,9 @@ public class Scalars {
         public Long parseValue(Object input) {
             Long result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Long");
+                throw new CoercingParseValueException(
+                        "Expected type 'Long' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -337,7 +365,7 @@ public class Scalars {
     /**
      * This represents the "Short" type which is a representation of java.lang.Short
      */
-    public static GraphQLScalarType GraphQLShort = new GraphQLScalarType("Short", "Built-in Short as Int", new Coercing<Short, Short>() {
+    public static final GraphQLScalarType GraphQLShort = new GraphQLScalarType("Short", "Built-in Short as Int", new Coercing<Short, Short>() {
 
         private Short convertImpl(Object input) {
             if (input instanceof Short) {
@@ -364,7 +392,9 @@ public class Scalars {
         public Short serialize(Object input) {
             Short result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Short");
+                throw new CoercingSerializeException(
+                        "Expected type 'Short' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -373,7 +403,9 @@ public class Scalars {
         public Short parseValue(Object input) {
             Short result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Short");
+                throw new CoercingParseValueException(
+                        "Expected type 'Short' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -392,7 +424,7 @@ public class Scalars {
     /**
      * This represents the "Byte" type which is a representation of java.lang.Byte
      */
-    public static GraphQLScalarType GraphQLByte = new GraphQLScalarType("Byte", "Built-in Byte as Int", new Coercing<Byte, Byte>() {
+    public static final GraphQLScalarType GraphQLByte = new GraphQLScalarType("Byte", "Built-in Byte as Int", new Coercing<Byte, Byte>() {
 
         private Byte convertImpl(Object input) {
             if (input instanceof Byte) {
@@ -419,7 +451,9 @@ public class Scalars {
         public Byte serialize(Object input) {
             Byte result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Byte");
+                throw new CoercingSerializeException(
+                        "Expected type 'Byte' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -428,7 +462,9 @@ public class Scalars {
         public Byte parseValue(Object input) {
             Byte result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Byte");
+                throw new CoercingParseValueException(
+                        "Expected type 'Byte' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -448,7 +484,7 @@ public class Scalars {
     /**
      * This represents the "BigInteger" type which is a representation of java.math.BigInteger
      */
-    public static GraphQLScalarType GraphQLBigInteger = new GraphQLScalarType("BigInteger", "Built-in java.math.BigInteger", new Coercing<BigInteger, BigInteger>() {
+    public static final GraphQLScalarType GraphQLBigInteger = new GraphQLScalarType("BigInteger", "Built-in java.math.BigInteger", new Coercing<BigInteger, BigInteger>() {
 
         private BigInteger convertImpl(Object input) {
             if (isNumberIsh(input)) {
@@ -472,7 +508,9 @@ public class Scalars {
         public BigInteger serialize(Object input) {
             BigInteger result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for BigInteger");
+                throw new CoercingSerializeException(
+                        "Expected type 'BigInteger' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -481,7 +519,9 @@ public class Scalars {
         public BigInteger parseValue(Object input) {
             BigInteger result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for BigInteger");
+                throw new CoercingParseValueException(
+                        "Expected type 'BigInteger' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -510,7 +550,7 @@ public class Scalars {
     /**
      * This represents the "BigDecimal" type which is a representation of java.math.BigDecimal
      */
-    public static GraphQLScalarType GraphQLBigDecimal = new GraphQLScalarType("BigDecimal", "Built-in java.math.BigDecimal", new Coercing<BigDecimal, BigDecimal>() {
+    public static final GraphQLScalarType GraphQLBigDecimal = new GraphQLScalarType("BigDecimal", "Built-in java.math.BigDecimal", new Coercing<BigDecimal, BigDecimal>() {
 
         private BigDecimal convertImpl(Object input) {
             if (isNumberIsh(input)) {
@@ -528,7 +568,9 @@ public class Scalars {
         public BigDecimal serialize(Object input) {
             BigDecimal result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for BigDecimal");
+                throw new CoercingSerializeException(
+                        "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -537,7 +579,9 @@ public class Scalars {
         public BigDecimal parseValue(Object input) {
             BigDecimal result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for BigDecimal");
+                throw new CoercingParseValueException(
+                        "Expected type 'BigDecimal' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -563,7 +607,7 @@ public class Scalars {
     /**
      * This represents the "Char" type which is a representation of java.lang.Character
      */
-    public static GraphQLScalarType GraphQLChar = new GraphQLScalarType("Char", "Built-in Char as Character", new Coercing<Character, Character>() {
+    public static final GraphQLScalarType GraphQLChar = new GraphQLScalarType("Char", "Built-in Char as Character", new Coercing<Character, Character>() {
 
         private Character convertImpl(Object input) {
             if (input instanceof String && ((String) input).length() == 1) {
@@ -580,7 +624,9 @@ public class Scalars {
         public Character serialize(Object input) {
             Character result = convertImpl(input);
             if (result == null) {
-                throw new CoercingSerializeException("Invalid input '" + input + "' for Char");
+                throw new CoercingSerializeException(
+                        "Expected type 'Char' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }
@@ -589,7 +635,9 @@ public class Scalars {
         public Character parseValue(Object input) {
             Character result = convertImpl(input);
             if (result == null) {
-                throw new CoercingParseValueException("Invalid input '" + input + "' for Char");
+                throw new CoercingParseValueException(
+                        "Expected type 'Char' but was '" + typeName(input) + "'."
+                );
             }
             return result;
         }

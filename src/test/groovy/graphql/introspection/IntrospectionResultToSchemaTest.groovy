@@ -1,7 +1,9 @@
 package graphql.introspection
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import graphql.ExecutionInput
 import graphql.GraphQL
+import graphql.TestUtil
 import graphql.language.AstPrinter
 import graphql.language.Document
 import graphql.language.EnumTypeDefinition
@@ -34,7 +36,7 @@ class IntrospectionResultToSchemaTest extends Specification {
     }
 
     def "create object"() {
-        def input = """ {
+        def input = ''' {
             "kind": "OBJECT",
             "name": "QueryType",
             "description": null,
@@ -61,7 +63,7 @@ class IntrospectionResultToSchemaTest extends Specification {
                         "name": "String",
                         "ofType": null
                     },
-                    "defaultValue": "bar"
+                    "defaultValue": "\\"bar\\""
                   }
                 ],
                 "type": {
@@ -74,11 +76,15 @@ class IntrospectionResultToSchemaTest extends Specification {
               }
             ],
             "inputFields": null,
-            "interfaces": [],
+            "interfaces": [{
+                    "kind": "INTERFACE",
+                    "name": "Query",
+                    "ofType": null
+                }],
             "enumValues": null,
             "possibleTypes": null
       }
-      """
+      '''
         def parsed = slurp(input)
 
         when:
@@ -87,7 +93,7 @@ class IntrospectionResultToSchemaTest extends Specification {
         def result = astPrinter.printAst(objectTypeDefinition)
 
         then:
-        result == """type QueryType {
+        result == """type QueryType implements Query {
   hero(
   #comment about episode
   episode: Episode
@@ -346,7 +352,7 @@ union Everything = Character | Episode"""
 
         then:
         result == """#input for characters
-CharacterInput {
+input CharacterInput {
   #first name
   firstName: String
   lastName: String
@@ -437,7 +443,7 @@ enum Episode {
 }
 
 #A humanoid creature in the Star Wars universe.
-type Human {
+type Human implements Character {
   #The id of the human.
   id: String!
   #The name of the human.
@@ -451,7 +457,7 @@ type Human {
 }
 
 #A mechanical creature in the Star Wars universe.
-type Droid {
+type Droid implements Character {
   #The id of the droid.
   id: String!
   #The name of the droid.
@@ -533,7 +539,7 @@ type MutationResult {
   success: Boolean
 }
 
-CharacterInput {
+input CharacterInput {
   firstName: String
   lastName: String
   family: Boolean
@@ -551,7 +557,7 @@ CharacterInput {
         when:
         def printedSchema = new SchemaPrinter().print(graphQLSchema)
         def typeRegistry = new SchemaParser().parse(printedSchema)
-        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build();
+        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build()
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
 
         def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
@@ -561,6 +567,86 @@ CharacterInput {
 
         then:
         printedSchema == astPrinterResult
+    }
+
+    def "test argument encoding"() {
+        given:
+        def schemaSpec = '''
+            type OutputType {
+                text : String
+            }
+            
+            type Query {
+                outputField(
+                    inputArg : InputType = {name : "nameViaArg", age : 666}
+                    inputBoolean : Boolean = true
+                    inputInt : Int = 1
+                    inputString : String = "viaArgString"
+                    ) : OutputType
+            }
+            
+            input InputType {
+                age : Int = -1
+                complex : ComplexType = {string : "string", boolean : true,  int : 666}
+                name : String = "defaultName"
+                rocks  : Boolean = true
+            }
+            
+            input ComplexType {
+                boolean : Boolean
+                int : Int
+                string : String
+            }
+            '''
+
+        def schema = TestUtil.schema(schemaSpec)
+        def printedSchema = new SchemaPrinter().print(schema)
+
+        when:
+        StringWriter sw = new StringWriter()
+        def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
+
+        //
+        // round trip the introspection into JSON and then again to ensure
+        // we see any encoding aspects
+        //
+        ObjectMapper objectMapper = new ObjectMapper()
+        objectMapper.writer().writeValue(sw, introspectionResult.data)
+        def json = sw.toString()
+        def roundTripMap = objectMapper.readValue(json, Map.class)
+
+        Document schemaDefinitionDocument = introspectionResultToSchema.createSchemaDefinition(roundTripMap)
+
+        AstPrinter astPrinter = new AstPrinter()
+        def astPrinterResult = astPrinter.printAst(schemaDefinitionDocument)
+
+        def actualSchema = TestUtil.schema(astPrinterResult)
+        def actualPrintedSchema = new SchemaPrinter().print(actualSchema)
+
+        then:
+        printedSchema == actualPrintedSchema
+
+        actualPrintedSchema == '''type OutputType {
+  text: String
+}
+
+type Query {
+  outputField(inputArg: InputType = {age : 666, name : "nameViaArg"}, inputBoolean: Boolean = true, inputInt: Int = 1, inputString: String = "viaArgString"): OutputType
+}
+
+input ComplexType {
+  boolean: Boolean
+  int: Int
+  string: String
+}
+
+input InputType {
+  age: Int = -1
+  complex: ComplexType = {boolean : true, int : 666, string : "string"}
+  name: String = "defaultName"
+  rocks: Boolean = true
+}
+'''
     }
 
     def "doesn't create schemaDefinition if not needed"() {

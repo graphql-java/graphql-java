@@ -14,12 +14,12 @@ import java.util.Set;
 
 public class ArgumentValidationUtil extends ValidationUtil {
 
-    private List<String> argumentNames = new ArrayList<>();
+    private final List<String> argumentNames = new ArrayList<>();
     private Value argumentValue;
     private String errorMessage;
-    private List<Object> arguments = new ArrayList<>();
+    private final List<Object> arguments = new ArrayList<>();
 
-    private String argumentName;
+    private final String argumentName;
 
     public ArgumentValidationUtil(Argument argument) {
         argumentName = argument.getName();
@@ -68,11 +68,10 @@ public class ArgumentValidationUtil extends ValidationUtil {
 
     public String getMessage() {
         StringBuilder argument = new StringBuilder(argumentName);
-        for (String name: argumentNames) {
+        for (String name : argumentNames) {
             if (name.startsWith("[")) {
                 argument.append(name);
-            }
-            else {
+            } else {
                 argument.append(".").append(name);
             }
         }

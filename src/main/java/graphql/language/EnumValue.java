@@ -4,7 +4,7 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EnumValue extends AbstractNode implements Value {
+public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValue> {
 
     private String name;
 
@@ -31,12 +31,15 @@ public class EnumValue extends AbstractNode implements Value {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        EnumValue enumValue = (EnumValue) o;
+        EnumValue that = (EnumValue) o;
 
-        return !(name != null ? !name.equals(enumValue.name) : enumValue.name != null);
-
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public EnumValue deepCopy() {
+        return new EnumValue(name);
+    }
 
     @Override
     public String toString() {

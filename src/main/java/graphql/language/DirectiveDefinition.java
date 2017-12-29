@@ -4,14 +4,20 @@ package graphql.language;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DirectiveDefinition extends AbstractNode implements Definition {
-    private String name;
+public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition> {
+    private final String name;
     private Description description;
-    private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
-    private List<DirectiveLocation> directiveLocations = new ArrayList<>();
+    private final List<InputValueDefinition> inputValueDefinitions;
+    private final List<DirectiveLocation> directiveLocations;
 
     public DirectiveDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>());
+    }
+
+    public DirectiveDefinition(String name, List<InputValueDefinition> inputValueDefinitions, List<DirectiveLocation> directiveLocations) {
         this.name = name;
+        this.inputValueDefinitions = inputValueDefinitions;
+        this.directiveLocations = directiveLocations;
     }
 
     public String getName() {
@@ -49,14 +55,15 @@ public class DirectiveDefinition extends AbstractNode implements Definition {
 
         DirectiveDefinition that = (DirectiveDefinition) o;
 
-        if (null == name) {
-            if (null != that.name) return false;
-        } else if (!name.equals(that.name)) {
-            return false;
-        }
-        return true;
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public DirectiveDefinition deepCopy() {
+        return new DirectiveDefinition(name,
+                deepCopy(inputValueDefinitions),
+                deepCopy(directiveLocations));
+    }
 
     @Override
     public String toString() {

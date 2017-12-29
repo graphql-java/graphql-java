@@ -1,0 +1,125 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-15 10:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../exceptions.rst:2
+msgid "Runtime Exceptions"
+msgstr ""
+
+#: ../../exceptions.rst:5
+msgid ""
+"Runtime exceptions can be thrown by the graphql engine if certain "
+"exceptional situations are encountered.  The following are a list of the "
+"exceptions that can be thrown all the way out of a "
+"``graphql.execute(...)`` call."
+msgstr ""
+
+#: ../../exceptions.rst:8
+msgid ""
+"These are not graphql errors in execution but rather totally unacceptable"
+" conditions in which to execute a graphql query."
+msgstr ""
+
+#: ../../exceptions.rst:10
+msgid "`graphql.schema.CoercingSerializeException`"
+msgstr ""
+
+#: ../../exceptions.rst:12
+msgid ""
+"is thrown when a value cannot be serialised by a Scalar type, for example"
+" a String value being coerced as an Int."
+msgstr ""
+
+#: ../../exceptions.rst:16
+msgid "`graphql.schema.CoercingParseValueException`"
+msgstr ""
+
+#: ../../exceptions.rst:18
+msgid ""
+"is thrown when a value cannot be parsed by a Scalar type, for example a "
+"String input value being parsed as an Int."
+msgstr ""
+
+#: ../../exceptions.rst:22
+msgid "`graphql.execution.UnresolvedTypeException`"
+msgstr ""
+
+#: ../../exceptions.rst:24
+msgid ""
+"is thrown if a  graphql.schema.TypeResolver` fails to provide a concrete "
+"object type given a interface or union type."
+msgstr ""
+
+#: ../../exceptions.rst:28
+msgid "`graphql.execution.NonNullableValueCoercedAsNullException`"
+msgstr ""
+
+#: ../../exceptions.rst:30
+msgid ""
+"is thrown if a non null variable argument is coerced as a null value "
+"during execution."
+msgstr ""
+
+#: ../../exceptions.rst:34
+msgid "`graphql.execution.InputMapDefinesTooManyFieldsException`"
+msgstr ""
+
+#: ../../exceptions.rst:36
+msgid ""
+"is thrown if a map used for an input type object contains more keys than "
+"is defined in that input type."
+msgstr ""
+
+#: ../../exceptions.rst:40
+msgid "`graphql.schema.validation.InvalidSchemaException`"
+msgstr ""
+
+#: ../../exceptions.rst:44
+msgid "is thrown if the schema is not valid when built via"
+msgstr ""
+
+#: ../../exceptions.rst:43
+msgid "graphql.schema.GraphQLSchema.Builder#build()`"
+msgstr ""
+
+#: ../../exceptions.rst:46
+msgid "`graphql.GraphQLException`"
+msgstr ""
+
+#: ../../exceptions.rst:48
+msgid ""
+"is thrown as a general purpose runtime exception, for example if the code"
+" cant access a named field when examining a POJO, it is analogous to a "
+"RuntimeException if you will."
+msgstr ""
+
+#: ../../exceptions.rst:52
+msgid "`graphql.AssertException`"
+msgstr ""
+
+#: ../../exceptions.rst:54
+msgid ""
+"is thrown as a low level code assertion exception for truly unexpected "
+"code conditions, things we assert"
+msgstr ""
+
+#: ../../exceptions.rst:55
+msgid "should never happen in practice."
+msgstr ""
+

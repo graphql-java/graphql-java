@@ -4,9 +4,9 @@ package graphql.language;
 import java.util.Collections;
 import java.util.List;
 
-public class NullValue extends AbstractNode implements Value {
+public class NullValue extends AbstractNode<NullValue> implements Value<NullValue> {
 
-    public static NullValue Null = new NullValue();
+    public static final NullValue Null = new NullValue();
 
     private NullValue() {
     }
@@ -23,6 +23,11 @@ public class NullValue extends AbstractNode implements Value {
 
         return true;
 
+    }
+
+    @Override
+    public NullValue deepCopy() {
+        return this;
     }
 
     @Override

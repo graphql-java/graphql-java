@@ -10,7 +10,7 @@ It does not concern itself about other high level application concerns such as t
 - Data authorisation
 - Data pagination
 - HTTP transfer
-- JSON endoding
+- JSON encoding
 - Code wiring via dependency injection
 
 You need to push these concerns into your business logic layers.

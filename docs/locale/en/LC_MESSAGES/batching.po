@@ -1,0 +1,150 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-15 10:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../batching.rst:2
+msgid "Using Dataloader"
+msgstr ""
+
+#: ../../batching.rst:4
+msgid ""
+"If you are using ``graphql``, you are likely to making queries on a graph"
+" of data (surprise surprise).  But its easy to implement inefficient code"
+" with naive loading of a graph of data."
+msgstr ""
+
+#: ../../batching.rst:7
+msgid ""
+"Using ``java-dataloader`` will help you to make this a more efficient "
+"process by both caching and batching requests for that graph of data "
+"items.  If ``dataloader`` has seen a data item before, it will have "
+"cached the value and will return it without having to ask for it again."
+msgstr ""
+
+#: ../../batching.rst:10
+msgid ""
+"Imagine we have the StarWars query outlined below.  It asks us to find a "
+"hero and their friend's names and their friend's friend's names.  It is "
+"likely that many of these people will be friends in common."
+msgstr ""
+
+#: ../../batching.rst:28
+msgid ""
+"The result of this query is displayed below. You can see that Han, Leia, "
+"Luke and R2-D2 are a tight knit bunch of friends and share many friends "
+"in common."
+msgstr ""
+
+#: ../../batching.rst:42
+msgid ""
+"A naive implementation would called a `DataFetcher` to retrieved a person"
+" object every time it was invoked."
+msgstr ""
+
+#: ../../batching.rst:44
+msgid ""
+"In this case it would be *15* calls over the network.  Even though the "
+"group of people have a lot of common friends. With `dataloader` you can "
+"make the `graphql` query much more efficient."
+msgstr ""
+
+#: ../../batching.rst:47
+msgid ""
+"As `graphql` descends each level of the query ( eg as it processes `hero`"
+" and then `friends` and then for each their `friends`), the data loader "
+"is called to \"promise\" to deliver a person object.  At each level "
+"`dataloader.dispatch()` will be called to fire off the batch requests for"
+" that part of the query. With caching turned on (the default) then any "
+"previously returned person will be returned as is for no cost."
+msgstr ""
+
+#: ../../batching.rst:52
+msgid ""
+"In the above example there are only *5* unique people mentioned but with "
+"caching and batching retrieval in place their will be only *3* calls to "
+"the batch loader function.  *3* calls over the network or to a database "
+"is much better than *15* calls you will agree."
+msgstr ""
+
+#: ../../batching.rst:55
+msgid ""
+"If you use capabilities like "
+"`java.util.concurrent.CompletableFuture.supplyAsync()` then you can make "
+"it even more efficient by making the the remote calls asynchronous to the"
+" rest of the query.  This will make it even more timely since multiple "
+"calls can happen at once if need be."
+msgstr ""
+
+#: ../../batching.rst:59
+msgid "Here is how you might put this in place:"
+msgstr ""
+
+#: ../../batching.rst:121
+msgid "```"
+msgstr ""
+
+#: ../../batching.rst:123
+msgid ""
+"One thing to note is the above only works if you use "
+"`DataLoaderDispatcherInstrumentation` which makes sure "
+"`dataLoader.dispatch()` is called.  If this was not in place, then all "
+"the promises to data will never be dispatched ot the batch loader "
+"function and hence nothing would ever resolve."
+msgstr ""
+
+#: ../../batching.rst:128
+msgid "Per Request Data Loaders"
+msgstr ""
+
+#: ../../batching.rst:130
+msgid ""
+"If you are serving web requests then the data can be specific to the user"
+" requesting it. If you have user specific data then you will not want to "
+"cache data meant for user A to then later give it to user B in a "
+"subsequent request."
+msgstr ""
+
+#: ../../batching.rst:133
+msgid ""
+"The scope of your DataLoader instances is important. You might want to "
+"create them per web request to ensure data is only cached within that web"
+" request and no more."
+msgstr ""
+
+#: ../../batching.rst:136
+msgid ""
+"If your data can be shared across web requests then you might want to "
+"scope your data loaders so they survive longer than the web request say."
+msgstr ""
+
+#: ../../batching.rst:139
+msgid ""
+"But if you are doing per request data loaders then creating a new set of "
+"``GraphQL`` and ``DataLoader`` objects per request is super cheap.  Its "
+"the ``GraphQLSchema`` creation that can be expensive, especially if you "
+"are using graphql SDL parsing."
+msgstr ""
+
+#: ../../batching.rst:142
+msgid ""
+"Structure your code so that the schema is statically held, perhaps in a "
+"static variable or in a singleton IoC component but build out a new "
+"``GraphQL`` set of objects on each request."
+msgstr ""
+

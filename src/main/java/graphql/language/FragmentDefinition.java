@@ -13,28 +13,31 @@ import static graphql.language.NodeUtil.directivesByName;
  * Provided to the DataFetcher, therefore public API
  */
 @PublicApi
-public class FragmentDefinition extends AbstractNode implements Definition {
+public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition> {
 
     private String name;
     private TypeName typeCondition;
-    private List<Directive> directives = new ArrayList<>();
+    private List<Directive> directives;
     private SelectionSet selectionSet;
 
     public FragmentDefinition() {
-
+        this(null, null, new ArrayList<>(), null);
     }
 
     public FragmentDefinition(String name, TypeName typeCondition) {
-        this.name = name;
-        this.typeCondition = typeCondition;
+        this(name, typeCondition, new ArrayList<>(), null);
     }
 
     public FragmentDefinition(String name, TypeName typeCondition, SelectionSet selectionSet) {
-        this.name = name;
-        this.typeCondition = typeCondition;
-        this.selectionSet = selectionSet;
+        this(name, typeCondition, new ArrayList<>(), selectionSet);
     }
 
+    public FragmentDefinition(String name, TypeName typeCondition, List<Directive> directives, SelectionSet selectionSet) {
+        this.name = name;
+        this.typeCondition = typeCondition;
+        this.directives = directives;
+        this.selectionSet = selectionSet;
+    }
 
     public String getName() {
         return name;
@@ -92,10 +95,17 @@ public class FragmentDefinition extends AbstractNode implements Definition {
 
         FragmentDefinition that = (FragmentDefinition) o;
 
-        return !(name != null ? !name.equals(that.name) : that.name != null);
-
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public FragmentDefinition deepCopy() {
+        return new FragmentDefinition(name,
+                deepCopy(typeCondition),
+                deepCopy(directives),
+                deepCopy(selectionSet)
+        );
+    }
 
     @Override
     public String toString() {

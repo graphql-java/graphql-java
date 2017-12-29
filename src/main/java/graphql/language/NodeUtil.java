@@ -18,6 +18,18 @@ import static java.util.function.Function.identity;
 @Internal
 public class NodeUtil {
 
+    public static boolean isEqualTo(String thisStr, String thatStr) {
+        if (null == thisStr) {
+            if (null != thatStr) {
+                return false;
+            }
+        } else if (!thisStr.equals(thatStr)) {
+            return false;
+        }
+        return true;
+    }
+
+
     public static Map<String, Directive> directivesByName(List<Directive> directives) {
         return getByName(directives, Directive::getName);
     }
@@ -65,7 +77,7 @@ public class NodeUtil {
         }
         OperationDefinition operation;
 
-        if (operationName == null) {
+        if (operationName == null || operationName.isEmpty()) {
             operation = operationsByName.values().iterator().next();
         } else {
             operation = operationsByName.get(operationName);

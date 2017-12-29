@@ -10,6 +10,7 @@ import java.util.StringTokenizer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
+import static java.lang.String.format;
 
 
 /**
@@ -18,7 +19,7 @@ import static graphql.Assert.assertTrue;
  */
 @PublicApi
 public class ExecutionPath {
-    private static ExecutionPath ROOT_PATH = new ExecutionPath();
+    private static final ExecutionPath ROOT_PATH = new ExecutionPath();
 
     /**
      * All paths start from here
@@ -60,15 +61,15 @@ public class ExecutionPath {
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
             if ("/".equals(token)) {
-                assertTrue(st.hasMoreTokens(), mkErrMsg(pathString));
+                assertTrue(st.hasMoreTokens(), mkErrMsg(), pathString);
                 path = path.segment(st.nextToken());
             } else if ("[".equals(token)) {
-                assertTrue(st.countTokens() >= 2, mkErrMsg(pathString));
+                assertTrue(st.countTokens() >= 2, mkErrMsg(), pathString);
                 path = path.segment(Integer.parseInt(st.nextToken()));
                 String closingBrace = st.nextToken();
-                assertTrue(closingBrace.equals("]"), mkErrMsg(pathString));
+                assertTrue(closingBrace.equals("]"), mkErrMsg(), pathString);
             } else {
-                throw new AssertException(mkErrMsg(pathString));
+                throw new AssertException(format(mkErrMsg(), pathString));
             }
         }
         return path;
@@ -94,8 +95,8 @@ public class ExecutionPath {
         return path;
     }
 
-    private static String mkErrMsg(String pathString) {
-        return "Invalid path string : '" + pathString + "'";
+    private static String mkErrMsg() {
+        return "Invalid path string : '%s'";
     }
 
     /**

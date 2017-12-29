@@ -7,14 +7,20 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class UnionTypeDefinition extends AbstractNode implements TypeDefinition {
-    private String name;
+public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> implements TypeDefinition<UnionTypeDefinition> {
+    private final String name;
     private Description description;
-    private List<Directive> directives = new ArrayList<>();
-    private List<Type> memberTypes = new ArrayList<>();
+    private final List<Directive> directives;
+    private final List<Type> memberTypes;
 
     public UnionTypeDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>());
+    }
+
+    public UnionTypeDefinition(String name, List<Directive> directives, List<Type> memberTypes) {
         this.name = name;
+        this.directives = directives;
+        this.memberTypes = memberTypes;
     }
 
     public List<Directive> getDirectives() {
@@ -62,14 +68,16 @@ public class UnionTypeDefinition extends AbstractNode implements TypeDefinition 
 
         UnionTypeDefinition that = (UnionTypeDefinition) o;
 
-        if (null == name) {
-            if (null != that.name) return false;
-        } else if (!name.equals(that.name)) {
-            return false;
-        }
-        return true;
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
+    @Override
+    public UnionTypeDefinition deepCopy() {
+        return new UnionTypeDefinition(name,
+                deepCopy(directives),
+                deepCopy(memberTypes)
+        );
+    }
 
     @Override
     public String toString() {

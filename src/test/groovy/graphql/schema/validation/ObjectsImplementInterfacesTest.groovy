@@ -283,4 +283,40 @@ class ObjectsImplementInterfacesTest extends Specification {
         !badErrorCollector.getErrors().isEmpty()
     }
 
+
+    def "field is a non null object"() {
+        given:
+        GraphQLInterfaceType memberInterface = newInterface()
+                .name("TestMemberInterface")
+                .field(newFieldDefinition().name("field").type(GraphQLString).build())
+                .typeResolver({})
+                .build()
+
+        GraphQLObjectType memberInterfaceImpl = newObject()
+                .name("TestMemberInterfaceImpl")
+                .field(newFieldDefinition().name("field").type(GraphQLString).build())
+                .withInterface(memberInterface)
+                .build()
+
+        GraphQLInterfaceType testInterface = newInterface()
+                .name("TestInterface")
+                .field(newFieldDefinition().name("field").type(new GraphQLNonNull(memberInterface)).build())
+                .typeResolver({})
+                .build()
+
+        GraphQLObjectType testInterfaceImpl = newObject()
+                .name("TestInterfaceImpl")
+                .field(newFieldDefinition().name("field").type(new GraphQLNonNull(memberInterfaceImpl)).build())
+                .withInterface(testInterface)
+                .build()
+
+        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
+
+        when:
+        new ObjectsImplementInterfaces().check(testInterfaceImpl, goodErrorCollector)
+
+        then:
+        goodErrorCollector.getErrors().isEmpty()
+    }
+
 }

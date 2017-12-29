@@ -1,0 +1,109 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+msgid ""
+msgstr "Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-11 19:21+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../concerns.rst:2
+msgid "Application concerns"
+msgstr "如何落地应用（Application concerns）"
+
+#: ../../concerns.rst:4
+msgid ""
+"The graphql-java library concentrates on providing an engine for the "
+"execution of queries according to the specification."
+msgstr "graphql-java 引擎主要的关注点是按 GraphQL 规范来执行查询。"
+
+#: ../../concerns.rst:6
+msgid ""
+"It does not concern itself about other high level application concerns "
+"such as the following :"
+msgstr "它本身不关注应用的其它方面，如："
+
+#: ../../concerns.rst:8
+msgid "Database access"
+msgstr "数据库访问"
+
+#: ../../concerns.rst:9
+msgid "Caching data"
+msgstr "缓存数据"
+
+#: ../../concerns.rst:10
+msgid "Data authorisation"
+msgstr "数据权限控制"
+
+#: ../../concerns.rst:11
+msgid "Data pagination"
+msgstr "数据分页"
+
+#: ../../concerns.rst:12
+msgid "HTTP transfer"
+msgstr "HTTP 转换"
+
+#: ../../concerns.rst:13
+msgid "JSON endoding"
+msgstr "JSON 编码"
+
+#: ../../concerns.rst:14
+msgid "Code wiring via dependency injection"
+msgstr "依赖注入的编程方法"
+
+#: ../../concerns.rst:16
+msgid "You need to push these concerns into your business logic layers."
+msgstr "你需要在自己的业务逻辑层中实现这些。"
+
+#: ../../concerns.rst:18
+msgid "The following are great links to read more about this"
+msgstr "下面是一些相关方案的介绍："
+
+#: ../../concerns.rst:20
+msgid "http://graphql.org/learn/serving-over-http/"
+msgstr ""
+
+#: ../../concerns.rst:21
+msgid "http://graphql.org/learn/authorization/"
+msgstr ""
+
+#: ../../concerns.rst:22
+msgid "http://graphql.org/learn/pagination/"
+msgstr ""
+
+#: ../../concerns.rst:23
+msgid "http://graphql.org/learn/caching/"
+msgstr ""
+
+#: ../../concerns.rst:26
+msgid "Context Objects"
+msgstr "上下文对象（Context Objects）"
+
+#: ../../concerns.rst:28
+msgid ""
+"You can pass in a context object during query execution that will allow "
+"you to better invoke that business logic."
+msgstr "为更方便的业务调用，你可以在查询执行中加入Context Object。"
+
+#: ../../concerns.rst:30
+msgid ""
+"For example the edge of your application could be performing user "
+"detection and you need that information inside the graphql execution to "
+"perform authorisation."
+msgstr "例如，你的应用的边界模块可能会做用户识别，然后 GraphQL 查询执行时，你可以想做数据权限控制。"
+
+#: ../../concerns.rst:33
+msgid ""
+"This made up example shows how you can pass yourself information to help "
+"execute your queries."
+msgstr "下面例子演示怎么向你的查询传递信息："
+

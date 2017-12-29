@@ -1,14 +1,11 @@
 package graphql.schema
 
+import graphql.AssertException
 import spock.lang.Specification
 
-import graphql.AssertException
-
-import static graphql.schema.GraphQLObjectType.newObject
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
-
 import static graphql.Scalars.GraphQLString
-
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
 
 class GraphQLObjectTypeTest extends Specification {
 
@@ -17,7 +14,7 @@ class GraphQLObjectTypeTest extends Specification {
         newObject().name("TestObjectType")
                 .field(newFieldDefinition().name("NAME").type(GraphQLString))
                 .field(newFieldDefinition().name("NAME").type(GraphQLString))
-                .build();
+                .build()
         then:
         thrown(AssertException)
     }

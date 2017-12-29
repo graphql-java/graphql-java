@@ -1,0 +1,134 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2017, Brad Baker
+# This file is distributed under the same license as the graphql-java
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2017.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: graphql-java current\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-11-15 10:51+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.5.1\n"
+
+#: ../../subscriptions.rst:2
+msgid "Subscriptions"
+msgstr ""
+
+#: ../../subscriptions.rst:5
+msgid "Subscription Queries"
+msgstr ""
+
+#: ../../subscriptions.rst:7
+msgid ""
+"Graphql subscriptions allow you subscribe to a reactive source and as new"
+" data arrives then a graphql query is applied over that data and the "
+"results are passed on."
+msgstr ""
+
+#: ../../subscriptions.rst:10
+msgid ""
+"See http://graphql.org/blog/subscriptions-in-graphql-and-relay/ for more "
+"general details on graphql subscriptions."
+msgstr ""
+
+#: ../../subscriptions.rst:14
+msgid ""
+"Imagine you have an stock market pricing service and you make a graphql "
+"subscription to it like this"
+msgstr ""
+
+#: ../../subscriptions.rst:27
+msgid ""
+"graphql subscriptions allow a stream of ``ExecutionResult`` objects to be"
+" sent down each time the stock price changes.  The field selection set "
+"will applied to the underlying data and are represented just like any "
+"other graphql query."
+msgstr ""
+
+#: ../../subscriptions.rst:31
+msgid ""
+"What is special is that the initial result of a subscription query is a "
+"reactive-streams ``Publisher`` object which you need to use to get the "
+"future values."
+msgstr ""
+
+#: ../../subscriptions.rst:34
+msgid ""
+"You need to use ``SubscriptionExecutionStrategy`` as your execution "
+"strategy as it has the support for the reactive-streams APIs."
+msgstr ""
+
+#: ../../subscriptions.rst:47
+msgid ""
+"The ``Publisher<ExecutionResult>`` here is the publisher of a stream of "
+"events.  You need to subscribe to this with your processing code which "
+"will look something like the following"
+msgstr ""
+
+#: ../../subscriptions.rst:111
+msgid ""
+"You are now writing reactive-streams code to consume a series of "
+"``ExecutionResults``.  You can see more details on reactive-streams code "
+"here http://www.reactive-streams.org/"
+msgstr ""
+
+#: ../../subscriptions.rst:114
+msgid ""
+"``RxJava`` is a popular implementation of reactive-streams.  Check out "
+"http://reactivex.io/intro.html to find out more about creating Publishers"
+" of data and Subscriptions to that data."
+msgstr ""
+
+#: ../../subscriptions.rst:117
+msgid ""
+"graphql-java only produces a stream of results.  It does not concern "
+"itself with sending these over the network on things like web sockets and"
+" so on.  That is important but not a concern of the base graphql-java "
+"library."
+msgstr ""
+
+#: ../../subscriptions.rst:120
+msgid ""
+"We have put together a basic example of using websockets (backed by "
+"Jetty) with a simulated stock price application that is built using "
+"RxJava."
+msgstr ""
+
+#: ../../subscriptions.rst:123
+msgid ""
+"See https://github.com/graphql-java/graphql-java-subscription-example for"
+" more detailed code on handling network concerns and the like."
+msgstr ""
+
+#: ../../subscriptions.rst:128
+msgid "Subscription Data Fetchers"
+msgstr ""
+
+#: ../../subscriptions.rst:130
+msgid ""
+"The ``DataFetcher`` behind a subscription field is responsible for "
+"creating the ``Publisher`` of data.  The objects return by this Publisher"
+" will be mapped over the graphql query as each arrives and then sent back"
+" out as an execution result."
+msgstr ""
+
+#: ../../subscriptions.rst:133
+msgid "You data fetcher is going to look something like this."
+msgstr ""
+
+#: ../../subscriptions.rst:146
+msgid ""
+"Now the exact details of how you get that stream of events is up to you "
+"and you're reactive code.  graphql-java gives you a way to map the "
+"graphql query fields over that stream of objects just like a standard "
+"graphql query."
+msgstr ""
+

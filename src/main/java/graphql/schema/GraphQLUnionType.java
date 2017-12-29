@@ -92,7 +92,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     public static class Builder {
         private String name;
         private String description;
-        private List<GraphQLOutputType> types = new ArrayList<>();
+        private final List<GraphQLOutputType> types = new ArrayList<>();
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
 
