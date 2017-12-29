@@ -20,7 +20,6 @@ import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLTypeReference
 import graphql.schema.StaticDataFetcher
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
@@ -40,6 +39,7 @@ import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
+import static graphql.schema.GraphQLTypeReference.typeRef
 
 class GraphQLTest extends Specification {
 
@@ -601,7 +601,7 @@ class GraphQLTest extends Specification {
                 .name("Foo")
                 .field(newFieldDefinition()
                 .name("field")
-                .type(new GraphQLTypeReference('Foo'))
+                .type(typeRef('Foo'))
                 .build())
                 .field(newFieldDefinition()
                 .name("scalar")
@@ -645,7 +645,7 @@ class GraphQLTest extends Specification {
                 .name("Foo")
                 .field(newFieldDefinition()
                 .name("field")
-                .type(new GraphQLTypeReference('Foo'))
+                .type(typeRef('Foo'))
                 .build())
                 .field(newFieldDefinition()
                 .name("scalar")
@@ -686,7 +686,7 @@ class GraphQLTest extends Specification {
         given:
         GraphQLObjectType foo = newObject()
                 .name("Foo")
-                .withInterface(new GraphQLTypeReference("Node"))
+                .withInterface(typeRef("Node"))
                 .field(
                 { field ->
                     field
@@ -746,7 +746,7 @@ class GraphQLTest extends Specification {
         given:
         GraphQLObjectType foo = newObject()
                 .name("Foo")
-                .withInterface(new GraphQLTypeReference("Node"))
+                .withInterface(typeRef("Node"))
                 .field(
                 { field ->
                     field
