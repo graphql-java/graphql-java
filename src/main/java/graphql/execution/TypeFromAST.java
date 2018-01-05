@@ -16,11 +16,15 @@ public class TypeFromAST {
 
 
     public static GraphQLType getTypeFromAST(GraphQLSchema schema, Type type) {
+        GraphQLType innerType;
         if (type instanceof ListType) {
-            return new GraphQLList(getTypeFromAST(schema, ((ListType) type).getType()));
+            innerType = getTypeFromAST(schema, ((ListType) type).getType());
+            return innerType != null ? new GraphQLList(innerType) : null;
         } else if (type instanceof NonNullType) {
-            return new GraphQLNonNull(getTypeFromAST(schema, ((NonNullType) type).getType()));
+            innerType = getTypeFromAST(schema, ((NonNullType) type).getType());
+            return innerType != null ? new GraphQLNonNull(innerType) : null;
         }
+
         return schema.getType(((TypeName) type).getName());
     }
 }
