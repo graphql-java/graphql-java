@@ -1,6 +1,9 @@
 package graphql.validation;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.TypeFromAST;
@@ -35,9 +38,6 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.SchemaUtil;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
@@ -139,7 +139,7 @@ public class TraversalContext implements DocumentVisitor {
 
     private void enterImpl(VariableDefinition variableDefinition) {
         GraphQLType type = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
-        addInputType((GraphQLInputType) type);
+        addInputType(type != null ? (GraphQLInputType) type : null);
     }
 
     private void enterImpl(Argument argument) {
