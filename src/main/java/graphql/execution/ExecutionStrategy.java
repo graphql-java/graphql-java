@@ -1,16 +1,5 @@
 package graphql.execution;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.stream.IntStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicSpi;
@@ -40,6 +29,17 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
@@ -301,17 +301,14 @@ public abstract class ExecutionStrategy {
         Field field = parameters.field().get(0);
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
 
         InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteField(
-                new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
+                new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo)
         );
 
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
-
-        ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
-
-        log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), fieldTypeInfo.getPath());
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, fieldTypeInfo);
 
@@ -325,11 +322,12 @@ public abstract class ExecutionStrategy {
                 .path(parameters.path())
                 .build();
 
+        log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), fieldTypeInfo.getPath());
+
         CompletableFuture<ExecutionResult> cf = completeValue(executionContext, newParameters);
         ctx.onEnd(cf, null);
         return cf;
     }
-
 
     /**
      * Called to complete a value for a field based on the type of the field.
@@ -353,7 +351,7 @@ public abstract class ExecutionStrategy {
         GraphQLType fieldType = typeInfo.getType();
 
         if (result == null) {
-            return completedFuture(new ExecutionResultImpl(parameters.nonNullFieldValidator().validate(parameters.path(), null), null));
+            return completeValueForNull(parameters);
         } else if (fieldType instanceof GraphQLList) {
             return completeValueForList(executionContext, parameters, result);
         } else if (fieldType instanceof GraphQLScalarType) {
@@ -361,23 +359,171 @@ public abstract class ExecutionStrategy {
         } else if (fieldType instanceof GraphQLEnumType) {
             return completeValueForEnum(executionContext, parameters, (GraphQLEnumType) fieldType, result);
         }
-
-
+        //
         // when we are here, we have a complex type: Interface, Union or Object
         // and we must go deeper
+        //
+        GraphQLObjectType resolvedObjectType = resolveType(executionContext, parameters, fieldType);
 
-        GraphQLObjectType resolvedType = resolveType(executionContext, parameters, fieldType);
+        return completeValueForObject(executionContext, parameters, resolvedObjectType, result);
+    }
+
+    private CompletableFuture<ExecutionResult> completeValueForNull(ExecutionStrategyParameters parameters) {
+        Object nullValue = parameters.nonNullFieldValidator().validate(parameters.path(), null);
+        return completedFuture(new ExecutionResultImpl(nullValue, null));
+    }
+
+    /**
+     * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
+     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param result           the result to complete, raw result
+     *
+     * @return an {@link ExecutionResult}
+     */
+    protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
+        Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
+        resultIterable = parameters.nonNullFieldValidator().validate(parameters.path(), resultIterable);
+        if (resultIterable == null) {
+            return completedFuture(new ExecutionResultImpl(null, null));
+        }
+        return completeValueForList(executionContext, parameters, resultIterable);
+    }
+
+    /**
+     * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
+     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param iterableValues   the values to complete, can't be null
+     *
+     * @return an {@link ExecutionResult}
+     */
+    protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
+
+        ExecutionTypeInfo typeInfo = parameters.typeInfo();
+        GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
+        GraphQLFieldDefinition fieldDef = parameters.typeInfo().getFieldDefinition();
+
+        InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteFieldList(
+                new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
+        );
+
+        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(iterableValues, (item, index) -> {
+
+            ExecutionPath indexedPath = parameters.path().segment(index);
+
+            ExecutionTypeInfo wrappedTypeInfo = ExecutionTypeInfo.newTypeInfo()
+                    .parentInfo(typeInfo)
+                    .type(fieldType.getWrappedType())
+                    .path(indexedPath)
+                    .fieldDefinition(fieldDef)
+                    .build();
+
+            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedTypeInfo);
+
+            ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
+                    .typeInfo(wrappedTypeInfo)
+                    .fields(parameters.fields())
+                    .nonNullFieldValidator(nonNullableFieldValidator)
+                    .path(indexedPath)
+                    .field(parameters.field())
+                    .source(item)
+                    .build();
+
+            return completeValue(executionContext, newParameters);
+        });
+        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        resultsFuture.whenComplete((results, exception) -> {
+            if (exception != null) {
+                handleNonNullException(executionContext, overallResult, exception);
+                return;
+            }
+            List<Object> completedResults = new ArrayList<>();
+            for (ExecutionResult completedValue : results) {
+                completedResults.add(completedValue.getData());
+            }
+            overallResult.complete(new ExecutionResultImpl(completedResults, null));
+        });
+        ctx.onEnd(overallResult, null);
+        return overallResult;
+    }
+
+    /**
+     * Called to turn an object into a scalar value according to the {@link GraphQLScalarType} by asking that scalar type to coerce the object
+     * into a valid value
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param scalarType       the type of the scalar
+     * @param result           the result to be coerced
+     *
+     * @return an {@link ExecutionResult}
+     */
+    protected CompletableFuture<ExecutionResult> completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
+        Object serialized;
+        try {
+            serialized = scalarType.getCoercing().serialize(result);
+        } catch (CoercingSerializeException e) {
+            serialized = handleCoercionProblem(executionContext, parameters, e);
+        }
+
+        // TODO: fix that: this should not be handled here
+        //6.6.1 http://facebook.github.io/graphql/#sec-Field-entries
+        if (serialized instanceof Double && ((Double) serialized).isNaN()) {
+            serialized = null;
+        }
+        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
+        return completedFuture(new ExecutionResultImpl(serialized, null));
+    }
+
+    /**
+     * Called to turn an object into a enum value according to the {@link GraphQLEnumType} by asking that enum type to coerce the object into a valid value
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param enumType         the type of the enum
+     * @param result           the result to be coerced
+     *
+     * @return an {@link ExecutionResult}
+     */
+    protected CompletableFuture<ExecutionResult> completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
+        Object serialized;
+        try {
+            serialized = enumType.getCoercing().serialize(result);
+        } catch (CoercingSerializeException e) {
+            serialized = handleCoercionProblem(executionContext, parameters, e);
+        }
+        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
+        return completedFuture(new ExecutionResultImpl(serialized, null));
+    }
+
+    /**
+     * Called to turn an java object value into an graphql object value
+     *
+     * @param executionContext   contains the top level execution parameters
+     * @param parameters         contains the parameters holding the fields to be executed and source object
+     * @param resolvedObjectType the resolved object type
+     * @param result             the result to be coerced
+     *
+     * @return an {@link ExecutionResult}
+     */
+    protected CompletableFuture<ExecutionResult> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
+        ExecutionTypeInfo typeInfo = parameters.typeInfo();
 
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())
-                .objectType(resolvedType)
+                .objectType(resolvedObjectType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
 
         Map<String, List<Field>> subFields = fieldCollector.collectFields(collectorParameters, parameters.field());
 
-        ExecutionTypeInfo newTypeInfo = typeInfo.treatAs(resolvedType);
+        ExecutionTypeInfo newTypeInfo = typeInfo.treatAs(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newTypeInfo);
 
         ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
@@ -390,6 +536,14 @@ public abstract class ExecutionStrategy {
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
 
         return executionContext.getQueryStrategy().execute(executionContext, newParameters);
+    }
+
+    @SuppressWarnings("SameReturnValue")
+    private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
+        SerializationError error = new SerializationError(parameters.path(), e);
+        log.warn(error.getMessage(), e);
+        context.addError(error, parameters.path());
+        return null;
     }
 
     /**
@@ -490,81 +644,6 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
-    /**
-     * Called to turn an object into a enum value according to the {@link GraphQLEnumType} by asking that enum type to coerce the object into a valid value
-     *
-     * @param executionContext contains the top level execution parameters
-     * @param parameters       contains the parameters holding the fields to be executed and source object
-     * @param enumType         the type of the enum
-     * @param result           the result to be coerced
-     *
-     * @return an {@link ExecutionResult}
-     */
-    protected CompletableFuture<ExecutionResult> completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
-        Object serialized;
-        try {
-            serialized = enumType.getCoercing().serialize(result);
-        } catch (CoercingSerializeException e) {
-            serialized = handleCoercionProblem(executionContext, parameters, e);
-        }
-        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
-        return completedFuture(new ExecutionResultImpl(serialized, null));
-    }
-
-    /**
-     * Called to turn an object into a scale value according to the {@link GraphQLScalarType} by asking that scalar type to coerce the object
-     * into a valid value
-     *
-     * @param executionContext contains the top level execution parameters
-     * @param parameters       contains the parameters holding the fields to be executed and source object
-     * @param scalarType       the type of the scalar
-     * @param result           the result to be coerced
-     *
-     * @return an {@link ExecutionResult}
-     */
-    protected CompletableFuture<ExecutionResult> completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
-        Object serialized;
-        try {
-            serialized = scalarType.getCoercing().serialize(result);
-        } catch (CoercingSerializeException e) {
-            serialized = handleCoercionProblem(executionContext, parameters, e);
-        }
-
-        // TODO: fix that: this should not be handled here
-        //6.6.1 http://facebook.github.io/graphql/#sec-Field-entries
-        if (serialized instanceof Double && ((Double) serialized).isNaN()) {
-            serialized = null;
-        }
-        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
-        return completedFuture(new ExecutionResultImpl(serialized, null));
-    }
-
-    @SuppressWarnings("SameReturnValue")
-    private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
-        SerializationError error = new SerializationError(parameters.path(), e);
-        log.warn(error.getMessage(), e);
-        context.addError(error, parameters.path());
-        return null;
-    }
-
-    /**
-     * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
-     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
-     *
-     * @param executionContext contains the top level execution parameters
-     * @param parameters       contains the parameters holding the fields to be executed and source object
-     * @param result           the result to complete, raw result
-     *
-     * @return an {@link ExecutionResult}
-     */
-    protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
-        Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
-        resultIterable = parameters.nonNullFieldValidator().validate(parameters.path(), resultIterable);
-        if (resultIterable == null) {
-            return completedFuture(new ExecutionResultImpl(null, null));
-        }
-        return completeValueForList(executionContext, parameters, resultIterable);
-    }
 
     protected Iterable<Object> toIterable(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
         if (result.getClass().isArray() || result instanceof Iterable) {
@@ -579,66 +658,6 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.path(), parameters.typeInfo().getType());
         log.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error, parameters.path());
-    }
-
-    /**
-     * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
-     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
-     *
-     * @param executionContext contains the top level execution parameters
-     * @param parameters       contains the parameters holding the fields to be executed and source object
-     * @param iterableValues   the values to complete, can't be null
-     *
-     * @return an {@link ExecutionResult}
-     */
-    protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
-
-        ExecutionTypeInfo typeInfo = parameters.typeInfo();
-        GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
-        GraphQLFieldDefinition fieldDef = parameters.typeInfo().getFieldDefinition();
-
-        InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteFieldList(
-                new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
-        );
-
-        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(iterableValues, (item, index) -> {
-
-            ExecutionPath indexedPath = parameters.path().segment(index);
-
-            ExecutionTypeInfo wrappedTypeInfo = ExecutionTypeInfo.newTypeInfo()
-                    .parentInfo(typeInfo)
-                    .type(fieldType.getWrappedType())
-                    .path(indexedPath)
-                    .fieldDefinition(fieldDef)
-                    .build();
-
-            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedTypeInfo);
-
-            ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
-                    .typeInfo(wrappedTypeInfo)
-                    .fields(parameters.fields())
-                    .nonNullFieldValidator(nonNullableFieldValidator)
-                    .path(indexedPath)
-                    .field(parameters.field())
-                    .source(item)
-                    .build();
-
-            return completeValue(executionContext, newParameters);
-        });
-        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-        resultsFuture.whenComplete((results, exception) -> {
-            if (exception != null) {
-                handleNonNullException(executionContext, overallResult, exception);
-                return;
-            }
-            List<Object> completedResults = new ArrayList<>();
-            for (ExecutionResult completedValue : results) {
-                completedResults.add(completedValue.getData());
-            }
-            overallResult.complete(new ExecutionResultImpl(completedResults, null));
-        });
-        ctx.onEnd(overallResult, null);
-        return overallResult;
     }
 
 
