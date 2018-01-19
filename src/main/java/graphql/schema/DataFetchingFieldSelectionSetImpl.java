@@ -129,7 +129,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
     }
 
-    private final static String SEP = FileSystems.getDefault().getSeparator();
+    private final static String SEP = "/";
 
 
     private void traverseFields(List<Field> fieldList, GraphQLFieldsContainer parentFieldType, String fieldPrefix) {
