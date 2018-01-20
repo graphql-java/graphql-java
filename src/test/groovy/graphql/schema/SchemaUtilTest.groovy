@@ -67,6 +67,18 @@ class SchemaUtilTest extends Specification {
         then:
         types.keySet() == expected.keySet()
     }
+    
+    def "group all types by implemented interface"() {
+        when:
+        Map<GraphQLType, List<GraphQLObjectType>> byInterface = new SchemaUtil().groupImplementations(starWarsSchema)
+        
+        then:
+        byInterface.size() == 1
+        byInterface[characterInterface].size() == 2
+        byInterface == [
+            (characterInterface): [humanType, droidType]            
+        ]
+    }
 
     def "using reference to input as output results in error"() {
         given:
