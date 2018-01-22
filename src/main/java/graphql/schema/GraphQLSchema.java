@@ -100,8 +100,8 @@ public class GraphQLSchema {
         return (GraphQLObjectType) graphQLType;
     }
     
-    Map<String, GraphQLType> getTypeMap () {
-        return typeMap;
+    public Map<String, GraphQLType> getTypeMap () {
+        return Collections.unmodifiableMap(typeMap);
     }
     
     public List<GraphQLType> getAllTypesAsList() {
