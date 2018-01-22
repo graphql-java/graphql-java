@@ -10,7 +10,7 @@ import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
 import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.Instrumentation
-import graphql.execution.instrumentation.NoOpInstrumentation
+import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -844,7 +844,7 @@ class GraphQLTest extends Specification {
 
     def "graphql copying works as expected"() {
 
-        def instrumentation = new NoOpInstrumentation()
+        def instrumentation = new SimpleInstrumentation()
         def hello = ExecutionId.from("hello")
         def executionIdProvider = new ExecutionIdProvider() {
             @Override
@@ -873,7 +873,7 @@ class GraphQLTest extends Specification {
         when:
 
         // now make some changes
-        def newInstrumentation = new NoOpInstrumentation()
+        def newInstrumentation = new SimpleInstrumentation()
         def goodbye = ExecutionId.from("goodbye")
         def newExecutionIdProvider = new ExecutionIdProvider() {
             @Override

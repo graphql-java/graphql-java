@@ -4,12 +4,11 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.instrumentation.InstrumentationContext
+import graphql.execution.instrumentation.SimpleInstrumentationContext
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.schema.GraphQLSchema
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
-
-import java.util.concurrent.CompletableFuture
 
 class DataLoaderPerformanceTest extends Specification {
 
@@ -84,9 +83,9 @@ class DataLoaderPerformanceTest extends Specification {
         dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
         def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry) {
             @Override
-            InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
+            InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
                 // if we never call super.xxx() then it wont record we are in a list and it wont be efficient
-                return { e, t -> }
+                return new SimpleInstrumentationContext<>()
             }
         }
         GraphQL graphQL = GraphQL

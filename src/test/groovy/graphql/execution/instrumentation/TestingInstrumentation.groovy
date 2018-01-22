@@ -3,7 +3,7 @@ package graphql.execution.instrumentation
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.execution.ExecutionContext
-import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
@@ -11,7 +11,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
 import graphql.language.Document
-import graphql.language.Field
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLSchema
@@ -57,21 +56,9 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
+    InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("data-fetch-dispatch", executionList, throwableList)
-    }
-
-    @Override
-    InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("data-fetch", executionList, throwableList)
-    }
-
-    @Override
-    InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("fields", executionList, throwableList)
+        return new TestingInstrumentContext("execute-operation", executionList, throwableList)
     }
 
     @Override
@@ -87,13 +74,13 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
+    InstrumentationContext<CompletableFuture<ExecutionResult>> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
         return new TestingInstrumentContext("complete-$parameters.field.name", executionList, throwableList)
     }
 
     @Override
-    InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
+    InstrumentationContext<CompletableFuture<ExecutionResult>> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
         return new TestingInstrumentContext("complete-list-$parameters.field.name", executionList, throwableList)
     }

@@ -41,7 +41,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
         when:
-        instrumentationContext.onEnd([new ValidationError(ValidationErrorType.SubSelectionNotAllowed)], null)
+        instrumentationContext.onCompleted([new ValidationError(ValidationErrorType.SubSelectionNotAllowed)], null)
         then:
         0 * queryTraversal._(_)
 
@@ -69,7 +69,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
         when:
-        instrumentationContext.onEnd(null, new RuntimeException())
+        instrumentationContext.onCompleted(null, new RuntimeException())
         then:
         0 * queryTraversal._(_)
 
@@ -95,7 +95,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
         when:
-        instrumentationContext.onEnd(null, null)
+        instrumentationContext.onCompleted(null, null)
         then:
         def e = thrown(AbortExecutionException)
         e.message.contains("maximum query depth exceeded 7 > 6")
@@ -121,7 +121,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
         InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
         when:
-        instrumentationContext.onEnd(null, null)
+        instrumentationContext.onCompleted(null, null)
         then:
         notThrown(Exception)
     }

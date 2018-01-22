@@ -5,7 +5,7 @@ import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionContextBuilder
 import graphql.execution.ExecutionId
 import graphql.execution.instrumentation.InstrumentationContext
-import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
@@ -48,15 +48,15 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .instrumentationState(instrumentationState)
                 .build()
-        def parameters = new InstrumentationDataFetchParameters(executionContext)
-        InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginDataFetchDispatch(parameters)
+        def parameters = new InstrumentationExecuteOperationParameters(executionContext)
+        InstrumentationContext<CompletableFuture<ExecutionResult>> context = dispatcher.beginExecuteOperation(parameters)
 
         // cause some activity
         dlA.load("A")
         dlB.load("B")
         dlC.load("C")
 
-        context.onEnd(null, null)
+        context.onDispatched(null)
 
 
 
