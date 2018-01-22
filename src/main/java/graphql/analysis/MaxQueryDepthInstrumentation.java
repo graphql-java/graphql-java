@@ -10,6 +10,8 @@ import graphql.validation.ValidationError;
 
 import java.util.List;
 
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.*;
+
 /**
  * Prevents execution if the query depth is greater than the specified maxDepth
  */
@@ -24,7 +26,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return SimpleInstrumentationContext.whenCompleted((errors, throwable) -> {
+        return whenCompleted((errors, throwable) -> {
             if ((errors != null && errors.size() > 0) || throwable != null) {
                 return;
             }
