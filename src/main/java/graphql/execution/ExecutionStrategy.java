@@ -254,9 +254,7 @@ public abstract class ExecutionStrategy {
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
             dataFetcherResult.getErrors().stream()
                     .map(relError -> new AbsoluteGraphQLError(parameters, relError))
-                    .forEach(e -> executionContext.addError(e, Optional.ofNullable(e.getPath())
-                            .map(path -> ExecutionPath.fromList(e.getPath()))
-                            .orElse(parameters.path())));
+                    .forEach(executionContext::addError);
             return dataFetcherResult.getData();
         } else {
             return result;
@@ -545,7 +543,7 @@ public abstract class ExecutionStrategy {
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
         SerializationError error = new SerializationError(parameters.path(), e);
         log.warn(error.getMessage(), e);
-        context.addError(error, parameters.path());
+        context.addError(error);
         return null;
     }
 
@@ -682,7 +680,7 @@ public abstract class ExecutionStrategy {
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
         TypeMismatchError error = new TypeMismatchError(parameters.path(), parameters.typeInfo().getType());
         log.warn("{} got {}", error.getMessage(), result.getClass());
-        context.addError(error, parameters.path());
+        context.addError(error);
     }
 
 
