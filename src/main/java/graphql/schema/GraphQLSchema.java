@@ -121,7 +121,7 @@ public class GraphQLSchema {
         List<GraphQLObjectType> implementations = byInterface.get(type);
         return (implementations == null)
             ? Collections.emptyList()
-            : new ArrayList<>(implementations);
+            : Collections.unmodifiableList(implementations);
     }
     
     public GraphQLObjectType getQueryType() {
