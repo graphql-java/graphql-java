@@ -171,7 +171,8 @@ public abstract class ExecutionStrategy {
                 .thenCompose((fetchedValue) ->
                         completeField(executionContext, parameters, fetchedValue));
 
-        result.whenComplete(fieldCtx::onEnd);
+        fieldCtx.onDispatched(result);
+        result.whenComplete(fieldCtx::onCompleted);
         return result;
     }
 
@@ -216,7 +217,8 @@ public abstract class ExecutionStrategy {
 
         InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
-        CompletableFuture<?> fetchedValue;
+
+        CompletableFuture<Object> fetchedValue;
         DataFetcher dataFetcher = fieldDef.getDataFetcher();
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
         ExecutionId executionId = executionContext.getExecutionId();
@@ -232,9 +234,10 @@ public abstract class ExecutionStrategy {
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
         }
+        fetchCtx.onDispatched(fetchedValue);
         return fetchedValue
                 .handle((result, exception) -> {
-                    fetchCtx.onEnd(result, exception);
+                    fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
                         handleFetchingException(executionContext, parameters, field, fieldDef, argumentValues, environment, exception);
                         return null;
@@ -304,8 +307,10 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
         ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
 
-        InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteField(
-                new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo)
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo, fetchedValue);
+        InstrumentationContext<ExecutionResult> ctxCompleteField = instrumentation.beginFieldComplete(
+                instrumentationParams
         );
 
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
@@ -326,7 +331,9 @@ public abstract class ExecutionStrategy {
         log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), fieldTypeInfo.getPath());
 
         CompletableFuture<ExecutionResult> cf = completeValue(executionContext, newParameters);
-        ctx.onEnd(cf, null);
+
+        ctxCompleteField.onDispatched(cf);
+        cf.whenComplete(ctxCompleteField::onCompleted);
         return cf;
     }
 
@@ -409,8 +416,11 @@ public abstract class ExecutionStrategy {
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
         GraphQLFieldDefinition fieldDef = parameters.typeInfo().getFieldDefinition();
 
-        InstrumentationContext<CompletableFuture<ExecutionResult>> ctx = executionContext.getInstrumentation().beginCompleteFieldList(
-                new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
+        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef), iterableValues);
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+
+        InstrumentationContext<ExecutionResult> completeListCtx = instrumentation.beginFieldListComplete(
+                instrumentationParams
         );
 
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(iterableValues, (item, index) -> {
@@ -437,19 +447,24 @@ public abstract class ExecutionStrategy {
 
             return completeValue(executionContext, newParameters);
         });
+
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        completeListCtx.onDispatched(overallResult);
+
         resultsFuture.whenComplete((results, exception) -> {
             if (exception != null) {
-                handleNonNullException(executionContext, overallResult, exception);
+                ExecutionResult executionResult = handleNonNullException(executionContext, overallResult, exception);
+                completeListCtx.onCompleted(executionResult, exception);
                 return;
             }
             List<Object> completedResults = new ArrayList<>();
             for (ExecutionResult completedValue : results) {
                 completedResults.add(completedValue.getData());
             }
-            overallResult.complete(new ExecutionResultImpl(completedResults, null));
+            ExecutionResultImpl executionResult = new ExecutionResultImpl(completedResults, null);
+            overallResult.complete(executionResult);
         });
-        ctx.onEnd(overallResult, null);
+        overallResult.whenComplete(completeListCtx::onCompleted);
         return overallResult;
     }
 
@@ -739,20 +754,24 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    protected void handleNonNullException(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result, Throwable e) {
+    protected ExecutionResult handleNonNullException(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result, Throwable e) {
+        ExecutionResult executionResult = null;
         if (e instanceof NonNullableFieldWasNullException) {
             assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e, result);
             if (!result.isDone()) {
-                result.complete(new ExecutionResultImpl(null, executionContext.getErrors()));
+                executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
+                result.complete(executionResult);
             }
         } else if (e instanceof CompletionException && e.getCause() instanceof NonNullableFieldWasNullException) {
             assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause(), result);
             if (!result.isDone()) {
-                result.complete(new ExecutionResultImpl(null, executionContext.getErrors()));
+                executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
+                result.complete(executionResult);
             }
         } else {
             result.completeExceptionally(e);
         }
+        return executionResult;
     }
 
 

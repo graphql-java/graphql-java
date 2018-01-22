@@ -6,13 +6,12 @@ import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.NoOpInstrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
@@ -24,9 +23,10 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenDispatched;
 
 /**
  * This graphql {@link graphql.execution.instrumentation.Instrumentation} will dispatch
@@ -39,7 +39,7 @@ import java.util.concurrent.CompletableFuture;
  * @see org.dataloader.DataLoader
  * @see org.dataloader.DataLoaderRegistry
  */
-public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
+public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     private static final Logger log = LoggerFactory.getLogger(DataLoaderDispatcherInstrumentation.class);
 
@@ -149,24 +149,19 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginDataFetchDispatch(InstrumentationDataFetchParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         ExecutionStrategy queryStrategy = parameters.getExecutionContext().getQueryStrategy();
         if (!(queryStrategy instanceof AsyncExecutionStrategy)) {
             CallStack callStack = parameters.getInstrumentationState();
             callStack.setAggressivelyBatching(false);
         }
-        return (result, t) -> dispatch();
+        return whenDispatched((result) -> dispatch());
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
-        return super.beginDataFetch(parameters);
-    }
-
-    @Override
-    public InstrumentationContext<Map<String, List<Field>>> beginFields(InstrumentationExecutionStrategyParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        return (result, t) -> dispatchIfNeeded(callStack);
+        return whenDispatched((result) -> dispatchIfNeeded(callStack));
     }
 
     /*
@@ -177,13 +172,13 @@ public class DataLoaderDispatcherInstrumentation extends NoOpInstrumentation {
        https://github.com/graphql-java/graphql-java/issues/760
      */
     @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteFieldList(InstrumentationFieldCompleteParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
         callStack.enterList();
-        return (result, t) -> {
+        return whenDispatched((result) -> {
             callStack.exitList();
             dispatchIfNeeded(callStack);
-        };
+        });
     }
 
     @Override

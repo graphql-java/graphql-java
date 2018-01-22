@@ -36,7 +36,7 @@ The following is a basic custom ``Instrumentation`` that measures overall execut
         }
     }
 
-    class CustomInstrumentation implements Instrumentation {
+    class CustomInstrumentation extends SimpleInstrumentation {
         @Override
         public InstrumentationState createState() {
             //
@@ -49,51 +49,19 @@ The following is a basic custom ``Instrumentation`` that measures overall execut
         @Override
         public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
             long startNanos = System.nanoTime();
-            return (result, throwable) -> {
-
-                CustomInstrumentationState state = parameters.getInstrumentationState();
-                state.recordTiming(parameters.getQuery(), System.nanoTime() - startNanos);
+            return new SimpleInstrumentationContext<ExecutionResult>() {
+                @Override
+                public void onCompleted(ExecutionResult result, Throwable t) {
+                    CustomInstrumentationState state = parameters.getInstrumentationState();
+                    state.recordTiming(parameters.getQuery(), System.nanoTime() - startNanos);
+                }
             };
-        }
-
-        @Override
-        public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-            //
-            // You MUST return a non null object but it does not have to do anything and hence
-            // you use this class to return a no-op object
-            //
-            return new NoOpInstrumentation.NoOpInstrumentationContext<>();
-        }
-
-        @Override
-        public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-            return new NoOpInstrumentation.NoOpInstrumentationContext<>();
-        }
-
-        @Override
-        public InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
-            return new NoOpInstrumentation.NoOpInstrumentationContext<>();
-        }
-
-        @Override
-        public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-            return new NoOpInstrumentation.NoOpInstrumentationContext<>();
-        }
-
-        @Override
-        public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-            return new NoOpInstrumentation.NoOpInstrumentationContext<>();
-        }
-
-        @Override
-        public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-            return new NoOpInstrumentation.NoOpInstrumentationContext<>();
         }
 
         @Override
         public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
             //
-            // this allows you to intercept the data fetcher used ot fetch a field and provide another one, perhaps
+            // this allows you to intercept the data fetcher used to fetch a field and provide another one, perhaps
             // that enforces certain behaviours or has certain side effects on the data
             //
             return dataFetcher;

@@ -10,7 +10,7 @@ import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.Execution
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionPath
-import graphql.execution.instrumentation.NoOpInstrumentation
+import graphql.execution.instrumentation.SimpleInstrumentation
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -307,7 +307,7 @@ class FieldValidationTest extends Specification {
         def execution = new Execution(strategy, strategy, strategy, instrumentation)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, NoOpInstrumentation.INSTANCE.createState())
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, SimpleInstrumentation.INSTANCE.createState())
     }
 
 }

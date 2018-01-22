@@ -46,12 +46,10 @@ class InstrumentationTest extends Specification {
                 "start:validation",
                 "end:validation",
 
-                "start:data-fetch-dispatch",
-                "start:data-fetch",
+                "start:execute-operation",
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
@@ -60,26 +58,21 @@ class InstrumentationTest extends Specification {
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
                 "end:complete-id",
                 "end:field-id",
-                "end:fields",
 
                 "end:execution-strategy",
 
                 "end:complete-hero",
                 "end:field-hero",
-                "end:fields",
 
                 "end:execution-strategy",
 
-                "end:data-fetch",
-
-                "end:data-fetch-dispatch",
+                "end:execute-operation",
                 "end:execution",
         ]
         when:
@@ -132,8 +125,7 @@ class InstrumentationTest extends Specification {
                 "end:parse",
                 "start:validation",
                 "end:validation",
-                "start:data-fetch-dispatch",
-                "start:data-fetch",
+                "start:execute-operation",
                 "start:execution-strategy",
 
                 "start:field-hero",
@@ -147,8 +139,7 @@ class InstrumentationTest extends Specification {
                 "end:field-id",
 
                 "end:execution-strategy",
-                "end:data-fetch",
-                "end:data-fetch-dispatch",
+                "end:execute-operation",
                 "end:execution",
         ]
         when:
@@ -214,7 +205,7 @@ class InstrumentationTest extends Specification {
      * java-dataloader works.  That is calls inside DataFetchers are "batched"
      * until a "dispatch" signal is made.
      */
-    class WaitingInstrumentation extends NoOpInstrumentation {
+    class WaitingInstrumentation extends SimpleInstrumentation {
 
         final AtomicBoolean goSignal = new AtomicBoolean()
 
@@ -223,10 +214,15 @@ class InstrumentationTest extends Specification {
             System.out.println(String.format("t%s setting go signal off", Thread.currentThread().getId()))
             goSignal.set(false)
             return new InstrumentationContext<CompletableFuture<ExecutionResult>>() {
+
                 @Override
-                void onEnd(CompletableFuture<ExecutionResult> result, Throwable t) {
+                void onDispatched(CompletableFuture<CompletableFuture<ExecutionResult>> result) {
                     System.out.println(String.format("t%s setting go signal on", Thread.currentThread().getId()))
                     goSignal.set(true)
+                }
+
+                @Override
+                void onCompleted(CompletableFuture<ExecutionResult> result, Throwable t) {
                 }
             }
         }

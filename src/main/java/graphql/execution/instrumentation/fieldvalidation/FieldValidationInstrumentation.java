@@ -5,8 +5,8 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.NoOpInstrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 
 import java.util.List;
 
@@ -22,7 +22,7 @@ import static graphql.Assert.assertNotNull;
  * @see FieldValidation
  */
 @PublicApi
-public class FieldValidationInstrumentation extends NoOpInstrumentation {
+public class FieldValidationInstrumentation extends SimpleInstrumentation {
 
     private final FieldValidation fieldValidation;
 
@@ -36,12 +36,12 @@ public class FieldValidationInstrumentation extends NoOpInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
 
         List<GraphQLError> errors = FieldValidationSupport.validateFieldsAndArguments(fieldValidation, parameters.getExecutionContext());
         if (errors != null && !errors.isEmpty()) {
             throw new AbortExecutionException(errors);
         }
-        return super.beginDataFetch(parameters);
+        return super.beginExecuteOperation(parameters);
     }
 }

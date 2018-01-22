@@ -6,12 +6,9 @@ import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.NoOpInstrumentation.NoOpInstrumentationContext;
-import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.validation.ValidationError;
@@ -22,12 +19,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
+
 /**
  * This {@link Instrumentation} implementation uses {@link TracingSupport} to
  * capture tracing information and puts it into the {@link ExecutionResult}
  */
 @PublicApi
-public class TracingInstrumentation implements Instrumentation {
+public class TracingInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationState createState() {
@@ -50,40 +49,20 @@ public class TracingInstrumentation implements Instrumentation {
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         TracingSupport tracingSupport = parameters.getInstrumentationState();
         TracingSupport.TracingContext ctx = tracingSupport.beginField(parameters.getEnvironment());
-        return (result, t) -> ctx.onEnd();
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        return new NoOpInstrumentationContext<>();
+        return whenCompleted((result, t) -> ctx.onEnd());
     }
 
     @Override
     public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
         TracingSupport tracingSupport = parameters.getInstrumentationState();
         TracingSupport.TracingContext ctx = tracingSupport.beginParse();
-        return (result, t) -> ctx.onEnd();
+        return whenCompleted((result, t) -> ctx.onEnd());
     }
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         TracingSupport tracingSupport = parameters.getInstrumentationState();
         TracingSupport.TracingContext ctx = tracingSupport.beginValidation();
-        return (result, t) -> ctx.onEnd();
-    }
-
-    @Override
-    public InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return new NoOpInstrumentationContext<>();
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
-        return new NoOpInstrumentationContext<>();
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        return new NoOpInstrumentationContext<>();
+        return whenCompleted((result, t) -> ctx.onEnd());
     }
 }

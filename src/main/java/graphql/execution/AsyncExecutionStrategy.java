@@ -36,11 +36,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext);
+        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
-        InstrumentationContext<CompletableFuture<ExecutionResult>> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
-
-        InstrumentationContext<Map<String, List<Field>>> beginFieldsCtx = instrumentation.beginFields(instrumentationParameters);
+        InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
         Map<String, List<Field>> fields = parameters.fields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
@@ -55,12 +53,13 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             CompletableFuture<ExecutionResult> future = resolveField(executionContext, newParameters);
             futures.add(future);
         }
-        beginFieldsCtx.onEnd(fields, null);
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        executionStrategyCtx.onDispatched(overallResult);
+
         Async.each(futures).whenComplete(handleResults(executionContext, fieldNames, overallResult));
 
-        executionStrategyCtx.onEnd(overallResult, null);
+        overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
     }
 

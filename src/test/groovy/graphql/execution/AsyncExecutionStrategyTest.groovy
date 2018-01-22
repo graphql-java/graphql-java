@@ -1,7 +1,7 @@
 package graphql.execution
 
 import graphql.ErrorType
-import graphql.execution.instrumentation.NoOpInstrumentation
+import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
@@ -74,7 +74,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .instrumentation(NoOpInstrumentation.INSTANCE)
+                .instrumentation(SimpleInstrumentation.INSTANCE)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -112,7 +112,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .instrumentation(NoOpInstrumentation.INSTANCE)
+                .instrumentation(SimpleInstrumentation.INSTANCE)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -152,7 +152,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .instrumentation(NoOpInstrumentation.INSTANCE)
+                .instrumentation(SimpleInstrumentation.INSTANCE)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -191,7 +191,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .instrumentation(NoOpInstrumentation.INSTANCE)
+                .instrumentation(SimpleInstrumentation.INSTANCE)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
