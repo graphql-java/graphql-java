@@ -10,8 +10,10 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -32,7 +34,8 @@ public class ExecutionContextBuilder {
     private OperationDefinition operationDefinition;
     private Map<String, Object> variables = new HashMap<>();
     private Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
-    private Map<String, GraphQLError> errors = new LinkedHashMap<>();
+    private Map<String, GraphQLError> perFieldErrors = new LinkedHashMap<>();
+    private List<GraphQLError> otherErrors = new ArrayList<>();
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -71,7 +74,8 @@ public class ExecutionContextBuilder {
         operationDefinition = other.getOperationDefinition();
         variables = new HashMap<>(other.getVariables());
         fragmentsByName = new HashMap<>(other.getFragmentsByName());
-        errors = new LinkedHashMap<>(other.getErrorMap());
+        perFieldErrors = new LinkedHashMap<>(other.getPerFieldErrorMap());
+        otherErrors = new ArrayList<>(other.getOtherErrors());
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -140,7 +144,7 @@ public class ExecutionContextBuilder {
     }
 
     public ExecutionContextBuilder errors(Map<String, GraphQLError> errors) {
-        this.errors = errors;
+        this.perFieldErrors = errors;
         return this;
     }
 
@@ -162,6 +166,7 @@ public class ExecutionContextBuilder {
                 variables,
                 context,
                 root,
-                errors);
+                perFieldErrors,
+                otherErrors);
     }
 }
