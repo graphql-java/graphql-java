@@ -12,7 +12,6 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
-import graphql.schema.SchemaUtil;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationError;
@@ -74,7 +73,7 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (type instanceof GraphQLObjectType) {
             possibleConditionTypes = Collections.singletonList(type);
         } else if (type instanceof GraphQLInterfaceType) {
-            possibleConditionTypes = new SchemaUtil().findImplementations(getValidationContext().getSchema(), (GraphQLInterfaceType) type);
+            possibleConditionTypes = getValidationContext().getSchema().getImplementations((GraphQLInterfaceType)type);
         } else if (type instanceof GraphQLUnionType) {
             possibleConditionTypes = ((GraphQLUnionType) type).getTypes();
         } else {

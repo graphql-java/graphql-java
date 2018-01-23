@@ -1,3 +1,9 @@
+# Purpose of This Fork
+We've started our GraphQL integration about 2+ years ago.
+Over time we have improved basic algorithms (~10X), added Visitor pattern to GraphQL AST nodes and GrapjQL type system, abstracted out tree traversal from tree processing logic.
+
+We believe in the power of the community and therefore we are looking to provide our contributions through this fork back to the original code base to make GraphQL better
+
 # graphql-java
 
 [![Join the chat at https://gitter.im/graphql-java/graphql-java](https://badges.gitter.im/graphql-java/graphql-java.svg)](https://gitter.im/graphql-java/graphql-java?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)

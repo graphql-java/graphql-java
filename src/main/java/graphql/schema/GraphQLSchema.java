@@ -40,6 +40,7 @@ public class GraphQLSchema {
     private final Set<GraphQLType> additionalTypes;
     private final Set<GraphQLDirective> directives;
     private final GraphqlFieldVisibility fieldVisibility;
+    private final Map<GraphQLOutputType, List<GraphQLObjectType>> byInterface;
 
 
     public GraphQLSchema(GraphQLObjectType queryType) {
@@ -59,6 +60,9 @@ public class GraphQLSchema {
         assertNotNull(queryType, "queryType can't be null");
         assertNotNull(directives, "directives can't be null");
         assertNotNull(fieldVisibility, "fieldVisibility can't be null");
+        
+        SchemaUtil schemaUtil = new SchemaUtil();
+        
         this.queryType = queryType;
         this.mutationType = mutationType;
         this.subscriptionType = subscriptionType;
@@ -66,7 +70,8 @@ public class GraphQLSchema {
         this.additionalTypes = additionalTypes;
         this.directives = new LinkedHashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
         this.directives.addAll(directives);
-        typeMap = new SchemaUtil().allTypes(this, additionalTypes);
+        this.typeMap = schemaUtil.allTypes(this, additionalTypes);
+        this.byInterface = schemaUtil.groupImplementations(this);
     }
 
     public Set<GraphQLType> getAdditionalTypes() {
@@ -94,11 +99,31 @@ public class GraphQLSchema {
         }
         return (GraphQLObjectType) graphQLType;
     }
-
+    
+    public Map<String, GraphQLType> getTypeMap () {
+        return Collections.unmodifiableMap(typeMap);
+    }
+    
     public List<GraphQLType> getAllTypesAsList() {
         return new ArrayList<>(typeMap.values());
     }
 
+    /**
+     * Introduced to replace costly {@link graphql.schema.SchemaUtil#findImplementations(graphql.schema.GraphQLSchema, graphql.schema.GraphQLInterfaceType)}
+     * method in order to avoid redundant indexing operation of O(n^2) complexity during query execution.
+     * Indexing is performed at Schema creation by {@link graphql.schema.SchemaUtil#groupImplementations(graphql.schema.GraphQLSchema)}
+     * This method just obtains results, which brings the complexity down to O(1)
+     * 
+     * @param type interface type to obtain implementations of.
+     * @return list of types implementing provided interface
+     */
+    public List<GraphQLObjectType> getImplementations (GraphQLInterfaceType type) {
+        List<GraphQLObjectType> implementations = byInterface.get(type);
+        return (implementations == null)
+            ? Collections.emptyList()
+            : Collections.unmodifiableList(implementations);
+    }
+    
     public GraphQLObjectType getQueryType() {
         return queryType;
     }
