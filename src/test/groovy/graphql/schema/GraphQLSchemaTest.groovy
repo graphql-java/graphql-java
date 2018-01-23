@@ -6,7 +6,24 @@ import graphql.TestUtil
 import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
 
+import static graphql.StarWarsSchema.characterInterface
+import static graphql.StarWarsSchema.droidType
+import static graphql.StarWarsSchema.humanType
+import static graphql.StarWarsSchema.starWarsSchema
+
 class GraphQLSchemaTest extends Specification {
+
+    def "getImplementations works as expected"() {
+        when:
+        List<GraphQLObjectType> objectTypes = starWarsSchema.getImplementations(characterInterface)
+
+        then:
+        objectTypes.size() == 2
+        objectTypes == [
+                humanType, droidType
+        ]
+
+    }
 
     def "#698 interfaces copied as expected"() {
 

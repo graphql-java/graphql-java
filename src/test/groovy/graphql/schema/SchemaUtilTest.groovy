@@ -70,13 +70,13 @@ class SchemaUtilTest extends Specification {
     
     def "group all types by implemented interface"() {
         when:
-        Map<GraphQLType, List<GraphQLObjectType>> byInterface = new SchemaUtil().groupImplementations(starWarsSchema)
+        Map<String, List<GraphQLObjectType>> byInterface = new SchemaUtil().groupImplementations(starWarsSchema)
         
         then:
         byInterface.size() == 1
-        byInterface[characterInterface].size() == 2
+        byInterface[characterInterface.getName()].size() == 2
         byInterface == [
-            (characterInterface): [humanType, droidType]            
+            (characterInterface.getName()): [humanType, droidType]
         ]
     }
 
