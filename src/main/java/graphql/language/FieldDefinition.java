@@ -10,6 +10,7 @@ import static graphql.language.NodeUtil.directivesByName;
 public class FieldDefinition extends AbstractNode<FieldDefinition> {
     private final String name;
     private Type type;
+    private Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
 
@@ -38,6 +39,14 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> {
 
     public String getName() {
         return name;
+    }
+
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
@@ -73,7 +82,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> {
 
         FieldDefinition that = (FieldDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+         return NodeUtil.isEqualTo(this.name,that.name) ;
     }
 
     @Override

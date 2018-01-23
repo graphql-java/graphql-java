@@ -9,6 +9,7 @@ import static graphql.language.NodeUtil.directivesByName;
 
 public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition> {
     private final String name;
+    private Description description;
     private final List<FieldDefinition> definitions;
     private final List<Directive> directives;
 
@@ -43,6 +44,14 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         return name;
     }
 
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
@@ -58,7 +67,7 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
 
         InterfaceTypeDefinition that = (InterfaceTypeDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+         return NodeUtil.isEqualTo(this.name,that.name) ;
     }
 
     @Override

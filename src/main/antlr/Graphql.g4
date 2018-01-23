@@ -62,26 +62,34 @@ typeCondition : 'on' typeName;
 name: NAME | FRAGMENT | QUERY | MUTATION | SUBSCRIPTION | SCHEMA | SCALAR | TYPE | INTERFACE | IMPLEMENTS | ENUM | UNION | INPUT | EXTEND | DIRECTIVE;
 
 value :
+stringValue |
 IntValue |
 FloatValue |
-StringValue |
 BooleanValue |
 NullValue |
 enumValue |
 arrayValue |
 objectValue;
 
+
 valueWithVariable :
 variable |
+stringValue |
 IntValue |
 FloatValue |
-StringValue |
 BooleanValue |
 NullValue |
 enumValue |
 arrayValueWithVariable |
 objectValueWithVariable;
 
+
+stringValue
+ : TripleQuotedStringValue
+ | StringValue
+ ;
+
+description : stringValue;
 
 enumValue : name ;
 
@@ -115,16 +123,16 @@ nonNullType: typeName '!' | listType '!';
 
 
 // Type System
-typeSystemDefinition:
+typeSystemDefinition: description?
 schemaDefinition |
 typeDefinition |
 typeExtensionDefinition |
 directiveDefinition
 ;
 
-schemaDefinition : SCHEMA directives? '{' operationTypeDefinition+ '}';
+schemaDefinition : description? SCHEMA directives? '{' operationTypeDefinition+ '}';
 
-operationTypeDefinition : operationType ':' typeName;
+operationTypeDefinition : description? operationType ':' typeName;
 
 typeDefinition:
 scalarTypeDefinition |
@@ -135,36 +143,40 @@ enumTypeDefinition |
 inputObjectTypeDefinition
 ;
 
-scalarTypeDefinition : SCALAR name directives?;
+scalarTypeDefinition : description? SCALAR name directives?;
 
-objectTypeDefinition : TYPE name implementsInterfaces? directives? '{' fieldDefinition+ '}';
+objectTypeDefinition : description? TYPE name implementsInterfaces? directives? '{' fieldDefinition+ '}';
 
 implementsInterfaces : IMPLEMENTS typeName+;
 
-fieldDefinition : name argumentsDefinition? ':' type directives?;
+fieldDefinition : description? name argumentsDefinition? ':' type directives?;
 
 argumentsDefinition : '(' inputValueDefinition+ ')';
 
-inputValueDefinition : name ':' type defaultValue? directives?;
+inputValueDefinition : description? name ':' type defaultValue? directives?;
 
-interfaceTypeDefinition : INTERFACE name directives? '{' fieldDefinition+ '}';
+interfaceTypeDefinition : description? INTERFACE name directives? '{' fieldDefinition+ '}';
 
-unionTypeDefinition : UNION name directives? '=' unionMembers;
+unionTypeDefinition : description? UNION name directives? '=' unionMembers;
 
 unionMembers:
 typeName |
 unionMembers '|' typeName
 ;
 
-enumTypeDefinition : ENUM name directives? '{' enumValueDefinition+ '}';
+enumTypeDefinition : description? ENUM name directives? '{' enumValueDefinition+ '}';
 
-enumValueDefinition : enumValue directives?;
+enumValueDefinition : description? enumValue directives?;
 
-inputObjectTypeDefinition : INPUT name directives? '{' inputValueDefinition+ '}';
+inputObjectTypeDefinition : description? INPUT name directives? '{' inputValueDefinition+ '}';
 
+//
+// type extensions dont get "description" strings according to reference implementation
+// https://github.com/graphql/graphql-js/pull/927/files#diff-b9370666fe8cd9ff4dd53e89e60d26afR182
+//
 typeExtensionDefinition : EXTEND objectTypeDefinition;
 
-directiveDefinition : DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
+directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
 
 directiveLocation : name;
 
@@ -212,7 +224,19 @@ ExponentPart : ('e'|'E') Sign? Digit+;
 Digit : '0'..'9';
 
 
-StringValue: '"' (~(["\\\n\r\u2028\u2029])|EscapedChar)* '"';
+StringValue
+ : '"' ( ~["\\\n\r\u2028\u2029] | EscapedChar )* '"'
+ ;
+
+TripleQuotedStringValue
+ : '"""' TripleQuotedStringPart? '"""'
+ ;
+
+
+// Fragments never become a token of their own: they are only used inside other lexer rules
+fragment TripleQuotedStringPart : ( EscapedTripleQuote | SourceCharacter )+?;
+fragment EscapedTripleQuote : '\\"""';
+fragment SourceCharacter :[\u0009\u000A\u000D\u0020-\uFFFF];
 
 Comment: '#' ~[\n\r\u2028\u2029]* -> channel(2);
 

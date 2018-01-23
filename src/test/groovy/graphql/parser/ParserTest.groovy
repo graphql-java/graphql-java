@@ -4,25 +4,33 @@ import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.AstComparator
 import graphql.language.BooleanValue
+import graphql.language.Description
 import graphql.language.Directive
+import graphql.language.DirectiveDefinition
 import graphql.language.Document
+import graphql.language.EnumTypeDefinition
 import graphql.language.Field
 import graphql.language.FloatValue
 import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
+import graphql.language.InputObjectTypeDefinition
 import graphql.language.IntValue
+import graphql.language.InterfaceTypeDefinition
 import graphql.language.ListType
 import graphql.language.Node
 import graphql.language.NonNullType
 import graphql.language.NullValue
 import graphql.language.ObjectField
+import graphql.language.ObjectTypeDefinition
 import graphql.language.ObjectValue
 import graphql.language.OperationDefinition
+import graphql.language.ScalarTypeDefinition
 import graphql.language.Selection
 import graphql.language.SelectionSet
 import graphql.language.StringValue
 import graphql.language.TypeName
+import graphql.language.UnionTypeDefinition
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import org.antlr.v4.runtime.misc.ParseCancellationException
@@ -517,6 +525,7 @@ class ParserTest extends Specification {
 
     }
 
+
     def "whitespace_ignored"() {
         given:
         def BOM = "\ufeff"
@@ -531,5 +540,133 @@ class ParserTest extends Specification {
 
         then:
         selection.name == "foo"
+    }
+
+    def "triple quoted strings"() {
+        given:
+        def input = '''{ field(triple : """triple
+string""", single : "single") }'''
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        OperationDefinition operationDefinition = document.definitions[0]
+        Selection selection = operationDefinition.getSelectionSet().getSelections()[0]
+        Field field = (Field) selection
+        assert field.getArguments().size() == 2
+        assert argValue(field, 0) == 'triple\nstring'
+        assert argValue(field, 1) == 'single'
+    }
+
+    def "triple quoted strings with the one special escape character"() {
+        given:
+        def input = '''{ field(
+triple : """triple
+
+string that is \\""" escaped""", 
+
+triple2 : """another string with \\""" escaping""", 
+
+triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
+
+) }'''
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        OperationDefinition operationDefinition = document.definitions[0]
+        Selection selection = operationDefinition.getSelectionSet().getSelections()[0]
+        Field field = (Field) selection
+        assert field.getArguments().size() == 3
+        assert argValue(field, 0) == 'triple\n\nstring that is """ escaped'
+        assert argValue(field, 1) == 'another string with """ escaping'
+        assert argValue(field, 2) == 'edge cases """ "" " \\"" \\" edge cases'
+    }
+
+    String argValue(Field field, Integer index) {
+        def value = (field.getArguments()[index].getValue() as StringValue).getValue()
+        value
+    }
+
+    def "parse IDL type definitions with doc string comments"() {
+        given:
+        def input = '''
+            """object type"""
+            type Object {
+                """object field"""
+                field : String
+            }
+            
+            """interface type"""
+            interface Interface {
+                """interface field"""
+                field : String
+            }
+            
+            """union type"""
+            union Union = Foo | Bar
+            
+            """scalar type"""
+            scalar Scalar
+            
+            """enum type"""
+            enum Enum {
+                """enum field"""
+                foo
+            }
+            
+            """input type"""
+            input Input {
+                """input field"""
+                field : String
+            }
+
+            """directive def""" 
+            directive @ dname on scalar            
+
+'''
+
+        when:
+        Document document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 7
+
+        assertMultiDesc((document.definitions[0] as ObjectTypeDefinition).getDescription(), "object type")
+        assertMultiDesc((document.definitions[0] as ObjectTypeDefinition).getFieldDefinitions()[0].getDescription(), "object field")
+
+        assertMultiDesc((document.definitions[1] as InterfaceTypeDefinition).getDescription(), "interface type")
+        assertMultiDesc((document.definitions[1] as InterfaceTypeDefinition).getFieldDefinitions()[0].getDescription(), "interface field")
+
+        assertMultiDesc((document.definitions[2] as UnionTypeDefinition).getDescription(), "union type")
+
+        assertMultiDesc((document.definitions[3] as ScalarTypeDefinition).getDescription(), "scalar type")
+
+        assertMultiDesc((document.definitions[4] as EnumTypeDefinition).getDescription(), "enum type")
+        assertMultiDesc((document.definitions[4] as EnumTypeDefinition).getEnumValueDefinitions()[0].getDescription(), "enum field")
+
+        assertMultiDesc((document.definitions[5] as InputObjectTypeDefinition).getDescription(), "input type")
+        assertMultiDesc((document.definitions[5] as InputObjectTypeDefinition).getInputValueDefinitions()[0].getDescription(), "input field")
+
+        assertMultiDesc((document.definitions[6] as DirectiveDefinition).getDescription(), "directive def")
+
+    }
+
+    def assertMultiDesc(Description description, String expected) {
+        assertDesc(description, expected, true)
+    }
+
+    def assertDesc(Description description, String expected, boolean multiLine) {
+        if (description == null) {
+            assert expected == null
+        } else {
+            assert expected == description.getContent(), "content check"
+            assert multiLine == description.isMultiLine(), "multi line ==" + multiLine
+        }
+        true
     }
 }

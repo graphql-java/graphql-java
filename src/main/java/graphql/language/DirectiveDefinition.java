@@ -6,6 +6,7 @@ import java.util.List;
 
 public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition> {
     private final String name;
+    private Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<DirectiveLocation> directiveLocations;
 
@@ -21,6 +22,14 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
 
     public String getName() {
         return name;
+    }
+
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {

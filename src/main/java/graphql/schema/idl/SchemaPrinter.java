@@ -3,7 +3,10 @@ package graphql.schema.idl;
 import graphql.Assert;
 import graphql.language.AstPrinter;
 import graphql.language.AstValueHelper;
+import graphql.language.Comment;
+import graphql.language.Description;
 import graphql.language.Document;
+import graphql.language.Node;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -30,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
@@ -419,7 +423,7 @@ public class SchemaPrinter {
             Object defaultValue = argument.getDefaultValue();
             if (defaultValue != null) {
                 sb.append(" = ");
-                sb.append(printAst(defaultValue,argument.getType()));
+                sb.append(printAst(defaultValue, argument.getType()));
             }
             count++;
         }
@@ -469,38 +473,102 @@ public class SchemaPrinter {
 
 
     private void printComments(PrintWriter out, Object graphQLType, String prefix) {
-        String description = getDescription(graphQLType);
-        if (isNullOrEmpty(description)) {
+
+        AstDescriptionAndComments descriptionAndComments = getDescriptionAndComments(graphQLType);
+        if (descriptionAndComments == null) {
             return;
         }
-        Stream<String> stream = Arrays.stream(description.split("\n"));
-        stream.map(s -> prefix + "#" + s + "\n").forEach(out::write);
+
+        Description astDescription = descriptionAndComments.descriptionAst;
+        if (astDescription != null) {
+            String quoteStr = "\"";
+            if (astDescription.isMultiLine()) {
+                quoteStr = "\"\"\"";
+            }
+            out.write(prefix);
+            out.write(quoteStr);
+            out.write(astDescription.getContent());
+            out.write(quoteStr);
+            out.write("\n");
+
+            return;
+        }
+
+        if (descriptionAndComments.comments != null) {
+            descriptionAndComments.comments.forEach(cmt -> {
+                out.write(prefix);
+                out.write("#");
+                out.write(cmt.getContent());
+                out.write("\n");
+            });
+        } else {
+            String runtimeDescription = descriptionAndComments.runtimeDescription;
+            if (!isNullOrEmpty(runtimeDescription)) {
+                Stream<String> stream = Arrays.stream(runtimeDescription.split("\n"));
+                stream.map(s -> prefix + "#" + s + "\n").forEach(out::write);
+            }
+        }
     }
 
-    private String getDescription(Object descriptionHolder) {
+    static class AstDescriptionAndComments {
+        String runtimeDescription;
+        Description descriptionAst;
+        List<Comment> comments;
+
+        public AstDescriptionAndComments(String runtimeDescription, Description descriptionAst, List<Comment> comments) {
+            this.runtimeDescription = runtimeDescription;
+            this.descriptionAst = descriptionAst;
+            this.comments = comments;
+        }
+    }
+
+    private AstDescriptionAndComments getDescriptionAndComments(Object descriptionHolder) {
         if (descriptionHolder instanceof GraphQLObjectType) {
-            return ((GraphQLObjectType) descriptionHolder).getDescription();
+            GraphQLObjectType type = (GraphQLObjectType) descriptionHolder;
+            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
         } else if (descriptionHolder instanceof GraphQLEnumType) {
-            return ((GraphQLEnumType) descriptionHolder).getDescription();
+            GraphQLEnumType type = (GraphQLEnumType) descriptionHolder;
+            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
         } else if (descriptionHolder instanceof GraphQLFieldDefinition) {
-            return ((GraphQLFieldDefinition) descriptionHolder).getDescription();
+            GraphQLFieldDefinition type = (GraphQLFieldDefinition) descriptionHolder;
+            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
         } else if (descriptionHolder instanceof GraphQLEnumValueDefinition) {
-            return ((GraphQLEnumValueDefinition) descriptionHolder).getDescription();
+            GraphQLEnumValueDefinition type = (GraphQLEnumValueDefinition) descriptionHolder;
+            return descriptionAndComments(type::getDescription, () -> null, () -> null);
         } else if (descriptionHolder instanceof GraphQLUnionType) {
-            return ((GraphQLUnionType) descriptionHolder).getDescription();
+            GraphQLUnionType type = (GraphQLUnionType) descriptionHolder;
+            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
         } else if (descriptionHolder instanceof GraphQLInputObjectType) {
-            return ((GraphQLInputObjectType) descriptionHolder).getDescription();
+            GraphQLInputObjectType type = (GraphQLInputObjectType) descriptionHolder;
+            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
         } else if (descriptionHolder instanceof GraphQLInputObjectField) {
-            return ((GraphQLInputObjectField) descriptionHolder).getDescription();
+            GraphQLInputObjectField type = (GraphQLInputObjectField) descriptionHolder;
+            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
         } else if (descriptionHolder instanceof GraphQLInterfaceType) {
-            return ((GraphQLInterfaceType) descriptionHolder).getDescription();
+            GraphQLInterfaceType type = (GraphQLInterfaceType) descriptionHolder;
+            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
         } else if (descriptionHolder instanceof GraphQLScalarType) {
-            return ((GraphQLScalarType) descriptionHolder).getDescription();
+            GraphQLScalarType type = (GraphQLScalarType) descriptionHolder;
+            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
         } else if (descriptionHolder instanceof GraphQLArgument) {
-            return ((GraphQLArgument) descriptionHolder).getDescription();
+            GraphQLArgument type = (GraphQLArgument) descriptionHolder;
+            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
         } else {
             return Assert.assertShouldNeverHappen();
         }
+    }
+
+    AstDescriptionAndComments descriptionAndComments(Supplier<String> stringSupplier, Supplier<Node> nodeSupplier, Supplier<Description> descriptionSupplier) {
+        String runtimeDesc = stringSupplier.get();
+        Node node = nodeSupplier.get();
+        Description description = null;
+        List<Comment> comments = null;
+        if (node != null) {
+            comments = node.getComments();
+            description = descriptionSupplier.get();
+        }
+        return new AstDescriptionAndComments(runtimeDesc, description, comments);
+
     }
 
     private static boolean isNullOrEmpty(String s) {
