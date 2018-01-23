@@ -7,13 +7,13 @@ import graphql.Internal;
 import graphql.introspection.Introspection;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static java.lang.String.format;
-import java.util.HashMap;
 
 @Internal
 public class SchemaUtil {
@@ -169,52 +169,45 @@ public class SchemaUtil {
         return typesByName;
     }
 
-    /**
-     * Indexes GraphQLObject types registered with the provided schema by implemented GraphQLInterface
-     * Accelerates/simplifies collecting types that implement a certain interface
+    /*
+     * Indexes GraphQLObject types registered with the provided schema by implemented GraphQLInterface name
+     *
+     * This helps in accelerates/simplifies collecting types that implement a certain interface
+     *
      * Provided to replace {@link #findImplementations(graphql.schema.GraphQLSchema, graphql.schema.GraphQLInterfaceType)}
      * 
-     * @see graphql.schema.GraphQLSchema#getImplementations(graphql.schema.GraphQLInterfaceType) 
-     * 
-     * @param schema
-     * @return 
      */
-    Map<GraphQLOutputType, List<GraphQLObjectType>> groupImplementations (GraphQLSchema schema) {
-        Map<GraphQLOutputType, List<GraphQLObjectType>> result = new HashMap<>();
-        for (GraphQLType type: schema.getAllTypesAsList()) {
+    Map<String, List<GraphQLObjectType>> groupImplementations(GraphQLSchema schema) {
+        Map<String, List<GraphQLObjectType>> result = new HashMap<>();
+        for (GraphQLType type : schema.getAllTypesAsList()) {
             if (type instanceof GraphQLObjectType) {
-                for (GraphQLOutputType intf: ((GraphQLObjectType)type).getInterfaces()) {
-                    List<GraphQLObjectType> myGroup = result.get(intf);
-                    if (myGroup == null) {
-                        result.put(intf, myGroup = new ArrayList<>());
-                                                                                        
-                    }
-                    
-                    myGroup.add((GraphQLObjectType)type);
+                for (GraphQLOutputType interfaceType : ((GraphQLObjectType) type).getInterfaces()) {
+                    List<GraphQLObjectType> myGroup = result.computeIfAbsent(interfaceType.getName(), k -> new ArrayList<>());
+                    myGroup.add((GraphQLObjectType) type);
                 }
             }
         }
-        
+
         return result;
     }
-    
+
     /**
-     * This method is deprecated due to performance degradation.
-     * 
-     * Algorithm complexity: O(n^2), where n is number of registered GraphQLTypes
-     * Indexing operation is performed twice per input document:
+     * This method is deprecated due to a performance concern.
+     *
+     * The Algorithm complexity: O(n^2), where n is number of registered GraphQLTypes
+     *
+     * That indexing operation is performed twice per input document:
      * 1. during validation
      * 2. during execution
-     * 
-     * Indexed all types at the schema creation, which brought complexity down to O(1)
-     * 
-     * @see #groupImplementations(graphql.schema.GraphQLSchema)
-     * @see graphql.schema.GraphQLSchema#getImplementations(graphql.schema.GraphQLInterfaceType) 
-     * 
+     *
+     * We now indexed all types at the schema creation, which has brought complexity down to O(1)
+     *
      * @param schema        GraphQL schema
      * @param interfaceType an interface type to find implementations for
+     *
      * @return List of object types implementing provided interface
-     * @deprecated
+     *
+     * @deprecated use {@link graphql.schema.GraphQLSchema#getImplementations(GraphQLInterfaceType)} instead
      */
     @Deprecated
     public List<GraphQLObjectType> findImplementations(GraphQLSchema schema, GraphQLInterfaceType interfaceType) {
@@ -224,7 +217,9 @@ public class SchemaUtil {
                 continue;
             }
             GraphQLObjectType objectType = (GraphQLObjectType) type;
-            if ((objectType).getInterfaces().contains(interfaceType)) result.add(objectType);
+            if ((objectType).getInterfaces().contains(interfaceType)) {
+                result.add(objectType);
+            }
         }
         return result;
     }
