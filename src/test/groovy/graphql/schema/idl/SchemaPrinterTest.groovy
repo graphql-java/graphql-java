@@ -679,4 +679,29 @@ enum Episode {
 """
     }
 
+
+
+    def "AST doc string entries are printed if present"() {
+        def schema = generate('''
+            # comments up here
+            """docstring"""
+            # and comments as well down here
+            type Query {
+                "field single desc"
+                field: String
+            }
+        ''')
+
+
+        def result = new SchemaPrinter().print(schema)
+
+        expect:
+        result == '''"""docstring"""
+type Query {
+  "field single desc"
+  field: String
+}
+'''
+    }
+
 }

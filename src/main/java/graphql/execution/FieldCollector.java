@@ -150,7 +150,7 @@ public class FieldCollector {
         }
 
         if (conditionType instanceof GraphQLInterfaceType) {
-            List<GraphQLObjectType> implementations = schemaUtil.findImplementations(parameters.getGraphQLSchema(), (GraphQLInterfaceType) conditionType);
+            List<GraphQLObjectType> implementations = parameters.getGraphQLSchema().getImplementations((GraphQLInterfaceType)conditionType);
             return implementations.contains(type);
         } else if (conditionType instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) conditionType).getTypes().contains(type);

@@ -9,6 +9,7 @@ import static graphql.language.NodeUtil.directivesByName;
 
 public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> implements TypeDefinition<ObjectTypeDefinition> {
     private String name;
+    private Description description;
     private final List<Type> implementz;
     private final List<Directive> directives;
     private final List<FieldDefinition> fieldDefinitions;
@@ -51,6 +52,14 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
     }
 
     @Override

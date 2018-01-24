@@ -9,6 +9,7 @@ import static graphql.language.NodeUtil.directivesByName;
 
 public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition> {
     private final String name;
+    private Description description;
     private final List<Directive> directives;
     private final List<InputValueDefinition> inputValueDefinitions;
 
@@ -43,6 +44,14 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
         return name;
     }
 
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
@@ -58,8 +67,8 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
 
         InputObjectTypeDefinition that = (InputObjectTypeDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
-    }
+         return NodeUtil.isEqualTo(this.name,that.name) ;
+            }
 
     @Override
     public InputObjectTypeDefinition deepCopy() {

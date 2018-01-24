@@ -23,7 +23,6 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
-import graphql.schema.SchemaUtil;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
@@ -201,7 +200,7 @@ public class Introspection {
     public static final DataFetcher possibleTypesFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLInterfaceType) {
-            return new SchemaUtil().findImplementations(environment.getGraphQLSchema(), (GraphQLInterfaceType) type);
+            return environment.getGraphQLSchema().getImplementations((GraphQLInterfaceType)type);
         }
         if (type instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) type).getTypes();

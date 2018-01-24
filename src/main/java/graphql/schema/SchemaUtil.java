@@ -7,6 +7,7 @@ import graphql.Internal;
 import graphql.introspection.Introspection;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -150,7 +151,7 @@ public class SchemaUtil {
     }
 
 
-    public Map<String, GraphQLType> allTypes(GraphQLSchema schema, Set<GraphQLType> additionalTypes) {
+    Map<String, GraphQLType> allTypes(GraphQLSchema schema, Set<GraphQLType> additionalTypes) {
         Map<String, GraphQLType> typesByName = new LinkedHashMap<>();
         collectTypes(schema.getQueryType(), typesByName);
         if (schema.isSupportingMutations()) {
@@ -168,22 +169,64 @@ public class SchemaUtil {
         return typesByName;
     }
 
+    /*
+     * Indexes GraphQLObject types registered with the provided schema by implemented GraphQLInterface name
+     *
+     * This helps in accelerates/simplifies collecting types that implement a certain interface
+     *
+     * Provided to replace {@link #findImplementations(graphql.schema.GraphQLSchema, graphql.schema.GraphQLInterfaceType)}
+     * 
+     */
+    Map<String, List<GraphQLObjectType>> groupImplementations(GraphQLSchema schema) {
+        Map<String, List<GraphQLObjectType>> result = new HashMap<>();
+        for (GraphQLType type : schema.getAllTypesAsList()) {
+            if (type instanceof GraphQLObjectType) {
+                for (GraphQLOutputType interfaceType : ((GraphQLObjectType) type).getInterfaces()) {
+                    List<GraphQLObjectType> myGroup = result.computeIfAbsent(interfaceType.getName(), k -> new ArrayList<>());
+                    myGroup.add((GraphQLObjectType) type);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * This method is deprecated due to a performance concern.
+     *
+     * The Algorithm complexity: O(n^2), where n is number of registered GraphQLTypes
+     *
+     * That indexing operation is performed twice per input document:
+     * 1. during validation
+     * 2. during execution
+     *
+     * We now indexed all types at the schema creation, which has brought complexity down to O(1)
+     *
+     * @param schema        GraphQL schema
+     * @param interfaceType an interface type to find implementations for
+     *
+     * @return List of object types implementing provided interface
+     *
+     * @deprecated use {@link graphql.schema.GraphQLSchema#getImplementations(GraphQLInterfaceType)} instead
+     */
+    @Deprecated
     public List<GraphQLObjectType> findImplementations(GraphQLSchema schema, GraphQLInterfaceType interfaceType) {
-        Map<String, GraphQLType> allTypes = allTypes(schema, schema.getAdditionalTypes());
         List<GraphQLObjectType> result = new ArrayList<>();
-        for (GraphQLType type : allTypes.values()) {
+        for (GraphQLType type : schema.getAllTypesAsList()) {
             if (!(type instanceof GraphQLObjectType)) {
                 continue;
             }
             GraphQLObjectType objectType = (GraphQLObjectType) type;
-            if ((objectType).getInterfaces().contains(interfaceType)) result.add(objectType);
+            if ((objectType).getInterfaces().contains(interfaceType)) {
+                result.add(objectType);
+            }
         }
         return result;
     }
 
 
     void replaceTypeReferences(GraphQLSchema schema) {
-        Map<String, GraphQLType> typeMap = allTypes(schema, schema.getAdditionalTypes());
+        Map<String, GraphQLType> typeMap = schema.getTypeMap();
         for (GraphQLType type : typeMap.values()) {
             if (type instanceof GraphQLFieldsContainer) {
                 resolveTypeReferencesForFieldsContainer((GraphQLFieldsContainer) type, typeMap);

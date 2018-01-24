@@ -8,6 +8,7 @@ import static graphql.language.NodeUtil.directivesByName;
 
 public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition> {
     private final String name;
+    private Description description;
     private final List<EnumValueDefinition> enumValueDefinitions;
     private final List<Directive> directives;
 
@@ -45,6 +46,14 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
     @Override
     public String getName() {
         return name;
+    }
+
+    public Description getDescription() {
+        return description;
+    }
+
+    public void setDescription(Description description) {
+        this.description = description;
     }
 
     @Override
