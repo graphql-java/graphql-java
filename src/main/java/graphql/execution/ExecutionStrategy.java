@@ -37,6 +37,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.stream.IntStream;
@@ -558,11 +561,33 @@ public abstract class ExecutionStrategy {
         if (result instanceof Optional) {
             Optional optional = (Optional) result;
             if (optional.isPresent()) {
-                result = optional.get();
+                return optional.get();
             } else {
-                result = null;
+                return null;
+            }
+        } else if (result instanceof OptionalInt) {
+            OptionalInt optional = (OptionalInt)result;
+            if (optional.isPresent()) {
+                return optional.getAsInt();
+            } else {
+                return null;
+            }
+        } else if (result instanceof OptionalDouble) {
+            OptionalDouble optional = (OptionalDouble)result;
+            if (optional.isPresent()) {
+                return optional.getAsDouble();
+            } else {
+                return null;
+            }
+        } else if (result instanceof OptionalLong) {
+            OptionalLong optional = (OptionalLong)result;
+            if (optional.isPresent()) {
+                return optional.getAsLong();
+            } else {
+                return null;
             }
         }
+
         return result;
     }
 
