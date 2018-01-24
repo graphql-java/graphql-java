@@ -178,6 +178,147 @@ class ExecutionStrategyTest extends Specification {
         thrown(NonNullableFieldWasNullException)
     }
 
+    def "completes value for java.util.OptionalInt"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = GraphQLString
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(result)
+                .fields(["fld": []])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+
+        then:
+        executionResult.data == expected
+
+        where:
+        result                    || expected
+        OptionalInt.of(10)      || "10"
+        OptionalInt.empty() || null
+    }
+
+    def "completes value for an empty java.util.OptionalInt that triggers non null exception"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = nonNull(GraphQLString)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(OptionalInt.empty())
+                .fields(["fld": []])
+                .build()
+
+        when:
+        executionStrategy.completeValue(executionContext, parameters).join()
+
+        then:
+        thrown(NonNullableFieldWasNullException)
+    }
+
+    def "completes value for java.util.OptionalDouble"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = GraphQLString
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(result)
+                .fields(["fld": []])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+
+        then:
+        executionResult.data == expected
+
+        where:
+        result                    || expected
+        OptionalDouble.of(10)      || "10.0"
+        OptionalDouble.empty() || null
+    }
+
+    def "completes value for an empty java.util.OptionalDouble that triggers non null exception"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = nonNull(GraphQLString)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(OptionalDouble.empty())
+                .fields(["fld": []])
+                .build()
+
+        when:
+        executionStrategy.completeValue(executionContext, parameters).join()
+
+        then:
+        thrown(NonNullableFieldWasNullException)
+    }
+
+    def "completes value for java.util.OptionalLong"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = GraphQLString
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(result)
+                .fields(["fld": []])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+
+        then:
+        executionResult.data == expected
+
+        where:
+        result                    || expected
+        OptionalLong.of(10)      || "10"
+        OptionalLong.empty() || null
+    }
+
+    def "completes value for an empty java.util.OptionalLong that triggers non null exception"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = nonNull(GraphQLString)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(OptionalLong.empty())
+                .fields(["fld": []])
+                .build()
+
+        when:
+        executionStrategy.completeValue(executionContext, parameters).join()
+
+        then:
+        thrown(NonNullableFieldWasNullException)
+    }
+
     def "completes value for an array"() {
         given:
         ExecutionContext executionContext = buildContext()
