@@ -473,9 +473,8 @@ class BatchedExecutionStrategyTest extends Specification {
         ExecutionResult result = graphQL.execute("query { user { id } }")
 
         expect:
-        result.getErrors().size() == 2
-        result.getErrors()[0] instanceof NonNullableFieldWasNullError
-        result.getErrors()[1] instanceof ExceptionWhileDataFetching
+        result.getErrors().size() == 1
+        result.getErrors()[0] instanceof ExceptionWhileDataFetching
     }
 
 }

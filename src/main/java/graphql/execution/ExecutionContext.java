@@ -12,7 +12,6 @@ import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -33,14 +32,13 @@ public class ExecutionContext {
     private final Object root;
     private final Object context;
     private final Instrumentation instrumentation;
-    private final Map<String, GraphQLError> perFieldErrors = new LinkedHashMap<>();
-    private final List<GraphQLError> otherErrors = new ArrayList<>();
+    private final List<GraphQLError> errors = new ArrayList<>();
 
     public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
-        this(instrumentation, executionId, graphQLSchema, instrumentationState, queryStrategy, mutationStrategy, subscriptionStrategy, fragmentsByName, document, operationDefinition, variables, context, root, Collections.emptyMap(), Collections.emptyList());
+        this(instrumentation, executionId, graphQLSchema, instrumentationState, queryStrategy, mutationStrategy, subscriptionStrategy, fragmentsByName, document, operationDefinition, variables, context, root, Collections.emptyList());
     }
 
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, Map<String, GraphQLError> startingFieldErrors, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, List<GraphQLError> startingErrors) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -54,8 +52,7 @@ public class ExecutionContext {
         this.context = context;
         this.root = root;
         this.instrumentation = instrumentation;
-        this.perFieldErrors.putAll(startingFieldErrors);
-        this.otherErrors.addAll(startingErrors);
+        this.errors.addAll(startingErrors);
     }
 
 
@@ -111,13 +108,21 @@ public class ExecutionContext {
      * @param fieldPath the field path to put it under
      */
     public void addError(GraphQLError error, ExecutionPath fieldPath) {
+        //
         // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
-        // field errors should be handled - ie only once per field
+        // field errors should be handled - ie only once per field if its already there for nullability
+        // but unclear if its not that error path
+        //
         synchronized (this) {
-            String key = fieldPath.toString();
-            if (!perFieldErrors.containsKey(key)) {
-                this.perFieldErrors.put(key, error);
+            for (GraphQLError graphQLError : errors) {
+                List<Object> path = graphQLError.getPath();
+                if (path != null) {
+                    if (fieldPath.equals(ExecutionPath.fromList(path))) {
+                        return;
+                    }
+                }
             }
+            this.errors.add(error);
         }
     }
 
@@ -129,36 +134,19 @@ public class ExecutionContext {
      */
     public void addError(GraphQLError error) {
         // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
-        // on how multiple errors should be handled - ie only once per field or not outside nullability
+        // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
+        // aspect.
         synchronized (this) {
-            this.otherErrors.add(error);
+            this.errors.add(error);
         }
     }
-
-    // access for builder only
-    Map<String, GraphQLError> getPerFieldErrorMap() {
-        synchronized (this) {
-            return perFieldErrors;
-        }
-    }
-
-    // access for builder only
-    List<GraphQLError> getOtherErrors() {
-        synchronized (this) {
-            return otherErrors;
-        }
-    }
-
 
     /**
      * @return the total list of errors for this execution context
      */
     public List<GraphQLError> getErrors() {
         synchronized (this) {
-            ArrayList<GraphQLError> errList = new ArrayList<>();
-            errList.addAll(perFieldErrors.values());
-            errList.addAll(otherErrors);
-            return errList;
+            return Collections.unmodifiableList(errors);
         }
     }
 
