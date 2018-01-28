@@ -50,4 +50,9 @@ public class Document extends AbstractNode<Document> {
                 "definitions=" + definitions +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

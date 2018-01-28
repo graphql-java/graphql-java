@@ -49,4 +49,9 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
     public FloatValue deepCopy() {
         return new FloatValue(value);
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

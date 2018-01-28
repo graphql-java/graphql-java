@@ -46,4 +46,9 @@ public class VariableReference extends AbstractNode<VariableReference> implement
                 "name='" + name + '\'' +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

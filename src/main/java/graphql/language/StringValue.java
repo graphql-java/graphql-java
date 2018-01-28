@@ -48,4 +48,9 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
     public StringValue deepCopy() {
         return new StringValue(value);
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

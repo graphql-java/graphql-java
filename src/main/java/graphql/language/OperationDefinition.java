@@ -134,4 +134,9 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 ", selectionSet=" + selectionSet +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

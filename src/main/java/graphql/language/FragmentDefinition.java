@@ -116,4 +116,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
                 ", selectionSet=" + selectionSet +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

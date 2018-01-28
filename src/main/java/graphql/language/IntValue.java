@@ -48,4 +48,9 @@ public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> 
                 "value=" + value +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

@@ -54,4 +54,9 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
                 "type=" + type +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

@@ -49,4 +49,9 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> {
                 "name='" + name + "'" +
                 "}";
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

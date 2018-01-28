@@ -49,4 +49,9 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
                 "objectFields=" + objectFields +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }
