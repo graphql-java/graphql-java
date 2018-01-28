@@ -73,4 +73,9 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> {
                 ", directives=" + directives +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

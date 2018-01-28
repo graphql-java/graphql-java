@@ -48,4 +48,9 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
                 "selections=" + selections +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

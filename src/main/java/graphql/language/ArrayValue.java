@@ -49,4 +49,9 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
     public ArrayValue deepCopy() {
         return new ArrayValue(deepCopy(values));
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

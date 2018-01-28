@@ -67,4 +67,9 @@ public class Directive extends AbstractNode<Directive> {
                 ", arguments=" + arguments +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

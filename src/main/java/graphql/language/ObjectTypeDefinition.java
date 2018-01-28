@@ -98,4 +98,9 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
                 ", fieldDefinitions=" + fieldDefinitions +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }

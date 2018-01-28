@@ -100,4 +100,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
                 ", selectionSet=" + selectionSet +
                 '}';
     }
+
+    @Override
+    public <U> Object accept(U data, NodeVisitor<U> visitor) {
+        return visitor.visit(this, data);
+    }
 }
