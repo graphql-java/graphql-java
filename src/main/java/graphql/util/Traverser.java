@@ -1,9 +1,5 @@
 /*
- * Copyright 2016 Intuit Inc. All rights reserved. Unauthorized reproduction
- * is a violation of applicable law. This material contains certain
- * confidential or proprietary information and trade secrets of Intuit Inc.
- * 
- * graphql.util.Traverser.java
+ * Generic traverser 
  * 
  * Created: Jan 28, 2018 12:42:17 PM
  * Author: gkesler
