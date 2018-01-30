@@ -25,18 +25,18 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
+import graphql.language.Node;
 import graphql.language.NodeVisitor;
 import graphql.language.NodeVisitorStub;
 import graphql.language.Selection;
 import graphql.util.Traverser;
 import graphql.util.Traverser.Context;
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.Objects;
+import java.util.function.Consumer;
 
 @Internal
 public class QueryTraversal {
@@ -131,174 +131,131 @@ public class QueryTraversal {
         });
     }
     
-    private static class Frame {
-        Frame (GraphQLCompositeType type, QueryVisitorEnvironment environment) {
-            this.type = type;
-            this.environment = environment;
-        }
-
-        GraphQLCompositeType type;
-        QueryVisitorEnvironment environment;
-    }
-    
     private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, QueryVisitorEnvironment parent, boolean preOrder) {
-        new Traverser<Selection>(new Traverser.Stack<Selection>() {
-                Context<Selection> rootCtx = newContext(null, null).setVar(Frame.class, new Frame(type, parent));
-
+        new Traverser<Selection>(this::childrenOf)
+            .traverse(selectionSet.getSelections(), null, new NodeVisitorStub<Traverser.Context<Selection>>() {
                 @Override
-                protected Context<Selection> newContext(Selection o, Context<Selection> parent) {
-                    return super.newContext(o, Optional
-                            .ofNullable(parent)
-                            .orElse(rootCtx));
+                public Object visit(InlineFragment inlineFragment, Traverser.Context<Selection> context) {
+                    if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives()))
+                        return Traverser.Markers.ABORT; // stop recursing down
+
+                    // inline fragments are allowed not have type conditions, if so the parent type counts
+                    Frame top = frames.peek();
+
+                    GraphQLCompositeType fragmentCondition;
+                    if (inlineFragment.getTypeCondition() != null) {
+                        TypeName typeCondition = inlineFragment.getTypeCondition();
+                        fragmentCondition = (GraphQLCompositeType) schema.getType(typeCondition.getName());
+                    } else {
+                        fragmentCondition = top.type;
+                    }
+
+                    // for unions we only have other fragments inside
+                    frames.push(new Frame(fragmentCondition, top.environment));
+                    return context;
                 }
-            }, n -> childrenOf(n))
-            .traverse(selectionSet.getSelections(), null, new Traverser.Visitor<Selection, Traverser.Context<Selection>>() {
-                final NodeVisitor<Traverser.Context<Selection>> preOrderVisitor = new NodeVisitorStub<Traverser.Context<Selection>>() {
-                    @Override
-                    public Object visit(InlineFragment inlineFragment, Traverser.Context<Selection> context) {
-                        if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives()))
-                            return Traverser.Markers.ABORT; // stop recursing down
 
-                        // inline fragments are allowed not have type conditions, if so the parent type counts
-                        Frame top = context
-                                .parentContext()
-                                .getVar(Frame.class);
-                        
-                        GraphQLCompositeType fragmentCondition;
-                        if (inlineFragment.getTypeCondition() != null) {
-                            TypeName typeCondition = inlineFragment.getTypeCondition();
-                            fragmentCondition = (GraphQLCompositeType) schema.getType(typeCondition.getName());
-                        } else {
-                            fragmentCondition = top.type;
-                        }
-                        
-                        // for unions we only have other fragments inside
-                        return context
-                                .setVar(Frame.class, new Frame(fragmentCondition, top.environment));
-                    }
-
-                    @Override
-                    public Object visit(FragmentSpread fragmentSpread, Traverser.Context<Selection> context) {
-                        if (!conditionalNodes.shouldInclude(variables, fragmentSpread.getDirectives()))
-                            return Traverser.Markers.ABORT; // stop recursion
-                        
-                        FragmentDefinition fragmentDefinition = fragmentsByName.get(fragmentSpread.getName());
-                        if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives()))
-                            return Traverser.Markers.ABORT; // stop recursion
-                        
-                        Frame top = context
-                                .parentContext()
-                                .getVar(Frame.class);                        
-                        
-                        GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
-                        
-                        return context
-                                .setVar(Frame.class, new Frame(typeCondition, top.environment));
-                    }
-
-                    @Override
-                    public Object visit(Field field, Traverser.Context<Selection> context) {
-                        if (!conditionalNodes.shouldInclude(variables, field.getDirectives()))
-                            return Traverser.Markers.ABORT; // stop recursion
-                        
-                        Frame top = context
-                                .parentContext()
-                                .getVar(Frame.class);
-                        
-                        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, top.type, field.getName());
-                        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
-                        
-                        QueryVisitorEnvironment environment = new QueryVisitorEnvironment(field, fieldDefinition, top.type, top.environment, argumentValues);  
-                        if (preOrder)
-                            visitor.visitField(environment);
-                        
-                        Frame frame;
-                        GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
-                        if (unmodifiedType instanceof GraphQLCompositeType)
-                            frame = new Frame((GraphQLCompositeType)unmodifiedType, environment); 
-                        else
-                            frame = new Frame(null, environment);// EMPTY FRAME
-                        
-                        return context
-                                .setVar(Frame.class, frame);
-                    }
-                };
-                final NodeVisitor<Traverser.Context<Selection>> postOrderVisitor = new NodeVisitorStub<Traverser.Context<Selection>>() {
-                    @Override
-                    public Object visit(Field field, Traverser.Context<Selection> context) {
-                        Frame top = context.getVar(Frame.class);
-                        if (!preOrder)
-                            visitor.visitField(top.environment);
-                        
-                        return context;
-                    }
-                };
-                
                 @Override
-                public Object enter(Traverser.Context<Selection> context, Traverser.Context<Selection> data) {
+                public Object visit(FragmentSpread fragmentSpread, Traverser.Context<Selection> context) {
+                    if (!conditionalNodes.shouldInclude(variables, fragmentSpread.getDirectives()))
+                        return Traverser.Markers.ABORT; // stop recursion
+
+                    FragmentDefinition fragmentDefinition = fragmentsByName.get(fragmentSpread.getName());
+                    if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives()))
+                        return Traverser.Markers.ABORT; // stop recursion
+
+                    Frame top = frames.peek();
+
+                    GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
+
+                    frames.push(new Frame(typeCondition, top.environment));
+                    return context;
+                }
+
+                @Override
+                public Object visit(Field field, Traverser.Context<Selection> context) {
+                    if (!conditionalNodes.shouldInclude(variables, field.getDirectives()))
+                        return Traverser.Markers.ABORT; // stop recursion
+
+                    Frame top = frames.peek();
+
+                    GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, top.type, field.getName());
+                    Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
+
+                    QueryVisitorEnvironment environment = new QueryVisitorEnvironment(field, fieldDefinition, top.type, top.environment, argumentValues);  
+                    visitorNotifier.notifyPreOrder(environment);
+
+                    Frame frame;
+                    GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
+                    if (unmodifiedType instanceof GraphQLCompositeType)
+                        frame = new Frame((GraphQLCompositeType)unmodifiedType, environment); 
+                    else
+                        frame = new Frame(null, environment);// EMPTY FRAME
+
+                    frames.push(frame);
+                    return context;
+                }
+
+                @Override
+                public Object enter(Context<Node> context, Context<Selection> data) {
                     return context
                             .thisNode()
-                            .accept(context, preOrderVisitor);
+                            .accept(context, this);
                 }
 
                 @Override
-                public Object leave(Traverser.Context<Selection> context, Traverser.Context<Selection> data) {
+                public Object leave(Traverser.Context<Node> context, Traverser.Context<Selection> data) {
                     return context
                             .thisNode()
                             .accept(context, postOrderVisitor);
                 }
+        
+                final NodeVisitor<Traverser.Context<Selection>> postOrderVisitor = new NodeVisitorStub<Traverser.Context<Selection>>() {
+                    @Override
+                    public Object visit(Field field, Traverser.Context<Selection> context) {
+                        Frame top = frames.pop();
+                        visitorNotifier.notifyPostOrder(top.environment);
+                        
+                        return context;
+                    }
+
+                    @Override
+                    protected Object visitSelection(Selection<?> node, Context<Selection> context) {
+                        frames.pop();
+                        return context;
+                    }
+                };
+
+                class Frame {
+                    Frame (GraphQLCompositeType type, QueryVisitorEnvironment environment) {
+                        this.type = type;
+                        this.environment = environment;
+                    }
+
+                    GraphQLCompositeType type;
+                    QueryVisitorEnvironment environment;
+                }
+                
+                class QueryVisitorNotifier {
+                    QueryVisitorNotifier (Consumer<QueryVisitorEnvironment> preOrder, Consumer<QueryVisitorEnvironment> postOrder) {
+                        this.preOrder = Objects.requireNonNull(preOrder);
+                        this.postOrder = Objects.requireNonNull(postOrder);
+                    }
+                    
+                    void notifyPreOrder (QueryVisitorEnvironment env) {
+                        preOrder.accept(env);
+                    }
+                    void notifyPostOrder (QueryVisitorEnvironment env) {
+                        postOrder.accept(env);
+                    }
+                    
+                    final Consumer<QueryVisitorEnvironment> preOrder, postOrder;
+                }
+                
+                final Deque<Frame> frames = new ArrayDeque<>(Collections.singleton(new Frame(type, parent)));
+                final QueryVisitorNotifier visitorNotifier = preOrder
+                        ? new QueryVisitorNotifier(visitor::visitField, env -> {})
+                        : new QueryVisitorNotifier(env -> {}, visitor::visitField);
             });
     }
-/*
-    private void visitFragmentSpread(QueryVisitor visitor, FragmentSpread fragmentSpread, QueryVisitorEnvironment parent, boolean preOrder) {
-        if (!conditionalNodes.shouldInclude(this.variables, fragmentSpread.getDirectives())) {
-            return; // stop recursion
-        }
-        FragmentDefinition fragmentDefinition = fragmentsByName.get(fragmentSpread.getName());
-
-        if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives())) {
-            return; // stop recursion
-        }
-        
-        // recurse to the selections
-        GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
-        visitImpl(visitor, fragmentDefinition.getSelectionSet(), typeCondition, parent, preOrder);
-    }
-
-
-    private void visitInlineFragment(QueryVisitor visitor, InlineFragment inlineFragment, GraphQLCompositeType parentType, QueryVisitorEnvironment parent, boolean preOrder) {
-        if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives())) {
-            return;
-        }
-        // inline fragments are allowed not have type conditions, if so the parent type counts
-        GraphQLCompositeType fragmentCondition;
-        if (inlineFragment.getTypeCondition() != null) {
-            TypeName typeCondition = inlineFragment.getTypeCondition();
-            fragmentCondition = (GraphQLCompositeType) schema.getType(typeCondition.getName());
-        } else {
-            fragmentCondition = parentType;
-        }
-        // for unions we only have other fragments inside
-        visitImpl(visitor, inlineFragment.getSelectionSet(), fragmentCondition, parent, preOrder);
-    }
-
-    private void visitField(QueryVisitor visitor, Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, QueryVisitorEnvironment parentEnv, boolean preOrder) {
-        if (!conditionalNodes.shouldInclude(variables, field.getDirectives())) {
-            return;
-        }
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
-        if (preOrder) {
-            visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues));
-        }
-        GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
-        if (unmodifiedType instanceof GraphQLCompositeType) {
-            QueryVisitorEnvironment newParentEnvironment = new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues);
-            visitImpl(visitor, field.getSelectionSet(), (GraphQLCompositeType) unmodifiedType, newParentEnvironment, preOrder);
-        }
-        if (!preOrder) {
-            visitor.visitField(new QueryVisitorEnvironment(field, fieldDefinition, parentType, parentEnv, argumentValues));
-        }
-
-    }
-*/
 }

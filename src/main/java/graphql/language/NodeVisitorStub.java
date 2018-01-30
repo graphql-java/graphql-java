@@ -10,11 +10,14 @@
  */
 package graphql.language;
 
+import graphql.util.Traverser;
+
 /**
  *
  * @author gkesler
  */
-public abstract class NodeVisitorStub<T> implements NodeVisitor<T> {
+public abstract class NodeVisitorStub<T> 
+        implements NodeVisitor<T>, Traverser.Visitor<Node, T> {
     @Override
     public Object visit(Argument node, T data) {
         return visitNode(node, data);
@@ -217,5 +220,19 @@ public abstract class NodeVisitorStub<T> implements NodeVisitor<T> {
     
     protected Object visitType (Type<?> node, T data) {
         return visitNode(node, data);
+    }
+
+    @Override
+    public Object enter(Traverser.Context<Node> context, T data) {
+        // perform double dispatch to the current node
+        // avoids expensive instanceOf check
+        return context
+                .thisNode()
+                .accept(data, this);
+    }
+
+    @Override
+    public Object leave(Traverser.Context<Node> context, T data) {
+        return data;
     }
 }
