@@ -29,13 +29,13 @@ import java.util.stream.Collectors;
  */
 public class Traverser<T> {
     public interface Visitor<T, U> {
-        Object enter (Context<? super T> context, U data);
-        Object leave (Context<? super T> context, U data);
+        Object enter (Context<T> context, U data);
+        Object leave (Context<T> context, U data);
         
-        default Object backRef (Context<? super T> context, U data) {
+        default Object backRef (Context<T> context, U data) {
             return data;
         }
-        default Object mapKey (Context<? super T> context, U data) {
+        default Object mapKey (Context<T> context, U data) {
             return data;
         }
     }
@@ -95,7 +95,7 @@ public class Traverser<T> {
                 @Override
                 public boolean isVisited(Object data) {
                     return visitedMap.putIfAbsent(o, Optional
-                            .of(data)
+                            .ofNullable(data)
                             .orElse(Markers.NULL)) != null;
                 }
 
