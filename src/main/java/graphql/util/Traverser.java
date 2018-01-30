@@ -181,6 +181,7 @@ public class Traverser<T> {
         
         protected void clear () {
             delegate.clear();
+            visitedMap.clear();
         }
         
         protected Context<T> newContext (final T o, final Context<T> parent) {
