@@ -1,9 +1,5 @@
 /*
- * Copyright 2016 Intuit Inc. All rights reserved. Unauthorized reproduction
- * is a violation of applicable law. This material contains certain
- * confidential or proprietary information and trade secrets of Intuit Inc.
- * 
- * graphql.util.TraverserTest.groovy
+ *
  * 
  * Created: Jan 29, 2018 11:56:36 AM
  * Author: gkesler
