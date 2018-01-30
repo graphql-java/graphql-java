@@ -51,7 +51,7 @@ public class Traverser<T> {
     
     abstract protected static class RecursionState<T> {
         public RecursionState () {
-            this(new ArrayDeque<>());
+            this(new ArrayDeque<>(32));
         }
         
         public RecursionState (Deque<? super Context<T>> delegate) {
