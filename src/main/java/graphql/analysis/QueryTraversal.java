@@ -102,7 +102,7 @@ public class QueryTraversal {
     }
 
     private List<Selection> childrenOf (Selection n) {
-        return (List<Selection>)n.accept(Collections.emptyList(), new NodeVisitorStub<List<Selection>>() {
+        return (List<Selection>)n.accept(null, new NodeVisitorStub<List<Selection>>() {
             @Override
             public Object visit(InlineFragment node, List<Selection> data) {
                 return getChildren(node.getSelectionSet());
