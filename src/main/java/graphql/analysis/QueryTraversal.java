@@ -185,12 +185,10 @@ public class QueryTraversal {
                     QueryVisitorEnvironment environment = new QueryVisitorEnvironment(field, fieldDefinition, top.type, top.environment, argumentValues);  
                     visitorNotifier.notifyPreOrder(environment);
 
-                    Frame frame;
                     GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
-                    if (unmodifiedType instanceof GraphQLCompositeType)
-                        frame = new Frame((GraphQLCompositeType)unmodifiedType, environment); 
-                    else
-                        frame = new Frame(null, environment);// EMPTY FRAME
+                    Frame frame = (unmodifiedType instanceof GraphQLCompositeType)
+                        ? new Frame((GraphQLCompositeType)unmodifiedType, environment)
+                        : new Frame(null, environment);// Terminal (scalar) node, EMPTY FRAME
 
                     frames.push(frame);
                     return context;
