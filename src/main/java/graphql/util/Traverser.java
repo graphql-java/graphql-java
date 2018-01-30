@@ -46,7 +46,7 @@ public class Traverser<T> {
         boolean isVisited (Object data);
         Map<T, Object> visitedNodes ();
         <S> S getVar (Class<? super S> key);
-        <S> void setVar (Class<? super S> key, S value);
+        <S> Context<T> setVar (Class<? super S> key, S value);
     }
     
     abstract protected static class RecursionState<T> {
@@ -110,8 +110,10 @@ public class Traverser<T> {
                 }
 
                 @Override
-                public <S> void setVar(Class<? super S> key, S value) {
+                public <S> Context<T> setVar(Class<? super S> key, S value) {
                     vars.put(key, value);
+                    return this;
+                    
                 }
                 
                 final Map<Class<?>, Object> vars = new HashMap<>();
@@ -193,7 +195,7 @@ public class Traverser<T> {
         }
 
         @Override
-        public <S> void setVar(Class<? super S> key, S value) {
+        public <S> Context<Object> setVar(Class<? super S> key, S value) {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
     }
