@@ -1,6 +1,4 @@
 /*
- *
- * 
  * Created: Jan 29, 2018 11:56:36 AM
  * Author: gkesler
  */
