@@ -1,9 +1,5 @@
 /*
- * Copyright 2016 Intuit Inc. All rights reserved. Unauthorized reproduction
- * is a violation of applicable law. This material contains certain
- * confidential or proprietary information and trade secrets of Intuit Inc.
- * 
- * graphql.language.NodeVisitor.java
+ * AST visitor interface  
  * 
  * Created: Jan 27, 2018 5:25:34 PM
  * Author: gkesler
