@@ -133,9 +133,9 @@ public class QueryTraversal {
     
     private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, QueryVisitorEnvironment parent, boolean preOrder) {
         new Traverser<Selection>(this::childrenOf)
-            .traverse(selectionSet.getSelections(), null, new NodeVisitorStub<Traverser.Context<Selection>>() {
+            .traverse(selectionSet.getSelections(), null, new NodeVisitorStub<Context<Selection>>() {
                 @Override
-                public Object visit(InlineFragment inlineFragment, Traverser.Context<Selection> context) {
+                public Object visit(InlineFragment inlineFragment, Context<Selection> context) {
                     if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives()))
                         return Traverser.Markers.ABORT; // stop recursing down
 
@@ -156,7 +156,7 @@ public class QueryTraversal {
                 }
 
                 @Override
-                public Object visit(FragmentSpread fragmentSpread, Traverser.Context<Selection> context) {
+                public Object visit(FragmentSpread fragmentSpread, Context<Selection> context) {
                     if (!conditionalNodes.shouldInclude(variables, fragmentSpread.getDirectives()))
                         return Traverser.Markers.ABORT; // stop recursion
 
@@ -173,7 +173,7 @@ public class QueryTraversal {
                 }
 
                 @Override
-                public Object visit(Field field, Traverser.Context<Selection> context) {
+                public Object visit(Field field, Context<Selection> context) {
                     if (!conditionalNodes.shouldInclude(variables, field.getDirectives()))
                         return Traverser.Markers.ABORT; // stop recursion
 
@@ -202,15 +202,15 @@ public class QueryTraversal {
                 }
 
                 @Override
-                public Object leave(Traverser.Context<Node> context, Traverser.Context<Selection> data) {
+                public Object leave(Context<Node> context, Context<Selection> data) {
                     return context
                             .thisNode()
                             .accept(context, postOrderVisitor);
                 }
         
-                final NodeVisitor<Traverser.Context<Selection>> postOrderVisitor = new NodeVisitorStub<Traverser.Context<Selection>>() {
+                final NodeVisitor<Context<Selection>> postOrderVisitor = new NodeVisitorStub<Context<Selection>>() {
                     @Override
-                    public Object visit(Field field, Traverser.Context<Selection> context) {
+                    public Object visit(Field field, Context<Selection> context) {
                         Frame top = frames.pop();
                         visitorNotifier.notifyPostOrder(top.environment);
                         
