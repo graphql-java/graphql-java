@@ -1100,4 +1100,26 @@ class SchemaGeneratorTest extends Specification {
         schema.getFieldVisibility() == fieldVisibility
 
     }
+
+    def "empty types are allowed and expanded"() {
+        def spec = """
+            type Query
+            
+            extend type Query {
+                name : String
+            }
+
+            extend type Query {
+                age : Int
+            }
+        """
+
+        def schema = schema(spec)
+        schema.getType("Query") instanceof GraphQLObjectType
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        query.getFieldDefinitions().size() == 2
+    }
+
 }
