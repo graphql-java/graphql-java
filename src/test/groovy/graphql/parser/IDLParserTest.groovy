@@ -520,5 +520,67 @@ input Gun {
         commentContent(inputValueDefinitions[1].comments) == [" second"]
     }
 
+    def "empty type definition"() {
+
+        def input = """
+        type EmptyType
+        
+        extend type EmptyType {
+            hero : String
+        }
+"""
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        ObjectTypeDefinition typeDef = document.definitions[0] as ObjectTypeDefinition
+        typeDef.getName() == 'EmptyType'
+        typeDef.getFieldDefinitions().isEmpty()
+
+        TypeExtensionDefinition extTypeDef = document.definitions[1] as TypeExtensionDefinition
+        extTypeDef.getName() == 'EmptyType'
+        extTypeDef.getFieldDefinitions().size() == 1
+    }
+
+    def "type implements can have & character for extra names"() {
+
+        def input = """
+        interface Bar {
+            bar : String
+        }
+
+        interface Baz {
+            baz : String
+        }
+        
+        type Foo implements Bar & Baz {
+            bar : String
+            baz : String
+        }
+    
+        type Foo2 implements Bar Baz {
+            bar : String
+            baz : String
+        }
+        
+"""
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        ObjectTypeDefinition typeDef = document.definitions[2] as ObjectTypeDefinition
+        typeDef.getName() == 'Foo'
+        typeDef.getImplements().size() == 2
+        (typeDef.getImplements()[0] as TypeName).getName() == 'Bar'
+        (typeDef.getImplements()[1] as TypeName).getName() == 'Baz'
+
+        then:
+        ObjectTypeDefinition typeDef2 = document.definitions[3] as ObjectTypeDefinition
+        typeDef2.getName() == 'Foo2'
+        typeDef2.getImplements().size() == 2
+        (typeDef2.getImplements()[0] as TypeName).getName() == 'Bar'
+        (typeDef2.getImplements()[1] as TypeName).getName() == 'Baz'
+    }
+
 }
 
