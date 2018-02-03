@@ -145,9 +145,13 @@ inputObjectTypeDefinition
 
 scalarTypeDefinition : description? SCALAR name directives?;
 
-objectTypeDefinition : description? TYPE name implementsInterfaces? directives? '{' fieldDefinition+ '}';
+objectTypeDefinition : description? TYPE name implementsInterfaces? directives? fieldsDefinition?;
 
-implementsInterfaces : IMPLEMENTS typeName+;
+implementsInterfaces :
+    IMPLEMENTS '&'? typeName+ |
+    implementsInterfaces '&' typeName ;
+
+fieldsDefinition : '{' fieldDefinition+ '}';
 
 fieldDefinition : description? name argumentsDefinition? ':' type directives?;
 
