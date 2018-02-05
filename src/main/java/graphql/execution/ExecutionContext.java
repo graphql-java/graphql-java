@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 @PublicApi
@@ -32,7 +33,7 @@ public class ExecutionContext {
     private final Object root;
     private final Object context;
     private final Instrumentation instrumentation;
-    private final List<GraphQLError> errors = new ArrayList<>();
+    private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
 
     public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
         this(instrumentation, executionId, graphQLSchema, instrumentationState, queryStrategy, mutationStrategy, subscriptionStrategy, fragmentsByName, document, operationDefinition, variables, context, root, Collections.emptyList());
@@ -113,17 +114,15 @@ public class ExecutionContext {
         // field errors should be handled - ie only once per field if its already there for nullability
         // but unclear if its not that error path
         //
-        synchronized (this) {
-            for (GraphQLError graphQLError : errors) {
-                List<Object> path = graphQLError.getPath();
-                if (path != null) {
-                    if (fieldPath.equals(ExecutionPath.fromList(path))) {
-                        return;
-                    }
+        for (GraphQLError graphQLError : errors) {
+            List<Object> path = graphQLError.getPath();
+            if (path != null) {
+                if (fieldPath.equals(ExecutionPath.fromList(path))) {
+                    return;
                 }
             }
-            this.errors.add(error);
         }
+        this.errors.add(error);
     }
 
     /**
@@ -136,18 +135,14 @@ public class ExecutionContext {
         // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
         // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
         // aspect.
-        synchronized (this) {
-            this.errors.add(error);
-        }
+        this.errors.add(error);
     }
 
     /**
      * @return the total list of errors for this execution context
      */
     public List<GraphQLError> getErrors() {
-        synchronized (this) {
-            return Collections.unmodifiableList(errors);
-        }
+        return Collections.unmodifiableList(errors);
     }
 
     public ExecutionStrategy getQueryStrategy() {
