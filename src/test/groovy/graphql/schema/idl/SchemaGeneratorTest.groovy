@@ -1105,13 +1105,18 @@ class SchemaGeneratorTest extends Specification {
         def spec = """
             type Query
             
+            interface IAge {
+                age : Int
+            }
+            
             extend type Query {
                 name : String
             }
 
-            extend type Query {
+            extend type Query implements IAge {
                 age : Int
             }
+            
         """
 
         def schema = schema(spec)
@@ -1120,6 +1125,8 @@ class SchemaGeneratorTest extends Specification {
 
         expect:
         query.getFieldDefinitions().size() == 2
+        query.getInterfaces().size() == 1
+        query.getInterfaces().get(0).getName() == 'IAge'
     }
 
 }
