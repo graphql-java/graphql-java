@@ -1,16 +1,7 @@
-/*
- * Created: Jan 29, 2018 11:56:36 AM
- * Author: gkesler
- */
-
 package graphql.util
 
 import spock.lang.Specification
 
-/**
- *
- * @author gkesler
- */
 class TraverserTest extends Specification {
     class Node {
         int number;
@@ -31,13 +22,13 @@ class TraverserTest extends Specification {
         
         when:
             List<Integer> result = new Traverser({Node n -> n.children})
-                .traverse(root, new ArrayList<Integer>(), new Traverser.Visitor<Node, List<Node>>() {
-                    public Object enter (Traverser.Context<? super Node> context, List<Node> data) {
+                .traverse(root, new ArrayList<Integer>(), new TraverserVisitor<Node, List<Node>>() {
+                    public Object enter (TraverserContext<? super Node> context, List<Node> data) {
                         data.add(context.thisNode().number);
                         return data;
                     }
                     
-                    public Object leave (Traverser.Context<? super Node> context, List<Node> data) {
+                    public Object leave (TraverserContext<? super Node> context, List<Node> data) {
                         return data;
                     }
                 })
@@ -60,12 +51,12 @@ class TraverserTest extends Specification {
         
         when:
             List<Integer> result = new Traverser({Node n -> n.children})
-                .traverse(root, new ArrayList<Integer>(), new Traverser.Visitor<Node, List<Node>>() {
-                    public Object enter (Traverser.Context<? super Node> context, List<Node> data) {
+                .traverse(root, new ArrayList<Integer>(), new TraverserVisitor<Node, List<Node>>() {
+                    public Object enter (TraverserContext<? super Node> context, List<Node> data) {
                         return data;
                     }
                     
-                    public Object leave (Traverser.Context<? super Node> context, List<Node> data) {
+                    public Object leave (TraverserContext<? super Node> context, List<Node> data) {
                         data.add(context.thisNode().number);
                         return data;
                     }
@@ -88,14 +79,14 @@ class TraverserTest extends Specification {
             ])
         
         when:
-            List<Integer> result = new Traverser(new Traverser.Queue<Node>(), {Node n -> n.children})
-                .traverse(root, new ArrayList<Integer>(), new Traverser.Visitor<Node, List<Node>>() {
-                    public Object enter (Traverser.Context<? super Node> context, List<Node> data) {
+            List<Integer> result = new Traverser(new TraverserQueue<Node>(), {Node n -> n.children})
+                .traverse(root, new ArrayList<Integer>(), new TraverserVisitor<Node, List<Node>>() {
+                    public Object enter (TraverserContext<? super Node> context, List<Node> data) {
                         data.add(context.thisNode().number);
                         return data;
                     }
                     
-                    public Object leave (Traverser.Context<? super Node> context, List<Node> data) {
+                    public Object leave (TraverserContext<? super Node> context, List<Node> data) {
                         return data;
                     }
                 })

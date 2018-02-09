@@ -30,7 +30,8 @@ import graphql.language.NodeVisitor;
 import graphql.language.NodeVisitorStub;
 import graphql.language.Selection;
 import graphql.util.Traverser;
-import graphql.util.Traverser.Context;
+import graphql.util.TraverserContext;
+import graphql.util.TraverserMarkers;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
@@ -133,11 +134,11 @@ public class QueryTraversal {
     
     private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, QueryVisitorEnvironment parent, boolean preOrder) {
         new Traverser<Selection>(this::childrenOf)
-            .traverse(selectionSet.getSelections(), null, new NodeVisitorStub<Context<Selection>>() {
+            .traverse(selectionSet.getSelections(), null, new NodeVisitorStub<TraverserContext<Selection>>() {
                 @Override
-                public Object visit(InlineFragment inlineFragment, Context<Selection> context) {
+                public Object visit(InlineFragment inlineFragment, TraverserContext<Selection> context) {
                     if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives()))
-                        return Traverser.Markers.ABORT; // stop recursing down
+                        return TraverserMarkers.ABORT; // stop recursing down
 
                     // inline fragments are allowed not have type conditions, if so the parent type counts
                     Frame top = frames.peek();
@@ -156,13 +157,13 @@ public class QueryTraversal {
                 }
 
                 @Override
-                public Object visit(FragmentSpread fragmentSpread, Context<Selection> context) {
+                public Object visit(FragmentSpread fragmentSpread, TraverserContext<Selection> context) {
                     if (!conditionalNodes.shouldInclude(variables, fragmentSpread.getDirectives()))
-                        return Traverser.Markers.ABORT; // stop recursion
+                        return TraverserMarkers.ABORT; // stop recursion
 
                     FragmentDefinition fragmentDefinition = fragmentsByName.get(fragmentSpread.getName());
                     if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives()))
-                        return Traverser.Markers.ABORT; // stop recursion
+                        return TraverserMarkers.ABORT; // stop recursion
 
                     Frame top = frames.peek();
 
@@ -173,9 +174,9 @@ public class QueryTraversal {
                 }
 
                 @Override
-                public Object visit(Field field, Context<Selection> context) {
+                public Object visit(Field field, TraverserContext<Selection> context) {
                     if (!conditionalNodes.shouldInclude(variables, field.getDirectives()))
-                        return Traverser.Markers.ABORT; // stop recursion
+                        return TraverserMarkers.ABORT; // stop recursion
 
                     Frame top = frames.peek();
 
@@ -195,22 +196,22 @@ public class QueryTraversal {
                 }
 
                 @Override
-                public Object enter(Context<Node> context, Context<Selection> data) {
+                public Object enter(TraverserContext<Node> context, TraverserContext<Selection> data) {
                     return context
                             .thisNode()
                             .accept(context, this);
                 }
 
                 @Override
-                public Object leave(Context<Node> context, Context<Selection> data) {
+                public Object leave(TraverserContext<Node> context, TraverserContext<Selection> data) {
                     return context
                             .thisNode()
                             .accept(context, postOrderVisitor);
                 }
         
-                final NodeVisitor<Context<Selection>> postOrderVisitor = new NodeVisitorStub<Context<Selection>>() {
+                final NodeVisitor<TraverserContext<Selection>> postOrderVisitor = new NodeVisitorStub<TraverserContext<Selection>>() {
                     @Override
-                    public Object visit(Field field, Context<Selection> context) {
+                    public Object visit(Field field, TraverserContext<Selection> context) {
                         Frame top = frames.pop();
                         visitorNotifier.notifyPostOrder(top.environment);
                         
@@ -218,7 +219,7 @@ public class QueryTraversal {
                     }
 
                     @Override
-                    protected Object visitSelection(Selection<?> node, Context<Selection> context) {
+                    protected Object visitSelection(Selection<?> node, TraverserContext<Selection> context) {
                         frames.pop();
                         return context;
                     }
