@@ -4,6 +4,7 @@ import java.util.Map;
 
 /**
  * Traversal context
+ *
  * @param <T> type of tree node
  */
 public interface TraverserContext<T> {
@@ -32,7 +33,7 @@ public interface TraverserContext<T> {
      * Informs that the current node has been already "visited"
      *
      * @param data a value to associate with the node if not yet visited
-     * Does not have effect if a node has been already visited
+     *             Does not have effect if a node has been already visited
      *
      * @return {@code true} if a node had been already visited
      */
@@ -49,8 +50,8 @@ public interface TraverserContext<T> {
     /**
      * Obtains a context local variable
      *
-     * @param <S>   type of the variable
-     * @param key   key to lookup the variable value
+     * @param <S> type of the variable
+     * @param key key to lookup the variable value
      *
      * @return a variable value of {@code null}
      */
@@ -65,5 +66,5 @@ public interface TraverserContext<T> {
      *
      * @return this context to allow operations chaining
      */
-    <S> TraverserContext<T> setVar(Class<? super S> key, S value);    
+    <S> TraverserContext<T> setVar(Class<? super S> key, S value);
 }
