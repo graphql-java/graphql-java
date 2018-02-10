@@ -3,10 +3,15 @@ package graphql.util;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
+import static graphql.Assert.assertNotNull;
+
 public class Traverser<T> {
+
+    private final RecursionState<T> stack;
+    private final Function<? super T, ? extends List<T>> getChildren;
+
     /**
      * Instantiates a depth-first Traverser object with a given method to extract
      * children nodes from the current root
@@ -28,8 +33,8 @@ public class Traverser<T> {
      *                    * FIFO structure makes the traversal breadth-first
      */
     public Traverser(RecursionState<T> stack, Function<? super T, ? extends List<T>> getChildren) {
-        this.stack = Objects.requireNonNull(stack);
-        this.getChildren = Objects.requireNonNull(getChildren);
+        this.stack = assertNotNull(stack);
+        this.getChildren = assertNotNull(getChildren);
     }
 
     /**
@@ -96,8 +101,8 @@ public class Traverser<T> {
      * @return some data produced by the last Visitor's method invoked
      */
     public <U> Object traverse(Collection<T> roots, U data, TraverserVisitor<? super T, ? super U> visitor) {
-        Objects.requireNonNull(roots);
-        Objects.requireNonNull(visitor);
+        assertNotNull(roots);
+        assertNotNull(visitor);
 
         stack.addAll(roots);
 
@@ -107,8 +112,8 @@ public class Traverser<T> {
 
         return d;
     }
-    
-    protected <U> Object traverseOne (TraverserVisitor<T, U> visitor, U data) {
+
+    private <U> Object traverseOne(TraverserVisitor<T, U> visitor, U data) {
         TraverserContext<T> top = stack.pop();
 
         Object result;
@@ -138,7 +143,5 @@ public class Traverser<T> {
 
         return result;
     }
-    
-    protected final RecursionState<T> stack;
-    protected final Function<? super T, ? extends List<T>> getChildren;
+
 }

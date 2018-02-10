@@ -6,19 +6,24 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
+
 abstract class RecursionState<T> {
+
+    private final Deque<TraverserContext<?>> delegate;
+    private final Map<T, Object> visitedMap = new ConcurrentHashMap<>();
+
     public RecursionState() {
         this(new ArrayDeque<>(32));
     }
 
     public RecursionState(Deque<? super TraverserContext<T>> delegate) {
-        this.delegate = (Deque<TraverserContext<?>>) Objects.requireNonNull(delegate);
+        this.delegate = (Deque<TraverserContext<?>>) assertNotNull(delegate);
     }
 
     public TraverserContext<T> peek() {
@@ -30,7 +35,7 @@ abstract class RecursionState<T> {
     public abstract void pushAll(TraverserContext<T> o, Function<? super T, ? extends List<T>> getChildren);
 
     protected void addAll(Collection<? extends T> col) {
-        Objects.requireNonNull(col).stream().map((x) -> newContext(x, null)).collect(Collectors.toCollection(() -> delegate));
+        assertNotNull(col).stream().map((x) -> newContext(x, null)).collect(Collectors.toCollection(() -> delegate));
     }
 
     protected boolean isEmpty() {
@@ -79,6 +84,11 @@ abstract class RecursionState<T> {
         };
     }
 
-    protected final Deque<TraverserContext<?>> delegate;
-    protected final Map<T, Object> visitedMap = new ConcurrentHashMap<>();
+    protected Deque<TraverserContext<?>> getDelegate() {
+        return delegate;
+    }
+
+    protected Map<T, Object> getVisitedMap() {
+        return visitedMap;
+    }
 }
