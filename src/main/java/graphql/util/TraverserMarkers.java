@@ -1,12 +1,14 @@
 package graphql.util;
 
 import graphql.Assert;
+import graphql.Internal;
 
 import java.util.Map;
 
 /**
  * Special traversal control values
  */
+@Internal
 public enum TraverserMarkers implements TraverserContext<Object> {
     /**
      * Used instead of {@code null} when storing a value in a map

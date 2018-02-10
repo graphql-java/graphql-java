@@ -1,5 +1,7 @@
 package graphql.util;
 
+import graphql.Internal;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -7,6 +9,7 @@ import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
 
+@Internal
 public class Traverser<T> {
 
     private final RecursionState<T> stack;

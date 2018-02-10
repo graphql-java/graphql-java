@@ -1,5 +1,7 @@
 package graphql.util;
 
+import graphql.Internal;
+
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -13,6 +15,7 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 
+@Internal
 abstract class RecursionState<T> {
 
     private final Deque<TraverserContext<?>> delegate;

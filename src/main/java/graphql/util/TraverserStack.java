@@ -1,10 +1,13 @@
 package graphql.util;
 
+import graphql.Internal;
+
 import java.util.ArrayDeque;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Internal
 public class TraverserStack<T> extends RecursionState<T> {
     @Override
     public TraverserContext<T> pop() {
