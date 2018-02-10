@@ -1159,4 +1159,33 @@ class SchemaGeneratorTest extends Specification {
         schema.getFieldVisibility() == fieldVisibility
 
     }
+
+    def "empty types are allowed and expanded"() {
+        def spec = """
+            type Query
+            
+            interface IAge {
+                age : Int
+            }
+            
+            extend type Query {
+                name : String
+            }
+
+            extend type Query implements IAge {
+                age : Int
+            }
+            
+        """
+
+        def schema = schema(spec)
+        schema.getType("Query") instanceof GraphQLObjectType
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        query.getFieldDefinitions().size() == 2
+        query.getInterfaces().size() == 1
+        query.getInterfaces().get(0).getName() == 'IAge'
+    }
+
 }

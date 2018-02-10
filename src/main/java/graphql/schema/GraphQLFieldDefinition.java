@@ -90,7 +90,7 @@ public class GraphQLFieldDefinition {
     }
 
     public List<GraphQLDirective> getDirectives() {
-        return Collections.unmodifiableList(directives);
+        return new ArrayList<>(directives);
     }
 
     public Map<String, GraphQLDirective> getDirectivesByName() {
