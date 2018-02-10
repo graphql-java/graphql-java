@@ -4,6 +4,8 @@ package graphql.schema;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.DirectivesUtil.directivesByName;
+
 /**
  * Represents a type that can have {@link graphql.schema.GraphQLDirective}s
  */
@@ -17,7 +19,9 @@ public interface GraphQLDirectiveContainer extends GraphQLType {
     /**
      * @return a a map of directives by directive name
      */
-    Map<String, GraphQLDirective> getDirectivesByName();
+    default Map<String, GraphQLDirective> getDirectivesByName() {
+        return directivesByName(getDirectives());
+    }
 
     /**
      * Returns a named directive

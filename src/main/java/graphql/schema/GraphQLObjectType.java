@@ -1,7 +1,6 @@
 package graphql.schema;
 
 import graphql.AssertException;
-import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
@@ -76,18 +75,12 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return Collections.unmodifiableList(directives);
-    }
-
-    @Override
-    public Map<String, GraphQLDirective> getDirectivesByName() {
-        return DirectivesUtil.directivesByName(directives);
+        return new ArrayList<>(directives);
     }
 
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }
-
 
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
         return new ArrayList<>(fieldDefinitionsByName.values());
