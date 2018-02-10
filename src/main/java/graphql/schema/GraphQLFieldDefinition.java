@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -285,13 +286,20 @@ public class GraphQLFieldDefinition {
 
         public GraphQLFieldDefinition build() {
             if (dataFetcherFactory == null) {
+                String fetchName = determineFetchName(name, directives);
                 if (isField) {
-                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new FieldDataFetcher<>(name));
+                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new FieldDataFetcher<>(fetchName));
                 } else {
-                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(name));
+                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(fetchName));
                 }
             }
             return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory, arguments, deprecationReason, directives, definition);
+        }
+
+        private String determineFetchName(String name, List<GraphQLDirective> directives) {
+            // @fetch(from : "name")
+            Optional<GraphQLArgument> from = DirectivesUtil.directiveWithArg(directives, "fetch", "from");
+            return from.map(arg -> String.valueOf(arg.getDefaultValue())).orElse(name);
         }
     }
 }
