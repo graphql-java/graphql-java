@@ -1,15 +1,5 @@
-/*
- * AST visitor interface  
- * 
- * Created: Jan 27, 2018 5:25:34 PM
- * Author: gkesler
- */
 package graphql.language;
 
-/**
- *
- * @author gkesler
- */
 public interface NodeVisitor<T> {
     Object visit (Argument node, T data);
     Object visit (ArrayValue node, T data);
