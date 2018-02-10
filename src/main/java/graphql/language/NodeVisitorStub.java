@@ -1,10 +1,9 @@
 package graphql.language;
 
-import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 
-public abstract class NodeVisitorStub<T> 
+public abstract class NodeVisitorStub<T>
         implements NodeVisitor<T>, TraverserVisitor<Node, T> {
     @Override
     public Object visit(Argument node, T data) {
@@ -186,27 +185,27 @@ public abstract class NodeVisitorStub<T>
         return visitValue(node, data);
     }
 
-    protected Object visitNode (Node node, T data) {
+    protected Object visitNode(Node node, T data) {
         return data;
     }
-    
-    protected Object visitValue (Value<?> node, T data) {
+
+    protected Object visitValue(Value<?> node, T data) {
         return visitNode(node, data);
     }
-    
-    protected Object visitDefinition (Definition<?> node, T data) {
+
+    protected Object visitDefinition(Definition<?> node, T data) {
         return visitNode(node, data);
     }
-    
-    protected Object visitTypeDefinition (TypeDefinition<?> node, T data) {
+
+    protected Object visitTypeDefinition(TypeDefinition<?> node, T data) {
         return visitDefinition(node, data);
     }
-    
-    protected Object visitSelection (Selection<?> node, T data) {
+
+    protected Object visitSelection(Selection<?> node, T data) {
         return visitNode(node, data);
     }
-    
-    protected Object visitType (Type<?> node, T data) {
+
+    protected Object visitType(Type<?> node, T data) {
         return visitNode(node, data);
     }
 
