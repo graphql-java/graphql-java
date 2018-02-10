@@ -59,6 +59,7 @@ import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -480,30 +481,32 @@ public class SchemaGenerator {
         builder.description(buildDescription(fieldDef, fieldDef.getDescription()));
         builder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
 
-        builder.dataFetcherFactory(buildDataFetcherFactory(buildCtx, parentType, fieldDef));
+        GraphQLDirective[] directives = buildDirectives(buildCtx, fieldDef.getDirectives(),
+                Collections.emptyList(), Introspection.DirectiveLocation.FIELD);
+        builder.withDirectives(
+                directives
+        );
 
         fieldDef.getInputValueDefinitions().forEach(inputValueDefinition ->
                 builder.argument(buildArgument(buildCtx, inputValueDefinition)));
 
-        builder.withDirectives(
-                buildDirectives(buildCtx, fieldDef.getDirectives(),
-                        Collections.emptyList(), Introspection.DirectiveLocation.FIELD)
-        );
+        GraphQLOutputType fieldType = buildOutputType(buildCtx, fieldDef.getType());
+        builder.type(fieldType);
 
-        GraphQLOutputType outputType = buildOutputType(buildCtx, fieldDef.getType());
-        builder.type(outputType);
+        builder.dataFetcherFactory(buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives)));
+
 
         return builder.build();
     }
 
-    private DataFetcherFactory buildDataFetcherFactory(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
+    private DataFetcherFactory buildDataFetcherFactory(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef, GraphQLOutputType fieldType, List<GraphQLDirective> directives) {
         String fieldName = fieldDef.getName();
         String parentTypeName = parentType.getName();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         RuntimeWiring runtimeWiring = buildCtx.getWiring();
         WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
 
-        FieldWiringEnvironment wiringEnvironment = new FieldWiringEnvironment(typeRegistry, parentType, fieldDef);
+        FieldWiringEnvironment wiringEnvironment = new FieldWiringEnvironment(typeRegistry, parentType, fieldDef, fieldType, directives);
 
         DataFetcherFactory<?> dataFetcherFactory;
         if (wiringFactory.providesDataFetcherFactory(wiringEnvironment)) {

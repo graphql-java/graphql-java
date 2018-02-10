@@ -295,11 +295,12 @@ public class GraphQLFieldDefinition {
             }
             return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory, arguments, deprecationReason, directives, definition);
         }
+    }
 
-        private String determineFetchName(String name, List<GraphQLDirective> directives) {
-            // @fetch(from : "name")
-            Optional<GraphQLArgument> from = DirectivesUtil.directiveWithArg(directives, "fetch", "from");
-            return from.map(arg -> String.valueOf(arg.getDefaultValue())).orElse(name);
-        }
+    @Internal
+    public static String determineFetchName(String fieldName, List<GraphQLDirective> directives) {
+        // @fetch(from : "name")
+        Optional<GraphQLArgument> from = DirectivesUtil.directiveWithArg(directives, "fetch", "from");
+        return from.map(arg -> String.valueOf(arg.getDefaultValue())).orElse(fieldName);
     }
 }
