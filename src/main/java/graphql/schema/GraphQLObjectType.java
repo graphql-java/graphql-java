@@ -1,11 +1,13 @@
 package graphql.schema;
 
 import graphql.AssertException;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +17,7 @@ import java.util.stream.Collectors;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 
 /**
  * This is the work horse type and represents an object with one or more field values that can be retrieved
@@ -26,24 +29,25 @@ import static java.lang.String.format;
  * See http://graphql.org/learn/schema/#object-types-and-fields for more details on the concept.
  */
 @PublicApi
-public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private List<GraphQLOutputType> interfaces = new ArrayList<>();
+    private final List<GraphQLDirective> directives;
     private final ObjectTypeDefinition definition;
 
     @Internal
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
                              List<GraphQLOutputType> interfaces) {
-        this(name, description, fieldDefinitions, interfaces, null);
+        this(name, description, fieldDefinitions, interfaces, emptyList(), null);
     }
 
     @Internal
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
-                             List<GraphQLOutputType> interfaces, ObjectTypeDefinition definition) {
+                             List<GraphQLOutputType> interfaces, List<GraphQLDirective> directives, ObjectTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
         assertNotNull(interfaces, "interfaces can't be null");
@@ -51,6 +55,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         this.description = description;
         this.interfaces = interfaces;
         this.definition = definition;
+        this.directives = assertNotNull(directives);
         buildDefinitionMap(fieldDefinitions);
     }
 
@@ -67,6 +72,16 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
                 throw new AssertException(format("Duplicated definition for field '%s' in type '%s'", name, this.name));
             fieldDefinitionsByName.put(name, fieldDefinition);
         }
+    }
+
+    @Override
+    public List<GraphQLDirective> getDirectives() {
+        return Collections.unmodifiableList(directives);
+    }
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return DirectivesUtil.directivesByName(directives);
     }
 
     public GraphQLFieldDefinition getFieldDefinition(String name) {
@@ -121,6 +136,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         private String description;
         private final List<GraphQLFieldDefinition> fieldDefinitions = new ArrayList<>();
         private final List<GraphQLOutputType> interfaces = new ArrayList<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
         private ObjectTypeDefinition definition;
 
         public Builder name(String name) {
@@ -209,8 +225,13 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             return this;
         }
 
+        public Builder withDirectives(GraphQLDirective... directives) {
+            Collections.addAll(this.directives, directives);
+            return this;
+        }
+
         public GraphQLObjectType build() {
-            return new GraphQLObjectType(name, description, fieldDefinitions, interfaces, definition);
+            return new GraphQLObjectType(name, description, fieldDefinitions, interfaces, directives, definition);
         }
 
     }

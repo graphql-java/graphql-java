@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLFieldsContainer
@@ -19,6 +20,7 @@ import spock.lang.Specification
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.schema
@@ -1051,6 +1053,63 @@ class SchemaGeneratorTest extends Specification {
         arg1 instanceof Integer
         arg2 instanceof List
         (arg2 as List).get(0) instanceof Integer
+    }
+
+    def "directives are gathered and turned into runtime objects with arguments"() {
+        def spec = """
+            type Query @directive1 {
+              field1 : String @fieldDirective1
+            }
+            
+            extend type Query @directive2 {
+                field2 : String @fieldDirective2
+            }
+
+            extend type Query @directive2
+            
+            extend type Query @directive3
+            
+            extend type Query @directiveWithArgs(strArg : "String", intArg : 1, boolArg : true, floatArg : 1.1, nullArg : null)
+            
+                
+        """
+
+        def schema = schema(spec)
+        GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        type.getDirectives().size() == 4
+        type.getDirectives()[0].name == "directive1"
+        type.getDirectives()[1].name == "directive2"
+        type.getDirectives()[2].name == "directive3"
+
+        // test that fields can have directives as well
+
+        def field1 = type.getFieldDefinition("field1")
+        def fieldDirective1 = field1.getDirectives()[0]
+        fieldDirective1.getName() == "fieldDirective1"
+
+        def field2 = type.getFieldDefinition("field2")
+        def fieldDirective2 = field2.getDirectives()[0]
+        fieldDirective2.getName() == "fieldDirective2"
+
+
+        def directive = type.getDirectives()[3] as GraphQLDirective
+        directive.name == "directiveWithArgs"
+        directive.arguments.size() == 5
+
+        directive.arguments[argIndex].name == argName
+        directive.arguments[argIndex].type == argType
+        directive.arguments[argIndex].defaultValue == argValue
+
+        where:
+        argIndex | argName    | argType        | argValue
+        0        | "strArg"   | GraphQLString  | "String"
+        1        | "intArg"   | GraphQLInt     | 1
+        2        | "boolArg"  | GraphQLBoolean | true
+        3        | "floatArg" | GraphQLFloat   | 1.1
+        4        | "nullArg"  | GraphQLString  | null
+
     }
 
     def "input object default value is parsed"() {
