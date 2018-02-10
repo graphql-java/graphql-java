@@ -37,20 +37,20 @@ abstract class RecursionState<T> {
 
     public abstract void pushAll(TraverserContext<T> o, Function<? super T, ? extends List<T>> getChildren);
 
-    protected void addAll(Collection<? extends T> col) {
+    public void addAll(Collection<? extends T> col) {
         assertNotNull(col).stream().map((x) -> newContext(x, null)).collect(Collectors.toCollection(() -> delegate));
     }
 
-    protected boolean isEmpty() {
+    public boolean isEmpty() {
         return delegate.isEmpty();
     }
 
-    protected void clear() {
+    public void clear() {
         delegate.clear();
         visitedMap.clear();
     }
 
-    protected TraverserContext<T> newContext(final T o, final TraverserContext<T> parent) {
+    public TraverserContext<T> newContext(final T o, final TraverserContext<T> parent) {
         return new TraverserContext<T>() {
             @Override
             public T thisNode() {
@@ -91,7 +91,4 @@ abstract class RecursionState<T> {
         return delegate;
     }
 
-    protected Map<T, Object> getVisitedMap() {
-        return visitedMap;
-    }
 }
