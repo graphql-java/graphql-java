@@ -1,5 +1,7 @@
 package graphql.util;
 
+import graphql.Internal;
+
 import java.util.Map;
 
 /**
@@ -7,6 +9,7 @@ import java.util.Map;
  *
  * @param <T> type of tree node
  */
+@Internal
 public interface TraverserContext<T> {
     /**
      * Returns current node being visited

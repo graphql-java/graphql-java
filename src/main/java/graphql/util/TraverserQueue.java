@@ -1,8 +1,11 @@
 package graphql.util;
 
+import graphql.Internal;
+
 import java.util.List;
 import java.util.function.Function;
 
+@Internal
 public class TraverserQueue<T> extends RecursionState<T> {
     @Override
     public TraverserContext<T> pop() {
