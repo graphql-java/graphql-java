@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-abstract class RecursionState<T> {    
+abstract class RecursionState<T> {
     public RecursionState() {
         this(new ArrayDeque<>(32));
     }
@@ -74,10 +74,11 @@ abstract class RecursionState<T> {
                 vars.put(key, value);
                 return this;
             }
+
             final Map<Class<?>, Object> vars = new HashMap<>();
         };
     }
-    
+
     protected final Deque<TraverserContext<?>> delegate;
-    protected final Map<T, Object> visitedMap = new ConcurrentHashMap<>();    
+    protected final Map<T, Object> visitedMap = new ConcurrentHashMap<>();
 }

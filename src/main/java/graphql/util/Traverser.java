@@ -10,102 +10,107 @@ public class Traverser<T> {
     /**
      * Instantiates a depth-first Traverser object with a given method to extract
      * children nodes from the current root
-     * 
+     *
      * @param getChildren a function to extract children
      */
-    public Traverser (Function<? super T, ? extends List<T>> getChildren) {
+    public Traverser(Function<? super T, ? extends List<T>> getChildren) {
         this(new TraverserStack<>(), getChildren);
     }
-    
+
     /**
      * Instantiates a Traverser object with a given method to extract
      * children nodes from the current root
-     * 
+     *
      * @param getChildren a function to extract children
      * @param stack       a queue of pended {@link TraverserContext} nodes to visit
-     * <br>
-     * * LIFO structure makes the traversal depth-first
-     * * FIFO structure makes the traversal breadth-first
+     *                    <br>
+     *                    * LIFO structure makes the traversal depth-first
+     *                    * FIFO structure makes the traversal breadth-first
      */
-    public Traverser (RecursionState<T> stack, Function<? super T, ? extends List<T>> getChildren) {
+    public Traverser(RecursionState<T> stack, Function<? super T, ? extends List<T>> getChildren) {
         this.stack = Objects.requireNonNull(stack);
         this.getChildren = Objects.requireNonNull(getChildren);
     }
-    
+
     /**
      * Creates a standard Traverser suitable for depth-first traversal (both pre- and post- order)
-     * 
-     * @param <T>           type of tree nodes to0 traverse
-     * @param getChildren   a function that obtains a list of children for a given tree node
-     * @return              Traverser instance
+     *
+     * @param <T>         type of tree nodes to0 traverse
+     * @param getChildren a function that obtains a list of children for a given tree node
+     *
+     * @return Traverser instance
      */
-    public static <T> Traverser<T> depthFirst (Function<? super T, ? extends List<T>> getChildren) {
+    public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren) {
         return new Traverser<>(new TraverserStack<>(), getChildren);
     }
-    
-    
+
+
     /**
      * Creates a standard Traverser suitable for breadth-first traversal
-     * 
-     * @param <T>           type of tree nodes to0 traverse
-     * @param getChildren   a function that obtains a list of children for a given tree node
-     * @return              Traverser instance
+     *
+     * @param <T>         type of tree nodes to0 traverse
+     * @param getChildren a function that obtains a list of children for a given tree node
+     *
+     * @return Traverser instance
      */
-    public static <T> Traverser<T> breadthFirst (Function<? super T, ? extends List<T>> getChildren) {
+    public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren) {
         return new Traverser<>(new TraverserQueue<>(), getChildren);
     }
-    
+
     /**
      * Resets the Traverser to the original state, so it can be re-used
      */
-    public void reset () {
+    public void reset() {
         stack.clear();
     }
-    
+
     /**
-     * Starts traversal of a tree from a provided root using specified Visitor 
+     * Starts traversal of a tree from a provided root using specified Visitor
      * and initial data to pass around Visitor's methods
-     * 
-     * @param <U>   type of data argument to Visitor's methods
-     * @param root  subtree root to start traversal from
-     * @param data  some data to pass across Visitor's methods. Visitor's methods
-     * can change that data to some other values of the same type or special Traverser
-     * markers {@link TraverserMarkers}
+     *
+     * @param <U>     type of data argument to Visitor's methods
+     * @param root    subtree root to start traversal from
+     * @param data    some data to pass across Visitor's methods. Visitor's methods
+     *                can change that data to some other values of the same type or special Traverser
+     *                markers {@link TraverserMarkers}
      * @param visitor a Visitor object to be notified during traversal
-     * @return      some data produced by the last Visitor's method invoked
+     *
+     * @return some data produced by the last Visitor's method invoked
      */
-    public <U> Object traverse (T root, U data, TraverserVisitor<? super T, ? super U> visitor) {
+    public <U> Object traverse(T root, U data, TraverserVisitor<? super T, ? super U> visitor) {
         return traverse(Collections.singleton(root), data, visitor);
     }
-    
-    
+
+
     /**
-     * Starts traversal of a tree from a provided roots using specified Visitor 
+     * Starts traversal of a tree from a provided roots using specified Visitor
      * and initial data to pass around Visitor's methods
-     * 
-     * @param <U>   type of data argument to Visitor's methods
-     * @param roots  multiple subtree roots to start traversal from
-     * @param data  some data to pass across Visitor's methods. Visitor's methods
-     * can change that data to some other values of the same type or special Traverser
-     * markers {@link TraverserMarkers}
+     *
+     * @param <U>     type of data argument to Visitor's methods
+     * @param roots   multiple subtree roots to start traversal from
+     * @param data    some data to pass across Visitor's methods. Visitor's methods
+     *                can change that data to some other values of the same type or special Traverser
+     *                markers {@link TraverserMarkers}
      * @param visitor a Visitor object to be notified during traversal
-     * @return      some data produced by the last Visitor's method invoked
+     *
+     * @return some data produced by the last Visitor's method invoked
      */
-    public <U> Object traverse (Collection<T> roots, U data, TraverserVisitor<? super T, ? super U> visitor) {
+    public <U> Object traverse(Collection<T> roots, U data, TraverserVisitor<? super T, ? super U> visitor) {
         Objects.requireNonNull(roots);
         Objects.requireNonNull(visitor);
-        
+
         stack.addAll(roots);
-        
+
         Object d = data;
-        while (!(stack.isEmpty() || (d = traverseOne((TraverserVisitor<T, U>)visitor, (U)d)) == TraverserMarkers.QUIT));
-        
+        while (!(stack.isEmpty() || (d = traverseOne((TraverserVisitor<T, U>) visitor, (U) d)) == TraverserMarkers.QUIT))
+            ;
+
         return d;
     }
     
     protected <U> Object traverseOne (TraverserVisitor<T, U> visitor, U data) {
         TraverserContext<T> top = stack.pop();
-        
+
         Object result;
         if (top == TraverserMarkers.END_LIST) {
             // end-of-list marker, we are done recursing children, 
@@ -129,8 +134,8 @@ public class Traverser<T> {
             // -or-
             // put children into a queue and this will be a breadth-first search
             stack.pushAll(top, getChildren);
-        }        
-        
+        }
+
         return result;
     }
     
