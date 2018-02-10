@@ -1,21 +1,9 @@
-/*
- * Abstract Visitor interface implementation,  
- * which helps to override only required methods in concrete visitor implementation.
- * 
- * 
- * Created: Jan 29, 2018 1:37:20 PM
- * Author: gkesler
- */
 package graphql.language;
 
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 
-/**
- *
- * @author gkesler
- */
 public abstract class NodeVisitorStub<T> 
         implements NodeVisitor<T>, TraverserVisitor<Node, T> {
     @Override
