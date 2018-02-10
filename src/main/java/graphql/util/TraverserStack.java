@@ -8,13 +8,13 @@ import java.util.stream.Collectors;
 public class TraverserStack<T> extends RecursionState<T> {
     @Override
     public TraverserContext<T> pop() {
-        return (TraverserContext<T>) delegate.pop();
+        return (TraverserContext<T>) getDelegate().pop();
     }
 
     @Override
     public void pushAll(TraverserContext<T> o, Function<? super T, ? extends List<T>> getChildren) {
-        delegate.push(o);
-        delegate.push(TraverserMarkers.END_LIST);
-        getChildren.apply(o.thisNode()).stream().collect(Collectors.toCollection(ArrayDeque::new)).descendingIterator().forEachRemaining((e) -> delegate.push(newContext(e, o)));
+        getDelegate().push(o);
+        getDelegate().push(TraverserMarkers.END_LIST);
+        getChildren.apply(o.thisNode()).stream().collect(Collectors.toCollection(ArrayDeque::new)).descendingIterator().forEachRemaining((e) -> getDelegate().push(newContext(e, o)));
     }
 }
