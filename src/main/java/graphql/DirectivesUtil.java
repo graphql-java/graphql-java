@@ -23,4 +23,11 @@ public class DirectivesUtil {
         }
         return Optional.ofNullable(argument);
     }
+
+    public static String atFetchFromSupport(String fieldName, List<GraphQLDirective> directives) {
+        // @fetch(from : "name")
+        Optional<GraphQLArgument> from = directiveWithArg(directives, "fetch", "from");
+        return from.map(arg -> String.valueOf(arg.getDefaultValue())).orElse(fieldName);
+    }
+
 }

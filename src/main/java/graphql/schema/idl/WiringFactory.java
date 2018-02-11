@@ -3,11 +3,11 @@ package graphql.schema.idl;
 import graphql.PublicSpi;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactory;
-import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.DirectivesUtil.atFetchFromSupport;
 
 /**
  * A WiringFactory allows you to more dynamically wire in {@link TypeResolver}s and {@link DataFetcher}s
@@ -117,7 +117,7 @@ public interface WiringFactory {
     default DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
 
         String fieldName = environment.getFieldDefinition().getName();
-        String fetchName = GraphQLFieldDefinition.determineFetchName(fieldName, environment.getDirectives());
+        String fetchName = atFetchFromSupport(fieldName, environment.getDirectives());
         return new PropertyDataFetcher(fetchName);
     }
 }
