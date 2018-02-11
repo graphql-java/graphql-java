@@ -2,14 +2,12 @@ package graphql.validation.rules;
 
 
 import graphql.execution.TypeFromAST;
-import graphql.language.AstPrinter;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
-import graphql.schema.idl.SchemaPrinter;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationError;
