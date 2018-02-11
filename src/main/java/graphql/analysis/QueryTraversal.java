@@ -1,5 +1,6 @@
 package graphql.analysis;
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.ValuesResolver;
@@ -237,8 +238,8 @@ public class QueryTraversal {
                 
                 class QueryVisitorNotifier {
                     QueryVisitorNotifier (Consumer<QueryVisitorEnvironment> preOrder, Consumer<QueryVisitorEnvironment> postOrder) {
-                        this.preOrder = Objects.requireNonNull(preOrder);
-                        this.postOrder = Objects.requireNonNull(postOrder);
+                        this.preOrder = Assert.assertNotNull(preOrder);
+                        this.postOrder = Assert.assertNotNull(postOrder);
                     }
                     
                     void notifyPreOrder (QueryVisitorEnvironment env) {
