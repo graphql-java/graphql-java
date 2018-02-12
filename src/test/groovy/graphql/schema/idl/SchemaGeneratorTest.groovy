@@ -1039,7 +1039,7 @@ class SchemaGeneratorTest extends Specification {
     def "scalar default value is parsed"() {
         def spec = """
             type Query {
-              field(arg1 : Int! = 10, arg2 : [Int!]! = [20], argNoDefault : Int) : String
+              field(arg1 : Int! = 10, arg2 : [Int!]! = [20]) : String
             }
         """
 
@@ -1048,12 +1048,26 @@ class SchemaGeneratorTest extends Specification {
         GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
         Object arg1 = query.getFieldDefinition("field").getArgument("arg1").defaultValue
         Object arg2 = query.getFieldDefinition("field").getArgument("arg2").defaultValue
-        Object argNoDefault = query.getFieldDefinition("field").getArgument("argNoDefault").defaultValue
 
         expect:
         arg1 instanceof Integer
         arg2 instanceof List
         (arg2 as List).get(0) instanceof Integer
+    }
+
+    def "null default arguments are ok"() {
+        def spec = """
+            type Query {
+              field(argNoDefault : Int) : String
+            }
+        """
+
+        def schema = schema(spec)
+        schema.getType("Query") instanceof GraphQLObjectType
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+        Object argNoDefault = query.getFieldDefinition("field").getArgument("argNoDefault").defaultValue
+
+        expect:
         argNoDefault == null
     }
 
