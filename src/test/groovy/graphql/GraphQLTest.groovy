@@ -32,8 +32,10 @@ import java.util.function.UnaryOperator
 
 import static graphql.ExecutionInput.Builder
 import static graphql.ExecutionInput.newExecutionInput
+import static graphql.GraphQL.newGraphQL
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
@@ -63,7 +65,7 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = simpleSchema()
 
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute('{ hello }').data
+        def result = newGraphQL(schema).build().execute('{ hello }').data
 
         then:
         result == [hello: 'world']
@@ -97,7 +99,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def result = GraphQL.newGraphQL(graphQLSchema).build().execute('{ simpson { id, name } }').data
+        def result = newGraphQL(graphQLSchema).build().execute('{ simpson { id, name } }').data
 
         then:
         result == [simpson: [id: '123', name: 'homer']]
@@ -118,7 +120,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:11) }').errors
+        def errors = newGraphQL(schema).build().execute('{ hello(arg:11) }').errors
 
         then:
         errors.size() == 1
@@ -133,7 +135,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(() }').errors
+        def errors = newGraphQL(schema).build().execute('{ hello(() }').errors
 
         then:
         errors.size() == 1
@@ -150,7 +152,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello[](() }').errors
+        def errors = newGraphQL(schema).build().execute('{ hello[](() }').errors
 
         then:
         errors.size() == 1
@@ -173,7 +175,7 @@ class GraphQLTest extends Specification {
         ).build()
 
         when:
-        def errors = GraphQL.newGraphQL(schema).build().execute('{ field }').errors
+        def errors = newGraphQL(schema).build().execute('{ field }').errors
 
         then:
         errors.size() == 1
@@ -198,7 +200,7 @@ class GraphQLTest extends Specification {
                 .build()
 
         when:
-        def data = GraphQL.newGraphQL(schema).build().execute("query { set }").data
+        def data = newGraphQL(schema).build().execute("query { set }").data
 
         then:
         data == [set: ['One', 'Two']]
@@ -224,7 +226,7 @@ class GraphQLTest extends Specification {
 
         when:
         def executionInput = newExecutionInput().query(query).operationName('Query2').context(null).variables([:])
-        def result = GraphQL.newGraphQL(schema).build().execute(executionInput)
+        def result = newGraphQL(schema).build().execute(executionInput)
 
         then:
         result.data == expected
@@ -247,7 +249,7 @@ class GraphQLTest extends Specification {
         """
 
         when:
-        GraphQL.newGraphQL(schema).build().execute(query)
+        newGraphQL(schema).build().execute(query)
 
         then:
         thrown(GraphQLException)
@@ -302,7 +304,7 @@ class GraphQLTest extends Specification {
                 .build()
         def query = "{foo(bar: 12345678910)}"
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query)
+        def result = newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 1
@@ -326,7 +328,7 @@ class GraphQLTest extends Specification {
                 .build()
         def query = "{foo}"
         when:
-        GraphQL.newGraphQL(schema).build().execute(query)
+        newGraphQL(schema).build().execute(query)
 
         then:
         1 * dataFetcher.get(_) >> {
@@ -353,7 +355,7 @@ class GraphQLTest extends Specification {
         def query = "{foo(bar: null)}"
         DataFetchingEnvironment dataFetchingEnvironment
         when:
-        GraphQL.newGraphQL(schema).build().execute(query)
+        newGraphQL(schema).build().execute(query)
 
         then:
         1 * dataFetcher.get(_) >> {
@@ -384,7 +386,7 @@ class GraphQLTest extends Specification {
                 .build()
         def query = "{foo(bar: {someKey: \"value\"})}"
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query)
+        def result = newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
@@ -417,7 +419,7 @@ class GraphQLTest extends Specification {
                 .build()
         def query = "{foo(bar: {someKey: \"value\", otherKey: null})}"
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query)
+        def result = newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
@@ -450,7 +452,7 @@ class GraphQLTest extends Specification {
                 .build()
         def query = "{foo(bar: {})}"
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query)
+        def result = newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
@@ -481,7 +483,7 @@ class GraphQLTest extends Specification {
                 .build()
         def query = "{foo(bar: {list: null})}"
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query)
+        def result = newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
@@ -513,7 +515,7 @@ class GraphQLTest extends Specification {
                 .build()
         def query = "{foo(bar: {list: [null]})}"
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute(query)
+        def result = newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
@@ -528,7 +530,7 @@ class GraphQLTest extends Specification {
 
     def "#448 invalid trailing braces are handled correctly"() {
         when:
-        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute("{hero { name }} }")
+        def result = newGraphQL(starWarsSchema).build().execute("{hero { name }} }")
 
         then:
         !result.errors.isEmpty()
@@ -552,7 +554,7 @@ class GraphQLTest extends Specification {
                 .query(queryType)
                 .build()
         when:
-        final GraphQL graphQL = GraphQL.newGraphQL(schema).build()
+        final GraphQL graphQL = newGraphQL(schema).build()
         final ExecutionResult result = graphQL.execute("{query (fooParam: [Val1,Val2])}")
         then:
         result.errors.size() == 1
@@ -567,7 +569,7 @@ class GraphQLTest extends Specification {
 
         when:
         def builder = newExecutionInput().query('{ hello }')
-        def result = GraphQL.newGraphQL(schema).build().execute(builder).data
+        def result = newGraphQL(schema).build().execute(builder).data
 
         then:
         result == [hello: 'world']
@@ -580,7 +582,7 @@ class GraphQLTest extends Specification {
         when:
 
         def builderFunction = { it.query('{hello}') } as UnaryOperator<Builder>
-        def result = GraphQL.newGraphQL(schema).build().execute(builderFunction).data
+        def result = newGraphQL(schema).build().execute(builderFunction).data
 
         then:
         result == [hello: 'world']
@@ -592,7 +594,7 @@ class GraphQLTest extends Specification {
 
         when:
         def builder = newExecutionInput().query('{ hello }')
-        def result = GraphQL.newGraphQL(schema).build().executeAsync(builder).join().data
+        def result = newGraphQL(schema).build().executeAsync(builder).join().data
 
         then:
         result == [hello: 'world']
@@ -605,7 +607,7 @@ class GraphQLTest extends Specification {
         when:
 
         def builderFunction = { it.query('{hello}') } as UnaryOperator<Builder>
-        def result = GraphQL.newGraphQL(schema).build().executeAsync(builderFunction).join().data
+        def result = newGraphQL(schema).build().executeAsync(builderFunction).join().data
 
         then:
         result == [hello: 'world']
@@ -637,7 +639,7 @@ class GraphQLTest extends Specification {
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(3)
 
 
-        def graphql = GraphQL.newGraphQL(schema).instrumentation(maximumQueryDepthInstrumentation).build()
+        def graphql = newGraphQL(schema).instrumentation(maximumQueryDepthInstrumentation).build()
 
         when:
         def result = graphql.execute(query)
@@ -681,7 +683,7 @@ class GraphQLTest extends Specification {
         MaxQueryComplexityInstrumentation maxQueryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(3)
 
 
-        def graphql = GraphQL.newGraphQL(schema).instrumentation(maxQueryComplexityInstrumentation).build()
+        def graphql = newGraphQL(schema).instrumentation(maxQueryComplexityInstrumentation).build()
 
         when:
         def result = graphql.execute(query)
@@ -737,7 +739,7 @@ class GraphQLTest extends Specification {
                 .query(query)
                 .build()
 
-        GraphQL graphQL = GraphQL.newGraphQL(schema)
+        GraphQL graphQL = newGraphQL(schema)
                 .instrumentation(instrumentation)
                 .build()
 
@@ -814,7 +816,7 @@ class GraphQLTest extends Specification {
                 .query(query)
                 .build()
 
-        GraphQL graphQL = GraphQL.newGraphQL(schema)
+        GraphQL graphQL = newGraphQL(schema)
                 .queryExecutionStrategy(new BatchedExecutionStrategy())
                 .mutationExecutionStrategy(new BatchedExecutionStrategy())
                 .build()
@@ -854,7 +856,7 @@ class GraphQLTest extends Specification {
         }
 
         def queryStrategy = new CaptureStrategy()
-        GraphQL graphQL = GraphQL.newGraphQL(simpleSchema())
+        GraphQL graphQL = newGraphQL(simpleSchema())
                 .queryExecutionStrategy(queryStrategy)
                 .instrumentation(instrumentation)
                 .executionIdProvider(executionIdProvider)

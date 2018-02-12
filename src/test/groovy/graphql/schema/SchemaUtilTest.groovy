@@ -12,6 +12,7 @@ import static graphql.StarWarsSchema.characterInterface
 import static graphql.StarWarsSchema.droidType
 import static graphql.StarWarsSchema.episodeEnum
 import static graphql.StarWarsSchema.humanType
+import static graphql.StarWarsSchema.mutationType
 import static graphql.StarWarsSchema.queryType
 import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.TypeReferenceSchema.SchemaWithReferences
@@ -27,10 +28,11 @@ class SchemaUtilTest extends Specification {
         when:
         Map<String, GraphQLType> types = new SchemaUtil().allTypes(starWarsSchema, Collections.emptySet())
         then:
-        types.size() == 15
+        types.size() == 16
         types == [(droidType.name)                        : droidType,
                   (humanType.name)                        : humanType,
                   (queryType.name)                        : queryType,
+                  (mutationType.name)                     : mutationType,
                   (characterInterface.name)               : characterInterface,
                   (episodeEnum.name)                      : episodeEnum,
                   (GraphQLString.name)                    : GraphQLString,

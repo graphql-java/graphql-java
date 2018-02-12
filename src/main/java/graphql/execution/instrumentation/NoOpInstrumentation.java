@@ -1,10 +1,15 @@
 package graphql.execution.instrumentation;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
+import graphql.execution.instrumentation.parameters.InstrumentationCreatePreExecutionStateParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionContextParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionResultParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -33,6 +38,16 @@ public class NoOpInstrumentation implements Instrumentation {
     public static final NoOpInstrumentation INSTANCE = new NoOpInstrumentation();
 
     public NoOpInstrumentation() {
+    }
+
+    @Override
+    public InstrumentationPreExecutionState createPreExecutionState(InstrumentationCreatePreExecutionStateParameters parameters) {
+        return null;
+    }
+
+    @Override
+    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+        return null;
     }
 
     @Override
@@ -75,10 +90,6 @@ public class NoOpInstrumentation implements Instrumentation {
         return new NoOpInstrumentationContext<>();
     }
 
-    @Override
-    public InstrumentationState createState() {
-        return null;
-    }
 
     @Override
     public InstrumentationContext<CompletableFuture<ExecutionResult>> beginCompleteField(InstrumentationFieldCompleteParameters parameters) {
@@ -101,7 +112,7 @@ public class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
+    public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionContextParameters parameters) {
         return executionContext;
     }
 
@@ -111,7 +122,17 @@ public class NoOpInstrumentation implements Instrumentation {
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+    public ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
+        return executionInput;
+    }
+
+    @Override
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionResultParameters parameters) {
+        return CompletableFuture.completedFuture(executionResult);
+    }
+
+    @Override
+    public CompletableFuture<ExecutionResult> instrumentFinalExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         return CompletableFuture.completedFuture(executionResult);
     }
 

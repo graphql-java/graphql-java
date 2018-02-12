@@ -25,6 +25,7 @@ class StarWarsIntrospectionTests extends Specification {
                                     [name: 'Episode'],
                                     [name: 'Human'],
                                     [name: 'Droid'],
+                                    [name:'MutationType'],
                                     [name: '__Schema'],
                                     [name: '__Type'],
                                     [name: '__TypeKind'],
@@ -357,6 +358,24 @@ class StarWarsIntrospectionTests extends Specification {
                                                 ]
                                         ],
                                         [
+                                                name: 'humans',
+                                                args: [
+                                                        [
+                                                                name        : 'ids',
+                                                                description : 'The ids of the humans',
+                                                                type        : [
+                                                                        kind  : 'NON_NULL',
+                                                                        name  : null,
+                                                                        ofType: [
+                                                                                kind: 'LIST',
+                                                                                name: null
+                                                                        ]
+                                                                ],
+                                                                defaultValue: null
+                                                        ]
+                                                ]
+                                        ],
+                                        [
                                                 name: 'droid',
                                                 args: [
                                                         [
@@ -423,9 +442,9 @@ class StarWarsIntrospectionTests extends Specification {
         Map<String, Object> schemaParts = (Map<String, Map>) schema.get("__schema")
         schemaParts.size() == 5
         schemaParts.get('queryType').size() == 1
-        schemaParts.get('mutationType') == null
+        schemaParts.get('mutationType').size() == 1
         schemaParts.get('subscriptionType') == null
-        schemaParts.get('types').size() == 15
+        schemaParts.get('types').size() == 16
         schemaParts.get('directives').size() == 2
     }
 }

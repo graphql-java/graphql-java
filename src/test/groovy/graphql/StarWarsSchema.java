@@ -125,6 +125,14 @@ public class StarWarsSchema {
                             .type(nonNull(GraphQLString)))
                     .dataFetcher(StarWarsData.getHumanDataFetcher()))
             .field(newFieldDefinition()
+                    .name("humans")
+                    .type(list(humanType))
+                    .argument(newArgument()
+                            .name("ids")
+                            .description("The ids of the humans")
+                            .type(nonNull(list(GraphQLString))))
+                    .dataFetcher(StarWarsData.getHumansDataFetcher()))
+            .field(newFieldDefinition()
                     .name("droid")
                     .type(droidType)
                     .argument(newArgument()
@@ -134,8 +142,22 @@ public class StarWarsSchema {
                     .dataFetcher(StarWarsData.getDroidDataFetcher()))
             .build();
 
+    public static GraphQLObjectType mutationType = newObject()
+            .name("MutationType")
+            .field(newFieldDefinition()
+                    .name("forceChoke")
+                    .type(list(characterInterface))
+                    .argument(newArgument()
+                            .name("ids")
+                            .description("The ids of the characters to Force choke")
+                            .type(nonNull(list(GraphQLString))))
+                    .dataFetcher(StarWarsData.getCharacterDataFetcher())
+            )
+            .build();
+
 
     public static GraphQLSchema starWarsSchema = GraphQLSchema.newSchema()
             .query(queryType)
+            .mutation(mutationType)
             .build();
 }

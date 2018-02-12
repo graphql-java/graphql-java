@@ -178,6 +178,10 @@ type QueryType {
   #id of the human
   id: String!
   ): Human
+  humans(
+  #The ids of the humans
+  ids: [String]!
+  ): [Human]
 }
 
 #One of the films in the Star Wars Trilogy
@@ -251,6 +255,10 @@ type QueryType {
   #id of the human
   id: String!
   ): Human
+  humans(
+  #The ids of the humans
+  ids: [String]!
+  ): [Human]
 }
 
 #One of the films in the Star Wars Trilogy
