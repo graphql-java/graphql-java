@@ -28,6 +28,7 @@ apply plugin: 'groovy'
 
 jar {
     from "LICENSE.md"
+    from "src/main/antlr/Graphql.g4"
 }
 
 dependencies {
