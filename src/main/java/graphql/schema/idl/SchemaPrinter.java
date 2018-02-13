@@ -8,6 +8,7 @@ import graphql.language.Description;
 import graphql.language.Document;
 import graphql.language.Node;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
@@ -280,7 +281,7 @@ public class SchemaPrinter {
             }
             printComments(out, type, "");
             if (type.getInterfaces().isEmpty()) {
-                out.format("type %s {\n", type.getName());
+                out.format("type %s%s {\n", type.getName(), directivesString(type.getDirectives()));
             } else {
                 Stream<String> interfaceNames = type.getInterfaces()
                         .stream()
@@ -296,8 +297,8 @@ public class SchemaPrinter {
                     .sorted(Comparator.comparing(GraphQLFieldDefinition::getName))
                     .forEach(fd -> {
                         printComments(out, fd, "  ");
-                        out.format("  %s%s: %s\n",
-                                fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
+                        out.format("  %s%s: %s%s\n",
+                                fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()), directivesString(fd.getDirectives()));
                     });
             out.format("}\n\n");
         };
@@ -432,6 +433,51 @@ public class SchemaPrinter {
                 sb.append("\n");
             }
             sb.append(prefix).append(")");
+        }
+        return sb.toString();
+    }
+
+    private String directivesString(List<GraphQLDirective> directives) {
+        StringBuilder sb = new StringBuilder();
+        if (!directives.isEmpty()) {
+            sb.append(" ");
+        }
+        directives = directives
+                .stream()
+                .sorted(Comparator.comparing(GraphQLDirective::getName))
+                .collect(toList());
+        for (int i = 0; i < directives.size(); i++) {
+            GraphQLDirective directive = directives.get(i);
+            sb.append(directiveString(directive));
+            if (i < directives.size() - 1) {
+                sb.append(" ");
+            }
+        }
+        return sb.toString();
+    }
+
+    private String directiveString(GraphQLDirective directive) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("@").append(directive.getName());
+        List<GraphQLArgument> args = directive.getArguments();
+        args = args
+                .stream()
+                .sorted(Comparator.comparing(GraphQLArgument::getName))
+                .collect(toList());
+        if (!args.isEmpty()) {
+            sb.append("(");
+            for (int i = 0; i < args.size(); i++) {
+                GraphQLArgument arg = args.get(i);
+                sb.append(arg.getName());
+                if (arg.getDefaultValue() != null) {
+                    sb.append(" : ");
+                    sb.append(printAst(arg.getDefaultValue(), arg.getType()));
+                }
+                if (i < args.size() - 1) {
+                    sb.append(", ");
+                }
+            }
+            sb.append(")");
         }
         return sb.toString();
     }

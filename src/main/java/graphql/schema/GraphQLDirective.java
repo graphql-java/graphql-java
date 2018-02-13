@@ -96,6 +96,15 @@ public class GraphQLDirective {
         return description;
     }
 
+    @Override
+    public String toString() {
+        return "GraphQLDirective{" +
+                "name='" + name + '\'' +
+                ", arguments=" + arguments +
+                ", locations=" + locations +
+                '}';
+    }
+
     public static Builder newDirective() {
         return new Builder();
     }

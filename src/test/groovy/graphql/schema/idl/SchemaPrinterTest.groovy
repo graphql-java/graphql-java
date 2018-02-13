@@ -680,7 +680,6 @@ enum Episode {
     }
 
 
-
     def "AST doc string entries are printed if present"() {
         def schema = generate('''
             # comments up here
@@ -703,5 +702,36 @@ type Query {
 }
 '''
     }
+
+
+    def "directives will be printed"() {
+        def schema = generate("""
+            
+            type Query @query1 @query2(arg1:"x") {
+                fieldA : String @fieldDirective1 @fieldDirective2(argStr:"str", argInt : 1, argFloat : 1.0, argBool : false)
+                fieldB : String
+            }
+            
+            type Single @single {
+                fieldA : String @singleField
+            }
+        """)
+
+
+        def result = new SchemaPrinter().print(schema)
+
+        expect:
+        // args and directives are sorted like the rest of the schema printer
+        result == '''type Query @query1 @query2(arg1 : "x") {
+  fieldA: String @fieldDirective1 @fieldDirective2(argBool : false, argFloat : 1.0, argInt : 1, argStr : "str")
+  fieldB: String
+}
+
+type Single @single {
+  fieldA: String @singleField
+}
+'''
+    }
+
 
 }
