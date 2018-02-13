@@ -19,7 +19,7 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
         ExecutionPath path = handlerParameters.getPath();
 
         ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, exception, sourceLocation);
-        handlerParameters.getExecutionContext().addError(error, handlerParameters.getPath());
+        handlerParameters.getExecutionContext().addError(error);
         log.warn(error.getMessage(), exception);
     }
 }

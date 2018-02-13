@@ -53,7 +53,7 @@ public class SerializationError implements GraphQLError {
 
     @Override
     public String toString() {
-        return "ExceptionWhileDataFetching{" +
+        return "SerializationError{" +
                 "path=" + path +
                 "exception=" + exception +
                 '}';

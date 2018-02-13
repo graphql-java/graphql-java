@@ -14,7 +14,7 @@ import static graphql.Assert.assertValidName;
 import static graphql.introspection.Introspection.DirectiveLocation;
 
 /**
- * A directive can be used to modify the behavior of a graphql field.
+ * A directive can be used to modify the behavior of a graphql field or type.
  *
  * See http://graphql.org/learn/queries/#directives for more details on the concept.
  */

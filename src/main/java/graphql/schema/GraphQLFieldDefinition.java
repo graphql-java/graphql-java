@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
@@ -34,17 +35,19 @@ public class GraphQLFieldDefinition {
     private final DataFetcherFactory dataFetcherFactory;
     private final String deprecationReason;
     private final List<GraphQLArgument> arguments;
+    private final List<GraphQLDirective> directives;
     private final FieldDefinition definition;
 
 
     @Deprecated
     @Internal
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher<?> dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
-        this(name, description, type, DataFetcherFactories.useDataFetcher(dataFetcher), arguments, deprecationReason, null);
+        this(name, description, type, DataFetcherFactories.useDataFetcher(dataFetcher), arguments, deprecationReason, Collections.emptyList(), null);
     }
 
     @Internal
-    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, FieldDefinition definition) {
+    public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, List<GraphQLDirective> directives, FieldDefinition definition) {
+        this.directives = directives;
         assertValidName(name);
         assertNotNull(dataFetcherFactory, "you have to provide a DataFetcher (or DataFetcherFactory)");
         assertNotNull(type, "type can't be null");
@@ -83,6 +86,18 @@ public class GraphQLFieldDefinition {
             if (argument.getName().equals(name)) return argument;
         }
         return null;
+    }
+
+    public List<GraphQLDirective> getDirectives() {
+        return new ArrayList<>(directives);
+    }
+
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return DirectivesUtil.directivesByName(directives);
+    }
+
+    public GraphQLDirective getDirective(String directiveName) {
+        return getDirectivesByName().get(directiveName);
     }
 
     public List<GraphQLArgument> getArguments() {
@@ -130,6 +145,7 @@ public class GraphQLFieldDefinition {
         private GraphQLOutputType type;
         private DataFetcherFactory<?> dataFetcherFactory;
         private final List<GraphQLArgument> arguments = new ArrayList<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
         private String deprecationReason;
         private boolean isField;
         private FieldDefinition definition;
@@ -262,6 +278,11 @@ public class GraphQLFieldDefinition {
             return this;
         }
 
+        public Builder withDirectives(GraphQLDirective... directives) {
+            Collections.addAll(this.directives, directives);
+            return this;
+        }
+
         public GraphQLFieldDefinition build() {
             if (dataFetcherFactory == null) {
                 if (isField) {
@@ -270,7 +291,7 @@ public class GraphQLFieldDefinition {
                     dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(name));
                 }
             }
-            return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory, arguments, deprecationReason, definition);
+            return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory, arguments, deprecationReason, directives, definition);
         }
     }
 }

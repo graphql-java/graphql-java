@@ -2,16 +2,21 @@ package graphql.schema.idl;
 
 import graphql.Assert;
 import graphql.GraphQLError;
+import graphql.Scalars;
+import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
+import graphql.language.BooleanValue;
 import graphql.language.Comment;
 import graphql.language.Description;
 import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
 import graphql.language.FieldDefinition;
+import graphql.language.FloatValue;
 import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
+import graphql.language.IntValue;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
 import graphql.language.NullValue;
@@ -31,6 +36,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
@@ -53,12 +59,14 @@ import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
@@ -344,6 +352,16 @@ public class SchemaGenerator {
 
         List<TypeExtensionDefinition> typeExtensions = getTypeExtensionsOf(typeDefinition, buildCtx);
 
+        List<Directive> extensionDirectives = typeExtensions.stream()
+                .map(ObjectTypeDefinition::getDirectives).filter(Objects::nonNull)
+                .flatMap(Collection::stream).collect(Collectors.toList());
+
+        // combine the type and its extension directives together as one
+        builder.withDirectives(
+                buildDirectives(buildCtx, typeDefinition.getDirectives(),
+                        extensionDirectives, Introspection.DirectiveLocation.OBJECT)
+        );
+
         buildObjectTypeFields(buildCtx, typeDefinition, builder, typeExtensions);
 
         buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, typeExtensions);
@@ -466,6 +484,11 @@ public class SchemaGenerator {
 
         fieldDef.getInputValueDefinitions().forEach(inputValueDefinition ->
                 builder.argument(buildArgument(buildCtx, inputValueDefinition)));
+
+        builder.withDirectives(
+                buildDirectives(buildCtx, fieldDef.getDirectives(),
+                        Collections.emptyList(), Introspection.DirectiveLocation.FIELD)
+        );
 
         GraphQLOutputType outputType = buildOutputType(buildCtx, fieldDef.getType());
         builder.type(outputType);
@@ -667,4 +690,81 @@ public class SchemaGenerator {
         }
         return null;
     }
+
+    private GraphQLDirective[] buildDirectives(BuildContext buildCtx, List<Directive> directives, List<Directive> extensionDirectives, Introspection.DirectiveLocation directiveLocation) {
+        directives = directives == null ? Collections.emptyList() : directives;
+        extensionDirectives = extensionDirectives == null ? Collections.emptyList() : extensionDirectives;
+        Set<String> names = new HashSet<>();
+
+        List<GraphQLDirective> output = new ArrayList<>();
+        for (Directive directive : directives) {
+            if (!names.contains(directive.getName())) {
+                names.add(directive.getName());
+                output.add(buildDirective(buildCtx, directive, directiveLocation));
+            }
+        }
+        for (Directive directive : extensionDirectives) {
+            if (!names.contains(directive.getName())) {
+                names.add(directive.getName());
+                output.add(buildDirective(buildCtx, directive, directiveLocation));
+            }
+        }
+        return output.toArray(new GraphQLDirective[0]);
+    }
+
+    // builds directives from a type and its extensions
+    private GraphQLDirective buildDirective(BuildContext buildCtx, Directive directive, Introspection.DirectiveLocation directiveLocation) {
+        List<GraphQLArgument> arguments = directive.getArguments().stream()
+                .map(arg -> buildDirectiveArgument(buildCtx, arg))
+                .collect(Collectors.toList());
+
+        GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
+                .name(directive.getName())
+                .description(buildDescription(directive, null))
+                .validLocations(directiveLocation);
+
+        for (GraphQLArgument argument : arguments) {
+            builder.argument(argument);
+        }
+        return builder.build();
+    }
+
+    private GraphQLArgument buildDirectiveArgument(BuildContext buildCtx, Argument arg) {
+        GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+        builder.name(arg.getName());
+        GraphQLInputType inputType = buildDirectiveInputType(buildCtx, arg.getValue());
+        builder.type(inputType);
+        builder.defaultValue(buildValue(arg.getValue(), inputType));
+        return builder.build();
+    }
+
+    /**
+     * We support the basic types as directive types
+     *
+     * @param buildCtx build ctx
+     * @param value    the value to use
+     *
+     * @return a graphql input type
+     */
+    private GraphQLInputType buildDirectiveInputType(BuildContext buildCtx, Value value) {
+        Object result = null;
+        if (value instanceof NullValue) {
+            return Scalars.GraphQLString;
+        }
+        if (value instanceof FloatValue) {
+            return Scalars.GraphQLFloat;
+        }
+        if (value instanceof StringValue) {
+            return Scalars.GraphQLString;
+        }
+        if (value instanceof IntValue) {
+            return Scalars.GraphQLInt;
+        }
+        if (value instanceof BooleanValue) {
+            return Scalars.GraphQLBoolean;
+        }
+        return Assert.assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getName());
+    }
+
+
 }
