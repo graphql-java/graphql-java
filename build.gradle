@@ -56,6 +56,7 @@ dependencies {
 compileJava.source file("build/generated-src"), sourceSets.main.java
 
 generateGrammarSource {
+    includes = ['Graphql.g4']
     maxHeapSize = "64m"
     arguments += ["-visitor"]
     outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
