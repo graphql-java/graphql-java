@@ -1,18 +1,20 @@
 package graphql.validation.rules;
 
 
+import graphql.Internal;
 import graphql.language.Value;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
+@Internal
 public class VariablesTypesMatcher {
 
     public boolean doesVariableTypesMatch(GraphQLType variableType, Value variableDefaultValue, GraphQLType expectedType) {
         return checkType(effectiveType(variableType, variableDefaultValue), expectedType);
     }
 
-    private GraphQLType effectiveType(GraphQLType variableType, Value defaultValue) {
+    public GraphQLType effectiveType(GraphQLType variableType, Value defaultValue) {
         if (defaultValue == null) return variableType;
         if (variableType instanceof GraphQLNonNull) return variableType;
         return new GraphQLNonNull(variableType);
