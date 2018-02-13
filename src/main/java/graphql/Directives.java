@@ -43,7 +43,7 @@ public class Directives {
             .argument(newArgument()
                     .name("from")
                     .type(new GraphQLNonNull(GraphQLString))
-                    .description("The name to fetch values from the underlying object"))
+                    .description("The `name` used to fetch values from the underlying object"))
             .validLocations(FIELD_DEFINITION)
             .build();
 
