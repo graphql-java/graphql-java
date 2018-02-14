@@ -1165,35 +1165,6 @@ class SchemaGeneratorTest extends Specification {
         "Puter"  | "PuterDirective"
     }
 
-    def "enum  and input type directives are captured"() {
-        def spec = """
-            type Query {
-              field1 : String
-            }
-            
-            enum Numb @NumbDirective {
-                X @NumbValueDirective,
-                Y
-            }
-            
-            input Puter @PuterDirective {
-                inputField : String @InputFieldDirective
-            
-        """
-
-        def schema = schema(spec)
-        GraphQLDirectiveContainer iface = schema.getType(typeName) as GraphQLDirectiveContainer
-
-        expect:
-
-        iface.getDirective(directiveName) != null
-
-        where:
-        typeName | directiveName
-        "IFace"  | "IFaceDirective"
-        "Onion"  | "OnionDirective"
-    }
-
     def "input object default value is parsed"() {
         def spec = """
             input InputObject {
