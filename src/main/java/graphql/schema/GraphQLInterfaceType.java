@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.language.InterfaceTypeDefinition;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,29 +27,33 @@ import static java.lang.String.format;
  * See http://graphql.org/learn/schema/#interfaces for more details on the concept.
  */
 @PublicApi
-public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, GraphQLFieldsContainer, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
+    private final List<GraphQLDirective> directives;
 
     @Internal
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver) {
-        this(name, description, fieldDefinitions, typeResolver, null);
+        this(name, description, fieldDefinitions, typeResolver, Collections.emptyList(), null);
     }
 
     @Internal
-    public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, InterfaceTypeDefinition definition) {
+    public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, List<GraphQLDirective> directives, InterfaceTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(typeResolver, "typeResolver can't null");
         assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
+        assertNotNull(directives, "directives cannot be null");
+
         this.name = name;
         this.description = description;
         buildDefinitionMap(fieldDefinitions);
         this.typeResolver = typeResolver;
         this.definition = definition;
+        this.directives = directives;
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
@@ -86,6 +91,11 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     }
 
     @Override
+    public List<GraphQLDirective> getDirectives() {
+        return new ArrayList<>(directives);
+    }
+
+    @Override
     public String toString() {
         return "GraphQLInterfaceType{" +
                 "name='" + name + '\'' +
@@ -107,6 +117,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         private final List<GraphQLFieldDefinition> fields = new ArrayList<>();
         private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
 
         public Builder name(String name) {
@@ -173,9 +184,13 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
             return this;
         }
 
+        public Builder withDirectives(GraphQLDirective... directives) {
+            Collections.addAll(this.directives, directives);
+            return this;
+        }
+
         public GraphQLInterfaceType build() {
-            return new GraphQLInterfaceType(name, description, fields, typeResolver, definition);
+            return new GraphQLInterfaceType(name, description, fields, typeResolver, directives, definition);
         }
     }
-
 }

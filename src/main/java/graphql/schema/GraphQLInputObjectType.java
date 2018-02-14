@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static java.util.Collections.emptyList;
 
 /**
  * graphql clearly delineates between the types of objects that represent the output of a query and input objects that
@@ -21,25 +23,29 @@ import static graphql.Assert.assertValidName;
  * See http://graphql.org/learn/schema/#input-types for more details on the concept
  */
 @PublicApi
-public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer {
+public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLInputObjectField> fieldMap = new LinkedHashMap<>();
     private final InputObjectTypeDefinition definition;
+    private final List<GraphQLDirective> directives;
 
     @Internal
     public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields) {
-        this(name, description, fields, null);
+        this(name, description, fields, emptyList(), null);
     }
 
     @Internal
-    public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields, InputObjectTypeDefinition definition) {
+    public GraphQLInputObjectType(String name, String description, List<GraphQLInputObjectField> fields, List<GraphQLDirective> directives, InputObjectTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(fields, "fields can't be null");
+        assertNotNull(directives, "directives cannot be null");
+
         this.name = name;
         this.description = description;
         this.definition = definition;
+        this.directives = directives;
         buildMap(fields);
     }
 
@@ -68,6 +74,11 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         return fieldMap.get(name);
     }
 
+    @Override
+    public List<GraphQLDirective> getDirectives() {
+        return new ArrayList<>(directives);
+    }
+
     public static Builder newInputObject() {
         return new Builder();
     }
@@ -93,6 +104,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         private String description;
         private InputObjectTypeDefinition definition;
         private final List<GraphQLInputObjectField> fields = new ArrayList<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -155,9 +167,13 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
             return this;
         }
 
-        public GraphQLInputObjectType build() {
-            return new GraphQLInputObjectType(name, description, fields, definition);
+        public Builder withDirectives(GraphQLDirective... directives) {
+            Collections.addAll(this.directives, directives);
+            return this;
         }
 
+        public GraphQLInputObjectType build() {
+            return new GraphQLInputObjectType(name, description, fields, directives, definition);
+        }
     }
 }
