@@ -1,14 +1,19 @@
 package graphql.schema;
 
 
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static java.util.Collections.emptyList;
 
 /**
  * Input objects defined via {@link graphql.schema.GraphQLInputObjectType} contains these input fields.
@@ -26,25 +31,29 @@ public class GraphQLInputObjectField {
     private GraphQLInputType type;
     private final Object defaultValue;
     private final InputValueDefinition definition;
+    private final List<GraphQLDirective> directives;
 
     @Internal
     public GraphQLInputObjectField(String name, GraphQLInputType type) {
-        this(name, null, type, null, null);
+        this(name, null, type, null, emptyList(), null);
     }
 
     @Internal
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue) {
-        this(name, description, type, defaultValue, null);
+        this(name, description, type, defaultValue, emptyList(), null);
     }
 
     @Internal
-    public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
+    public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue, List<GraphQLDirective> directives, InputValueDefinition definition) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
+        assertNotNull(directives, "directives cannot be null");
+
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
         this.description = description;
+        this.directives = directives;
         this.definition = definition;
     }
 
@@ -72,6 +81,18 @@ public class GraphQLInputObjectField {
         return definition;
     }
 
+    public List<GraphQLDirective> getDirectives() {
+        return new ArrayList<>(directives);
+    }
+
+    public Map<String, GraphQLDirective> getDirectivesByName() {
+        return DirectivesUtil.directivesByName(directives);
+    }
+
+    public GraphQLDirective getDirective(String directiveName) {
+        return getDirectivesByName().get(directiveName);
+    }
+
     public static Builder newInputObjectField() {
         return new Builder();
     }
@@ -83,6 +104,7 @@ public class GraphQLInputObjectField {
         private Object defaultValue;
         private GraphQLInputType type;
         private InputValueDefinition definition;
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -113,8 +135,13 @@ public class GraphQLInputObjectField {
             return this;
         }
 
+        public Builder withDirectives(GraphQLDirective... directives) {
+            Collections.addAll(this.directives, directives);
+            return this;
+        }
+
         public GraphQLInputObjectField build() {
-            return new GraphQLInputObjectField(name, description, type, defaultValue, definition);
+            return new GraphQLInputObjectField(name, description, type, defaultValue, directives, definition);
         }
     }
 }
