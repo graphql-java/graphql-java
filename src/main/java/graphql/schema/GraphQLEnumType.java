@@ -185,6 +185,11 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             return this;
         }
 
+        public Builder value(GraphQLEnumValueDefinition enumValueDefinition) {
+            values.add(enumValueDefinition);
+            return this;
+        }
+
         public Builder withDirectives(GraphQLDirective... directives) {
             Collections.addAll(this.directives, directives);
             return this;

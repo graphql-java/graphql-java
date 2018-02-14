@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
@@ -24,7 +23,7 @@ import static java.util.Collections.emptyList;
  * See http://graphql.org/learn/schema/#input-types for more details on the concept.
  */
 @PublicApi
-public class GraphQLInputObjectField {
+public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
@@ -81,16 +80,9 @@ public class GraphQLInputObjectField {
         return definition;
     }
 
+    @Override
     public List<GraphQLDirective> getDirectives() {
         return new ArrayList<>(directives);
-    }
-
-    public Map<String, GraphQLDirective> getDirectivesByName() {
-        return DirectivesUtil.directivesByName(directives);
-    }
-
-    public GraphQLDirective getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
     }
 
     public static Builder newInputObjectField() {

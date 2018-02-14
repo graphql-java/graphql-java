@@ -7,12 +7,12 @@ import java.util.Map;
 import static graphql.DirectivesUtil.directivesByName;
 
 /**
- * Represents a type that can have {@link graphql.schema.GraphQLDirective}s
+ * Represents a graphql object that can have {@link graphql.schema.GraphQLDirective}s
  */
 public interface GraphQLDirectiveContainer extends GraphQLType {
 
     /**
-     * @return a list of directives associated with the type
+     * @return a list of directives associated with the type or field
      */
     List<GraphQLDirective> getDirectives();
 
@@ -26,7 +26,7 @@ public interface GraphQLDirectiveContainer extends GraphQLType {
     /**
      * Returns a named directive
      *
-     * @param directiveName the name of the directive to retrive
+     * @param directiveName the name of the directive to retrieve
      *
      * @return the directive or null if there is one one with that name
      */

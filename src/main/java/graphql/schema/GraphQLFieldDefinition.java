@@ -27,7 +27,7 @@ import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactor
  * See http://graphql.org/learn/queries/#fields for more details on the concept.
  */
 @PublicApi
-public class GraphQLFieldDefinition {
+public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
@@ -88,16 +88,9 @@ public class GraphQLFieldDefinition {
         return null;
     }
 
+    @Override
     public List<GraphQLDirective> getDirectives() {
         return new ArrayList<>(directives);
-    }
-
-    public Map<String, GraphQLDirective> getDirectivesByName() {
-        return DirectivesUtil.directivesByName(directives);
-    }
-
-    public GraphQLDirective getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
     }
 
     public List<GraphQLArgument> getArguments() {
