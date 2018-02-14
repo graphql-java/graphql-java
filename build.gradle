@@ -29,6 +29,9 @@ apply plugin: 'groovy'
 jar {
     from "LICENSE.md"
     from "src/main/antlr/Graphql.g4"
+    from "src/main/antlr/GraphqlOperation.g4"
+    from "src/main/antlr/GraphqlSDL.g4"
+    from "src/main/antlr/GraphqlCommon.g4"
 }
 
 dependencies {
@@ -56,6 +59,7 @@ dependencies {
 compileJava.source file("build/generated-src"), sourceSets.main.java
 
 generateGrammarSource {
+    includes = ['Graphql.g4']
     maxHeapSize = "64m"
     arguments += ["-visitor"]
     outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
