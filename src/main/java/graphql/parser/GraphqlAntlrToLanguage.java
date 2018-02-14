@@ -50,7 +50,6 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
@@ -64,13 +63,12 @@ import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 
 @Internal
-
 public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     private final CommonTokenStream tokens;
-    Document result;
+    private Document result;
 
-    GraphqlAntlrToLanguage(CommonTokenStream tokens) {
+    public GraphqlAntlrToLanguage(CommonTokenStream tokens) {
         this.tokens = tokens;
     }
 
@@ -838,5 +836,13 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
             comments.add(new Comment(text, new SourceLocation(refTok.getLine(), refTok.getCharPositionInLine())));
         }
         return comments;
+    }
+
+    public Document getResult() {
+        return result;
+    }
+
+    public Deque<ContextEntry> getContextStack() {
+        return contextStack;
     }
 }

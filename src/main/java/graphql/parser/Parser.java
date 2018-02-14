@@ -46,6 +46,6 @@ public class Parser {
                 throw new ParseCancellationException("There are more tokens in the query that have not been consumed");
             }
         }
-        return antlrToLanguage.result;
+        return antlrToLanguage.getResult();
     }
 }
