@@ -1056,6 +1056,22 @@ class SchemaGeneratorTest extends Specification {
         (arg2 as List).get(0) instanceof Integer
     }
 
+    def "null default arguments are ok"() {
+        def spec = """
+            type Query {
+              field(argNoDefault : Int) : String
+            }
+        """
+
+        def schema = schema(spec)
+        schema.getType("Query") instanceof GraphQLObjectType
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+        Object argNoDefault = query.getFieldDefinition("field").getArgument("argNoDefault").defaultValue
+
+        expect:
+        argNoDefault == null
+    }
+
     def "object type directives are gathered and turned into runtime objects with arguments"() {
         def spec = """
             type Query @directive1 {

@@ -598,7 +598,10 @@ public class SchemaGenerator {
         //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         GraphQLInputType inputType = buildInputType(buildCtx, fieldDef.getType());
         fieldBuilder.type(inputType);
-        fieldBuilder.defaultValue(buildValue(fieldDef.getDefaultValue(), inputType));
+        Value defaultValue = fieldDef.getDefaultValue();
+        if (defaultValue != null) {
+            fieldBuilder.defaultValue(buildValue(defaultValue, inputType));
+        }
 
         fieldBuilder.withDirectives(
                 buildDirectives(buildCtx, fieldDef.getDirectives(),
@@ -615,7 +618,10 @@ public class SchemaGenerator {
         builder.description(buildDescription(valueDefinition, valueDefinition.getDescription()));
         GraphQLInputType inputType = buildInputType(buildCtx, valueDefinition.getType());
         builder.type(inputType);
-        builder.defaultValue(buildValue(valueDefinition.getDefaultValue(), inputType));
+        Value defaultValue = valueDefinition.getDefaultValue();
+        if (defaultValue != null) {
+            builder.defaultValue(buildValue(defaultValue, inputType));
+        }
 
         return builder.build();
     }
