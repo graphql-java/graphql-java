@@ -7,6 +7,7 @@ import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.DirectivesUtil.atFetchFromSupport;
 
 /**
  * A WiringFactory allows you to more dynamically wire in {@link TypeResolver}s and {@link DataFetcher}s
@@ -114,6 +115,9 @@ public interface WiringFactory {
      * @return a {@link DataFetcher}
      */
     default DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
-        return new PropertyDataFetcher(environment.getFieldDefinition().getName());
+
+        String fieldName = environment.getFieldDefinition().getName();
+        String fetchName = atFetchFromSupport(fieldName, environment.getDirectives());
+        return new PropertyDataFetcher(fetchName);
     }
 }

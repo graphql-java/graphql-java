@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.AssertException;
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;

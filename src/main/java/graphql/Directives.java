@@ -5,7 +5,9 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNonNull;
 
 import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLString;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -33,6 +35,16 @@ public class Directives {
                     .type(new GraphQLNonNull(GraphQLBoolean))
                     .description("Skipped when true."))
             .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
+            .build();
+
+    public static final GraphQLDirective FetchDirective = GraphQLDirective.newDirective()
+            .name("fetch")
+            .description("Directs the SDL type generation to create a data fetcher that uses this `from` argument as the property name")
+            .argument(newArgument()
+                    .name("from")
+                    .type(new GraphQLNonNull(GraphQLString))
+                    .description("The `name` used to fetch values from the underlying object"))
+            .validLocations(FIELD_DEFINITION)
             .build();
 
 
