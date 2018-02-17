@@ -1,6 +1,7 @@
 package graphql.parser;
 
 import graphql.Assert;
+import graphql.Internal;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -10,11 +11,12 @@ import java.util.List;
 /**
  * Contains parsing code for the StringValue types in the grammar
  */
-class StringValueParsing {
+@Internal
+public class StringValueParsing {
     private final static String ESCAPED_TRIPLE_QUOTES = "\\\\\"\"\""; // ahh Java + Regex
     private final static String THREE_QUOTES = "\"\"\"";
 
-    static String parseTripleQuotedString(String strText) {
+    public static String parseTripleQuotedString(String strText) {
         int end = strText.length() - 3;
         String s = strText.substring(3, end);
         s = s.replaceAll(ESCAPED_TRIPLE_QUOTES, THREE_QUOTES);
@@ -24,7 +26,7 @@ class StringValueParsing {
     /*
        See https://github.com/facebook/graphql/pull/327/files#diff-fe406b08746616e2f5f00909488cce66R758
      */
-    static String removeIndentation(String rawValue) {
+    public static String removeIndentation(String rawValue) {
         String[] lines = rawValue.split("\\n");
         int minIndent = Integer.MAX_VALUE;
         for (int i = 0; i < lines.length; i++) {
@@ -89,7 +91,7 @@ class StringValueParsing {
         return count;
     }
 
-    static String parseSingleQuotedString(String string) {
+    public static String parseSingleQuotedString(String string) {
         StringWriter writer = new StringWriter(string.length() - 2);
         int end = string.length() - 1;
         for (int i = 1; i < end; i++) {
