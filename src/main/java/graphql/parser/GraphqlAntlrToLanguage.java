@@ -277,6 +277,18 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
+    public Void visitInlineFragment(GraphqlParser.InlineFragmentContext ctx) {
+        TypeName typeName = ctx.typeCondition() != null ? new TypeName(ctx.typeCondition().typeName().getText()) : null;
+        InlineFragment inlineFragment = new InlineFragment(typeName);
+        newNode(inlineFragment, ctx);
+        ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(inlineFragment);
+        addContextProperty(ContextProperty.InlineFragment, inlineFragment);
+        super.visitInlineFragment(ctx);
+        popContext();
+        return null;
+    }
+
+    @Override
     public Void visitTypeName(GraphqlParser.TypeNameContext ctx) {
         TypeName typeName = new TypeName(ctx.name().getText());
         newNode(typeName, ctx);
@@ -390,17 +402,6 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return super.visitArgument(ctx);
     }
 
-    @Override
-    public Void visitInlineFragment(GraphqlParser.InlineFragmentContext ctx) {
-        TypeName typeName = ctx.typeCondition() != null ? new TypeName(ctx.typeCondition().typeName().getText()) : null;
-        InlineFragment inlineFragment = new InlineFragment(typeName);
-        newNode(inlineFragment, ctx);
-        ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(inlineFragment);
-        addContextProperty(ContextProperty.InlineFragment, inlineFragment);
-        super.visitInlineFragment(ctx);
-        popContext();
-        return null;
-    }
 
     @Override
     public Void visitDirective(GraphqlParser.DirectiveContext ctx) {
