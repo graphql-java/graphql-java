@@ -45,6 +45,7 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.antlr.GraphqlBaseVisitor;
+import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -60,40 +61,6 @@ import java.util.List;
 import static graphql.language.NullValue.Null;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
-import static graphql.parser.antlr.GraphqlParser.ArgumentContext;
-import static graphql.parser.antlr.GraphqlParser.DescriptionContext;
-import static graphql.parser.antlr.GraphqlParser.DirectiveContext;
-import static graphql.parser.antlr.GraphqlParser.DirectiveDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.DirectiveLocationContext;
-import static graphql.parser.antlr.GraphqlParser.DocumentContext;
-import static graphql.parser.antlr.GraphqlParser.EnumTypeDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.EnumValueDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.FieldContext;
-import static graphql.parser.antlr.GraphqlParser.FieldDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.FragmentDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.FragmentSpreadContext;
-import static graphql.parser.antlr.GraphqlParser.InlineFragmentContext;
-import static graphql.parser.antlr.GraphqlParser.InputObjectTypeDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.InputValueDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.InterfaceTypeDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.ListTypeContext;
-import static graphql.parser.antlr.GraphqlParser.NonNullTypeContext;
-import static graphql.parser.antlr.GraphqlParser.ObjectFieldContext;
-import static graphql.parser.antlr.GraphqlParser.ObjectFieldWithVariableContext;
-import static graphql.parser.antlr.GraphqlParser.ObjectTypeDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.OperationDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.OperationTypeContext;
-import static graphql.parser.antlr.GraphqlParser.OperationTypeDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.ScalarTypeDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.SchemaDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.SelectionSetContext;
-import static graphql.parser.antlr.GraphqlParser.StringValueContext;
-import static graphql.parser.antlr.GraphqlParser.TypeExtensionDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.TypeNameContext;
-import static graphql.parser.antlr.GraphqlParser.UnionTypeDefinitionContext;
-import static graphql.parser.antlr.GraphqlParser.ValueContext;
-import static graphql.parser.antlr.GraphqlParser.ValueWithVariableContext;
-import static graphql.parser.antlr.GraphqlParser.VariableDefinitionContext;
 
 @Internal
 public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
@@ -202,14 +169,14 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     @Override
-    public Void visitDocument(DocumentContext ctx) {
+    public Void visitDocument(GraphqlParser.DocumentContext ctx) {
         result = new Document();
         newNode(result, ctx);
         return super.visitDocument(ctx);
     }
 
     @Override
-    public Void visitOperationDefinition(OperationDefinitionContext ctx) {
+    public Void visitOperationDefinition(GraphqlParser.OperationDefinitionContext ctx) {
         OperationDefinition operationDefinition;
         operationDefinition = new OperationDefinition();
         newNode(operationDefinition, ctx);
@@ -229,7 +196,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
-    private OperationDefinition.Operation parseOperation(OperationTypeContext operationTypeContext) {
+    private OperationDefinition.Operation parseOperation(GraphqlParser.OperationTypeContext operationTypeContext) {
         if (operationTypeContext.getText().equals("query")) {
             return OperationDefinition.Operation.QUERY;
         } else if (operationTypeContext.getText().equals("mutation")) {
@@ -242,7 +209,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitFragmentSpread(FragmentSpreadContext ctx) {
+    public Void visitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) {
         FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
         newNode(fragmentSpread, ctx);
         ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(fragmentSpread);
@@ -253,7 +220,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitVariableDefinition(VariableDefinitionContext ctx) {
+    public Void visitVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) {
         VariableDefinition variableDefinition = new VariableDefinition();
         newNode(variableDefinition, ctx);
         variableDefinition.setName(ctx.variable().name().getText());
@@ -271,7 +238,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitFragmentDefinition(FragmentDefinitionContext ctx) {
+    public Void visitFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx) {
         FragmentDefinition fragmentDefinition = new FragmentDefinition();
         newNode(fragmentDefinition, ctx);
         fragmentDefinition.setName(ctx.fragmentName().getText());
@@ -285,7 +252,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     @Override
-    public Void visitSelectionSet(SelectionSetContext ctx) {
+    public Void visitSelectionSet(GraphqlParser.SelectionSetContext ctx) {
         SelectionSet newSelectionSet = new SelectionSet();
         newNode(newSelectionSet, ctx);
         addContextProperty(ContextProperty.SelectionSet, newSelectionSet);
@@ -296,7 +263,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     @Override
-    public Void visitField(FieldContext ctx) {
+    public Void visitField(GraphqlParser.FieldContext ctx) {
         Field newField = new Field();
         newNode(newField, ctx);
         newField.setName(ctx.name().getText());
@@ -310,7 +277,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitInlineFragment(InlineFragmentContext ctx) {
+    public Void visitInlineFragment(GraphqlParser.InlineFragmentContext ctx) {
         TypeName typeName = ctx.typeCondition() != null ? new TypeName(ctx.typeCondition().typeName().getText()) : null;
         InlineFragment inlineFragment = new InlineFragment(typeName);
         newNode(inlineFragment, ctx);
@@ -322,7 +289,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitTypeName(TypeNameContext ctx) {
+    public Void visitTypeName(GraphqlParser.TypeNameContext ctx) {
         TypeName typeName = new TypeName(ctx.name().getText());
         newNode(typeName, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -363,7 +330,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitNonNullType(NonNullTypeContext ctx) {
+    public Void visitNonNullType(GraphqlParser.NonNullTypeContext ctx) {
         NonNullType nonNullType = new NonNullType();
         newNode(nonNullType, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -391,7 +358,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitListType(ListTypeContext ctx) {
+    public Void visitListType(GraphqlParser.ListTypeContext ctx) {
         ListType listType = new ListType();
         newNode(listType, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -423,7 +390,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitArgument(ArgumentContext ctx) {
+    public Void visitArgument(GraphqlParser.ArgumentContext ctx) {
         Argument argument = new Argument(ctx.name().getText(), getValue(ctx.valueWithVariable()));
         newNode(argument, ctx);
         if (getFromContextStack(ContextProperty.Directive, false) != null) {
@@ -437,7 +404,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     @Override
-    public Void visitDirective(DirectiveContext ctx) {
+    public Void visitDirective(GraphqlParser.DirectiveContext ctx) {
         Directive directive = new Directive(ctx.name().getText());
         newNode(directive, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -495,7 +462,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitSchemaDefinition(SchemaDefinitionContext ctx) {
+    public Void visitSchemaDefinition(GraphqlParser.SchemaDefinitionContext ctx) {
         SchemaDefinition def = new SchemaDefinition();
         newNode(def, ctx);
         result.getDefinitions().add(def);
@@ -506,7 +473,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitOperationTypeDefinition(OperationTypeDefinitionContext ctx) {
+    public Void visitOperationTypeDefinition(GraphqlParser.OperationTypeDefinitionContext ctx) {
         OperationTypeDefinition def = new OperationTypeDefinition(ctx.operationType().getText());
         newNode(def, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -522,7 +489,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitScalarTypeDefinition(ScalarTypeDefinitionContext ctx) {
+    public Void visitScalarTypeDefinition(GraphqlParser.ScalarTypeDefinitionContext ctx) {
         ScalarTypeDefinition def = new ScalarTypeDefinition(ctx.name().getText());
         newNode(def, ctx);
         def.setDescription(newDescription(ctx.description()));
@@ -534,7 +501,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitObjectTypeDefinition(ObjectTypeDefinitionContext ctx) {
+    public Void visitObjectTypeDefinition(GraphqlParser.ObjectTypeDefinitionContext ctx) {
         ObjectTypeDefinition def = null;
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.contextProperty == ContextProperty.TypeExtensionDefinition) {
@@ -557,7 +524,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     @Override
-    public Void visitFieldDefinition(FieldDefinitionContext ctx) {
+    public Void visitFieldDefinition(GraphqlParser.FieldDefinitionContext ctx) {
         FieldDefinition def = new FieldDefinition(ctx.name().getText());
         newNode(def, ctx);
         def.setDescription(newDescription(ctx.description()));
@@ -578,7 +545,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitInputValueDefinition(InputValueDefinitionContext ctx) {
+    public Void visitInputValueDefinition(GraphqlParser.InputValueDefinitionContext ctx) {
         InputValueDefinition def = new InputValueDefinition(ctx.name().getText());
         newNode(def, ctx);
         def.setDescription(newDescription(ctx.description()));
@@ -606,7 +573,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitInterfaceTypeDefinition(InterfaceTypeDefinitionContext ctx) {
+    public Void visitInterfaceTypeDefinition(GraphqlParser.InterfaceTypeDefinitionContext ctx) {
         InterfaceTypeDefinition def = new InterfaceTypeDefinition(ctx.name().getText());
         newNode(def, ctx);
         def.setDescription(newDescription(ctx.description()));
@@ -618,7 +585,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitUnionTypeDefinition(UnionTypeDefinitionContext ctx) {
+    public Void visitUnionTypeDefinition(GraphqlParser.UnionTypeDefinitionContext ctx) {
         UnionTypeDefinition def = new UnionTypeDefinition(ctx.name().getText());
         newNode(def, ctx);
         def.setDescription(newDescription(ctx.description()));
@@ -630,7 +597,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitEnumTypeDefinition(EnumTypeDefinitionContext ctx) {
+    public Void visitEnumTypeDefinition(GraphqlParser.EnumTypeDefinitionContext ctx) {
         EnumTypeDefinition def = new EnumTypeDefinition(ctx.name().getText());
         newNode(def, ctx);
         def.setDescription(newDescription(ctx.description()));
@@ -642,7 +609,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitEnumValueDefinition(EnumValueDefinitionContext ctx) {
+    public Void visitEnumValueDefinition(GraphqlParser.EnumValueDefinitionContext ctx) {
         EnumValueDefinition def = new EnumValueDefinition(ctx.enumValue().getText());
         newNode(def, ctx);
         def.setDescription(newDescription(ctx.description()));
@@ -659,7 +626,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitInputObjectTypeDefinition(InputObjectTypeDefinitionContext ctx) {
+    public Void visitInputObjectTypeDefinition(GraphqlParser.InputObjectTypeDefinitionContext ctx) {
         InputObjectTypeDefinition def = new InputObjectTypeDefinition(ctx.name().getText());
         newNode(def, ctx);
         def.setDescription(newDescription(ctx.description()));
@@ -671,7 +638,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitTypeExtensionDefinition(TypeExtensionDefinitionContext ctx) {
+    public Void visitTypeExtensionDefinition(GraphqlParser.TypeExtensionDefinitionContext ctx) {
         TypeExtensionDefinition def = new TypeExtensionDefinition();
         newNode(def, ctx);
         result.getDefinitions().add(def);
@@ -682,7 +649,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitDirectiveDefinition(DirectiveDefinitionContext ctx) {
+    public Void visitDirectiveDefinition(GraphqlParser.DirectiveDefinitionContext ctx) {
         DirectiveDefinition def = new DirectiveDefinition(ctx.name().getText());
         newNode(def, ctx);
         def.setDescription(newDescription(ctx.description()));
@@ -694,7 +661,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     @Override
-    public Void visitDirectiveLocation(DirectiveLocationContext ctx) {
+    public Void visitDirectiveLocation(GraphqlParser.DirectiveLocationContext ctx) {
         DirectiveLocation def = new DirectiveLocation(ctx.name().getText());
         newNode(def, ctx);
         for (ContextEntry contextEntry : contextStack) {
@@ -707,7 +674,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
-    private Value getValue(ValueWithVariableContext ctx) {
+    private Value getValue(GraphqlParser.ValueWithVariableContext ctx) {
         if (ctx.IntValue() != null) {
             IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
@@ -734,14 +701,14 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         } else if (ctx.arrayValueWithVariable() != null) {
             ArrayValue arrayValue = new ArrayValue();
             newNode(arrayValue, ctx);
-            for (ValueWithVariableContext valueWithVariableContext : ctx.arrayValueWithVariable().valueWithVariable()) {
+            for (GraphqlParser.ValueWithVariableContext valueWithVariableContext : ctx.arrayValueWithVariable().valueWithVariable()) {
                 arrayValue.getValues().add(getValue(valueWithVariableContext));
             }
             return arrayValue;
         } else if (ctx.objectValueWithVariable() != null) {
             ObjectValue objectValue = new ObjectValue();
             newNode(objectValue, ctx);
-            for (ObjectFieldWithVariableContext objectFieldWithVariableContext :
+            for (GraphqlParser.ObjectFieldWithVariableContext objectFieldWithVariableContext :
                     ctx.objectValueWithVariable().objectFieldWithVariable()) {
                 ObjectField objectField = new ObjectField(objectFieldWithVariableContext.name().getText(), getValue(objectFieldWithVariableContext.valueWithVariable()));
                 objectValue.getObjectFields().add(objectField);
@@ -755,7 +722,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return Assert.assertShouldNeverHappen();
     }
 
-    private Value getValue(ValueContext ctx) {
+    private Value getValue(GraphqlParser.ValueContext ctx) {
         if (ctx.IntValue() != null) {
             IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
@@ -782,14 +749,14 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         } else if (ctx.arrayValue() != null) {
             ArrayValue arrayValue = new ArrayValue();
             newNode(arrayValue, ctx);
-            for (ValueContext valueWithVariableContext : ctx.arrayValue().value()) {
+            for (GraphqlParser.ValueContext valueWithVariableContext : ctx.arrayValue().value()) {
                 arrayValue.getValues().add(getValue(valueWithVariableContext));
             }
             return arrayValue;
         } else if (ctx.objectValue() != null) {
             ObjectValue objectValue = new ObjectValue();
             newNode(objectValue, ctx);
-            for (ObjectFieldContext objectFieldContext :
+            for (GraphqlParser.ObjectFieldContext objectFieldContext :
                     ctx.objectValue().objectField()) {
                 ObjectField objectField = new ObjectField(objectFieldContext.name().getText(), getValue(objectFieldContext.value()));
                 objectValue.getObjectFields().add(objectField);
@@ -799,7 +766,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return Assert.assertShouldNeverHappen();
     }
 
-    static String quotedString(StringValueContext ctx) {
+    static String quotedString(GraphqlParser.StringValueContext ctx) {
         boolean multiLine = ctx.TripleQuotedStringValue() != null;
         String strText = ctx.getText();
         if (multiLine) {
@@ -819,11 +786,11 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         abstractNode.setSourceLocation(getSourceLocation(parserRuleContext));
     }
 
-    private Description newDescription(DescriptionContext descriptionCtx) {
+    private Description newDescription(GraphqlParser.DescriptionContext descriptionCtx) {
         if (descriptionCtx == null) {
             return null;
         }
-        StringValueContext stringValueCtx = descriptionCtx.stringValue();
+        GraphqlParser.StringValueContext stringValueCtx = descriptionCtx.stringValue();
         if (stringValueCtx == null) {
             return null;
         }
