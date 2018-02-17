@@ -145,6 +145,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return null;
     }
 
+    //MARKER START: Here GraphqlOperation.g4 specific methods begin
+
     private void newSelectionSet(SelectionSet selectionSet) {
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.contextProperty == ContextProperty.Field) {
@@ -287,6 +289,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         popContext();
         return null;
     }
+
+    //MARKER END: Here GraphqlOperation.g4 specific methods end
 
     @Override
     public Void visitTypeName(GraphqlParser.TypeNameContext ctx) {
