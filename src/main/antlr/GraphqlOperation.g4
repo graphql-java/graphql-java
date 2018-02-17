@@ -5,7 +5,9 @@ operationDefinition:
 selectionSet |
 operationType  name? variableDefinitions? directives? selectionSet;
 
+variableDefinitions : '(' variableDefinition+ ')';
 
+variableDefinition : variable ':' type defaultValue?;
 
 
 selectionSet :  '{' selection+ '}';
@@ -18,6 +20,7 @@ inlineFragment;
 field : alias? name arguments? directives? selectionSet?;
 
 alias : name ':';
+
 
 
 

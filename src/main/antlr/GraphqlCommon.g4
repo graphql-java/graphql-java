@@ -53,10 +53,6 @@ arrayValueWithVariable |
 objectValueWithVariable;
 
 
-variableDefinitions : '(' variableDefinition+ ')';
-
-variableDefinition : variable ':' type defaultValue?;
-
 variable : '$' name;
 
 defaultValue : '=' value;
