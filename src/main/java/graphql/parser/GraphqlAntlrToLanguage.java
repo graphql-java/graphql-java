@@ -112,15 +112,6 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     private void addContextProperty(ContextProperty contextProperty, Object value) {
-
-        switch (contextProperty) {
-            case SelectionSet:
-                newSelectionSet((SelectionSet) value);
-                break;
-            case Field:
-                newField((Field) value);
-                break;
-        }
         contextStack.addFirst(new ContextEntry(contextProperty, value));
     }
 
@@ -147,27 +138,6 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     //MARKER START: Here GraphqlOperation.g4 specific methods begin
 
-    private void newSelectionSet(SelectionSet selectionSet) {
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == ContextProperty.Field) {
-                ((Field) contextEntry.value).setSelectionSet(selectionSet);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.OperationDefinition) {
-                ((OperationDefinition) contextEntry.value).setSelectionSet(selectionSet);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.FragmentDefinition) {
-                ((FragmentDefinition) contextEntry.value).setSelectionSet(selectionSet);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.InlineFragment) {
-                ((InlineFragment) contextEntry.value).setSelectionSet(selectionSet);
-                break;
-            }
-        }
-    }
-
-    private void newField(Field field) {
-        ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(field);
-    }
 
 
     @Override
@@ -257,6 +227,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     public Void visitSelectionSet(GraphqlParser.SelectionSetContext ctx) {
         SelectionSet newSelectionSet = new SelectionSet();
         newNode(newSelectionSet, ctx);
+        newSelectionSet(newSelectionSet);
         addContextProperty(ContextProperty.SelectionSet, newSelectionSet);
         super.visitSelectionSet(ctx);
         popContext();
@@ -272,11 +243,35 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         if (ctx.alias() != null) {
             newField.setAlias(ctx.alias().name().getText());
         }
+        newField(newField);
         addContextProperty(ContextProperty.Field, newField);
         super.visitField(ctx);
         popContext();
         return null;
     }
+
+    private void newSelectionSet(SelectionSet selectionSet) {
+        for (ContextEntry contextEntry : contextStack) {
+            if (contextEntry.contextProperty == ContextProperty.Field) {
+                ((Field) contextEntry.value).setSelectionSet(selectionSet);
+                break;
+            } else if (contextEntry.contextProperty == ContextProperty.OperationDefinition) {
+                ((OperationDefinition) contextEntry.value).setSelectionSet(selectionSet);
+                break;
+            } else if (contextEntry.contextProperty == ContextProperty.FragmentDefinition) {
+                ((FragmentDefinition) contextEntry.value).setSelectionSet(selectionSet);
+                break;
+            } else if (contextEntry.contextProperty == ContextProperty.InlineFragment) {
+                ((InlineFragment) contextEntry.value).setSelectionSet(selectionSet);
+                break;
+            }
+        }
+    }
+
+    private void newField(Field field) {
+        ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(field);
+    }
+
 
     @Override
     public Void visitInlineFragment(GraphqlParser.InlineFragmentContext ctx) {
