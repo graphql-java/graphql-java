@@ -99,8 +99,8 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     }
 
     protected static class ContextEntry {
-        final ContextProperty contextProperty;
-        final Object value;
+        public final ContextProperty contextProperty;
+        public final Object value;
 
         public ContextEntry(ContextProperty contextProperty, Object value) {
             this.contextProperty = contextProperty;
