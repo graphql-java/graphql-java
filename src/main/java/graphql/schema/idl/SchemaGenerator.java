@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.Scalars;
+import graphql.introspection.Introspection;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -61,6 +62,7 @@ import graphql.schema.idl.errors.SchemaProblem;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -718,7 +720,7 @@ public class SchemaGenerator {
         return typeResolver;
     }
 
-    private String buildDescription(Node node, Description description) {
+    private String buildDescription(Node<?> node, Description description) {
         if (description != null) {
             return description.getContent();
         }

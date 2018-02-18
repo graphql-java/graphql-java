@@ -3,6 +3,7 @@ package graphql.language;
 
 import java.util.List;
 
+// This class should really be called ObjectTypeExtensionDefinition but history
 public class TypeExtensionDefinition extends ObjectTypeDefinition {
     public TypeExtensionDefinition() {
         super(null);
