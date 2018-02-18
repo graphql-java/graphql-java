@@ -4,7 +4,7 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
-import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
@@ -68,9 +68,9 @@ class ChainedInstrumentationStateTest extends Specification {
         }
 
         @Override
-        InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
+        InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
             assertState(parameters.getInstrumentationState())
-            return super.beginDataFetch(parameters)
+            return super.beginExecuteOperation(parameters)
         }
 
         @Override
@@ -126,13 +126,10 @@ class ChainedInstrumentationStateTest extends Specification {
                 "start:validation",
                 "end:validation",
 
-                "start:data-fetch-dispatch",
-
-                "start:data-fetch",
+                "start:execute-operation",
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
@@ -140,25 +137,21 @@ class ChainedInstrumentationStateTest extends Specification {
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
                 "end:complete-id",
                 "end:field-id",
-                "end:fields",
 
                 "end:execution-strategy",
 
                 "end:complete-hero",
                 "end:field-hero",
-                "end:fields",
 
                 "end:execution-strategy",
 
-                "end:data-fetch",
-                "end:data-fetch-dispatch",
+                "end:execute-operation",
 
                 "end:execution",
         ]

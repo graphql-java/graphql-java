@@ -82,7 +82,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        InstrumentationContext<CompletableFuture<ExecutionResult>> executionStrategyCtx = executionContext.getInstrumentation().beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext));
+        InstrumentationContext<ExecutionResult> executionStrategyCtx = executionContext.getInstrumentation()
+                .beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext, parameters));
 
         GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
 
@@ -103,7 +104,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 root.getFields().keySet().iterator(),
                 result);
 
-        executionStrategyCtx.onEnd(result, null);
+        executionStrategyCtx.onDispatched(result);
+        result.whenComplete(executionStrategyCtx::onCompleted);
         return result;
     }
 
@@ -199,7 +201,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
             return completeValues(executionContext, fetchedValues, typeInfo, fieldName, fields, argumentValues);
         });
-        result.whenComplete((nodes, throwable) -> fieldCtx.onEnd(null, throwable));
+        fieldCtx.onDispatched(null);
+        result.whenComplete((nodes, throwable) -> fieldCtx.onCompleted(null, throwable));
         return result;
 
     }
@@ -249,7 +252,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
         return fetchedValue
                 .thenApply((result) -> assertResult(parentResults, result))
-                .whenComplete(fetchCtx::onEnd)
+                .whenComplete(fetchCtx::onCompleted)
                 .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
     }
 

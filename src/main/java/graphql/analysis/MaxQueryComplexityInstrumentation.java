@@ -3,7 +3,7 @@ package graphql.analysis;
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
 
@@ -13,12 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
 
 /**
  * Prevents execution if the query complexity is greater than the specified maxComplexity
  */
 @PublicApi
-public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
+public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
 
 
     private final int maxComplexity;
@@ -47,7 +48,7 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return (errors, throwable) -> {
+        return whenCompleted((errors, throwable) -> {
             if ((errors != null && errors.size() > 0) || throwable != null) {
                 return;
             }
@@ -68,7 +69,7 @@ public class MaxQueryComplexityInstrumentation extends NoOpInstrumentation {
             if (totalComplexity > maxComplexity) {
                 throw mkAbortException(totalComplexity, maxComplexity);
             }
-        };
+        });
     }
 
     /**

@@ -59,6 +59,7 @@ import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -506,11 +507,16 @@ public class SchemaGenerator {
     }
 
     private GraphQLScalarType buildScalar(BuildContext buildCtx, ScalarTypeDefinition typeDefinition) {
-        // TODO - add directive support to the wiring so the scalar provider code takes directives as input
-        //
-        // eg: getWiring().getScalar(typeDefinition,directives);
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        RuntimeWiring runtimeWiring = buildCtx.getWiring();
+        WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
+        ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, typeDefinition);
 
-        return buildCtx.getWiring().getScalars().get(typeDefinition.getName());
+        if (wiringFactory.providesScalar(environment)) {
+            return wiringFactory.getScalar(environment);
+        } else {
+            return buildCtx.getWiring().getScalars().get(typeDefinition.getName());
+        }
     }
 
     private GraphQLFieldDefinition buildField(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
@@ -520,7 +526,11 @@ public class SchemaGenerator {
         builder.description(buildDescription(fieldDef, fieldDef.getDescription()));
         builder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
 
-        builder.dataFetcherFactory(buildDataFetcherFactory(buildCtx, parentType, fieldDef));
+        GraphQLDirective[] directives = buildDirectives(buildCtx, fieldDef.getDirectives(),
+                Collections.emptyList(), Introspection.DirectiveLocation.FIELD);
+        builder.withDirectives(
+                directives
+        );
 
         fieldDef.getInputValueDefinitions().forEach(inputValueDefinition ->
                 builder.argument(buildArgument(buildCtx, inputValueDefinition)));
@@ -530,20 +540,23 @@ public class SchemaGenerator {
                         emptyList(), FIELD)
         );
 
-        GraphQLOutputType outputType = buildOutputType(buildCtx, fieldDef.getType());
-        builder.type(outputType);
+        GraphQLOutputType fieldType = buildOutputType(buildCtx, fieldDef.getType());
+        builder.type(fieldType);
+
+        builder.dataFetcherFactory(buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives)));
+
 
         return builder.build();
     }
 
-    private DataFetcherFactory buildDataFetcherFactory(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
+    private DataFetcherFactory buildDataFetcherFactory(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef, GraphQLOutputType fieldType, List<GraphQLDirective> directives) {
         String fieldName = fieldDef.getName();
         String parentTypeName = parentType.getName();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         RuntimeWiring runtimeWiring = buildCtx.getWiring();
         WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
 
-        FieldWiringEnvironment wiringEnvironment = new FieldWiringEnvironment(typeRegistry, parentType, fieldDef);
+        FieldWiringEnvironment wiringEnvironment = new FieldWiringEnvironment(typeRegistry, parentType, fieldDef, fieldType, directives);
 
         DataFetcherFactory<?> dataFetcherFactory;
         if (wiringFactory.providesDataFetcherFactory(wiringEnvironment)) {

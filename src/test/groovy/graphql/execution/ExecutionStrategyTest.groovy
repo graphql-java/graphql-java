@@ -7,7 +7,7 @@ import graphql.ExecutionResult
 import graphql.Scalars
 import graphql.SerializationError
 import graphql.TypeMismatchError
-import graphql.execution.instrumentation.NoOpInstrumentation
+import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.OperationDefinition
@@ -55,7 +55,7 @@ class ExecutionStrategyTest extends Specification {
     def buildContext(GraphQLSchema schema = null) {
         ExecutionId executionId = ExecutionId.from("executionId123")
         def variables = [arg1: "value1"]
-        new ExecutionContext(NoOpInstrumentation.INSTANCE, executionId, schema, null,
+        new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema, null,
                 executionStrategy, executionStrategy, executionStrategy,
                 null, null, null,
                 variables, "context", "root")

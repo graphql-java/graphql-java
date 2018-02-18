@@ -7,15 +7,15 @@ import graphql.execution.instrumentation.InstrumentationState;
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
-public class InstrumentationDataFetchParameters {
+public class InstrumentationExecuteOperationParameters {
     private final ExecutionContext executionContext;
     private final InstrumentationState instrumentationState;
 
-    public InstrumentationDataFetchParameters(ExecutionContext executionContext) {
+    public InstrumentationExecuteOperationParameters(ExecutionContext executionContext) {
         this(executionContext, executionContext.getInstrumentationState());
     }
 
-    private InstrumentationDataFetchParameters(ExecutionContext executionContext, InstrumentationState instrumentationState) {
+    private InstrumentationExecuteOperationParameters(ExecutionContext executionContext, InstrumentationState instrumentationState) {
         this.executionContext = executionContext;
         this.instrumentationState = instrumentationState;
     }
@@ -27,8 +27,8 @@ public class InstrumentationDataFetchParameters {
      *
      * @return a new parameters object with the new state
      */
-    public InstrumentationDataFetchParameters withNewState(InstrumentationState instrumentationState) {
-        return new InstrumentationDataFetchParameters(executionContext, instrumentationState);
+    public InstrumentationExecuteOperationParameters withNewState(InstrumentationState instrumentationState) {
+        return new InstrumentationExecuteOperationParameters(executionContext, instrumentationState);
     }
 
     public ExecutionContext getExecutionContext() {

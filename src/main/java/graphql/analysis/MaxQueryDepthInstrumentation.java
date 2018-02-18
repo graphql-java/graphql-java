@@ -3,17 +3,20 @@ package graphql.analysis;
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
 
 import java.util.List;
 
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.*;
+
 /**
  * Prevents execution if the query depth is greater than the specified maxDepth
  */
 @PublicApi
-public class MaxQueryDepthInstrumentation extends NoOpInstrumentation {
+public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
 
     private final int maxDepth;
 
@@ -23,7 +26,7 @@ public class MaxQueryDepthInstrumentation extends NoOpInstrumentation {
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return (errors, throwable) -> {
+        return whenCompleted((errors, throwable) -> {
             if ((errors != null && errors.size() > 0) || throwable != null) {
                 return;
             }
@@ -32,7 +35,7 @@ public class MaxQueryDepthInstrumentation extends NoOpInstrumentation {
             if (depth > maxDepth) {
                 throw mkAbortException(depth, maxDepth);
             }
-        };
+        });
     }
 
     /**
