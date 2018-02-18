@@ -168,8 +168,10 @@ public class SchemaTypeChecker {
     }
 
     private void checkScalarImplementationsArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
-        typeRegistry.scalars().keySet().forEach(scalarName -> {
-            if (!wiring.getScalars().containsKey(scalarName)) {
+        typeRegistry.scalars().forEach((scalarName, scalarTypeDefinition) -> {
+            WiringFactory wiringFactory = wiring.getWiringFactory();
+            ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, scalarTypeDefinition);
+            if (!wiringFactory.providesScalar(environment) && !wiring.getScalars().containsKey(scalarName)) {
                 errors.add(new MissingScalarImplementationError(scalarName));
             }
         });

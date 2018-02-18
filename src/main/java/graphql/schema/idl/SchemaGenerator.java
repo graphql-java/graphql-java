@@ -471,7 +471,16 @@ public class SchemaGenerator {
     }
 
     private GraphQLScalarType buildScalar(BuildContext buildCtx, ScalarTypeDefinition typeDefinition) {
-        return buildCtx.getWiring().getScalars().get(typeDefinition.getName());
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        RuntimeWiring runtimeWiring = buildCtx.getWiring();
+        WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
+        ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, typeDefinition);
+
+        if (wiringFactory.providesScalar(environment)) {
+            return wiringFactory.getScalar(environment);
+        } else {
+            return buildCtx.getWiring().getScalars().get(typeDefinition.getName());
+        }
     }
 
     private GraphQLFieldDefinition buildField(BuildContext buildCtx, TypeDefinition parentType, FieldDefinition fieldDef) {
