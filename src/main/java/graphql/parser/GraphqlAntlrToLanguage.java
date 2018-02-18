@@ -72,7 +72,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         this.tokens = tokens;
     }
 
-    private enum ContextProperty {
+    protected enum ContextProperty {
         OperationDefinition,
         FragmentDefinition,
         Field,
@@ -98,7 +98,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         DirectiveDefinition,
     }
 
-    static class ContextEntry {
+    protected static class ContextEntry {
         final ContextProperty contextProperty;
         final Object value;
 
@@ -111,20 +111,20 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     private final Deque<ContextEntry> contextStack = new ArrayDeque<>();
 
 
-    private void addContextProperty(ContextProperty contextProperty, Object value) {
+    protected void addContextProperty(ContextProperty contextProperty, Object value) {
         contextStack.addFirst(new ContextEntry(contextProperty, value));
     }
 
-    private void popContext() {
+    protected void popContext() {
         contextStack.removeFirst();
     }
 
-    private Object getFromContextStack(ContextProperty contextProperty) {
+    protected Object getFromContextStack(ContextProperty contextProperty) {
         return getFromContextStack(contextProperty, false);
     }
 
     @SuppressWarnings("SameParameterValue")
-    private Object getFromContextStack(ContextProperty contextProperty, boolean required) {
+    protected Object getFromContextStack(ContextProperty contextProperty, boolean required) {
         for (ContextEntry contextEntry : contextStack) {
             if (contextEntry.contextProperty == contextProperty) {
                 return contextEntry.value;
