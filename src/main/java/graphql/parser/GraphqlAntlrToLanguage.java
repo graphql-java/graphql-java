@@ -842,6 +842,10 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return result;
     }
 
+    protected void setResult(Document result) {
+        this.result = result;
+    }
+
     public Deque<ContextEntry> getContextStack() {
         return contextStack;
     }
