@@ -1,12 +1,14 @@
 package graphql.schema.idl
 
 import graphql.TypeResolutionEnvironment
+import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetcherFactories
 import graphql.schema.DataFetcherFactory
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLUnionType
 import graphql.schema.PropertyDataFetcher
@@ -46,6 +48,31 @@ class WiringFactoryTest extends Specification {
 
         NamedWiringFactory(String name) {
             this.name = name
+        }
+
+        @Override
+        boolean providesScalar(ScalarWiringEnvironment environment) {
+            return name == environment.getInterfaceTypeDefinition().getName()
+        }
+
+        @Override
+        GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
+            return new GraphQLScalarType(name, "Custom scalar", new Coercing() {
+                @Override
+                Object serialize(Object input) {
+                    throw new UnsupportedOperationException("Not implemented")
+                }
+
+                @Override
+                Object parseValue(Object input) {
+                    throw new UnsupportedOperationException("Not implemented")
+                }
+
+                @Override
+                Object parseLiteral(Object input) {
+                    throw new UnsupportedOperationException("Not implemented")
+                }
+            })
         }
 
         @Override
@@ -121,11 +148,14 @@ class WiringFactoryTest extends Specification {
                 name: String!
             }
             
+            scalar Long
+
             union Cyborg = Human | Droid
             
             type Droid implements Character {
                 id: ID!
                 name: String!
+                age: Long
                 friends: [Character]
                 appearsIn: [Episode]!
             }
@@ -145,6 +175,7 @@ class WiringFactoryTest extends Specification {
         def combinedWiringFactory = new CombinedWiringFactory([
                 new NamedWiringFactory("Character"),
                 new NamedWiringFactory("Cyborg"),
+                new NamedWiringFactory("Long"),
                 new NamedDataFetcherFactoryWiringFactory("cyborg"),
                 new NamedWiringFactory("friends")])
 
@@ -174,6 +205,9 @@ class WiringFactoryTest extends Specification {
 
         def cyborgDataFetcher = humanType.getFieldDefinition("cyborg").getDataFetcher() as NamedDataFetcher
         cyborgDataFetcher.name == "cyborg"
+
+        GraphQLScalarType longScalar = schema.getType("Long") as GraphQLScalarType
+        longScalar.name == "Long"
     }
 
     def "ensure field wiring environment makes sense"() {
