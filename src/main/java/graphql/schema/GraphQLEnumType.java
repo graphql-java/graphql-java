@@ -8,12 +8,14 @@ import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static java.util.Collections.emptyList;
 
 /**
  * A graphql enumeration type has a limited set of values.
@@ -24,12 +26,13 @@ import static graphql.Assert.assertValidName;
  * See http://graphql.org/learn/schema/#enumeration-types for more details
  */
 @PublicApi
-public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
     private final Map<String, GraphQLEnumValueDefinition> valueDefinitionMap = new LinkedHashMap<>();
     private final EnumTypeDefinition definition;
+    private final List<GraphQLDirective> directives;
 
     private final Coercing coercing = new Coercing() {
         @Override
@@ -55,15 +58,18 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     @Internal
     public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values) {
-        this(name, description, values, null);
+        this(name, description, values, emptyList(), null);
     }
 
     @Internal
-    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, EnumTypeDefinition definition) {
+    public GraphQLEnumType(String name, String description, List<GraphQLEnumValueDefinition> values, List<GraphQLDirective> directives, EnumTypeDefinition definition) {
         assertValidName(name);
+        assertNotNull(directives, "directives cannot be null");
+
         this.name = name;
         this.description = description;
         this.definition = definition;
+        this.directives = directives;
         buildMap(values);
     }
 
@@ -126,6 +132,11 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         return definition;
     }
 
+    @Override
+    public List<GraphQLDirective> getDirectives() {
+        return new ArrayList<>(directives);
+    }
+
     public static Builder newEnum() {
         return new Builder();
     }
@@ -136,6 +147,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         private String description;
         private EnumTypeDefinition definition;
         private final List<GraphQLEnumValueDefinition> values = new ArrayList<>();
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -173,9 +185,18 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             return this;
         }
 
+        public Builder value(GraphQLEnumValueDefinition enumValueDefinition) {
+            values.add(enumValueDefinition);
+            return this;
+        }
+
+        public Builder withDirectives(GraphQLDirective... directives) {
+            Collections.addAll(this.directives, directives);
+            return this;
+        }
 
         public GraphQLEnumType build() {
-            return new GraphQLEnumType(name, description, values, definition);
+            return new GraphQLEnumType(name, description, values, directives, definition);
         }
 
     }

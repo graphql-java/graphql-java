@@ -1,10 +1,17 @@
 package graphql.schema;
 
 
+import graphql.Internal;
+import graphql.PublicApi;
 import graphql.language.ScalarTypeDefinition;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static java.util.Collections.emptyList;
 
 /**
  * A scalar type is a leaf node in the graphql tree of types.  This class allows you to define new scalar types.
@@ -21,24 +28,30 @@ import static graphql.Assert.assertValidName;
  *
  * @see graphql.Scalars
  */
-public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
     private final Coercing coercing;
     private final ScalarTypeDefinition definition;
+    private final List<GraphQLDirective> directives;
 
+    @Internal
     public GraphQLScalarType(String name, String description, Coercing coercing) {
-        this(name, description, coercing, null);
+        this(name, description, coercing, emptyList(), null);
     }
 
-    public GraphQLScalarType(String name, String description, Coercing coercing, ScalarTypeDefinition definition) {
+    @Internal
+    public GraphQLScalarType(String name, String description, Coercing coercing, List<GraphQLDirective> directives, ScalarTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(coercing, "coercing can't be null");
+        assertNotNull(directives, "directives can't be null");
+
         this.name = name;
         this.description = description;
         this.coercing = coercing;
         this.definition = definition;
+        this.directives = directives;
     }
 
     public String getName() {
@@ -60,11 +73,54 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
     }
 
     @Override
+    public List<GraphQLDirective> getDirectives() {
+        return new ArrayList<>(directives);
+    }
+
+    @Override
     public String toString() {
         return "GraphQLScalarType{" +
                 "name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", coercing=" + coercing +
                 '}';
+    }
+
+    public static Builder newScalar() {
+        return new Builder();
+    }
+
+
+    @PublicApi
+    public static class Builder {
+        private String name;
+        private String description;
+        private Coercing coercing;
+        private ScalarTypeDefinition definition;
+        private final List<GraphQLDirective> directives = new ArrayList<>();
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder definition(ScalarTypeDefinition definition) {
+            this.definition = definition;
+            return this;
+        }
+
+        public Builder withDirectives(GraphQLDirective... directives) {
+            Collections.addAll(this.directives, directives);
+            return this;
+        }
+
+        public GraphQLScalarType build() {
+            return new GraphQLScalarType(name, description, coercing, directives, definition);
+        }
     }
 }

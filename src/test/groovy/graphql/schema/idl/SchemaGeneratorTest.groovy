@@ -1,6 +1,7 @@
 package graphql.schema.idl
 
 import graphql.schema.GraphQLDirective
+import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLFieldsContainer
@@ -1071,7 +1072,7 @@ class SchemaGeneratorTest extends Specification {
         argNoDefault == null
     }
 
-    def "directives are gathered and turned into runtime objects with arguments"() {
+    def "object type directives are gathered and turned into runtime objects with arguments"() {
         def spec = """
             type Query @directive1 {
               field1 : String @fieldDirective1
@@ -1126,6 +1127,58 @@ class SchemaGeneratorTest extends Specification {
         3        | "floatArg" | GraphQLFloat   | 1.1
         4        | "nullArg"  | GraphQLString  | null
 
+    }
+
+    def "other type directives are captured"() {
+        def spec = """
+            type Query {
+              field1 : String
+            }
+            type A  {
+                fieldA : String
+            }
+            type B  {
+                fieldB : String
+            }
+            
+            interface IFace @IFaceDirective {
+                field1 : String
+            }
+            
+            union Onion @OnionDirective = A | B
+            
+            enum Numb @NumbDirective {
+                X @EnumValueDirective,
+                Y
+            }
+            
+            input Puter @PuterDirective {
+                inputField : String @InputFieldDirective
+            }
+        """
+
+        def schema = schema(spec)
+        GraphQLDirectiveContainer container = schema.getType(typeName) as GraphQLDirectiveContainer
+
+        expect:
+
+        container.getDirective(directiveName) != null
+
+        if (container instanceof GraphQLEnumType) {
+            def evd = ((GraphQLEnumType) container).getValue("X").getDirective("EnumValueDirective")
+            assert evd != null
+        }
+        if (container instanceof GraphQLInputObjectType) {
+            def ifd = ((GraphQLInputObjectType) container).getField("inputField").getDirective("InputFieldDirective")
+            assert ifd != null
+        }
+
+        where:
+        typeName | directiveName
+        "IFace"  | "IFaceDirective"
+        "Onion"  | "OnionDirective"
+        "Numb"   | "NumbDirective"
+        "Puter"  | "PuterDirective"
     }
 
     def "input object default value is parsed"() {

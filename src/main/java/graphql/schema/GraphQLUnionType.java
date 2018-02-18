@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static java.util.Collections.emptyList;
 
 /**
  * A union type is a polymorphic type that dynamically represents one of more concrete object types.
@@ -25,31 +27,35 @@ import static graphql.Assert.assertValidName;
  * See http://graphql.org/learn/schema/#union-types for more details on the concept.
  */
 @PublicApi
-public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType {
+public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
     private List<GraphQLOutputType> types = new ArrayList<>();
     private final TypeResolver typeResolver;
     private final UnionTypeDefinition definition;
+    private final List<GraphQLDirective> directives;
 
 
     @Internal
     public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver) {
-        this(name, description, types, typeResolver, null);
+        this(name, description, types, typeResolver, emptyList(), null);
     }
 
     @Internal
-    public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver, UnionTypeDefinition definition) {
+    public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(types, "types can't be null");
         assertNotEmpty(types, "A Union type must define one or more member types.");
         assertNotNull(typeResolver, "typeResolver can't be null");
+        assertNotNull(directives, "directives cannot be null");
+
         this.name = name;
         this.description = description;
         this.types = types;
         this.typeResolver = typeResolver;
         this.definition = definition;
+        this.directives = directives;
     }
 
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
@@ -84,6 +90,11 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         return definition;
     }
 
+    @Override
+    public List<GraphQLDirective> getDirectives() {
+        return new ArrayList<>(directives);
+    }
+
     public static Builder newUnionType() {
         return new Builder();
     }
@@ -95,6 +106,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         private final List<GraphQLOutputType> types = new ArrayList<>();
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
+        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder name(String name) {
             this.name = name;
@@ -144,8 +156,13 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
             return this;
         }
 
+        public Builder withDirectives(GraphQLDirective... directives) {
+            Collections.addAll(this.directives, directives);
+            return this;
+        }
+
         public GraphQLUnionType build() {
-            return new GraphQLUnionType(name, description, types, typeResolver, definition);
+            return new GraphQLUnionType(name, description, types, typeResolver, directives, definition);
         }
     }
 }
