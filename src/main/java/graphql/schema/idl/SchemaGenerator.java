@@ -77,7 +77,6 @@ import java.util.stream.Collectors;
 import static graphql.Assert.assertNotNull;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
-import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
 import static graphql.introspection.Introspection.DirectiveLocation.INTERFACE;
@@ -536,11 +535,6 @@ public class SchemaGenerator {
 
         fieldDef.getInputValueDefinitions().forEach(inputValueDefinition ->
                 builder.argument(buildArgument(buildCtx, inputValueDefinition)));
-
-        builder.withDirectives(
-                buildDirectives(buildCtx, fieldDef.getDirectives(),
-                        emptyList(), FIELD)
-        );
 
         GraphQLOutputType fieldType = buildOutputType(buildCtx, fieldDef.getType());
         builder.type(fieldType);

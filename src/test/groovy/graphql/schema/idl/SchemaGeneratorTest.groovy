@@ -1103,10 +1103,12 @@ class SchemaGeneratorTest extends Specification {
         // test that fields can have directives as well
 
         def field1 = type.getFieldDefinition("field1")
+        field1.getDirectives().size() == 1
         def fieldDirective1 = field1.getDirectives()[0]
         fieldDirective1.getName() == "fieldDirective1"
 
         def field2 = type.getFieldDefinition("field2")
+        field2.getDirectives().size() == 1
         def fieldDirective2 = field2.getDirectives()[0]
         fieldDirective2.getName() == "fieldDirective2"
 
