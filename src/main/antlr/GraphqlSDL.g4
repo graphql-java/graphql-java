@@ -4,7 +4,7 @@ import GraphqlCommon;
 typeSystemDefinition: description?
 schemaDefinition |
 typeDefinition |
-typeExtensionDefinition |
+typeExtension |
 directiveDefinition
 ;
 
@@ -21,9 +21,28 @@ enumTypeDefinition |
 inputObjectTypeDefinition
 ;
 
+//
+// type extensions dont get "description" strings according to spec
+// https://github.com/facebook/graphql/blob/master/spec/Appendix%20B%20--%20Grammar%20Summary.md
+//
+
+typeExtension :
+    objectTypeExtensionDefinition |
+    interfaceTypeExtensionDefinition |
+    unionTypeExtensionDefinition |
+    scalarTypeExtensionDefinition |
+    enumTypeExtensionDefinition |
+    inputObjectTypeExtensionDefinition
+;
+
+
 scalarTypeDefinition : description? SCALAR name directives?;
 
+scalarTypeExtensionDefinition : EXTEND SCALAR name directives?;
+
 objectTypeDefinition : description? TYPE name implementsInterfaces? directives? fieldsDefinition?;
+
+objectTypeExtensionDefinition : EXTEND TYPE name implementsInterfaces? directives? fieldsDefinition?;
 
 implementsInterfaces :
     IMPLEMENTS '&'? typeName+ |
@@ -37,26 +56,37 @@ argumentsDefinition : '(' inputValueDefinition+ ')';
 
 inputValueDefinition : description? name ':' type defaultValue? directives?;
 
-interfaceTypeDefinition : description? INTERFACE name directives? '{' fieldDefinition+ '}';
+interfaceTypeDefinition : description? INTERFACE name directives? fieldsDefinition?;
 
-unionTypeDefinition : description? UNION name directives? '=' unionMembers;
+interfaceTypeExtensionDefinition : EXTEND INTERFACE name directives? fieldsDefinition?;
+
+
+unionTypeDefinition : description? UNION name directives? unionMembership;
+
+unionTypeExtensionDefinition : EXTEND UNION name directives? unionMembership?;
+
+unionMembership : '=' unionMembers;
 
 unionMembers:
-typeName |
+'|'? typeName |
 unionMembers '|' typeName
 ;
 
-enumTypeDefinition : description? ENUM name directives? '{' enumValueDefinition+ '}';
+enumTypeDefinition : description? ENUM name directives? enumValueDefinitions;
+
+enumTypeExtensionDefinition : EXTEND ENUM name directives? enumValueDefinitions?;
+
+enumValueDefinitions : '{' enumValueDefinition+ '}';
 
 enumValueDefinition : description? enumValue directives?;
 
-inputObjectTypeDefinition : description? INPUT name directives? '{' inputValueDefinition+ '}';
 
-//
-// type extensions dont get "description" strings according to reference implementation
-// https://github.com/graphql/graphql-js/pull/927/files#diff-b9370666fe8cd9ff4dd53e89e60d26afR182
-//
-typeExtensionDefinition : EXTEND objectTypeDefinition;
+inputObjectTypeDefinition : description? INPUT name directives? inputObjectValueDefinitions;
+
+inputObjectTypeExtensionDefinition : EXTEND INPUT name directives? inputObjectValueDefinitions?;
+
+inputObjectValueDefinitions : '{' inputValueDefinition+ '}';
+
 
 directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? 'on' directiveLocations;
 
