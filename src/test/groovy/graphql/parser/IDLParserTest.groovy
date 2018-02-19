@@ -8,13 +8,17 @@ import graphql.language.Comment
 import graphql.language.Directive
 import graphql.language.DirectiveDefinition
 import graphql.language.DirectiveLocation
+import graphql.language.Document
 import graphql.language.EnumTypeDefinition
+import graphql.language.EnumTypeExtensionDefinition
 import graphql.language.EnumValueDefinition
 import graphql.language.FieldDefinition
 import graphql.language.InputObjectTypeDefinition
+import graphql.language.InputObjectTypeExtensionDefinition
 import graphql.language.InputValueDefinition
 import graphql.language.IntValue
 import graphql.language.InterfaceTypeDefinition
+import graphql.language.InterfaceTypeExtensionDefinition
 import graphql.language.ListType
 import graphql.language.Node
 import graphql.language.NonNullType
@@ -23,10 +27,12 @@ import graphql.language.ObjectTypeDefinition
 import graphql.language.ObjectValue
 import graphql.language.OperationTypeDefinition
 import graphql.language.ScalarTypeDefinition
+import graphql.language.ScalarTypeExtensionDefinition
 import graphql.language.SchemaDefinition
 import graphql.language.TypeExtensionDefinition
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
+import graphql.language.UnionTypeExtensionDefinition
 import graphql.language.VariableReference
 import spock.lang.Specification
 
@@ -582,5 +588,162 @@ input Gun {
         (typeDef2.getImplements()[1] as TypeName).getName() == 'Baz'
     }
 
+    def "basic type extensions"() {
+
+        def input = '''
+
+        type Query {
+            bar : String
+        }
+        
+        extend type Query @directiveOnly
+
+        extend type Query @directive {
+            field : String
+        }
+
+        
+        interface Bar {
+            bar : String
+        }
+
+        extend interface Bar @directiveOnly
+        
+        extend interface Bar @directive {
+          iField : String
+        }
+        
+        
+        union FooBar = Foo | Bar
+
+        extend union FooBar @directiveOnly
+
+        extend union FooBar @directive =
+            | Baz 
+            | Buzz
+        
+        
+        enum Numb {
+            A, B, C
+        }
+        
+        extend enum Numb @directiveOnly
+        
+        extend enum Numb @directive {
+            E,F
+        }
+        
+        
+        scalar Scales
+        
+        extend scalar Scales @directiveOnly 
+        
+        extend scalar Scales @directive
+        
+        input Puter {
+            field : String
+        }
+        
+        extend input Puter @directiveOnly
+        
+        extend input Puter @directive {
+            inputField : String
+        }
+            
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+        // object type extension
+        fromDoc(doc, 0, ObjectTypeDefinition).name == "Query"
+
+        fromDoc(doc, 1, TypeExtensionDefinition).name == "Query"
+        fromDoc(doc, 1, TypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 1, TypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 1, TypeExtensionDefinition).getFieldDefinitions().size() == 0
+
+        fromDoc(doc, 2, TypeExtensionDefinition).name == "Query"
+        fromDoc(doc, 2, TypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 2, TypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, TypeExtensionDefinition).getFieldDefinitions().size() == 1
+        fromDoc(doc, 2, TypeExtensionDefinition).getFieldDefinitions()[0].name == 'field'
+
+        // interface type extension
+        fromDoc(doc, 3, InterfaceTypeDefinition).name == 'Bar'
+
+        fromDoc(doc, 4, InterfaceTypeExtensionDefinition).name == 'Bar'
+        fromDoc(doc, 4, InterfaceTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 4, InterfaceTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 4, InterfaceTypeExtensionDefinition).getFieldDefinitions().size() == 0
+
+
+        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).name == 'Bar'
+        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).getFieldDefinitions().size() == 1
+        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).getFieldDefinitions()[0].name == 'iField'
+
+        // union type extension
+        fromDoc(doc, 6, UnionTypeDefinition).name == 'FooBar'
+
+        fromDoc(doc, 7, UnionTypeExtensionDefinition).name == 'FooBar'
+        fromDoc(doc, 7, UnionTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 7, UnionTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+
+        fromDoc(doc, 8, UnionTypeExtensionDefinition).name == 'FooBar'
+        fromDoc(doc, 8, UnionTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 8, UnionTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        (fromDoc(doc, 8, UnionTypeExtensionDefinition).memberTypes[0] as TypeName).name == 'Baz'
+        (fromDoc(doc, 8, UnionTypeExtensionDefinition).memberTypes[1] as TypeName).name == 'Buzz'
+
+        // enum type extension
+        fromDoc(doc, 9, EnumTypeDefinition).name == 'Numb'
+
+        fromDoc(doc, 10, EnumTypeExtensionDefinition).name == 'Numb'
+        fromDoc(doc, 10, EnumTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 10, EnumTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+
+        fromDoc(doc, 11, EnumTypeExtensionDefinition).name == 'Numb'
+        fromDoc(doc, 11, EnumTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 11, EnumTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 11, EnumTypeExtensionDefinition).getEnumValueDefinitions()[0].name == 'E'
+        fromDoc(doc, 11, EnumTypeExtensionDefinition).getEnumValueDefinitions()[1].name == 'F'
+
+        // scalar type extension
+        fromDoc(doc, 12, ScalarTypeDefinition).name == 'Scales'
+
+        fromDoc(doc, 13, ScalarTypeExtensionDefinition).name == 'Scales'
+        fromDoc(doc, 13, ScalarTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 13, ScalarTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+
+        fromDoc(doc, 14, ScalarTypeExtensionDefinition).name == 'Scales'
+        fromDoc(doc, 14, ScalarTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 14, ScalarTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+
+        // input object type extension
+        fromDoc(doc, 15, InputObjectTypeDefinition).name == 'Puter'
+
+        fromDoc(doc, 16, InputObjectTypeExtensionDefinition).name == 'Puter'
+        fromDoc(doc, 16, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 16, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 16, InputObjectTypeExtensionDefinition).inputValueDefinitions.isEmpty()
+
+        fromDoc(doc, 17, InputObjectTypeExtensionDefinition).name == 'Puter'
+        fromDoc(doc, 17, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 17, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 17, InputObjectTypeExtensionDefinition).inputValueDefinitions[0].name == 'inputField'
+
+        // cap out to be sure we don't have extra surprises
+        doc.definitions.size() == 18
+    }
+
+    static <T> T fromDoc(Document document, int index, Class<T> asClass) {
+        def definition = document.definitions[index]
+        assert asClass == definition.getClass(), "Could not find expected definition of type " + asClass.getName() + " but was " + definition.getClass().getName()
+        return asClass.cast(definition)
+    }
 }
 

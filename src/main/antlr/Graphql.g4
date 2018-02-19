@@ -1,5 +1,5 @@
 grammar Graphql;
-import GraphqlSDL, GraphqlOperation;
+import GraphqlSDL, GraphqlOperation, GraphqlCommon;
 
 @header {
     package graphql.parser.antlr;
