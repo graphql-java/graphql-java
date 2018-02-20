@@ -430,7 +430,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.get(0).getMessage().contains("is missing its base object type")
+        result.get(0).getMessage().contains("is missing its base underlying type")
     }
 
     def "test object interface is missing"() {

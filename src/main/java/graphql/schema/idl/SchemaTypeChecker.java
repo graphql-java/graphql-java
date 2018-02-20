@@ -12,6 +12,7 @@ import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.OperationTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.StringValue;
 import graphql.language.Type;
@@ -63,8 +64,10 @@ public class SchemaTypeChecker {
         List<GraphQLError> errors = new ArrayList<>();
         checkForMissingTypes(errors, typeRegistry);
 
-        checkTypeExtensionsHaveCorrespondingType(errors, typeRegistry);
-        checkTypeExtensionsFieldRedefinition(errors, typeRegistry);
+        SchemaTypeExtensionsChecker typeExtensionsChecker = new SchemaTypeExtensionsChecker();
+        typeExtensionsChecker.checkTypeExtensionsHaveCorrespondingType(errors, typeRegistry);
+
+        typeExtensionsChecker.checkTypeExtensionsFieldRedefinition(errors, typeRegistry);
 
         checkInterfacesAreImplemented(errors, typeRegistry);
 
@@ -481,75 +484,6 @@ public class SchemaTypeChecker {
             }
         }
     }
-
-    /*
-    A type can re-define a field if its actual the same type, but if they make 'fieldA : String' into
-    'fieldA : Int' then we cant handle that.  Even 'fieldA : String' to 'fieldA: String!' is tough to handle
-    so we don't
-    */
-    private void checkTypeExtensionsFieldRedefinition(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
-        Map<String, List<TypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
-        typeExtensions.values().forEach(extList -> extList.forEach(typeExtension -> {
-            //
-            // first check for field re-defs within a type ext
-            for (TypeExtensionDefinition otherTypeExt : extList) {
-                if (otherTypeExt == typeExtension) {
-                    continue;
-                }
-                // its the children that matter - the fields cannot be redefined
-                checkForFieldRedefinition(errors, otherTypeExt, otherTypeExt.getFieldDefinitions(), typeExtension.getFieldDefinitions());
-            }
-            //
-            // then check for field re-defs from the base type
-            Optional<TypeDefinition> type = typeRegistry.getType(typeExtension.getName());
-            if (type.isPresent() && type.get() instanceof ObjectTypeDefinition) {
-                ObjectTypeDefinition baseType = (ObjectTypeDefinition) type.get();
-
-                checkForFieldRedefinition(errors, typeExtension, typeExtension.getFieldDefinitions(), baseType.getFieldDefinitions());
-            }
-
-        }));
-
-    }
-
-    private void checkForFieldRedefinition(List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions, List<FieldDefinition> referenceFieldDefinitions) {
-        Map<String, FieldDefinition> referenceFields = referenceFieldDefinitions.stream()
-                .collect(Collectors.toMap(
-                        FieldDefinition::getName, Function.identity(), mergeFirstValue()
-                ));
-
-        fieldDefinitions.forEach(fld -> {
-            FieldDefinition referenceField = referenceFields.get(fld.getName());
-            if (referenceFields.containsKey(fld.getName())) {
-                // ok they have the same field but is it the same type
-                if (!isSameType(fld.getType(), referenceField.getType())) {
-                    errors.add(new TypeExtensionFieldRedefinitionError(typeDefinition, fld));
-                }
-            }
-        });
-    }
-
-    private boolean isSameType(Type type1, Type type2) {
-        String s1 = AstPrinter.printAst(type1);
-        String s2 = AstPrinter.printAst(type2);
-        return s1.equals(s2);
-    }
-
-    private void checkTypeExtensionsHaveCorrespondingType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
-        Map<String, List<TypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
-        typeExtensions.forEach((name, extTypeList) -> {
-            TypeExtensionDefinition extensionDefinition = extTypeList.get(0);
-            Optional<TypeDefinition> typeDefinition = typeRegistry.getType(new TypeName(name));
-            if (!typeDefinition.isPresent()) {
-                errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
-            } else {
-                if (!(typeDefinition.get() instanceof ObjectTypeDefinition)) {
-                    errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
-                }
-            }
-        });
-    }
-
 
     private Consumer<OperationTypeDefinition> checkOperationTypesExist(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors) {
         return op -> {
