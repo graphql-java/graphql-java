@@ -29,7 +29,7 @@ import graphql.language.OperationTypeDefinition
 import graphql.language.ScalarTypeDefinition
 import graphql.language.ScalarTypeExtensionDefinition
 import graphql.language.SchemaDefinition
-import graphql.language.TypeExtensionDefinition
+import graphql.language.ObjectTypeExtensionDefinition
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.UnionTypeExtensionDefinition
@@ -349,7 +349,7 @@ withArgs(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
 """
 
         and: "expected schema"
-        def schema = new TypeExtensionDefinition("ExtendType")
+        def schema = new ObjectTypeExtensionDefinition("ExtendType")
         schema.getImplements().add(new TypeName("Impl3"))
         schema.getDirectives()
                 .add(new Directive("extendDirective", [new Argument("a1", new VariableReference("v1"))]))
@@ -543,7 +543,7 @@ input Gun {
         typeDef.getName() == 'EmptyType'
         typeDef.getFieldDefinitions().isEmpty()
 
-        TypeExtensionDefinition extTypeDef = document.definitions[1] as TypeExtensionDefinition
+        ObjectTypeExtensionDefinition extTypeDef = document.definitions[1] as ObjectTypeExtensionDefinition
         extTypeDef.getName() == 'EmptyType'
         extTypeDef.getFieldDefinitions().size() == 1
     }
@@ -660,16 +660,16 @@ input Gun {
         // object type extension
         fromDoc(doc, 0, ObjectTypeDefinition).name == "Query"
 
-        fromDoc(doc, 1, TypeExtensionDefinition).name == "Query"
-        fromDoc(doc, 1, TypeExtensionDefinition).getDirectivesByName().size() == 1
-        fromDoc(doc, 1, TypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
-        fromDoc(doc, 1, TypeExtensionDefinition).getFieldDefinitions().size() == 0
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).name == "Query"
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).getFieldDefinitions().size() == 0
 
-        fromDoc(doc, 2, TypeExtensionDefinition).name == "Query"
-        fromDoc(doc, 2, TypeExtensionDefinition).getDirectivesByName().size() == 1
-        fromDoc(doc, 2, TypeExtensionDefinition).getDirectivesByName().containsKey("directive")
-        fromDoc(doc, 2, TypeExtensionDefinition).getFieldDefinitions().size() == 1
-        fromDoc(doc, 2, TypeExtensionDefinition).getFieldDefinitions()[0].name == 'field'
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).name == "Query"
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getFieldDefinitions().size() == 1
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getFieldDefinitions()[0].name == 'field'
 
         // interface type extension
         fromDoc(doc, 3, InterfaceTypeDefinition).name == 'Bar'

@@ -34,6 +34,7 @@ import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.ObjectField;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.ObjectValue;
 import graphql.language.OperationDefinition;
 import graphql.language.OperationTypeDefinition;
@@ -43,7 +44,6 @@ import graphql.language.SchemaDefinition;
 import graphql.language.SelectionSet;
 import graphql.language.SourceLocation;
 import graphql.language.StringValue;
-import graphql.language.TypeExtensionDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
@@ -642,7 +642,7 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
     @Override
     public Void visitObjectTypeExtensionDefinition(GraphqlParser.ObjectTypeExtensionDefinitionContext ctx) {
-        return extensionTypeImpl(ctx, new TypeExtensionDefinition(ctx.name().getText()), ContextProperty.ObjectTypeDefinition);
+        return extensionTypeImpl(ctx, new ObjectTypeExtensionDefinition(ctx.name().getText()), ContextProperty.ObjectTypeDefinition);
     }
 
     @Override
