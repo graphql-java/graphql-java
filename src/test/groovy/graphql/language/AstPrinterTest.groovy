@@ -456,4 +456,55 @@ type Query {
 
     }
 
+    def "print type extensions"() {
+        def query = '''
+    extend type Object @directive {
+        objectField : String
+    }    
+
+    extend interface Interface @directive {
+        objectField : String
+    }    
+
+    extend union Union @directive = | Foo | Baz
+    
+    extend enum Enum {
+        X
+        Y
+    }
+    
+    extend scalar Scalar @directive
+
+    extend input Input @directive {
+        inputField : String
+    }
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''extend type Object @directive {
+  objectField: String
+}
+
+extend interface Interface @directive {
+  objectField: String
+}
+
+extend union Union @directive = Foo | Baz
+
+extend enum Enum {
+  X
+  Y
+}
+
+extend scalar Scalar @directive
+
+extend input Input @directive {
+  inputField: String
+}
+'''
+
+    }
+
 }
