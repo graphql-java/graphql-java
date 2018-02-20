@@ -55,7 +55,7 @@ public class AstPrinter {
         printers.put(SchemaDefinition.class, schemaDefinition());
         printers.put(SelectionSet.class, selectionSet());
         printers.put(StringValue.class, value());
-        printers.put(TypeExtensionDefinition.class, typeExtensionDefinition());
+        printers.put(ObjectTypeExtensionDefinition.class, typeExtensionDefinition());
         printers.put(TypeName.class, type());
         printers.put(UnionTypeDefinition.class, unionTypeDefinition());
         printers.put(VariableDefinition.class, variableDefinition());
@@ -331,7 +331,7 @@ public class AstPrinter {
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
-    private static NodePrinter<TypeExtensionDefinition> typeExtensionDefinition() {
+    private static NodePrinter<ObjectTypeExtensionDefinition> typeExtensionDefinition() {
         return (out, node) -> {
             ObjectTypeDefinition asObjectType = node;
             out.printf("extend %s", node(asObjectType));

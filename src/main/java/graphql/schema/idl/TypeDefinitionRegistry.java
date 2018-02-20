@@ -2,11 +2,11 @@ package graphql.schema.idl;
 
 import graphql.GraphQLError;
 import graphql.language.Definition;
+import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
-import graphql.language.TypeExtensionDefinition;
 import graphql.language.TypeName;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
@@ -27,7 +27,7 @@ import static java.util.Optional.ofNullable;
 public class TypeDefinitionRegistry {
 
     private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
-    private final Map<String, List<TypeExtensionDefinition>> typeExtensions = new LinkedHashMap<>();
+    private final Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = new LinkedHashMap<>();
     private final Map<String, TypeDefinition> types = new LinkedHashMap<>();
     private SchemaDefinition schema;
 
@@ -68,7 +68,7 @@ public class TypeDefinitionRegistry {
         //
         // merge type extensions since they can be redefined by design
         typeRegistry.typeExtensions.forEach((key, value) -> {
-            List<TypeExtensionDefinition> currentList = this.typeExtensions
+            List<ObjectTypeExtensionDefinition> currentList = this.typeExtensions
                     .computeIfAbsent(key, k -> new ArrayList<>());
             currentList.addAll(value);
         });
@@ -84,8 +84,8 @@ public class TypeDefinitionRegistry {
      * @return an optional error
      */
     public Optional<GraphQLError> add(Definition definition) {
-        if (definition instanceof TypeExtensionDefinition) {
-            TypeExtensionDefinition newEntry = (TypeExtensionDefinition) definition;
+        if (definition instanceof ObjectTypeExtensionDefinition) {
+            ObjectTypeExtensionDefinition newEntry = (ObjectTypeExtensionDefinition) definition;
             return defineExt(typeExtensions, newEntry);
         } else if (definition instanceof ScalarTypeDefinition) {
             ScalarTypeDefinition newEntry = (ScalarTypeDefinition) definition;
@@ -116,8 +116,8 @@ public class TypeDefinitionRegistry {
         return Optional.empty();
     }
 
-    private Optional<GraphQLError> defineExt(Map<String, List<TypeExtensionDefinition>> typeExtensions, TypeExtensionDefinition newEntry) {
-        List<TypeExtensionDefinition> currentList = typeExtensions.computeIfAbsent(newEntry.getName(), k -> new ArrayList<>());
+    private Optional<GraphQLError> defineExt(Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions, ObjectTypeExtensionDefinition newEntry) {
+        List<ObjectTypeExtensionDefinition> currentList = typeExtensions.computeIfAbsent(newEntry.getName(), k -> new ArrayList<>());
         currentList.add(newEntry);
         return Optional.empty();
     }
@@ -132,7 +132,7 @@ public class TypeDefinitionRegistry {
         return scalars;
     }
 
-    public Map<String, List<TypeExtensionDefinition>> typeExtensions() {
+    public Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions() {
         return new LinkedHashMap<>(typeExtensions);
     }
 
