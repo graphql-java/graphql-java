@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.language.AstPrinter;
+import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
@@ -17,19 +18,31 @@ import graphql.language.TypeDefinition;
 import graphql.language.TypeExtensionDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.language.UnionTypeExtensionDefinition;
+import graphql.schema.idl.errors.TypeExtensionDirectiveRedefinitionError;
 import graphql.schema.idl.errors.TypeExtensionFieldRedefinitionError;
 import graphql.schema.idl.errors.TypeExtensionMissingBaseTypeError;
+import graphql.util.FpKit;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import static graphql.util.FpKit.mergeFirst;
 
 /**
  * A support class to help break up the large SchemaTypeChecker class.  This handles
  * the checking of "type extensions"
+ *
+ * From the spec:
+ *
+ * Interface type extensions have the potential to be invalid if incorrectly defined.
+ *
+ * The named type must already be defined and must be an Interface type.
+ * The fields of an Interface type extension must have unique names; no two fields may share the same name.
+ * Any fields of an Interface type extension must not be already defined on the original Interface type.
+ * Any Object type which implemented the original Interface type must also be a super-set of the fields of the Interface type extension (which may be due to Object type extension).
+ * Any directives provided must not already apply to the original Interface type.
  */
 @Internal
 class SchemaTypeExtensionsChecker {
@@ -42,8 +55,7 @@ class SchemaTypeExtensionsChecker {
                 .forEach((name, extensions) ->
                         checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, InterfaceTypeDefinition.class));
         typeRegistry.unionTypeExtensions()
-                .forEach((name, extensions) ->
-                        checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, UnionTypeDefinition.class));
+                .forEach((name, extensions) -> checkUnionTypeExtension(errors, typeRegistry, name, extensions));
         typeRegistry.enumTypeExtensions()
                 .forEach((name, extensions) ->
                         checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, EnumTypeDefinition.class));
@@ -55,16 +67,67 @@ class SchemaTypeExtensionsChecker {
                         checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, InputObjectTypeDefinition.class));
     }
 
-    private void checkTypeExtensionHasCorrespondingType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, String name, List<? extends TypeDefinition> extTypeList, Class targetClass) {
+    private void checkTypeExtensionHasCorrespondingType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, String name, List<? extends TypeDefinition> extTypeList, Class<? extends TypeDefinition> targetClass) {
         TypeDefinition extensionDefinition = extTypeList.get(0);
-        Optional<TypeDefinition> typeDefinition = typeRegistry.getType(new TypeName(name));
+        Optional<? extends TypeDefinition> typeDefinition = typeRegistry.getType(new TypeName(name), targetClass);
         if (!typeDefinition.isPresent()) {
             errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
-        } else {
-            if (!(typeDefinition.get().getClass().equals(targetClass))) {
-                errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
-            }
         }
+    }
+
+    void checkTypeExtensionsDirectiveRedefinition(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+        typeRegistry.typeExtensions()
+                .forEach((name, extensions) ->
+                        checkTypeExtensionDirectiveRedefinition(errors, typeRegistry, name, extensions, ObjectTypeDefinition.class));
+        typeRegistry.interfaceTypeExtensions()
+                .forEach((name, extensions) ->
+                        checkTypeExtensionDirectiveRedefinition(errors, typeRegistry, name, extensions, InterfaceTypeDefinition.class));
+        typeRegistry.unionTypeExtensions()
+                .forEach((name, extensions) ->
+                        checkTypeExtensionDirectiveRedefinition(errors, typeRegistry, name, extensions, UnionTypeDefinition.class));
+        typeRegistry.enumTypeExtensions()
+                .forEach((name, extensions) ->
+                        checkTypeExtensionDirectiveRedefinition(errors, typeRegistry, name, extensions, EnumTypeDefinition.class));
+        typeRegistry.scalarTypeExtensions()
+                .forEach((name, extensions) ->
+                        checkTypeExtensionDirectiveRedefinition(errors, typeRegistry, name, extensions, ScalarTypeDefinition.class));
+        typeRegistry.inputObjectTypeExtensions()
+                .forEach((name, extensions) ->
+                        checkTypeExtensionDirectiveRedefinition(errors, typeRegistry, name, extensions, InputObjectTypeDefinition.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void checkTypeExtensionDirectiveRedefinition(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, String name, List<? extends TypeDefinition> extensions, Class<? extends TypeDefinition> targetClass) {
+        TypeDefinition extensionDefinition = extensions.get(0);
+        Optional<? extends TypeDefinition> typeDefinition = typeRegistry.getType(new TypeName(name), targetClass);
+        if (typeDefinition.isPresent() && typeDefinition.get().getClass().equals(targetClass)) {
+            List<Directive> directives = typeDefinition.get().getDirectives();
+            Map<String, Directive> directiveMap = FpKit.getByName(directives, Directive::getName, mergeFirst());
+            extensions.forEach(typeExt -> {
+                        List<Directive> extDirectives = typeExt.getDirectives();
+                        extDirectives.forEach(directive -> {
+                            if (directiveMap.containsKey(directive.getName())) {
+                                errors.add(new TypeExtensionDirectiveRedefinitionError(typeDefinition.get(), directive));
+                            }
+                        });
+                    }
+            );
+        }
+
+    }
+
+    /*
+     * Union type extensions have the potential to be invalid if incorrectly defined.
+     *
+     * The named type must already be defined and must be a Union type.
+     * The member types of a Union type extension must all be Object base types; Scalar, Interface and Union types must not be member types of a Union. Similarly, wrapping types must not be member types of a Union.
+     * All member types of a Union type extension must be unique.
+     * All member types of a Union type extension must not already be a member of the original Union type.
+     * Any directives provided must not already apply to the original Union type.
+     */
+    private void checkUnionTypeExtension(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, String name, List<UnionTypeExtensionDefinition> extensions) {
+        checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, UnionTypeDefinition.class);
+
     }
 
     /*
@@ -72,6 +135,7 @@ class SchemaTypeExtensionsChecker {
         'fieldA : Int' then we cant handle that.  Even 'fieldA : String' to 'fieldA: String!' is tough to handle
         so we don't
     */
+
     void checkTypeExtensionsFieldRedefinition(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         // object type  extensions
         Map<String, List<TypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
@@ -138,14 +202,11 @@ class SchemaTypeExtensionsChecker {
                 checkForInputValueRedefinition(errors, extension, extension.getInputValueDefinitions(), baseType.getInputValueDefinitions());
             }
         }));
-
     }
 
     private void checkForFieldRedefinition(List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions, List<FieldDefinition> referenceFieldDefinitions) {
-        Map<String, FieldDefinition> referenceFields = referenceFieldDefinitions.stream()
-                .collect(Collectors.toMap(
-                        FieldDefinition::getName, Function.identity(), mergeFirstValue()
-                ));
+
+        Map<String, FieldDefinition> referenceFields = FpKit.getByName(referenceFieldDefinitions, FieldDefinition::getName, mergeFirst());
 
         fieldDefinitions.forEach(fld -> {
             FieldDefinition referenceField = referenceFields.get(fld.getName());
@@ -159,10 +220,7 @@ class SchemaTypeExtensionsChecker {
     }
 
     private void checkForInputValueRedefinition(List<GraphQLError> errors, InputObjectTypeExtensionDefinition typeDefinition, List<InputValueDefinition> inputValueDefinitions, List<InputValueDefinition> referenceInputValues) {
-        Map<String, InputValueDefinition> referenceFields = referenceInputValues.stream()
-                .collect(Collectors.toMap(
-                        InputValueDefinition::getName, Function.identity(), mergeFirstValue()
-                ));
+        Map<String, InputValueDefinition> referenceFields = FpKit.getByName(referenceInputValues, InputValueDefinition::getName, mergeFirst());
 
         inputValueDefinitions.forEach(fld -> {
             InputValueDefinition referenceField = referenceFields.get(fld.getName());
@@ -181,7 +239,4 @@ class SchemaTypeExtensionsChecker {
         return s1.equals(s2);
     }
 
-    private <T> BinaryOperator<T> mergeFirstValue() {
-        return (v1, v2) -> v1;
-    }
 }

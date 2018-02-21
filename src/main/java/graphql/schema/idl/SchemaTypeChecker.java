@@ -65,9 +65,12 @@ public class SchemaTypeChecker {
         checkForMissingTypes(errors, typeRegistry);
 
         SchemaTypeExtensionsChecker typeExtensionsChecker = new SchemaTypeExtensionsChecker();
+
         typeExtensionsChecker.checkTypeExtensionsHaveCorrespondingType(errors, typeRegistry);
 
         typeExtensionsChecker.checkTypeExtensionsFieldRedefinition(errors, typeRegistry);
+
+        typeExtensionsChecker.checkTypeExtensionsDirectiveRedefinition(errors, typeRegistry);
 
         checkInterfacesAreImplemented(errors, typeRegistry);
 

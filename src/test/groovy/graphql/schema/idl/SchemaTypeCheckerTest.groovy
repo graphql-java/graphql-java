@@ -915,4 +915,79 @@ class SchemaTypeCheckerTest extends Specification {
         result.size() == 5
     }
 
+    def "interface type extensions invariants are enforced"() {
+
+        def spec = """                        
+
+            type Query implements InterfaceType1 {
+                fieldA : String
+                fieldC : String
+            }
+            
+            interface InterfaceType1 @directive {
+                fieldA : String  
+            }
+
+            extend interface InterfaceType1 @directive {  # directive redefined
+                fieldA : Int #redefined  
+            }
+            
+            extend interface NonExistent {
+                fieldX : String            
+            }
+            
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        !result.isEmpty()
+        result.size() == 3
+        result[0].message.contains("is missing its base underlying type")
+        result[1].message.contains("tried to redefine field 'fieldA'")
+        result[2].message.contains("has redefined the directive called 'directive'")
+    }
+
+    def "union type extensions invariants are enforced"() {
+
+        def spec = """                        
+
+            type Query {
+                fieldA : String
+            }
+            
+            type Foo {
+                foo : String
+            }
+
+            type Bar {
+                bar : String
+            }
+
+            type Baz {
+                baz : String
+            }
+            
+            union FooBar @directive = Foo | Bar
+
+            extend union FooBar
+            
+            extend interface NonExistent {
+                fieldX : String            
+            }
+            
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        !result.isEmpty()
+        result.size() == 3
+        result[0].message.contains("is missing its base underlying type")
+        result[1].message.contains("tried to redefine field 'fieldA'")
+        result[2].message.contains("has redefined the directive called 'directive'")
+    }
+
 }

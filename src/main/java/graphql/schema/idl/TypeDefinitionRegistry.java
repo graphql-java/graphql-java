@@ -231,14 +231,31 @@ public class TypeDefinitionRegistry {
         return getType(typeName);
     }
 
+    public <T extends TypeDefinition> Optional<T> getType(Type type, Class<T> ofType) {
+        String typeName = TypeInfo.typeInfo(type).getName();
+        return getType(typeName, ofType);
+    }
+
     public Optional<TypeDefinition> getType(String typeName) {
-        TypeDefinition typeDefinition = types.get(typeName);
+        TypeDefinition<?> typeDefinition = types.get(typeName);
         if (typeDefinition != null) {
             return Optional.of(typeDefinition);
         }
         typeDefinition = scalars().get(typeName);
         if (typeDefinition != null) {
             return Optional.of(typeDefinition);
+        }
+        return Optional.empty();
+    }
+
+    public <T extends TypeDefinition> Optional<T> getType(String typeName, Class<T> ofType) {
+        Optional<TypeDefinition> type = getType(typeName);
+        if (type.isPresent()) {
+            TypeDefinition typeDefinition = type.get();
+            if (typeDefinition.getClass().equals(ofType)) {
+                //noinspection unchecked
+                return Optional.of((T) typeDefinition);
+            }
         }
         return Optional.empty();
     }
