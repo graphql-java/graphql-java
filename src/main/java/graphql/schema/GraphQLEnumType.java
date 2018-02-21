@@ -98,7 +98,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             }
             // we can treat enum backing values as strings in effect
             if (definitionValue instanceof Enum  && value instanceof String) {
-                if (value.equals(definitionValue.toString())) {
+                if (value.equals(((Enum) definitionValue).name())) {
                     return valueDefinition.getName();
                 }
             }
