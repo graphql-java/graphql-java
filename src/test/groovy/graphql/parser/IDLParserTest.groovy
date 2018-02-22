@@ -29,7 +29,7 @@ import graphql.language.OperationTypeDefinition
 import graphql.language.ScalarTypeDefinition
 import graphql.language.ScalarTypeExtensionDefinition
 import graphql.language.SchemaDefinition
-import graphql.language.TypeExtensionDefinition
+import graphql.language.ObjectTypeExtensionDefinition
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.UnionTypeExtensionDefinition
@@ -349,7 +349,7 @@ withArgs(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
 """
 
         and: "expected schema"
-        def schema = new TypeExtensionDefinition("ExtendType")
+        def schema = new ObjectTypeExtensionDefinition("ExtendType")
         schema.getImplements().add(new TypeName("Impl3"))
         schema.getDirectives()
                 .add(new Directive("extendDirective", [new Argument("a1", new VariableReference("v1"))]))
@@ -543,7 +543,7 @@ input Gun {
         typeDef.getName() == 'EmptyType'
         typeDef.getFieldDefinitions().isEmpty()
 
-        TypeExtensionDefinition extTypeDef = document.definitions[1] as TypeExtensionDefinition
+        ObjectTypeExtensionDefinition extTypeDef = document.definitions[1] as ObjectTypeExtensionDefinition
         extTypeDef.getName() == 'EmptyType'
         extTypeDef.getFieldDefinitions().size() == 1
     }
@@ -588,7 +588,7 @@ input Gun {
         (typeDef2.getImplements()[1] as TypeName).getName() == 'Baz'
     }
 
-    def "basic type extensions"() {
+    def "object type extensions"() {
 
         def input = '''
 
@@ -602,6 +602,32 @@ input Gun {
             field : String
         }
 
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+        // object type extension
+        fromDoc(doc, 0, ObjectTypeDefinition).name == "Query"
+
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).name == "Query"
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).getFieldDefinitions().size() == 0
+
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).name == "Query"
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getFieldDefinitions().size() == 1
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getFieldDefinitions()[0].name == 'field'
+
+    }
+
+    def "interface type extensions"() {
+
+        def input = '''
         
         interface Bar {
             bar : String
@@ -613,7 +639,32 @@ input Gun {
           iField : String
         }
         
-        
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+        fromDoc(doc, 0, InterfaceTypeDefinition).name == 'Bar'
+
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).name == 'Bar'
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).getFieldDefinitions().size() == 0
+
+
+        fromDoc(doc, 2, InterfaceTypeExtensionDefinition).name == 'Bar'
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 2, InterfaceTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, InterfaceTypeExtensionDefinition).getFieldDefinitions().size() == 1
+        fromDoc(doc, 2, InterfaceTypeExtensionDefinition).getFieldDefinitions()[0].name == 'iField'
+    }
+
+    def "union type extensions"() {
+
+        def input = '''
+
         union FooBar = Foo | Bar
 
         extend union FooBar @directiveOnly
@@ -623,6 +674,31 @@ input Gun {
             | Buzz
         
         
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+        // union type extension
+        fromDoc(doc, 0, UnionTypeDefinition).name == 'FooBar'
+
+        fromDoc(doc, 1, UnionTypeExtensionDefinition).name == 'FooBar'
+        fromDoc(doc, 1, UnionTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 1, UnionTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+
+        fromDoc(doc, 2, UnionTypeExtensionDefinition).name == 'FooBar'
+        fromDoc(doc, 2, UnionTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 2, UnionTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        (fromDoc(doc, 2, UnionTypeExtensionDefinition).memberTypes[0] as TypeName).name == 'Baz'
+        (fromDoc(doc, 2, UnionTypeExtensionDefinition).memberTypes[1] as TypeName).name == 'Buzz'
+    }
+
+    def "enum type extensions"() {
+
+        def input = '''
+
         enum Numb {
             A, B, C
         }
@@ -634,12 +710,62 @@ input Gun {
         }
         
         
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+
+        // enum type extension
+        fromDoc(doc, 0, EnumTypeDefinition).name == 'Numb'
+
+        fromDoc(doc, 1, EnumTypeExtensionDefinition).name == 'Numb'
+        fromDoc(doc, 1, EnumTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 1, EnumTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).name == 'Numb'
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).getEnumValueDefinitions()[0].name == 'E'
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).getEnumValueDefinitions()[1].name == 'F'
+    }
+
+    def "scalar type extensions"() {
+
+        def input = '''
+
         scalar Scales
         
         extend scalar Scales @directiveOnly 
         
         extend scalar Scales @directive
         
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+
+        // scalar type extension
+        fromDoc(doc, 0, ScalarTypeDefinition).name == 'Scales'
+
+        fromDoc(doc, 1, ScalarTypeExtensionDefinition).name == 'Scales'
+        fromDoc(doc, 1, ScalarTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 1, ScalarTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+
+        fromDoc(doc, 2, ScalarTypeExtensionDefinition).name == 'Scales'
+        fromDoc(doc, 2, ScalarTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 2, ScalarTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+    }
+
+    def "input object type extensions"() {
+
+        def input = '''
+
         input Puter {
             field : String
         }
@@ -657,87 +783,17 @@ input Gun {
 
         then:
 
-        // object type extension
-        fromDoc(doc, 0, ObjectTypeDefinition).name == "Query"
+        fromDoc(doc, 0, InputObjectTypeDefinition).name == 'Puter'
 
-        fromDoc(doc, 1, TypeExtensionDefinition).name == "Query"
-        fromDoc(doc, 1, TypeExtensionDefinition).getDirectivesByName().size() == 1
-        fromDoc(doc, 1, TypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
-        fromDoc(doc, 1, TypeExtensionDefinition).getFieldDefinitions().size() == 0
+        fromDoc(doc, 1, InputObjectTypeExtensionDefinition).name == 'Puter'
+        fromDoc(doc, 1, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 1, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 1, InputObjectTypeExtensionDefinition).inputValueDefinitions.isEmpty()
 
-        fromDoc(doc, 2, TypeExtensionDefinition).name == "Query"
-        fromDoc(doc, 2, TypeExtensionDefinition).getDirectivesByName().size() == 1
-        fromDoc(doc, 2, TypeExtensionDefinition).getDirectivesByName().containsKey("directive")
-        fromDoc(doc, 2, TypeExtensionDefinition).getFieldDefinitions().size() == 1
-        fromDoc(doc, 2, TypeExtensionDefinition).getFieldDefinitions()[0].name == 'field'
-
-        // interface type extension
-        fromDoc(doc, 3, InterfaceTypeDefinition).name == 'Bar'
-
-        fromDoc(doc, 4, InterfaceTypeExtensionDefinition).name == 'Bar'
-        fromDoc(doc, 4, InterfaceTypeExtensionDefinition).getDirectivesByName().size() == 1
-        fromDoc(doc, 4, InterfaceTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
-        fromDoc(doc, 4, InterfaceTypeExtensionDefinition).getFieldDefinitions().size() == 0
-
-
-        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).name == 'Bar'
-        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).getDirectivesByName().size() == 1
-        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
-        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).getFieldDefinitions().size() == 1
-        fromDoc(doc, 5, InterfaceTypeExtensionDefinition).getFieldDefinitions()[0].name == 'iField'
-
-        // union type extension
-        fromDoc(doc, 6, UnionTypeDefinition).name == 'FooBar'
-
-        fromDoc(doc, 7, UnionTypeExtensionDefinition).name == 'FooBar'
-        fromDoc(doc, 7, UnionTypeExtensionDefinition).getDirectives().size() == 1
-        fromDoc(doc, 7, UnionTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
-
-        fromDoc(doc, 8, UnionTypeExtensionDefinition).name == 'FooBar'
-        fromDoc(doc, 8, UnionTypeExtensionDefinition).getDirectives().size() == 1
-        fromDoc(doc, 8, UnionTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
-        (fromDoc(doc, 8, UnionTypeExtensionDefinition).memberTypes[0] as TypeName).name == 'Baz'
-        (fromDoc(doc, 8, UnionTypeExtensionDefinition).memberTypes[1] as TypeName).name == 'Buzz'
-
-        // enum type extension
-        fromDoc(doc, 9, EnumTypeDefinition).name == 'Numb'
-
-        fromDoc(doc, 10, EnumTypeExtensionDefinition).name == 'Numb'
-        fromDoc(doc, 10, EnumTypeExtensionDefinition).getDirectives().size() == 1
-        fromDoc(doc, 10, EnumTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
-
-        fromDoc(doc, 11, EnumTypeExtensionDefinition).name == 'Numb'
-        fromDoc(doc, 11, EnumTypeExtensionDefinition).getDirectives().size() == 1
-        fromDoc(doc, 11, EnumTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
-        fromDoc(doc, 11, EnumTypeExtensionDefinition).getEnumValueDefinitions()[0].name == 'E'
-        fromDoc(doc, 11, EnumTypeExtensionDefinition).getEnumValueDefinitions()[1].name == 'F'
-
-        // scalar type extension
-        fromDoc(doc, 12, ScalarTypeDefinition).name == 'Scales'
-
-        fromDoc(doc, 13, ScalarTypeExtensionDefinition).name == 'Scales'
-        fromDoc(doc, 13, ScalarTypeExtensionDefinition).getDirectives().size() == 1
-        fromDoc(doc, 13, ScalarTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
-
-        fromDoc(doc, 14, ScalarTypeExtensionDefinition).name == 'Scales'
-        fromDoc(doc, 14, ScalarTypeExtensionDefinition).getDirectives().size() == 1
-        fromDoc(doc, 14, ScalarTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
-
-        // input object type extension
-        fromDoc(doc, 15, InputObjectTypeDefinition).name == 'Puter'
-
-        fromDoc(doc, 16, InputObjectTypeExtensionDefinition).name == 'Puter'
-        fromDoc(doc, 16, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
-        fromDoc(doc, 16, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
-        fromDoc(doc, 16, InputObjectTypeExtensionDefinition).inputValueDefinitions.isEmpty()
-
-        fromDoc(doc, 17, InputObjectTypeExtensionDefinition).name == 'Puter'
-        fromDoc(doc, 17, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
-        fromDoc(doc, 17, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
-        fromDoc(doc, 17, InputObjectTypeExtensionDefinition).inputValueDefinitions[0].name == 'inputField'
-
-        // cap out to be sure we don't have extra surprises
-        doc.definitions.size() == 18
+        fromDoc(doc, 2, InputObjectTypeExtensionDefinition).name == 'Puter'
+        fromDoc(doc, 2, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 2, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, InputObjectTypeExtensionDefinition).inputValueDefinitions[0].name == 'inputField'
     }
 
     static <T> T fromDoc(Document document, int index, Class<T> asClass) {

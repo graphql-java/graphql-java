@@ -3,22 +3,21 @@ package graphql.language;
 
 import java.util.List;
 
-// This class should really be called ObjectTypeExtensionDefinition but history
-public class TypeExtensionDefinition extends ObjectTypeDefinition {
-    public TypeExtensionDefinition() {
+public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
+    public ObjectTypeExtensionDefinition() {
         super(null);
     }
 
-    public TypeExtensionDefinition(String name) {
+    public ObjectTypeExtensionDefinition(String name) {
         super(name);
     }
 
-    public TypeExtensionDefinition(String name, List<Type> implementz, List<Directive> directives, List<FieldDefinition> fieldDefinitions) {
+    public ObjectTypeExtensionDefinition(String name, List<Type> implementz, List<Directive> directives, List<FieldDefinition> fieldDefinitions) {
         super(name, implementz, directives, fieldDefinitions);
     }
 
-    public TypeExtensionDefinition deepCopy() {
-        return new TypeExtensionDefinition(getName(),
+    public ObjectTypeExtensionDefinition deepCopy() {
+        return new ObjectTypeExtensionDefinition(getName(),
                 deepCopy(getImplements()),
                 deepCopy(getDirectives()),
                 deepCopy(getFieldDefinitions())
@@ -28,7 +27,7 @@ public class TypeExtensionDefinition extends ObjectTypeDefinition {
 
     @Override
     public String toString() {
-        return "TypeExtensionDefinition{" +
+        return "ObjectTypeExtensionDefinition{" +
                 "name='" + getName() + '\'' +
                 ", implements=" + getImplements() +
                 ", directives=" + getDirectives() +
