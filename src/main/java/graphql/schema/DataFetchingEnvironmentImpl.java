@@ -84,6 +84,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    public Field getField() {
+        return fields.get(0);
+    }
+
+    @Override
     public GraphQLOutputType getFieldType() {
         return fieldType;
     }
