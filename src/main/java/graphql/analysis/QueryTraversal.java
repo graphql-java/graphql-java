@@ -34,19 +34,20 @@ import graphql.util.TraverserMarkers;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.List;
 
 @Internal
 public class QueryTraversal {
 
     private final OperationDefinition operationDefinition;
     private final GraphQLSchema schema;
-    private Map<String, FragmentDefinition> fragmentsByName;
+    private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
-    private final SelectionProvider selectionProvider;
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
     private final ValuesResolver valuesResolver = new ValuesResolver();
     private final SchemaUtil schemaUtil = new SchemaUtil();
+    private final SelectionProvider selectionProvider = new SelectionProvider();
 
     public QueryTraversal(GraphQLSchema schema,
                           Document document,
@@ -58,7 +59,6 @@ public class QueryTraversal {
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.schema = schema;
         this.variables = variables;
-        this.selectionProvider = new SelectionProvider(fragmentsByName);
     }
 
     public void visitPostOrder(QueryVisitor visitor) {
@@ -98,12 +98,16 @@ public class QueryTraversal {
         return (T) acc[0];
     }
         
+    private List<Selection> childrenOf (Selection n) {
+        return selectionProvider.getChildren(n, fragmentsByName);
+    }
+    
     private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, QueryVisitorEnvironment parent, boolean preOrder) {
         QueryTraversalNotifier visitorNotifier = preOrder
                     ? new QueryTraversalNotifier(visitor::visitField, env -> {})
                     : new QueryTraversalNotifier(env -> {}, visitor::visitField);
         
-        new Traverser<Selection>(selectionProvider::childrenOf)
+        new Traverser<Selection>(this::childrenOf)
             .traverse(selectionSet.getSelections(), null, new QueryTraversalDelegate(visitorNotifier, new QueryTraversalContext(type, parent)));
     }
         

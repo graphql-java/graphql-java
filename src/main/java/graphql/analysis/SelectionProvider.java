@@ -1,6 +1,5 @@
 package graphql.analysis;
 
-import graphql.Assert;
 import graphql.Internal;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -15,34 +14,28 @@ import java.util.Map;
 
 /**
  * QueryTraversal helper class responsible for obtaining Selection 
- * nodes from selection parent
+ * nodes from selection parent.
+ * Uses double dispatch in order to avoid reflection based {@code instanceof} check.
  */
 @Internal
-public class SelectionProvider extends NodeVisitorStub<List<Selection>> {
-    
-    private final Map<String, FragmentDefinition> fragmentsByName;
-
-    SelectionProvider(Map<String, FragmentDefinition> fragmentsByName) {
-        this.fragmentsByName = Assert.assertNotNull(fragmentsByName);
-    }
-
+public class SelectionProvider extends NodeVisitorStub<Map<String, FragmentDefinition>> {
     @Override
-    public Object visit(InlineFragment node, List<Selection> data) {
+    public Object visit(InlineFragment node, Map<String, FragmentDefinition> fragmentsByName) {
         return getChildren(node.getSelectionSet());
     }
 
     @Override
-    public Object visit(FragmentSpread fragmentSpread, List<Selection> data) {
+    public Object visit(FragmentSpread fragmentSpread, Map<String, FragmentDefinition> fragmentsByName) {
         return getChildren(fragmentsByName.get(fragmentSpread.getName()).getSelectionSet());
     }
 
     @Override
-    public Object visit(Field node, List<Selection> data) {
+    public Object visit(Field node, Map<String, FragmentDefinition> fragmentsByName) {
         return getChildren(node.getSelectionSet());
     }
 
     @Override
-    public Object visit(SelectionSet node, List<Selection> data) {
+    public Object visit(SelectionSet node, Map<String, FragmentDefinition> fragmentsByName) {
         return node.getSelections();
     }
 
@@ -50,7 +43,7 @@ public class SelectionProvider extends NodeVisitorStub<List<Selection>> {
         return (node == null) ? Collections.emptyList() : node.getSelections();
     } 
     
-    public List<Selection> childrenOf (Selection n) {
-        return (List<Selection>)n.accept(null, this);
+    public List<Selection> getChildren (Selection n, Map<String, FragmentDefinition> fragmentsByName) {
+        return (List<Selection>)n.accept(fragmentsByName, this);
     }
 }
