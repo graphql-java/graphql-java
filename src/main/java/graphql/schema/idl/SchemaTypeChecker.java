@@ -11,12 +11,12 @@ import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
-import graphql.language.TypeExtensionDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError;
@@ -112,7 +112,7 @@ public class SchemaTypeChecker {
 
     private void checkForMissingTypes(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         // type extensions
-        List<TypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        List<ObjectTypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         typeExtensions.forEach(typeExtension -> {
 
             List<Type> implementsTypes = typeExtension.getImplements();
@@ -412,7 +412,7 @@ public class SchemaTypeChecker {
             implementsTypes.forEach(checkInterfaceIsImplemented("object", typeRegistry, errors, objectType));
         });
 
-        Map<String, List<TypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
+        Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
         typeExtensions.values().forEach(extList -> extList.forEach(typeExtension -> {
             List<Type> implementsTypes = typeExtension.getImplements();
             implementsTypes.forEach(checkInterfaceIsImplemented("extension", typeRegistry, errors, typeExtension));

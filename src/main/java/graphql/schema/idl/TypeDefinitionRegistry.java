@@ -5,12 +5,12 @@ import graphql.language.Definition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
+import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
-import graphql.language.TypeExtensionDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.SchemaProblem;
@@ -33,7 +33,7 @@ import static java.util.Optional.ofNullable;
 public class TypeDefinitionRegistry {
 
     private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
-    private final Map<String, List<TypeExtensionDefinition>> typeExtensions = new LinkedHashMap<>();
+    private final Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = new LinkedHashMap<>();
     private final Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions = new LinkedHashMap<>();
     private final Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions = new LinkedHashMap<>();
     private final Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions = new LinkedHashMap<>();
@@ -82,7 +82,7 @@ public class TypeDefinitionRegistry {
         //
         // merge type extensions since they can be redefined by design
         typeRegistry.typeExtensions.forEach((key, value) -> {
-            List<TypeExtensionDefinition> currentList = this.typeExtensions
+            List<ObjectTypeExtensionDefinition> currentList = this.typeExtensions
                     .computeIfAbsent(key, k -> new ArrayList<>());
             currentList.addAll(value);
         });
@@ -124,9 +124,9 @@ public class TypeDefinitionRegistry {
      */
     public Optional<GraphQLError> add(Definition definition) {
         // extensions
-        if (definition instanceof TypeExtensionDefinition) {
-            TypeExtensionDefinition newEntry = (TypeExtensionDefinition) definition;
-            return defineExt(typeExtensions, newEntry, TypeExtensionDefinition::getName);
+        if (definition instanceof ObjectTypeExtensionDefinition) {
+            ObjectTypeExtensionDefinition newEntry = (ObjectTypeExtensionDefinition) definition;
+            return defineExt(typeExtensions, newEntry, ObjectTypeExtensionDefinition::getName);
         } else if (definition instanceof InterfaceTypeExtensionDefinition) {
             InterfaceTypeExtensionDefinition newEntry = (InterfaceTypeExtensionDefinition) definition;
             return defineExt(interfaceTypeExtensions, newEntry, InterfaceTypeExtensionDefinition::getName);
@@ -189,7 +189,7 @@ public class TypeDefinitionRegistry {
         return scalars;
     }
 
-    public Map<String, List<TypeExtensionDefinition>> typeExtensions() {
+    public Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions() {
         return new LinkedHashMap<>(typeExtensions);
     }
 
