@@ -12,7 +12,6 @@ import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.OperationTypeDefinition;
-import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.StringValue;
 import graphql.language.Type;
@@ -36,15 +35,14 @@ import graphql.schema.idl.errors.OperationTypesMustBeObjects;
 import graphql.schema.idl.errors.QueryOperationMissingError;
 import graphql.schema.idl.errors.SchemaMissingError;
 import graphql.schema.idl.errors.SchemaProblem;
-import graphql.schema.idl.errors.TypeExtensionFieldRedefinitionError;
-import graphql.schema.idl.errors.TypeExtensionMissingBaseTypeError;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -66,11 +64,7 @@ public class SchemaTypeChecker {
 
         SchemaTypeExtensionsChecker typeExtensionsChecker = new SchemaTypeExtensionsChecker();
 
-        typeExtensionsChecker.checkTypeExtensionsHaveCorrespondingType(errors, typeRegistry);
-
-        typeExtensionsChecker.checkTypeExtensionsFieldRedefinition(errors, typeRegistry);
-
-        typeExtensionsChecker.checkTypeExtensionsDirectiveRedefinition(errors, typeRegistry);
+        typeExtensionsChecker.checkTypeExtensions(errors, typeRegistry);
 
         checkInterfacesAreImplemented(errors, typeRegistry);
 
@@ -186,10 +180,6 @@ public class SchemaTypeChecker {
     private void checkFieldsAreSensible(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         Map<String, TypeDefinition> typesMap = typeRegistry.types();
 
-        // type extensions
-        List<TypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-        typeExtensions.forEach(typeExtension -> checkTypeExtFields(errors, typeExtension, typeExtension.getFieldDefinitions()));
-
         // objects
         List<ObjectTypeDefinition> objectTypes = filterTo(typesMap, ObjectTypeDefinition.class);
         objectTypes.forEach(objectType -> checkObjTypeFields(errors, objectType, objectType.getFieldDefinitions()));
@@ -207,29 +197,6 @@ public class SchemaTypeChecker {
         inputTypes.forEach(inputType -> checkInputValues(errors, inputType, inputType.getInputValueDefinitions()));
     }
 
-    private void checkTypeExtFields(List<GraphQLError> errors, TypeExtensionDefinition typeExtension, List<FieldDefinition> fieldDefinitions) {
-
-        // field unique ness
-        checkNamedUniqueness(errors, fieldDefinitions, FieldDefinition::getName,
-                (name, fieldDef) -> new NonUniqueNameError(typeExtension, fieldDef));
-
-        // field arg unique ness
-        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getInputValueDefinitions(), InputValueDefinition::getName,
-                (name, inputValueDefinition) -> new NonUniqueArgumentError(typeExtension, fld, name)));
-
-        // directive checks
-        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
-                (directiveName, directive) -> new NonUniqueDirectiveError(typeExtension, fld, directiveName)));
-
-        fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-            checkDeprecatedDirective(errors, directive,
-                    () -> new InvalidDeprecationDirectiveError(typeExtension, fld));
-
-            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
-                    (argumentName, argument) -> new NonUniqueArgumentError(typeExtension, fld, argumentName));
-
-        }));
-    }
 
     private void checkObjTypeFields(List<GraphQLError> errors, ObjectTypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions) {
         // field unique ness
@@ -304,7 +271,12 @@ public class SchemaTypeChecker {
 
         // field unique ness
         checkNamedUniqueness(errors, inputValueDefinitions, InputValueDefinition::getName,
-                (name, inputValueDefinition) -> new NonUniqueNameError(inputType, inputValueDefinition));
+                (name, inputValueDefinition) -> {
+                    // not sure why this is needed but inlining breaks it
+                    @SuppressWarnings("UnnecessaryLocalVariable")
+                    InputObjectTypeDefinition as = inputType;
+                    return new NonUniqueNameError(as, inputValueDefinition);
+                });
 
 
         // directive checks
@@ -321,7 +293,14 @@ public class SchemaTypeChecker {
     }
 
 
-    private void checkDeprecatedDirective(List<GraphQLError> errors, Directive directive, Supplier<InvalidDeprecationDirectiveError> errorSupplier) {
+    /**
+     * A special check for the magic @deprecated directive
+     *
+     * @param errors        the list of errors
+     * @param directive     the directive to check
+     * @param errorSupplier the error supplier function
+     */
+    static void checkDeprecatedDirective(List<GraphQLError> errors, Directive directive, Supplier<InvalidDeprecationDirectiveError> errorSupplier) {
         if ("deprecated".equals(directive.getName())) {
             // it can have zero args
             List<Argument> arguments = directive.getArguments();
@@ -340,18 +319,23 @@ public class SchemaTypeChecker {
         }
     }
 
-    /*
+    /**
      * A simple function that takes a list of things, asks for their names and checks that the
      * names are unique within that list.  If not it calls the error handler function
+     *
+     * @param errors            the error list
+     * @param listOfNamedThings the list of named things
+     * @param namer             the function naming a thing
+     * @param errorFunction     the function producing an error
      */
-    private <T, E extends GraphQLError> void checkNamedUniqueness(List<GraphQLError> errors, List<T> listOfNamedThings, Function<T, String> namer, BiFunction<String, T, E> errorFunction) {
-        Map<String, T> mapOfThings = new LinkedHashMap<>();
+    static <T, E extends GraphQLError> void checkNamedUniqueness(List<GraphQLError> errors, List<T> listOfNamedThings, Function<T, String> namer, BiFunction<String, T, E> errorFunction) {
+        Set<String> names = new HashSet<>();
         listOfNamedThings.forEach(thing -> {
             String name = namer.apply(thing);
-            if (mapOfThings.containsKey(name)) {
+            if (names.contains(name)) {
                 errors.add(errorFunction.apply(name, thing));
             } else {
-                mapOfThings.put(name, thing);
+                names.add(name);
             }
         });
     }
