@@ -193,6 +193,11 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             return this;
         }
 
+        public boolean hasField(String fieldName) {
+            return fieldDefinitions.stream().anyMatch(f -> f.getName().equals(fieldName));
+        }
+
+
         public Builder withInterface(GraphQLInterfaceType interfaceType) {
             assertNotNull(interfaceType, "interfaceType can't be null");
             this.interfaces.add(interfaceType);

@@ -190,6 +190,10 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             return this;
         }
 
+        public boolean hasValue(String name) {
+            return values.stream().anyMatch(evd -> evd.getName().equals(name));
+        }
+
         public Builder withDirectives(GraphQLDirective... directives) {
             Collections.addAll(this.directives, directives);
             return this;
@@ -198,6 +202,5 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         public GraphQLEnumType build() {
             return new GraphQLEnumType(name, description, values, directives, definition);
         }
-
     }
 }

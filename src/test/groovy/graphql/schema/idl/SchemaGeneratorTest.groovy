@@ -1259,4 +1259,145 @@ class SchemaGeneratorTest extends Specification {
         query.getInterfaces().get(0).getName() == 'IAge'
     }
 
+    def "object extension types are combined"() {
+
+    }
+
+    def "interface extension types are combined"() {
+        def spec = """
+            type Query implements IAgeAndHeight {
+                age : Int
+                height : Int
+            }
+            
+            
+            interface IAgeAndHeight @directive {
+                age : Int
+            }
+
+            extend interface IAgeAndHeight {
+                height : Int @directiveField
+            }
+            
+        """
+
+        def schema = schema(spec)
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        query.getFieldDefinitions().size() == 2
+        query.getInterfaces().size() == 1
+        query.getInterfaces().get(0).getName() == 'IAgeAndHeight'
+        (query.getInterfaces().get(0) as GraphQLInterfaceType).getDirectivesByName().containsKey("directive")
+        (query.getInterfaces().get(0) as GraphQLInterfaceType).getFieldDefinition("height").getDirectivesByName().containsKey("directiveField")
+    }
+
+    def "union extension types are combined"() {
+        def spec = """
+            type Query {
+                field :String
+            }
+            
+            
+            type Foo {
+                field :String
+            }
+
+            type Bar {
+                field :String
+            }
+
+            type Baz {
+                field :String
+            }
+                
+
+            union FooBar = Foo
+            
+            extend union FooBar = Bar | Baz
+            
+            extend union FooBar @directive
+            
+        """
+
+        def schema = schema(spec)
+        GraphQLUnionType unionType = schema.getType("FooBar") as GraphQLUnionType
+
+        expect:
+        unionType.types.size() == 3
+        unionType.types.stream().anyMatch({ t -> (t.getName() == "Foo") })
+        unionType.types.stream().anyMatch({ t -> (t.getName() == "Bar") })
+        unionType.types.stream().anyMatch({ t -> (t.getName() == "Baz") })
+        unionType.directivesByName.containsKey("directive")
+    }
+
+    def "enum extension types are combined"() {
+        def spec = """
+            type Query {
+                field :String
+            }
+            
+            
+            enum Numb {
+                A,B
+            }
+            
+            extend enum Numb {
+                C
+            }
+
+            extend enum Numb @directive{
+                D
+            }
+        """
+
+        def schema = schema(spec)
+        GraphQLEnumType enumType = schema.getType("Numb") as GraphQLEnumType
+
+        expect:
+        enumType.values.size() == 4
+        enumType.values.stream().anyMatch({ t -> (t.getName() == "A") })
+        enumType.values.stream().anyMatch({ t -> (t.getName() == "B") })
+        enumType.values.stream().anyMatch({ t -> (t.getName() == "C") })
+        enumType.values.stream().anyMatch({ t -> (t.getName() == "D") })
+        enumType.directivesByName.containsKey("directive")
+    }
+
+    def "input extension types are combined"() {
+        def spec = """
+            type Query {
+                field :String
+            }
+            
+            
+            input Puter {
+                fieldA : String
+            }
+
+            extend input Puter {
+                fieldB : String
+            }
+
+            extend input Puter {
+                fieldC : String
+            }
+
+            extend input Puter @directive {
+                fieldD : String
+            }
+            
+        """
+
+        def schema = schema(spec)
+        GraphQLInputObjectType inputObjectType = schema.getType("Puter") as GraphQLInputObjectType
+
+        expect:
+        inputObjectType.fields.size() == 4
+        inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldA") })
+        inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldB") })
+        inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldC") })
+        inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldD") })
+        inputObjectType.directivesByName.containsKey("directive")
+    }
+
 }
