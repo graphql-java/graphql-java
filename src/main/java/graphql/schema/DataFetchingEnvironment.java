@@ -80,9 +80,33 @@ public interface DataFetchingEnvironment {
 
 
     /**
-     * @return the list of fields currently in query context
+     * It can happen that a query has overlapping fields which are
+     * are querying the same data. If this is the case they get merged
+     * together and fetched only once, but this method returns all of the Fields
+     * from the query.
+     *
+     * Most of the time you probably want to use {@link #getField()}.
+     *
+     * Example query with more than one Field returned:
+     *
+     *  query Foo {
+     *      bar
+     *      ...BarFragment
+     *  }
+     *
+     *  fragment BarFragment on Query {
+     *      bar
+     *  }
+     *
+     *
+     * @return the list of fields currently queried
      */
     List<Field> getFields();
+
+    /**
+     * @return returns the field which is currently queried. See also {@link #getFields()}
+     */
+    Field getField();
 
     /**
      * @return graphql type of the current field
