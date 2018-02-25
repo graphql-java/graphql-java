@@ -167,6 +167,10 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
             return this;
         }
 
+        public boolean hasField(String fieldName) {
+            return fields.stream().anyMatch(fld -> fld.getName().equals(fieldName));
+        }
+
         public Builder withDirectives(GraphQLDirective... directives) {
             Collections.addAll(this.directives, directives);
             return this;
