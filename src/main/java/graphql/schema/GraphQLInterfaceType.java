@@ -179,6 +179,10 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
             return this;
         }
 
+        public boolean hasField(String fieldName) {
+            return fields.stream().anyMatch(f -> f.getName().equals(fieldName));
+        }
+
         public Builder typeResolver(TypeResolver typeResolver) {
             this.typeResolver = typeResolver;
             return this;

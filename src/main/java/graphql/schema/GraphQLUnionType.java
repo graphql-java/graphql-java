@@ -156,6 +156,10 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
             return this;
         }
 
+        public boolean containType(String name) {
+            return types.stream().anyMatch(type -> type.getName().equals(name));
+        }
+
         public Builder withDirectives(GraphQLDirective... directives) {
             Collections.addAll(this.directives, directives);
             return this;
