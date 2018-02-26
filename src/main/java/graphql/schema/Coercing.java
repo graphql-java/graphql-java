@@ -33,7 +33,7 @@ public interface Coercing<I, O> {
      *
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
-    O serialize(Object dataFetcherResult);
+    O serialize(Object dataFetcherResult) throws CoercingSerializeException;
 
     /**
      * Called to resolve a input from a query variable into a Java object acceptable for the scalar type.
@@ -47,7 +47,7 @@ public interface Coercing<I, O> {
      *
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
-    I parseValue(Object input);
+    I parseValue(Object input) throws CoercingParseValueException;
 
     /**
      * Called to convert an query input AST node into a Java object acceptable for the scalar type.  The input
@@ -58,7 +58,9 @@ public interface Coercing<I, O> {
      *
      * @param input is never null
      *
-     * @return A parsed value or a null value indicates that the literal is not valid. See {@link graphql.validation.ValidationUtil#isValidLiteralValue}
+     * @return a parsed value which is never null
+     *
+     * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
-    I parseLiteral(Object input);
+    I parseLiteral(Object input) throws CoercingParseValueException;
 }

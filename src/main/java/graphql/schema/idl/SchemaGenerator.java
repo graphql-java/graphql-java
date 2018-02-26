@@ -22,6 +22,7 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
 import graphql.language.NullValue;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.ObjectValue;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
@@ -29,7 +30,6 @@ import graphql.language.SchemaDefinition;
 import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
-import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
@@ -642,7 +642,7 @@ public class SchemaGenerator {
             requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
         }
         if (requiredType instanceof GraphQLScalarType) {
-            result = ((GraphQLScalarType) requiredType).getCoercing().parseLiteral(value);
+            result = parseLiteral(value, (GraphQLScalarType) requiredType);
         } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
             result = ((EnumValue) value).getName();
         } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
@@ -657,6 +657,13 @@ public class SchemaGenerator {
                     "cannot build value of %s from %s", requiredType.getName(), String.valueOf(value));
         }
         return result;
+    }
+
+    private Object parseLiteral(Value value, GraphQLScalarType requiredType) {
+        if (value instanceof NullValue) {
+            return null;
+        }
+        return requiredType.getCoercing().parseLiteral(value);
     }
 
     private Object buildObjectValue(ObjectValue defaultValue, GraphQLInputObjectType objectType) {

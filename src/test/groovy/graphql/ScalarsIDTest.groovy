@@ -24,8 +24,10 @@ class ScalarsIDTest extends Specification {
 
     @Unroll
     def "ID returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLID.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLID.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                | _

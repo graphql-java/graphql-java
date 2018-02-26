@@ -27,8 +27,10 @@ class ScalarsShortTest extends Specification {
 
     @Unroll
     def "Short returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLShort.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLShort.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                                          | _

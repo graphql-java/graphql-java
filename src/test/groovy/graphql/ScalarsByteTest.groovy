@@ -27,8 +27,10 @@ class ScalarsByteTest extends Specification {
 
     @Unroll
     def "Byte returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLByte.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLByte.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                                         | _

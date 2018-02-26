@@ -12,6 +12,8 @@ import graphql.language.Type;
 import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableReference;
+import graphql.schema.Coercing;
+import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
@@ -82,14 +84,14 @@ public class ValidationUtil {
         }
 
         if (type instanceof GraphQLScalarType) {
-            boolean valid = ((GraphQLScalarType) type).getCoercing().parseLiteral(value) != null;
+            boolean valid = parseLiteral(value, ((GraphQLScalarType) type).getCoercing());
             if (!valid) {
                 handleScalarError(value, (GraphQLScalarType) type);
             }
             return valid;
         }
         if (type instanceof GraphQLEnumType) {
-            boolean valid = ((GraphQLEnumType) type).getCoercing().parseLiteral(value) != null;
+            boolean valid = parseLiteral(value, ((GraphQLEnumType) type).getCoercing());
             if (!valid) {
                 handleEnumError(value, (GraphQLEnumType) type);
             }
@@ -101,6 +103,14 @@ public class ValidationUtil {
         }
         return type instanceof GraphQLInputObjectType && isValidLiteralValue(value, (GraphQLInputObjectType) type, schema);
 
+    }
+
+    private boolean parseLiteral(Value value, Coercing coercing) {
+        try {
+            return coercing.parseLiteral(value) != null;
+        } catch (CoercingParseValueException e) {
+            return false;
+        }
     }
 
     private boolean isValidLiteralValue(Value value, GraphQLInputObjectType type, GraphQLSchema schema) {

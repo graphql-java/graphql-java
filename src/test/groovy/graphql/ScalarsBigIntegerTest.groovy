@@ -27,8 +27,10 @@ class ScalarsBigIntegerTest extends Specification {
 
     @Unroll
     def "BigInteger returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLBigInteger.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLBigInteger.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                                 | _

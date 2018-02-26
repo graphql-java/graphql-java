@@ -27,8 +27,10 @@ class ScalarsIntTest extends Specification {
 
     @Unroll
     def "Int returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLInt.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLInt.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                                            | _

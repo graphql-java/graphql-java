@@ -28,8 +28,10 @@ class ScalarsBigDecimalTest extends Specification {
 
     @Unroll
     def "BigDecimal returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLBigDecimal.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLBigDecimal.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                         | _

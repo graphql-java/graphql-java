@@ -62,8 +62,9 @@ public class ScalarExamples {
                     return possibleEmailValue;
                 }
             }
-            // null indicates that the AST cant be parsed in this case
-            return null;
+            throw new CoercingParseValueException(
+                    "Value is not any email address : '" + String.valueOf(input) + "'"
+            );
         }
     }
 

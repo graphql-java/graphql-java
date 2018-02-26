@@ -29,8 +29,10 @@ class ScalarsFloatTest extends Specification {
 
     @Unroll
     def "Float returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLFloat.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLFloat.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                | _

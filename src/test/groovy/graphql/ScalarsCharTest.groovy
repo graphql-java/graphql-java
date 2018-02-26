@@ -23,8 +23,10 @@ class ScalarsCharTest extends Specification {
 
     @Unroll
     def "Short returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLChar.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLChar.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                        | _

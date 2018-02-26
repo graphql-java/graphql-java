@@ -35,8 +35,10 @@ class ScalarsLongTest extends Specification {
 
     @Unroll
     def "Long returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLLong.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLLong.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                         | _

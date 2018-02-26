@@ -25,8 +25,10 @@ class ScalarsBooleanTest extends Specification {
 
     @Unroll
     def "Boolean returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseValueException)
 
         where:
         literal                                 | _
