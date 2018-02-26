@@ -189,7 +189,7 @@ public class TypeDefinitionRegistry {
         return scalars;
     }
 
-    public Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions() {
+    public Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions() {
         return new LinkedHashMap<>(typeExtensions);
     }
 
