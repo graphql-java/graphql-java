@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.PublicApi;
 import graphql.language.AstPrinter;
 import graphql.language.AstValueHelper;
 import graphql.language.Comment;
@@ -45,6 +46,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * This can print an in memory GraphQL schema back to a logical schema definition
  */
+@PublicApi
 public class SchemaPrinter {
 
     /**

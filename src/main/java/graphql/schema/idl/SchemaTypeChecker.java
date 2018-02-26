@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.AstPrinter;
 import graphql.language.Directive;
@@ -57,6 +58,7 @@ import java.util.stream.Collectors;
  * <p>
  * It looks for missing types and ensure certain invariants are true before a schema can be made.
  */
+@Internal
 public class SchemaTypeChecker {
 
     public List<GraphQLError> checkTypeRegistry(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {

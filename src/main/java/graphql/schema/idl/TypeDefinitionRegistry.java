@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.GraphQLError;
+import graphql.PublicApi;
 import graphql.language.Definition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
@@ -30,6 +31,7 @@ import static java.util.Optional.ofNullable;
  * A {@link TypeDefinitionRegistry} contains the set of type definitions that come from compiling
  * a graphql schema definition file via {@link SchemaParser#parse(String)}
  */
+@PublicApi
 public class TypeDefinitionRegistry {
 
     private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
