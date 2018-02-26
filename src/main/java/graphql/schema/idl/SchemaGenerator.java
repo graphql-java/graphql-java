@@ -725,7 +725,7 @@ public class SchemaGenerator {
 
 
     private List<ObjectTypeExtensionDefinition> objectTypeExtensions(ObjectTypeDefinition typeDefinition, BuildContext buildCtx) {
-        return nvl(buildCtx.typeRegistry.typeExtensions().get(typeDefinition.getName()));
+        return nvl(buildCtx.typeRegistry.objectTypeExtensions().get(typeDefinition.getName()));
     }
 
     private List<InterfaceTypeExtensionDefinition> interfaceTypeExtensions(InterfaceTypeDefinition typeDefinition, BuildContext buildCtx) {

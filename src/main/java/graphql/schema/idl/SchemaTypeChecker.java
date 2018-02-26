@@ -115,7 +115,7 @@ public class SchemaTypeChecker {
 
     private void checkForMissingTypes(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         // type extensions
-        List<ObjectTypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        List<ObjectTypeExtensionDefinition> typeExtensions = typeRegistry.objectTypeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         typeExtensions.forEach(typeExtension -> {
 
             List<Type> implementsTypes = typeExtension.getImplements();
@@ -415,7 +415,7 @@ public class SchemaTypeChecker {
             implementsTypes.forEach(checkInterfaceIsImplemented("object", typeRegistry, errors, objectType));
         });
 
-        Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
+        Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = typeRegistry.objectTypeExtensions();
         typeExtensions.values().forEach(extList -> extList.forEach(typeExtension -> {
             List<Type> implementsTypes = typeExtension.getImplements();
             implementsTypes.forEach(checkInterfaceIsImplemented("extension", typeRegistry, errors, typeExtension));

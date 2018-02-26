@@ -67,7 +67,7 @@ class SchemaTypeExtensionsChecker {
      * The resulting extended object type must be a super-set of all interfaces it implements.
      */
     private void checkObjectTypeExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
-        typeRegistry.typeExtensions()
+        typeRegistry.objectTypeExtensions()
                 .forEach((name, extensions) -> {
                             checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, ObjectTypeDefinition.class);
                             checkTypeExtensionDirectiveRedefinition(errors, typeRegistry, name, extensions, ObjectTypeDefinition.class);
