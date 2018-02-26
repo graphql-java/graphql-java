@@ -41,7 +41,7 @@ public class ScalarExamples {
             if (looksLikeAnEmailAddress(possibleEmailValue)) {
                 return possibleEmailValue;
             } else {
-                throw new CoercingSerializeException("Unable to serialise " + possibleEmailValue + " as an email address");
+                throw new CoercingSerializeException("Unable to serialize " + possibleEmailValue + " as an email address");
             }
         }
 
