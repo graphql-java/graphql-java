@@ -51,6 +51,6 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitSelectionSet(this, data);
     }
 }

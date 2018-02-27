@@ -6,182 +6,182 @@ import graphql.util.TraverserVisitor;
 public abstract class NodeVisitorStub<T>
         implements NodeVisitor<T>, TraverserVisitor<Node, T> {
     @Override
-    public Object visit(Argument node, T data) {
+    public Object visitArgument(Argument node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(ArrayValue node, T data) {
+    public Object visitArrayValue(ArrayValue node, T data) {
         return visitValue(node, data);
     }
 
     @Override
-    public Object visit(BooleanValue node, T data) {
+    public Object visitBooleanValue(BooleanValue node, T data) {
         return visitValue(node, data);
     }
 
     @Override
-    public Object visit(Directive node, T data) {
+    public Object visitDirective(Directive node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(DirectiveDefinition node, T data) {
+    public Object visitDirectiveDefinition(DirectiveDefinition node, T data) {
         return visitDefinition(node, data);
     }
 
     @Override
-    public Object visit(DirectiveLocation node, T data) {
+    public Object visitDirectiveLocation(DirectiveLocation node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(Document node, T data) {
+    public Object visitDocument(Document node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(EnumTypeDefinition node, T data) {
+    public Object visitEnumTypeDefinition(EnumTypeDefinition node, T data) {
         return visitTypeDefinition(node, data);
     }
 
     @Override
-    public Object visit(EnumValue node, T data) {
+    public Object visitEnumValue(EnumValue node, T data) {
         return visitValue(node, data);
     }
 
     @Override
-    public Object visit(EnumValueDefinition node, T data) {
+    public Object visitEnumValueDefinition(EnumValueDefinition node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(Field node, T data) {
+    public Object visitField(Field node, T data) {
         return visitSelection(node, data);
     }
 
     @Override
-    public Object visit(FieldDefinition node, T data) {
+    public Object visitFieldDefinition(FieldDefinition node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(FloatValue node, T data) {
+    public Object visitFloatValue(FloatValue node, T data) {
         return visitValue(node, data);
     }
 
     @Override
-    public Object visit(FragmentDefinition node, T data) {
+    public Object visitFragmentDefinition(FragmentDefinition node, T data) {
         return visitDefinition(node, data);
     }
 
     @Override
-    public Object visit(FragmentSpread node, T data) {
+    public Object visitFragmentSpread(FragmentSpread node, T data) {
         return visitSelection(node, data);
     }
 
     @Override
-    public Object visit(InlineFragment node, T data) {
+    public Object visitInlineFragment(InlineFragment node, T data) {
         return visitSelection(node, data);
     }
 
     @Override
-    public Object visit(InputObjectTypeDefinition node, T data) {
+    public Object visitInputObjectTypeDefinition(InputObjectTypeDefinition node, T data) {
         return visitTypeDefinition(node, data);
     }
 
     @Override
-    public Object visit(InputValueDefinition node, T data) {
+    public Object visitInputValueDefinition(InputValueDefinition node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(IntValue node, T data) {
+    public Object visitIntValue(IntValue node, T data) {
         return visitValue(node, data);
     }
 
     @Override
-    public Object visit(InterfaceTypeDefinition node, T data) {
+    public Object visitInterfaceTypeDefinition(InterfaceTypeDefinition node, T data) {
         return visitTypeDefinition(node, data);
     }
 
     @Override
-    public Object visit(ListType node, T data) {
+    public Object visitListType(ListType node, T data) {
         return visitType(node, data);
     }
 
     @Override
-    public Object visit(NonNullType node, T data) {
+    public Object visitNonNullType(NonNullType node, T data) {
         return visitType(node, data);
     }
 
     @Override
-    public Object visit(NullValue node, T data) {
+    public Object visitNullValue(NullValue node, T data) {
         return visitValue(node, data);
     }
 
     @Override
-    public Object visit(ObjectField node, T data) {
+    public Object visitObjectField(ObjectField node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(ObjectTypeDefinition node, T data) {
+    public Object visitObjectTypeDefinition(ObjectTypeDefinition node, T data) {
         return visitTypeDefinition(node, data);
     }
 
     @Override
-    public Object visit(ObjectValue node, T data) {
+    public Object visitObjectValue(ObjectValue node, T data) {
         return visitValue(node, data);
     }
 
     @Override
-    public Object visit(OperationDefinition node, T data) {
+    public Object visitOperationDefinition(OperationDefinition node, T data) {
         return visitDefinition(node, data);
     }
 
     @Override
-    public Object visit(OperationTypeDefinition node, T data) {
+    public Object visitOperationTypeDefinition(OperationTypeDefinition node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(ScalarTypeDefinition node, T data) {
+    public Object visitScalarTypeDefinition(ScalarTypeDefinition node, T data) {
         return visitTypeDefinition(node, data);
     }
 
     @Override
-    public Object visit(SchemaDefinition node, T data) {
+    public Object visitSchemaDefinition(SchemaDefinition node, T data) {
         return visitDefinition(node, data);
     }
 
     @Override
-    public Object visit(SelectionSet node, T data) {
+    public Object visitSelectionSet(SelectionSet node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(StringValue node, T data) {
+    public Object visitStringValue(StringValue node, T data) {
         return visitValue(node, data);
     }
 
     @Override
-    public Object visit(TypeName node, T data) {
+    public Object visitTypeName(TypeName node, T data) {
         return visitType(node, data);
     }
 
     @Override
-    public Object visit(UnionTypeDefinition node, T data) {
+    public Object visitUnionTypeDefinition(UnionTypeDefinition node, T data) {
         return visitTypeDefinition(node, data);
     }
 
     @Override
-    public Object visit(VariableDefinition node, T data) {
+    public Object visitVariableDefinition(VariableDefinition node, T data) {
         return visitNode(node, data);
     }
 
     @Override
-    public Object visit(VariableReference node, T data) {
+    public Object visitVariableReference(VariableReference node, T data) {
         return visitValue(node, data);
     }
 

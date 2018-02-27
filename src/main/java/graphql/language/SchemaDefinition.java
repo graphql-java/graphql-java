@@ -70,6 +70,6 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitSchemaDefinition(this, data);
     }
 }

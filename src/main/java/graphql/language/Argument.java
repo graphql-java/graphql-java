@@ -56,6 +56,6 @@ public class Argument extends AbstractNode<Argument> {
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitArgument(this, data);
     }
 }

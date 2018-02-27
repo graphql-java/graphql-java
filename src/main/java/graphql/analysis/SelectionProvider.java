@@ -8,6 +8,7 @@ import graphql.language.InlineFragment;
 import graphql.language.NodeVisitorStub;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -20,22 +21,22 @@ import java.util.Map;
 @Internal
 public class SelectionProvider extends NodeVisitorStub<Map<String, FragmentDefinition>> {
     @Override
-    public Object visit(InlineFragment node, Map<String, FragmentDefinition> fragmentsByName) {
+    public Object visitInlineFragment(InlineFragment node, Map<String, FragmentDefinition> fragmentsByName) {
         return getChildren(node.getSelectionSet());
     }
 
     @Override
-    public Object visit(FragmentSpread fragmentSpread, Map<String, FragmentDefinition> fragmentsByName) {
+    public Object visitFragmentSpread(FragmentSpread fragmentSpread, Map<String, FragmentDefinition> fragmentsByName) {
         return getChildren(fragmentsByName.get(fragmentSpread.getName()).getSelectionSet());
     }
 
     @Override
-    public Object visit(Field node, Map<String, FragmentDefinition> fragmentsByName) {
+    public Object visitField(Field node, Map<String, FragmentDefinition> fragmentsByName) {
         return getChildren(node.getSelectionSet());
     }
 
     @Override
-    public Object visit(SelectionSet node, Map<String, FragmentDefinition> fragmentsByName) {
+    public Object visitSelectionSet(SelectionSet node, Map<String, FragmentDefinition> fragmentsByName) {
         return node.getSelections();
     }
 

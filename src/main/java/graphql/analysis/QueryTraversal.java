@@ -9,8 +9,12 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
+import graphql.language.Node;
 import graphql.language.NodeUtil;
+import graphql.language.NodeVisitor;
+import graphql.language.NodeVisitorStub;
 import graphql.language.OperationDefinition;
+import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.schema.GraphQLCompositeType;
@@ -19,22 +23,18 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.SchemaUtil;
-
-import java.util.Map;
-
-import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertShouldNeverHappen;
-import graphql.language.Node;
-import graphql.language.NodeVisitor;
-import graphql.language.NodeVisitorStub;
-import graphql.language.Selection;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserMarkers;
+
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
+
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 
 @Internal
 public class QueryTraversal {
@@ -122,7 +122,7 @@ public class QueryTraversal {
         }
         
         @Override
-        public Object visit(InlineFragment inlineFragment, TraverserContext<Selection> context) {
+        public Object visitInlineFragment(InlineFragment inlineFragment, TraverserContext<Selection> context) {
             if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives()))
                 return TraverserMarkers.ABORT; // stop recursing down
 
@@ -143,7 +143,7 @@ public class QueryTraversal {
         }
 
         @Override
-        public Object visit(FragmentSpread fragmentSpread, TraverserContext<Selection> context) {
+        public Object visitFragmentSpread(FragmentSpread fragmentSpread, TraverserContext<Selection> context) {
             if (!conditionalNodes.shouldInclude(variables, fragmentSpread.getDirectives()))
                 return TraverserMarkers.ABORT; // stop recursion
 
@@ -160,7 +160,7 @@ public class QueryTraversal {
         }
 
         @Override
-        public Object visit(Field field, TraverserContext<Selection> context) {
+        public Object visitField(Field field, TraverserContext<Selection> context) {
             if (!conditionalNodes.shouldInclude(variables, field.getDirectives()))
                 return TraverserMarkers.ABORT; // stop recursion
 
@@ -197,7 +197,7 @@ public class QueryTraversal {
 
         final NodeVisitor<TraverserContext<Selection>> postOrderVisitor = new NodeVisitorStub<TraverserContext<Selection>>() {
             @Override
-            public Object visit(Field field, TraverserContext<Selection> context) {
+            public Object visitField(Field field, TraverserContext<Selection> context) {
                 QueryTraversalContext top = contextStack.pop();
                 visitorNotifier.notifyPostOrder(top.getEnvironment());
 

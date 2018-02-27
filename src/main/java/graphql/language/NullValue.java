@@ -38,6 +38,6 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitNullValue(this, data);
     }
 }

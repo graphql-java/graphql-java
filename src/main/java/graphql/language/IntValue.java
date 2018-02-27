@@ -51,6 +51,6 @@ public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> 
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitIntValue(this, data);
     }
 }

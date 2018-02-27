@@ -81,6 +81,6 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitUnionTypeDefinition(this, data);
     }
 }

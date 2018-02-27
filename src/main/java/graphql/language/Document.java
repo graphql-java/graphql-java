@@ -53,6 +53,6 @@ public class Document extends AbstractNode<Document> {
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitDocument(this, data);
     }
 }

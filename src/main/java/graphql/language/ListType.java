@@ -52,6 +52,6 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitListType(this, data);
     }
 }
