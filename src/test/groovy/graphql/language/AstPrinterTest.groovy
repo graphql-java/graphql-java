@@ -507,4 +507,13 @@ extend input Input @directive {
 
     }
 
+    def "compact ast printing"() {
+        def query = "{foo {hello} world}"
+        def document = parse(query)
+        String output = AstPrinter.printAstCompact(document)
+
+        expect:
+        output == "query { foo { hello } world }"
+    }
+
 }

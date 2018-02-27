@@ -2,8 +2,10 @@ package graphql.schema.idl
 
 import graphql.GraphQLError
 import graphql.TypeResolutionEnvironment
+import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLScalarType
 import graphql.schema.TypeResolver
 import graphql.schema.idl.errors.SchemaMissingError
 import spock.lang.Specification
@@ -59,17 +61,34 @@ class SchemaTypeCheckerTest extends Specification {
         }
     }
 
-
     List<GraphQLError> check(String spec) {
         def types = parse(spec)
 
 
         NamedWiringFactory wiringFactory = new NamedWiringFactory("InterfaceType")
 
+        def scalesScalar = new GraphQLScalarType("Scales", "", new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) {
+                return null
+            }
+
+            @Override
+            Object parseValue(Object input) {
+                return null
+            }
+
+            @Override
+            Object parseLiteral(Object input) {
+                return null
+            }
+        })
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(wiringFactory)
+                .scalar(scalesScalar)
                 .type(TypeRuntimeWiring.newTypeWiring("InterfaceType1").typeResolver(resolver))
                 .type(TypeRuntimeWiring.newTypeWiring("InterfaceType2").typeResolver(resolver))
+                .type(TypeRuntimeWiring.newTypeWiring("FooBar").typeResolver(resolver))
                 .build()
         return new SchemaTypeChecker().checkTypeRegistry(types, wiring)
     }
@@ -430,7 +449,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.get(0).getMessage().contains("is missing its base object type")
+        result.get(0).getMessage().contains("is missing its base underlying type")
     }
 
     def "test object interface is missing"() {
@@ -913,6 +932,252 @@ class SchemaTypeCheckerTest extends Specification {
 
         !result.isEmpty()
         result.size() == 5
+    }
+
+
+    def errorContaining(List<GraphQLError> errors, String partialMatch) {
+        for (GraphQLError e : errors) {
+            String message = e.message
+            message = message.replaceAll($/\[@[0-9]+:[0-9]+]/$, '[@n:n]')
+            if (message.contains(partialMatch)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    def "object type extensions invariants are enforced"() {
+
+        def spec = """                        
+
+            type Query @directive {
+                fieldA : String
+            }
+            
+            extend type Query @directive {
+                fieldB : String
+            }
+
+            extend type Query {
+                fieldB : String
+            }
+
+            extend type Query {
+                fieldB : Int
+            }
+            
+            extend type Query {
+                fieldC : Int
+                fieldC : Int
+            }
+
+            extend type NonExistent {
+                fieldX : String  
+            }
+            
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        errorContaining(result, "The extension 'Query' type [@n:n] has redefined the directive called 'directive'")
+        errorContaining(result, "'Query' extension type [@n:n] tried to redefine field 'fieldB' [@n:n]")
+        errorContaining(result, "The type 'Query' [@n:n] has declared a field with a non unique name 'fieldC'")
+        errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
+    }
+
+    def "interface type extensions invariants are enforced"() {
+
+        def spec = """                        
+
+            type Query implements InterfaceType1 {
+                fieldA : String
+                fieldC : String
+            }
+            
+            interface InterfaceType1 @directive {
+                fieldA : String  
+            }
+
+            extend interface InterfaceType1 @directive {  # directive redefined
+                fieldA : Int #redefined  
+            }
+            
+            extend interface NonExistent {
+                fieldX : String            
+            }
+            
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.size() == 3
+        errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
+        errorContaining(result, "'InterfaceType1' extension type [@n:n] tried to redefine field 'fieldA' [@n:n]")
+        errorContaining(result, "The extension 'InterfaceType1' type [@n:n] has redefined the directive called 'directive'")
+    }
+
+    def "union type extensions invariants are enforced"() {
+
+        def spec = """                        
+            type Query {
+                fieldA : String
+            }
+            
+            type Foo {
+                foo : String
+            }
+
+            type Bar {
+                bar : String
+            }
+
+            type Baz {
+                baz : String
+            }
+
+            union FooBar @directive = Foo | Bar
+
+            extend union FooBar @directive
+            
+            extend union FooBar = Foo | Baz
+
+            extend union FooBar = Foo | Foo
+            
+            extend union FooBar = Buzz
+            
+            extend union NonExistent = Foo
+            
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.size() == 4
+        errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
+        errorContaining(result, "The extension 'FooBar' type [@n:n] has redefined the directive called 'directive'")
+        errorContaining(result, "The union member type 'Buzz' is not present when resolving type 'FooBar' [@n:n]")
+        errorContaining(result, "The type 'FooBar' [@n:n] has declared an union member with a non unique name 'Foo'")
+    }
+
+    def "enum type extensions invariants are enforced"() {
+
+        def spec = """                        
+            type Query {
+                fieldA : String
+            }
+
+            enum Numb @directive {
+                A
+            }
+
+            extend enum Numb @directive {
+                B
+            }
+
+            extend enum Numb {
+                A,C
+            }
+
+            extend enum Numb {
+                D,D
+            }
+
+            extend enum NonExistent {
+                E
+            }
+            
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        errorContaining(result, "'Numb' extension type [@n:n] tried to redefine enum value 'A' [@n:n]")
+        errorContaining(result, "The extension 'Numb' type [@n:n] has redefined the directive called 'directive'")
+        errorContaining(result, "The type 'Numb' [@n:n] has declared an enum value with a non unique name 'D'")
+        errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
+    }
+
+
+    def "scalar type extensions invariants are enforced"() {
+
+        def spec = """                        
+            type Query {
+                fieldA : String
+            }
+
+            scalar Scales @directive 
+
+            extend scalar Scales @directive 
+
+            
+            extend scalar NonExistent {
+                E
+            }
+            
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        errorContaining(result, "The extension 'Scales' type [@n:n] has redefined the directive called 'directive'")
+        errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
+    }
+
+    def "input object type extensions invariants are enforced"() {
+
+        def spec = """                        
+
+            type Query  {
+                fieldA : String
+            }
+            
+            input Puter @directive {
+                fieldA : String  
+                fieldB : String  
+            }
+
+            extend input Puter @directive {
+                fieldC : String  
+            }
+            
+            extend input Puter {
+                fieldB : String  
+            }
+
+            extend input Puter {
+                fieldD : String  
+                fieldD : Int  
+            }
+
+            extend input Puter {
+                fieldE : String  
+            }
+
+            extend input Puter {
+                fieldE : Int  
+            }
+
+            extend input NonExistent {
+                fieldX : String  
+            }
+            
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        errorContaining(result, "The extension 'Puter' type [@n:n] has redefined the directive called 'directive'")
+        errorContaining(result, "The type 'Puter' [@n:n] has declared an input field with a non unique name 'fieldD'")
+        errorContaining(result, "'Puter' extension type [@n:n] tried to redefine field 'fieldE' [@n:n]")
+        errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
     }
 
 }

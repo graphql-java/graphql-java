@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.AstPrinter;
 import graphql.language.Directive;
@@ -35,15 +36,15 @@ import graphql.schema.idl.errors.OperationTypesMustBeObjects;
 import graphql.schema.idl.errors.QueryOperationMissingError;
 import graphql.schema.idl.errors.SchemaMissingError;
 import graphql.schema.idl.errors.SchemaProblem;
-import graphql.schema.idl.errors.TypeExtensionFieldRedefinitionError;
-import graphql.schema.idl.errors.TypeExtensionMissingBaseTypeError;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -57,14 +58,16 @@ import java.util.stream.Collectors;
  * <p>
  * It looks for missing types and ensure certain invariants are true before a schema can be made.
  */
+@Internal
 public class SchemaTypeChecker {
 
     public List<GraphQLError> checkTypeRegistry(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
         List<GraphQLError> errors = new ArrayList<>();
         checkForMissingTypes(errors, typeRegistry);
 
-        checkTypeExtensionsHaveCorrespondingType(errors, typeRegistry);
-        checkTypeExtensionsFieldRedefinition(errors, typeRegistry);
+        SchemaTypeExtensionsChecker typeExtensionsChecker = new SchemaTypeExtensionsChecker();
+
+        typeExtensionsChecker.checkTypeExtensions(errors, typeRegistry);
 
         checkInterfacesAreImplemented(errors, typeRegistry);
 
@@ -112,7 +115,7 @@ public class SchemaTypeChecker {
 
     private void checkForMissingTypes(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         // type extensions
-        List<ObjectTypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+        List<ObjectTypeExtensionDefinition> typeExtensions = typeRegistry.objectTypeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
         typeExtensions.forEach(typeExtension -> {
 
             List<Type> implementsTypes = typeExtension.getImplements();
@@ -170,7 +173,7 @@ public class SchemaTypeChecker {
     private void checkScalarImplementationsArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
         typeRegistry.scalars().forEach((scalarName, scalarTypeDefinition) -> {
             WiringFactory wiringFactory = wiring.getWiringFactory();
-            ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, scalarTypeDefinition);
+            ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, scalarTypeDefinition, Collections.emptyList());
             if (!wiringFactory.providesScalar(environment) && !wiring.getScalars().containsKey(scalarName)) {
                 errors.add(new MissingScalarImplementationError(scalarName));
             }
@@ -179,10 +182,6 @@ public class SchemaTypeChecker {
 
     private void checkFieldsAreSensible(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         Map<String, TypeDefinition> typesMap = typeRegistry.types();
-
-        // type extensions
-        List<ObjectTypeExtensionDefinition> typeExtensions = typeRegistry.typeExtensions().values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-        typeExtensions.forEach(typeExtension -> checkTypeExtFields(errors, typeExtension, typeExtension.getFieldDefinitions()));
 
         // objects
         List<ObjectTypeDefinition> objectTypes = filterTo(typesMap, ObjectTypeDefinition.class);
@@ -201,29 +200,6 @@ public class SchemaTypeChecker {
         inputTypes.forEach(inputType -> checkInputValues(errors, inputType, inputType.getInputValueDefinitions()));
     }
 
-    private void checkTypeExtFields(List<GraphQLError> errors, ObjectTypeExtensionDefinition typeExtension, List<FieldDefinition> fieldDefinitions) {
-
-        // field unique ness
-        checkNamedUniqueness(errors, fieldDefinitions, FieldDefinition::getName,
-                (name, fieldDef) -> new NonUniqueNameError(typeExtension, fieldDef));
-
-        // field arg unique ness
-        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getInputValueDefinitions(), InputValueDefinition::getName,
-                (name, inputValueDefinition) -> new NonUniqueArgumentError(typeExtension, fld, name)));
-
-        // directive checks
-        fieldDefinitions.forEach(fld -> checkNamedUniqueness(errors, fld.getDirectives(), Directive::getName,
-                (directiveName, directive) -> new NonUniqueDirectiveError(typeExtension, fld, directiveName)));
-
-        fieldDefinitions.forEach(fld -> fld.getDirectives().forEach(directive -> {
-            checkDeprecatedDirective(errors, directive,
-                    () -> new InvalidDeprecationDirectiveError(typeExtension, fld));
-
-            checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
-                    (argumentName, argument) -> new NonUniqueArgumentError(typeExtension, fld, argumentName));
-
-        }));
-    }
 
     private void checkObjTypeFields(List<GraphQLError> errors, ObjectTypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions) {
         // field unique ness
@@ -298,7 +274,12 @@ public class SchemaTypeChecker {
 
         // field unique ness
         checkNamedUniqueness(errors, inputValueDefinitions, InputValueDefinition::getName,
-                (name, inputValueDefinition) -> new NonUniqueNameError(inputType, inputValueDefinition));
+                (name, inputValueDefinition) -> {
+                    // not sure why this is needed but inlining breaks it
+                    @SuppressWarnings("UnnecessaryLocalVariable")
+                    InputObjectTypeDefinition as = inputType;
+                    return new NonUniqueNameError(as, inputValueDefinition);
+                });
 
 
         // directive checks
@@ -315,7 +296,14 @@ public class SchemaTypeChecker {
     }
 
 
-    private void checkDeprecatedDirective(List<GraphQLError> errors, Directive directive, Supplier<InvalidDeprecationDirectiveError> errorSupplier) {
+    /**
+     * A special check for the magic @deprecated directive
+     *
+     * @param errors        the list of errors
+     * @param directive     the directive to check
+     * @param errorSupplier the error supplier function
+     */
+    static void checkDeprecatedDirective(List<GraphQLError> errors, Directive directive, Supplier<InvalidDeprecationDirectiveError> errorSupplier) {
         if ("deprecated".equals(directive.getName())) {
             // it can have zero args
             List<Argument> arguments = directive.getArguments();
@@ -334,18 +322,23 @@ public class SchemaTypeChecker {
         }
     }
 
-    /*
+    /**
      * A simple function that takes a list of things, asks for their names and checks that the
      * names are unique within that list.  If not it calls the error handler function
+     *
+     * @param errors            the error list
+     * @param listOfNamedThings the list of named things
+     * @param namer             the function naming a thing
+     * @param errorFunction     the function producing an error
      */
-    private <T, E extends GraphQLError> void checkNamedUniqueness(List<GraphQLError> errors, List<T> listOfNamedThings, Function<T, String> namer, BiFunction<String, T, E> errorFunction) {
-        Map<String, T> mapOfThings = new LinkedHashMap<>();
+    static <T, E extends GraphQLError> void checkNamedUniqueness(List<GraphQLError> errors, List<T> listOfNamedThings, Function<T, String> namer, BiFunction<String, T, E> errorFunction) {
+        Set<String> names = new HashSet<>();
         listOfNamedThings.forEach(thing -> {
             String name = namer.apply(thing);
-            if (mapOfThings.containsKey(name)) {
+            if (names.contains(name)) {
                 errors.add(errorFunction.apply(name, thing));
             } else {
-                mapOfThings.put(name, thing);
+                names.add(name);
             }
         });
     }
@@ -422,7 +415,7 @@ public class SchemaTypeChecker {
             implementsTypes.forEach(checkInterfaceIsImplemented("object", typeRegistry, errors, objectType));
         });
 
-        Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
+        Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = typeRegistry.objectTypeExtensions();
         typeExtensions.values().forEach(extList -> extList.forEach(typeExtension -> {
             List<Type> implementsTypes = typeExtension.getImplements();
             implementsTypes.forEach(checkInterfaceIsImplemented("extension", typeRegistry, errors, typeExtension));
@@ -481,75 +474,6 @@ public class SchemaTypeChecker {
             }
         }
     }
-
-    /*
-    A type can re-define a field if its actual the same type, but if they make 'fieldA : String' into
-    'fieldA : Int' then we cant handle that.  Even 'fieldA : String' to 'fieldA: String!' is tough to handle
-    so we don't
-    */
-    private void checkTypeExtensionsFieldRedefinition(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
-        Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
-        typeExtensions.values().forEach(extList -> extList.forEach(typeExtension -> {
-            //
-            // first check for field re-defs within a type ext
-            for (ObjectTypeExtensionDefinition otherTypeExt : extList) {
-                if (otherTypeExt == typeExtension) {
-                    continue;
-                }
-                // its the children that matter - the fields cannot be redefined
-                checkForFieldRedefinition(errors, otherTypeExt, otherTypeExt.getFieldDefinitions(), typeExtension.getFieldDefinitions());
-            }
-            //
-            // then check for field re-defs from the base type
-            Optional<TypeDefinition> type = typeRegistry.getType(typeExtension.getName());
-            if (type.isPresent() && type.get() instanceof ObjectTypeDefinition) {
-                ObjectTypeDefinition baseType = (ObjectTypeDefinition) type.get();
-
-                checkForFieldRedefinition(errors, typeExtension, typeExtension.getFieldDefinitions(), baseType.getFieldDefinitions());
-            }
-
-        }));
-
-    }
-
-    private void checkForFieldRedefinition(List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions, List<FieldDefinition> referenceFieldDefinitions) {
-        Map<String, FieldDefinition> referenceFields = referenceFieldDefinitions.stream()
-                .collect(Collectors.toMap(
-                        FieldDefinition::getName, Function.identity(), mergeFirstValue()
-                ));
-
-        fieldDefinitions.forEach(fld -> {
-            FieldDefinition referenceField = referenceFields.get(fld.getName());
-            if (referenceFields.containsKey(fld.getName())) {
-                // ok they have the same field but is it the same type
-                if (!isSameType(fld.getType(), referenceField.getType())) {
-                    errors.add(new TypeExtensionFieldRedefinitionError(typeDefinition, fld));
-                }
-            }
-        });
-    }
-
-    private boolean isSameType(Type type1, Type type2) {
-        String s1 = AstPrinter.printAst(type1);
-        String s2 = AstPrinter.printAst(type2);
-        return s1.equals(s2);
-    }
-
-    private void checkTypeExtensionsHaveCorrespondingType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
-        Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = typeRegistry.typeExtensions();
-        typeExtensions.forEach((name, extTypeList) -> {
-            ObjectTypeExtensionDefinition extensionDefinition = extTypeList.get(0);
-            Optional<TypeDefinition> typeDefinition = typeRegistry.getType(new TypeName(name));
-            if (!typeDefinition.isPresent()) {
-                errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
-            } else {
-                if (!(typeDefinition.get() instanceof ObjectTypeDefinition)) {
-                    errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
-                }
-            }
-        });
-    }
-
 
     private Consumer<OperationTypeDefinition> checkOperationTypesExist(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors) {
         return op -> {

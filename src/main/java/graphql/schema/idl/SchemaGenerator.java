@@ -1,37 +1,31 @@
 package graphql.schema.idl;
 
-import graphql.Assert;
 import graphql.GraphQLError;
-import graphql.Scalars;
+import graphql.PublicApi;
 import graphql.introspection.Introspection;
 import graphql.introspection.Introspection.DirectiveLocation;
-import graphql.language.Argument;
-import graphql.language.ArrayValue;
-import graphql.language.BooleanValue;
-import graphql.language.Comment;
-import graphql.language.Description;
 import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
-import graphql.language.EnumValue;
+import graphql.language.EnumTypeExtensionDefinition;
+import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
-import graphql.language.FloatValue;
 import graphql.language.InputObjectTypeDefinition;
+import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InputValueDefinition;
-import graphql.language.IntValue;
 import graphql.language.InterfaceTypeDefinition;
-import graphql.language.Node;
-import graphql.language.NullValue;
+import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
-import graphql.language.ObjectValue;
+import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
+import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaDefinition;
-import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.language.UnionTypeExtensionDefinition;
 import graphql.language.Value;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
@@ -39,13 +33,12 @@ import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
@@ -61,7 +54,6 @@ import graphql.schema.idl.errors.SchemaProblem;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,24 +65,23 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
-import static graphql.introspection.Introspection.DirectiveLocation.INTERFACE;
 import static graphql.introspection.Introspection.DirectiveLocation.OBJECT;
 import static graphql.introspection.Introspection.DirectiveLocation.UNION;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.schema.GraphQLTypeReference.typeRef;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * This can generate a working runtime schema from a type registry and runtime wiring
  */
+@PublicApi
 public class SchemaGenerator {
 
     /**
@@ -161,6 +152,7 @@ public class SchemaGenerator {
     }
 
     private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();
+    private final SchemaGeneratorHelper schemaGeneratorHelper = new SchemaGeneratorHelper();
 
     public SchemaGenerator() {
     }
@@ -359,60 +351,40 @@ public class SchemaGenerator {
         GraphQLObjectType.Builder builder = GraphQLObjectType.newObject();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
 
-        List<ObjectTypeExtensionDefinition> typeExtensions = getTypeExtensionsOf(typeDefinition, buildCtx);
-
-        List<Directive> extensionDirectives = typeExtensions.stream()
-                .map(ObjectTypeDefinition::getDirectives).filter(Objects::nonNull)
-                .flatMap(Collection::stream).collect(Collectors.toList());
-
-        // combine the type and its extension directives together as one
+        List<ObjectTypeExtensionDefinition> extensions = objectTypeExtensions(typeDefinition, buildCtx);
         builder.withDirectives(
-                buildDirectives(buildCtx, typeDefinition.getDirectives(),
-                        extensionDirectives, OBJECT)
+                buildDirectives(typeDefinition.getDirectives(),
+                        directivesOf(extensions), OBJECT)
         );
 
-        buildObjectTypeFields(buildCtx, typeDefinition, builder, typeExtensions);
+        typeDefinition.getFieldDefinitions().forEach(fieldDef -> {
+            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
+            builder.field(newFieldDefinition);
+        });
 
-        buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, typeExtensions);
+        extensions.forEach(extension -> extension.getFieldDefinitions().forEach(fieldDef -> {
+            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
+            if (!builder.hasField(newFieldDefinition.getName())) {
+                builder.field(newFieldDefinition);
+            }
+        }));
+
+        buildObjectTypeInterfaces(buildCtx, typeDefinition, builder, extensions);
 
         return builder.build();
     }
 
-    private void buildObjectTypeFields(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<ObjectTypeExtensionDefinition> typeExtensions) {
-        Map<String, GraphQLFieldDefinition> fieldDefinitions = new LinkedHashMap<>();
-
-        typeDefinition.getFieldDefinitions().forEach(fieldDef -> {
-            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
-            fieldDefinitions.put(newFieldDefinition.getName(), newFieldDefinition);
-        });
-
-        // an object consists of the fields it gets from its definition AND its type extensions
-        typeExtensions.forEach(typeExt -> typeExt.getFieldDefinitions().forEach(fieldDef -> {
-            GraphQLFieldDefinition newFieldDefinition = buildField(buildCtx, typeDefinition, fieldDef);
-            //
-            // de-dupe here - pre-flight checks ensure all dupes are of the same type
-            if (!fieldDefinitions.containsKey(newFieldDefinition.getName())) {
-                fieldDefinitions.put(newFieldDefinition.getName(), newFieldDefinition);
-            }
-        }));
-
-        fieldDefinitions.values().forEach(builder::field);
-    }
-
-    private void buildObjectTypeInterfaces(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<ObjectTypeExtensionDefinition> typeExtensions) {
+    private void buildObjectTypeInterfaces(BuildContext buildCtx, ObjectTypeDefinition typeDefinition, GraphQLObjectType.Builder builder, List<ObjectTypeExtensionDefinition> extensions) {
         Map<String, GraphQLInterfaceType> interfaces = new LinkedHashMap<>();
         typeDefinition.getImplements().forEach(type -> {
             GraphQLInterfaceType newInterfaceType = buildOutputType(buildCtx, type);
             interfaces.put(newInterfaceType.getName(), newInterfaceType);
         });
 
-        // an object consists of the interfaces it gets from its definition AND its type extensions
-        typeExtensions.forEach(typeExt -> typeExt.getImplements().forEach(type -> {
+        extensions.forEach(extension -> extension.getImplements().forEach(type -> {
             GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
-            //
-            // de-dupe here - pre-flight checks ensure all dupes are of the same type
             if (!interfaces.containsKey(interfaceType.getName())) {
                 interfaces.put(interfaceType.getName(), interfaceType);
             }
@@ -421,26 +393,30 @@ public class SchemaGenerator {
         interfaces.values().forEach(builder::withInterface);
     }
 
-    private List<ObjectTypeExtensionDefinition> getTypeExtensionsOf(ObjectTypeDefinition objectTypeDefinition, BuildContext buildCtx) {
-        List<ObjectTypeExtensionDefinition> objectTypeExtensionDefinitions = buildCtx.typeRegistry.typeExtensions().get(objectTypeDefinition.getName());
-        return objectTypeExtensionDefinitions == null ? emptyList() : objectTypeExtensionDefinitions;
-    }
 
     private GraphQLInterfaceType buildInterfaceType(BuildContext buildCtx, InterfaceTypeDefinition typeDefinition) {
         GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
 
         builder.typeResolver(getTypeResolverForInterface(buildCtx, typeDefinition));
+
+        List<InterfaceTypeExtensionDefinition> extensions = interfaceTypeExtensions(typeDefinition, buildCtx);
+        builder.withDirectives(
+                buildDirectives(typeDefinition.getDirectives(),
+                        directivesOf(extensions), OBJECT)
+        );
 
         typeDefinition.getFieldDefinitions().forEach(fieldDef ->
                 builder.field(buildField(buildCtx, typeDefinition, fieldDef)));
 
-        builder.withDirectives(
-                buildDirectives(buildCtx, typeDefinition.getDirectives(),
-                        emptyList(), INTERFACE)
-        );
+        extensions.forEach(extension -> extension.getFieldDefinitions().forEach(fieldDef -> {
+            GraphQLFieldDefinition field = buildField(buildCtx, typeDefinition, fieldDef);
+            if (!builder.hasField(field.getName())) {
+                builder.field(field);
+            }
+        }));
 
         return builder.build();
     }
@@ -449,8 +425,10 @@ public class SchemaGenerator {
         GraphQLUnionType.Builder builder = GraphQLUnionType.newUnionType();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
         builder.typeResolver(getTypeResolverForUnion(buildCtx, typeDefinition));
+
+        List<UnionTypeExtensionDefinition> extensions = unionTypeExtensions(typeDefinition, buildCtx);
 
         typeDefinition.getMemberTypes().forEach(mt -> {
             GraphQLOutputType outputType = buildOutputType(buildCtx, mt);
@@ -462,9 +440,21 @@ public class SchemaGenerator {
         });
 
         builder.withDirectives(
-                buildDirectives(buildCtx, typeDefinition.getDirectives(),
-                        emptyList(), UNION)
+                buildDirectives(typeDefinition.getDirectives(),
+                        directivesOf(extensions), UNION)
         );
+
+        extensions.forEach(extension -> extension.getMemberTypes().forEach(mt -> {
+                    GraphQLOutputType outputType = buildOutputType(buildCtx, mt);
+                    if (!builder.containType(outputType.getName())) {
+                        if (outputType instanceof GraphQLTypeReference) {
+                            builder.possibleType((GraphQLTypeReference) outputType);
+                        } else {
+                            builder.possibleType((GraphQLObjectType) outputType);
+                        }
+                    }
+                }
+        ));
 
         return builder.build();
     }
@@ -473,45 +463,61 @@ public class SchemaGenerator {
         GraphQLEnumType.Builder builder = GraphQLEnumType.newEnum();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
+
+        List<EnumTypeExtensionDefinition> extensions = enumTypeExtensions(typeDefinition, buildCtx);
 
         EnumValuesProvider enumValuesProvider = buildCtx.getWiring().getEnumValuesProviders().get(typeDefinition.getName());
         typeDefinition.getEnumValueDefinitions().forEach(evd -> {
-            String description = buildDescription(evd, evd.getDescription());
-            String deprecation = buildDeprecationReason(evd.getDirectives());
-
-            Object value;
-            if (enumValuesProvider != null) {
-                value = enumValuesProvider.getValue(evd.getName());
-                assertNotNull(value, "EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName());
-            } else {
-                value = evd.getName();
-            }
-            builder.value(newEnumValueDefinition()
-                    .name(evd.getName())
-                    .value(value)
-                    .description(description)
-                    .deprecationReason(deprecation)
-                    .withDirectives(
-                            buildDirectives(buildCtx, evd.getDirectives(),
-                                    emptyList(), ENUM_VALUE)
-                    )
-                    .build());
+            GraphQLEnumValueDefinition enumValueDefinition = buildEnumValue(buildCtx, typeDefinition, enumValuesProvider, evd);
+            builder.value(enumValueDefinition);
         });
 
+        extensions.forEach(extension -> extension.getEnumValueDefinitions().forEach(evd -> {
+            GraphQLEnumValueDefinition enumValueDefinition = buildEnumValue(buildCtx, typeDefinition, enumValuesProvider, evd);
+            if (!builder.hasValue(enumValueDefinition.getName())) {
+                builder.value(enumValueDefinition);
+            }
+        }));
+
         builder.withDirectives(
-                buildDirectives(buildCtx, typeDefinition.getDirectives(),
-                        emptyList(), ENUM)
+                buildDirectives(typeDefinition.getDirectives(),
+                        directivesOf(extensions), ENUM)
         );
 
         return builder.build();
+    }
+
+    private GraphQLEnumValueDefinition buildEnumValue(BuildContext buildCtx, EnumTypeDefinition typeDefinition, EnumValuesProvider enumValuesProvider, EnumValueDefinition evd) {
+        String description = schemaGeneratorHelper.buildDescription(evd, evd.getDescription());
+        String deprecation = schemaGeneratorHelper.buildDeprecationReason(evd.getDirectives());
+
+        Object value;
+        if (enumValuesProvider != null) {
+            value = enumValuesProvider.getValue(evd.getName());
+            assertNotNull(value, "EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName());
+        } else {
+            value = evd.getName();
+        }
+        return newEnumValueDefinition()
+                .name(evd.getName())
+                .value(value)
+                .description(description)
+                .deprecationReason(deprecation)
+                .withDirectives(
+                        buildDirectives(evd.getDirectives(),
+                                emptyList(), ENUM_VALUE)
+                )
+                .build();
     }
 
     private GraphQLScalarType buildScalar(BuildContext buildCtx, ScalarTypeDefinition typeDefinition) {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         RuntimeWiring runtimeWiring = buildCtx.getWiring();
         WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
-        ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, typeDefinition);
+        List<ScalarTypeExtensionDefinition> extensions = scalarTypeExtensions(typeDefinition, buildCtx);
+
+        ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, typeDefinition, extensions);
 
         if (wiringFactory.providesScalar(environment)) {
             return wiringFactory.getScalar(environment);
@@ -524,10 +530,10 @@ public class SchemaGenerator {
         GraphQLFieldDefinition.Builder builder = GraphQLFieldDefinition.newFieldDefinition();
         builder.definition(fieldDef);
         builder.name(fieldDef.getName());
-        builder.description(buildDescription(fieldDef, fieldDef.getDescription()));
-        builder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
+        builder.description(schemaGeneratorHelper.buildDescription(fieldDef, fieldDef.getDescription()));
+        builder.deprecate(schemaGeneratorHelper.buildDeprecationReason(fieldDef.getDirectives()));
 
-        GraphQLDirective[] directives = buildDirectives(buildCtx, fieldDef.getDirectives(),
+        GraphQLDirective[] directives = buildDirectives(fieldDef.getDirectives(),
                 Collections.emptyList(), Introspection.DirectiveLocation.FIELD);
         builder.withDirectives(
                 directives
@@ -585,15 +591,25 @@ public class SchemaGenerator {
         GraphQLInputObjectType.Builder builder = GraphQLInputObjectType.newInputObject();
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
-        builder.description(buildDescription(typeDefinition, typeDefinition.getDescription()));
+        builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
+
+        List<InputObjectTypeExtensionDefinition> extensions = inputObjectTypeExtensions(typeDefinition, buildCtx);
 
         builder.withDirectives(
-                buildDirectives(buildCtx, typeDefinition.getDirectives(),
-                        emptyList(), INPUT_OBJECT)
+                buildDirectives(typeDefinition.getDirectives(),
+                        directivesOf(extensions), INPUT_OBJECT)
         );
 
-        typeDefinition.getInputValueDefinitions().forEach(fieldDef ->
-                builder.field(buildInputField(buildCtx, fieldDef)));
+        typeDefinition.getInputValueDefinitions().forEach(inputValue ->
+                builder.field(buildInputField(buildCtx, inputValue)));
+
+        extensions.forEach(extension -> extension.getInputValueDefinitions().forEach(inputValueDefinition -> {
+            GraphQLInputObjectField inputField = buildInputField(buildCtx, inputValueDefinition);
+            if (!builder.hasField(inputField.getName())) {
+                builder.field(inputField);
+            }
+        }));
+
         return builder.build();
     }
 
@@ -601,7 +617,7 @@ public class SchemaGenerator {
         GraphQLInputObjectField.Builder fieldBuilder = GraphQLInputObjectField.newInputObjectField();
         fieldBuilder.definition(fieldDef);
         fieldBuilder.name(fieldDef.getName());
-        fieldBuilder.description(buildDescription(fieldDef, fieldDef.getDescription()));
+        fieldBuilder.description(schemaGeneratorHelper.buildDescription(fieldDef, fieldDef.getDescription()));
 
         // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
         //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
@@ -609,11 +625,11 @@ public class SchemaGenerator {
         fieldBuilder.type(inputType);
         Value defaultValue = fieldDef.getDefaultValue();
         if (defaultValue != null) {
-            fieldBuilder.defaultValue(buildValue(defaultValue, inputType));
+            fieldBuilder.defaultValue(schemaGeneratorHelper.buildValue(defaultValue, inputType));
         }
 
         fieldBuilder.withDirectives(
-                buildDirectives(buildCtx, fieldDef.getDirectives(),
+                buildDirectives(fieldDef.getDirectives(),
                         emptyList(), INPUT_FIELD_DEFINITION)
         );
 
@@ -624,12 +640,12 @@ public class SchemaGenerator {
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
         builder.definition(valueDefinition);
         builder.name(valueDefinition.getName());
-        builder.description(buildDescription(valueDefinition, valueDefinition.getDescription()));
+        builder.description(schemaGeneratorHelper.buildDescription(valueDefinition, valueDefinition.getDescription()));
         GraphQLInputType inputType = buildInputType(buildCtx, valueDefinition.getType());
         builder.type(inputType);
         Value defaultValue = valueDefinition.getDefaultValue();
         if (defaultValue != null) {
-            builder.defaultValue(buildValue(defaultValue, inputType));
+            builder.defaultValue(schemaGeneratorHelper.buildValue(defaultValue, inputType));
         }
 
         return builder.build();
@@ -721,43 +737,8 @@ public class SchemaGenerator {
         return typeResolver;
     }
 
-    private String buildDescription(Node<?> node, Description description) {
-        if (description != null) {
-            return description.getContent();
-        }
-        List<Comment> comments = node.getComments();
-        List<String> lines = new ArrayList<>();
-        for (Comment comment : comments) {
-            String commentLine = comment.getContent();
-            if (commentLine.trim().isEmpty()) {
-                lines.clear();
-            } else {
-                lines.add(commentLine);
-            }
-        }
-        if (lines.size() == 0) return null;
-        return lines.stream().collect(joining("\n"));
-    }
 
-
-    private String buildDeprecationReason(List<Directive> directives) {
-        directives = directives == null ? emptyList() : directives;
-        Optional<Directive> directive = directives.stream().filter(d -> "deprecated".equals(d.getName())).findFirst();
-        if (directive.isPresent()) {
-            Map<String, String> args = directive.get().getArguments().stream().collect(toMap(
-                    Argument::getName, arg -> ((StringValue) arg.getValue()).getValue()
-            ));
-            if (args.isEmpty()) {
-                return "No longer supported"; // default value from spec
-            } else {
-                // pre flight checks have ensured its valid
-                return args.get("reason");
-            }
-        }
-        return null;
-    }
-
-    private GraphQLDirective[] buildDirectives(BuildContext buildCtx, List<Directive> directives, List<Directive> extensionDirectives, DirectiveLocation directiveLocation) {
+    private GraphQLDirective[] buildDirectives(List<Directive> directives, List<Directive> extensionDirectives, DirectiveLocation directiveLocation) {
         directives = directives == null ? emptyList() : directives;
         extensionDirectives = extensionDirectives == null ? emptyList() : extensionDirectives;
         Set<String> names = new HashSet<>();
@@ -766,71 +747,53 @@ public class SchemaGenerator {
         for (Directive directive : directives) {
             if (!names.contains(directive.getName())) {
                 names.add(directive.getName());
-                output.add(buildDirective(buildCtx, directive, directiveLocation));
+                output.add(schemaGeneratorHelper.buildDirective(directive, directiveLocation));
             }
         }
         for (Directive directive : extensionDirectives) {
             if (!names.contains(directive.getName())) {
                 names.add(directive.getName());
-                output.add(buildDirective(buildCtx, directive, directiveLocation));
+                output.add(schemaGeneratorHelper.buildDirective(directive, directiveLocation));
             }
         }
         return output.toArray(new GraphQLDirective[0]);
     }
 
-    // builds directives from a type and its extensions
-    private GraphQLDirective buildDirective(BuildContext buildCtx, Directive directive, DirectiveLocation directiveLocation) {
-        List<GraphQLArgument> arguments = directive.getArguments().stream()
-                .map(arg -> buildDirectiveArgument(buildCtx, arg))
-                .collect(Collectors.toList());
 
-        GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
-                .name(directive.getName())
-                .description(buildDescription(directive, null))
-                .validLocations(directiveLocation);
 
-        for (GraphQLArgument argument : arguments) {
-            builder.argument(argument);
-        }
-        return builder.build();
+    private List<ObjectTypeExtensionDefinition> objectTypeExtensions(ObjectTypeDefinition typeDefinition, BuildContext buildCtx) {
+        return nvl(buildCtx.typeRegistry.objectTypeExtensions().get(typeDefinition.getName()));
     }
 
-    private GraphQLArgument buildDirectiveArgument(BuildContext buildCtx, Argument arg) {
-        GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
-        builder.name(arg.getName());
-        GraphQLInputType inputType = buildDirectiveInputType(buildCtx, arg.getValue());
-        builder.type(inputType);
-        builder.defaultValue(buildValue(arg.getValue(), inputType));
-        return builder.build();
+    private List<InterfaceTypeExtensionDefinition> interfaceTypeExtensions(InterfaceTypeDefinition typeDefinition, BuildContext buildCtx) {
+        return nvl(buildCtx.typeRegistry.interfaceTypeExtensions().get(typeDefinition.getName()));
     }
 
-    /**
-     * We support the basic types as directive types
-     *
-     * @param buildCtx build ctx
-     * @param value    the value to use
-     *
-     * @return a graphql input type
-     */
-    private GraphQLInputType buildDirectiveInputType(BuildContext buildCtx, Value value) {
-        Object result = null;
-        if (value instanceof NullValue) {
-            return Scalars.GraphQLString;
-        }
-        if (value instanceof FloatValue) {
-            return Scalars.GraphQLFloat;
-        }
-        if (value instanceof StringValue) {
-            return Scalars.GraphQLString;
-        }
-        if (value instanceof IntValue) {
-            return Scalars.GraphQLInt;
-        }
-        if (value instanceof BooleanValue) {
-            return Scalars.GraphQLBoolean;
-        }
-        return Assert.assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getName());
+    private List<UnionTypeExtensionDefinition> unionTypeExtensions(UnionTypeDefinition typeDefinition, BuildContext buildCtx) {
+        return nvl(buildCtx.typeRegistry.unionTypeExtensions().get(typeDefinition.getName()));
     }
 
+    private List<EnumTypeExtensionDefinition> enumTypeExtensions(EnumTypeDefinition typeDefinition, BuildContext buildCtx) {
+        return nvl(buildCtx.typeRegistry.enumTypeExtensions().get(typeDefinition.getName()));
+    }
+
+    private List<ScalarTypeExtensionDefinition> scalarTypeExtensions(ScalarTypeDefinition typeDefinition, BuildContext buildCtx) {
+        return nvl(buildCtx.typeRegistry.scalarTypeExtensions().get(typeDefinition.getName()));
+    }
+
+    private List<InputObjectTypeExtensionDefinition> inputObjectTypeExtensions(InputObjectTypeDefinition typeDefinition, BuildContext buildCtx) {
+        return nvl(buildCtx.typeRegistry.inputObjectTypeExtensions().get(typeDefinition.getName()));
+    }
+
+    private <T> List<T> nvl(List<T> list) {
+        return list == null ? emptyList() : list;
+    }
+
+    private List<Directive> directivesOf(List<? extends TypeDefinition> typeDefinition) {
+        Stream<Directive> directiveStream = typeDefinition.stream()
+                .map(TypeDefinition::getDirectives).filter(Objects::nonNull)
+                .flatMap(List::stream);
+        return directiveStream.collect(Collectors.toList());
+    }
 
 }

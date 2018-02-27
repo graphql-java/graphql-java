@@ -545,6 +545,21 @@ public class AstPrinter {
     }
 
     /**
+     * This will print the Ast node in graphql language format.
+     * The format is derived from the pretty print version by replacing
+     * all newlines and indentations through single space.
+     *
+     * @param node the AST node to print
+     *
+     * @return the printed node in graphql language format
+     */
+    public static String printAstCompact(Node node) {
+        StringWriter sw = new StringWriter();
+        printAst(sw, node);
+        return sw.toString().replaceAll("\\s+", " ").trim();
+    }
+
+    /**
      * This will pretty print the AST node in graphql language format
      *
      * @param writer the place to put the output

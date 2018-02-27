@@ -209,7 +209,7 @@ class TypeDefinitionRegistryTest extends Specification {
         author.name == "Author"
         author.getChildren().size() == 4
 
-        def typeExtensions = result1.typeExtensions().get("Post")
+        def typeExtensions = result1.objectTypeExtensions().get("Post")
         typeExtensions.size() == 2
     }
 }
