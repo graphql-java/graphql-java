@@ -9,9 +9,11 @@ import graphql.PublicApi;
 @PublicApi
 public class DataFetcherFactoryEnvironment {
     private final GraphQLFieldDefinition fieldDefinition;
+    private final GraphQLSchema graphQLSchema;
 
-    DataFetcherFactoryEnvironment(GraphQLFieldDefinition fieldDefinition) {
+    DataFetcherFactoryEnvironment(GraphQLFieldDefinition fieldDefinition, GraphQLSchema graphQLSchema) {
         this.fieldDefinition = fieldDefinition;
+        this.graphQLSchema = graphQLSchema;
     }
 
     /**
@@ -21,20 +23,30 @@ public class DataFetcherFactoryEnvironment {
         return fieldDefinition;
     }
 
+    public GraphQLSchema getGraphQLSchema() {
+        return graphQLSchema;
+    }
+
     public static Builder newDataFetchingFactoryEnvironment() {
         return new Builder();
     }
 
     static class Builder {
         GraphQLFieldDefinition fieldDefinition;
+        GraphQLSchema schema;
 
         public Builder fieldDefinition(GraphQLFieldDefinition fieldDefinition) {
             this.fieldDefinition = fieldDefinition;
             return this;
         }
 
+        public Builder schema(GraphQLSchema schema) {
+            this.schema = schema;
+            return this;
+        }
+
         public DataFetcherFactoryEnvironment build() {
-            return new DataFetcherFactoryEnvironment(fieldDefinition);
+            return new DataFetcherFactoryEnvironment(fieldDefinition, schema);
         }
     }
 }

@@ -264,7 +264,16 @@ public class GraphQLSchema {
             if (errors.size() > 0) {
                 throw new InvalidSchemaException(errors);
             }
+            initDataFetchers(graphQLSchema);
             return graphQLSchema;
+        }
+
+        private void initDataFetchers(GraphQLSchema graphQLSchema) {
+            graphQLSchema.getAllTypesAsList().stream()
+                    .filter(GraphQLFieldsContainer.class::isInstance)
+                    .map(type -> (GraphQLFieldsContainer) type)
+                    .flatMap(graphQLFieldsContainer -> graphQLFieldsContainer.getFieldDefinitions().stream())
+                    .forEach(graphQLFieldDefinition -> graphQLFieldDefinition.initDataFetcher(graphQLSchema));
         }
     }
 }

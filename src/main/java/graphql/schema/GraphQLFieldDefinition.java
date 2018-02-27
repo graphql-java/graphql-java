@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
@@ -37,6 +36,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     private final List<GraphQLArgument> arguments;
     private final List<GraphQLDirective> directives;
     private final FieldDefinition definition;
+    private DataFetcher dataFetcher;
 
 
     @Deprecated
@@ -76,9 +76,15 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     }
 
     public DataFetcher getDataFetcher() {
-        return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
+        assertNotNull(this.dataFetcher, "DataFetcher is not initialized");
+        return this.dataFetcher;
+    }
+
+    public void initDataFetcher(GraphQLSchema schema) {
+        this.dataFetcher = assertNotNull(dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(this)
-                .build());
+                .schema(schema)
+                .build()));
     }
 
     public GraphQLArgument getArgument(String name) {
