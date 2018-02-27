@@ -106,8 +106,8 @@ public class QueryTraversal {
         QueryTraversalNotifier visitorNotifier = preOrder
                     ? new QueryTraversalNotifier(visitor::visitField, env -> {})
                     : new QueryTraversalNotifier(env -> {}, visitor::visitField);
-        
-        new Traverser<Selection>(this::childrenOf)
+
+        new Traverser<>(this::childrenOf)
             .traverse(selectionSet.getSelections(), null, new QueryTraversalDelegate(visitorNotifier, new QueryTraversalContext(type, parent)));
     }
         
@@ -124,7 +124,7 @@ public class QueryTraversal {
         @Override
         public Object visitInlineFragment(InlineFragment inlineFragment, TraverserContext<Selection> context) {
             if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives()))
-                return TraverserMarkers.ABORT; // stop recursing down
+                return TraverserMarkers.ABORT;
 
             // inline fragments are allowed not have type conditions, if so the parent type counts
             QueryTraversalContext top = contextStack.peek();
@@ -145,11 +145,11 @@ public class QueryTraversal {
         @Override
         public Object visitFragmentSpread(FragmentSpread fragmentSpread, TraverserContext<Selection> context) {
             if (!conditionalNodes.shouldInclude(variables, fragmentSpread.getDirectives()))
-                return TraverserMarkers.ABORT; // stop recursion
+                return TraverserMarkers.ABORT;
 
             FragmentDefinition fragmentDefinition = fragmentsByName.get(fragmentSpread.getName());
             if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives()))
-                return TraverserMarkers.ABORT; // stop recursion
+                return TraverserMarkers.ABORT;
 
             QueryTraversalContext top = contextStack.peek();
 
