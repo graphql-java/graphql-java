@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
@@ -14,7 +13,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
+import static graphql.schema.DataFetcherFactoryEnvironmentImpl.newDataFetchingFactoryEnvironment;
 
 /**
  * Fields are the ways you get data values in graphql and a field definition represents a field, its type, the arguments it takes
@@ -75,9 +74,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         return type;
     }
 
-    public DataFetcher getDataFetcher() {
+    public DataFetcher getDataFetcher(GraphQLSchema graphQLSchema) {
         return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(this)
+                .schema(graphQLSchema)
                 .build());
     }
 

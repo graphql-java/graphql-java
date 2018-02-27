@@ -219,7 +219,7 @@ public abstract class ExecutionStrategy {
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
 
         CompletableFuture<Object> fetchedValue;
-        DataFetcher dataFetcher = fieldDef.getDataFetcher();
+        DataFetcher dataFetcher = fieldDef.getDataFetcher(executionContext.getGraphQLSchema());
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
         ExecutionId executionId = executionContext.getExecutionId();
         try {
