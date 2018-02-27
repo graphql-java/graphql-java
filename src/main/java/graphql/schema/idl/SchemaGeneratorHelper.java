@@ -39,10 +39,10 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 
-@Internal
 /**
  * Simple helper methods with no BuildContext argument
  */
+@Internal
 public class SchemaGeneratorHelper {
 
     public Object buildValue(Value value, GraphQLType requiredType) {
@@ -51,7 +51,7 @@ public class SchemaGeneratorHelper {
             requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
         }
         if (requiredType instanceof GraphQLScalarType) {
-            result = ((GraphQLScalarType) requiredType).getCoercing().parseLiteral(value);
+            result = parseLiteral(value,(GraphQLScalarType) requiredType);
         } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
             result = ((EnumValue) value).getName();
         } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
@@ -67,6 +67,14 @@ public class SchemaGeneratorHelper {
         }
         return result;
     }
+
+    private Object parseLiteral(Value value, GraphQLScalarType requiredType) {
+        if (value instanceof NullValue) {
+            return null;
+        }
+        return requiredType.getCoercing().parseLiteral(value);
+    }
+
 
     public Object buildObjectValue(ObjectValue defaultValue, GraphQLInputObjectType objectType) {
         Map<String, Object> map = new LinkedHashMap<>();

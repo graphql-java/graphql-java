@@ -16,7 +16,6 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
-import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
@@ -651,44 +650,6 @@ public class SchemaGenerator {
         return builder.build();
     }
 
-
-    private Object buildValue(Value value, GraphQLType requiredType) {
-        Object result = null;
-        if (requiredType instanceof GraphQLNonNull) {
-            requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
-        }
-        if (requiredType instanceof GraphQLScalarType) {
-            result = parseLiteral(value, (GraphQLScalarType) requiredType);
-        } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
-            result = ((EnumValue) value).getName();
-        } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
-            ArrayValue arrayValue = (ArrayValue) value;
-            GraphQLType wrappedType = ((GraphQLList) requiredType).getWrappedType();
-            result = arrayValue.getValues().stream()
-                    .map(item -> this.buildValue(item, wrappedType)).collect(Collectors.toList());
-        } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
-            result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
-        } else if (value != null && !(value instanceof NullValue)) {
-            Assert.assertShouldNeverHappen(
-                    "cannot build value of %s from %s", requiredType.getName(), String.valueOf(value));
-        }
-        return result;
-    }
-
-    private Object parseLiteral(Value value, GraphQLScalarType requiredType) {
-        if (value instanceof NullValue) {
-            return null;
-        }
-        return requiredType.getCoercing().parseLiteral(value);
-    }
-
-    private Object buildObjectValue(ObjectValue defaultValue, GraphQLInputObjectType objectType) {
-        HashMap<String, Object> map = new LinkedHashMap<>();
-        defaultValue.getObjectFields().forEach(of -> map.put(of.getName(),
-                buildValue(of.getValue(), objectType.getField(of.getName()).getType())));
-        return map;
-    }
-
     @SuppressWarnings("Duplicates")
     private TypeResolver getTypeResolverForUnion(BuildContext buildCtx, UnionTypeDefinition unionType) {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
@@ -758,7 +719,6 @@ public class SchemaGenerator {
         }
         return output.toArray(new GraphQLDirective[0]);
     }
-
 
 
     private List<ObjectTypeExtensionDefinition> objectTypeExtensions(ObjectTypeDefinition typeDefinition, BuildContext buildCtx) {
