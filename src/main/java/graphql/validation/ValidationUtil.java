@@ -13,6 +13,7 @@ import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableReference;
 import graphql.schema.Coercing;
+import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
@@ -108,7 +109,7 @@ public class ValidationUtil {
     private boolean parseLiteral(Value value, Coercing coercing) {
         try {
             return coercing.parseLiteral(value) != null;
-        } catch (CoercingParseValueException e) {
+        } catch (CoercingParseLiteralException e) {
             return false;
         }
     }

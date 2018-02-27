@@ -102,7 +102,7 @@ the normal graphql behaviour for validation.  You MUST return a non null value
 value cannot be parsed as input into an appropriate form.  You must not allow other runtime exceptions to escape this method to get
 the normal graphql behaviour for validation.  You MUST return a non null value.
 
-* The ``parseLiteral``  MUST ONLY allow ``graphql.schema.CoercingParseValueException`` to be thrown from it.  This indicates that the
+* The ``parseLiteral``  MUST ONLY allow ``graphql.schema.CoercingParseLiteralException`` to be thrown from it.  This indicates that the
 AST value cannot be parsed as input into an appropriate form.  You must not allow any runtime exceptions to escape this method to get
 the normal graphql behaviour for validation.
 
@@ -168,7 +168,7 @@ such a scalar.
                     return possibleEmailValue;
                 }
             }
-            throw new CoercingParseValueException(
+            throw new CoercingParseLiteralException(
                     "Value is not any email address : '" + String.valueOf(input) + "'"
             );
         }

@@ -266,7 +266,7 @@ public class ValuesResolver {
     }
 
     private Object parseLiteral(Value inputValue, Coercing coercing) {
-        // the CoercingParseValueException exception that could happen here has been validated earlier via ValidationUtil
+        // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
         return coercing.parseLiteral(inputValue);
     }
 

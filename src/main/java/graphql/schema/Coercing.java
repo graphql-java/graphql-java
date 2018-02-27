@@ -60,7 +60,7 @@ public interface Coercing<I, O> {
      *
      * @return a parsed value which is never null
      *
-     * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
+     * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
-    I parseLiteral(Object input) throws CoercingParseValueException;
+    I parseLiteral(Object input) throws CoercingParseLiteralException;
 }
