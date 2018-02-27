@@ -4,6 +4,7 @@ import graphql.language.BooleanValue
 import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
@@ -28,7 +29,7 @@ class ScalarsBooleanTest extends Specification {
         when:
         Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal)
         then:
-        thrown(CoercingParseValueException)
+        thrown(CoercingParseLiteralException)
 
         where:
         literal                                 | _

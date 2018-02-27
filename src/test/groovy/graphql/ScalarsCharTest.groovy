@@ -2,6 +2,7 @@ package graphql
 
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
@@ -26,7 +27,7 @@ class ScalarsCharTest extends Specification {
         when:
         Scalars.GraphQLChar.getCoercing().parseLiteral(literal)
         then:
-        thrown(CoercingParseValueException)
+        thrown(CoercingParseLiteralException)
 
         where:
         literal                        | _

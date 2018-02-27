@@ -2,6 +2,7 @@ package graphql
 
 import graphql.language.BooleanValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import spock.lang.Shared
 import spock.lang.Specification
@@ -34,7 +35,7 @@ class ScalarsStringTest extends Specification {
         when:
         Scalars.GraphQLString.getCoercing().parseLiteral(literal)
         then:
-        thrown(CoercingParseValueException)
+        thrown(CoercingParseLiteralException)
 
         where:
         literal                | _

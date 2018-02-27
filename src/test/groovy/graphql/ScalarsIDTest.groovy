@@ -3,6 +3,7 @@ package graphql
 import graphql.language.BooleanValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
@@ -27,7 +28,7 @@ class ScalarsIDTest extends Specification {
         when:
         Scalars.GraphQLID.getCoercing().parseLiteral(literal)
         then:
-        thrown(CoercingParseValueException)
+        thrown(CoercingParseLiteralException)
 
         where:
         literal                | _

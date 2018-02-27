@@ -45,12 +45,27 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             return getValueByName(input);
         }
 
+        private String typeName(Object input) {
+            if (input == null) {
+                return "null";
+            }
+            return input.getClass().getSimpleName();
+        }
+
         @Override
         public Object parseLiteral(Object input) {
-            if (!(input instanceof EnumValue)) return null;
+            if (!(input instanceof EnumValue)) {
+                throw new CoercingParseLiteralException(
+                        "Expected AST type 'EnumValue' but was '" + typeName(input) + "'."
+                );
+            }
             EnumValue enumValue = (EnumValue) input;
             GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(enumValue.getName());
-            if (enumValueDefinition == null) return null;
+            if (enumValueDefinition == null) {
+                throw new CoercingParseLiteralException(
+                        "Expected enum literal value not in allowable values -  '" + String.valueOf(input) + "'."
+                );
+            }
             return enumValueDefinition.getValue();
         }
     };

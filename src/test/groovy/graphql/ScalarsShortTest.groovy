@@ -3,6 +3,7 @@ package graphql
 import graphql.language.FloatValue
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
@@ -30,7 +31,7 @@ class ScalarsShortTest extends Specification {
         when:
         Scalars.GraphQLShort.getCoercing().parseLiteral(literal)
         then:
-        thrown(CoercingParseValueException)
+        thrown(CoercingParseLiteralException)
 
         where:
         literal                                          | _
