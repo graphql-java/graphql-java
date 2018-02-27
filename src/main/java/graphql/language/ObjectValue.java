@@ -52,6 +52,6 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitObjectValue(this, data);
     }
 }

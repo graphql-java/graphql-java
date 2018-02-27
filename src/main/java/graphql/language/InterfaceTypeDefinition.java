@@ -89,6 +89,6 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitInterfaceTypeDefinition(this, data);
     }
 }

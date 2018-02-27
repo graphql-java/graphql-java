@@ -93,6 +93,6 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitEnumTypeDefinition(this, data);
     }
 }

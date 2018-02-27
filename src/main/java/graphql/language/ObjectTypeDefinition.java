@@ -101,6 +101,6 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitObjectTypeDefinition(this, data);
     }
 }

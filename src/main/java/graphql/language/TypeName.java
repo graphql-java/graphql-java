@@ -49,6 +49,6 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitTypeName(this, data);
     }
 }

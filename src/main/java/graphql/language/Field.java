@@ -147,6 +147,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field> {
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitField(this, data);
     }
 }

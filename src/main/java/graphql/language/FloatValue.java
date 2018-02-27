@@ -52,6 +52,6 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitFloatValue(this, data);
     }
 }

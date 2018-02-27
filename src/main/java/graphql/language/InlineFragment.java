@@ -103,6 +103,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitInlineFragment(this, data);
     }
 }

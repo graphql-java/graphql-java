@@ -89,6 +89,6 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitInputObjectTypeDefinition(this, data);
     }
 }

@@ -51,6 +51,6 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitStringValue(this, data);
     }
 }

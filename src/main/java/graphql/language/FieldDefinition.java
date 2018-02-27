@@ -106,6 +106,6 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> {
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitFieldDefinition(this, data);
     }
 }

@@ -114,6 +114,6 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> {
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitInputValueDefinition(this, data);
     }
 }

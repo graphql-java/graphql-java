@@ -82,6 +82,6 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visit(this, data);
+        return visitor.visitFragmentSpread(this, data);
     }
 }
