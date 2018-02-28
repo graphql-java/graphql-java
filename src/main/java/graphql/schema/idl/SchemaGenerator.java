@@ -650,8 +650,6 @@ public class SchemaGenerator {
         return builder.build();
     }
 
-
-
     @SuppressWarnings("Duplicates")
     private TypeResolver getTypeResolverForUnion(BuildContext buildCtx, UnionTypeDefinition unionType) {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
@@ -721,7 +719,6 @@ public class SchemaGenerator {
         }
         return output.toArray(new GraphQLDirective[0]);
     }
-
 
 
     private List<ObjectTypeExtensionDefinition> objectTypeExtensions(ObjectTypeDefinition typeDefinition, BuildContext buildCtx) {

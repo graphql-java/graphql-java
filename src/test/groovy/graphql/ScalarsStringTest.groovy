@@ -2,6 +2,8 @@ package graphql
 
 import graphql.language.BooleanValue
 import graphql.language.StringValue
+import graphql.schema.CoercingParseLiteralException
+import graphql.schema.CoercingParseValueException
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -30,8 +32,10 @@ class ScalarsStringTest extends Specification {
 
     @Unroll
     def "String returns null for invalid #literal"() {
-        expect:
-        Scalars.GraphQLString.getCoercing().parseLiteral(literal) == null
+        when:
+        Scalars.GraphQLString.getCoercing().parseLiteral(literal)
+        then:
+        thrown(CoercingParseLiteralException)
 
         where:
         literal                | _
