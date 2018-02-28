@@ -41,7 +41,7 @@ abstract class RecursionState<T> {
         addAll(col, null);
     }
 
-    protected void addAll(Collection<? extends T> col, TraverserContext<T> root) {
+    public void addAll(Collection<? extends T> col, TraverserContext<T> root) {
         assertNotNull(col).stream().map((x) -> newContext(x, root)).collect(Collectors.toCollection(() -> delegate));
     }
     
@@ -54,7 +54,13 @@ abstract class RecursionState<T> {
         visitedMap.clear();
     }
 
-    public TraverserContext<T> newContext(final T o, final TraverserContext<T> parent) {
+    public TraverserContext<T> newContext(T o, TraverserContext<T> parent) {
+        return newContext(o, parent, new ConcurrentHashMap<>());
+    }
+    
+    public TraverserContext<T> newContext(T o, TraverserContext<T> parent, Map<Class<?>, Object> vars) {
+        assertNotNull(vars);
+        
         return new TraverserContext<T>() {
             @Override
             public T thisNode() {
@@ -86,8 +92,6 @@ abstract class RecursionState<T> {
                 vars.put(key, value);
                 return this;
             }
-
-            final Map<Class<?>, Object> vars = new HashMap<>();
         };
     }
 

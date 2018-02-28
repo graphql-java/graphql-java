@@ -8,12 +8,15 @@ import java.util.List;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Internal
 public class Traverser<T> {
 
     private final RecursionState<T> stack;
     private final Function<? super T, ? extends List<T>> getChildren;
+    private final Map<Class<?>, Object> rootVars = new ConcurrentHashMap<>();
 
     /**
      * Instantiates a depth-first Traverser object with a given method to extract
@@ -39,7 +42,32 @@ public class Traverser<T> {
         this.stack = assertNotNull(stack);
         this.getChildren = assertNotNull(getChildren);
     }
-
+    
+    /**
+     * Bootstraps the very root (BARRIER) TraverserContext as a common parent for
+     * all traversal roots' contexts with the provided set of root variables
+     * 
+     * @param rootVars root variables
+     * @return this Traverser instance to allow chaining
+     */
+    public Traverser<T> rootVars (Map<Class<?>, Object> rootVars) {
+        rootVars.putAll(assertNotNull(rootVars));
+        return this;
+    }
+    
+    /**
+     * Bootstraps the very root (BARRIER) TraverserContext as a common parent for
+     * all traversal roots' contexts with the provided root variable
+     * 
+     * @param key key to store root variable
+     * @param value value of the root variable
+     * @return this Traverser instance to allow chaining
+     */
+    public Traverser<T> rootVar (Class<?> key, Object value) {
+        rootVars.put(key, value);
+        return this;
+    }
+    
     /**
      * Creates a standard Traverser suitable for depth-first traversal (both pre- and post- order)
      *
@@ -107,7 +135,7 @@ public class Traverser<T> {
         assertNotNull(roots);
         assertNotNull(visitor);
 
-        stack.addAll(roots);
+        stack.addAll(roots, stack.newContext(null, null, rootVars));
 
         Object d = data;
         while (!(stack.isEmpty() || (d = traverseOne((TraverserVisitor<T, U>) visitor, (U) d)) == TraverserMarkers.QUIT))
