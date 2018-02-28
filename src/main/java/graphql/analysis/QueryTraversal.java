@@ -31,7 +31,7 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -103,22 +103,38 @@ public class QueryTraversal {
     }
     
     private void visitImpl(QueryVisitor visitor, SelectionSet selectionSet, GraphQLCompositeType type, QueryVisitorEnvironment parent, boolean preOrder) {
-        QueryTraversalNotifier visitorNotifier = preOrder
-                    ? new QueryTraversalNotifier(visitor::visitField, env -> {})
-                    : new QueryTraversalNotifier(env -> {}, visitor::visitField);
-
-        new Traverser<>(this::childrenOf)
-            .traverse(selectionSet.getSelections(), null, new QueryTraversalDelegate(visitorNotifier, new QueryTraversalContext(type, parent)));
-    }
+        QueryTraversalContext context = new QueryTraversalContext(type, parent);
+        QueryTraversalDelegate delegate = preOrder
+                    ? new QueryTraversalDelegate(visitor::visitField, env -> {})
+                    : new QueryTraversalDelegate(env -> {}, visitor::visitField);
         
+        // in order not to check parentContext for null and guarantee that
+        // we always can obtain the root QueryTraversalContext,
+        // we are subclassing here TraverserStack to set up a BARRIER
+        // parent that stores root QueryTraversalContext
+        new Traverser<Selection>(createStack(context), this::childrenOf)
+            .traverse(selectionSet.getSelections(), null, delegate);
+    }
+
+    private TraverserStack<Selection> createStack (QueryTraversalContext root) {
+        return new TraverserStack<Selection>() {
+            @Override
+            public void addAll(Collection<? extends Selection> col) {
+                TraverserContext<Selection> rootContext = newContext(null, null)
+                        .setVar(QueryTraversalContext.class, root);
+                addAll(col, rootContext);
+            }
+        };
+    }
+    
     private class QueryTraversalDelegate extends NodeVisitorStub<TraverserContext<Selection>> {
         
-        final Deque<QueryTraversalContext> contextStack;
-        final QueryTraversalNotifier visitorNotifier;
+        final Consumer<QueryVisitorEnvironment> preOrder;
+        final Consumer<QueryVisitorEnvironment> postOrder;
         
-        QueryTraversalDelegate (QueryTraversalNotifier visitorNotifier, QueryTraversalContext root) {
-            this.contextStack = new ArrayDeque<>(Collections.singleton(root));
-            this.visitorNotifier = visitorNotifier;
+        QueryTraversalDelegate (Consumer<QueryVisitorEnvironment> preOrder, Consumer<QueryVisitorEnvironment> postOrder) {
+            this.preOrder = Assert.assertNotNull(preOrder);
+            this.postOrder = Assert.assertNotNull(postOrder);
         }
         
         @Override
@@ -127,19 +143,21 @@ public class QueryTraversal {
                 return TraverserMarkers.ABORT;
 
             // inline fragments are allowed not have type conditions, if so the parent type counts
-            QueryTraversalContext top = contextStack.peek();
+            QueryTraversalContext parentEnv = context
+                    .parentContext()
+                    .getVar(QueryTraversalContext.class);
 
             GraphQLCompositeType fragmentCondition;
             if (inlineFragment.getTypeCondition() != null) {
                 TypeName typeCondition = inlineFragment.getTypeCondition();
                 fragmentCondition = (GraphQLCompositeType) schema.getType(typeCondition.getName());
             } else {
-                fragmentCondition = top.getType();
+                fragmentCondition = parentEnv.getType();
             }
 
             // for unions we only have other fragments inside
-            contextStack.push(new QueryTraversalContext(fragmentCondition, top.getEnvironment()));
-            return context;
+            return context
+                .setVar(QueryTraversalContext.class, new QueryTraversalContext(fragmentCondition, parentEnv.getEnvironment()));
         }
 
         @Override
@@ -151,12 +169,14 @@ public class QueryTraversal {
             if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives()))
                 return TraverserMarkers.ABORT;
 
-            QueryTraversalContext top = contextStack.peek();
+            QueryTraversalContext parentEnv = context
+                    .parentContext()
+                    .getVar(QueryTraversalContext.class);
 
             GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
 
-            contextStack.push(new QueryTraversalContext(typeCondition, top.getEnvironment()));
-            return context;
+            return context
+                .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment()));
         }
 
         @Override
@@ -164,49 +184,47 @@ public class QueryTraversal {
             if (!conditionalNodes.shouldInclude(variables, field.getDirectives()))
                 return TraverserMarkers.ABORT; // stop recursion
 
-            QueryTraversalContext top = contextStack.peek();
+            QueryTraversalContext parentEnv = context
+                    .parentContext()
+                    .getVar(QueryTraversalContext.class);
 
-            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, top.getType(), field.getName());
+            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getType(), field.getName());
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
 
-            QueryVisitorEnvironment environment = new QueryVisitorEnvironment(field, fieldDefinition, top.getType(), top.getEnvironment(), argumentValues);  
-            visitorNotifier.notifyPreOrder(environment);
-
+            QueryVisitorEnvironment environment = new QueryVisitorEnvironment(field, fieldDefinition, parentEnv.getType(), parentEnv.getEnvironment(), argumentValues);  
             GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
-            QueryTraversalContext frame = (unmodifiedType instanceof GraphQLCompositeType)
+            QueryTraversalContext fieldEnv = (unmodifiedType instanceof GraphQLCompositeType)
                 ? new QueryTraversalContext((GraphQLCompositeType)unmodifiedType, environment)
                 : new QueryTraversalContext(null, environment);// Terminal (scalar) node, EMPTY FRAME
+            preOrder.accept(fieldEnv.getEnvironment());
 
-            contextStack.push(frame);
-            return context;
+            return context
+                    .setVar(QueryTraversalContext.class, fieldEnv);
         }
 
         @Override
         public Object enter(TraverserContext<Node> context, TraverserContext<Selection> data) {
             return context
                     .thisNode()
-                    .accept(context, this);
+                    // it is important to pass current traversal context as NodeVisitor's parameter
+                    .accept(context, this); 
         }
 
         @Override
         public Object leave(TraverserContext<Node> context, TraverserContext<Selection> data) {
             return context
                     .thisNode()
+                    // it is important to pass current traversal context as NodeVisitor's parameter
                     .accept(context, postOrderVisitor);
         }
 
         final NodeVisitor<TraverserContext<Selection>> postOrderVisitor = new NodeVisitorStub<TraverserContext<Selection>>() {
             @Override
-            public Object visitField(Field field, TraverserContext<Selection> context) {
-                QueryTraversalContext top = contextStack.pop();
-                visitorNotifier.notifyPostOrder(top.getEnvironment());
+            public Object visit(Field field, TraverserContext<Selection> context) {
+                QueryTraversalContext fieldEnv = context
+                        .getVar(QueryTraversalContext.class);
+                postOrder.accept(fieldEnv.getEnvironment());
 
-                return context;
-            }
-
-            @Override
-            protected Object visitSelection(Selection<?> node, TraverserContext<Selection> context) {
-                contextStack.pop();
                 return context;
             }
         };
