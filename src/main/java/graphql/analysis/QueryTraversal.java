@@ -26,12 +26,12 @@ import graphql.schema.SchemaUtil;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserMarkers;
+import graphql.util.TraverserStack;
 
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.Collection;
+import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -133,8 +133,8 @@ public class QueryTraversal {
         final Consumer<QueryVisitorEnvironment> postOrder;
         
         QueryTraversalDelegate (Consumer<QueryVisitorEnvironment> preOrder, Consumer<QueryVisitorEnvironment> postOrder) {
-            this.preOrder = Assert.assertNotNull(preOrder);
-            this.postOrder = Assert.assertNotNull(postOrder);
+            this.preOrder = assertNotNull(preOrder);
+            this.postOrder = assertNotNull(postOrder);
         }
         
         @Override
@@ -220,7 +220,7 @@ public class QueryTraversal {
 
         final NodeVisitor<TraverserContext<Selection>> postOrderVisitor = new NodeVisitorStub<TraverserContext<Selection>>() {
             @Override
-            public Object visit(Field field, TraverserContext<Selection> context) {
+            public Object visitField(Field field, TraverserContext<Selection> context) {
                 QueryTraversalContext fieldEnv = context
                         .getVar(QueryTraversalContext.class);
                 postOrder.accept(fieldEnv.getEnvironment());
