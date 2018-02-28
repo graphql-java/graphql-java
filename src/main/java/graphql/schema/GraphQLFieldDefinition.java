@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
@@ -140,7 +139,6 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         private final List<GraphQLArgument> arguments = new ArrayList<>();
         private final List<GraphQLDirective> directives = new ArrayList<>();
         private String deprecationReason;
-        private boolean isField;
         private FieldDefinition definition;
 
 
@@ -214,16 +212,6 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
             return this;
         }
 
-        /**
-         * Get the data from a field, rather than a property.
-         *
-         * @return this builder
-         */
-        public Builder fetchField() {
-            this.isField = true;
-            return this;
-        }
-
         public Builder argument(GraphQLArgument argument) {
             this.arguments.add(argument);
             return this;
@@ -278,11 +266,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
         public GraphQLFieldDefinition build() {
             if (dataFetcherFactory == null) {
-                if (isField) {
-                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new FieldDataFetcher<>(name));
-                } else {
-                    dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(name));
-                }
+                dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(name));
             }
             return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory, arguments, deprecationReason, directives, definition);
         }
