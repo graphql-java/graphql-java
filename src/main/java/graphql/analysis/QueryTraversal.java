@@ -35,6 +35,8 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
+import java.util.Collections;
+import java.util.HashMap;
 
 @Internal
 public class QueryTraversal {
@@ -112,19 +114,9 @@ public class QueryTraversal {
         // we always can obtain the root QueryTraversalContext,
         // we are subclassing here TraverserStack to set up a BARRIER
         // parent that stores root QueryTraversalContext
-        new Traverser<Selection>(createStack(context), this::childrenOf)
+        Traverser.depthFirst(this::childrenOf)
+            .rootVar(QueryTraversalContext.class, context)
             .traverse(selectionSet.getSelections(), null, delegate);
-    }
-
-    private TraverserStack<Selection> createStack (QueryTraversalContext root) {
-        return new TraverserStack<Selection>() {
-            @Override
-            public void addAll(Collection<? extends Selection> col) {
-                TraverserContext<Selection> rootContext = newContext(null, null)
-                        .setVar(QueryTraversalContext.class, root);
-                addAll(col, rootContext);
-            }
-        };
     }
     
     private class QueryTraversalDelegate extends NodeVisitorStub<TraverserContext<Selection>> {
