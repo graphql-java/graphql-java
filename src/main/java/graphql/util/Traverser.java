@@ -98,6 +98,7 @@ public class Traverser<T> {
      */
     public void reset() {
         stack.clear();
+        rootVars.clear();
     }
 
     /**
