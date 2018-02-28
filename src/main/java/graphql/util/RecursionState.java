@@ -38,9 +38,13 @@ abstract class RecursionState<T> {
     public abstract void pushAll(TraverserContext<T> o, Function<? super T, ? extends List<T>> getChildren);
 
     public void addAll(Collection<? extends T> col) {
-        assertNotNull(col).stream().map((x) -> newContext(x, null)).collect(Collectors.toCollection(() -> delegate));
+        addAll(col, null);
     }
 
+    protected void addAll(Collection<? extends T> col, TraverserContext<T> root) {
+        assertNotNull(col).stream().map((x) -> newContext(x, root)).collect(Collectors.toCollection(() -> delegate));
+    }
+    
     public boolean isEmpty() {
         return delegate.isEmpty();
     }
