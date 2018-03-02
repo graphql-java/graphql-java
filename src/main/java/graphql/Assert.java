@@ -40,7 +40,7 @@ public class Assert {
         throw new AssertException(format(format, args));
     }
 
-    private static final String invalidNameErrorMessage = "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]*";
+    private static final String invalidNameErrorMessage = "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]* - was '%s'";
 
     /**
      * Validates that the Lexical token name matches the current spec.
@@ -54,7 +54,7 @@ public class Assert {
         if (name != null && !name.isEmpty() && name.matches("[_A-Za-z][_0-9A-Za-z]*")) {
             return name;
         }
-        throw new AssertException(invalidNameErrorMessage);
+        throw new AssertException(String.format(invalidNameErrorMessage,name));
     }
 
 }
