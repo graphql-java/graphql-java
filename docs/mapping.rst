@@ -71,7 +71,7 @@ We would be better to do all this work in the ``Query.products`` data fetcher an
 So looking at the code above we have 3 types of information that need to be combined in a way such that a graphql query above can get access to
 the fields ``id, name, cost, tax``
 
-We have two ways to create this mapping.  One is via using an un type safe ``List<Map>`` structure and one by creating a type safe ``List<ProductDTO>`` class that
+We have two ways to create this mapping.  One is via using a not type safe ``List<Map>`` structure and one by creating a type safe ``List<ProductDTO>`` class that
 encapsulates this unified data.
 
 The ``Map`` technique could look like this.
@@ -175,7 +175,7 @@ It supports a ``Map`` approach and a ``POJO`` approach in a Java idiomatic way. 
 called ``fieldX``.
 
 However you may have small differences between your graphql schema naming and runtime object naming.  For example imagine that ``Product.description`` is actually
-represented as ``getDesc()` in the runtime backing object.
+represented as ``getDesc()` in the rgit fetch time backing object.
 
 If you are using SDL to specify your schema then you can use the ``@fetch`` directive to indicate this remapping.
 
