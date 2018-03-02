@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.GraphQLError;
 import graphql.InvalidSyntaxError;
+import graphql.PublicApi;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.parser.Parser;
@@ -22,6 +23,7 @@ import java.util.List;
  * This can take a graphql schema definition and parse it into a {@link TypeDefinitionRegistry} of
  * definitions ready to be placed into {@link SchemaGenerator} say
  */
+@PublicApi
 public class SchemaParser {
 
     /**

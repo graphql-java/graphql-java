@@ -44,7 +44,7 @@ public class SpecValidationSchema {
 
     public static final GraphQLInterfaceType sentient = GraphQLInterfaceType.newInterface()
             .name("Sentient")
-            .field(newFieldDefinition().fetchField().name("name").type(nonNull(Scalars.GraphQLString)))
+            .field(newFieldDefinition().name("name").type(nonNull(Scalars.GraphQLString)))
             .typeResolver(new TypeResolver() {
                 @Override
                 public GraphQLObjectType getType(TypeResolutionEnvironment env) {
@@ -57,7 +57,7 @@ public class SpecValidationSchema {
 
     public static final GraphQLInterfaceType pet = GraphQLInterfaceType.newInterface()
             .name("Pet")
-            .field(newFieldDefinition().fetchField().name("name").type(nonNull(Scalars.GraphQLString)))
+            .field(newFieldDefinition().name("name").type(nonNull(Scalars.GraphQLString)))
             .typeResolver(new TypeResolver() {
                 @Override
                 public GraphQLObjectType getType(TypeResolutionEnvironment env) {
@@ -70,14 +70,14 @@ public class SpecValidationSchema {
 
     public static final GraphQLObjectType human = GraphQLObjectType.newObject()
             .name("Human")
-            .field(newFieldDefinition().fetchField().name("name").type(nonNull(Scalars.GraphQLString)))
+            .field(newFieldDefinition().name("name").type(nonNull(Scalars.GraphQLString)))
             .withInterface(SpecValidationSchema.sentient)
             .build();
 
     public static final GraphQLObjectType alien = GraphQLObjectType.newObject()
             .name("Alien")
-            .field(newFieldDefinition().fetchField().name("name").type(nonNull(Scalars.GraphQLString)))
-            .field(newFieldDefinition().fetchField().name("homePlanet").type(Scalars.GraphQLString))
+            .field(newFieldDefinition().name("name").type(nonNull(Scalars.GraphQLString)))
+            .field(newFieldDefinition().name("homePlanet").type(Scalars.GraphQLString))
             .withInterface(SpecValidationSchema.sentient)
             .build();
 
@@ -98,23 +98,23 @@ public class SpecValidationSchema {
 
     public static final GraphQLObjectType dog = GraphQLObjectType.newObject()
             .name("Dog")
-            .field(newFieldDefinition().fetchField().name("name").type(nonNull(Scalars.GraphQLString)))
-            .field(newFieldDefinition().fetchField().name("nickname").type(Scalars.GraphQLString))
-            .field(newFieldDefinition().fetchField().name("barkVolume").type(Scalars.GraphQLInt))
-            .field(newFieldDefinition().fetchField().name("doesKnowCommand").type(nonNull(Scalars.GraphQLBoolean))
+            .field(newFieldDefinition().name("name").type(nonNull(Scalars.GraphQLString)))
+            .field(newFieldDefinition().name("nickname").type(Scalars.GraphQLString))
+            .field(newFieldDefinition().name("barkVolume").type(Scalars.GraphQLInt))
+            .field(newFieldDefinition().name("doesKnowCommand").type(nonNull(Scalars.GraphQLBoolean))
                     .argument(singletonList(dogCommandArg)))
-            .field(newFieldDefinition().fetchField().name("isHousetrained").type(Scalars.GraphQLBoolean)
+            .field(newFieldDefinition().name("isHousetrained").type(Scalars.GraphQLBoolean)
                     .argument(singletonList(atOtherHomesArg)))
-            .field(newFieldDefinition().fetchField().name("owner").type(human))
+            .field(newFieldDefinition().name("owner").type(human))
             .withInterface(SpecValidationSchema.pet)
             .build();
 
     public static final GraphQLObjectType cat = GraphQLObjectType.newObject()
             .name("Cat")
-            .field(newFieldDefinition().fetchField().name("name").type(nonNull(Scalars.GraphQLString)))
-            .field(newFieldDefinition().fetchField().name("nickname").type(Scalars.GraphQLString))
-            .field(newFieldDefinition().fetchField().name("meowVolume").type(Scalars.GraphQLInt))
-            .field(newFieldDefinition().fetchField().name("doesKnowCommand").type(nonNull(Scalars.GraphQLBoolean))
+            .field(newFieldDefinition().name("name").type(nonNull(Scalars.GraphQLString)))
+            .field(newFieldDefinition().name("nickname").type(Scalars.GraphQLString))
+            .field(newFieldDefinition().name("meowVolume").type(Scalars.GraphQLInt))
+            .field(newFieldDefinition().name("doesKnowCommand").type(nonNull(Scalars.GraphQLBoolean))
                     .argument(singletonList(catCommandArg)))
             .withInterface(SpecValidationSchema.pet)
             .build();
@@ -151,7 +151,7 @@ public class SpecValidationSchema {
 
     public static final GraphQLObjectType queryRoot = GraphQLObjectType.newObject()
             .name("QueryRoot")
-            .field(newFieldDefinition().fetchField().name("dog").type(dog))
+            .field(newFieldDefinition().name("dog").type(dog))
             .build();
 
     @SuppressWarnings("serial")

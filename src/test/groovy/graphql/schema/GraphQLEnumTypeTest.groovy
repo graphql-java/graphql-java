@@ -45,13 +45,17 @@ class GraphQLEnumTypeTest extends Specification {
 
 
     def "parseLiteral return null for invalid input"() {
-        expect:
-        enumType.getCoercing().parseLiteral(new StringValue("foo")) == null
+        when:
+        enumType.getCoercing().parseLiteral(new StringValue("foo"))
+        then:
+        thrown(CoercingParseLiteralException)
     }
 
     def "parseLiteral return null for invalid enum name"() {
-        expect:
-        enumType.getCoercing().parseLiteral(new EnumValue("NOT_NAME")) == null
+        when:
+        enumType.getCoercing().parseLiteral(new EnumValue("NOT_NAME"))
+        then:
+        thrown(CoercingParseLiteralException)
     }
 
     def "parseLiteral returns value for 'NAME'"() {
