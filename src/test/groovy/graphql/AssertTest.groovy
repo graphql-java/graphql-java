@@ -142,7 +142,7 @@ class AssertTest extends Specification {
 
         then:
         def error = thrown(AssertException)
-        error.message == "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]*"
+        error.message == "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]* - was '${name}'"
 
         where:
         name   | _
