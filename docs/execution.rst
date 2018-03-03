@@ -487,9 +487,6 @@ Alternatively, schemas with nested lists may benefit from using a ``graphql.exec
 creating batched DataFetchers with get() methods annotated @Batched.
 
 
-.. This text will not be shown and if it does I have not done restructured comments right.  We should add more details
-on how BatchedExecutionStrategy works here.  Its a pretty special case that I don't know how to explain properly
-
 Limiting Field Visibility
 -------------------------
 
