@@ -5,11 +5,12 @@ import graphql.Internal;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import static graphql.Assert.assertShouldNeverHappen;
 
 @Internal
 public class Traverser<T> {
@@ -17,16 +18,6 @@ public class Traverser<T> {
     private final RecursionState<T> stack;
     private final Function<? super T, ? extends List<T>> getChildren;
     private final Map<Class<?>, Object> rootVars = new ConcurrentHashMap<>();
-
-    /**
-     * Instantiates a depth-first Traverser object with a given method to extract
-     * children nodes from the current root
-     *
-     * @param getChildren a function to extract children
-     */
-    public Traverser(Function<? super T, ? extends List<T>> getChildren) {
-        this(new TraverserStack<>(), getChildren);
-    }
 
     /**
      * Instantiates a Traverser object with a given method to extract
@@ -38,36 +29,42 @@ public class Traverser<T> {
      *                    * LIFO structure makes the traversal depth-first
      *                    * FIFO structure makes the traversal breadth-first
      */
-    public Traverser(RecursionState<T> stack, Function<? super T, ? extends List<T>> getChildren) {
+    private Traverser(RecursionState<T> stack, Function<? super T, ? extends List<T>> getChildren) {
         this.stack = assertNotNull(stack);
         this.getChildren = assertNotNull(getChildren);
     }
-    
+
     /**
      * Bootstraps the very root (BARRIER) TraverserContext as a common parent for
      * all traversal roots' contexts with the provided set of root variables
-     * 
+     *
      * @param rootVars root variables
+     *
      * @return this Traverser instance to allow chaining
      */
-    public Traverser<T> rootVars (Map<Class<?>, Object> rootVars) {
-        rootVars.putAll(assertNotNull(rootVars));
+    public Traverser<T> rootVars(Map<Class<?>, Object> rootVars) {
+        this.rootVars.putAll(assertNotNull(rootVars));
         return this;
     }
-    
+
     /**
      * Bootstraps the very root (BARRIER) TraverserContext as a common parent for
      * all traversal roots' contexts with the provided root variable
-     * 
-     * @param key key to store root variable
+     *
+     * @param key   key to store root variable
      * @param value value of the root variable
+     *
      * @return this Traverser instance to allow chaining
      */
-    public Traverser<T> rootVar (Class<?> key, Object value) {
+    public Traverser<T> rootVar(Class<?> key, Object value) {
         rootVars.put(key, value);
         return this;
     }
-    
+
+    public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren) {
+        return depthFirst(getChildren, null);
+    }
+
     /**
      * Creates a standard Traverser suitable for depth-first traversal (both pre- and post- order)
      *
@@ -76,10 +73,14 @@ public class Traverser<T> {
      *
      * @return Traverser instance
      */
-    public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren) {
-        return new Traverser<>(new TraverserStack<>(), getChildren);
+    public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren, Object initialData) {
+        return new Traverser<>(new RecursionState<>(RecursionState.Type.STACK, initialData), getChildren);
     }
 
+
+    public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren) {
+        return breadthFirst(getChildren, null);
+    }
 
     /**
      * Creates a standard Traverser suitable for breadth-first traversal
@@ -89,8 +90,8 @@ public class Traverser<T> {
      *
      * @return Traverser instance
      */
-    public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren) {
-        return new Traverser<>(new TraverserQueue<>(), getChildren);
+    public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren, Object initialData) {
+        return new Traverser<>(new RecursionState<>(RecursionState.Type.QUEUE, initialData), getChildren);
     }
 
     /**
@@ -107,15 +108,12 @@ public class Traverser<T> {
      *
      * @param <U>     type of data argument to Visitor's methods
      * @param root    subtree root to start traversal from
-     * @param data    some data to pass across Visitor's methods. Visitor's methods
-     *                can change that data to some other values of the same type or special Traverser
-     *                markers {@link TraverserMarkers}
      * @param visitor a Visitor object to be notified during traversal
      *
      * @return some data produced by the last Visitor's method invoked
      */
-    public <U> Object traverse(T root, U data, TraverserVisitor<? super T, ? super U> visitor) {
-        return traverse(Collections.singleton(root), data, visitor);
+    public <U> Object traverse(T root, TraverserVisitor<? super T> visitor) {
+        return traverse(Collections.singleton(root), visitor);
     }
 
 
@@ -125,55 +123,59 @@ public class Traverser<T> {
      *
      * @param <U>     type of data argument to Visitor's methods
      * @param roots   multiple subtree roots to start traversal from
-     * @param data    some data to pass across Visitor's methods. Visitor's methods
      *                can change that data to some other values of the same type or special Traverser
-     *                markers {@link TraverserMarkers}
+     *                markers {@link TraversalControl}
      * @param visitor a Visitor object to be notified during traversal
      *
      * @return some data produced by the last Visitor's method invoked
      */
-    public <U> Object traverse(Collection<T> roots, U data, TraverserVisitor<? super T, ? super U> visitor) {
+    public <U> Object traverse(Collection<? extends T> roots, TraverserVisitor<? super T> visitor) {
         assertNotNull(roots);
         assertNotNull(visitor);
 
-        stack.addAll(roots, stack.newContext(null, null, rootVars));
+        stack.addNewContexts(roots, stack.newContext(null, null, rootVars));
 
-        Object d = data;
-        while (!(stack.isEmpty() || (d = traverseOne((TraverserVisitor<T, U>) visitor, (U) d)) == TraverserMarkers.QUIT))
-            ;
+        TraverserContext currentContext = null;
+        while (!stack.isEmpty()) {
+            Object top = stack.pop();
 
-        return d;
-    }
+            if (top == RecursionState.Marker.END_LIST) {
+                // end-of-list marker, we are done recursing children,
+                // mark the current node as fully visited
+                TraversalControl traversalControl = visitor.leave((TraverserContext) stack.pop());
+                assertNotNull(traversalControl, "result of leave must not be null");
+                switch (traversalControl) {
+                    case QUIT:
+                        break;
+                    case ABORT:
+                    case CONTINUE:
+                        continue;
+                    default:
+                        assertShouldNeverHappen();
+                }
+            }
 
-    private <U> Object traverseOne(TraverserVisitor<T, U> visitor, U data) {
-        TraverserContext<T> top = stack.pop();
-
-        Object result;
-        if (top == TraverserMarkers.END_LIST) {
-            // end-of-list marker, we are done recursing children, 
-            // mark the current node as fully visited
-            result = visitor.leave(stack.pop(), data);
-        } else if (top == TraverserMarkers.MAP_KEY) {
-            // in case we've traversed through a map of children,
-            // this is a chance to introspect the current child's map key
-            result = visitor.mapKey(stack.pop(), data);
-        } else if (top.isVisited(data)) {
-            // cyclic reference detected
-            result = visitor.backRef(top, data);
-        } else if ((result = visitor.enter(top, data)) == TraverserMarkers.ABORT) {
-            // abort traversing this subtree, don't recurse to children
-        } else if (result == TraverserMarkers.QUIT) {
-            // complete abort traversing, don't recurse to children
-        } else {
-            // recurse to children.
-            // Depending on RecursionState implementation we'll either
-            // put children into a stack and this will be a depth-first search
-            // -or-
-            // put children into a queue and this will be a breadth-first search
-            stack.pushAll(top, getChildren);
+            currentContext = (TraverserContext) top;
+            if (currentContext.isVisited()) {
+                visitor.backRef(currentContext);
+            } else {
+                TraversalControl traversalControl = visitor.enter(currentContext);
+                assertNotNull(traversalControl, "result of enter must not be null");
+                switch (traversalControl) {
+                    case QUIT:
+                        break;
+                    case ABORT:
+                        continue;
+                    case CONTINUE:
+                        stack.pushAll(currentContext, getChildren);
+                        continue;
+                    default:
+                        assertShouldNeverHappen();
+                }
+            }
         }
-
-        return result;
+        return currentContext.getResult();
     }
+
 
 }

@@ -7,7 +7,7 @@ class TraverserTest extends Specification {
         int number;
         List<Node> children = Collections.emptyList();
     }
-    
+
     def "test pre-order depth-first traversal"() {
         given:
             Node root = new Node(number: 0, children: [
@@ -19,24 +19,24 @@ class TraverserTest extends Specification {
                     new Node(number: 5)
                 ])
             ])
-        
+        def initialData = new ArrayList();
         when:
-            List<Integer> result = new Traverser({Node n -> n.children})
-                .traverse(root, new ArrayList<Integer>(), new TraverserVisitor<Node, List<Node>>() {
-                    public Object enter (TraverserContext<? super Node> context, List<Node> data) {
-                        data.add(context.thisNode().number);
-                        return data;
+        Traverser.depthFirst({ Node n -> n.children }, initialData)
+                .traverse(root, new TraverserVisitor<Node>() {
+            public TraversalControl enter(TraverserContext<? super Node> context) {
+                context.getInitialData().add(context.thisNode().number);
+                return TraversalControl.CONTINUE;
                     }
-                    
-                    public Object leave (TraverserContext<? super Node> context, List<Node> data) {
-                        return data;
+
+            public TraversalControl leave(TraverserContext<? super Node> context) {
+                return TraversalControl.CONTINUE;
                     }
                 })
-            
+
         then:
-            assert result == [0, 1, 3, 2, 4, 5]
+        initialData == [0, 1, 3, 2, 4, 5]
     }
-    
+
     def "test post-order depth-first traversal"() {
         given:
             Node root = new Node(number: 0, children: [
@@ -48,24 +48,24 @@ class TraverserTest extends Specification {
                     new Node(number: 5)
                 ])
             ])
-        
+        def initialData = new ArrayList();
         when:
-            List<Integer> result = new Traverser({Node n -> n.children})
-                .traverse(root, new ArrayList<Integer>(), new TraverserVisitor<Node, List<Node>>() {
-                    public Object enter (TraverserContext<? super Node> context, List<Node> data) {
-                        return data;
+        Traverser.depthFirst({ Node n -> n.children }, initialData)
+                .traverse(root, new TraverserVisitor<Node>() {
+            public TraversalControl enter(TraverserContext<? super Node> context) {
+                return TraversalControl.CONTINUE
                     }
-                    
-                    public Object leave (TraverserContext<? super Node> context, List<Node> data) {
-                        data.add(context.thisNode().number);
-                        return data;
+
+            public TraversalControl leave(TraverserContext<? super Node> context) {
+                context.getInitialData().add(context.thisNode().number);
+                return TraversalControl.CONTINUE;
                     }
                 })
-            
+
         then:
-            assert result == [3, 1, 4, 5, 2, 0]
+        initialData == [3, 1, 4, 5, 2, 0]
     }
-    
+
     def "test breadth-first traversal"() {
         given:
             Node root = new Node(number: 0, children: [
@@ -77,22 +77,22 @@ class TraverserTest extends Specification {
                     new Node(number: 5)
                 ])
             ])
-        
+        def initialData = new ArrayList()
         when:
-            List<Integer> result = new Traverser(new TraverserQueue<Node>(), {Node n -> n.children})
-                .traverse(root, new ArrayList<Integer>(), new TraverserVisitor<Node, List<Node>>() {
-                    public Object enter (TraverserContext<? super Node> context, List<Node> data) {
-                        data.add(context.thisNode().number);
-                        return data;
+        Traverser.breadthFirst({ Node n -> n.children }, initialData)
+                .traverse(root, new TraverserVisitor<Node>() {
+            public TraversalControl enter(TraverserContext<? super Node> context) {
+                context.getInitialData().add(context.thisNode().number);
+                return TraversalControl.CONTINUE;
                     }
-                    
-                    public Object leave (TraverserContext<? super Node> context, List<Node> data) {
-                        return data;
+
+            public TraversalControl leave(TraverserContext<? super Node> context) {
+                return TraversalControl.CONTINUE;
                     }
                 })
-            
+
         then:
-            assert result == [0, 1, 2, 3, 4, 5]
+        initialData == [0, 1, 2, 3, 4, 5]
     }
 }
 

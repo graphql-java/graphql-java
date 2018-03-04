@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +54,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
     }
 
     @Override
-    public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visitListType(this, data);
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitListType(this, context);
     }
 }

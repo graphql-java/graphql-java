@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +58,7 @@ public class Argument extends AbstractNode<Argument> {
     }
 
     @Override
-    public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visitArgument(this, data);
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitArgument(this, context);
     }
 }

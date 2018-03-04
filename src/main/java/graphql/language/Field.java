@@ -2,6 +2,8 @@ package graphql.language;
 
 
 import graphql.PublicApi;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -146,7 +148,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field> {
     }
 
     @Override
-    public <U> Object accept(U data, NodeVisitor<U> visitor) {
-        return visitor.visitField(this, data);
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitField(this, context);
     }
 }
