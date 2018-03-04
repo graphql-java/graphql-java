@@ -7,6 +7,8 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TypeRuntimeWiring
+import graphql.validation.ValidationError
+import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class Issue938 extends Specification {
@@ -103,6 +105,31 @@ class Issue938 extends Specification {
                                          [id: 1, username: 'rossg', email: 'rossg@gmail.com']
         ]
 
+        when:
+
+        input = ExecutionInput.newExecutionInput()
+                .query('''
+                        query myTwoBestFriends($friendOne: String!, $friendTwo: String!) {
+                            friendOne: User(user1: $friendOne) {
+                                 id
+                                 username
+                                 email
+                            }
+                            friendTwo: User(username: $friendTwo) {
+                                 id
+                                 username
+                                 email
+                            }
+                        }
+                        ''')
+                .variables(["friendOne": "joeyt", "friendTwo": "rossg"])
+                .build()
+        executionResult = graphql.execute(input)
+
+        then:
+        executionResult.errors.size() == 2
+        (executionResult.errors[0] as ValidationError).validationErrorType == ValidationErrorType.MissingFieldArgument
+        (executionResult.errors[1] as ValidationError).validationErrorType == ValidationErrorType.UnknownArgument
 
     }
 }
