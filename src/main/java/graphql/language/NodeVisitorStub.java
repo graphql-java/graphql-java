@@ -1,225 +1,212 @@
 package graphql.language;
 
+import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import graphql.util.TraverserVisitor;
 
-public abstract class NodeVisitorStub<T>
-        implements NodeVisitor<T>, TraverserVisitor<Node, T> {
+public abstract class NodeVisitorStub
+        implements NodeVisitor {
     @Override
-    public Object visitArgument(Argument node, T data) {
-        return visitNode(node, data);
-    }
-
-    @Override
-    public Object visitArrayValue(ArrayValue node, T data) {
-        return visitValue(node, data);
+    public TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitBooleanValue(BooleanValue node, T data) {
-        return visitValue(node, data);
+    public TraversalControl visitArrayValue(ArrayValue node, TraverserContext<Node> context) {
+        return visitValue(node, context);
     }
 
     @Override
-    public Object visitDirective(Directive node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitBooleanValue(BooleanValue node, TraverserContext<Node> context) {
+        return visitValue(node, context);
     }
 
     @Override
-    public Object visitDirectiveDefinition(DirectiveDefinition node, T data) {
-        return visitDefinition(node, data);
+    public TraversalControl visitDirective(Directive node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitDirectiveLocation(DirectiveLocation node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitDirectiveDefinition(DirectiveDefinition node, TraverserContext<Node> context) {
+        return visitDefinition(node, context);
     }
 
     @Override
-    public Object visitDocument(Document node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitDirectiveLocation(DirectiveLocation node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitEnumTypeDefinition(EnumTypeDefinition node, T data) {
-        return visitTypeDefinition(node, data);
+    public TraversalControl visitDocument(Document node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitEnumValue(EnumValue node, T data) {
-        return visitValue(node, data);
+    public TraversalControl visitEnumTypeDefinition(EnumTypeDefinition node, TraverserContext<Node> context) {
+        return visitTypeDefinition(node, context);
     }
 
     @Override
-    public Object visitEnumValueDefinition(EnumValueDefinition node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitEnumValue(EnumValue node, TraverserContext<Node> context) {
+        return visitValue(node, context);
     }
 
     @Override
-    public Object visitField(Field node, T data) {
-        return visitSelection(node, data);
+    public TraversalControl visitEnumValueDefinition(EnumValueDefinition node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitFieldDefinition(FieldDefinition node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitField(Field node, TraverserContext<Node> context) {
+        return visitSelection(node, context);
     }
 
     @Override
-    public Object visitFloatValue(FloatValue node, T data) {
-        return visitValue(node, data);
+    public TraversalControl visitFieldDefinition(FieldDefinition node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitFragmentDefinition(FragmentDefinition node, T data) {
-        return visitDefinition(node, data);
+    public TraversalControl visitFloatValue(FloatValue node, TraverserContext<Node> context) {
+        return visitValue(node, context);
     }
 
     @Override
-    public Object visitFragmentSpread(FragmentSpread node, T data) {
-        return visitSelection(node, data);
+    public TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> context) {
+        return visitDefinition(node, context);
     }
 
     @Override
-    public Object visitInlineFragment(InlineFragment node, T data) {
-        return visitSelection(node, data);
+    public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
+        return visitSelection(node, context);
     }
 
     @Override
-    public Object visitInputObjectTypeDefinition(InputObjectTypeDefinition node, T data) {
-        return visitTypeDefinition(node, data);
+    public TraversalControl visitInlineFragment(InlineFragment node, TraverserContext<Node> context) {
+        return visitSelection(node, context);
     }
 
     @Override
-    public Object visitInputValueDefinition(InputValueDefinition node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitInputObjectTypeDefinition(InputObjectTypeDefinition node, TraverserContext<Node> context) {
+        return visitTypeDefinition(node, context);
     }
 
     @Override
-    public Object visitIntValue(IntValue node, T data) {
-        return visitValue(node, data);
+    public TraversalControl visitInputValueDefinition(InputValueDefinition node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitInterfaceTypeDefinition(InterfaceTypeDefinition node, T data) {
-        return visitTypeDefinition(node, data);
+    public TraversalControl visitIntValue(IntValue node, TraverserContext<Node> context) {
+        return visitValue(node, context);
     }
 
     @Override
-    public Object visitListType(ListType node, T data) {
-        return visitType(node, data);
+    public TraversalControl visitInterfaceTypeDefinition(InterfaceTypeDefinition node, TraverserContext<Node> context) {
+        return visitTypeDefinition(node, context);
     }
 
     @Override
-    public Object visitNonNullType(NonNullType node, T data) {
-        return visitType(node, data);
+    public TraversalControl visitListType(ListType node, TraverserContext<Node> context) {
+        return visitType(node, context);
     }
 
     @Override
-    public Object visitNullValue(NullValue node, T data) {
-        return visitValue(node, data);
+    public TraversalControl visitNonNullType(NonNullType node, TraverserContext<Node> context) {
+        return visitType(node, context);
     }
 
     @Override
-    public Object visitObjectField(ObjectField node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitNullValue(NullValue node, TraverserContext<Node> context) {
+        return visitValue(node, context);
     }
 
     @Override
-    public Object visitObjectTypeDefinition(ObjectTypeDefinition node, T data) {
-        return visitTypeDefinition(node, data);
+    public TraversalControl visitObjectField(ObjectField node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitObjectValue(ObjectValue node, T data) {
-        return visitValue(node, data);
+    public TraversalControl visitObjectTypeDefinition(ObjectTypeDefinition node, TraverserContext<Node> context) {
+        return visitTypeDefinition(node, context);
     }
 
     @Override
-    public Object visitOperationDefinition(OperationDefinition node, T data) {
-        return visitDefinition(node, data);
+    public TraversalControl visitObjectValue(ObjectValue node, TraverserContext<Node> context) {
+        return visitValue(node, context);
     }
 
     @Override
-    public Object visitOperationTypeDefinition(OperationTypeDefinition node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {
+        return visitDefinition(node, context);
     }
 
     @Override
-    public Object visitScalarTypeDefinition(ScalarTypeDefinition node, T data) {
-        return visitTypeDefinition(node, data);
+    public TraversalControl visitOperationTypeDefinition(OperationTypeDefinition node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitSchemaDefinition(SchemaDefinition node, T data) {
-        return visitDefinition(node, data);
+    public TraversalControl visitScalarTypeDefinition(ScalarTypeDefinition node, TraverserContext<Node> context) {
+        return visitTypeDefinition(node, context);
     }
 
     @Override
-    public Object visitSelectionSet(SelectionSet node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitSchemaDefinition(SchemaDefinition node, TraverserContext<Node> context) {
+        return visitDefinition(node, context);
     }
 
     @Override
-    public Object visitStringValue(StringValue node, T data) {
-        return visitValue(node, data);
+    public TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object visitTypeName(TypeName node, T data) {
-        return visitType(node, data);
+    public TraversalControl visitStringValue(StringValue node, TraverserContext<Node> context) {
+        return visitValue(node, context);
     }
 
     @Override
-    public Object visitUnionTypeDefinition(UnionTypeDefinition node, T data) {
-        return visitTypeDefinition(node, data);
+    public TraversalControl visitTypeName(TypeName node, TraverserContext<Node> context) {
+        return visitType(node, context);
     }
 
     @Override
-    public Object visitVariableDefinition(VariableDefinition node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitUnionTypeDefinition(UnionTypeDefinition node, TraverserContext<Node> context) {
+        return visitTypeDefinition(node, context);
     }
 
     @Override
-    public Object visitVariableReference(VariableReference node, T data) {
-        return visitValue(node, data);
-    }
-
-    protected Object visitNode(Node node, T data) {
-        return data;
-    }
-
-    protected Object visitValue(Value<?> node, T data) {
-        return visitNode(node, data);
-    }
-
-    protected Object visitDefinition(Definition<?> node, T data) {
-        return visitNode(node, data);
-    }
-
-    protected Object visitTypeDefinition(TypeDefinition<?> node, T data) {
-        return visitDefinition(node, data);
-    }
-
-    protected Object visitSelection(Selection<?> node, T data) {
-        return visitNode(node, data);
-    }
-
-    protected Object visitType(Type<?> node, T data) {
-        return visitNode(node, data);
+    public TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> context) {
+        return visitNode(node, context);
     }
 
     @Override
-    public Object enter(TraverserContext<Node> context, T data) {
-        // perform double dispatch to the current node
-        // avoids expensive instanceOf check
-        return context
-                .thisNode()
-                .accept(data, this);
+    public TraversalControl visitVariableReference(VariableReference node, TraverserContext<Node> context) {
+        return visitValue(node, context);
     }
 
-    @Override
-    public Object leave(TraverserContext<Node> context, T data) {
-        return data;
+
+    protected TraversalControl visitValue(Value<?> node, TraverserContext<Node> context) {
+        return visitNode(node, context);
+    }
+
+    protected TraversalControl visitDefinition(Definition<?> node, TraverserContext<Node> context) {
+        return visitNode(node, context);
+    }
+
+    protected TraversalControl visitTypeDefinition(TypeDefinition<?> node, TraverserContext<Node> context) {
+        return visitDefinition(node, context);
+    }
+
+    protected TraversalControl visitSelection(Selection<?> node, TraverserContext<Node> context) {
+        return visitNode(node, context);
+    }
+
+    protected TraversalControl visitType(Type<?> node, TraverserContext<Node> context) {
+        return visitNode(node, context);
+    }
+
+    protected TraversalControl visitNode(Node node, TraverserContext<Node> context) {
+        return TraversalControl.CONTINUE;
     }
 }

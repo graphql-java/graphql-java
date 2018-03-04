@@ -1,75 +1,78 @@
 package graphql.language;
 
-public interface NodeVisitor<T> {
-    Object visitArgument(Argument node, T data);
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
-    Object visitArrayValue(ArrayValue node, T data);
+public interface NodeVisitor {
+    TraversalControl visitArgument(Argument node, TraverserContext<Node> data);
 
-    Object visitBooleanValue(BooleanValue node, T data);
+    TraversalControl visitArrayValue(ArrayValue node, TraverserContext<Node> data);
 
-    Object visitDirective(Directive node, T data);
+    TraversalControl visitBooleanValue(BooleanValue node, TraverserContext<Node> data);
 
-    Object visitDirectiveDefinition(DirectiveDefinition node, T data);
+    TraversalControl visitDirective(Directive node, TraverserContext<Node> data);
 
-    Object visitDirectiveLocation(DirectiveLocation node, T data);
+    TraversalControl visitDirectiveDefinition(DirectiveDefinition node, TraverserContext<Node> data);
 
-    Object visitDocument(Document node, T data);
+    TraversalControl visitDirectiveLocation(DirectiveLocation node, TraverserContext<Node> data);
 
-    Object visitEnumTypeDefinition(EnumTypeDefinition node, T data);
+    TraversalControl visitDocument(Document node, TraverserContext<Node> data);
 
-    Object visitEnumValue(EnumValue node, T data);
+    TraversalControl visitEnumTypeDefinition(EnumTypeDefinition node, TraverserContext<Node> data);
 
-    Object visitEnumValueDefinition(EnumValueDefinition node, T data);
+    TraversalControl visitEnumValue(EnumValue node, TraverserContext<Node> data);
 
-    Object visitField(Field node, T data);
+    TraversalControl visitEnumValueDefinition(EnumValueDefinition node, TraverserContext<Node> data);
 
-    Object visitFieldDefinition(FieldDefinition node, T data);
+    TraversalControl visitField(Field node, TraverserContext<Node> data);
 
-    Object visitFloatValue(FloatValue node, T data);
+    TraversalControl visitFieldDefinition(FieldDefinition node, TraverserContext<Node> data);
 
-    Object visitFragmentDefinition(FragmentDefinition node, T data);
+    TraversalControl visitFloatValue(FloatValue node, TraverserContext<Node> data);
 
-    Object visitFragmentSpread(FragmentSpread node, T data);
+    TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> data);
 
-    Object visitInlineFragment(InlineFragment node, T data);
+    TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> data);
 
-    Object visitInputObjectTypeDefinition(InputObjectTypeDefinition node, T data);
+    TraversalControl visitInlineFragment(InlineFragment node, TraverserContext<Node> data);
 
-    Object visitInputValueDefinition(InputValueDefinition node, T data);
+    TraversalControl visitInputObjectTypeDefinition(InputObjectTypeDefinition node, TraverserContext<Node> data);
 
-    Object visitIntValue(IntValue node, T data);
+    TraversalControl visitInputValueDefinition(InputValueDefinition node, TraverserContext<Node> data);
 
-    Object visitInterfaceTypeDefinition(InterfaceTypeDefinition node, T data);
+    TraversalControl visitIntValue(IntValue node, TraverserContext<Node> data);
 
-    Object visitListType(ListType node, T data);
+    TraversalControl visitInterfaceTypeDefinition(InterfaceTypeDefinition node, TraverserContext<Node> data);
 
-    Object visitNonNullType(NonNullType node, T data);
+    TraversalControl visitListType(ListType node, TraverserContext<Node> data);
 
-    Object visitNullValue(NullValue node, T data);
+    TraversalControl visitNonNullType(NonNullType node, TraverserContext<Node> data);
 
-    Object visitObjectField(ObjectField node, T data);
+    TraversalControl visitNullValue(NullValue node, TraverserContext<Node> data);
 
-    Object visitObjectTypeDefinition(ObjectTypeDefinition node, T data);
+    TraversalControl visitObjectField(ObjectField node, TraverserContext<Node> data);
 
-    Object visitObjectValue(ObjectValue node, T data);
+    TraversalControl visitObjectTypeDefinition(ObjectTypeDefinition node, TraverserContext<Node> data);
 
-    Object visitOperationDefinition(OperationDefinition node, T data);
+    TraversalControl visitObjectValue(ObjectValue node, TraverserContext<Node> data);
 
-    Object visitOperationTypeDefinition(OperationTypeDefinition node, T data);
+    TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> data);
 
-    Object visitScalarTypeDefinition(ScalarTypeDefinition node, T data);
+    TraversalControl visitOperationTypeDefinition(OperationTypeDefinition node, TraverserContext<Node> data);
 
-    Object visitSchemaDefinition(SchemaDefinition node, T data);
+    TraversalControl visitScalarTypeDefinition(ScalarTypeDefinition node, TraverserContext<Node> data);
 
-    Object visitSelectionSet(SelectionSet node, T data);
+    TraversalControl visitSchemaDefinition(SchemaDefinition node, TraverserContext<Node> data);
 
-    Object visitStringValue(StringValue node, T data);
+    TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> data);
 
-    Object visitTypeName(TypeName node, T data);
+    TraversalControl visitStringValue(StringValue node, TraverserContext<Node> data);
 
-    Object visitUnionTypeDefinition(UnionTypeDefinition node, T data);
+    TraversalControl visitTypeName(TypeName node, TraverserContext<Node> data);
 
-    Object visitVariableDefinition(VariableDefinition node, T data);
+    TraversalControl visitUnionTypeDefinition(UnionTypeDefinition node, TraverserContext<Node> data);
 
-    Object visitVariableReference(VariableReference node, T data);
+    TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> data);
+
+    TraversalControl visitVariableReference(VariableReference node, TraverserContext<Node> data);
 }

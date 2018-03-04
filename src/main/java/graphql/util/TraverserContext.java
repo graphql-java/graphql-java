@@ -2,7 +2,7 @@ package graphql.util;
 
 import graphql.Internal;
 
-import java.util.Map;
+import java.util.Set;
 
 /**
  * Traversal context
@@ -32,15 +32,14 @@ public interface TraverserContext<T> {
      */
     TraverserContext<T> parentContext();
 
+    Object getParentResult();
+
     /**
      * Informs that the current node has been already "visited"
      *
-     * @param data a value to associate with the node if not yet visited
-     *             Does not have effect if a node has been already visited
-     *
      * @return {@code true} if a node had been already visited
      */
-    boolean isVisited(Object data);
+    boolean isVisited();
 
     /**
      * Obtains all visited nodes and values received by the {@link TraverserVisitor#enter(graphql.util.TraverserContext, java.lang.Object) }
@@ -48,7 +47,7 @@ public interface TraverserContext<T> {
      *
      * @return a map containg all nodes visited and values passed when visiting nodes for the first time
      */
-    Map<T, Object> visitedNodes();
+    Set<T> visitedNodes();
 
     /**
      * Obtains a context local variable
@@ -70,4 +69,12 @@ public interface TraverserContext<T> {
      * @return this context to allow operations chaining
      */
     <S> TraverserContext<T> setVar(Class<? super S> key, S value);
+
+
+    void setResult(Object result);
+
+    Object getResult();
+
+    Object getInitialData();
+
 }

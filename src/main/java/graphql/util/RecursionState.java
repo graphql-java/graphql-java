@@ -1,70 +1,97 @@
 package graphql.util;
 
+import graphql.Assert;
 import graphql.Internal;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
-import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 
 @Internal
-abstract class RecursionState<T> {
+public class RecursionState<T> {
 
-    private final Deque<TraverserContext<?>> delegate;
-    private final Map<T, Object> visitedMap = new ConcurrentHashMap<>();
+    private Object initialData;
 
-    public RecursionState() {
-        this(new ArrayDeque<>(32));
+    public enum Type {
+        STACK,
+        QUEUE
     }
 
-    public RecursionState(Deque<? super TraverserContext<T>> delegate) {
-        this.delegate = (Deque<TraverserContext<?>>) assertNotNull(delegate);
+    private final Deque<Object> state;
+    private final Set<T> visited = new LinkedHashSet<>();
+    private final Type type;
+
+
+    public enum Marker {
+        END_LIST
     }
 
-    public TraverserContext<T> peek() {
-        return (TraverserContext<T>) delegate.peek();
+    public RecursionState(Type type, Object initialData) {
+        this.initialData = initialData;
+        this.state = new ArrayDeque<>(32);
+        this.type = assertNotNull(type);
     }
 
-    public abstract TraverserContext<T> pop();
 
-    public abstract void pushAll(TraverserContext<T> o, Function<? super T, ? extends List<T>> getChildren);
-
-    public void addAll(Collection<? extends T> col) {
-        addAll(col, null);
+    public Object peek() {
+        return state.peek();
     }
 
-    public void addAll(Collection<? extends T> col, TraverserContext<T> root) {
-        assertNotNull(col).stream().map((x) -> newContext(x, root)).collect(Collectors.toCollection(() -> delegate));
+
+    public Object pop() {
+        return this.state.pop();
     }
-    
+
+    public void pushAll(TraverserContext<T> o, Function<? super T, ? extends List<T>> getChildren) {
+        if (type == Type.QUEUE) {
+            getChildren.apply(o.thisNode()).iterator().forEachRemaining((e) -> this.state.add(newContext(e, o)));
+            this.state.add(Marker.END_LIST);
+            this.state.add(o);
+        } else if (type == Type.STACK) {
+            this.state.push(o);
+            this.state.push(Marker.END_LIST);
+            new ArrayDeque<>(getChildren.apply(o.thisNode())).descendingIterator().forEachRemaining((e) -> this.state.push(newContext(e, o)));
+        } else {
+            Assert.assertShouldNeverHappen();
+        }
+
+    }
+
+
+    public void addNewContexts(Collection<? extends T> children, TraverserContext<T> root) {
+        assertNotNull(children).stream().map((x) -> newContext(x, root)).forEach(this.state::add);
+    }
+
     public boolean isEmpty() {
-        return delegate.isEmpty();
+        return state.isEmpty();
     }
 
     public void clear() {
-        delegate.clear();
-        visitedMap.clear();
+        state.clear();
+        visited.clear();
     }
 
     public TraverserContext<T> newContext(T o, TraverserContext<T> parent) {
         return newContext(o, parent, new ConcurrentHashMap<>());
     }
-    
-    public TraverserContext<T> newContext(T o, TraverserContext<T> parent, Map<Class<?>, Object> vars) {
+
+    public TraverserContext<T> newContext(T curNode, TraverserContext<T> parent, Map<Class<?>, Object> vars) {
         assertNotNull(vars);
-        
+
         return new TraverserContext<T>() {
+            Object result;
+
             @Override
             public T thisNode() {
-                return o;
+                return curNode;
             }
 
             @Override
@@ -73,13 +100,18 @@ abstract class RecursionState<T> {
             }
 
             @Override
-            public boolean isVisited(Object data) {
-                return visitedMap.putIfAbsent(o, Optional.ofNullable(data).orElse(TraverserMarkers.NULL)) != null;
+            public Object getParentResult() {
+                return parent.getResult();
             }
 
             @Override
-            public Map<T, Object> visitedNodes() {
-                return visitedMap;
+            public Set<T> visitedNodes() {
+                return visited;
+            }
+
+            @Override
+            public boolean isVisited() {
+                return visited.contains(curNode);
             }
 
             @Override
@@ -92,11 +124,25 @@ abstract class RecursionState<T> {
                 vars.put(key, value);
                 return this;
             }
+
+            @Override
+            public void setResult(Object result) {
+                this.result = result;
+            }
+
+            @Override
+            public Object getResult() {
+                return this.result;
+            }
+
+            @Override
+            public Object getInitialData() {
+                return initialData;
+            }
+
+
         };
     }
 
-    protected Deque<TraverserContext<?>> getDelegate() {
-        return delegate;
-    }
 
 }

@@ -9,32 +9,30 @@ import graphql.Internal;
  * @param <U> type of data to pass or return across Visitor's methods
  */
 @Internal
-public interface TraverserVisitor<T, U> {
+public interface TraverserVisitor<T> {
     /**
      * Notification that a traverser starts "visiting" a tree node
      *
      * @param context traverser context
-     * @param data    a value to be passed to the visitor
      *
      * @return either a value to pass to next Visitor's method during traversal
      * or a marker to control the traversal
      *
      * @see TraverserContext
      */
-    Object enter(TraverserContext<T> context, U data);
+    TraversalControl enter(TraverserContext<T> context);
 
     /**
      * Notification that a traverser finishes "visiting" a tree node
      *
      * @param context traverser context
-     * @param data    a value to be passed to the visitor
      *
      * @return either a value to pass to next Visitor's method during traversal
      * or a marker to control the traversal
      *
      * @see TraverserContext
      */
-    Object leave(TraverserContext<T> context, U data);
+    TraversalControl leave(TraverserContext<T> context);
 
     /**
      * Notification that a traverser visits a node it has already visited
@@ -42,31 +40,14 @@ public interface TraverserVisitor<T, U> {
      * node again to prevent infinite recursion
      *
      * @param context traverser context
-     * @param data    a value to be passed to the visitor
      *
      * @return either a value to pass to next Visitor's method during traversal
      * or a marker to control the traversal
      *
      * @see TraverserContext
      */
-    default Object backRef(TraverserContext<T> context, U data) {
-        return data;
+    default TraversalControl backRef(TraverserContext<T> context) {
+        return null;
     }
 
-    /**
-     * Notification that a traverser visits a map key associated with a child node
-     * in case children are stored in a map vs. list. In this case call to this
-     * method will be followed by {@link #enter(graphql.util.TraverserContext, java.lang.Object) method call}
-     *
-     * @param context traverser context
-     * @param data    a value to be passed to the visitor
-     *
-     * @return either a value to pass to next Visitor's method during traversal
-     * or a marker to control the traversal
-     *
-     * @see TraverserContext
-     */
-    default Object mapKey(TraverserContext<T> context, U data) {
-        return data;
-    }
 }
