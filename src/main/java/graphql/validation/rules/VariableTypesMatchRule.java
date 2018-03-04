@@ -46,10 +46,18 @@ public class VariableTypesMatchRule extends AbstractRule {
     @Override
     public void checkVariable(VariableReference variableReference) {
         VariableDefinition variableDefinition = variableDefinitionMap.get(variableReference.getName());
-        if (variableDefinition == null) return;
+        if (variableDefinition == null) {
+            return;
+        }
         GraphQLType variableType = TypeFromAST.getTypeFromAST(getValidationContext().getSchema(), variableDefinition.getType());
-        if (variableType == null) return;
+        if (variableType == null) {
+            return;
+        }
         GraphQLInputType expectedType = getValidationContext().getInputType();
+        if (expectedType == null) {
+            // we must have a unknown variable say to not have a known type
+            return;
+        }
         if (!variablesTypesMatcher.doesVariableTypesMatch(variableType, variableDefinition.getDefaultValue(), expectedType)) {
             GraphQLType effectiveType = variablesTypesMatcher.effectiveType(variableType, variableDefinition.getDefaultValue());
             String message = String.format("Variable type '%s' doesn't match expected type '%s'",
