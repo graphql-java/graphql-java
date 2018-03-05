@@ -4,32 +4,30 @@ import spock.lang.Specification
 
 class TraverserTest extends Specification {
 
-    static class Node {
-        int number
-        List<Node> children = Collections.emptyList()
-    }
+    def root = [
+            [number: 0, children: [
+                    [number: 1, children: [
+                            [number: 3, children: []]
+                    ]],
+                    [number: 2, children: [
+                            [number: 4, children: []],
+                            [number: 5, children: []]
+                    ]]]
+            ]
+    ]
 
     def "test pre-order depth-first traversal"() {
         given:
-        Node root = new Node(number: 0, children: [
-                new Node(number: 1, children: [
-                        new Node(number: 3)
-                ]),
-                new Node(number: 2, children: [
-                        new Node(number: 4),
-                        new Node(number: 5)
-                ])
-        ])
         def initialData = []
         def visitor = [
-                enter: { TraverserContext<Node> context ->
+                enter: { TraverserContext context ->
                     context.getInitialData().add(context.thisNode().number)
                     TraversalControl.CONTINUE
                 },
                 leave: { TraversalControl.CONTINUE }
-        ] as TraverserVisitor<Node>
+        ] as TraverserVisitor
         when:
-        Traverser.depthFirst({ Node n -> n.children }, initialData).traverse(root, visitor)
+        Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
 
         then:
@@ -38,27 +36,18 @@ class TraverserTest extends Specification {
 
     def "test post-order depth-first traversal"() {
         given:
-        Node root = new Node(number: 0, children: [
-                new Node(number: 1, children: [
-                        new Node(number: 3)
-                ]),
-                new Node(number: 2, children: [
-                        new Node(number: 4),
-                        new Node(number: 5)
-                ])
-        ])
         def initialData = new ArrayList();
         def visitor = [
-                enter: { TraverserContext<Node> context ->
+                enter: { TraverserContext context ->
                     TraversalControl.CONTINUE
                 },
-                leave: { TraverserContext<Node> context ->
+                leave: { TraverserContext context ->
                     context.getInitialData().add(context.thisNode().number)
                     TraversalControl.CONTINUE
                 }
-        ] as TraverserVisitor<Node>
+        ] as TraverserVisitor
         when:
-        Traverser.depthFirst({ Node n -> n.children }, initialData).traverse(root, visitor)
+        Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
         initialData == [3, 1, 4, 5, 2, 0]
@@ -66,27 +55,18 @@ class TraverserTest extends Specification {
 
     def "test breadth-first traversal"() {
         given:
-        Node root = new Node(number: 0, children: [
-                new Node(number: 1, children: [
-                        new Node(number: 3)
-                ]),
-                new Node(number: 2, children: [
-                        new Node(number: 4),
-                        new Node(number: 5)
-                ])
-        ])
         def initialData = new ArrayList()
         def visitor = [
-                enter: { TraverserContext<Node> context ->
+                enter: { TraverserContext context ->
                     context.getInitialData().add(context.thisNode().number)
                     TraversalControl.CONTINUE
                 },
                 leave: {
                     TraversalControl.CONTINUE
                 }
-        ] as TraverserVisitor<Node>
+        ] as TraverserVisitor
         when:
-        Traverser.breadthFirst({ Node n -> n.children }, initialData).traverse(root, visitor)
+        Traverser.breadthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
         initialData == [0, 1, 2, 3, 4, 5]
