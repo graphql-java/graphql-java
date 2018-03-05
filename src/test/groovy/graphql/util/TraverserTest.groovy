@@ -4,7 +4,7 @@ import spock.lang.Specification
 
 class TraverserTest extends Specification {
 
-    class Node {
+    static class Node {
         int number
         List<Node> children = Collections.emptyList()
     }
