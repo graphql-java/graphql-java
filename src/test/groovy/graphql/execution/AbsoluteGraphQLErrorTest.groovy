@@ -1,18 +1,12 @@
 package graphql.execution
 
-import graphql.*
+import graphql.DataFetchingErrorGraphQLError
 import graphql.language.Field
-import graphql.language.OperationDefinition
 import graphql.language.SourceLocation
-import graphql.parser.Parser
-import graphql.schema.DataFetcher
-import graphql.schema.GraphQLSchema
 import spock.lang.Specification
-import spock.lang.Unroll
 
 import static graphql.Scalars.GraphQLString
 import static graphql.execution.ExecutionStrategyParameters.newParameters
-import static graphql.execution.ExecutionTypeInfo.newTypeInfo
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 
@@ -41,7 +35,12 @@ class AbsoluteGraphQLErrorTest extends Specification {
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
 
-        def relativeError = new DataFetchingErrorGraphQLError("blah", ["fld"])
+        def relativeError = new DataFetchingErrorGraphQLError("blah", ["fld"]) {
+            @Override
+            Map<String, Object> getExtensions() {
+                return ["ext": true]
+            }
+        }
 
         when:
 
@@ -55,6 +54,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         error.getLocations().get(0).getColumn() == 15
         error.getLocations().get(0).getLine() == 6
         error.getErrorType() == relativeError.getErrorType()
+        error.getExtensions() == ["ext": true]
     }
 
     def "constructor handles missing path as null"() {
