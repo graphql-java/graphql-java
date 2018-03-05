@@ -4,8 +4,8 @@ import graphql.Internal;
 import graphql.language.Document;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
@@ -18,7 +18,7 @@ public class Parser {
 
     public Document parseDocument(String input) {
 
-        GraphqlLexer lexer = new GraphqlLexer(new ANTLRInputStream(input));
+        GraphqlLexer lexer = new GraphqlLexer(CharStreams.fromString(input));
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 
