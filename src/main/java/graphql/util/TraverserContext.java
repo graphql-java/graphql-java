@@ -42,7 +42,7 @@ public interface TraverserContext<T> {
     boolean isVisited();
 
     /**
-     * Obtains all visited nodes and values received by the {@link TraverserVisitor#enter(graphql.util.TraverserContext, java.lang.Object) }
+     * Obtains all visited nodes and values received by the {@link TraverserVisitor#enter(graphql.util.TraverserContext) }
      * method
      *
      * @return a map containg all nodes visited and values passed when visiting nodes for the first time
