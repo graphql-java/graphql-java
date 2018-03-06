@@ -14,6 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
+import java.util.Iterator;
+import java.util.ListIterator;
 
 @Internal
 public class RecursionState<T> {
@@ -58,7 +60,7 @@ public class RecursionState<T> {
         } else if (type == Type.STACK) {
             this.state.push(o);
             this.state.push(Marker.END_LIST);
-            new ArrayDeque<>(getChildren.apply(o.thisNode())).descendingIterator().forEachRemaining((e) -> this.state.push(newContext(e, o)));
+            new ReverseIterator<>(getChildren.apply(o.thisNode())).forEachRemaining((e) -> this.state.push(newContext(e, o)));
         } else {
             Assert.assertShouldNeverHappen();
         }
@@ -144,5 +146,28 @@ public class RecursionState<T> {
         };
     }
 
+    private static class ReverseIterator<T> implements Iterator<T> {
+        private final ListIterator<T> delegate;
 
+        private ReverseIterator (List<T> list) {
+            assertNotNull(list);
+            
+            this.delegate = list.listIterator(list.size());
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return delegate.hasPrevious();
+        }
+
+        @Override
+        public T next() {
+            return delegate.previous();
+        }
+
+        @Override
+        public void remove() {
+            delegate.remove();
+        }
+    }
 }

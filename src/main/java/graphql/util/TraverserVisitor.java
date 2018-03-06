@@ -6,7 +6,6 @@ import graphql.Internal;
  * Visitor interface that get's notified as the Traverser traverses a tree
  *
  * @param <T> type of tree nodes
- * @param <U> type of data to pass or return across Visitor's methods
  */
 @Internal
 public interface TraverserVisitor<T> {
