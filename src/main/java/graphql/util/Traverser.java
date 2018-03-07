@@ -15,7 +15,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 @Internal
 public class Traverser<T> {
 
-    private final RecursionState<T> recursionState;
+    private final TraverserState<T> traverserState;
     private final Function<? super T, ? extends List<T>> getChildren;
     private final Map<Class<?>, Object> rootVars = new ConcurrentHashMap<>();
 
@@ -24,13 +24,13 @@ public class Traverser<T> {
      * children nodes from the current root
      *
      * @param getChildren    a function to extract children
-     * @param recursionState a queue of pended {@link TraverserContext} nodes to visit
+     * @param traverserState a queue of pended {@link TraverserContext} nodes to visit
      *                       <br>
      *                       * LIFO structure makes the traversal depth-first
      *                       * FIFO structure makes the traversal breadth-first
      */
-    private Traverser(RecursionState<T> recursionState, Function<? super T, ? extends List<T>> getChildren) {
-        this.recursionState = assertNotNull(recursionState);
+    private Traverser(TraverserState<T> traverserState, Function<? super T, ? extends List<T>> getChildren) {
+        this.traverserState = assertNotNull(traverserState);
         this.getChildren = assertNotNull(getChildren);
     }
 
@@ -75,7 +75,7 @@ public class Traverser<T> {
      * @return Traverser instance
      */
     public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren, Object initialData) {
-        return new Traverser<>(new RecursionState<>(RecursionState.Type.STACK, initialData), getChildren);
+        return new Traverser<>(TraverserState.newStackState(initialData), getChildren);
     }
 
 
@@ -93,14 +93,14 @@ public class Traverser<T> {
      * @return Traverser instance
      */
     public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren, Object initialData) {
-        return new Traverser<>(new RecursionState<>(RecursionState.Type.QUEUE, initialData), getChildren);
+        return new Traverser<>(TraverserState.newQueueState(initialData), getChildren);
     }
 
     /**
      * Resets the Traverser to the original state, so it can be re-used
      */
     public void reset() {
-        recursionState.clear();
+        traverserState.clear();
         rootVars.clear();
     }
 
@@ -135,17 +135,17 @@ public class Traverser<T> {
         assertNotNull(roots);
         assertNotNull(visitor);
 
-        recursionState.addNewContexts(roots, recursionState.newContext(null, null, rootVars));
+        traverserState.addNewContexts(roots, traverserState.newContext(null, null, rootVars));
 
         TraverserContext currentContext = null;
         traverseLoop:
-        while (!recursionState.isEmpty()) {
-            Object top = recursionState.pop();
+        while (!traverserState.isEmpty()) {
+            Object top = traverserState.pop();
 
-            if (top == RecursionState.Marker.END_LIST) {
+            if (top == TraverserState.Marker.END_LIST) {
                 // end-of-list marker, we are done recursing children,
                 // mark the current node as fully visited
-                TraversalControl traversalControl = visitor.leave((TraverserContext) recursionState.pop());
+                TraversalControl traversalControl = visitor.leave((TraverserContext) traverserState.pop());
                 assertNotNull(traversalControl, "result of leave must not be null");
                 switch (traversalControl) {
                     case QUIT:
@@ -170,7 +170,7 @@ public class Traverser<T> {
                     case ABORT:
                         continue;
                     case CONTINUE:
-                        recursionState.pushAll(currentContext, getChildren);
+                        traverserState.pushAll(currentContext, getChildren);
                         continue;
                     default:
                         assertShouldNeverHappen();
