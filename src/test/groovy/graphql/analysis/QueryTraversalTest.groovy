@@ -539,6 +539,125 @@ class QueryTraversalTest extends Specification {
 
     }
 
+    @Unroll
+    def "skipped Fragment (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo1 
+                bar: String
+            }
+            type Foo1 {
+                string: String  
+                subFoo: Foo2 
+            }
+            type Foo2 {
+                otherString: String
+            }
+        """)
+        def visitor = Mock(FieldVisitor)
+        def query = createQuery("""
+            query MyQuery(\$variableFoo: Boolean) {
+                bar 
+                ...Test @include(if: \$variableFoo)
+            }
+            fragment Test on Query {
+                bar
+            }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+        0 * visitor.visitField(_)
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
+    @Unroll
+    def "skipped inline Fragment (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo1 
+                bar: String
+            }
+            type Foo1 {
+                string: String  
+                subFoo: Foo2 
+            }
+            type Foo2 {
+                otherString: String
+            }
+        """)
+        def visitor = Mock(FieldVisitor)
+        def query = createQuery("""
+            query MyQuery(\$variableFoo: Boolean) {
+                bar 
+                ...@include(if: \$variableFoo) {
+                    foo
+                }
+            }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+        0 * visitor.visitField(_)
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
+    @Unroll
+    def "skipped Field (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo1 
+                bar: String
+            }
+            type Foo1 {
+                string: String  
+                subFoo: Foo2 
+            }
+            type Foo2 {
+                otherString: String
+            }
+        """)
+        def visitor = Mock(FieldVisitor)
+        def query = createQuery("""
+            query MyQuery(\$variableFoo: Boolean) {
+                bar 
+                foo @include(if: \$variableFoo)
+            }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+        0 * visitor.visitField(_)
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
 
     def "reduce preOrder"() {
         given:

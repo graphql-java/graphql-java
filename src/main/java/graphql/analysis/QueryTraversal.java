@@ -106,18 +106,23 @@ public class QueryTraversal {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(type, null));
 
+        FieldVisitor noOp = notUsed -> {
+        };
+        FieldVisitor preOrderCallback = preOrder ? visitFieldCallback : noOp;
+        FieldVisitor postOrderCallback = !preOrder ? visitFieldCallback : noOp;
+
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
-        nodeTraverser.depthFirst(new NodeVisitorImpl(visitFieldCallback, preOrder), selectionSet.getSelections());
+        nodeTraverser.depthFirst(new NodeVisitorImpl(preOrderCallback, postOrderCallback), selectionSet.getSelections());
     }
 
     private class NodeVisitorImpl extends NodeVisitorStub {
 
-        private FieldVisitor visitFieldCallback;
-        boolean preOrder;
+        final FieldVisitor preOrderCallback;
+        final FieldVisitor postOrderCallback;
 
-        NodeVisitorImpl(FieldVisitor visitFieldCallback, boolean preOrder) {
-            this.visitFieldCallback = visitFieldCallback;
-            this.preOrder = preOrder;
+        NodeVisitorImpl(FieldVisitor preOrderCallback, FieldVisitor postOrderCallback) {
+            this.preOrderCallback = preOrderCallback;
+            this.postOrderCallback = postOrderCallback;
         }
 
         @Override
@@ -180,17 +185,14 @@ public class QueryTraversal {
 
             LeaveOrEnter leaveOrEnter = context.getVar(LeaveOrEnter.class);
             if (leaveOrEnter == LEAVE) {
-                if (!preOrder) {
-                    visitFieldCallback.visitField(environment);
-                }
+                postOrderCallback.visitField(environment);
                 return TraversalControl.CONTINUE;
-            }
-            if (preOrder) {
-                visitFieldCallback.visitField(environment);
             }
 
             if (!conditionalNodes.shouldInclude(variables, field.getDirectives()))
-                return TraversalControl.ABORT; // stop recursion
+                return TraversalControl.ABORT;
+
+            preOrderCallback.visitField(environment);
 
             GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
             QueryTraversalContext fieldEnv = (unmodifiedType instanceof GraphQLCompositeType)
