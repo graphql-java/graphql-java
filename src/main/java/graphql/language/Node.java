@@ -51,8 +51,7 @@ public interface Node<T extends Node> {
      * from the code that needs to be executed when traversal "visits" a particular Node
      * in the tree. This leads to a better code re-usability and maintainability.
      *
-     * @param <U>     Visitor's type parameter
-     * @param visitor Visitor instance that performs actual processing on the Nodes(s)
+     * @param context TraverserContext bound to this Node object
      * @param visitor Visitor instance that performs actual processing on the Nodes(s)
      *
      * @return Result of Visitor's operation.

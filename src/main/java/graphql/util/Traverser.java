@@ -70,6 +70,7 @@ public class Traverser<T> {
      *
      * @param <T>         type of tree nodes to0 traverse
      * @param getChildren a function that obtains a list of children for a given tree node
+     * @param initialData some data to passed into the traversal at the bootstrap time
      *
      * @return Traverser instance
      */
@@ -87,6 +88,7 @@ public class Traverser<T> {
      *
      * @param <T>         type of tree nodes to0 traverse
      * @param getChildren a function that obtains a list of children for a given tree node
+     * @param initialData some data to passed into the traversal at the bootstrap time
      *
      * @return Traverser instance
      */
