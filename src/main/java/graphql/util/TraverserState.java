@@ -1,70 +1,78 @@
 package graphql.util;
 
-import graphql.Assert;
 import graphql.Internal;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
-import java.util.Iterator;
-import java.util.ListIterator;
 
 @Internal
-public class RecursionState<T> {
+public abstract class TraverserState<T> {
 
     private Object initialData;
 
-    public enum Type {
-        STACK,
-        QUEUE
-    }
 
     private final Deque<Object> state;
     private final Set<T> visited = new LinkedHashSet<>();
-    private final Type type;
 
+
+    private static class StackTraverserState<U> extends TraverserState<U> {
+
+        private StackTraverserState(Object initialData) {
+            super(initialData);
+        }
+
+        public void pushAll(TraverserContext<U> o, Function<? super U, ? extends List<U>> getChildren) {
+            super.state.push(o);
+            super.state.push(Marker.END_LIST);
+            new ReverseIterator<>(getChildren.apply(o.thisNode())).forEachRemaining((e) -> super.state.push(newContext(e, o)));
+        }
+    }
+
+    private static class QueueTraverserState<U> extends TraverserState<U> {
+
+        private QueueTraverserState(Object initialData) {
+            super(initialData);
+        }
+
+        public void pushAll(TraverserContext<U> o, Function<? super U, ? extends List<U>> getChildren) {
+            getChildren.apply(o.thisNode()).iterator().forEachRemaining((e) -> super.state.add(newContext(e, o)));
+            super.state.add(Marker.END_LIST);
+            super.state.add(o);
+        }
+    }
 
     public enum Marker {
         END_LIST
     }
 
-    public RecursionState(Type type, Object initialData) {
+    private TraverserState(Object initialData) {
         this.initialData = initialData;
         this.state = new ArrayDeque<>(32);
-        this.type = assertNotNull(type);
     }
 
-
-    public Object peek() {
-        return state.peek();
+    public static <U> TraverserState<U> newQueueState(Object initialData) {
+        return new QueueTraverserState<>(initialData);
     }
 
+    public static <U> TraverserState<U> newStackState(Object initialData) {
+        return new StackTraverserState<>(initialData);
+    }
+
+    public abstract void pushAll(TraverserContext<T> o, Function<? super T, ? extends List<T>> getChildren);
 
     public Object pop() {
         return this.state.pop();
-    }
-
-    public void pushAll(TraverserContext<T> o, Function<? super T, ? extends List<T>> getChildren) {
-        if (type == Type.QUEUE) {
-            getChildren.apply(o.thisNode()).iterator().forEachRemaining((e) -> this.state.add(newContext(e, o)));
-            this.state.add(Marker.END_LIST);
-            this.state.add(o);
-        } else if (type == Type.STACK) {
-            this.state.push(o);
-            this.state.push(Marker.END_LIST);
-            new ReverseIterator<>(getChildren.apply(o.thisNode())).forEachRemaining((e) -> this.state.push(newContext(e, o)));
-        } else {
-            Assert.assertShouldNeverHappen();
-        }
-
     }
 
 
@@ -149,12 +157,12 @@ public class RecursionState<T> {
     private static class ReverseIterator<T> implements Iterator<T> {
         private final ListIterator<T> delegate;
 
-        private ReverseIterator (List<T> list) {
+        private ReverseIterator(List<T> list) {
             assertNotNull(list);
-            
+
             this.delegate = list.listIterator(list.size());
         }
-        
+
         @Override
         public boolean hasNext() {
             return delegate.hasPrevious();
