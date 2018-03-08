@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.Internal;
+import graphql.language.AstPrinter;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.Type;
@@ -9,6 +10,7 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
+import java.util.Objects;
 import java.util.Stack;
 
 /**
@@ -25,7 +27,7 @@ public class TypeInfo {
     private final TypeName typeName;
     private final Stack<Class<?>> decoration = new Stack<>();
 
-    public TypeInfo(Type type) {
+    private TypeInfo(Type type) {
         this.rawType = type;
         while (!(type instanceof TypeName)) {
             if (type instanceof NonNullType) {
@@ -93,13 +95,7 @@ public class TypeInfo {
     }
 
     public static String getAstDesc(Type type) {
-        if (type instanceof NonNullType) {
-            return getAstDesc(((NonNullType) type).getType()) + "!";
-        }
-        if (type instanceof ListType) {
-            return "[" + getAstDesc(((ListType) type).getType()) + "]";
-        }
-        return ((TypeName) type).getName();
+        return AstPrinter.printAst(type);
     }
 
     public TypeInfo unwrapOne() {
@@ -112,12 +108,30 @@ public class TypeInfo {
         return this;
     }
 
+    public Type unwrapOneType() {
+        return unwrapOne().getRawType();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TypeInfo typeInfo = (TypeInfo) o;
+        return isNonNull() == typeInfo.isNonNull() &&
+                isList() == typeInfo.isList() &&
+                Objects.equals(typeName.getName(), typeInfo.typeName.getName());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(typeName.getName(), isNonNull(), isList());
+    }
+
+
     @Override
     public String toString() {
         return "TypeInfo{" +
-                "rawType=" + rawType +
-                ", typeName=" + typeName +
-                ", isNonNull=" + decoration +
+                getAstDesc(rawType) +
                 '}';
     }
 }

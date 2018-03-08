@@ -1,6 +1,9 @@
 package graphql.schema.idl
 
+import graphql.language.InterfaceTypeDefinition
+import graphql.language.ObjectTypeDefinition
 import graphql.language.SchemaDefinition
+import graphql.language.TypeName
 import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.idl.errors.SchemaRedefinitionError
 import spock.lang.Specification
@@ -211,5 +214,168 @@ class TypeDefinitionRegistryTest extends Specification {
 
         def typeExtensions = result1.objectTypeExtensions().get("Post")
         typeExtensions.size() == 2
+    }
+
+    def commonSpec = '''
+
+            type Type {
+                name : String
+            }
+
+            type Type2 {
+                name : String
+            }
+            
+            type Type3 {
+                name : String
+            }
+
+            interface Interface {
+                name : String
+            }
+            
+            union Union = Foo | Bar
+            
+            scalar Scalar
+                
+
+        '''
+
+    private TypeName type(String name) {
+        new TypeName(name)
+    }
+
+    def "test abstract type detection"() {
+
+        when:
+        def registry = parse(commonSpec)
+
+        then:
+        registry.isAbstractType(type("Interface"))
+        registry.isAbstractType(type("Union"))
+        !registry.isAbstractType(type("Type"))
+        !registry.isAbstractType(type("Scalar"))
+    }
+
+    def "test object type detection"() {
+
+        when:
+        def registry = parse(commonSpec)
+
+        then:
+        registry.isObjectType(type("Type"))
+        !registry.isObjectType(type("Interface"))
+        !registry.isObjectType(type("Union"))
+        !registry.isObjectType(type("Scalar"))
+    }
+
+    def "test can get list of type definitions"() {
+        when:
+        def registry = parse(commonSpec)
+        def objectTypeDefinitions = registry.getTypes(ObjectTypeDefinition.class)
+        def names = objectTypeDefinitions.collect { it.getName() }
+        then:
+        names == ["Type", "Type2", "Type3"]
+    }
+
+    def "test can get map of type definitions"() {
+        when:
+        def registry = parse(commonSpec)
+        def objectTypeDefinitions = registry.getTypesMap(ObjectTypeDefinition.class)
+        then:
+        objectTypeDefinitions.size() == 3
+        objectTypeDefinitions.containsKey("Type")
+        objectTypeDefinitions.containsKey("Type2")
+        objectTypeDefinitions.containsKey("Type3")
+    }
+
+
+    def "test can get implements of interface"() {
+        def spec = '''
+            interface Interface {
+                name : String
+            }
+            
+            type Type1 implements Interface {
+                name : String
+            }
+
+            type Type2 implements Interface {
+                name : String
+            }
+
+            type Type3 implements Interface {
+                name : String
+            }
+
+            type Type4 implements NotThatInterface {
+                name : String
+            }
+        '''
+        when:
+        def registry = parse(spec)
+        def interfaceDef = registry.getType("Interface", InterfaceTypeDefinition.class).get()
+        def objectTypeDefinitions = registry.getImplementationsOf(interfaceDef)
+        def names = objectTypeDefinitions.collect { it.getName() }
+        then:
+        names == ["Type1", "Type2", "Type3"]
+    }
+
+    def "test possible type detection"() {
+        def spec = '''
+
+            interface Animal {
+              id: String!
+            }
+
+            interface Mammal {
+              id: String!
+            }
+
+            interface Reptile {
+              id: String!
+            }
+
+            type Dog implements Animal, Mammal {
+              id: String!
+            }
+
+            type Duck implements Animal, Mammal {
+              id: String!
+            }
+            
+            union Platypus = Duck | Turtle
+
+            type Cat implements Animal, Mammal {
+              id: String!
+            }
+
+            type Turtle implements Animal, Reptile {
+              id: String!
+            }
+
+
+        '''
+        when:
+        def registry = parse(spec)
+
+        then:
+        registry.isPossibleType(type("Mammal"), type("Dog"))
+        registry.isPossibleType(type("Mammal"), type("Cat"))
+        !registry.isPossibleType(type("Mammal"), type("Turtle"))
+
+        !registry.isPossibleType(type("Reptile"), type("Dog"))
+        !registry.isPossibleType(type("Reptile"), type("Cat"))
+        registry.isPossibleType(type("Reptile"), type("Turtle"))
+
+        registry.isPossibleType(type("Animal"), type("Dog"))
+        registry.isPossibleType(type("Animal"), type("Cat"))
+        registry.isPossibleType(type("Animal"), type("Turtle"))
+
+        registry.isPossibleType(type("Platypus"), type("Duck"))
+        registry.isPossibleType(type("Platypus"), type("Turtle"))
+        !registry.isPossibleType(type("Platypus"), type("Dog"))
+        !registry.isPossibleType(type("Platypus"), type("Cat"))
+
     }
 }
