@@ -367,8 +367,11 @@ public class TypeDefinitionRegistry {
         if (abstractTypeDef instanceof UnionTypeDefinition) {
             List<Type> memberTypes = ((UnionTypeDefinition) abstractTypeDef).getMemberTypes();
             for (Type memberType : memberTypes) {
-                if (getType(memberType, ObjectTypeDefinition.class).isPresent()) {
-                    return true;
+                Optional<ObjectTypeDefinition> checkType = getType(memberType, ObjectTypeDefinition.class);
+                if (checkType.isPresent()) {
+                    if (checkType.get().getName().equals(targetObjectTypeDef.getName())) {
+                        return true;
+                    }
                 }
             }
             return false;
