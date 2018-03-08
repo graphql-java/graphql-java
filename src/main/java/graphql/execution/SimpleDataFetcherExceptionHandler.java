@@ -21,5 +21,8 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
         ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, exception, sourceLocation);
         handlerParameters.getExecutionContext().addError(error);
         log.warn(error.getMessage(), exception);
+
+        DeferSupport deferSupport = handlerParameters.getExecutionContext().getDeferSupport();
+        deferSupport.onFetcherError(error);
     }
 }

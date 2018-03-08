@@ -2,12 +2,15 @@ package graphql.execution;
 
 import graphql.Directives;
 import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
+import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.language.Field;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +26,7 @@ import java.util.function.Supplier;
 public class DeferSupport implements Publisher<ExecutionResult> {
 
     private final Deque<Supplier<CompletableFuture<ExecutionResult>>> deferredCalls = new ConcurrentLinkedDeque<>();
+    private final List<GraphQLError> errorsEncountered = new ArrayList<>();
     private final AtomicBoolean deferDetected = new AtomicBoolean(false);
 
     public boolean checkForDeferDirective(List<Field> currentField) {
@@ -53,6 +57,7 @@ public class DeferSupport implements Publisher<ExecutionResult> {
                 // means we will resolve them in "encountered" order.  We could do it async and hence in any order
                 //
                 ExecutionResult executionResult = future.get();
+                executionResult = addAnyErrorsEncountered(executionResult);
                 subscriber.onNext(executionResult);
             } catch (Exception e) {
                 subscriber.onError(e);
@@ -62,6 +67,24 @@ public class DeferSupport implements Publisher<ExecutionResult> {
         return true;
     }
 
+    private ExecutionResult addAnyErrorsEncountered(ExecutionResult executionResult) {
+        synchronized (errorsEncountered) {
+            ExecutionResultImpl sourceResult = (ExecutionResultImpl) executionResult;
+            ExecutionResultImpl.Builder builder = ExecutionResultImpl.newExecutionResult().from(sourceResult);
+
+            builder.addErrors(errorsEncountered);
+            errorsEncountered.clear();
+
+            return builder.build();
+        }
+    }
+
+
+    public void onFetcherError(GraphQLError error) {
+        synchronized (errorsEncountered) {
+            errorsEncountered.add(error);
+        }
+    }
 
     public void enqueue(Supplier<CompletableFuture<ExecutionResult>> deferredCall) {
         deferDetected.set(true);
