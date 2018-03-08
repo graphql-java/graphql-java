@@ -62,6 +62,10 @@ class SchemaTypeCheckerTest extends Specification {
     }
 
     List<GraphQLError> check(String spec) {
+        check(spec, [])
+    }
+
+    List<GraphQLError> check(String spec, List<String> resolvingNames) {
         def types = parse(spec)
 
 
@@ -83,14 +87,17 @@ class SchemaTypeCheckerTest extends Specification {
                 return null
             }
         })
-        def wiring = RuntimeWiring.newRuntimeWiring()
+        def runtimeBuilder = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(wiringFactory)
                 .scalar(scalesScalar)
                 .type(TypeRuntimeWiring.newTypeWiring("InterfaceType1").typeResolver(resolver))
                 .type(TypeRuntimeWiring.newTypeWiring("InterfaceType2").typeResolver(resolver))
                 .type(TypeRuntimeWiring.newTypeWiring("FooBar").typeResolver(resolver))
-                .build()
-        return new SchemaTypeChecker().checkTypeRegistry(types, wiring)
+
+        for (String name : resolvingNames) {
+            runtimeBuilder.type(TypeRuntimeWiring.newTypeWiring(name).typeResolver(resolver))
+        }
+        return new SchemaTypeChecker().checkTypeRegistry(types, runtimeBuilder.build())
     }
 
     def "test missing type in object"() {
@@ -1180,4 +1187,85 @@ class SchemaTypeCheckerTest extends Specification {
         errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
     }
 
+    def "covariant object types are supported"() {
+
+        def spec = '''
+            type Query {
+              planets: PlanetsConnection
+            }
+            
+            type PlanetsConnection implements UnpaginatedConnection {
+              edges: [PlanetEdge]
+            }
+            
+            type PlanetEdge implements Edge {
+              vertex: Planet!
+            }
+            
+            type Planet implements Vertex {
+              id: String!
+              name: String!
+            }
+            
+            interface UnpaginatedConnection {
+              edges: [Edge]
+            }
+            
+            interface Edge {
+              vertex: Vertex!
+            }
+            
+            interface Vertex {
+              id: String!
+            }
+        '''
+
+        def result = check(spec, ["UnpaginatedConnection", "Edge", "Vertex"])
+
+        expect:
+
+        result.isEmpty()
+
+    }
+
+    def "deviant covariant object types are detected"() {
+
+        def spec = '''
+            type Query {
+              planets: PlanetsConnection
+            }
+            
+            type PlanetsConnection implements UnpaginatedConnection {
+              edges: PlanetEdge
+            }
+            
+            type PlanetEdge implements Edge {
+              vertex: Planet
+            }
+            
+            type Planet implements Vertex {
+              id: String!
+              name: String!
+            }
+            
+            interface UnpaginatedConnection {
+              edges: [Edge]!
+            }
+            
+            interface Edge {
+              vertex: Vertex!
+            }
+            
+            interface Vertex {
+              id: String!
+            }
+        '''
+
+        def result = check(spec, ["UnpaginatedConnection", "Edge", "Vertex"])
+
+        expect:
+
+        errorContaining(result, "The object type 'PlanetsConnection' [@n:n] has tried to redefine field 'edges' defined via interface 'UnpaginatedConnection' [@n:n] from '[Edge]!' to 'PlanetEdge'")
+        errorContaining(result, "The object type 'PlanetsConnection' [@n:n] has tried to redefine field 'edges' defined via interface 'UnpaginatedConnection' [@n:n] from '[Edge]!' to 'PlanetEdge'")
+    }
 }
