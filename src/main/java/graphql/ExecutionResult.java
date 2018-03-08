@@ -1,8 +1,6 @@
 package graphql;
 
 
-import graphql.execution.defer.DeferredResults;
-
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +26,7 @@ public interface ExecutionResult {
      * @return a map of extensions or null if there are none
      */
     Map<Object, Object> getExtensions();
+
 
     /**
      * The graphql specification says that result of a call should be a map that follows certain rules on what items
