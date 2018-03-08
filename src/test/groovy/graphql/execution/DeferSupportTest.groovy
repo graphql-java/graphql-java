@@ -8,12 +8,12 @@ import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
-import javafx.util.Duration
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import spock.lang.Specification
 
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
@@ -22,7 +22,7 @@ class DeferSupportTest extends Specification {
     def then = System.currentTimeMillis();
 
     def sentAt() {
-        def seconds = Duration.millis(System.currentTimeMillis() - then).toSeconds()
+        def seconds = Duration.ofMillis(System.currentTimeMillis() - then).getSeconds()
         "T+" + seconds
     }
 
