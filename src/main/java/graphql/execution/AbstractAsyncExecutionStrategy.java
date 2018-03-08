@@ -32,7 +32,16 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 String fieldName = fieldNames.get(ix++);
                 resolvedValuesByField.put(fieldName, executionResult.getData());
             }
-            overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors()));
+
+            Map<Object, Object> extensions = null;
+            DeferSupport deferSupport = executionContext.getDeferSupport();
+            if (deferSupport.isDeferDetected()) {
+                extensions = new LinkedHashMap<>();
+                extensions.put("deferredResults", deferSupport.getPublisher());
+            }
+            overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors(), extensions));
         };
     }
+
+
 }

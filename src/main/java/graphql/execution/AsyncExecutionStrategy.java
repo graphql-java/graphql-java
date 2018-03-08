@@ -50,6 +50,11 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
+            DeferSupport deferSupport = executionContext.getDeferSupport();
+            if (deferSupport.checkForDeferDirective(currentField)) {
+                deferSupport.enqueue(() -> resolveField(executionContext, newParameters));
+                continue;
+            }
             CompletableFuture<ExecutionResult> future = resolveField(executionContext, newParameters);
             futures.add(future);
         }
@@ -62,5 +67,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
     }
+
 
 }

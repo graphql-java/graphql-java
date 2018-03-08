@@ -1,6 +1,7 @@
 package graphql;
 
 
+import graphql.introspection.Introspection;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNonNull;
 
@@ -47,5 +48,11 @@ public class Directives {
             .validLocations(FIELD_DEFINITION)
             .build();
 
+    @ExperimentalApi
+    public static final GraphQLDirective DeferDirective = GraphQLDirective.newDirective()
+            .name("defer")
+            .description("This experimental directive allows results to be deferred during execution")
+            .validLocations(Introspection.DirectiveLocation.FIELD)
+            .build();
 
 }
