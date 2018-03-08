@@ -49,12 +49,18 @@ class DeferSupportTest extends Specification {
             type Comment {
                 commentText : String
                 sentAt : String
+                goes : Bang
             }
             
             type Review {
                 reviewText : String
                 sentAt : String
-            }            
+                goes : Bang
+            }       
+            
+            type Bang {
+                bang : String
+            }     
         '''
 
         DataFetcher postFetcher = new DataFetcher() {
@@ -70,7 +76,7 @@ class DeferSupportTest extends Specification {
                     sleepSome(env)
                     def result = []
                     for (int i = 0; i < 5; i++) {
-                        result.add([commentText: "This is the comment text " + i, sentAt: sentAt()])
+                        result.add([commentText: "This is the comment text " + i, sentAt: sentAt(), goes: "goes"])
                     }
                     return result
                 })
@@ -84,10 +90,17 @@ class DeferSupportTest extends Specification {
                     sleepSome(env)
                     def result = []
                     for (int i = 0; i < 3; i++) {
-                        result.add([reviewText: "This is the review text " + i, sentAt: sentAt()])
+                        result.add([reviewText: "This is the review text " + i, sentAt: sentAt(), goes: "goes"])
                     }
                     return result
                 })
+            }
+        }
+
+        DataFetcher bangDataFetcher = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                throw new RuntimeException("Bang!")
             }
         }
 
@@ -95,6 +108,7 @@ class DeferSupportTest extends Specification {
                 .type(newTypeWiring("Query").dataFetcher("post", postFetcher))
                 .type(newTypeWiring("Post").dataFetcher("comments", commentsFetcher))
                 .type(newTypeWiring("Post").dataFetcher("reviews", reviewsFetcher))
+                .type(newTypeWiring("Bang").dataFetcher("bang", bangDataFetcher))
                 .build()
 
         def schema = TestUtil.schema(spec, runtimeWiring)
@@ -116,6 +130,12 @@ class DeferSupportTest extends Specification {
                     reviews(sleepTime:2000) @defer {
                         reviewText
                         sentAt
+                    }
+                    bang: reviews @defer {
+                        sentAt
+                        goes {
+                            bang
+                        }
                     }
                 }
             }
@@ -141,6 +161,7 @@ class DeferSupportTest extends Specification {
             void onNext(ExecutionResult executionResult) {
                 println "\nonNext@" + sentAt()
                 println executionResult.data
+                println executionResult.errors
             }
 
             @Override
