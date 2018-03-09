@@ -28,10 +28,12 @@ class TraverserTest extends Specification {
         def visitor = [
                 enter: { TraverserContext context ->
                     preOrderNodes << context.thisNode().number
+                    println "enter:$preOrderNodes"
                     TraversalControl.CONTINUE
                 },
                 leave: { TraverserContext context ->
                     postOrderNodes << context.thisNode().number
+                    println "leave:$postOrderNodes"
                     TraversalControl.CONTINUE
                 }
         ] as TraverserVisitor
