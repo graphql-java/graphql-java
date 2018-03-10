@@ -164,6 +164,7 @@ public class Traverser<T> {
             } else {
                 TraversalControl traversalControl = visitor.enter(currentContext);
                 assertNotNull(traversalControl, "result of enter must not be null");
+                this.traverserState.addVisited((T) currentContext.thisNode());
                 switch (traversalControl) {
                     case QUIT:
                         break traverseLoop;

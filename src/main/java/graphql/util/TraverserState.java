@@ -89,6 +89,10 @@ public abstract class TraverserState<T> {
         visited.clear();
     }
 
+    public void addVisited(T visited) {
+        this.visited.add(visited);
+    }
+
     public TraverserContext<T> newContext(T o, TraverserContext<T> parent) {
         return newContext(o, parent, new ConcurrentHashMap<>());
     }
