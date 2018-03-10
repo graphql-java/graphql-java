@@ -14,9 +14,6 @@ public interface TraverserVisitor<T> {
      *
      * @param context traverser context
      *
-     * @return either a value to pass to next Visitor's method during traversal
-     * or a marker to control the traversal
-     *
      * @see TraverserContext
      */
     TraversalControl enter(TraverserContext<T> context);
@@ -25,9 +22,6 @@ public interface TraverserVisitor<T> {
      * Notification that a traverser finishes "visiting" a tree node
      *
      * @param context traverser context
-     *
-     * @return either a value to pass to next Visitor's method during traversal
-     * or a marker to control the traversal
      *
      * @see TraverserContext
      */
@@ -40,13 +34,10 @@ public interface TraverserVisitor<T> {
      *
      * @param context traverser context
      *
-     * @return either a value to pass to next Visitor's method during traversal
-     * or a marker to control the traversal
-     *
      * @see TraverserContext
      */
-    default TraversalControl backRef(TraverserContext<T> context) {
-        return null;
+    default void backRef(TraverserContext<T> context) {
+
     }
 
 }

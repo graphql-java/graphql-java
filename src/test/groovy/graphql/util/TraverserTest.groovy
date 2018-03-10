@@ -102,7 +102,6 @@ class TraverserTest extends Specification {
         given:
         def initialData = new ArrayList()
         def leaveCount = 0
-
         def visitor = [
                 enter: { TraverserContext context ->
                     context.getInitialData().add(context.thisNode().number)
@@ -169,6 +168,26 @@ class TraverserTest extends Specification {
 
         then:
         initialData == [0, 1, 2, 3]
+    }
+
+    static class Node {
+        int number
+        List<Node> children
+    }
+
+    def "simple cycle"() {
+        given:
+        def cycleRoot = new Node(number: 0, children: [])
+        cycleRoot.children.add(cycleRoot)
+
+        def visitor = Mock(TraverserVisitor)
+        when:
+        Traverser.depthFirst({ n -> n.children }).traverse(cycleRoot, visitor)
+
+        then:
+        1 * visitor.enter(_) >> TraversalControl.CONTINUE
+        1 * visitor.leave(_) >> TraversalControl.CONTINUE
+        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot })
 
     }
 
