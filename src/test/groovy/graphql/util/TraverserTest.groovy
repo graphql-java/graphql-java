@@ -172,12 +172,12 @@ class TraverserTest extends Specification {
 
     static class Node {
         int number
-        List<Node> children
+        List<Node> children = new ArrayList<>()
     }
 
     def "simple cycle"() {
         given:
-        def cycleRoot = new Node(number: 0, children: [])
+        def cycleRoot = new Node(number: 0)
         cycleRoot.children.add(cycleRoot)
 
         def visitor = Mock(TraverserVisitor)
@@ -188,7 +188,33 @@ class TraverserTest extends Specification {
         1 * visitor.enter(_) >> TraversalControl.CONTINUE
         1 * visitor.leave(_) >> TraversalControl.CONTINUE
         1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot })
+    }
 
+    def "more complex cycles"() {
+        given:
+        def cycleRoot = new Node(number: 0)
+        cycleRoot.children.add(new Node(number: 1))
+
+        def node2 = new Node(number: 2)
+        cycleRoot.children.add(node2)
+        node2.children.add(node2)
+
+        def node3 = new Node(number: 3)
+        cycleRoot.children.add(node3)
+        def node5 = new Node(number: 5)
+        node3.children.add(node5)
+        node5.children.add(cycleRoot)
+
+        def visitor = Mock(TraverserVisitor)
+        visitor.enter(_) >> TraversalControl.CONTINUE
+        visitor.leave(_) >> TraversalControl.CONTINUE
+        when:
+        Traverser.depthFirst({ n -> n.children }).traverse(cycleRoot, visitor)
+
+        then:
+        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot })
+        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == node2 })
+        0 * visitor.backRef(_)
     }
 
 }
