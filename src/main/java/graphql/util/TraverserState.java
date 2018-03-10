@@ -84,10 +84,6 @@ public abstract class TraverserState<T> {
         return state.isEmpty();
     }
 
-    public void clear() {
-        state.clear();
-        visited.clear();
-    }
 
     public void addVisited(T visited) {
         this.visited.add(visited);
