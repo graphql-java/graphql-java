@@ -96,13 +96,6 @@ public class Traverser<T> {
         return new Traverser<>(TraverserState.newQueueState(initialData), getChildren);
     }
 
-    /**
-     * Resets the Traverser to the original state, so it can be re-used
-     */
-    public void reset() {
-        traverserState.clear();
-        rootVars.clear();
-    }
 
     /**
      * Starts traversal of a tree from a provided root using specified Visitor
