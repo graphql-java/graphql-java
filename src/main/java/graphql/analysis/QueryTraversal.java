@@ -135,7 +135,7 @@ public class QueryTraversal {
 
             // inline fragments are allowed not have type conditions, if so the parent type counts
             QueryTraversalContext parentEnv = context
-                    .parentContext()
+                    .getParentContext()
                     .getVar(QueryTraversalContext.class);
 
             GraphQLCompositeType fragmentCondition;
@@ -163,7 +163,7 @@ public class QueryTraversal {
                 return TraversalControl.ABORT;
 
             QueryTraversalContext parentEnv = context
-                    .parentContext()
+                    .getParentContext()
                     .getVar(QueryTraversalContext.class);
 
             GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
@@ -176,7 +176,7 @@ public class QueryTraversal {
         @Override
         public TraversalControl visitField(Field field, TraverserContext<Node> context) {
             QueryTraversalContext parentEnv = context
-                    .parentContext()
+                    .getParentContext()
                     .getVar(QueryTraversalContext.class);
 
             GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getType(), field.getName());

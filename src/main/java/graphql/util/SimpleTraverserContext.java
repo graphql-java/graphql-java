@@ -21,7 +21,7 @@ public class SimpleTraverserContext<T> implements TraverserContext<T> {
 
 
     @Override
-    public TraverserContext<T> parentContext() {
+    public TraverserContext<T> getParentContext() {
         return null;
     }
 

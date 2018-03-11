@@ -6,12 +6,12 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
@@ -90,7 +90,7 @@ public abstract class TraverserState<T> {
     }
 
     public TraverserContext<T> newContext(T o, TraverserContext<T> parent) {
-        return newContext(o, parent, new ConcurrentHashMap<>());
+        return newContext(o, parent, new LinkedHashMap<>());
     }
 
     public TraverserContext<T> newContext(T curNode, TraverserContext<T> parent, Map<Class<?>, Object> vars) {
@@ -105,7 +105,7 @@ public abstract class TraverserState<T> {
             }
 
             @Override
-            public TraverserContext<T> parentContext() {
+            public TraverserContext<T> getParentContext() {
                 return parent;
             }
 

@@ -29,6 +29,7 @@ class TraverserTest extends Specification {
                 enter: { TraverserContext context ->
                     preOrderNodes << context.thisNode().number
                     println "enter:$preOrderNodes"
+                    context.setResult(context.thisNode())
                     TraversalControl.CONTINUE
                 },
                 leave: { TraverserContext context ->
@@ -44,6 +45,7 @@ class TraverserTest extends Specification {
         then:
         !result.encounteredCycle
         result.fullTraversal
+        result.result.number == 5
         preOrderNodes == [0, 1, 3, 2, 4, 5]
         postOrderNodes == [3, 1, 4, 5, 2, 0]
     }
@@ -56,6 +58,7 @@ class TraverserTest extends Specification {
         def visitor = [
                 enter: { TraverserContext context ->
                     enterData << context.thisNode().number
+                    context.setResult(context.thisNode())
                     println "enter:$enterData"
                     TraversalControl.CONTINUE
                 },
@@ -71,6 +74,7 @@ class TraverserTest extends Specification {
         then:
         !result.encounteredCycle
         result.fullTraversal
+        result.result.number == 5
         enterData == [0, 1, 2, 3, 4, 5]
         leaveData == [0, 1, 2, 3, 4, 5]
     }
@@ -256,5 +260,78 @@ class TraverserTest extends Specification {
         0 * visitor.backRef(_)
     }
 
+
+    def "test context variables"() {
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    assert context.getParentContext().getVar(Object.class) == "var1"
+                    assert context.getParentContext().getVar(String.class) == "var2"
+                    context.setVar(Object.class, "var1")
+                    context.setVar(String.class, "var2")
+
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.breadthFirst({ n -> n.children },)
+                .rootVars([(Object.class): "var1", (String.class): "var2"])
+                .traverse(root, visitor)
+
+
+        then:
+        true
+    }
+
+    def "test parent result chain"() {
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    List visited = context.getParentResult()
+                    visited = visited == null ? new ArrayList<>() : visited
+                    visited.add(context.thisNode().number)
+                    context.setVar(List.class, visited)
+                    context.setResult(visited)
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.breadthFirst({ n -> n.children },)
+                .traverse(root, visitor)
+
+
+        then:
+        result.result == [0, 1, 2, 3, 4, 5]
+    }
+
+    def "test initial data"() {
+        def visitor = [
+                enter: { TraverserContext context ->
+                    assert context.getInitialData() == "foo"
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    assert context.getInitialData() == "foo"
+                    TraversalControl.QUIT
+                },
+
+        ] as TraverserVisitor
+
+        when:
+        Traverser.depthFirst({ n -> n.children }, "foo").traverse(root, visitor)
+
+        then:
+        true
+
+    }
+
 }
+
+
 
