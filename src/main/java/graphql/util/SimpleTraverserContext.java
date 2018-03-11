@@ -1,9 +1,12 @@
 package graphql.util;
 
+import graphql.Internal;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
+@Internal
 public class SimpleTraverserContext<T> implements TraverserContext<T> {
 
     private final Map<Class<?>, Object> vars = new LinkedHashMap<>();

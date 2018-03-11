@@ -1,8 +1,10 @@
 package graphql.language;
 
+import graphql.Internal;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+@Internal
 public interface NodeVisitor {
     TraversalControl visitArgument(Argument node, TraverserContext<Node> data);
 
