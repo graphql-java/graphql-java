@@ -1,9 +1,11 @@
 package graphql.language;
 
+import graphql.Internal;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-public abstract class NodeVisitorStub
+@Internal
+public class NodeVisitorStub
         implements NodeVisitor {
     @Override
     public TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
