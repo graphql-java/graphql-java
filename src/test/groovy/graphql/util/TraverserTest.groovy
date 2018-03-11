@@ -38,10 +38,12 @@ class TraverserTest extends Specification {
                 }
         ] as TraverserVisitor
         when:
-        Traverser.depthFirst({ n -> n.children }).traverse(root, visitor)
+        def result = Traverser.depthFirst({ n -> n.children }).traverse(root, visitor)
 
 
         then:
+        !result.encounteredCycle
+        result.fullTraversal
         preOrderNodes == [0, 1, 3, 2, 4, 5]
         postOrderNodes == [3, 1, 4, 5, 2, 0]
     }
@@ -64,37 +66,41 @@ class TraverserTest extends Specification {
                 }
         ] as TraverserVisitor
         when:
-        Traverser.breadthFirst({ n -> n.children }).traverse(root, visitor)
+        def result = Traverser.breadthFirst({ n -> n.children }).traverse(root, visitor)
 
         then:
+        !result.encounteredCycle
+        result.fullTraversal
         enterData == [0, 1, 2, 3, 4, 5]
         leaveData == [0, 1, 2, 3, 4, 5]
     }
 
     def "quit traversal immediately"() {
         given:
-        def initialData = new ArrayList()
+        def enterData = []
 
         def visitor = [
                 enter: { TraverserContext context ->
-                    context.getInitialData().add(context.thisNode().number)
+                    enterData << context.thisNode().number
                     TraversalControl.QUIT
                 }
         ] as TraverserVisitor
 
         when:
-        Traverser.breadthFirst({ n -> n.children }, initialData).traverse(root, visitor)
+        def result = Traverser.breadthFirst({ n -> n.children }).traverse(root, visitor)
 
         then:
-        initialData == [0]
+        !result.fullTraversal
+        enterData == [0]
 
 
         when:
-        initialData.clear()
-        Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
+        enterData = []
+        result = Traverser.depthFirst({ n -> n.children }).traverse(root, visitor)
 
         then:
-        initialData == [0]
+        !result.fullTraversal
+        enterData == [0]
 
     }
 
@@ -115,9 +121,10 @@ class TraverserTest extends Specification {
         ] as TraverserVisitor
 
         when:
-        Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
+        def result = Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
+        !result.fullTraversal
         initialData == [0, 1, 3]
         leaveCount == 1
 
@@ -140,9 +147,10 @@ class TraverserTest extends Specification {
         ] as TraverserVisitor
 
         when:
-        Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
+        def result = Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
+        !result.fullTraversal
         initialData == [0, 1, 2]
 
     }
@@ -164,9 +172,10 @@ class TraverserTest extends Specification {
         ] as TraverserVisitor
 
         when:
-        Traverser.breadthFirst({ n -> n.children }, initialData).traverse(root, visitor)
+        def result = Traverser.breadthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
+        !result.fullTraversal
         initialData == [0, 1, 2, 3]
     }
 
@@ -182,12 +191,14 @@ class TraverserTest extends Specification {
 
         def visitor = Mock(TraverserVisitor)
         when:
-        Traverser.depthFirst({ n -> n.children }).traverse(cycleRoot, visitor)
+        def result = Traverser.depthFirst({ n -> n.children }).traverse(cycleRoot, visitor)
 
         then:
+        result.encounteredCycle
+        result.fullTraversal
         1 * visitor.enter(_) >> TraversalControl.CONTINUE
         1 * visitor.leave(_) >> TraversalControl.CONTINUE
-        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot })
+        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot }) >> TraversalControl.CONTINUE
     }
 
     def "more complex cycles"() {
@@ -201,19 +212,47 @@ class TraverserTest extends Specification {
 
         def node3 = new Node(number: 3)
         cycleRoot.children.add(node3)
-        def node5 = new Node(number: 5)
-        node3.children.add(node5)
-        node5.children.add(cycleRoot)
+        def node4 = new Node(number: 4)
+        node3.children.add(node4)
+        node4.children.add(cycleRoot)
 
         def visitor = Mock(TraverserVisitor)
-        visitor.enter(_) >> TraversalControl.CONTINUE
-        visitor.leave(_) >> TraversalControl.CONTINUE
         when:
-        Traverser.depthFirst({ n -> n.children }).traverse(cycleRoot, visitor)
+        def result = Traverser.depthFirst({ n -> n.children }).traverse(cycleRoot, visitor)
 
         then:
-        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot })
-        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == node2 })
+        5 * visitor.enter(_) >> TraversalControl.CONTINUE
+        5 * visitor.leave(_) >> TraversalControl.CONTINUE
+        result.encounteredCycle
+        result.fullTraversal
+        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot }) >> TraversalControl.CONTINUE
+        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == node2 }) >> TraversalControl.CONTINUE
+        0 * visitor.backRef(_)
+    }
+
+    def "abort when cycle found"() {
+        def cycleRoot = new Node(number: 0)
+        cycleRoot.children.add(new Node(number: 1))
+
+        def node2 = new Node(number: 2)
+        cycleRoot.children.add(node2)
+
+        def node3 = new Node(number: 3)
+        cycleRoot.children.add(node3)
+        def node4 = new Node(number: 4)
+        node3.children.add(node4)
+        node4.children.add(cycleRoot)
+        def visitor = Mock(TraverserVisitor)
+
+        when:
+        def result = Traverser.depthFirst({ n -> n.children }).traverse(cycleRoot, visitor)
+
+        then:
+        5 * visitor.enter(_) >> TraversalControl.CONTINUE
+        2 * visitor.leave(_) >> TraversalControl.CONTINUE
+        result.encounteredCycle
+        !result.fullTraversal
+        1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot }) >> TraversalControl.QUIT
         0 * visitor.backRef(_)
     }
 
