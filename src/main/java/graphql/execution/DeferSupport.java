@@ -41,30 +41,24 @@ public class DeferSupport implements Publisher<ExecutionResult> {
     @Override
     public void subscribe(Subscriber<? super ExecutionResult> subscriber) {
         subscriber.onSubscribe(emptySubscription());
-        boolean ok = drainDeferredCalls(subscriber);
-        if (ok) {
-            subscriber.onComplete();
-        }
+        drainDeferredCalls(subscriber);
     }
 
-    private boolean drainDeferredCalls(Subscriber<? super ExecutionResult> subscriber) {
-        while (!deferredCalls.isEmpty()) {
-            Supplier<CompletableFuture<ExecutionResult>> deferredExecution = deferredCalls.pop();
-            try {
-                CompletableFuture<ExecutionResult> future = deferredExecution.get();
-                //
-                // this becomes a blocking call on the deferred resolveField value.  This and the use of the queue
-                // means we will resolve them in "encountered" order.  We could do it async and hence in any order
-                //
-                ExecutionResult executionResult = future.get();
-                executionResult = addAnyErrorsEncountered(executionResult);
-                subscriber.onNext(executionResult);
-            } catch (Exception e) {
-                subscriber.onError(e);
-                return false;
-            }
+    private void drainDeferredCalls(Subscriber<? super ExecutionResult> subscriber) {
+        if (deferredCalls.isEmpty()) {
+            subscriber.onComplete();
         }
-        return true;
+        Supplier<CompletableFuture<ExecutionResult>> deferredExecutionSupplier = deferredCalls.pop();
+        CompletableFuture<ExecutionResult> future = deferredExecutionSupplier.get();
+        future.whenComplete((executionResult, exception) -> {
+            if (exception != null) {
+                subscriber.onError(exception);
+                return;
+            }
+            executionResult = addAnyErrorsEncountered(executionResult);
+            subscriber.onNext(executionResult);
+            drainDeferredCalls(subscriber);
+        });
     }
 
     private ExecutionResult addAnyErrorsEncountered(ExecutionResult executionResult) {
