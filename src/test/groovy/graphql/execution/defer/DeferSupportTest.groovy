@@ -3,6 +3,8 @@ package graphql.execution.defer
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
 import graphql.GraphQLException
+import graphql.language.Directive
+import graphql.language.Field
 import org.awaitility.Awaitility
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
@@ -171,6 +173,31 @@ class DeferSupportTest extends Specification {
 
         then:
         deferPresent2
+    }
+
+    def "detects @defer directive"() {
+        given:
+        def deferSupport = new DeferSupport()
+
+        when:
+        def noDirectivePresent = deferSupport.checkForDeferDirective([
+                new Field("a"),
+                new Field("b")
+        ])
+
+        then:
+        !noDirectivePresent
+
+        when:
+        def directivePresent = deferSupport.checkForDeferDirective([
+                new Field("a", [], [new Directive("defer")]),
+                new Field("b")
+        ])
+
+        then:
+        directivePresent
+
+
     }
 
     private static DeferredCall offThread(String data, int sleepTime) {
