@@ -282,6 +282,8 @@ public abstract class ExecutionStrategy {
                 .build();
 
         dataFetcherExceptionHandler.accept(handlerParameters);
+
+        parameters.deferredErrorSupport().onFetchingException(parameters, e);
     }
 
     /**
@@ -326,6 +328,7 @@ public abstract class ExecutionStrategy {
                 .source(fetchedValue)
                 .nonNullFieldValidator(nonNullableFieldValidator)
                 .path(parameters.path())
+                .deferredErrorSupport(parameters.deferredErrorSupport())
                 .build();
 
         log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), fieldTypeInfo.getPath());
@@ -443,6 +446,7 @@ public abstract class ExecutionStrategy {
                     .path(indexedPath)
                     .field(parameters.field())
                     .source(item)
+                    .deferredErrorSupport(parameters.deferredErrorSupport())
                     .build();
 
             return completeValue(executionContext, newParameters);
@@ -547,6 +551,7 @@ public abstract class ExecutionStrategy {
                 .fields(subFields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
                 .path(parameters.path())
+                .deferredErrorSupport(parameters.deferredErrorSupport())
                 .source(result).build();
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
@@ -559,6 +564,9 @@ public abstract class ExecutionStrategy {
         SerializationError error = new SerializationError(parameters.path(), e);
         log.warn(error.getMessage(), e);
         context.addError(error);
+
+        parameters.deferredErrorSupport().onError(error);
+
         return null;
     }
 
@@ -579,21 +587,21 @@ public abstract class ExecutionStrategy {
                 return null;
             }
         } else if (result instanceof OptionalInt) {
-            OptionalInt optional = (OptionalInt)result;
+            OptionalInt optional = (OptionalInt) result;
             if (optional.isPresent()) {
                 return optional.getAsInt();
             } else {
                 return null;
             }
         } else if (result instanceof OptionalDouble) {
-            OptionalDouble optional = (OptionalDouble)result;
+            OptionalDouble optional = (OptionalDouble) result;
             if (optional.isPresent()) {
                 return optional.getAsDouble();
             } else {
                 return null;
             }
         } else if (result instanceof OptionalLong) {
-            OptionalLong optional = (OptionalLong)result;
+            OptionalLong optional = (OptionalLong) result;
             if (optional.isPresent()) {
                 return optional.getAsLong();
             } else {
@@ -696,6 +704,8 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.path(), parameters.typeInfo().getType());
         log.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
+
+        parameters.deferredErrorSupport().onError(error);
     }
 
 

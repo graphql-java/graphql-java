@@ -3,6 +3,7 @@ package graphql.execution;
 
 import graphql.GraphQLError;
 import graphql.PublicApi;
+import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;

@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.execution.defer.DeferSupport;
 
 import java.util.LinkedHashMap;
 import java.util.List;

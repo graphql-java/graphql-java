@@ -1,4 +1,4 @@
-package graphql.execution
+package graphql.execution.defer
 
 import graphql.Directives
 import graphql.ExecutionInput
@@ -8,6 +8,7 @@ import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
+import org.awaitility.Awaitility
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
@@ -15,6 +16,7 @@ import spock.lang.Specification
 
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicBoolean
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
@@ -123,15 +125,18 @@ class DeferSupportTest extends Specification {
                 post {
                     postText
                     sentAt
-                    comments(sleepTime:1000) @defer {
+                    
+                    a :comments(sleepTime:5000) @defer {
                         commentText
                         sentAt
                     }
-                    reviews(sleepTime:2000) @defer {
+                    
+                    b : reviews(sleepTime:1000) @defer {
                         reviewText
                         sentAt
                     }
-                    bang: reviews @defer {
+                    
+                    c: reviews @defer {
                         sentAt
                         goes {
                             bang
@@ -150,6 +155,7 @@ class DeferSupportTest extends Specification {
         println result.data
 
 
+        AtomicBoolean doneORCancelled = new AtomicBoolean()
         Publisher<ExecutionResult> deferredResults = result.extensions["deferredResults"] as Publisher<ExecutionResult>
         deferredResults.subscribe(new Subscriber<ExecutionResult>() {
             @Override
@@ -166,14 +172,18 @@ class DeferSupportTest extends Specification {
 
             @Override
             void onError(Throwable t) {
+                doneORCancelled.set(true)
                 println "\nonError@" + sentAt()
                 t.printStackTrace()
             }
 
             @Override
             void onComplete() {
+                doneORCancelled.set(true)
                 println "\nonComplete@" + sentAt()
             }
         })
+
+        Awaitility.await().untilTrue(doneORCancelled)
     }
 }

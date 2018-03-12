@@ -1,22 +1,19 @@
-package graphql.execution;
+package graphql.execution.defer;
 
 import graphql.Directives;
 import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
-import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.reactive.CancellableSubscription;
 import graphql.language.Field;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
-import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This provides support for @defer directives on fields that mean that results will be sent AFTER
@@ -25,9 +22,9 @@ import java.util.function.Supplier;
 @Internal
 public class DeferSupport implements Publisher<ExecutionResult> {
 
-    private final Deque<Supplier<CompletableFuture<ExecutionResult>>> deferredCalls = new ConcurrentLinkedDeque<>();
-    private final List<GraphQLError> errorsEncountered = new ArrayList<>();
+    private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
     private final AtomicBoolean deferDetected = new AtomicBoolean(false);
+    private final AtomicReference<CancellableSubscription> subscription = new AtomicReference<>();
 
     public boolean checkForDeferDirective(List<Field> currentField) {
         for (Field field : currentField) {
@@ -40,7 +37,10 @@ public class DeferSupport implements Publisher<ExecutionResult> {
 
     @Override
     public void subscribe(Subscriber<? super ExecutionResult> subscriber) {
-        subscriber.onSubscribe(emptySubscription());
+        if (subscription.getAndSet(new CancellableSubscription()) != null) {
+            throw new RuntimeException("The @defer code only supports one subscription to the results");
+        }
+        subscriber.onSubscribe(subscription.get());
         drainDeferredCalls(subscriber);
     }
 
@@ -48,39 +48,23 @@ public class DeferSupport implements Publisher<ExecutionResult> {
         if (deferredCalls.isEmpty()) {
             subscriber.onComplete();
         }
-        Supplier<CompletableFuture<ExecutionResult>> deferredExecutionSupplier = deferredCalls.pop();
-        CompletableFuture<ExecutionResult> future = deferredExecutionSupplier.get();
+        DeferredCall deferredCall = deferredCalls.pop();
+        CompletableFuture<ExecutionResult> future = deferredCall.makeCall();
         future.whenComplete((executionResult, exception) -> {
+            if (subscription.get().isCancelled()) {
+                return;
+            }
             if (exception != null) {
                 subscriber.onError(exception);
                 return;
             }
-            executionResult = addAnyErrorsEncountered(executionResult);
+            executionResult = deferredCall.addErrorsEncountered(executionResult);
             subscriber.onNext(executionResult);
             drainDeferredCalls(subscriber);
         });
     }
 
-    private ExecutionResult addAnyErrorsEncountered(ExecutionResult executionResult) {
-        synchronized (errorsEncountered) {
-            ExecutionResultImpl sourceResult = (ExecutionResultImpl) executionResult;
-            ExecutionResultImpl.Builder builder = ExecutionResultImpl.newExecutionResult().from(sourceResult);
-
-            builder.addErrors(errorsEncountered);
-            errorsEncountered.clear();
-
-            return builder.build();
-        }
-    }
-
-
-    public void onFetcherError(GraphQLError error) {
-        synchronized (errorsEncountered) {
-            errorsEncountered.add(error);
-        }
-    }
-
-    public void enqueue(Supplier<CompletableFuture<ExecutionResult>> deferredCall) {
+    public void enqueue(DeferredCall deferredCall) {
         deferDetected.set(true);
         deferredCalls.offer(deferredCall);
     }
@@ -91,17 +75,5 @@ public class DeferSupport implements Publisher<ExecutionResult> {
 
     public Publisher<ExecutionResult> getPublisher() {
         return this;
-    }
-
-    private Subscription emptySubscription() {
-        return new Subscription() {
-            @Override
-            public void request(long n) {
-            }
-
-            @Override
-            public void cancel() {
-            }
-        };
     }
 }
