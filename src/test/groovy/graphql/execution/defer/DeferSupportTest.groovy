@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class DeferSupportTest extends Specification {
 
-    def "emits N deferred calls in order"() {
+    def "emits N deferred calls with order preserved"() {
 
         given:
         def deferSupport = new DeferSupport()
@@ -57,7 +57,51 @@ class DeferSupportTest extends Specification {
         results[2].data == "C"
     }
 
-    def "stops at first exception encountered but in order"() {
+    def "calls within calls are enqueued correctly"() {
+        given:
+        def deferSupport = new DeferSupport()
+        deferSupport.enqueue(offThreadCallWithinCall(deferSupport, "A", "a", 100))
+        deferSupport.enqueue(offThreadCallWithinCall(deferSupport, "B", "b", 50))
+        deferSupport.enqueue(offThreadCallWithinCall(deferSupport, "C", "c", 10))
+
+        when:
+        List<ExecutionResult> results = []
+        AtomicBoolean finished = new AtomicBoolean()
+        deferSupport.subscribe(new Subscriber<ExecutionResult>() {
+            @Override
+            void onSubscribe(Subscription subscription) {
+                assert subscription != null
+            }
+
+            @Override
+            void onNext(ExecutionResult executionResult) {
+                results.add(executionResult)
+            }
+
+            @Override
+            void onError(Throwable t) {
+                assert false, "This should not be called!"
+            }
+
+            @Override
+            void onComplete() {
+                finished.set(true)
+            }
+        })
+
+        Awaitility.await().untilTrue(finished)
+        then:
+
+        results.size() == 6
+        results[0].data == "A"
+        results[1].data == "B"
+        results[2].data == "C"
+        results[3].data == "a"
+        results[4].data == "b"
+        results[5].data == "c"
+    }
+
+    def "stops at first exception encountered but still in order"() {
         given:
         def deferSupport = new DeferSupport()
         deferSupport.enqueue(offThread("A", 100))
@@ -208,6 +252,18 @@ class DeferSupportTest extends Specification {
                     throw new RuntimeException(data)
                 }
                 new ExecutionResultImpl(data, [])
+            })
+        }
+        return new DeferredCall(callSupplier, new DeferredErrorSupport())
+    }
+
+    private
+    static DeferredCall offThreadCallWithinCall(DeferSupport deferSupport, String dataParent, String dataChild, int sleepTime) {
+        def callSupplier = {
+            CompletableFuture.supplyAsync({
+                Thread.sleep(sleepTime)
+                deferSupport.enqueue(offThread(dataChild, sleepTime))
+                new ExecutionResultImpl(dataParent, [])
             })
         }
         return new DeferredCall(callSupplier, new DeferredErrorSupport())

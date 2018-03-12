@@ -23,6 +23,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @Internal
 public class DeferSupport implements Publisher<ExecutionResult> {
 
+    public static final String DEFERRED_RESULT_STREAM_NAME = "deferredResultStream";
+
     private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
     private final AtomicBoolean deferDetected = new AtomicBoolean(false);
     private final AtomicReference<CancellableSubscription> subscription = new AtomicReference<>();

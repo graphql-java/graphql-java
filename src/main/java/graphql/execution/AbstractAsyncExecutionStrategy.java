@@ -38,7 +38,7 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
             DeferSupport deferSupport = executionContext.getDeferSupport();
             if (deferSupport.isDeferDetected()) {
                 extensions = new LinkedHashMap<>();
-                extensions.put("deferredResults", deferSupport.getPublisher());
+                extensions.put(DeferSupport.DEFERRED_RESULT_STREAM_NAME, deferSupport.getPublisher());
             }
             overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors(), extensions));
         };
