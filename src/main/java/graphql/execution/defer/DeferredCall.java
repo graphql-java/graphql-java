@@ -23,11 +23,12 @@ public class DeferredCall {
         this.errorSupport = deferredErrorSupport;
     }
 
-    CompletableFuture<ExecutionResult> makeCall() {
-        return call.get();
+    CompletableFuture<ExecutionResult> invoke() {
+        CompletableFuture<ExecutionResult> future = call.get();
+        return future.thenApply(this::addErrorsEncountered);
     }
 
-    ExecutionResult addErrorsEncountered(ExecutionResult executionResult) {
+    private ExecutionResult addErrorsEncountered(ExecutionResult executionResult) {
         List<GraphQLError> errorsEncountered = errorSupport.getErrors();
         if (errorsEncountered.isEmpty()) {
             return executionResult;

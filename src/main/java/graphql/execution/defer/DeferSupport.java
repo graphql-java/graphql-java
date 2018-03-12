@@ -2,6 +2,7 @@ package graphql.execution.defer;
 
 import graphql.Directives;
 import graphql.ExecutionResult;
+import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.execution.reactive.CancellableSubscription;
 import graphql.language.Field;
@@ -38,7 +39,7 @@ public class DeferSupport implements Publisher<ExecutionResult> {
     @Override
     public void subscribe(Subscriber<? super ExecutionResult> subscriber) {
         if (subscription.getAndSet(new CancellableSubscription()) != null) {
-            throw new RuntimeException("The @defer code only supports one subscription to the results");
+            throw new GraphQLException("The @defer code only supports one subscription to the results");
         }
         subscriber.onSubscribe(subscription.get());
         drainDeferredCalls(subscriber);
@@ -48,20 +49,28 @@ public class DeferSupport implements Publisher<ExecutionResult> {
         if (deferredCalls.isEmpty()) {
             subscriber.onComplete();
         }
+        if (isCancelled()) {
+            subscriber.onComplete();
+            return;
+        }
         DeferredCall deferredCall = deferredCalls.pop();
-        CompletableFuture<ExecutionResult> future = deferredCall.makeCall();
+        CompletableFuture<ExecutionResult> future = deferredCall.invoke();
         future.whenComplete((executionResult, exception) -> {
-            if (subscription.get().isCancelled()) {
+            if (isCancelled()) {
+                subscriber.onComplete();
                 return;
             }
             if (exception != null) {
                 subscriber.onError(exception);
                 return;
             }
-            executionResult = deferredCall.addErrorsEncountered(executionResult);
             subscriber.onNext(executionResult);
             drainDeferredCalls(subscriber);
         });
+    }
+
+    private boolean isCancelled() {
+        return subscription.get().isCancelled();
     }
 
     public void enqueue(DeferredCall deferredCall) {

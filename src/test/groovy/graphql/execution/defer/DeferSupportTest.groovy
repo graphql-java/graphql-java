@@ -1,189 +1,209 @@
 package graphql.execution.defer
 
-import graphql.Directives
-import graphql.ExecutionInput
 import graphql.ExecutionResult
-import graphql.GraphQL
-import graphql.TestUtil
-import graphql.schema.DataFetcher
-import graphql.schema.DataFetchingEnvironment
-import graphql.schema.idl.RuntimeWiring
+import graphql.ExecutionResultImpl
+import graphql.GraphQLException
 import org.awaitility.Awaitility
-import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import spock.lang.Specification
 
-import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 
-import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
-
 class DeferSupportTest extends Specification {
-    def then = System.currentTimeMillis();
 
-    def sentAt() {
-        def seconds = Duration.ofMillis(System.currentTimeMillis() - then).getSeconds()
-        "T+" + seconds
-    }
+    def "emits N deferred calls in order"() {
 
-    def sleepSome(DataFetchingEnvironment env) {
-        Integer sleepTime = env.getArgument("sleepTime")
-        sleepTime = Optional.ofNullable(sleepTime).orElse(0)
-        Thread.sleep(sleepTime)
-    }
-
-
-    def "test defer support"() {
-        def spec = '''
-            type Query {
-                post : Post 
-            }
-            
-            type Post {
-                postText : String
-                sentAt : String
-                comments(sleepTime : Int) : [Comment]
-                reviews(sleepTime : Int) : [Review]
-            }
-            
-            type Comment {
-                commentText : String
-                sentAt : String
-                goes : Bang
-            }
-            
-            type Review {
-                reviewText : String
-                sentAt : String
-                goes : Bang
-            }       
-            
-            type Bang {
-                bang : String
-            }     
-        '''
-
-        DataFetcher postFetcher = new DataFetcher() {
-            @Override
-            Object get(DataFetchingEnvironment environment) {
-                return [postText: "This is the postText", sentAt: sentAt()]
-            }
-        }
-        DataFetcher commentsFetcher = new DataFetcher() {
-            @Override
-            Object get(DataFetchingEnvironment env) {
-                return CompletableFuture.supplyAsync({
-                    sleepSome(env)
-                    def result = []
-                    for (int i = 0; i < 5; i++) {
-                        result.add([commentText: "This is the comment text " + i, sentAt: sentAt(), goes: "goes"])
-                    }
-                    return result
-                })
-            }
-
-        }
-        DataFetcher reviewsFetcher = new DataFetcher() {
-            @Override
-            Object get(DataFetchingEnvironment env) {
-                return CompletableFuture.supplyAsync({
-                    sleepSome(env)
-                    def result = []
-                    for (int i = 0; i < 3; i++) {
-                        result.add([reviewText: "This is the review text " + i, sentAt: sentAt(), goes: "goes"])
-                    }
-                    return result
-                })
-            }
-        }
-
-        DataFetcher bangDataFetcher = new DataFetcher() {
-            @Override
-            Object get(DataFetchingEnvironment environment) {
-                throw new RuntimeException("Bang!")
-            }
-        }
-
-        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
-                .type(newTypeWiring("Query").dataFetcher("post", postFetcher))
-                .type(newTypeWiring("Post").dataFetcher("comments", commentsFetcher))
-                .type(newTypeWiring("Post").dataFetcher("reviews", reviewsFetcher))
-                .type(newTypeWiring("Bang").dataFetcher("bang", bangDataFetcher))
-                .build()
-
-        def schema = TestUtil.schema(spec, runtimeWiring)
-        schema = schema.transform({ builder ->
-            builder.additionalDirective(Directives.DeferDirective)
-        })
-
-        def graphQL = GraphQL.newGraphQL(schema).build()
-
-        def query = '''
-            query {
-                post {
-                    postText
-                    sentAt
-                    
-                    a :comments(sleepTime:5000) @defer {
-                        commentText
-                        sentAt
-                    }
-                    
-                    b : reviews(sleepTime:1000) @defer {
-                        reviewText
-                        sentAt
-                    }
-                    
-                    c: reviews @defer {
-                        sentAt
-                        goes {
-                            bang
-                        }
-                    }
-                }
-            }
-        '''
+        given:
+        def deferSupport = new DeferSupport()
+        deferSupport.enqueue(offThread("A", 100)) // <-- will finish last
+        deferSupport.enqueue(offThread("B", 50)) // <-- will finish second
+        deferSupport.enqueue(offThread("C", 10)) // <-- will finish first
 
         when:
-        def result = graphQL.execute(ExecutionInput.newExecutionInput().query(query).build())
-
-        then:
-        result.errors.isEmpty()
-        result.data != null
-        println result.data
-
-
-        AtomicBoolean doneORCancelled = new AtomicBoolean()
-        Publisher<ExecutionResult> deferredResults = result.extensions["deferredResults"] as Publisher<ExecutionResult>
-        deferredResults.subscribe(new Subscriber<ExecutionResult>() {
+        List<ExecutionResult> results = []
+        AtomicBoolean finished = new AtomicBoolean()
+        deferSupport.subscribe(new Subscriber<ExecutionResult>() {
             @Override
-            void onSubscribe(Subscription s) {
-                println "\nonSubscribe@" + sentAt()
+            void onSubscribe(Subscription subscription) {
+                assert subscription != null
             }
 
             @Override
             void onNext(ExecutionResult executionResult) {
-                println "\nonNext@" + sentAt()
-                println executionResult.data
-                println executionResult.errors
+                results.add(executionResult)
             }
 
             @Override
             void onError(Throwable t) {
-                doneORCancelled.set(true)
-                println "\nonError@" + sentAt()
-                t.printStackTrace()
+                assert false, "This should not be called!"
             }
 
             @Override
             void onComplete() {
-                doneORCancelled.set(true)
-                println "\nonComplete@" + sentAt()
+                finished.set(true)
             }
         })
 
-        Awaitility.await().untilTrue(doneORCancelled)
+        Awaitility.await().untilTrue(finished)
+        then:
+
+        results.size() == 3
+        results[0].data == "A"
+        results[1].data == "B"
+        results[2].data == "C"
+    }
+
+    def "stops at first exception encountered but in order"() {
+        given:
+        def deferSupport = new DeferSupport()
+        deferSupport.enqueue(offThread("A", 100))
+        deferSupport.enqueue(offThread("Bang", 50)) // <-- will throw exception
+        deferSupport.enqueue(offThread("C", 10))
+
+        when:
+        List<ExecutionResult> results = []
+        AtomicBoolean finished = new AtomicBoolean()
+        Throwable thrown = null
+        deferSupport.subscribe(new Subscriber<ExecutionResult>() {
+            @Override
+            void onSubscribe(Subscription subscription) {
+                assert subscription != null
+            }
+
+            @Override
+            void onNext(ExecutionResult executionResult) {
+                results.add(executionResult)
+            }
+
+            @Override
+            void onError(Throwable t) {
+                thrown = t
+                finished.set(true)
+            }
+
+            @Override
+            void onComplete() {
+                assert false, "This should not be called!"
+            }
+        })
+
+        Awaitility.await().untilTrue(finished)
+        then:
+
+        results.size() == 1
+        results[0].data == "A"
+        thrown.message == "java.lang.RuntimeException: Bang"
+    }
+
+    def "you can cancel the subscription"() {
+        given:
+        def deferSupport = new DeferSupport()
+        deferSupport.enqueue(offThread("A", 100)) // <-- will finish last
+        deferSupport.enqueue(offThread("B", 50)) // <-- will finish second
+        deferSupport.enqueue(offThread("C", 10)) // <-- will finish first
+
+        when:
+        List<ExecutionResult> results = []
+        AtomicBoolean finished = new AtomicBoolean()
+        deferSupport.subscribe(new Subscriber<ExecutionResult>() {
+            Subscription savedSubscription
+
+            @Override
+            void onSubscribe(Subscription subscription) {
+                assert subscription != null
+                savedSubscription = subscription
+            }
+
+            @Override
+            void onNext(ExecutionResult executionResult) {
+                results.add(executionResult)
+                savedSubscription.cancel()
+            }
+
+            @Override
+            void onError(Throwable t) {
+                assert false, "This should not be called!"
+            }
+
+            @Override
+            void onComplete() {
+                finished.set(true)
+            }
+        })
+
+        Awaitility.await().untilTrue(finished)
+        then:
+
+        results.size() == 1
+        results[0].data == "A"
+
+    }
+
+    def "you cant subscribe twice"() {
+        given:
+        def deferSupport = new DeferSupport()
+        deferSupport.enqueue(offThread("A", 100))
+        deferSupport.enqueue(offThread("Bang", 50)) // <-- will finish second
+        deferSupport.enqueue(offThread("C", 10)) // <-- will finish first
+
+        when:
+        deferSupport.subscribe(noOpSubscriber())
+        deferSupport.subscribe(noOpSubscriber())
+        then:
+        thrown(GraphQLException)
+    }
+
+    def "indicates of there any defers present"() {
+        given:
+        def deferSupport = new DeferSupport()
+
+        when:
+        def deferPresent1 = deferSupport.isDeferDetected()
+
+        then:
+        !deferPresent1
+
+        when:
+        deferSupport.enqueue(offThread("A", 100))
+        def deferPresent2 = deferSupport.isDeferDetected()
+
+        then:
+        deferPresent2
+    }
+
+    private static DeferredCall offThread(String data, int sleepTime) {
+        def callSupplier = {
+            CompletableFuture.supplyAsync({
+                Thread.sleep(sleepTime)
+                if (data == "Bang") {
+                    throw new RuntimeException(data)
+                }
+                new ExecutionResultImpl(data, [])
+            })
+        }
+        return new DeferredCall(callSupplier, new DeferredErrorSupport())
+    }
+
+    private static Subscriber<ExecutionResult> noOpSubscriber() {
+        return new Subscriber<ExecutionResult>() {
+            @Override
+            void onSubscribe(Subscription s) {
+            }
+
+            @Override
+            void onNext(ExecutionResult executionResult) {
+
+            }
+
+            @Override
+            void onError(Throwable t) {
+            }
+
+            @Override
+            void onComplete() {
+            }
+        }
     }
 }
