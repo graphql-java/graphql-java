@@ -7,6 +7,7 @@ import graphql.GraphqlErrorHelper;
 import graphql.language.SourceLocation;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ValidationError implements GraphQLError {
@@ -15,25 +16,35 @@ public class ValidationError implements GraphQLError {
     private final List<SourceLocation> locations = new ArrayList<>();
     private final String description;
     private final ValidationErrorType validationErrorType;
+    private final List<Object> path;
 
     public ValidationError(ValidationErrorType validationErrorType) {
         this(validationErrorType, (SourceLocation) null, null);
     }
 
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description) {
-        this.validationErrorType = validationErrorType;
-        if (sourceLocation != null)
-            this.locations.add(sourceLocation);
-        this.description = description;
-        this.message = mkMessage(validationErrorType, description);
+        this(validationErrorType, nullOrList(sourceLocation), description, null);
+    }
+
+    public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<Object> path) {
+        this(validationErrorType, nullOrList(sourceLocation), description, path);
     }
 
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
+        this(validationErrorType, sourceLocations, description, null);
+    }
+
+    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<Object> path) {
         this.validationErrorType = validationErrorType;
         if (sourceLocations != null)
             this.locations.addAll(sourceLocations);
         this.description = description;
         this.message = mkMessage(validationErrorType, description);
+        this.path = path;
+    }
+
+    private static List<SourceLocation> nullOrList(SourceLocation sourceLocation) {
+        return sourceLocation == null ? null : Collections.singletonList(sourceLocation);
     }
 
     private String mkMessage(ValidationErrorType validationErrorType, String description) {
@@ -59,6 +70,11 @@ public class ValidationError implements GraphQLError {
     }
 
     @Override
+    public List<Object> getPath() {
+        return path;
+    }
+
+    @Override
     public ErrorType getErrorType() {
         return ErrorType.ValidationError;
     }
@@ -68,6 +84,7 @@ public class ValidationError implements GraphQLError {
     public String toString() {
         return "ValidationError{" +
                 "validationErrorType=" + validationErrorType +
+                ", path=" + path +
                 ", message=" + message +
                 ", locations=" + locations +
                 ", description='" + description + '\'' +

@@ -10,7 +10,6 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
@@ -63,7 +62,7 @@ public class VariableTypesMatchRule extends AbstractRule {
             String message = String.format("Variable type '%s' doesn't match expected type '%s'",
                     GraphQLTypeUtil.getUnwrappedTypeName(effectiveType),
                     GraphQLTypeUtil.getUnwrappedTypeName(expectedType));
-            addError(new ValidationError(ValidationErrorType.VariableTypeMismatch, variableReference.getSourceLocation(), message));
+            addError(ValidationErrorType.VariableTypeMismatch, variableReference.getSourceLocation(), message);
         }
     }
 

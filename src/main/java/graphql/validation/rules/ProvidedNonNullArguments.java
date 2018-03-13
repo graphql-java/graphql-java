@@ -11,7 +11,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLNonNull;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
@@ -36,7 +35,7 @@ public class ProvidedNonNullArguments extends AbstractRule {
             if (argument == null
                     && (graphQLArgument.getType() instanceof GraphQLNonNull)) {
                 String message = String.format("Missing field argument %s", graphQLArgument.getName());
-                addError(new ValidationError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message));
+                addError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message);
             }
         }
     }
@@ -61,7 +60,7 @@ public class ProvidedNonNullArguments extends AbstractRule {
             if (argument == null
                     && (graphQLArgument.getType() instanceof GraphQLNonNull)) {
                 String message = String.format("Missing directive argument %s", graphQLArgument.getName());
-                addError(new ValidationError(ValidationErrorType.MissingDirectiveArgument, directive.getSourceLocation(), message));
+                addError(ValidationErrorType.MissingDirectiveArgument, directive.getSourceLocation(), message);
             }
         }
     }
