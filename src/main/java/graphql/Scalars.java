@@ -13,6 +13,7 @@ import graphql.schema.GraphQLScalarType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.UUID;
 
 import static graphql.Assert.assertShouldNeverHappen;
 
@@ -265,17 +266,7 @@ public class Scalars {
     public static final GraphQLScalarType GraphQLID = new GraphQLScalarType("ID", "Built-in ID", new Coercing<Object, Object>() {
 
         private String convertImpl(Object input) {
-            if (input instanceof String) {
-                return (String) input;
-            }
-            if (input instanceof Integer) {
-                return String.valueOf(input);
-            }
-            if (input instanceof Long) {
-                return String.valueOf(input);
-            }
-            return null;
-
+            return String.valueOf(input);
         }
 
         @Override
