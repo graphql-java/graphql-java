@@ -1,9 +1,6 @@
 package graphql.validation;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.TypeFromAST;
@@ -39,6 +36,9 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.SchemaUtil;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
@@ -50,6 +50,7 @@ public class TraversalContext implements DocumentVisitor {
     final List<GraphQLCompositeType> parentTypeStack = new ArrayList<>();
     final List<GraphQLInputType> inputTypeStack = new ArrayList<>();
     final List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
+    final List<String> nameStack = new ArrayList<>();
     GraphQLDirective directive;
     GraphQLArgument argument;
 
@@ -96,6 +97,7 @@ public class TraversalContext implements DocumentVisitor {
     }
 
     private void enterImpl(Field field) {
+        enterName(field.getName());
         GraphQLCompositeType parentType = getParentType();
         GraphQLFieldDefinition fieldDefinition = null;
         if (parentType != null) {
@@ -133,6 +135,7 @@ public class TraversalContext implements DocumentVisitor {
     }
 
     private void enterImpl(FragmentDefinition fragmentDefinition) {
+        enterName(fragmentDefinition.getName());
         GraphQLType type = schema.getType(fragmentDefinition.getTypeCondition().getName());
         addOutputType((GraphQLOutputType) type);
     }
@@ -190,6 +193,7 @@ public class TraversalContext implements DocumentVisitor {
         } else if (node instanceof SelectionSet) {
             parentTypeStack.remove(parentTypeStack.size() - 1);
         } else if (node instanceof Field) {
+            leaveName(((Field) node).getName());
             fieldDefStack.remove(fieldDefStack.size() - 1);
             outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof Directive) {
@@ -197,6 +201,7 @@ public class TraversalContext implements DocumentVisitor {
         } else if (node instanceof InlineFragment) {
             outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof FragmentDefinition) {
+            leaveName(((FragmentDefinition) node).getName());
             outputTypeStack.remove(outputTypeStack.size() - 1);
         } else if (node instanceof VariableDefinition) {
             inputTypeStack.remove(inputTypeStack.size() - 1);
@@ -210,6 +215,21 @@ public class TraversalContext implements DocumentVisitor {
         }
     }
 
+    private void enterName(String name) {
+        if (!isEmpty(name)) {
+            nameStack.add(name);
+        }
+    }
+
+    private void leaveName(String name) {
+        if (!isEmpty(name)) {
+            nameStack.remove(nameStack.size() - 1);
+        }
+    }
+
+    private boolean isEmpty(String name) {
+        return name == null || name.isEmpty();
+    }
 
     private GraphQLNullableType getNullableType(GraphQLType type) {
         return (GraphQLNullableType) (type instanceof GraphQLNonNull ? ((GraphQLNonNull) type).getWrappedType() : type);
@@ -254,6 +274,13 @@ public class TraversalContext implements DocumentVisitor {
 
     public GraphQLFieldDefinition getFieldDef() {
         return lastElement(fieldDefStack);
+    }
+
+    public List<Object> getPath() {
+        if (nameStack.isEmpty()) {
+            return null;
+        }
+        return new ArrayList<>(nameStack);
     }
 
     private void addFieldDef(GraphQLFieldDefinition fieldDefinition) {

@@ -14,6 +14,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Internal
@@ -82,4 +83,12 @@ public class ValidationContext {
     }
 
 
+    public List<Object> getPath() {
+        return traversalContext.getPath();
+    }
+
+    @Override
+    public String toString() {
+        return "ValidationContext{" + getPath() + "}";
+    }
 }
