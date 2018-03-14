@@ -15,7 +15,7 @@ This is a [GraphQL](https://github.com/facebook/graphql) Java implementation.
 
 For details how to use `graphql-java` please look at the documentation: http://graphql-java.readthedocs.io/
 
-There is also an excellent tutorial here : https://www.howtographql.com/graphql-java/0-introduction/
+There is also an [out-of-date](https://github.com/graphql-java/graphql-java/issues/934) tutorial here : https://www.howtographql.com/graphql-java/0-introduction/
 
 Please take a look at our [list of releases](https://github.com/graphql-java/graphql-java/releases) if you want to learn more about new releases and the changelog.
 
