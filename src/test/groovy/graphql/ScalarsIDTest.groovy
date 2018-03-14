@@ -46,33 +46,8 @@ class ScalarsIDTest extends Specification {
         "123ab"             | "123ab"
         123                 | "123"
         123123123123123123L | "123123123123123123"
+        new URL("http://example.com")  | "http://example.com"
+        UUID.fromString("037ebc7a-f9b8-4d76-89f6-31b34a40e10b") | "037ebc7a-f9b8-4d76-89f6-31b34a40e10b"
     }
-
-    @Unroll
-    def "serialize throws exception for invalid input #value"() {
-        when:
-        Scalars.GraphQLID.getCoercing().serialize(value)
-        then:
-        thrown(CoercingSerializeException)
-
-        where:
-        value        | _
-        new Object() | _
-
-    }
-
-    @Unroll
-    def "parseValue throws exception for invalid input #value"() {
-        when:
-        Scalars.GraphQLID.getCoercing().parseValue(value)
-        then:
-        thrown(CoercingParseValueException)
-
-        where:
-        value        | _
-        new Object() | _
-
-    }
-
 
 }
