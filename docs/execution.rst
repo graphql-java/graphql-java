@@ -480,13 +480,6 @@ See http://www.reactive-streams.org/ for more information on the reactive ``Publ
 Also see the page on subscriptions for more details on how to write a subscription based graphql service.
 
 
-BatchedExecutionStrategy
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Alternatively, schemas with nested lists may benefit from using a ``graphql.execution.batched.BatchedExecutionStrategy`` and
-creating batched DataFetchers with get() methods annotated @Batched.
-
-
 Limiting Field Visibility
 -------------------------
 
