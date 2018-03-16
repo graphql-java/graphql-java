@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static java.util.stream.Collectors.toList;
 
@@ -93,6 +94,12 @@ public class ExecutionResultImpl implements ExecutionResult {
                 ", dataPresent=" + dataPresent +
                 ", extensions=" + extensions +
                 '}';
+    }
+
+    public ExecutionResultImpl transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newExecutionResult().from(this);
+        builderConsumer.accept(builder);
+        return builder.build();
     }
 
     public static Builder newExecutionResult() {

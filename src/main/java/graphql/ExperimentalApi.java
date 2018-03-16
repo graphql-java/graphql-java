@@ -11,10 +11,10 @@ import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
 
 /**
- * This represents code that the graphql-java project considers experimental API and has less of an imperative to be stable within
+ * This represents code that the graphql-java project considers experimental API and may not be stable between
  * releases.
  *
- * In general unnecessary changes will be avoided and this code is aiming to be public one day but you should be aware that things
+ * In general unnecessary changes will be avoided and the code is aiming to be public one day but you should be aware that things
  * might change.
  */
 @Retention(RetentionPolicy.RUNTIME)

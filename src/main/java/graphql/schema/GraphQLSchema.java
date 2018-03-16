@@ -239,7 +239,11 @@ public class GraphQLSchema {
         }
 
         public Builder additionalTypes(Set<GraphQLType> additionalTypes) {
-            this.additionalTypes = additionalTypes;
+            this.additionalTypes.addAll(additionalTypes);
+            return this;
+        }
+        public Builder additionalType(GraphQLType additionalType) {
+            this.additionalTypes.add(additionalType);
             return this;
         }
 
