@@ -70,8 +70,6 @@ public class Traverser<T> {
         traverserState.addNewContexts(roots, traverserState.newContext(null, null, rootVars));
 
         TraverserContext currentContext = null;
-        boolean cycle = false;
-        boolean fullTraversal = true;
         traverseLoop:
         while (!traverserState.isEmpty()) {
             Object top = traverserState.pop();
@@ -85,7 +83,6 @@ public class Traverser<T> {
                 assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), "result can only return CONTINUE or QUIT");
                 switch (traversalControl) {
                     case QUIT:
-                        fullTraversal = false;
                         break traverseLoop;
                     case CONTINUE:
                         continue;
@@ -100,9 +97,7 @@ public class Traverser<T> {
                 TraversalControl traversalControl = visitor.backRef(currentContext);
                 assertNotNull(traversalControl, "result of backRef must not be null");
                 assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), "backRef can only return CONTINUE or QUIT");
-                cycle = true;
                 if (traversalControl == QUIT) {
-                    fullTraversal = false;
                     break traverseLoop;
                 }
             } else {
@@ -111,10 +106,8 @@ public class Traverser<T> {
                 this.traverserState.addVisited((T) currentContext.thisNode());
                 switch (traversalControl) {
                     case QUIT:
-                        fullTraversal = false;
                         break traverseLoop;
                     case ABORT:
-                        fullTraversal = false;
                         continue;
                     case CONTINUE:
                         traverserState.pushAll(currentContext, getChildren);
@@ -124,7 +117,7 @@ public class Traverser<T> {
                 }
             }
         }
-        TraverserResult traverserResult = new TraverserResult(cycle, currentContext.getResult(), fullTraversal);
+        TraverserResult traverserResult = new TraverserResult(currentContext.getResult());
         return traverserResult;
     }
 
