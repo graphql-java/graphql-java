@@ -78,6 +78,7 @@ public class Traverser<T> {
                 // end-of-list marker, we are done recursing children,
                 // mark the current node as fully visited
                 TraverserContext contextForLeave = (TraverserContext) traverserState.pop();
+                currentContext = contextForLeave;
                 TraversalControl traversalControl = visitor.leave(contextForLeave);
                 assertNotNull(traversalControl, "result of leave must not be null");
                 assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), "result can only return CONTINUE or QUIT");

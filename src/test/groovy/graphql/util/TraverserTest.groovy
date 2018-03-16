@@ -105,6 +105,7 @@ class TraverserTest extends Specification {
     def "quit traversal in first leave"() {
         given:
         def initialData = new ArrayList()
+        def leaveResult = "Leave result"
         def leaveCount = 0
         def visitor = [
                 enter: { TraverserContext context ->
@@ -112,6 +113,7 @@ class TraverserTest extends Specification {
                     TraversalControl.CONTINUE
                 },
                 leave: { TraverserContext context ->
+                    context.setResult(leaveResult)
                     leaveCount++
                     TraversalControl.QUIT
                 },
@@ -122,9 +124,9 @@ class TraverserTest extends Specification {
         def result = Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
+        result.result == leaveResult
         initialData == [0, 1, 3]
         leaveCount == 1
-
     }
 
     def "abort subtree traversal depth-first"() {
