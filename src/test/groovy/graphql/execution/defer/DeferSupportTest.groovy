@@ -2,18 +2,15 @@ package graphql.execution.defer
 
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
-import graphql.GraphQLException
 import graphql.language.Directive
 import graphql.language.Field
 import org.awaitility.Awaitility
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicBoolean
 
 class DeferSupportTest extends Specification {
+
 
     def "emits N deferred calls with order preserved"() {
 
@@ -25,30 +22,15 @@ class DeferSupportTest extends Specification {
 
         when:
         List<ExecutionResult> results = []
-        AtomicBoolean finished = new AtomicBoolean()
-        deferSupport.subscribe(new Subscriber<ExecutionResult>() {
-            @Override
-            void onSubscribe(Subscription subscription) {
-                assert subscription != null
-            }
-
+        def subscriber = new BasicSubscriber() {
             @Override
             void onNext(ExecutionResult executionResult) {
                 results.add(executionResult)
+                subscription.request(1)
             }
-
-            @Override
-            void onError(Throwable t) {
-                assert false, "This should not be called!"
-            }
-
-            @Override
-            void onComplete() {
-                finished.set(true)
-            }
-        })
-
-        Awaitility.await().untilTrue(finished)
+        }
+        deferSupport.startDeferredCalls().subscribe(subscriber)
+        Awaitility.await().untilTrue(subscriber.finished)
         then:
 
         results.size() == 3
@@ -66,30 +48,16 @@ class DeferSupportTest extends Specification {
 
         when:
         List<ExecutionResult> results = []
-        AtomicBoolean finished = new AtomicBoolean()
-        deferSupport.subscribe(new Subscriber<ExecutionResult>() {
-            @Override
-            void onSubscribe(Subscription subscription) {
-                assert subscription != null
-            }
-
+        BasicSubscriber subscriber = new BasicSubscriber() {
             @Override
             void onNext(ExecutionResult executionResult) {
                 results.add(executionResult)
+                subscription.request(1)
             }
+        }
+        deferSupport.startDeferredCalls().subscribe(subscriber)
 
-            @Override
-            void onError(Throwable t) {
-                assert false, "This should not be called!"
-            }
-
-            @Override
-            void onComplete() {
-                finished.set(true)
-            }
-        })
-
-        Awaitility.await().untilTrue(finished)
+        Awaitility.await().untilTrue(subscriber.finished)
         then:
 
         results.size() == 6
@@ -101,7 +69,7 @@ class DeferSupportTest extends Specification {
         results[5].data == "c"
     }
 
-    def "stops at first exception encountered but still in order"() {
+    def "stops at first exception encountered"() {
         given:
         def deferSupport = new DeferSupport()
         deferSupport.enqueue(offThread("A", 100))
@@ -110,17 +78,12 @@ class DeferSupportTest extends Specification {
 
         when:
         List<ExecutionResult> results = []
-        AtomicBoolean finished = new AtomicBoolean()
         Throwable thrown = null
-        deferSupport.subscribe(new Subscriber<ExecutionResult>() {
-            @Override
-            void onSubscribe(Subscription subscription) {
-                assert subscription != null
-            }
-
+        def subscriber = new BasicSubscriber() {
             @Override
             void onNext(ExecutionResult executionResult) {
                 results.add(executionResult)
+                subscription.request(1)
             }
 
             @Override
@@ -133,13 +96,12 @@ class DeferSupportTest extends Specification {
             void onComplete() {
                 assert false, "This should not be called!"
             }
-        })
+        }
+        deferSupport.startDeferredCalls().subscribe(subscriber)
 
-        Awaitility.await().untilTrue(finished)
+        Awaitility.await().untilTrue(subscriber.finished)
         then:
 
-        results.size() == 1
-        results[0].data == "A"
         thrown.message == "java.lang.RuntimeException: Bang"
     }
 
@@ -152,34 +114,17 @@ class DeferSupportTest extends Specification {
 
         when:
         List<ExecutionResult> results = []
-        AtomicBoolean finished = new AtomicBoolean()
-        deferSupport.subscribe(new Subscriber<ExecutionResult>() {
-            Subscription savedSubscription
-
-            @Override
-            void onSubscribe(Subscription subscription) {
-                assert subscription != null
-                savedSubscription = subscription
-            }
-
+        def subscriber = new BasicSubscriber() {
             @Override
             void onNext(ExecutionResult executionResult) {
                 results.add(executionResult)
-                savedSubscription.cancel()
-            }
-
-            @Override
-            void onError(Throwable t) {
-                assert false, "This should not be called!"
-            }
-
-            @Override
-            void onComplete() {
+                subscription.cancel()
                 finished.set(true)
             }
-        })
+        }
+        deferSupport.startDeferredCalls().subscribe(subscriber)
 
-        Awaitility.await().untilTrue(finished)
+        Awaitility.await().untilTrue(subscriber.finished)
         then:
 
         results.size() == 1
@@ -195,10 +140,16 @@ class DeferSupportTest extends Specification {
         deferSupport.enqueue(offThread("C", 10)) // <-- will finish first
 
         when:
-        deferSupport.subscribe(noOpSubscriber())
-        deferSupport.subscribe(noOpSubscriber())
+        Throwable expectedThrowble
+        deferSupport.startDeferredCalls().subscribe(new BasicSubscriber())
+        deferSupport.startDeferredCalls().subscribe(new BasicSubscriber() {
+            @Override
+            void onError(Throwable t) {
+                expectedThrowble = t
+            }
+        })
         then:
-        thrown(GraphQLException)
+        expectedThrowble != null
     }
 
     def "indicates of there any defers present"() {
@@ -267,26 +218,5 @@ class DeferSupportTest extends Specification {
             })
         }
         return new DeferredCall(callSupplier, new DeferredErrorSupport())
-    }
-
-    private static Subscriber<ExecutionResult> noOpSubscriber() {
-        return new Subscriber<ExecutionResult>() {
-            @Override
-            void onSubscribe(Subscription s) {
-            }
-
-            @Override
-            void onNext(ExecutionResult executionResult) {
-
-            }
-
-            @Override
-            void onError(Throwable t) {
-            }
-
-            @Override
-            void onComplete() {
-            }
-        }
     }
 }

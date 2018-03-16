@@ -10,7 +10,6 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
 import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import spock.lang.Specification
 
@@ -24,7 +23,7 @@ class DeferSupportIntegrationTest extends Specification {
     def then = 0
 
     def sentAt() {
-        def seconds = Duration.ofMillis(System.currentTimeMillis() - then).getSeconds()
+        def seconds = Duration.ofMillis(System.currentTimeMillis() - then).toMillis()
         "T+" + seconds
     }
 
@@ -141,11 +140,11 @@ class DeferSupportIntegrationTest extends Specification {
                 post {
                     postText
                     
-                    a :comments @defer {
+                    a :comments(sleepTime:200) @defer {
                         commentText
                     }
                     
-                    b : reviews @defer {
+                    b : reviews(sleepTime:100) @defer {
                         reviewText
                         comments(prefix : "b_") @defer {
                             commentText
@@ -163,6 +162,7 @@ class DeferSupportIntegrationTest extends Specification {
 
         when:
         def initialResult = graphQL.execute(ExecutionInput.newExecutionInput().query(query).build())
+        println "\ninitialResult@" + sentAt()
 
         then:
         initialResult.errors.isEmpty()
@@ -173,9 +173,10 @@ class DeferSupportIntegrationTest extends Specification {
 
         Publisher<ExecutionResult> deferredResultStream = initialResult.extensions["deferredResultStream"] as Publisher<ExecutionResult>
         AtomicBoolean doneORCancelled = new AtomicBoolean()
-        deferredResultStream.subscribe(new Subscriber<ExecutionResult>() {
+        def subscriber = new BasicSubscriber() {
             @Override
             void onSubscribe(Subscription s) {
+                super.onSubscribe(s)
                 println "\nonSubscribe@" + sentAt()
             }
 
@@ -185,6 +186,7 @@ class DeferSupportIntegrationTest extends Specification {
                 println executionResult.data
                 println executionResult.errors
                 resultList.add(executionResult)
+                subscription.request(1)
 
             }
 
@@ -200,7 +202,8 @@ class DeferSupportIntegrationTest extends Specification {
                 doneORCancelled.set(true)
                 println "\nonComplete@" + sentAt()
             }
-        })
+        }
+        deferredResultStream.subscribe(subscriber)
 
         then:
         Awaitility.await().untilTrue(doneORCancelled)

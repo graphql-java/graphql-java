@@ -2,32 +2,29 @@ package graphql.execution.defer;
 
 import graphql.Directives;
 import graphql.ExecutionResult;
-import graphql.GraphQLException;
 import graphql.Internal;
-import graphql.execution.reactive.CancellableSubscription;
+import graphql.execution.reactive.SingleSubscriberPublisher;
 import graphql.language.Field;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
 
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * This provides support for @defer directives on fields that mean that results will be sent AFTER
  * the main result is sent via a Publisher stream.
  */
 @Internal
-public class DeferSupport implements Publisher<ExecutionResult> {
+public class DeferSupport {
 
     public static final String DEFERRED_RESULT_STREAM_NAME = "deferredResultStream";
 
-    private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
     private final AtomicBoolean deferDetected = new AtomicBoolean(false);
-    private final AtomicReference<CancellableSubscription> subscription = new AtomicReference<>();
+    private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
+    private final SingleSubscriberPublisher<ExecutionResult> publisher = new SingleSubscriberPublisher<>();
 
     public boolean checkForDeferDirective(List<Field> currentField) {
         for (Field field : currentField) {
@@ -38,41 +35,21 @@ public class DeferSupport implements Publisher<ExecutionResult> {
         return false;
     }
 
-    @Override
-    public void subscribe(Subscriber<? super ExecutionResult> subscriber) {
-        if (subscription.getAndSet(new CancellableSubscription()) != null) {
-            throw new GraphQLException("The @defer code only supports one subscription to the results");
-        }
-        subscriber.onSubscribe(subscription.get());
-        drainDeferredCalls(subscriber);
-    }
-
-    private void drainDeferredCalls(Subscriber<? super ExecutionResult> subscriber) {
+    private void drainDeferredCalls() {
         if (deferredCalls.isEmpty()) {
-            subscriber.onComplete();
-        }
-        if (isCancelled()) {
-            subscriber.onComplete();
+            publisher.noMoreData();
             return;
         }
         DeferredCall deferredCall = deferredCalls.pop();
         CompletableFuture<ExecutionResult> future = deferredCall.invoke();
         future.whenComplete((executionResult, exception) -> {
-            if (isCancelled()) {
-                subscriber.onComplete();
-                return;
-            }
             if (exception != null) {
-                subscriber.onError(exception);
+                publisher.offerError(exception);
                 return;
             }
-            subscriber.onNext(executionResult);
-            drainDeferredCalls(subscriber);
+            publisher.offer(executionResult);
+            drainDeferredCalls();
         });
-    }
-
-    private boolean isCancelled() {
-        return subscription.get().isCancelled();
     }
 
     public void enqueue(DeferredCall deferredCall) {
@@ -84,7 +61,13 @@ public class DeferSupport implements Publisher<ExecutionResult> {
         return deferDetected.get();
     }
 
-    public Publisher<ExecutionResult> getPublisher() {
-        return this;
+    /**
+     * When this is called the deferred execution will begin
+     *
+     * @return the publisher of deferred results
+     */
+    public Publisher<ExecutionResult> startDeferredCalls() {
+        drainDeferredCalls();
+        return publisher;
     }
 }

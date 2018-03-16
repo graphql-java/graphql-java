@@ -6,6 +6,7 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -23,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -169,7 +171,28 @@ public class Execution {
 
         result = result.whenComplete(executeOperationCtx::onCompleted);
 
-        return result;
+        return deferSupport(executionContext, result);
+    }
+
+    /*
+     * Adds the deferred publisher if its needed at the end of the query.  This is also a good time for the deferred code to start running
+     */
+    private CompletableFuture<ExecutionResult> deferSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
+        return result.thenApply(er -> {
+            Map<Object, Object> extensions = er.getExtensions();
+            DeferSupport deferSupport = executionContext.getDeferSupport();
+            if (deferSupport.isDeferDetected()) {
+                if (extensions == null) {
+                    extensions = new LinkedHashMap<>();
+                }
+                // we start the rest of the query now to maximize throughput.  We have the initial important results
+                // and now we can start the rest of the calls as early as possible (even before some one subscribes)
+                extensions.put(DeferSupport.DEFERRED_RESULT_STREAM_NAME, deferSupport.startDeferredCalls());
+                return ExecutionResultImpl.newExecutionResult().from((ExecutionResultImpl) er).extensions(extensions).build();
+            }
+            return er;
+        });
+
     }
 
     private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {

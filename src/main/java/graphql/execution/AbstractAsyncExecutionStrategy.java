@@ -2,7 +2,6 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.execution.defer.DeferSupport;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,16 +32,7 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 String fieldName = fieldNames.get(ix++);
                 resolvedValuesByField.put(fieldName, executionResult.getData());
             }
-
-            Map<Object, Object> extensions = null;
-            DeferSupport deferSupport = executionContext.getDeferSupport();
-            if (deferSupport.isDeferDetected()) {
-                extensions = new LinkedHashMap<>();
-                extensions.put(DeferSupport.DEFERRED_RESULT_STREAM_NAME, deferSupport.getPublisher());
-            }
-            overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors(), extensions));
+            overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors()));
         };
     }
-
-
 }
