@@ -43,8 +43,6 @@ class TraverserTest extends Specification {
 
 
         then:
-        !result.encounteredCycle
-        result.fullTraversal
         result.result.number == 5
         preOrderNodes == [0, 1, 3, 2, 4, 5]
         postOrderNodes == [3, 1, 4, 5, 2, 0]
@@ -72,8 +70,6 @@ class TraverserTest extends Specification {
         def result = Traverser.breadthFirst({ n -> n.children }).traverse(root, visitor)
 
         then:
-        !result.encounteredCycle
-        result.fullTraversal
         result.result.number == 5
         enterData == [0, 1, 2, 3, 4, 5]
         leaveData == [0, 1, 2, 3, 4, 5]
@@ -94,7 +90,6 @@ class TraverserTest extends Specification {
         def result = Traverser.breadthFirst({ n -> n.children }).traverse(root, visitor)
 
         then:
-        !result.fullTraversal
         enterData == [0]
 
 
@@ -103,7 +98,6 @@ class TraverserTest extends Specification {
         result = Traverser.depthFirst({ n -> n.children }).traverse(root, visitor)
 
         then:
-        !result.fullTraversal
         enterData == [0]
 
     }
@@ -128,7 +122,6 @@ class TraverserTest extends Specification {
         def result = Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
-        !result.fullTraversal
         initialData == [0, 1, 3]
         leaveCount == 1
 
@@ -154,7 +147,6 @@ class TraverserTest extends Specification {
         def result = Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
-        !result.fullTraversal
         initialData == [0, 1, 2]
 
     }
@@ -179,7 +171,6 @@ class TraverserTest extends Specification {
         def result = Traverser.breadthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
-        !result.fullTraversal
         initialData == [0, 1, 2, 3]
     }
 
@@ -198,8 +189,6 @@ class TraverserTest extends Specification {
         def result = Traverser.depthFirst({ n -> n.children }).traverse(cycleRoot, visitor)
 
         then:
-        result.encounteredCycle
-        result.fullTraversal
         1 * visitor.enter(_) >> TraversalControl.CONTINUE
         1 * visitor.leave(_) >> TraversalControl.CONTINUE
         1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot }) >> TraversalControl.CONTINUE
@@ -227,8 +216,6 @@ class TraverserTest extends Specification {
         then:
         5 * visitor.enter(_) >> TraversalControl.CONTINUE
         5 * visitor.leave(_) >> TraversalControl.CONTINUE
-        result.encounteredCycle
-        result.fullTraversal
         1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot }) >> TraversalControl.CONTINUE
         1 * visitor.backRef({ TraverserContext context -> context.thisNode() == node2 }) >> TraversalControl.CONTINUE
         0 * visitor.backRef(_)
@@ -254,8 +241,6 @@ class TraverserTest extends Specification {
         then:
         5 * visitor.enter(_) >> TraversalControl.CONTINUE
         2 * visitor.leave(_) >> TraversalControl.CONTINUE
-        result.encounteredCycle
-        !result.fullTraversal
         1 * visitor.backRef({ TraverserContext context -> context.thisNode() == cycleRoot }) >> TraversalControl.QUIT
         0 * visitor.backRef(_)
     }
