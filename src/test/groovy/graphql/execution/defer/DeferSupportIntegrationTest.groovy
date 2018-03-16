@@ -10,6 +10,7 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
 import org.reactivestreams.Publisher
+import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import spock.lang.Specification
 
@@ -173,11 +174,14 @@ class DeferSupportIntegrationTest extends Specification {
 
         Publisher<ExecutionResult> deferredResultStream = initialResult.extensions["deferredResultStream"] as Publisher<ExecutionResult>
         AtomicBoolean doneORCancelled = new AtomicBoolean()
-        def subscriber = new BasicSubscriber() {
+        def subscriber = new Subscriber<ExecutionResult>() {
+            Subscription subscription;
+
             @Override
             void onSubscribe(Subscription s) {
-                super.onSubscribe(s)
                 println "\nonSubscribe@" + sentAt()
+                subscription = s;
+                subscription.request(1)
             }
 
             @Override
@@ -192,21 +196,21 @@ class DeferSupportIntegrationTest extends Specification {
 
             @Override
             void onError(Throwable t) {
-                doneORCancelled.set(true)
                 println "\nonError@" + sentAt()
                 t.printStackTrace()
+                doneORCancelled.set(true)
             }
 
             @Override
             void onComplete() {
-                doneORCancelled.set(true)
                 println "\nonComplete@" + sentAt()
+                doneORCancelled.set(true)
             }
         }
         deferredResultStream.subscribe(subscriber)
 
-        then:
         Awaitility.await().untilTrue(doneORCancelled)
+        then:
 
         resultList.size() == 6
 
