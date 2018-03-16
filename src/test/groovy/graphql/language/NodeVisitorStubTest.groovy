@@ -106,5 +106,39 @@ class NodeVisitorStubTest extends Specification {
         control == TraversalControl.QUIT
     }
 
+    def "definitions call visitDefinition by default"() {
+        given:
+        NodeVisitorStub nodeVisitorStub = Spy(NodeVisitorStub, constructorArgs: [])
+        OperationDefinition operationDefinition = new OperationDefinition()
+        FragmentDefinition fragmentDefinition = new FragmentDefinition()
+        DirectiveDefinition directiveDefinition = new DirectiveDefinition("")
+        SchemaDefinition schemaDefinition = new SchemaDefinition()
+        TraverserContext context = Mock(TraverserContext)
+
+        when:
+        def control = nodeVisitorStub.visitOperationDefinition(operationDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitDefinition(operationDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitFragmentDefinition(fragmentDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitDefinition(fragmentDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitDirectiveDefinition(directiveDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitDefinition(directiveDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitSchemaDefinition(schemaDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitDefinition(schemaDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+    }
+
 
 }
