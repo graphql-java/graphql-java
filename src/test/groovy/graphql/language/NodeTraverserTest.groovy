@@ -69,6 +69,21 @@ class NodeTraverserTest extends Specification {
 
     }
 
+    def "one visit with result"() {
+        given:
+        def visitor = new NodeVisitorStub() {
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                context.setResult(node)
+            }
+        }
+        def field = new Field()
+        when:
+        def result = NodeTraverser.oneVisitWithResult(field, visitor);
+        then:
+        result == field
+    }
+
 
     boolean isEnter(TraverserContext context) {
         return context.getVar(NodeTraverser.LeaveOrEnter.class) == ENTER
