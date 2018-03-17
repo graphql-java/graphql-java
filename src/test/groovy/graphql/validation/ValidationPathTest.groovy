@@ -21,10 +21,10 @@ class ValidationPathTest extends SpecValidationBase {
 
         then:
         validationErrors.size() == 4
-        validationErrors[0].path == ["dog", "doesKnowCommand"]
-        validationErrors[1].path == ["dog", "owner", "name"]
-        validationErrors[2].path == ["dog", "owner", "badField"]
-        validationErrors[3].path == ["elephant"]
+        validationErrors[0].queryPath == ["dog", "doesKnowCommand"]
+        validationErrors[1].queryPath == ["dog", "owner", "name"]
+        validationErrors[2].queryPath == ["dog", "owner", "badField"]
+        validationErrors[3].queryPath == ["elephant"]
     }
 
     def "fragments validation errors have paths"() {
@@ -55,11 +55,11 @@ class ValidationPathTest extends SpecValidationBase {
 
         then:
         validationErrors.size() == 5
-        validationErrors[0].path == ["dog", "owner"]
-        validationErrors[1].path == ["dog", "owner", "homePlanet"]
-        validationErrors[2].path == ["namedFragment", "doesKnowCommand"]
-        validationErrors[3].path == ["namedFragment", "owner", "name"]
-        validationErrors[4].path == ["namedFragment", "owner", "badField"]
+        validationErrors[0].queryPath == ["dog", "owner"]
+        validationErrors[1].queryPath == ["dog", "owner", "homePlanet"]
+        validationErrors[2].queryPath == ["namedFragment", "doesKnowCommand"]
+        validationErrors[3].queryPath == ["namedFragment", "owner", "name"]
+        validationErrors[4].queryPath == ["namedFragment", "owner", "badField"]
 
     }
 }

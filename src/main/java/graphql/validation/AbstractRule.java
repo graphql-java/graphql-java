@@ -58,11 +58,11 @@ public class AbstractRule {
         for (Node node : locations) {
             locationList.add(node.getSourceLocation());
         }
-        validationErrorCollector.addError(new ValidationError(validationErrorType, locationList, description, getPath()));
+        validationErrorCollector.addError(new ValidationError(validationErrorType, locationList, description, getQueryPath()));
     }
 
     public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description) {
-        validationErrorCollector.addError(new ValidationError(validationErrorType, location, description, getPath()));
+        validationErrorCollector.addError(new ValidationError(validationErrorType, location, description, getQueryPath()));
     }
 
     public List<ValidationError> getErrors() {
@@ -74,8 +74,8 @@ public class AbstractRule {
         return validationContext;
     }
 
-    protected List<Object> getPath() {
-        return validationContext.getPath();
+    protected List<String> getQueryPath() {
+        return validationContext.getQueryPath();
     }
 
     public void checkArgument(Argument argument) {
