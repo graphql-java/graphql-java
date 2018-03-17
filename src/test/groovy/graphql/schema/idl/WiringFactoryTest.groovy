@@ -200,10 +200,10 @@ class WiringFactoryTest extends Specification {
 
         GraphQLObjectType humanType = schema.getType("Human") as GraphQLObjectType
 
-        def friendsDataFetcher = humanType.getFieldDefinition("friends").getDataFetcher() as NamedDataFetcher
+        def friendsDataFetcher = humanType.getFieldDefinition("friends").getDataFetcher(Mock(GraphQLSchema)) as NamedDataFetcher
         friendsDataFetcher.name == "friends"
 
-        def cyborgDataFetcher = humanType.getFieldDefinition("cyborg").getDataFetcher() as NamedDataFetcher
+        def cyborgDataFetcher = humanType.getFieldDefinition("cyborg").getDataFetcher(Mock(GraphQLSchema)) as NamedDataFetcher
         cyborgDataFetcher.name == "cyborg"
 
         GraphQLScalarType longScalar = schema.getType("Long") as GraphQLScalarType
@@ -319,7 +319,7 @@ class WiringFactoryTest extends Specification {
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
 
         expect:
-        def fetcher = type.getFieldDefinition("homePlanet").getDataFetcher()
+        def fetcher = type.getFieldDefinition("homePlanet").getDataFetcher(Mock(GraphQLSchema))
         fetcher instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher = fetcher
@@ -327,7 +327,7 @@ class WiringFactoryTest extends Specification {
         //
         // no directive - plain name
         //
-        def fetcher2 = type.getFieldDefinition("name").getDataFetcher()
+        def fetcher2 = type.getFieldDefinition("name").getDataFetcher(Mock(GraphQLSchema))
         fetcher2 instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher2 = fetcher2
