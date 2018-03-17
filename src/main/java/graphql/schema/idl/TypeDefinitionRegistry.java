@@ -274,7 +274,7 @@ public class TypeDefinitionRegistry {
      *
      * @return true if its abstract
      */
-    public boolean isAbstractType(Type type) {
+    public boolean isInterfaceOrUnion(Type type) {
         Optional<TypeDefinition> typeDefinition = getType(type);
         if (typeDefinition.isPresent()) {
             TypeDefinition definition = typeDefinition.get();
@@ -356,7 +356,7 @@ public class TypeDefinitionRegistry {
      */
     @SuppressWarnings("ConstantConditions")
     public boolean isPossibleType(Type abstractType, Type possibleObjectType) {
-        if (!isAbstractType(abstractType)) {
+        if (!isInterfaceOrUnion(abstractType)) {
             return false;
         }
         if (!isObjectType(possibleObjectType)) {
@@ -382,4 +382,59 @@ public class TypeDefinitionRegistry {
                     .anyMatch(od -> od.getName().equals(targetObjectTypeDef.getName()));
         }
     }
+
+    /**
+     * Returns true if the maybe type is either equal or a subset of the second super type (covariant).
+     *
+     * @param maybeSubType the type to check
+     * @param superType    the equality checked type
+     *
+     * @return true if maybeSubType is covariant or equal to superType
+     */
+    @SuppressWarnings("SimplifiableIfStatement")
+    public boolean isSubTypeOf(Type maybeSubType, Type superType) {
+        TypeInfo maybeSubTypeInfo = TypeInfo.typeInfo(maybeSubType);
+        TypeInfo superTypeInfo = TypeInfo.typeInfo(superType);
+        // Equivalent type is a valid subtype
+        if (maybeSubTypeInfo.equals(superTypeInfo)) {
+            return true;
+        }
+
+
+        // If superType is non-null, maybeSubType must also be non-null.
+        if (superTypeInfo.isNonNull()) {
+            if (maybeSubTypeInfo.isNonNull()) {
+                return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
+            }
+            return false;
+        }
+        if (maybeSubTypeInfo.isNonNull()) {
+            // If superType is nullable, maybeSubType may be non-null or nullable.
+            return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superType);
+        }
+
+        // If superType type is a list, maybeSubType type must also be a list.
+        if (superTypeInfo.isList()) {
+            if (maybeSubTypeInfo.isList()) {
+                return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
+            }
+            return false;
+        }
+        if (maybeSubTypeInfo.isList()) {
+            // If superType is not a list, maybeSubType must also be not a list.
+            return false;
+        }
+
+        // If superType type is an abstract type, maybeSubType type may be a currently
+        // possible object type.
+        if (isInterfaceOrUnion(superType) &&
+                isObjectType(maybeSubType) &&
+                isPossibleType(superType, maybeSubType)) {
+            return true;
+        }
+
+        // Otherwise, the child type is not a valid subtype of the parent type.
+        return false;
+    }
+
 }

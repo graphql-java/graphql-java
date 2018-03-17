@@ -1,8 +1,11 @@
 package graphql.schema.idl
 
 import graphql.language.InterfaceTypeDefinition
+import graphql.language.ListType
+import graphql.language.NonNullType
 import graphql.language.ObjectTypeDefinition
 import graphql.language.SchemaDefinition
+import graphql.language.Type
 import graphql.language.TypeName
 import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.idl.errors.SchemaRedefinitionError
@@ -241,8 +244,24 @@ class TypeDefinitionRegistryTest extends Specification {
 
         '''
 
-    private TypeName type(String name) {
+    private static TypeName type(String name) {
         new TypeName(name)
+    }
+
+    private static Type nonNullType(Type type) {
+        new NonNullType(type)
+    }
+
+    private static Type nonNullType(String name) {
+        new NonNullType(new TypeName(name))
+    }
+
+    private static Type listType(String name) {
+        new ListType(new TypeName(name))
+    }
+
+    private static Type listType(Type type) {
+        new ListType(type)
     }
 
     def "test abstract type detection"() {
@@ -251,10 +270,10 @@ class TypeDefinitionRegistryTest extends Specification {
         def registry = parse(commonSpec)
 
         then:
-        registry.isAbstractType(type("Interface"))
-        registry.isAbstractType(type("Union"))
-        !registry.isAbstractType(type("Type"))
-        !registry.isAbstractType(type("Scalar"))
+        registry.isInterfaceOrUnion(type("Interface"))
+        registry.isInterfaceOrUnion(type("Union"))
+        !registry.isInterfaceOrUnion(type("Type"))
+        !registry.isInterfaceOrUnion(type("Scalar"))
     }
 
     def "test object type detection"() {
@@ -321,8 +340,7 @@ class TypeDefinitionRegistryTest extends Specification {
         names == ["Type1", "Type2", "Type3"]
     }
 
-    def "test possible type detection"() {
-        def spec = '''
+    def animalia = '''
 
             interface Animal {
               id: String!
@@ -356,8 +374,10 @@ class TypeDefinitionRegistryTest extends Specification {
 
 
         '''
+
+    def "test possible type detection"() {
         when:
-        def registry = parse(spec)
+        def registry = parse(animalia)
 
         then:
         registry.isPossibleType(type("Mammal"), type("Dog"))
@@ -376,6 +396,30 @@ class TypeDefinitionRegistryTest extends Specification {
         registry.isPossibleType(type("Platypus"), type("Turtle"))
         !registry.isPossibleType(type("Platypus"), type("Dog"))
         !registry.isPossibleType(type("Platypus"), type("Cat"))
+
+    }
+
+
+    def "isSubTypeOf detection"() {
+        when:
+        def registry = parse(animalia)
+
+        then:
+        registry.isSubTypeOf(type("Mammal"), type("Mammal"))
+        registry.isSubTypeOf(type("Dog"), type("Mammal"))
+
+        registry.isSubTypeOf(type("Turtle"), type("Animal"))
+        !registry.isSubTypeOf(type("Turtle"), type("Mammal"))
+
+        registry.isSubTypeOf(nonNullType("Dog"), type("Mammal"))
+        !registry.isSubTypeOf(type("Dog"), nonNullType("Mammal")) // but not the other way around
+
+        registry.isSubTypeOf(listType("Mammal"), listType("Mammal"))
+        !registry.isSubTypeOf(listType("Mammal"), type("Mammal")) // but not if they aren't both lists
+
+        // unwraps all the way down
+        registry.isSubTypeOf(listType(nonNullType(listType(type("Dog")))), listType(nonNullType(listType(type("Mammal")))))
+        ! registry.isSubTypeOf(listType(nonNullType(listType(type("Turtle")))), listType(nonNullType(listType(type("Mammal")))))
 
     }
 }
