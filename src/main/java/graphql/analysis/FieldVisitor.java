@@ -3,7 +3,7 @@ package graphql.analysis;
 import graphql.Internal;
 
 @Internal
-public interface QueryVisitor {
+public interface FieldVisitor {
 
     void visitField(QueryVisitorEnvironment queryVisitorEnvironment);
 

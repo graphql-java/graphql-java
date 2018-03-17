@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -34,5 +37,10 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
     public String toString() {
         return "NullValue{" +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitNullValue(this, context);
     }
 }

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -202,8 +203,8 @@ public class GraphQLSchema {
         private GraphQLObjectType mutationType;
         private GraphQLObjectType subscriptionType;
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
-        private Set<GraphQLType> additionalTypes = Collections.emptySet();
-        private Set<GraphQLDirective> additionalDirectives = Collections.emptySet();
+        private Set<GraphQLType> additionalTypes = new HashSet<>();
+        private Set<GraphQLDirective> additionalDirectives = new HashSet<>();
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -238,12 +239,21 @@ public class GraphQLSchema {
         }
 
         public Builder additionalTypes(Set<GraphQLType> additionalTypes) {
-            this.additionalTypes = additionalTypes;
+            this.additionalTypes.addAll(additionalTypes);
+            return this;
+        }
+        public Builder additionalType(GraphQLType additionalType) {
+            this.additionalTypes.add(additionalType);
             return this;
         }
 
         public Builder additionalDirectives(Set<GraphQLDirective> additionalDirectives) {
-            this.additionalDirectives = additionalDirectives;
+            this.additionalDirectives.addAll(additionalDirectives);
+            return this;
+        }
+
+        public Builder additionalDirective(GraphQLDirective additionalDirective) {
+            this.additionalDirectives.add(additionalDirective);
             return this;
         }
 

@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,5 +49,10 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
         return "EnumValue{" +
                 "name='" + name + '\'' +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitEnumValue(this, context);
     }
 }

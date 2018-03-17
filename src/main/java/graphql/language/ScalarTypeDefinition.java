@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -75,5 +78,10 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
                 "name='" + name + '\'' +
                 ", directives=" + directives +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitScalarTypeDefinition(this, context);
     }
 }

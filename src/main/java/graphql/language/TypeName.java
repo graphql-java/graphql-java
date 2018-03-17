@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,5 +48,10 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
         return "TypeName{" +
                 "name='" + name + '\'' +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitTypeName(this, context);
     }
 }

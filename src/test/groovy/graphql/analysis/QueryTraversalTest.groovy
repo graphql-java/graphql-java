@@ -36,7 +36,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
@@ -68,7 +68,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {foo { subFoo} bar }
             """)
@@ -104,7 +104,7 @@ class QueryTraversalTest extends Specification {
             }
             schema {mutation: Mutation, query: Query}
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             mutation M{bar foo { subFoo} }
             """)
@@ -143,7 +143,7 @@ class QueryTraversalTest extends Specification {
             }
             schema {subscription: Subscription, query: Query}
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             subscription S{bar foo { subFoo} }
             """)
@@ -175,7 +175,7 @@ class QueryTraversalTest extends Specification {
                 foo(arg1: String, arg2: Boolean): String
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             query myQuery(\$myVar: String){foo(arg1: \$myVar, arg2: true)} 
             """)
@@ -207,7 +207,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {bar foo { subFoo} }
             """)
@@ -244,7 +244,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {bar foo { subFoo} foo2 { subFoo} foo3 { subFoo}}
             """)
@@ -280,7 +280,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {
                 bar 
@@ -323,7 +323,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {
                 bar 
@@ -366,7 +366,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {
                 bar 
@@ -411,7 +411,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {
                 bar 
@@ -450,7 +450,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             query MyQuery(\$variableFoo: Boolean) {
                 bar 
@@ -493,7 +493,7 @@ class QueryTraversalTest extends Specification {
                 otherString: String
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             query MyQuery(\$variableFoo: Boolean) {
                 bar 
@@ -531,6 +531,125 @@ class QueryTraversalTest extends Specification {
                     it.parentEnvironment.field.name == "subFoo" && it.parentEnvironment.fieldDefinition.type.name == "Foo2" && it.parentEnvironment.parentType.name == "Foo1" &&
                     secondParent.field.name == "foo" && secondParent.fieldDefinition.type.name == "Foo1" && secondParent.parentType.name == "Query"
         })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
+    @Unroll
+    def "skipped Fragment (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo1 
+                bar: String
+            }
+            type Foo1 {
+                string: String  
+                subFoo: Foo2 
+            }
+            type Foo2 {
+                otherString: String
+            }
+        """)
+        def visitor = Mock(FieldVisitor)
+        def query = createQuery("""
+            query MyQuery(\$variableFoo: Boolean) {
+                bar 
+                ...Test @include(if: \$variableFoo)
+            }
+            fragment Test on Query {
+                bar
+            }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+        0 * visitor.visitField(_)
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
+    @Unroll
+    def "skipped inline Fragment (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo1 
+                bar: String
+            }
+            type Foo1 {
+                string: String  
+                subFoo: Foo2 
+            }
+            type Foo2 {
+                otherString: String
+            }
+        """)
+        def visitor = Mock(FieldVisitor)
+        def query = createQuery("""
+            query MyQuery(\$variableFoo: Boolean) {
+                bar 
+                ...@include(if: \$variableFoo) {
+                    foo
+                }
+            }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+        0 * visitor.visitField(_)
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
+    @Unroll
+    def "skipped Field (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo1 
+                bar: String
+            }
+            type Foo1 {
+                string: String  
+                subFoo: Foo2 
+            }
+            type Foo2 {
+                otherString: String
+            }
+        """)
+        def visitor = Mock(FieldVisitor)
+        def query = createQuery("""
+            query MyQuery(\$variableFoo: Boolean) {
+                bar 
+                foo @include(if: \$variableFoo)
+            }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema, [variableFoo: false])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+        0 * visitor.visitField(_)
 
         where:
         order       | visitFn
@@ -617,7 +736,7 @@ class QueryTraversalTest extends Specification {
             
             schema {query: Query}
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {a {id... on Person {name}}}
         """)
@@ -655,7 +774,7 @@ class QueryTraversalTest extends Specification {
             
             schema {query: Query}
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {foo {... on Cat {catName} ... on Dog {dogName}} }
         """)
@@ -685,7 +804,7 @@ class QueryTraversalTest extends Specification {
                 subFoo: String  
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {foo {__typename subFoo} 
             __schema{  types { name } }
@@ -730,7 +849,7 @@ class QueryTraversalTest extends Specification {
                 field2 : String
             }
         """)
-        def visitor = Mock(QueryVisitor)
+        def visitor = Mock(FieldVisitor)
         def query = createQuery("""
             {
             someObject {

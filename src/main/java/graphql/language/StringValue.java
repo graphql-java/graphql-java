@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,5 +50,10 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
     @Override
     public StringValue deepCopy() {
         return new StringValue(value);
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitStringValue(this, context);
     }
 }

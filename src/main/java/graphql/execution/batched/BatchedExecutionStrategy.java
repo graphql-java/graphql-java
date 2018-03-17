@@ -58,6 +58,20 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
+ * <blockquote>
+ *   BatchedExecutionStrategy has been deprecated in favour of {@link graphql.execution.AsyncExecutionStrategy}
+ *   and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}.
+ *
+ *   BatchedExecutionStrategy does not properly implement the graphql runtime specification.  Specifically it
+ *   does not correctly handle non null fields and how they are to cascade up their parent fields.  It has proven
+ *   an intractable problem to make this code handle these cases.
+ *
+ *   See http://facebook.github.io/graphql/October2016/#sec-Errors-and-Non-Nullability
+ *
+ *   We will remove it once we are sure the alternative is as least good as the BatchedExecutionStrategy.
+ *
+ * </blockquote>
+ *
  * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link DataFetcher}s that have
  * {@link DataFetcher#get(DataFetchingEnvironment)} methods annotated with {@link Batched}. See the javadoc comment on
  * {@link Batched} for a more detailed description of batched data fetchers.
@@ -66,8 +80,11 @@ import static java.util.stream.Collectors.toList;
  * </p>
  * Normal DataFetchers can be used, however they will not see benefits of batching as they expect a single source object
  * at a time.
+ *
+ * @deprecated This has been deprecated in favour of using {@link graphql.execution.AsyncExecutionStrategy} and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
 @PublicApi
+@Deprecated
 public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private final BatchedDataFetcherFactory batchingFactory = new BatchedDataFetcherFactory();

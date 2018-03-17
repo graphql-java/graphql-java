@@ -1,5 +1,8 @@
 package graphql.language;
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -89,5 +92,10 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
                 ", enumValueDefinitions=" + enumValueDefinitions +
                 ", directives=" + directives +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitEnumTypeDefinition(this, context);
     }
 }

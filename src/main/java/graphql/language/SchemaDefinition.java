@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -66,5 +69,10 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
                 "directives=" + directives +
                 ", operationTypeDefinitions=" + operationTypeDefinitions +
                 "}";
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitSchemaDefinition(this, context);
     }
 }

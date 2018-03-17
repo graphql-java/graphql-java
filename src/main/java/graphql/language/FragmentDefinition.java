@@ -2,6 +2,8 @@ package graphql.language;
 
 
 import graphql.PublicApi;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -115,5 +117,10 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
                 ", directives=" + directives +
                 ", selectionSet=" + selectionSet +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor nodeVisitor) {
+        return nodeVisitor.visitFragmentDefinition(this, context);
     }
 }
