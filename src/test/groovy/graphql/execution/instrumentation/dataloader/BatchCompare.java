@@ -78,7 +78,7 @@ public class BatchCompare {
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(TypeRuntimeWiring.newTypeWiring("Query")
                         .dataFetcher("shops", BatchCompareDataFetchers.shopsDataFetcher)
-                        .dataFetcher("expensiveShops", BatchCompareDataFetchers.shopsDataFetcher)
+                        .dataFetcher("expensiveShops", BatchCompareDataFetchers.expensiveShopsDataFetcher)
                 )
                 .type(TypeRuntimeWiring.newTypeWiring("Shop")
                         .dataFetcher("departments", BatchCompareDataFetchers.departmentsForShopDataLoaderDataFetcher)
