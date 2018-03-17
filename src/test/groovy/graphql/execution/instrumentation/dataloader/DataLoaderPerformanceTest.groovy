@@ -45,6 +45,100 @@ class DataLoaderPerformanceTest extends Specification {
             }
             """
 
+    def expectedExpensiveData = [
+            shops         : [[name                : "Shop 1",
+                              departments         : [[name: "Department 1", products: [[name: "Product 1"]], expensiveProducts: [[name: "Product 1"]]],
+                                                     [name: "Department 2", products: [[name: "Product 2"]], expensiveProducts: [[name: "Product 2"]]],
+                                                     [name: "Department 3", products: [[name: "Product 3"]], expensiveProducts: [[name: "Product 3"]]]],
+                              expensiveDepartments: [[name: "Department 1", products: [[name: "Product 1"]], expensiveProducts: [[name: "Product 1"]]],
+                                                     [name: "Department 2", products: [[name: "Product 2"]], expensiveProducts: [[name: "Product 2"]]],
+                                                     [name: "Department 3", products: [[name: "Product 3"]], expensiveProducts: [[name: "Product 3"]]]]],
+                             [name                : "Shop 2",
+                              departments         : [[name: "Department 4", products: [[name: "Product 4"]], expensiveProducts: [[name: "Product 4"]]],
+                                                     [name: "Department 5", products: [[name: "Product 5"]], expensiveProducts: [[name: "Product 5"]]],
+                                                     [name: "Department 6", products: [[name: "Product 6"]], expensiveProducts: [[name: "Product 6"]]]],
+                              expensiveDepartments: [[name: "Department 4", products: [[name: "Product 4"]], expensiveProducts: [[name: "Product 4"]]],
+                                                     [name: "Department 5", products: [[name: "Product 5"]], expensiveProducts: [[name: "Product 5"]]],
+                                                     [name: "Department 6", products: [[name: "Product 6"]], expensiveProducts: [[name: "Product 6"]]]]],
+                             [name                : "Shop 3",
+                              departments         : [[name: "Department 7", products: [[name: "Product 7"]], expensiveProducts: [[name: "Product 7"]]],
+                                                     [name: "Department 8", products: [[name: "Product 8"]], expensiveProducts: [[name: "Product 8"]]],
+                                                     [name: "Department 9", products: [[name: "Product 9"]], expensiveProducts: [[name: "Product 9"]]]],
+                              expensiveDepartments: [[name: "Department 7", products: [[name: "Product 7"]], expensiveProducts: [[name: "Product 7"]]],
+                                                     [name: "Department 8", products: [[name: "Product 8"]], expensiveProducts: [[name: "Product 8"]]],
+                                                     [name: "Department 9", products: [[name: "Product 9"]], expensiveProducts: [[name: "Product 9"]]]]]],
+            expensiveShops: [[name                : "Shop 1",
+                              departments         : [[name: "Department 1", products: [[name: "Product 1"]], expensiveProducts: [[name: "Product 1"]]],
+                                                     [name: "Department 2", products: [[name: "Product 2"]], expensiveProducts: [[name: "Product 2"]]],
+                                                     [name: "Department 3", products: [[name: "Product 3"]], expensiveProducts: [[name: "Product 3"]]]],
+                              expensiveDepartments: [[name: "Department 1", products: [[name: "Product 1"]], expensiveProducts: [[name: "Product 1"]]],
+                                                     [name: "Department 2", products: [[name: "Product 2"]], expensiveProducts: [[name: "Product 2"]]],
+                                                     [name: "Department 3", products: [[name: "Product 3"]], expensiveProducts: [[name: "Product 3"]]]]],
+                             [name                : "Shop 2",
+                              departments         : [[name: "Department 4", products: [[name: "Product 4"]], expensiveProducts: [[name: "Product 4"]]],
+                                                     [name: "Department 5", products: [[name: "Product 5"]], expensiveProducts: [[name: "Product 5"]]],
+                                                     [name: "Department 6", products: [[name: "Product 6"]], expensiveProducts: [[name: "Product 6"]]]],
+                              expensiveDepartments: [[name: "Department 4", products: [[name: "Product 4"]], expensiveProducts: [[name: "Product 4"]]],
+                                                     [name: "Department 5", products: [[name: "Product 5"]], expensiveProducts: [[name: "Product 5"]]],
+                                                     [name: "Department 6", products: [[name: "Product 6"]], expensiveProducts: [[name: "Product 6"]]]]],
+                             [name                : "Shop 3",
+                              departments         : [[name: "Department 7", products: [[name: "Product 7"]], expensiveProducts: [[name: "Product 7"]]],
+                                                     [name: "Department 8", products: [[name: "Product 8"]], expensiveProducts: [[name: "Product 8"]]],
+                                                     [name: "Department 9", products: [[name: "Product 9"]], expensiveProducts: [[name: "Product 9"]]]],
+                              expensiveDepartments: [[name: "Department 7", products: [[name: "Product 7"]], expensiveProducts: [[name: "Product 7"]]],
+                                                     [name: "Department 8", products: [[name: "Product 8"]], expensiveProducts: [[name: "Product 8"]]],
+                                                     [name: "Department 9", products: [[name: "Product 9"]], expensiveProducts: [[name: "Product 9"]]]]]]
+
+    ]
+
+
+    def expensiveQuery = """
+            query { 
+                shops { 
+                    name 
+                    departments { 
+                        name 
+                        products { 
+                            name 
+                        } 
+                        expensiveProducts { 
+                            name 
+                        } 
+                    } 
+                    expensiveDepartments { 
+                        name 
+                        products { 
+                            name 
+                        } 
+                        expensiveProducts { 
+                            name 
+                        } 
+                    } 
+                } 
+                expensiveShops { 
+                    name 
+                    departments { 
+                        name 
+                        products { 
+                            name 
+                        } 
+                        expensiveProducts { 
+                            name 
+                        } 
+                    } 
+                    expensiveDepartments { 
+                        name 
+                        products { 
+                            name 
+                        } 
+                        expensiveProducts { 
+                            name 
+                        } 
+                    } 
+                } 
+            }
+            """
+
     void setup() {
         BatchCompareDataFetchers.resetState()
     }
@@ -67,6 +161,30 @@ class DataLoaderPerformanceTest extends Specification {
 
         then:
         result.data == expectedData
+        //
+        //  eg 1 for shops-->departments and one for departments --> products
+        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+    }
+
+    def "970 ensure data loader is performant for multiple field with lists"() {
+
+        when:
+
+        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema()
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
+        dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
+        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
+        GraphQL graphQL = GraphQL
+                .newGraphQL(schema)
+                .instrumentation(instrumentation)
+                .build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).build()
+        def result = graphQL.execute(executionInput)
+
+        then:
+        result.data == expectedExpensiveData
         //
         //  eg 1 for shops-->departments and one for departments --> products
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1

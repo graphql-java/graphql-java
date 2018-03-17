@@ -78,12 +78,15 @@ public class BatchCompare {
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(TypeRuntimeWiring.newTypeWiring("Query")
                         .dataFetcher("shops", BatchCompareDataFetchers.shopsDataFetcher)
+                        .dataFetcher("expensiveShops", BatchCompareDataFetchers.shopsDataFetcher)
                 )
                 .type(TypeRuntimeWiring.newTypeWiring("Shop")
                         .dataFetcher("departments", BatchCompareDataFetchers.departmentsForShopDataLoaderDataFetcher)
+                        .dataFetcher("expensiveDepartments", BatchCompareDataFetchers.departmentsForShopDataLoaderDataFetcher)
                 )
                 .type(TypeRuntimeWiring.newTypeWiring("Department")
                         .dataFetcher("products", BatchCompareDataFetchers.productsForDepartmentDataLoaderDataFetcher)
+                        .dataFetcher("expensiveProducts", BatchCompareDataFetchers.productsForDepartmentDataLoaderDataFetcher)
                 )
                 .build();
 
