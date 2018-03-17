@@ -29,12 +29,12 @@ class TraverserTest extends Specification {
                 enter: { TraverserContext context ->
                     preOrderNodes << context.thisNode().number
                     println "enter:$preOrderNodes"
-                    context.setResult(context.thisNode())
                     TraversalControl.CONTINUE
                 },
                 leave: { TraverserContext context ->
                     postOrderNodes << context.thisNode().number
                     println "leave:$postOrderNodes"
+                    context.setResult(context.thisNode())
                     TraversalControl.CONTINUE
                 }
         ] as TraverserVisitor
@@ -43,7 +43,7 @@ class TraverserTest extends Specification {
 
 
         then:
-        result.result.number == 5
+        result.result.number == 0
         preOrderNodes == [0, 1, 3, 2, 4, 5]
         postOrderNodes == [3, 1, 4, 5, 2, 0]
     }
