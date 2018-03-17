@@ -276,7 +276,7 @@ public class TraversalContext implements DocumentVisitor {
         return lastElement(fieldDefStack);
     }
 
-    public List<Object> getPath() {
+    public List<String> getQueryPath() {
         if (nameStack.isEmpty()) {
             return null;
         }

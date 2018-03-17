@@ -83,12 +83,12 @@ public class ValidationContext {
     }
 
 
-    public List<Object> getPath() {
-        return traversalContext.getPath();
+    public List<String> getQueryPath() {
+        return traversalContext.getQueryPath();
     }
 
     @Override
     public String toString() {
-        return "ValidationContext{" + getPath() + "}";
+        return "ValidationContext{" + getQueryPath() + "}";
     }
 }
