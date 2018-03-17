@@ -76,85 +76,46 @@ class NodeVisitorStubTest extends Specification {
         new SchemaDefinition()      | 'visitSchemaDefinition'
     }
 
-    def "type definitions call visitTypeDefinition by default"() {
+    @Unroll
+    def "#visitMethod call visitTypeDefinition by default"() {
         given:
         NodeVisitorStub nodeVisitorStub = Spy(NodeVisitorStub, constructorArgs: [])
-        UnionTypeDefinition unionTypeDefinition = new UnionTypeDefinition("")
-        InputObjectTypeDefinition inputObjectTypeDefinition = new InputObjectTypeDefinition("")
-        ScalarTypeDefinition scalarTypeDefinition = new ScalarTypeDefinition("")
-        InterfaceTypeDefinition interfaceTypeDefinition = new InterfaceTypeDefinition("")
-        EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition("")
-        ObjectTypeDefinition objectTypeDefinition = new ObjectTypeDefinition("")
         TraverserContext context = Mock(TraverserContext)
 
         when:
-        def control = nodeVisitorStub.visitUnionTypeDefinition(unionTypeDefinition, context)
+        def control = nodeVisitorStub."$visitMethod"(node, context)
         then:
-        1 * nodeVisitorStub.visitTypeDefinition(unionTypeDefinition, context) >> TraversalControl.QUIT
+        1 * nodeVisitorStub.visitTypeDefinition(node, context) >> TraversalControl.QUIT
         control == TraversalControl.QUIT
 
-        when:
-        control = nodeVisitorStub.visitInputObjectTypeDefinition(inputObjectTypeDefinition, context)
-        then:
-        1 * nodeVisitorStub.visitTypeDefinition(inputObjectTypeDefinition, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
-
-        when:
-        control = nodeVisitorStub.visitInputObjectTypeDefinition(inputObjectTypeDefinition, context)
-        then:
-        1 * nodeVisitorStub.visitTypeDefinition(inputObjectTypeDefinition, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
-
-        when:
-        control = nodeVisitorStub.visitScalarTypeDefinition(scalarTypeDefinition, context)
-        then:
-        1 * nodeVisitorStub.visitTypeDefinition(scalarTypeDefinition, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
-
-        when:
-        control = nodeVisitorStub.visitInterfaceTypeDefinition(interfaceTypeDefinition, context)
-        then:
-        1 * nodeVisitorStub.visitTypeDefinition(interfaceTypeDefinition, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
-
-        when:
-        control = nodeVisitorStub.visitEnumTypeDefinition(enumTypeDefinition, context)
-        then:
-        1 * nodeVisitorStub.visitEnumTypeDefinition(enumTypeDefinition, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
-
-        when:
-        control = nodeVisitorStub.visitObjectTypeDefinition(objectTypeDefinition, context)
-        then:
-        1 * nodeVisitorStub.visitObjectTypeDefinition(objectTypeDefinition, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
+        where:
+        node                              | visitMethod
+        new UnionTypeDefinition("")       | 'visitUnionTypeDefinition'
+        new InputObjectTypeDefinition("") | 'visitInputObjectTypeDefinition'
+        new ScalarTypeDefinition("")      | 'visitScalarTypeDefinition'
+        new InterfaceTypeDefinition("")   | 'visitInterfaceTypeDefinition'
+        new EnumTypeDefinition("")        | 'visitEnumTypeDefinition'
+        new ObjectTypeDefinition("")      | 'visitObjectTypeDefinition'
     }
 
-    def "types call visitTypes by default"() {
+    @Unroll
+    def "#visitMethod call visitTypes by default"() {
         given:
         NodeVisitorStub nodeVisitorStub = Spy(NodeVisitorStub, constructorArgs: [])
-        NonNullType nonNullType = new NonNullType()
-        ListType listType = new ListType()
-        TypeName typeName = new TypeName("")
         TraverserContext context = Mock(TraverserContext)
 
         when:
-        def control = nodeVisitorStub.visitNonNullType(nonNullType, context)
+        def control = nodeVisitorStub."$visitMethod"(node, context)
         then:
-        1 * nodeVisitorStub.visitType(nonNullType, context) >> TraversalControl.QUIT
+        1 * nodeVisitorStub.visitType(node, context) >> TraversalControl.QUIT
         control == TraversalControl.QUIT
 
-        when:
-        control = nodeVisitorStub.visitListType(listType, context)
-        then:
-        1 * nodeVisitorStub.visitType(listType, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
+        where:
+        node              | visitMethod
+        new NonNullType() | 'visitNonNullType'
+        new ListType()    | 'visitListType'
+        new TypeName("")  | 'visitTypeName'
 
-        when:
-        control = nodeVisitorStub.visitTypeName(typeName, context)
-        then:
-        1 * nodeVisitorStub.visitType(typeName, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
     }
 
     @Unroll
