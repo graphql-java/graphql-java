@@ -194,5 +194,31 @@ class NodeVisitorStubTest extends Specification {
         control == TraversalControl.QUIT
     }
 
+    def "types call visitTypes by default"() {
+        given:
+        NodeVisitorStub nodeVisitorStub = Spy(NodeVisitorStub, constructorArgs: [])
+        NonNullType nonNullType = new NonNullType()
+        ListType listType = new ListType()
+        TypeName typeName = new TypeName("")
+        TraverserContext context = Mock(TraverserContext)
+
+        when:
+        def control = nodeVisitorStub.visitNonNullType(nonNullType, context)
+        then:
+        1 * nodeVisitorStub.visitType(nonNullType, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitListType(listType, context)
+        then:
+        1 * nodeVisitorStub.visitType(listType, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitTypeName(typeName, context)
+        then:
+        1 * nodeVisitorStub.visitType(typeName, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+    }
 
 }
