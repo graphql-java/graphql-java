@@ -140,5 +140,59 @@ class NodeVisitorStubTest extends Specification {
         control == TraversalControl.QUIT
     }
 
+    def "type definitions call visitTypeDefinition by default"() {
+        given:
+        NodeVisitorStub nodeVisitorStub = Spy(NodeVisitorStub, constructorArgs: [])
+        UnionTypeDefinition unionTypeDefinition = new UnionTypeDefinition("")
+        InputObjectTypeDefinition inputObjectTypeDefinition = new InputObjectTypeDefinition("")
+        ScalarTypeDefinition scalarTypeDefinition = new ScalarTypeDefinition("")
+        InterfaceTypeDefinition interfaceTypeDefinition = new InterfaceTypeDefinition("")
+        EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition("")
+        ObjectTypeDefinition objectTypeDefinition = new ObjectTypeDefinition("")
+        TraverserContext context = Mock(TraverserContext)
+
+        when:
+        def control = nodeVisitorStub.visitUnionTypeDefinition(unionTypeDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitTypeDefinition(unionTypeDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitInputObjectTypeDefinition(inputObjectTypeDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitTypeDefinition(inputObjectTypeDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitInputObjectTypeDefinition(inputObjectTypeDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitTypeDefinition(inputObjectTypeDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitScalarTypeDefinition(scalarTypeDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitTypeDefinition(scalarTypeDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitInterfaceTypeDefinition(interfaceTypeDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitTypeDefinition(interfaceTypeDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitEnumTypeDefinition(enumTypeDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitEnumTypeDefinition(enumTypeDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+
+        when:
+        control = nodeVisitorStub.visitObjectTypeDefinition(objectTypeDefinition, context)
+        then:
+        1 * nodeVisitorStub.visitObjectTypeDefinition(objectTypeDefinition, context) >> TraversalControl.QUIT
+        control == TraversalControl.QUIT
+    }
+
 
 }
