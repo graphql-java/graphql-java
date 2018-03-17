@@ -441,7 +441,7 @@ public class SchemaTypeChecker {
                     if (objectFieldDef == null) {
                         errors.add(new MissingInterfaceFieldError(typeOfType, objectTypeDef, interfaceTypeDef, interfaceFieldDef));
                     } else {
-                        if (!isTypeSubTypeOf(typeRegistry, objectFieldDef.getType(), interfaceFieldDef.getType())) {
+                        if (! typeRegistry.isSubTypeOf(objectFieldDef.getType(), interfaceFieldDef.getType())) {
                             String interfaceFieldType = AstPrinter.printAst(interfaceFieldDef.getType());
                             String objectFieldType = AstPrinter.printAst(objectFieldDef.getType());
                             errors.add(new InterfaceFieldRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectFieldType, interfaceFieldType));
@@ -461,51 +461,6 @@ public class SchemaTypeChecker {
         };
     }
 
-    @SuppressWarnings("SimplifiableIfStatement")
-    private boolean isTypeSubTypeOf(TypeDefinitionRegistry registry, Type maybeSubType, Type superType) {
-        TypeInfo maybeSubTypeInfo = TypeInfo.typeInfo(maybeSubType);
-        TypeInfo superTypeInfo = TypeInfo.typeInfo(superType);
-        // Equivalent type is a valid subtype
-        if (maybeSubTypeInfo.equals(superTypeInfo)) {
-            return true;
-        }
-
-
-        // If superType is non-null, maybeSubType must also be non-null.
-        if (superTypeInfo.isNonNull()) {
-            if (maybeSubTypeInfo.isNonNull()) {
-                return isTypeSubTypeOf(registry, maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
-            }
-            return false;
-        }
-        if (maybeSubTypeInfo.isNonNull()) {
-            // If superType is nullable, maybeSubType may be non-null or nullable.
-            return isTypeSubTypeOf(registry, maybeSubTypeInfo.unwrapOneType(), superType);
-        }
-
-        // If superType type is a list, maybeSubType type must also be a list.
-        if (superTypeInfo.isList()) {
-            if (maybeSubTypeInfo.isList()) {
-                return isTypeSubTypeOf(registry, maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
-            }
-            return false;
-        }
-        if (maybeSubTypeInfo.isList()) {
-            // If superType is not a list, maybeSubType must also be not a list.
-            return false;
-        }
-
-        // If superType type is an abstract type, maybeSubType type may be a currently
-        // possible object type.
-        if (registry.isAbstractType(superType) &&
-                registry.isObjectType(maybeSubType) &&
-                registry.isPossibleType(superType, maybeSubType)) {
-            return true;
-        }
-
-        // Otherwise, the child type is not a valid subtype of the parent type.
-        return false;
-    }
 
     private void checkArgumentConsistency(String typeOfType, ObjectTypeDefinition objectTypeDef, InterfaceTypeDefinition interfaceTypeDef, FieldDefinition objectFieldDef, FieldDefinition interfaceFieldDef, List<GraphQLError> errors) {
         List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
