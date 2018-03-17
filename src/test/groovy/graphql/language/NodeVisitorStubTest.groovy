@@ -30,7 +30,8 @@ class NodeVisitorStubTest extends Specification {
 
     }
 
-    def "values nodes call visitValue by default"() {
+    @Unroll
+    def "#visitMethod call visitValue by default"() {
         given:
         NodeVisitorStub nodeVisitorStub = Spy(NodeVisitorStub, constructorArgs: [])
         TraverserContext context = Mock(TraverserContext)
@@ -54,38 +55,25 @@ class NodeVisitorStubTest extends Specification {
         new StringValue()       | 'visitStringValue'
     }
 
-    def "definitions call visitDefinition by default"() {
+    @Unroll
+    def "#visitMethod call visitDefinition by default"() {
         given:
         NodeVisitorStub nodeVisitorStub = Spy(NodeVisitorStub, constructorArgs: [])
-        OperationDefinition operationDefinition = new OperationDefinition()
-        FragmentDefinition fragmentDefinition = new FragmentDefinition()
-        DirectiveDefinition directiveDefinition = new DirectiveDefinition("")
-        SchemaDefinition schemaDefinition = new SchemaDefinition()
         TraverserContext context = Mock(TraverserContext)
 
         when:
-        def control = nodeVisitorStub.visitOperationDefinition(operationDefinition, context)
+        def control = nodeVisitorStub."$visitMethod"(node, context)
         then:
-        1 * nodeVisitorStub.visitDefinition(operationDefinition, context) >> TraversalControl.QUIT
+        1 * nodeVisitorStub.visitDefinition(node, context) >> TraversalControl.QUIT
         control == TraversalControl.QUIT
 
-        when:
-        control = nodeVisitorStub.visitFragmentDefinition(fragmentDefinition, context)
-        then:
-        1 * nodeVisitorStub.visitDefinition(fragmentDefinition, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
 
-        when:
-        control = nodeVisitorStub.visitDirectiveDefinition(directiveDefinition, context)
-        then:
-        1 * nodeVisitorStub.visitDefinition(directiveDefinition, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
-
-        when:
-        control = nodeVisitorStub.visitSchemaDefinition(schemaDefinition, context)
-        then:
-        1 * nodeVisitorStub.visitDefinition(schemaDefinition, context) >> TraversalControl.QUIT
-        control == TraversalControl.QUIT
+        where:
+        node                        | visitMethod
+        new OperationDefinition()   | 'visitOperationDefinition'
+        new FragmentDefinition()    | 'visitFragmentDefinition'
+        new DirectiveDefinition("") | 'visitDirectiveDefinition'
+        new SchemaDefinition()      | 'visitSchemaDefinition'
     }
 
     def "type definitions call visitTypeDefinition by default"() {
