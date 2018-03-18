@@ -3,11 +3,13 @@ package graphql.schema;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
+import graphql.PublicApi;
 import graphql.language.SourceLocation;
 
 import java.util.Arrays;
 import java.util.List;
 
+@PublicApi
 public class CoercingParseLiteralException extends GraphQLException implements GraphQLError {
     private List<SourceLocation> sourceLocations;
 
