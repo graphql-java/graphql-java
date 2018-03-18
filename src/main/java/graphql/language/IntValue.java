@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,5 +50,10 @@ public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> 
         return "IntValue{" +
                 "value=" + value +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitIntValue(this, context);
     }
 }

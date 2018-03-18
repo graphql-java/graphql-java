@@ -46,6 +46,7 @@ class ScalarsIDTest extends Specification {
         "123ab"             | "123ab"
         123                 | "123"
         123123123123123123L | "123123123123123123"
+        UUID.fromString("037ebc7a-f9b8-4d76-89f6-31b34a40e10b") | "037ebc7a-f9b8-4d76-89f6-31b34a40e10b"
     }
 
     @Unroll

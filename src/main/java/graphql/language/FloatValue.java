@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,5 +51,10 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
     @Override
     public FloatValue deepCopy() {
         return new FloatValue(value);
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitFloatValue(this, context);
     }
 }

@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -97,5 +100,10 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
                 ", directives=" + directives +
                 ", fieldDefinitions=" + fieldDefinitions +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitObjectTypeDefinition(this, context);
     }
 }

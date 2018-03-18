@@ -13,6 +13,7 @@ import graphql.schema.GraphQLScalarType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.UUID;
 
 import static graphql.Assert.assertShouldNeverHappen;
 
@@ -272,6 +273,9 @@ public class Scalars {
                 return String.valueOf(input);
             }
             if (input instanceof Long) {
+                return String.valueOf(input);
+            }
+            if (input instanceof UUID) {
                 return String.valueOf(input);
             }
             return null;

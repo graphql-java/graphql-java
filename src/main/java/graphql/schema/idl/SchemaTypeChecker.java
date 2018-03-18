@@ -441,9 +441,9 @@ public class SchemaTypeChecker {
                     if (objectFieldDef == null) {
                         errors.add(new MissingInterfaceFieldError(typeOfType, objectTypeDef, interfaceTypeDef, interfaceFieldDef));
                     } else {
-                        String interfaceFieldType = AstPrinter.printAst(interfaceFieldDef.getType());
-                        String objectFieldType = AstPrinter.printAst(objectFieldDef.getType());
-                        if (!interfaceFieldType.equals(objectFieldType)) {
+                        if (! typeRegistry.isSubTypeOf(objectFieldDef.getType(), interfaceFieldDef.getType())) {
+                            String interfaceFieldType = AstPrinter.printAst(interfaceFieldDef.getType());
+                            String objectFieldType = AstPrinter.printAst(objectFieldDef.getType());
                             errors.add(new InterfaceFieldRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectFieldType, interfaceFieldType));
                         }
 
@@ -460,6 +460,7 @@ public class SchemaTypeChecker {
             }
         };
     }
+
 
     private void checkArgumentConsistency(String typeOfType, ObjectTypeDefinition objectTypeDef, InterfaceTypeDefinition interfaceTypeDef, FieldDefinition objectFieldDef, FieldDefinition interfaceFieldDef, List<GraphQLError> errors) {
         List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();

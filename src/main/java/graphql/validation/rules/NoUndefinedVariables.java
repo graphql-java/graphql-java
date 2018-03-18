@@ -7,7 +7,6 @@ import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
@@ -37,7 +36,7 @@ public class NoUndefinedVariables extends AbstractRule {
     public void checkVariable(VariableReference variableReference) {
         if (!variableNames.contains(variableReference.getName())) {
             String message = String.format("Undefined variable %s", variableReference.getName());
-            addError(new ValidationError(ValidationErrorType.UndefinedVariable, variableReference.getSourceLocation(), message));
+            addError(ValidationErrorType.UndefinedVariable, variableReference.getSourceLocation(), message);
         }
     }
 

@@ -5,7 +5,9 @@ import graphql.PublicApi;
 import graphql.language.Definition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
+import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
+import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
@@ -13,10 +15,12 @@ import graphql.language.SchemaDefinition;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
+import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -24,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Optional.ofNullable;
 
@@ -261,4 +266,175 @@ public class TypeDefinitionRegistry {
         }
         return Optional.empty();
     }
+
+    /**
+     * Returns true if the specified type exists in the registry and is an abstract (Interface or Union) type
+     *
+     * @param type the type to check
+     *
+     * @return true if its abstract
+     */
+    public boolean isInterfaceOrUnion(Type type) {
+        Optional<TypeDefinition> typeDefinition = getType(type);
+        if (typeDefinition.isPresent()) {
+            TypeDefinition definition = typeDefinition.get();
+            return definition instanceof UnionTypeDefinition || definition instanceof InterfaceTypeDefinition;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the specified type exists in the registry and is an object type
+     *
+     * @param type the type to check
+     *
+     * @return true if its an object type
+     */
+    public boolean isObjectType(Type type) {
+        return getType(type, ObjectTypeDefinition.class).isPresent();
+    }
+
+    /**
+     * Returns a list of types in the registry of that specified class
+     *
+     * @param targetClass the class to search for
+     * @param <T>         must extend TypeDefinition
+     *
+     * @return a list of types of the target class
+     */
+    public <T extends TypeDefinition> List<T> getTypes(Class<T> targetClass) {
+        return types.values().stream()
+                .filter(targetClass::isInstance)
+                .map(targetClass::cast)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns a map of types in the registry of that specified class keyed by name
+     *
+     * @param targetClass the class to search for
+     * @param <T>         must extend TypeDefinition
+     *
+     * @return a map of types
+     */
+    public <T extends TypeDefinition> Map<String, T> getTypesMap(Class<T> targetClass) {
+        List<T> list = getTypes(targetClass);
+        return FpKit.getByName(list, TypeDefinition::getName, FpKit.mergeFirst());
+    }
+
+    /**
+     * Returns the list of object types that implement the given interface type
+     *
+     * @param targetInterface the target to search for
+     *
+     * @return the list of object types that implement the given interface type
+     */
+    public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
+        List<ObjectTypeDefinition> objectTypeDefinitions = getTypes(ObjectTypeDefinition.class);
+        return objectTypeDefinitions.stream().filter(objectTypeDefinition -> {
+            List<Type> implementsList = objectTypeDefinition.getImplements();
+            for (Type iFace : implementsList) {
+                Optional<InterfaceTypeDefinition> interfaceTypeDef = getType(iFace, InterfaceTypeDefinition.class);
+                if (interfaceTypeDef.isPresent()) {
+                    boolean equals = interfaceTypeDef.get().getName().equals(targetInterface.getName());
+                    if (equals) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Returns true of the abstract type is in implemented by the object type
+     *
+     * @param abstractType       the abstract type to check (interface or union)
+     * @param possibleObjectType the object type to check
+     *
+     * @return true if the object type implements the abstract type
+     */
+    @SuppressWarnings("ConstantConditions")
+    public boolean isPossibleType(Type abstractType, Type possibleObjectType) {
+        if (!isInterfaceOrUnion(abstractType)) {
+            return false;
+        }
+        if (!isObjectType(possibleObjectType)) {
+            return false;
+        }
+        ObjectTypeDefinition targetObjectTypeDef = getType(possibleObjectType, ObjectTypeDefinition.class).get();
+        TypeDefinition abstractTypeDef = getType(abstractType).get();
+        if (abstractTypeDef instanceof UnionTypeDefinition) {
+            List<Type> memberTypes = ((UnionTypeDefinition) abstractTypeDef).getMemberTypes();
+            for (Type memberType : memberTypes) {
+                Optional<ObjectTypeDefinition> checkType = getType(memberType, ObjectTypeDefinition.class);
+                if (checkType.isPresent()) {
+                    if (checkType.get().getName().equals(targetObjectTypeDef.getName())) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } else {
+            InterfaceTypeDefinition iFace = (InterfaceTypeDefinition) abstractTypeDef;
+            List<ObjectTypeDefinition> objectTypeDefinitions = getImplementationsOf(iFace);
+            return objectTypeDefinitions.stream()
+                    .anyMatch(od -> od.getName().equals(targetObjectTypeDef.getName()));
+        }
+    }
+
+    /**
+     * Returns true if the maybe type is either equal or a subset of the second super type (covariant).
+     *
+     * @param maybeSubType the type to check
+     * @param superType    the equality checked type
+     *
+     * @return true if maybeSubType is covariant or equal to superType
+     */
+    @SuppressWarnings("SimplifiableIfStatement")
+    public boolean isSubTypeOf(Type maybeSubType, Type superType) {
+        TypeInfo maybeSubTypeInfo = TypeInfo.typeInfo(maybeSubType);
+        TypeInfo superTypeInfo = TypeInfo.typeInfo(superType);
+        // Equivalent type is a valid subtype
+        if (maybeSubTypeInfo.equals(superTypeInfo)) {
+            return true;
+        }
+
+
+        // If superType is non-null, maybeSubType must also be non-null.
+        if (superTypeInfo.isNonNull()) {
+            if (maybeSubTypeInfo.isNonNull()) {
+                return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
+            }
+            return false;
+        }
+        if (maybeSubTypeInfo.isNonNull()) {
+            // If superType is nullable, maybeSubType may be non-null or nullable.
+            return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superType);
+        }
+
+        // If superType type is a list, maybeSubType type must also be a list.
+        if (superTypeInfo.isList()) {
+            if (maybeSubTypeInfo.isList()) {
+                return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
+            }
+            return false;
+        }
+        if (maybeSubTypeInfo.isList()) {
+            // If superType is not a list, maybeSubType must also be not a list.
+            return false;
+        }
+
+        // If superType type is an abstract type, maybeSubType type may be a currently
+        // possible object type.
+        if (isInterfaceOrUnion(superType) &&
+                isObjectType(maybeSubType) &&
+                isPossibleType(superType, maybeSubType)) {
+            return true;
+        }
+
+        // Otherwise, the child type is not a valid subtype of the parent type.
+        return false;
+    }
+
 }

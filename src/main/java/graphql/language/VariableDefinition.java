@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,5 +85,10 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> {
                 ", type=" + type +
                 ", defaultValue=" + defaultValue +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitVariableDefinition(this, context);
     }
 }

@@ -2,6 +2,8 @@ package graphql.language;
 
 
 import graphql.Internal;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -64,5 +66,10 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
                 "name='" + name + "'" +
                 ", type=" + type +
                 "}";
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitOperationTypeDefinition(this, context);
     }
 }

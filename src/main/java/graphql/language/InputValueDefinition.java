@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -110,5 +113,10 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> {
                 ", defaultValue=" + defaultValue +
                 ", directives=" + directives +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitInputValueDefinition(this, context);
     }
 }

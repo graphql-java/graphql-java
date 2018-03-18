@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,5 +54,10 @@ public class ObjectField extends AbstractNode<ObjectField> {
                 "name='" + name + '\'' +
                 ", value=" + value +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitObjectField(this, context);
     }
 }
