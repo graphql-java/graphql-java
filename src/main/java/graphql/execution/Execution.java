@@ -20,6 +20,7 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -179,16 +180,14 @@ public class Execution {
      */
     private CompletableFuture<ExecutionResult> deferSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
         return result.thenApply(er -> {
-            Map<Object, Object> extensions = er.getExtensions();
             DeferSupport deferSupport = executionContext.getDeferSupport();
             if (deferSupport.isDeferDetected()) {
-                if (extensions == null) {
-                    extensions = new LinkedHashMap<>();
-                }
                 // we start the rest of the query now to maximize throughput.  We have the initial important results
                 // and now we can start the rest of the calls as early as possible (even before some one subscribes)
-                extensions.put(DeferSupport.DEFERRED_RESULT_STREAM_NAME, deferSupport.startDeferredCalls());
-                return ExecutionResultImpl.newExecutionResult().from((ExecutionResultImpl) er).extensions(extensions).build();
+                Publisher<ExecutionResult> publisher = deferSupport.startDeferredCalls();
+                return ExecutionResultImpl.newExecutionResult().from((ExecutionResultImpl) er)
+                        .addExtension(DeferSupport.DEFERRED_RESULT_STREAM_NAME, publisher)
+                        .build();
             }
             return er;
         });

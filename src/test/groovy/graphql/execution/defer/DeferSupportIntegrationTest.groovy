@@ -175,12 +175,12 @@ class DeferSupportIntegrationTest extends Specification {
         Publisher<ExecutionResult> deferredResultStream = initialResult.extensions["deferredResultStream"] as Publisher<ExecutionResult>
         AtomicBoolean doneORCancelled = new AtomicBoolean()
         def subscriber = new Subscriber<ExecutionResult>() {
-            Subscription subscription;
+            Subscription subscription
 
             @Override
             void onSubscribe(Subscription s) {
                 println "\nonSubscribe@" + sentAt()
-                subscription = s;
+                subscription = s
                 subscription.request(1)
             }
 
