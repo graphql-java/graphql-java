@@ -291,7 +291,7 @@ public class SchemaPrinter {
                         .sorted(Comparator.naturalOrder());
                 out.format("type %s implements %s {\n",
                         type.getName(),
-                        interfaceNames.collect(joining(", ")));
+                        interfaceNames.collect(joining(" & ")));
             }
 
             visibility.getFieldDefinitions(type)
