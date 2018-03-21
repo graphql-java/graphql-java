@@ -112,6 +112,8 @@ public class ExecutionStrategyParameters {
             this.fields = oldParameters.fields;
             this.arguments = oldParameters.arguments;
             this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
+            this.path = oldParameters.path;
+            this.currentField = oldParameters.currentField;
         }
 
         public Builder typeInfo(ExecutionTypeInfo type) {
