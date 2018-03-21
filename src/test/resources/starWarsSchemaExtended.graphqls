@@ -5,6 +5,7 @@ schema {
 type Query {
     hero(episode: Episode): Character
     droid(id: ID!): Droid
+    node(id: ID!): Node
 }
 
 enum Episode {
@@ -20,7 +21,11 @@ interface Character {
     appearsIn: [Episode]!
 }
 
-type Human implements Character {
+interface Node {
+  id: ID!
+}
+
+type Human implements Character & Node {
     id: ID!
     name: String!
     friends: [Character]
@@ -28,7 +33,7 @@ type Human implements Character {
     homePlanet: String
 }
 
-type Droid implements Character {
+type Droid implements Character & Node {
     id: ID!
     name: String!
     friends: [Character]
@@ -40,6 +45,11 @@ type Droid implements Character {
 type Planet {
     name : String
     hitBy : Asteroid
+}
+
+type Starship implements Node {
+    id: ID!
+    name : String
 }
 
 scalar Asteroid
