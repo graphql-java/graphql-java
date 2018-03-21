@@ -33,27 +33,27 @@ public class ExecutionStrategyParameters {
         this.currentField = currentField;
     }
 
-    public ExecutionTypeInfo typeInfo() {
+    public ExecutionTypeInfo getTypeInfo() {
         return typeInfo;
     }
 
-    public Object source() {
+    public Object getSource() {
         return source;
     }
 
-    public Map<String, List<Field>> fields() {
+    public Map<String, List<Field>> getFields() {
         return fields;
     }
 
-    public Map<String, Object> arguments() {
+    public Map<String, Object> getArguments() {
         return arguments;
     }
 
-    public NonNullableFieldValidator nonNullFieldValidator() {
+    public NonNullableFieldValidator getNonNullFieldValidator() {
         return nonNullableFieldValidator;
     }
 
-    public ExecutionPath path() {
+    public ExecutionPath getPath() {
         return path;
     }
 
@@ -64,7 +64,7 @@ public class ExecutionStrategyParameters {
      *
      * @return the current field in list form  or null if this has not be computed yet
      */
-    public List<Field> field() {
+    public List<Field> getField() {
         return currentField;
     }
 

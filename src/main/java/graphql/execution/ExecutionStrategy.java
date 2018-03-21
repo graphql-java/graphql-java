@@ -160,7 +160,7 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.field().get(0));
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().get(0));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
@@ -191,22 +191,22 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        Field field = parameters.field().get(0);
-        GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
+        Field field = parameters.getField().get(0);
+        GraphQLObjectType parentType = parameters.getTypeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
 
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.field());
+        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
         ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
-                .source(parameters.source())
+                .source(parameters.getSource())
                 .arguments(argumentValues)
                 .fieldDefinition(fieldDef)
-                .fields(parameters.field())
+                .fields(parameters.getField())
                 .fieldType(fieldType)
                 .fieldTypeInfo(fieldTypeInfo)
                 .parentType(parentType)
@@ -277,7 +277,7 @@ public abstract class ExecutionStrategy {
                 .argumentValues(argumentValues)
                 .field(field)
                 .fieldDefinition(fieldDef)
-                .path(parameters.path())
+                .path(parameters.getPath())
                 .exception(e)
                 .build();
 
@@ -302,8 +302,8 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
-        Field field = parameters.field().get(0);
-        GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
+        Field field = parameters.getField().get(0);
+        GraphQLObjectType parentType = parameters.getTypeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
         ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
 
@@ -320,12 +320,12 @@ public abstract class ExecutionStrategy {
 
         ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
                 .typeInfo(fieldTypeInfo)
-                .field(parameters.field())
-                .fields(parameters.fields())
+                .field(parameters.getField())
+                .fields(parameters.getFields())
                 .arguments(argumentValues)
                 .source(fetchedValue)
                 .nonNullFieldValidator(nonNullableFieldValidator)
-                .path(parameters.path())
+                .path(parameters.getPath())
                 .build();
 
         log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), fieldTypeInfo.getPath());
@@ -354,8 +354,8 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        ExecutionTypeInfo typeInfo = parameters.typeInfo();
-        Object result = unboxPossibleOptional(parameters.source());
+        ExecutionTypeInfo typeInfo = parameters.getTypeInfo();
+        Object result = unboxPossibleOptional(parameters.getSource());
         GraphQLType fieldType = typeInfo.getType();
 
         if (result == null) {
@@ -377,7 +377,7 @@ public abstract class ExecutionStrategy {
     }
 
     private CompletableFuture<ExecutionResult> completeValueForNull(ExecutionStrategyParameters parameters) {
-        Object nullValue = parameters.nonNullFieldValidator().validate(parameters.path(), null);
+        Object nullValue = parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
         return completedFuture(new ExecutionResultImpl(nullValue, null));
     }
 
@@ -393,7 +393,7 @@ public abstract class ExecutionStrategy {
      */
     protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
         Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
-        resultIterable = parameters.nonNullFieldValidator().validate(parameters.path(), resultIterable);
+        resultIterable = parameters.getNonNullFieldValidator().validate(parameters.getPath(), resultIterable);
         if (resultIterable == null) {
             return completedFuture(new ExecutionResultImpl(null, null));
         }
@@ -412,9 +412,9 @@ public abstract class ExecutionStrategy {
      */
     protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
 
-        ExecutionTypeInfo typeInfo = parameters.typeInfo();
+        ExecutionTypeInfo typeInfo = parameters.getTypeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
-        GraphQLFieldDefinition fieldDef = parameters.typeInfo().getFieldDefinition();
+        GraphQLFieldDefinition fieldDef = parameters.getTypeInfo().getFieldDefinition();
 
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef), iterableValues);
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -425,7 +425,7 @@ public abstract class ExecutionStrategy {
 
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(iterableValues, (item, index) -> {
 
-            ExecutionPath indexedPath = parameters.path().segment(index);
+            ExecutionPath indexedPath = parameters.getPath().segment(index);
 
             ExecutionTypeInfo wrappedTypeInfo = ExecutionTypeInfo.newTypeInfo()
                     .parentInfo(typeInfo)
@@ -438,10 +438,10 @@ public abstract class ExecutionStrategy {
 
             ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
                     .typeInfo(wrappedTypeInfo)
-                    .fields(parameters.fields())
+                    .fields(parameters.getFields())
                     .nonNullFieldValidator(nonNullableFieldValidator)
                     .path(indexedPath)
-                    .field(parameters.field())
+                    .field(parameters.getField())
                     .source(item)
                     .build();
 
@@ -492,7 +492,7 @@ public abstract class ExecutionStrategy {
         if (serialized instanceof Double && ((Double) serialized).isNaN()) {
             serialized = null;
         }
-        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
+        serialized = parameters.getNonNullFieldValidator().validate(parameters.getPath(), serialized);
         return completedFuture(new ExecutionResultImpl(serialized, null));
     }
 
@@ -513,7 +513,7 @@ public abstract class ExecutionStrategy {
         } catch (CoercingSerializeException e) {
             serialized = handleCoercionProblem(executionContext, parameters, e);
         }
-        serialized = parameters.nonNullFieldValidator().validate(parameters.path(), serialized);
+        serialized = parameters.getNonNullFieldValidator().validate(parameters.getPath(), serialized);
         return completedFuture(new ExecutionResultImpl(serialized, null));
     }
 
@@ -528,7 +528,7 @@ public abstract class ExecutionStrategy {
      * @return an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
-        ExecutionTypeInfo typeInfo = parameters.typeInfo();
+        ExecutionTypeInfo typeInfo = parameters.getTypeInfo();
 
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())
@@ -537,7 +537,7 @@ public abstract class ExecutionStrategy {
                 .variables(executionContext.getVariables())
                 .build();
 
-        Map<String, List<Field>> subFields = fieldCollector.collectFields(collectorParameters, parameters.field());
+        Map<String, List<Field>> subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
 
         ExecutionTypeInfo newTypeInfo = typeInfo.treatAs(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newTypeInfo);
@@ -546,7 +546,7 @@ public abstract class ExecutionStrategy {
                 .typeInfo(newTypeInfo)
                 .fields(subFields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
-                .path(parameters.path())
+                .path(parameters.getPath())
                 .source(result).build();
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
@@ -556,7 +556,7 @@ public abstract class ExecutionStrategy {
 
     @SuppressWarnings("SameReturnValue")
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
-        SerializationError error = new SerializationError(parameters.path(), e);
+        SerializationError error = new SerializationError(parameters.getPath(), e);
         log.warn(error.getMessage(), e);
         context.addError(error);
         return null;
@@ -628,9 +628,9 @@ public abstract class ExecutionStrategy {
         if (fieldType instanceof GraphQLInterfaceType) {
             TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
                     .graphQLInterfaceType((GraphQLInterfaceType) fieldType)
-                    .field(parameters.field().get(0))
-                    .value(parameters.source())
-                    .argumentValues(parameters.arguments())
+                    .field(parameters.getField().get(0))
+                    .value(parameters.getSource())
+                    .argumentValues(parameters.getArguments())
                     .context(executionContext.getContext())
                     .schema(executionContext.getGraphQLSchema()).build();
             resolvedType = resolveTypeForInterface(resolutionParams);
@@ -638,9 +638,9 @@ public abstract class ExecutionStrategy {
         } else if (fieldType instanceof GraphQLUnionType) {
             TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
                     .graphQLUnionType((GraphQLUnionType) fieldType)
-                    .field(parameters.field().get(0))
-                    .value(parameters.source())
-                    .argumentValues(parameters.arguments())
+                    .field(parameters.getField().get(0))
+                    .value(parameters.getSource())
+                    .argumentValues(parameters.getArguments())
                     .context(executionContext.getContext())
                     .schema(executionContext.getGraphQLSchema()).build();
             resolvedType = resolveTypeForUnion(resolutionParams);
@@ -693,7 +693,7 @@ public abstract class ExecutionStrategy {
     }
 
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
-        TypeMismatchError error = new TypeMismatchError(parameters.path(), parameters.typeInfo().getType());
+        TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getTypeInfo().getType());
         log.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
     }
@@ -709,7 +709,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Field field) {
-        GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
+        GraphQLObjectType parentType = parameters.getTypeInfo().castType(GraphQLObjectType.class);
         return getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
     }
 
@@ -788,8 +788,8 @@ public abstract class ExecutionStrategy {
         return newTypeInfo()
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
-                .path(parameters.path())
-                .parentInfo(parameters.typeInfo())
+                .path(parameters.getPath())
+                .parentInfo(parameters.getTypeInfo())
                 .build();
 
     }

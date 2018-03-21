@@ -58,12 +58,12 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
         InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
-        Map<String, List<Field>> fields = parameters.fields();
+        Map<String, List<Field>> fields = parameters.getFields();
         Map<String, Future<CompletableFuture<ExecutionResult>>> futures = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
             final List<Field> currentField = fields.get(fieldName);
 
-            ExecutionPath fieldPath = parameters.path().segment(fieldName);
+            ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
