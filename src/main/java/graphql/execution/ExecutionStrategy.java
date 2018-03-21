@@ -318,15 +318,12 @@ public abstract class ExecutionStrategy {
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, fieldTypeInfo);
 
-        ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
-                .typeInfo(fieldTypeInfo)
-                .field(parameters.getField())
-                .fields(parameters.getFields())
-                .arguments(argumentValues)
-                .source(fetchedValue)
-                .nonNullFieldValidator(nonNullableFieldValidator)
-                .path(parameters.getPath())
-                .build();
+        ExecutionStrategyParameters newParameters = parameters.transform(builder ->
+                builder.typeInfo(fieldTypeInfo)
+                        .arguments(argumentValues)
+                        .source(fetchedValue)
+                        .nonNullFieldValidator(nonNullableFieldValidator)
+        );
 
         log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), fieldTypeInfo.getPath());
 
@@ -436,14 +433,12 @@ public abstract class ExecutionStrategy {
 
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedTypeInfo);
 
-            ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
-                    .typeInfo(wrappedTypeInfo)
-                    .fields(parameters.getFields())
-                    .nonNullFieldValidator(nonNullableFieldValidator)
-                    .path(indexedPath)
-                    .field(parameters.getField())
-                    .source(item)
-                    .build();
+            ExecutionStrategyParameters newParameters = parameters.transform(builder ->
+                    builder.typeInfo(wrappedTypeInfo)
+                            .nonNullFieldValidator(nonNullableFieldValidator)
+                            .path(indexedPath)
+                            .source(item)
+            );
 
             return completeValue(executionContext, newParameters);
         });
@@ -542,12 +537,12 @@ public abstract class ExecutionStrategy {
         ExecutionTypeInfo newTypeInfo = typeInfo.treatAs(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newTypeInfo);
 
-        ExecutionStrategyParameters newParameters = ExecutionStrategyParameters.newParameters()
-                .typeInfo(newTypeInfo)
-                .fields(subFields)
-                .nonNullFieldValidator(nonNullableFieldValidator)
-                .path(parameters.getPath())
-                .source(result).build();
+        ExecutionStrategyParameters newParameters = parameters.transform(builder ->
+                builder.typeInfo(newTypeInfo)
+                        .fields(subFields)
+                        .nonNullFieldValidator(nonNullableFieldValidator)
+                        .source(result)
+        );
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
 
@@ -579,21 +574,21 @@ public abstract class ExecutionStrategy {
                 return null;
             }
         } else if (result instanceof OptionalInt) {
-            OptionalInt optional = (OptionalInt)result;
+            OptionalInt optional = (OptionalInt) result;
             if (optional.isPresent()) {
                 return optional.getAsInt();
             } else {
                 return null;
             }
         } else if (result instanceof OptionalDouble) {
-            OptionalDouble optional = (OptionalDouble)result;
+            OptionalDouble optional = (OptionalDouble) result;
             if (optional.isPresent()) {
                 return optional.getAsDouble();
             } else {
                 return null;
             }
         } else if (result instanceof OptionalLong) {
-            OptionalLong optional = (OptionalLong)result;
+            OptionalLong optional = (OptionalLong) result;
             if (optional.isPresent()) {
                 return optional.getAsLong();
             } else {
