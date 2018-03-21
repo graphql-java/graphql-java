@@ -4,6 +4,7 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.defer.DeferSupport;
@@ -25,7 +26,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -186,7 +186,7 @@ public class Execution {
                 // and now we can start the rest of the calls as early as possible (even before some one subscribes)
                 Publisher<ExecutionResult> publisher = deferSupport.startDeferredCalls();
                 return ExecutionResultImpl.newExecutionResult().from((ExecutionResultImpl) er)
-                        .addExtension(DeferSupport.DEFERRED_RESULT_STREAM_NAME, publisher)
+                        .addExtension(GraphQL.DEFERRED_RESULTS, publisher)
                         .build();
             }
             return er;

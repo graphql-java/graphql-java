@@ -172,7 +172,7 @@ class DeferSupportIntegrationTest extends Specification {
         when:
         List<ExecutionResult> resultList = []
 
-        Publisher<ExecutionResult> deferredResultStream = initialResult.extensions["deferredResultStream"] as Publisher<ExecutionResult>
+        Publisher<ExecutionResult> deferredResultStream = initialResult.extensions[GraphQL.DEFERRED_RESULTS] as Publisher<ExecutionResult>
         AtomicBoolean doneORCancelled = new AtomicBoolean()
         def subscriber = new Subscriber<ExecutionResult>() {
             Subscription subscription

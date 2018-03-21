@@ -20,8 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Internal
 public class DeferSupport {
 
-    public static final String DEFERRED_RESULT_STREAM_NAME = "deferredResultStream";
-
     private final AtomicBoolean deferDetected = new AtomicBoolean(false);
     private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
     private final SingleSubscriberPublisher<ExecutionResult> publisher = new SingleSubscriberPublisher<>();

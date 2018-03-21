@@ -82,7 +82,7 @@ the ``extensions`` map
         sendResult(httpServletResponse, initialResult);
 
         Map<Object, Object> extensions = initialResult.getExtensions();
-        Publisher<ExecutionResult> deferredResults = (Publisher<ExecutionResult>) extensions.get("deferredResultStream");
+        Publisher<ExecutionResult> deferredResults = (Publisher<ExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS);
 
         //
         // you subscribe to the deferred results like any other reactive stream
