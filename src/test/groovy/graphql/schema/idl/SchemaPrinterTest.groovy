@@ -40,6 +40,7 @@ class SchemaPrinterTest extends Specification {
     GraphQLSchema starWarsSchema() {
         def wiring = newRuntimeWiring()
                 .type("Character", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
+                .type("Node", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .scalar(ASTEROID)
                 .build()
         GraphQLSchema schema = load("starWarsSchemaExtended.graphqls", wiring)
@@ -644,7 +645,11 @@ type TypeE {
   name: String!
 }
 
-type Droid implements Character {
+interface Node {
+  id: ID!
+}
+
+type Droid implements Character & Node {
   appearsIn: [Episode]!
   friends: [Character]
   id: ID!
@@ -653,7 +658,7 @@ type Droid implements Character {
   primaryFunction: String
 }
 
-type Human implements Character {
+type Human implements Character & Node {
   appearsIn: [Episode]!
   friends: [Character]
   homePlanet: String
@@ -669,6 +674,12 @@ type Planet {
 type Query {
   droid(id: ID!): Droid
   hero(episode: Episode): Character
+  node(id: ID!): Node
+}
+
+type Starship implements Node {
+  id: ID!
+  name: String
 }
 
 enum Episode {

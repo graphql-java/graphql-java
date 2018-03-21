@@ -51,7 +51,11 @@ interface Character {
     appearsIn: [Episode]!
 }
 
-type Human implements Character {
+interface Node {
+  id: ID!
+}
+
+type Human implements Character & Node {
     id: ID!
     name: String!
     friends: [Character]
@@ -59,7 +63,7 @@ type Human implements Character {
     homePlanet: String
 }
 
-type Droid implements Character {
+type Droid implements Character & Node {
     id: ID!
     name: String!
     friends: [Character]
@@ -69,7 +73,7 @@ type Droid implements Character {
 
 union SearchResult = Human | Droid | Starship
 
-type Review {
+type Review implements Node {
   id: ID!
   stars: Int!
   commentary: String
@@ -122,7 +126,11 @@ interface Character {
   appearsIn: [Episode]!
 }
 
-type Human implements Character {
+interface Node {
+  id: ID!
+}
+
+type Human implements Character & Node {
   id: ID!
   name: String!
   friends: [Character]
@@ -130,7 +138,7 @@ type Human implements Character {
   homePlanet: String
 }
 
-type Droid implements Character {
+type Droid implements Character & Node {
   id: ID!
   name: String!
   friends: [Character]
@@ -140,7 +148,7 @@ type Droid implements Character {
 
 union SearchResult = Human | Droid | Starship
 
-type Review {
+type Review implements Node {
   id: ID!
   stars: Int!
   commentary: String
