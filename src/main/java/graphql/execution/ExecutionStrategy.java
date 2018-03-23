@@ -282,6 +282,8 @@ public abstract class ExecutionStrategy {
                 .build();
 
         dataFetcherExceptionHandler.accept(handlerParameters);
+
+        parameters.deferredErrorSupport().onFetchingException(parameters, e);
     }
 
     /**
@@ -554,6 +556,9 @@ public abstract class ExecutionStrategy {
         SerializationError error = new SerializationError(parameters.getPath(), e);
         log.warn(error.getMessage(), e);
         context.addError(error);
+
+        parameters.deferredErrorSupport().onError(error);
+
         return null;
     }
 
@@ -691,6 +696,8 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getTypeInfo().getType());
         log.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
+
+        parameters.deferredErrorSupport().onError(error);
     }
 
 

@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.execution.defer.DeferredErrorSupport;
 import graphql.language.Field;
 
 import java.util.List;
@@ -22,8 +23,9 @@ public class ExecutionStrategyParameters {
     private final NonNullableFieldValidator nonNullableFieldValidator;
     private final ExecutionPath path;
     private final List<Field> currentField;
+    private final DeferredErrorSupport deferredErrorSupport;
 
-    private ExecutionStrategyParameters(ExecutionTypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator, ExecutionPath path, List<Field> currentField) {
+    private ExecutionStrategyParameters(ExecutionTypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator, ExecutionPath path, List<Field> currentField, DeferredErrorSupport deferredErrorSupport) {
         this.typeInfo = assertNotNull(typeInfo, "typeInfo is null");
         this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
@@ -31,6 +33,7 @@ public class ExecutionStrategyParameters {
         this.nonNullableFieldValidator = nonNullableFieldValidator;
         this.path = path;
         this.currentField = currentField;
+        this.deferredErrorSupport = deferredErrorSupport;
     }
 
     public ExecutionTypeInfo getTypeInfo() {
@@ -55,6 +58,10 @@ public class ExecutionStrategyParameters {
 
     public ExecutionPath getPath() {
         return path;
+    }
+
+    public DeferredErrorSupport deferredErrorSupport() {
+        return deferredErrorSupport;
     }
 
     /**
@@ -96,6 +103,7 @@ public class ExecutionStrategyParameters {
         NonNullableFieldValidator nonNullableFieldValidator;
         ExecutionPath path = ExecutionPath.rootPath();
         List<Field> currentField;
+        DeferredErrorSupport deferredErrorSupport = new DeferredErrorSupport();
 
         /**
          * @see ExecutionStrategyParameters#newParameters()
@@ -112,8 +120,9 @@ public class ExecutionStrategyParameters {
             this.fields = oldParameters.fields;
             this.arguments = oldParameters.arguments;
             this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
-            this.path = oldParameters.path;
             this.currentField = oldParameters.currentField;
+            this.deferredErrorSupport = oldParameters.deferredErrorSupport;
+            this.path = oldParameters.path;
         }
 
         public Builder typeInfo(ExecutionTypeInfo type) {
@@ -156,8 +165,13 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
+        public Builder deferredErrorSupport(DeferredErrorSupport deferredErrorSupport) {
+            this.deferredErrorSupport = deferredErrorSupport;
+            return this;
+        }
+
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField);
+            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField, deferredErrorSupport);
         }
     }
 }

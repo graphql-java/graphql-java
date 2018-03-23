@@ -1,6 +1,9 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
+import graphql.execution.defer.DeferSupport;
+import graphql.execution.defer.DeferredCall;
+import graphql.execution.defer.DeferredErrorSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -50,6 +53,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
+            if (isDeferred(executionContext, newParameters, currentField)) {
+                continue;
+            }
             CompletableFuture<ExecutionResult> future = resolveField(executionContext, newParameters);
             futures.add(future);
         }
@@ -63,4 +69,16 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         return overallResult;
     }
 
+    private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters newParameters, List<Field> currentField) {
+        DeferSupport deferSupport = executionContext.getDeferSupport();
+        if (deferSupport.checkForDeferDirective(currentField)) {
+            DeferredErrorSupport errorSupport = new DeferredErrorSupport();
+            ExecutionStrategyParameters callParameters = newParameters.transform(builder -> builder.deferredErrorSupport(errorSupport));
+
+            DeferredCall call = new DeferredCall(() -> resolveField(executionContext, callParameters), errorSupport);
+            deferSupport.enqueue(call);
+            return true;
+        }
+        return false;
+    }
 }
