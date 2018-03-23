@@ -1,6 +1,8 @@
 package graphql.execution.reactive;
 
 
+import graphql.Internal;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -29,6 +31,7 @@ import static java.util.Objects.requireNonNull;
  * Inspired by Public Domain CC0 code at h
  * https://github.com/jroper/reactive-streams-servlet/tree/master/reactive-streams-servlet/src/main/java/org/reactivestreams/servlet
  */
+@Internal
 class NonBlockingMutexExecutor implements Executor {
     private final AtomicReference<RunNode> last = new AtomicReference<>();
 

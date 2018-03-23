@@ -145,7 +145,7 @@ public class SingleSubscriberPublisher<T> implements Publisher<T> {
         }
     }
 
-    private class SimpleSubscription implements org.reactivestreams.Subscription {
+    private class SimpleSubscription implements Subscription {
 
         @Override
         public void request(long n) {
