@@ -43,13 +43,13 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
-        Map<String, List<Field>> fields = parameters.fields();
+        Map<String, List<Field>> fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         List<CompletableFuture<ExecutionResult>> futures = new ArrayList<>();
         for (String fieldName : fieldNames) {
             List<Field> currentField = fields.get(fieldName);
 
-            ExecutionPath fieldPath = parameters.path().segment(fieldName);
+            ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 

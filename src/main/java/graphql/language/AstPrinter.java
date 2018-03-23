@@ -281,7 +281,7 @@ public class AstPrinter {
             out.printf("%s", spaced(
                     "type",
                     node.getName(),
-                    wrap("implements ", join(node.getImplements(), ", "), ""),
+                    wrap("implements ", join(node.getImplements(), " & "), ""),
                     directives(node.getDirectives()),
                     block(node.getFieldDefinitions())
             ));

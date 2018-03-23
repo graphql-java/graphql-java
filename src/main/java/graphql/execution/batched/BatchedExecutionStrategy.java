@@ -102,13 +102,13 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         InstrumentationContext<ExecutionResult> executionStrategyCtx = executionContext.getInstrumentation()
                 .beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext, parameters));
 
-        GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
+        GraphQLObjectType type = parameters.getTypeInfo().castType(GraphQLObjectType.class);
 
         ExecutionNode root = new ExecutionNode(type,
-                parameters.typeInfo(),
-                parameters.fields(),
+                parameters.getTypeInfo(),
+                parameters.getFields(),
                 singletonList(MapOrList.createMap(new LinkedHashMap<>())),
-                Collections.singletonList(parameters.source())
+                Collections.singletonList(parameters.getSource())
         );
 
         Queue<ExecutionNode> nodes = new ArrayDeque<>();
@@ -152,7 +152,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         // once an object is resolved from a interface / union to a node with an object type, the
         // parent type info has effectively changed (it has got more specific), even though the path etc...
         // has not changed
-        ExecutionTypeInfo currentParentTypeInfo = parameters.typeInfo();
+        ExecutionTypeInfo currentParentTypeInfo = parameters.getTypeInfo();
         ExecutionTypeInfo newParentTypeInfo = newTypeInfo()
                 .type(curNode.getType())
                 .fieldDefinition(currentParentTypeInfo.getFieldDefinition())
@@ -202,7 +202,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        ExecutionTypeInfo typeInfo = parameters.typeInfo();
+        ExecutionTypeInfo typeInfo = parameters.getTypeInfo();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
                 new InstrumentationFieldParameters(executionContext, fieldDef, typeInfo)
         );
@@ -247,7 +247,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .fieldDefinition(fieldDef)
                 .fields(fields)
                 .fieldType(fieldDef.getType())
-                .fieldTypeInfo(parameters.typeInfo())
+                .fieldTypeInfo(parameters.getTypeInfo())
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
                 .build();
@@ -285,7 +285,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                         .argumentValues(argumentValues)
                         .field(fields.get(0))
                         .fieldDefinition(fieldDef)
-                        .path(parameters.path())
+                        .path(parameters.getPath())
                         .exception(exception)
                         .build();
                 dataFetcherExceptionHandler.accept(handlerParameters);
@@ -297,7 +297,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 Object value = unboxPossibleOptional(values.get(i));
                 retVal.add(new FetchedValue(parentResults.get(i), value));
             }
-            return new FetchedValues(retVal, parameters.typeInfo(), parameters.path());
+            return new FetchedValues(retVal, parameters.getTypeInfo(), parameters.getPath());
         };
     }
 

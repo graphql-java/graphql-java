@@ -31,7 +31,7 @@ class AbsoluteGraphQLError implements GraphQLError {
         assertNotNull(executionStrategyParameters);
         assertNotNull(relativeError);
         this.absolutePath = createAbsolutePath(executionStrategyParameters, relativeError);
-        this.locations = createAbsoluteLocations(relativeError, executionStrategyParameters.field());
+        this.locations = createAbsoluteLocations(relativeError, executionStrategyParameters.getField());
         this.message = relativeError.getMessage();
         this.errorType = relativeError.getErrorType();
         if (relativeError.getExtensions() != null) {
@@ -72,7 +72,7 @@ class AbsoluteGraphQLError implements GraphQLError {
         return Optional.ofNullable(relativeError.getPath())
                 .map(originalPath -> {
                     List<Object> path = new ArrayList<>();
-                    path.addAll(executionStrategyParameters.path().toList());
+                    path.addAll(executionStrategyParameters.getPath().toList());
                     path.addAll(relativeError.getPath());
                     return path;
                 })
