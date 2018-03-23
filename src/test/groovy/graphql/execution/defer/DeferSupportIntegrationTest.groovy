@@ -222,9 +222,9 @@ class DeferSupportIntegrationTest extends Specification {
 
         // exceptions in here
         resultList[2].errors.size() == 3
-        resultList[2].errors[0].getMessage() == "Exception while fetching data ([0]/goes/bang) : Bang!"
-        resultList[2].errors[1].getMessage() == "Exception while fetching data ([1]/goes/bang) : Bang!"
-        resultList[2].errors[2].getMessage() == "Exception while fetching data ([2]/goes/bang) : Bang!"
+        resultList[2].errors[0].getMessage() == "Exception while fetching data (/post/c[0]/goes/bang) : Bang!"
+        resultList[2].errors[1].getMessage() == "Exception while fetching data (/post/c[1]/goes/bang) : Bang!"
+        resultList[2].errors[2].getMessage() == "Exception while fetching data (/post/c[2]/goes/bang) : Bang!"
 
         // sub defers are sent in encountered order
         resultList[3].data == [[commentText: "b_comment0"], [commentText: "b_comment1"], [commentText: "b_comment2"]]
