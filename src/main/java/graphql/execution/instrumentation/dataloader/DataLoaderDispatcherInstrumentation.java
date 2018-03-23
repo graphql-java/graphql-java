@@ -11,7 +11,6 @@ import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
@@ -20,9 +19,7 @@ import org.dataloader.stats.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -73,12 +70,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
 
-    /**
-     * We need to become stateful about whether we are in a list or not
-     */
     private static class CallStack implements InstrumentationState {
         private boolean aggressivelyBatching = true;
-        private final Deque<Boolean> stack = new ArrayDeque<>();
         private final Map<Integer, Integer> outstandingFieldFetchCounts = new HashMap<>();
 
         private boolean isAggressivelyBatching() {
@@ -87,30 +80,6 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
         private void setAggressivelyBatching(boolean aggressivelyBatching) {
             this.aggressivelyBatching = aggressivelyBatching;
-        }
-
-        private void enterList() {
-            synchronized (this) {
-                stack.push(true);
-            }
-        }
-
-        private void exitList() {
-            synchronized (this) {
-                if (!stack.isEmpty()) {
-                    stack.pop();
-                }
-            }
-        }
-
-        private boolean isInList() {
-            synchronized (this) {
-                if (stack.isEmpty()) {
-                    return false;
-                } else {
-                    return stack.peek();
-                }
-            }
         }
 
         private void setOutstandingFieldFetches(int level, int count) {
@@ -138,10 +107,6 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             return false;
         }
 
-        @Override
-        public String toString() {
-            return "isInList=" + isInList();
-        }
     }
 
 
@@ -230,23 +195,6 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         int level = parameters.getEnvironment().getFieldTypeInfo().getPath().getLevel();
         callStack.decrementOutstandingFieldFetches(level);
         return super.beginFieldFetch(parameters);
-    }
-
-    /*
-           When graphql-java enters a field list it re-cursively called the execution strategy again, which will cause an early flush
-           to the data loader - which is not efficient from a batch point of view.  We want to allow the list of field values
-           to bank up as promises and call dispatch when we are clear of a list value.
-
-           https://github.com/graphql-java/graphql-java/issues/760
-         */
-    @Override
-    public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
-        callStack.enterList();
-        return whenDispatched((result) -> {
-            callStack.exitList();
-            dispatchIfNeeded(callStack, parameters.getExecutionStrategyParameters());
-        });
     }
 
     @Override
