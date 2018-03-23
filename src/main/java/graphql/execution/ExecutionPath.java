@@ -46,6 +46,18 @@ public class ExecutionPath {
         pathList = toListImpl();
     }
 
+    public int getLevel() {
+        int counter = 0;
+        ExecutionPath currentPath = this;
+        while (currentPath != null) {
+            if (currentPath.segment instanceof StringPathSegment) {
+                counter++;
+            }
+            currentPath = currentPath.parent;
+        }
+        return counter;
+    }
+
     /**
      * Parses an execution path from the provided path string in the format /segment1/segment2[index]/segmentN
      *
@@ -125,7 +137,7 @@ public class ExecutionPath {
      * @return converts the path into a list of segments
      */
     public List<Object> toList() {
-        return pathList;
+        return new ArrayList<>(pathList);
     }
 
     private List<Object> toListImpl() {

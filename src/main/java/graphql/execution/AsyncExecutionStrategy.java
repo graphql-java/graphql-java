@@ -51,7 +51,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
             ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath));
+                    .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
 
             if (isDeferred(executionContext, newParameters, currentField)) {
                 continue;
@@ -59,7 +59,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             CompletableFuture<ExecutionResult> future = resolveField(executionContext, newParameters);
             futures.add(future);
         }
-
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched(overallResult);
 

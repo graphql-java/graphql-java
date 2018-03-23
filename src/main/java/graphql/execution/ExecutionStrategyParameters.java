@@ -23,9 +23,23 @@ public class ExecutionStrategyParameters {
     private final NonNullableFieldValidator nonNullableFieldValidator;
     private final ExecutionPath path;
     private final List<Field> currentField;
+    private final int listSize;
+    private final int currentListIndex;
+    private final ExecutionStrategyParameters parent;
     private final DeferredErrorSupport deferredErrorSupport;
 
-    private ExecutionStrategyParameters(ExecutionTypeInfo typeInfo, Object source, Map<String, List<Field>> fields, Map<String, Object> arguments, NonNullableFieldValidator nonNullableFieldValidator, ExecutionPath path, List<Field> currentField, DeferredErrorSupport deferredErrorSupport) {
+    private ExecutionStrategyParameters(ExecutionTypeInfo typeInfo,
+                                        Object source,
+                                        Map<String, List<Field>> fields,
+                                        Map<String, Object> arguments,
+                                        NonNullableFieldValidator nonNullableFieldValidator,
+                                        ExecutionPath path,
+                                        List<Field> currentField,
+                                        int listSize,
+                                        int currentListIndex,
+                                        ExecutionStrategyParameters parent,
+                                        DeferredErrorSupport deferredErrorSupport) {
+
         this.typeInfo = assertNotNull(typeInfo, "typeInfo is null");
         this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
@@ -33,6 +47,9 @@ public class ExecutionStrategyParameters {
         this.nonNullableFieldValidator = nonNullableFieldValidator;
         this.path = path;
         this.currentField = currentField;
+        this.listSize = listSize;
+        this.currentListIndex = currentListIndex;
+        this.parent = parent;
         this.deferredErrorSupport = deferredErrorSupport;
     }
 
@@ -60,6 +77,17 @@ public class ExecutionStrategyParameters {
         return path;
     }
 
+    public int getListSize() {
+        return listSize;
+    }
+
+    public int getCurrentListIndex() {
+        return currentListIndex;
+    }
+
+    public ExecutionStrategyParameters getParent() {
+        return parent;
+    }
     public DeferredErrorSupport deferredErrorSupport() {
         return deferredErrorSupport;
     }
@@ -103,6 +131,9 @@ public class ExecutionStrategyParameters {
         NonNullableFieldValidator nonNullableFieldValidator;
         ExecutionPath path = ExecutionPath.rootPath();
         List<Field> currentField;
+        int listSize;
+        int currentListIndex;
+        ExecutionStrategyParameters parent;
         DeferredErrorSupport deferredErrorSupport = new DeferredErrorSupport();
 
         /**
@@ -123,6 +154,9 @@ public class ExecutionStrategyParameters {
             this.currentField = oldParameters.currentField;
             this.deferredErrorSupport = oldParameters.deferredErrorSupport;
             this.path = oldParameters.path;
+            this.parent = oldParameters.parent;
+            this.listSize = oldParameters.listSize;
+            this.currentListIndex = oldParameters.currentListIndex;
         }
 
         public Builder typeInfo(ExecutionTypeInfo type) {
@@ -165,13 +199,28 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
+        public Builder listSize(int listSize) {
+            this.listSize = listSize;
+            return this;
+        }
+
+        public Builder currentListIndex(int currentListIndex) {
+            this.currentListIndex = currentListIndex;
+            return this;
+        }
+
+        public Builder parent(ExecutionStrategyParameters parent) {
+            this.parent = parent;
+            return this;
+        }
+
         public Builder deferredErrorSupport(DeferredErrorSupport deferredErrorSupport) {
             this.deferredErrorSupport = deferredErrorSupport;
             return this;
         }
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField, deferredErrorSupport);
+            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent, deferredErrorSupport);
         }
     }
 }

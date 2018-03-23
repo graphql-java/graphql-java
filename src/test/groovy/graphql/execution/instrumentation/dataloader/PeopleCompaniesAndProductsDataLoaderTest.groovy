@@ -197,14 +197,14 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         then:
 
-        executionResult.data != null
+        (executionResult.data["products"] as Map).size() == 5
 
         personBatchLoadKeyCount == 26
         personBatchLoadInvocationCount == 1
 
         companyBatchLoadKeyCount == 26
 
-        companyBatchLoadInvocationCount == 10
+        companyBatchLoadInvocationCount == 2
 
     }
 }

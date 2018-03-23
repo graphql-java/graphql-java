@@ -29,11 +29,12 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import graphql.util.FpKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -42,13 +43,11 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.concurrent.CompletableFuture.completedFuture;
-import static java.util.stream.Collectors.toList;
 
 /**
  * An execution strategy is give a list of fields from the graphql query to execute and find values for using a recursive strategy.
@@ -411,18 +410,19 @@ public abstract class ExecutionStrategy {
      */
     protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
 
+        Collection<Object> values = FpKit.toCollection(iterableValues);
         ExecutionTypeInfo typeInfo = parameters.getTypeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
         GraphQLFieldDefinition fieldDef = parameters.getTypeInfo().getFieldDefinition();
 
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef), iterableValues);
+        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef), values);
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         InstrumentationContext<ExecutionResult> completeListCtx = instrumentation.beginFieldListComplete(
                 instrumentationParams
         );
 
-        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(iterableValues, (item, index) -> {
+        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(values, (item, index) -> {
 
             ExecutionPath indexedPath = parameters.getPath().segment(index);
 
@@ -438,6 +438,8 @@ public abstract class ExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                     builder.typeInfo(wrappedTypeInfo)
                             .nonNullFieldValidator(nonNullableFieldValidator)
+                            .listSize(values.size())
+                            .currentListIndex(index)
                             .path(indexedPath)
                             .source(item)
             );
@@ -615,12 +617,7 @@ public abstract class ExecutionStrategy {
      */
     @SuppressWarnings("unchecked")
     protected Iterable<Object> toIterable(Object result) {
-        if (result.getClass().isArray()) {
-            return IntStream.range(0, Array.getLength(result))
-                    .mapToObj(i -> Array.get(result, i))
-                    .collect(toList());
-        }
-        return (Iterable<Object>) result;
+        return FpKit.toCollection(result);
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {

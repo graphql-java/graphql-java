@@ -8,28 +8,36 @@ import org.dataloader.DataLoader;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class BatchCompareDataFetchers {
     // Shops
-    private static final Map<String, Shop> shops = new HashMap<>();
+    private static final Map<String, Shop> shops = new LinkedHashMap<>();
+    private static final Map<String, Shop> expensiveShops = new LinkedHashMap<>();
 
     static {
         shops.put("shop-1", new Shop("shop-1", "Shop 1", Arrays.asList("department-1", "department-2", "department-3")));
         shops.put("shop-2", new Shop("shop-2", "Shop 2", Arrays.asList("department-4", "department-5", "department-6")));
         shops.put("shop-3", new Shop("shop-3", "Shop 3", Arrays.asList("department-7", "department-8", "department-9")));
+
+        expensiveShops.put("exshop-1", new Shop("exshop-1", "ExShop 1", Arrays.asList("department-1", "department-2", "department-3")));
+        expensiveShops.put("exshop-2", new Shop("exshop-2", "ExShop 2", Arrays.asList("department-4", "department-5", "department-6")));
+        expensiveShops.put("exshop-3", new Shop("exshop-3", "ExShop 3", Arrays.asList("department-7", "department-8", "department-9")));
     }
 
     public static DataFetcher<List<Shop>> shopsDataFetcher = environment -> new ArrayList<>(shops.values());
+    public static DataFetcher<List<Shop>> expensiveShopsDataFetcher = environment -> new ArrayList<>(expensiveShops.values());
 
     // Departments
-    private static Map<String, Department> departments = new HashMap<>();
+    private static Map<String, Department> departments = new LinkedHashMap<>();
 
     static {
         departments.put("department-1", new Department("department-1", "Department 1", Arrays.asList("product-1")));
@@ -72,8 +80,10 @@ public class BatchCompareDataFetchers {
 
     private static BatchLoader<String, List<Department>> departmentsForShopsBatchLoader = ids -> {
         departmentsForShopsBatchLoaderCounter.incrementAndGet();
-        List<Shop> s = ids.stream().map(shops::get).collect(Collectors.toList());
-        return CompletableFuture.completedFuture(getDepartmentsForShops(s));
+        Stream<Shop> shopStream = ids.stream().map(shops::get).filter(Objects::nonNull);
+        Stream<Shop> exShopStream = ids.stream().map(expensiveShops::get).filter(Objects::nonNull);
+        List<Shop> shopList = Stream.concat(shopStream, exShopStream).collect(Collectors.toList());
+        return CompletableFuture.completedFuture(getDepartmentsForShops(shopList));
     };
 
     public static DataLoader<String, List<Department>> departmentsForShopDataLoader = new DataLoader<>(departmentsForShopsBatchLoader);
@@ -89,7 +99,7 @@ public class BatchCompareDataFetchers {
     };
 
     // Products
-    private static Map<String, Product> products = new HashMap<>();
+    private static Map<String, Product> products = new LinkedHashMap<>();
 
     static {
         products.put("product-1", new Product("product-1", "Product 1", 0));
