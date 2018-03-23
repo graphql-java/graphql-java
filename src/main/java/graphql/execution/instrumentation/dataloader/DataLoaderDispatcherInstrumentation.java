@@ -20,11 +20,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenDispatched;
@@ -72,7 +72,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     private static class CallStack implements InstrumentationState {
         private boolean aggressivelyBatching = true;
-        private final Map<Integer, Integer> outstandingFieldFetchCounts = new HashMap<>();
+        private final Map<Integer, Integer> outstandingFieldFetchCounts = new ConcurrentHashMap<>();
 
         private boolean isAggressivelyBatching() {
             return aggressivelyBatching;
@@ -86,6 +86,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             outstandingFieldFetchCounts.put(level, count);
         }
 
+        // TODO: should be threadsafe
         private int decrementOutstandingFieldFetches(int level) {
             int newCount = outstandingFieldFetchCounts.getOrDefault(level, 1) - 1;
             outstandingFieldFetchCounts.put(level, newCount);
@@ -146,7 +147,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     private void dispatchIfNeeded(CallStack callStack, ExecutionStrategyParameters executionStrategyParameters) {
-        int level = executionStrategyParameters == null ? 0 : executionStrategyParameters.getPath().getLevel();
+        int level = executionStrategyParameters.getPath().getLevel();
         boolean outstandingDispatches = callStack.thereAreOutstandingFieldFetches(level);
         if (isEndOfListOnAllLevels(executionStrategyParameters) && !outstandingDispatches) {
             dispatch();
