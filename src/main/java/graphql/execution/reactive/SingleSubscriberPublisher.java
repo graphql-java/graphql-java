@@ -8,7 +8,7 @@ import org.reactivestreams.Subscription;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
-import static java.util.Objects.requireNonNull;
+import static graphql.Assert.assertNotNull;
 
 /**
  * A Publisher of things that are buffered and handles a single subscriber at a time.
@@ -49,7 +49,7 @@ public class SingleSubscriberPublisher<T> implements Publisher<T> {
      * @param subscriptionCallback the callback when some ones
      */
     public SingleSubscriberPublisher(OnSubscriptionCallback subscriptionCallback) {
-        this.subscriptionCallback = requireNonNull(subscriptionCallback);
+        this.subscriptionCallback = assertNotNull(subscriptionCallback);
     }
 
 
@@ -98,7 +98,7 @@ public class SingleSubscriberPublisher<T> implements Publisher<T> {
 
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
-        requireNonNull(subscriber, "Subscriber passed to subscribe must not be null");
+        assertNotNull(subscriber, "Subscriber passed to subscribe must not be null");
         mutex.execute(() -> {
             if (this.subscriber == null) {
                 this.subscriber = subscriber;

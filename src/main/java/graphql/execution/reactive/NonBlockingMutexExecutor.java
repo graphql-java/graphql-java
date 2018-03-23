@@ -6,7 +6,7 @@ import graphql.Internal;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static java.util.Objects.requireNonNull;
+import static graphql.Assert.assertNotNull;
 
 
 /**
@@ -37,7 +37,7 @@ class NonBlockingMutexExecutor implements Executor {
 
     @Override
     public void execute(final Runnable command) {
-        final RunNode newNode = new RunNode(requireNonNull(command, "Runnable must not be null"));
+        final RunNode newNode = new RunNode(assertNotNull(command, "Runnable must not be null"));
         final RunNode prevLast = last.getAndSet(newNode);
         if (prevLast != null)
             prevLast.lazySet(newNode);
