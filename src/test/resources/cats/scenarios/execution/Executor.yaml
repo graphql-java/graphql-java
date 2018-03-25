@@ -1,0 +1,524 @@
+scenario: "Execute: Handles basic execution tasks"
+tests:
+  - name: executes arbitrary code
+    given:
+      schema: |
+        type DataType {
+          a: String
+          b: String
+          c: String
+          d: String
+          e: String
+          f: String
+          pic(size: Int = 50): String @resolveString(value: "Pic of size: $size")
+          deep: DeepDataType
+          promise: DataType @resolvePromise
+        }
+
+        type DeepDataType {
+          a: String
+          b: String
+          c: [String]
+          deeper: [DataType]
+        }
+
+        schema {
+          query: DataType
+        }
+      test-data:
+        data:
+          a: Apple
+          b: Banana
+          c: Cookie
+          c: Cookie
+          d: Donut
+          e: Egg
+          f: Fish
+          deep: {$ref: deepData}
+          promise: {$ref: data}
+        deepData:
+          a: Already Been Done
+          b: Boring
+          c:
+            - "Contrived"
+            - null
+            - Confusing
+          deeper:
+            - {$ref: data}
+            - null
+            - {$ref: data}
+      query: |
+        query Example($size: Int) {
+          a,
+          b,
+          x: c
+          ...c
+          f
+          ...on DataType {
+            pic(size: $size)
+            promise {
+              a
+            }
+          }
+          deep {
+            a
+            b
+            c
+            deeper {
+              a
+              b
+            }
+          }
+        }
+
+        fragment c on DataType {
+          d
+          e
+        }
+    when:
+      execute:
+        test-value: data
+        operation-name: Example
+        variables:
+          size: 100
+    then:
+      data:
+        a: Apple
+        b: Banana
+        x: Cookie
+        d: Donut
+        e: Egg
+        f: Fish
+        pic: "Pic of size: 100"
+        promise:
+          a: Apple
+        deep:
+          a: Already Been Done
+          b: Boring
+          c:
+            - Contrived
+            - null
+            - Confusing
+          deeper:
+            - a: Apple
+              b: Banana
+            - null
+            - a: Apple
+              b: Banana
+
+  - name: merges parallel fragments
+    given:
+      schema: |
+        type Type {
+          a: String @resolveString(value: "Apple")
+          b: String @resolveString(value: "Banana")
+          c: String @resolveString(value: "Cherry")
+          deep: Type @resolveEmptyObject
+        }
+
+        schema {
+          query: Type
+        }
+      query: |
+        { a, ...FragOne, ...FragTwo }
+
+        fragment FragOne on Type {
+          b
+          deep { b, deeper: deep { b } }
+        }
+
+        fragment FragTwo on Type {
+          c
+          deep { c, deeper: deep { c } }
+        }
+    when:
+      execute:
+    then:
+      data:
+        a: Apple
+        b: Banana
+        c: Cherry
+        deep:
+          b: Banana
+          c: Cherry
+          deeper:
+            b: Banana
+            c: Cherry
+
+  - name: nulls out error subtrees
+    given:
+      schema: |
+        type Type {
+          sync: String @resolveString(value: "sync")
+
+          syncError: String @resolveError(message: "Error getting syncError")
+          syncErrorList: [String] @resolveErrorList(
+            values: ["sync0", "sync2"],
+            messages: ["Error getting syncErrorList1", "Error getting syncErrorList3"])
+
+          async: String @resolvePromiseString(value: "async")
+
+          asyncRejectError: String @resolvePromiseReject(message: "Error getting asyncRejectError")
+          asyncRejectListError: [String] @resolvePromiseRejectList(
+            values: ["async0", "async2"],
+            messages: ["Error getting asyncRejectListError1", "Error getting asyncRejectListError3"])
+        }
+
+        schema {
+          query: Type
+        }
+      query: |
+        {
+          sync
+
+          syncError
+          syncErrorList
+
+          async
+
+          asyncRejectError
+          asyncRejectListError
+        }
+    when:
+      execute:
+    then:
+      - data:
+          sync: sync
+          syncError: null
+          syncErrorList:
+            - sync0
+            - sync2
+          async: async
+          asyncRejectError: null
+          asyncRejectListError:
+            - async0
+            - async2
+      - error-count: 6
+      - error: Error getting syncError
+        loc: {line: 4, column: 3}
+      - error: Error getting syncErrorList1
+        loc: {line: 5, column: 3}
+      - error: Error getting syncErrorList3
+        loc: {line: 5, column: 3}
+      - error: Error getting asyncRejectError
+        loc: {line: 9, column: 3}
+      - error: Error getting asyncRejectListError1
+        loc: {line: 10, column: 3}
+      - error: Error getting asyncRejectListError3
+        loc: {line: 10, column: 3}
+
+  - name: uses the inline operation if no operation name is provided
+    given:
+      schema: |
+        type Type {
+          a: String
+        }
+
+        schema {
+          query: Type
+        }
+      test-data:
+        data:
+          a: b
+      query: "{ a }"
+    when:
+      execute:
+        test-value: data
+    then:
+      - data:
+          a: b
+
+  - name: uses the only operation if no operation name is provided
+    given:
+      schema: |
+        type Type {
+          a: String
+        }
+
+        schema {
+          query: Type
+        }
+      test-data:
+        data:
+          a: b
+      query: "query Example { a }"
+    when:
+      execute:
+        test-value: data
+    then:
+      - data:
+          a: b
+
+  - name: uses the named operation if operation name is provided
+    given:
+      schema: |
+        type Type {
+          a: String
+        }
+
+        schema {
+          query: Type
+        }
+      test-data:
+        data:
+          a: b
+      query: "query Example { first: a } query OtherExample { second: a }"
+    when:
+      execute:
+        operation-name: OtherExample
+        test-value: data
+    then:
+      - data:
+          second: b
+
+  - name: throws if no operation is provided
+    given:
+      schema: |
+        type Type {
+          a: String
+        }
+
+        schema {
+          query: Type
+        }
+      test-data:
+        data:
+          a: b
+      query: "fragment Example on Type { a }"
+    when:
+      execute:
+        validate-query: false
+        test-value: data
+    then:
+      exception: Must provide operation
+
+  - name: throws if no operation name is provided with multiple operations
+    given:
+      schema: |
+        type Type {
+          a: String
+        }
+
+        schema {
+          query: Type
+        }
+      test-data:
+        data:
+          a: b
+      query: "query Example { a } query OtherExample { a }"
+    when:
+      execute:
+        test-value: data
+    then:
+      exception: Must provide operation name if query contains multiple operations
+
+  - name: throws if unknown operation name is provided
+    given:
+      schema: |
+        type Type {
+          a: String
+        }
+
+        schema {
+          query: Type
+        }
+      test-data:
+        data:
+          a: b
+      query: "query Example { a } query OtherExample { a }"
+    when:
+      execute:
+        operation-name: UnknownExample
+        test-value: data
+    then:
+      exception: Unknown operation named "UnknownExample"
+
+  - name: uses the query schema for queries
+    given:
+      schema: |
+        type Q {
+          a: String
+        }
+
+        type M {
+          c: String
+        }
+
+        type S {
+          a: String
+        }
+
+        schema {
+          query: Q
+          mutation: M
+          subscription: S
+        }
+      test-data:
+        data:
+          a: b
+          c: d
+      query: "query Q { a } mutation M { c } subscription S { a }"
+    when:
+      execute:
+        operation-name: Q
+        test-value: data
+    then:
+      data:
+        a: b
+
+  - name: uses the mutation schema for mutations
+    given:
+      schema: |
+        type Q {
+          a: String
+        }
+
+        type M {
+          c: String
+        }
+
+        schema {
+          query: Q
+          mutation: M
+        }
+      test-data:
+        data:
+          a: b
+          c: d
+      query: "query Q { a } mutation M { c }"
+    when:
+      execute:
+        operation-name: M
+        test-value: data
+    then:
+      data:
+        c: d
+
+  - name: uses the subscription schema for subscriptions
+    given:
+      schema: |
+        type Q {
+          a: String
+        }
+
+        type S {
+          c: String
+        }
+
+        schema {
+          query: Q
+          subscription: S
+        }
+      test-data:
+        data:
+          a: b
+          c: d
+      query: "query Q { a } subscription S { c }"
+    when:
+      execute:
+        operation-name: S
+        test-value: data
+    then:
+      data:
+        c: d
+
+  - name: Avoids recursion
+    given:
+      schema: |
+        type Type {
+          a: String
+        }
+
+        schema {
+          query: Type
+        }
+      test-data:
+        data:
+          a: b
+      query: |
+        query Q {
+          a
+          ...Frag
+          ...Frag
+        }
+
+        fragment Frag on Type {
+          a,
+          ...Frag
+        }
+    when:
+      execute:
+        operation-name: Q
+        validate-query: false
+        test-value: data
+    then:
+      data:
+        a: b
+
+  - name: does not include illegal fields in output
+    given:
+      schema: |
+        type Q {
+          a: String
+        }
+
+        type M {
+          c: String
+        }
+
+        schema {
+          query: Q
+          mutation: M
+        }
+      test-data:
+        data:
+          a: b
+          c: d
+          thisIsIllegalDontIncludeMe: Dangerous
+      query: |
+        mutation M {
+          thisIsIllegalDontIncludeMe
+        }
+    when:
+      execute:
+        operation-name: M
+        validate-query: false
+        test-value: data
+    then:
+      data: {}
+
+  - name: does not include arguments that were not set
+    given:
+      schema: |
+        type Type {
+          field(a: Boolean, b: Boolean, c: Boolean, d: Int, e: Int): String @argumentsJson
+        }
+
+        schema {
+          query: Type
+        }
+      query: "{ field(a: true, c: false, e: 0) }"
+    when:
+      execute:
+    then:
+      data:
+        field: '{"a":true,"c":false,"e":0}'
+
+  - name: fails to execute a query containing a type definition
+    given:
+      schema: |
+        type Type {
+          foo: String
+        }
+
+        schema {
+          query: Type
+        }
+      query: |
+        { foo }
+
+        type Query { foo: String }
+    when:
+      execute:
+    then:
+      exception: GraphQL cannot execute a request containing a ObjectTypeDefinition.

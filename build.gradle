@@ -48,12 +48,16 @@ dependencies {
     testCompile 'com.google.code.gson:gson:2.8.0'
     testCompile 'org.eclipse.jetty:jetty-server:9.4.5.v20170502'
     testCompile 'com.fasterxml.jackson.core:jackson-databind:2.8.8.1'
+    testCompile 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.9.4'
     testCompile 'org.slf4j:slf4j-simple:' + slf4jVersion
     testCompile 'org.awaitility:awaitility-groovy:3.0.0'
     testCompile 'com.github.javafaker:javafaker:0.13'
 
     testCompile 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testCompile "io.reactivex.rxjava2:rxjava:2.1.5"
+    testCompile "org.yaml:snakeyaml:1.18"
+    testCompile "org.immutables:value:2.5.6"
+    testCompile "org.immutables:builder:2.5.6"
 }
 
 compileJava.source file("build/generated-src"), sourceSets.main.java

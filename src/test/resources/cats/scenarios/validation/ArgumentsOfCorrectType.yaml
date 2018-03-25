@@ -1,0 +1,26 @@
+scenario: "Validate: Argument values of correct type"
+background:
+  schema-file: validation.schema.graphql
+tests:
+  - name: correct argument type
+    given:
+      query: |
+        query BadArgumentValue {
+          dog { name(surname: true) }
+        }
+    when:
+      validate: [ArgumentsOfCorrectType]
+    then:
+      passes:
+  - name: argument type mismatch
+    given:
+      query: |
+        query BadArgumentValue {
+          dog { name(surname: "notaboolean") }
+        }
+    when:
+      validate: [ArgumentsOfCorrectType]
+    then:
+      - error-count: 1
+      - error: "Argument 'surname' of type 'Boolean' has invalid value: \"notaboolean\". Reason: Boolean value expected."
+        loc: {line: 2, column: 23}

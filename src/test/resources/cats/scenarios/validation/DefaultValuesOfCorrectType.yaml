@@ -1,0 +1,89 @@
+scenario: "Validate: Variable default values of correct type"
+background:
+  schema-file: validation.schema.graphql
+tests:
+  - name: variables with no default values
+    given:
+      query: |
+        query NullableValues($a: Int, $b: String, $c: ComplexInput) {
+          dog { name }
+        }
+    when:
+      validate: [DefaultValuesOfCorrectType]
+    then:
+      passes:
+
+  - name: required variables without default values
+    given:
+      query: |
+        query RequiredValues($a: Int!, $b: String!) {
+          dog { name }
+        }
+    when:
+      validate: [DefaultValuesOfCorrectType]
+    then:
+      passes:
+
+  - name: variables with valid default values
+    given:
+      query: |
+        query WithDefaultValues(
+          $a: Int = 1,
+          $b: String = "ok",
+          $c: ComplexInput = { requiredField: true, intField: 3 }
+        ) {
+          dog { name }
+        }
+    when:
+      validate: [DefaultValuesOfCorrectType]
+    then:
+      passes:
+
+  - name: no required variables with default values
+    given:
+      query: |
+        query UnreachableDefaultValues($a: Int! = 3, $b: String! = "default") {
+          dog { name }
+        }
+    when:
+      validate: [DefaultValuesOfCorrectType]
+    then:
+      - error-count: 2
+      - error: Variable '$a' of type 'Int!' is required and will never use the default value. Perhaps you meant to use type 'Int'.
+        loc: {line: 1, column: 43}
+      - error: Variable '$b' of type 'String!' is required and will never use the default value. Perhaps you meant to use type 'String'.
+        loc: {line: 1, column: 60}
+
+  - name: variables with invalid default values
+    given:
+      query: |
+        query InvalidDefaultValues(
+          $a: Int = "one",
+          $b: String = 4,
+          $c: ComplexInput = "notverycomplex"
+        ) {
+          dog { name }
+        }
+    when:
+      validate: [DefaultValuesOfCorrectType]
+    then:
+      - error-count: 3
+      - error: "Variable '$a' of type 'Int' has invalid default value: \"one\". Reason: Int value expected"
+        loc: {line: 2, column: 13}
+      - error: "Variable '$b' of type 'String' has invalid default value: 4. Reason: String value expected"
+        loc: {line: 3, column: 16}
+      - error: "Variable '$c' of type 'ComplexInput' has invalid default value: \"notverycomplex\". Reason: Expected 'ComplexInput', found not an object."
+        loc: {line: 4, column: 22}
+
+  - name: complex variables missing required field
+    given:
+      query: |
+        query MissingRequiredField($a: ComplexInput = {intField: 3}) {
+          dog { name }
+        }
+    when:
+      validate: [DefaultValuesOfCorrectType]
+    then:
+      - error-count: 1
+      - error: "Variable '$a' of type 'ComplexInput' has invalid default value: {intField: 3}. Reason: The NotNull field 'requiredField' defined in the input type 'Boolean' is missing."
+        loc: {line: 1, column: 47}

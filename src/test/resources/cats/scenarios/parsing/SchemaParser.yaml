@@ -1,0 +1,167 @@
+scenario: Schema Parser
+tests:
+  - name: Simple type
+    given:
+      query: |
+        type Hello {
+          world: String
+        }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple extension
+    given:
+      query: |
+        extend type Hello {
+          world: String
+        }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple non-null type
+    given:
+      query: |
+        type Hello {
+          world: String!
+        }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple type inheriting interface
+    given:
+      query: type Hello implements World { }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple type inheriting multiple interfaces
+    given:
+      query: type Hello implements Wo, rld { }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Single value enum
+    given:
+      query: enum Hello { WORLD }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Double value enum
+    given:
+      query: enum Hello { WO, RLD }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple interface
+    given:
+      query: |
+        interface Hello {
+          world: String
+        }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple field with arg
+    given:
+      query: |
+        type Hello {
+          world(flag: Boolean): String
+        }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple field with arg with default value
+    given:
+      query: |
+        type Hello {
+          world(flag: Boolean = true): String
+        }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple field with list arg
+    given:
+      query: |
+        type Hello {
+          world(things: [String]): String
+        }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple field with two args
+    given:
+      query: |
+        type Hello {
+          world(argOne: Boolean, argTwo: Int): String
+        }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple union
+    given:
+      query: union Hello = World
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Union with two types
+    given:
+      query: union Hello = Wo | Rld
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Scalar
+    given:
+      query: scalar Hello
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple input object
+    given:
+      query: |
+        input Hello {
+          world: String
+        }
+    when:
+      parse:
+    then:
+      passes:
+
+  - name: Simple input object with args should fail
+    given:
+      query: |
+        input Hello {
+          world(foo: Int): String
+        }
+    when:
+      parse:
+    then:
+      syntax-error:
