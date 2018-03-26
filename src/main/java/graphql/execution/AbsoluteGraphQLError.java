@@ -2,7 +2,9 @@ package graphql.execution;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -11,8 +13,6 @@ import graphql.GraphQLError;
 import graphql.language.Field;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetcher;
-import java.util.HashMap;
-import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
@@ -25,7 +25,7 @@ class AbsoluteGraphQLError implements GraphQLError {
     private final List<Object> absolutePath;
     private final String message;
     private final ErrorType errorType;
-    private final Map<String, Object> extentions;
+    private final Map<String, Object> extensions;
 
     AbsoluteGraphQLError(ExecutionStrategyParameters executionStrategyParameters, GraphQLError relativeError) {
         assertNotNull(executionStrategyParameters);
@@ -35,10 +35,10 @@ class AbsoluteGraphQLError implements GraphQLError {
         this.message = relativeError.getMessage();
         this.errorType = relativeError.getErrorType();
         if (relativeError.getExtensions() != null) {
-            this.extentions = new HashMap<>();
-            this.extentions.putAll(relativeError.getExtensions());
+            this.extensions = new HashMap<>();
+            this.extensions.putAll(relativeError.getExtensions());
         } else {
-            this.extentions = null;
+            this.extensions = null;
         }
     }
 
@@ -64,7 +64,7 @@ class AbsoluteGraphQLError implements GraphQLError {
 
     @Override
     public Map<String, Object> getExtensions() {
-        return extentions;
+        return extensions;
     }
 
     /**
