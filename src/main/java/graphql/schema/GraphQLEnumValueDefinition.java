@@ -4,7 +4,6 @@ package graphql.schema;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -14,7 +13,8 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.util.FpKit.*;
+import static graphql.util.FpKit.getByName;
+import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**

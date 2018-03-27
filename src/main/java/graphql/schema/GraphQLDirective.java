@@ -3,7 +3,6 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
-import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +17,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.introspection.Introspection.DirectiveLocation;
 import static graphql.util.FpKit.getByName;
+import static graphql.util.FpKit.valuesToList;
 
 /**
  * A directive can be used to modify the behavior of a graphql field or type.
@@ -271,7 +271,7 @@ public class GraphQLDirective {
         }
 
         public GraphQLDirective build() {
-            return new GraphQLDirective(name, description, locations, FpKit.valuesToList(arguments), onOperation, onFragment, onField);
+            return new GraphQLDirective(name, description, locations, valuesToList(arguments), onOperation, onFragment, onField);
         }
 
 

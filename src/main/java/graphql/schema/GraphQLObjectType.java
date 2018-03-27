@@ -148,7 +148,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         private String name;
         private String description;
         private ObjectTypeDefinition definition;
-        private final Map<String, GraphQLFieldDefinition> fieldDefinitions = new LinkedHashMap<>();
+        private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
         private final Map<String, GraphQLOutputType> interfaces = new LinkedHashMap<>();
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
@@ -159,7 +159,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
             name = existing.getName();
             description = existing.getDescription();
             definition = existing.getDefinition();
-            fieldDefinitions.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
+            fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             interfaces.putAll(getByName(existing.getInterfaces(), GraphQLType::getName));
             directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
@@ -181,7 +181,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
         public Builder field(GraphQLFieldDefinition fieldDefinition) {
             assertNotNull(fieldDefinition, "fieldDefinition can't be null");
-            this.fieldDefinitions.put(fieldDefinition.getName(), fieldDefinition);
+            this.fields.put(fieldDefinition.getName(), fieldDefinition);
             return this;
         }
 
@@ -229,12 +229,12 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
          * @return the builder
          */
         public Builder clearFields() {
-            fieldDefinitions.clear();
+            fields.clear();
             return this;
         }
 
         public boolean hasField(String fieldName) {
-            return fieldDefinitions.containsKey(fieldName);
+            return fields.containsKey(fieldName);
         }
 
 
@@ -304,7 +304,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
 
         public GraphQLObjectType build() {
             return new GraphQLObjectType(name, description,
-                    valuesToList(fieldDefinitions), valuesToList(interfaces), valuesToList(directives),
+                    valuesToList(fields), valuesToList(interfaces), valuesToList(directives),
                     definition);
         }
 
