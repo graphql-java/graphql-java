@@ -6,12 +6,15 @@ import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.util.FpKit.getByName;
+import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -85,6 +88,25 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         return new ArrayList<>(directives);
     }
 
+    /**
+     * This helps you transform the current GraphQLInputObjectField into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new object based on calling build on that builder
+     */
+    public GraphQLInputObjectField transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newInputObjectField(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    public static Builder newInputObjectField(GraphQLInputObjectField existing) {
+        return new Builder(existing);
+    }
+
+
     public static Builder newInputObjectField() {
         return new Builder();
     }
@@ -96,7 +118,19 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         private Object defaultValue;
         private GraphQLInputType type;
         private InputValueDefinition definition;
-        private final List<GraphQLDirective> directives = new ArrayList<>();
+        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+
+        public Builder() {
+        }
+
+        public Builder(GraphQLInputObjectField existing) {
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.defaultValue = existing.getDefaultValue();
+            this.type = existing.getType();
+            this.definition = existing.getDefinition();
+            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+        }
 
         public Builder name(String name) {
             this.name = name;
@@ -128,12 +162,35 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            Collections.addAll(this.directives, directives);
+            assertNotNull(directives, "directives can't be null");
+            for (GraphQLDirective directive : directives) {
+                withDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective directive) {
+            assertNotNull(directive, "directive can't be null");
+            directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective.Builder builder) {
+            return withDirective(builder.build());
+        }
+
+        /**
+         * This is used to clear all the directives in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearDirectives() {
+            directives.clear();
             return this;
         }
 
         public GraphQLInputObjectField build() {
-            return new GraphQLInputObjectField(name, description, type, defaultValue, directives, definition);
+            return new GraphQLInputObjectField(name, description, type, defaultValue, valuesToList(directives), definition);
         }
     }
 }

@@ -73,14 +73,14 @@ class GraphQLEnumTypeTest extends Specification {
     }
 
 
-    def "duplicate value definition fails"() {
+    def "duplicate value definition overwrites"() {
         when:
-        newEnum().name("AnotherTestEnum")
+        def enumType = newEnum().name("AnotherTestEnum")
                 .value("NAME", 42)
                 .value("NAME", 43)
                 .build()
         then:
-        thrown(AssertException)
+        enumType.getValue("NAME").getValue() == 43
     }
 
     enum Episode {
@@ -132,5 +132,43 @@ class GraphQLEnumTypeTest extends Specification {
 
         then:
         serialized == "NEWHOPE"
+    }
+
+    def "object can be transformed"() {
+        given:
+        def startEnum = newEnum().name("E1")
+                .description("E1_description")
+                .value("A")
+                .value("B")
+                .value("C")
+                .value("D")
+                .build()
+        when:
+        def transformedEnum = startEnum.transform({
+            it
+                    .name("E2")
+                    .clearValues()
+                    .value("X", 1)
+                    .value("Y", 2)
+                    .value("Z", 3)
+
+        })
+
+        then:
+        startEnum.name == "E1"
+        startEnum.description == "E1_description"
+        startEnum.getValues().size() == 4
+        startEnum.getValue("A").value == "A"
+        startEnum.getValue("B").value == "B"
+        startEnum.getValue("C").value == "C"
+        startEnum.getValue("D").value == "D"
+
+        transformedEnum.name == "E2"
+        transformedEnum.description == "E1_description" // left alone
+        transformedEnum.getValues().size() == 3
+        transformedEnum.getValue("X").value == 1
+        transformedEnum.getValue("Y").value == 2
+        transformedEnum.getValue("Z").value == 3
+
     }
 }

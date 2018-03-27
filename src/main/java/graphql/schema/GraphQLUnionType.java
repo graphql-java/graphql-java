@@ -6,14 +6,17 @@ import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.util.FpKit.getByName;
+import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -95,18 +98,48 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         return new ArrayList<>(directives);
     }
 
+    /**
+     * This helps you transform the current GraphQLUnionType into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new object based on calling build on that builder
+     */
+    public GraphQLUnionType transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newUnionType(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static Builder newUnionType() {
         return new Builder();
+    }
+
+    public static Builder newUnionType(GraphQLUnionType existing) {
+        return new Builder(existing);
     }
 
     @PublicApi
     public static class Builder {
         private String name;
         private String description;
-        private final List<GraphQLOutputType> types = new ArrayList<>();
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
-        private final List<GraphQLDirective> directives = new ArrayList<>();
+        private final Map<String, GraphQLOutputType> types = new LinkedHashMap<>();
+        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+
+        public Builder() {
+        }
+
+        public Builder(GraphQLUnionType existing) {
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.typeResolver = existing.getTypeResolver();
+            this.definition = existing.getDefinition();
+            this.types.putAll(getByName(existing.getTypes(), GraphQLType::getName));
+            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+        }
 
         public Builder name(String name) {
             this.name = name;
@@ -132,13 +165,13 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
         public Builder possibleType(GraphQLObjectType type) {
             assertNotNull(type, "possible type can't be null");
-            types.add(type);
+            types.put(type.getName(), type);
             return this;
         }
 
         public Builder possibleType(GraphQLTypeReference reference) {
             assertNotNull(reference, "reference can't be null");
-            types.add(reference);
+            types.put(reference.getName(), reference);
             return this;
         }
 
@@ -156,17 +189,49 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
             return this;
         }
 
+        /**
+         * This is used to clear all the types in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearPossibleTypes() {
+            types.clear();
+            return this;
+        }
+
         public boolean containType(String name) {
-            return types.stream().anyMatch(type -> type.getName().equals(name));
+            return types.containsKey(name);
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            Collections.addAll(this.directives, directives);
+            for (GraphQLDirective directive : directives) {
+                withDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective directive) {
+            assertNotNull(directive, "directive can't be null");
+            directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective.Builder builder) {
+            return withDirective(builder.build());
+        }
+
+        /**
+         * This is used to clear all the directives in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearDirectives() {
+            directives.clear();
             return this;
         }
 
         public GraphQLUnionType build() {
-            return new GraphQLUnionType(name, description, types, typeResolver, directives, definition);
+            return new GraphQLUnionType(name, description, valuesToList(types), typeResolver, valuesToList(directives), definition);
         }
     }
 }

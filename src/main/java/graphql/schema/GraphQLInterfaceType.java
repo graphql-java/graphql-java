@@ -10,10 +10,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.util.FpKit.getByName;
+import static graphql.util.FpKit.valuesToList;
 import static java.lang.String.format;
 
 /**
@@ -105,8 +108,26 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
                 '}';
     }
 
+    /**
+     * This helps you transform the current GraphQLInterfaceType into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new object based on calling build on that builder
+     */
+    public GraphQLInterfaceType transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newInterface(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static Builder newInterface() {
         return new Builder();
+    }
+
+    public static Builder newInterface(GraphQLInterfaceType existing) {
+        return new Builder(existing);
     }
 
 
@@ -114,11 +135,22 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     public static class Builder {
         private String name;
         private String description;
-        private final List<GraphQLFieldDefinition> fields = new ArrayList<>();
         private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
-        private final List<GraphQLDirective> directives = new ArrayList<>();
+        private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
+        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
+        public Builder() {
+        }
+
+        public Builder(GraphQLInterfaceType existing) {
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.typeResolver = existing.getTypeResolver();
+            this.definition = existing.getDefinition();
+            this.fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
+            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+        }
 
         public Builder name(String name) {
             this.name = name;
@@ -136,7 +168,8 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         }
 
         public Builder field(GraphQLFieldDefinition fieldDefinition) {
-            fields.add(fieldDefinition);
+            assertNotNull(fieldDefinition, "fieldDefinition can't be null");
+            this.fields.put(fieldDefinition.getName(), fieldDefinition);
             return this;
         }
 
@@ -169,19 +202,29 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
          * @return this
          */
         public Builder field(GraphQLFieldDefinition.Builder builder) {
-            this.fields.add(builder.build());
-            return this;
+            return field(builder.build());
         }
 
         public Builder fields(List<GraphQLFieldDefinition> fieldDefinitions) {
             assertNotNull(fieldDefinitions, "fieldDefinitions can't be null");
-            fields.addAll(fieldDefinitions);
+            fieldDefinitions.forEach(this::field);
             return this;
         }
 
         public boolean hasField(String fieldName) {
-            return fields.stream().anyMatch(f -> f.getName().equals(fieldName));
+            return fields.containsKey(fieldName);
         }
+
+        /**
+         * This is used to clear all the fields in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearFields() {
+            fields.clear();
+            return this;
+        }
+
 
         public Builder typeResolver(TypeResolver typeResolver) {
             this.typeResolver = typeResolver;
@@ -189,12 +232,34 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            Collections.addAll(this.directives, directives);
+            for (GraphQLDirective directive : directives) {
+                withDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective directive) {
+            assertNotNull(directive, "directive can't be null");
+            directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective.Builder builder) {
+            return withDirective(builder.build());
+        }
+
+        /**
+         * This is used to clear all the directives in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearDirectives() {
+            directives.clear();
             return this;
         }
 
         public GraphQLInterfaceType build() {
-            return new GraphQLInterfaceType(name, description, fields, typeResolver, directives, definition);
+            return new GraphQLInterfaceType(name, description, valuesToList(fields), typeResolver, valuesToList(directives), definition);
         }
     }
 }
