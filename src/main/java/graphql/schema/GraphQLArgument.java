@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -69,8 +70,26 @@ public class GraphQLArgument {
         return definition;
     }
 
+    /**
+     * This helps you transform the current GraphQLArgument into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new field based on calling build on that builder
+     */
+    public GraphQLArgument transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newArgument(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static Builder newArgument() {
         return new Builder();
+    }
+
+    public static Builder newArgument(GraphQLArgument existing) {
+        return new Builder(existing);
     }
 
     public static class Builder {
@@ -80,6 +99,17 @@ public class GraphQLArgument {
         private Object defaultValue;
         private String description;
         private InputValueDefinition definition;
+
+        public Builder() {
+        }
+
+        public Builder(GraphQLArgument existing) {
+            this.name = existing.getName();
+            this.type = existing.getType();
+            this.defaultValue = existing.getDefaultValue();
+            this.description = existing.getDescription();
+            this.definition = existing.getDefinition();
+        }
 
         public Builder name(String name) {
             this.name = name;
