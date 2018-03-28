@@ -13,7 +13,10 @@ import graphql.schema.GraphQLUnionType;
 
 /**
  * A SchemaDirectiveWiring is responsible for enhancing a runtime element based on directives placed on that
- * element in the Schema Definition Language (SDL)
+ * element in the Schema Definition Language (SDL).
+ *
+ * It can enhance the graphql runtime element and add new behaviour for example by changing
+ * a fields {@link graphql.schema.DataFetcher}
  */
 public interface SchemaDirectiveWiring {
 
@@ -25,9 +28,9 @@ public interface SchemaDirectiveWiring {
         return environment.getTypeElement();
     }
 
-//    default GraphQLArgument onArgument(SchemaDirectiveWiringEnvironment<GraphQLArgument> environment) {
-//        return environment.getTypeElement();
-//    }
+    default GraphQLArgument onArgument(SchemaDirectiveWiringEnvironment<GraphQLArgument> environment) {
+        return environment.getTypeElement();
+    }
 
     default GraphQLInterfaceType onInterface(SchemaDirectiveWiringEnvironment<GraphQLInterfaceType> environment) {
         return environment.getTypeElement();
@@ -44,7 +47,6 @@ public interface SchemaDirectiveWiring {
     default GraphQLEnumValueDefinition onEnumValue(SchemaDirectiveWiringEnvironment<GraphQLEnumValueDefinition> environment) {
         return environment.getTypeElement();
     }
-
 
     default GraphQLScalarType onScalar(SchemaDirectiveWiringEnvironment<GraphQLScalarType> environment) {
         return environment.getTypeElement();
