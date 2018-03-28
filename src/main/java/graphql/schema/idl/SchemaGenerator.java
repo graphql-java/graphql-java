@@ -712,7 +712,7 @@ public class SchemaGenerator {
 
         builder.withDirectives(
                 buildDirectives(valueDefinition.getDirectives(),
-                        emptyList(), ARGUMENT_DEFINITION)
+                        Collections.emptyList(), ARGUMENT_DEFINITION)
         );
 
         GraphQLArgument argument = builder.build();
