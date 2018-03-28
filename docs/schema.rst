@@ -8,11 +8,6 @@ mutated.
 ``graphql-java`` offers two different ways of defining the schema: Programmatically as Java code or
 via a special graphql dsl (called SDL).
 
-NOTE: SDL is not currently part of the `formal graphql spec <https://facebook.github.io/graphql/#sec-Appendix-Grammar-Summary.Query-Document>`_.
-The implementation in this library is based off the `reference implementation <https://github.com/graphql/graphql-js>`_.  However plenty of
-code out there is based on this SDL syntax and hence you can be fairly confident that you are building on solid technology ground.
-
-
 If you are unsure which option to use we recommend the SDL.
 
 SDL example:
