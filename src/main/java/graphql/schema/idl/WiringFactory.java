@@ -1,6 +1,8 @@
 package graphql.schema.idl;
 
 import graphql.PublicSpi;
+import graphql.introspection.Introspection;
+import graphql.language.Directive;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLScalarType;
@@ -106,6 +108,16 @@ public interface WiringFactory {
     default <T> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
         return assertShouldNeverHappen();
     }
+
+    default boolean providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+        return false;
+    }
+
+    default SchemaDirectiveWiring getSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+        return assertShouldNeverHappen();
+    }
+
+
 
     /**
      * This is called to ask if this factory can provide a data fetcher for the definition
