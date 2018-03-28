@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
@@ -647,6 +648,10 @@ public class SchemaGenerator {
             builder.defaultValue(schemaGeneratorHelper.buildValue(defaultValue, inputType));
         }
 
+        builder.withDirectives(
+                buildDirectives(valueDefinition.getDirectives(),
+                        Collections.emptyList(), ARGUMENT_DEFINITION)
+        );
         return builder.build();
     }
 

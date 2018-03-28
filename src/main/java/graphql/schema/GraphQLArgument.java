@@ -3,12 +3,18 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
+import graphql.util.FpKit;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.util.FpKit.valuesToList;
 
 /**
  * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.
@@ -18,13 +24,14 @@ import static graphql.Assert.assertValidName;
  * See http://graphql.org/learn/queries/#arguments for more details on the concept.
  */
 @PublicApi
-public class GraphQLArgument {
+public class GraphQLArgument implements GraphQLDirectiveContainer {
 
     private final String name;
     private final String description;
     private GraphQLInputType type;
     private final Object defaultValue;
     private final InputValueDefinition definition;
+    private final List<GraphQLDirective> directives;
 
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue) {
         this(name, description, type, defaultValue, null);
@@ -35,6 +42,10 @@ public class GraphQLArgument {
     }
 
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
+        this(name, description, type, defaultValue, definition, Collections.emptyList());
+    }
+
+    private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition, List<GraphQLDirective> directives) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
         this.name = name;
@@ -42,6 +53,7 @@ public class GraphQLArgument {
         this.type = type;
         this.defaultValue = defaultValue;
         this.definition = definition;
+        this.directives = directives;
     }
 
 
@@ -68,6 +80,11 @@ public class GraphQLArgument {
 
     public InputValueDefinition getDefinition() {
         return definition;
+    }
+
+    @Override
+    public List<GraphQLDirective> getDirectives() {
+        return new ArrayList<>(directives);
     }
 
     /**
@@ -99,6 +116,7 @@ public class GraphQLArgument {
         private Object defaultValue;
         private String description;
         private InputValueDefinition definition;
+        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
         public Builder() {
         }
@@ -109,6 +127,7 @@ public class GraphQLArgument {
             this.defaultValue = existing.getDefaultValue();
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
+            this.directives.putAll(FpKit.getByName(existing.getDirectives(), GraphQLDirective::getName));
         }
 
         public Builder name(String name) {
@@ -137,8 +156,37 @@ public class GraphQLArgument {
             return this;
         }
 
+        public Builder withDirectives(GraphQLDirective... directives) {
+            assertNotNull(directives, "directives can't be null");
+            for (GraphQLDirective directive : directives) {
+                withDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective directive) {
+            assertNotNull(directive, "directive can't be null");
+            directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective.Builder builder) {
+            return withDirective(builder.build());
+        }
+
+        /**
+         * This is used to clear all the directives in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearDirectives() {
+            directives.clear();
+            return this;
+        }
+
+
         public GraphQLArgument build() {
-            return new GraphQLArgument(name, description, type, defaultValue, definition);
+            return new GraphQLArgument(name, description, type, defaultValue, definition, valuesToList(directives));
         }
     }
 
