@@ -18,7 +18,7 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     }
 
     @Override
-    public T getTypeElement() {
+    public T getElement() {
         return element;
     }
 

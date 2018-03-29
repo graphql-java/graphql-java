@@ -75,6 +75,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
 import static graphql.introspection.Introspection.DirectiveLocation.OBJECT;
+import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.introspection.Introspection.DirectiveLocation.UNION;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.schema.GraphQLTypeReference.typeRef;
@@ -563,14 +564,18 @@ public class SchemaGenerator {
         } else {
             scalar = buildCtx.getWiring().getScalars().get(typeDefinition.getName());
         }
-        scalar = directiveBehaviour.onScalar(scalar, buildCtx.mkBehaviourParams());
 
-        // TODO - scalars dont have directives YET - but they should!
-//        builder.withDirectives(
-//                buildDirectives(typeDefinition.getDirectives(),
-//                        directivesOf(extensions), SCALAR)
-//        );
-
+        if (!ScalarInfo.isStandardScalar(scalar) && !ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
+            scalar = scalar.transform(builder -> {
+                builder.withDirectives(
+                        buildDirectives(typeDefinition.getDirectives(),
+                                directivesOf(extensions), SCALAR)
+                );
+            });
+            //
+            // only allow modification of custom scalars
+            scalar = directiveBehaviour.onScalar(scalar, buildCtx.mkBehaviourParams());
+        }
 
         return buildCtx.exitNode(scalar);
     }

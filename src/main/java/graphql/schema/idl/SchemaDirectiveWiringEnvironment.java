@@ -12,9 +12,9 @@ import graphql.schema.GraphQLDirectiveContainer;
 public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveContainer> {
 
     /**
-     * @return the runtime type in play
+     * @return the runtime element in play
      */
-    T getTypeElement();
+    T getElement();
 
     /**
      * @return the directive that is being examined

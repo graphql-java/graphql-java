@@ -1,9 +1,12 @@
 package graphql.schema.idl
 
+import graphql.ExecutionInput
+import graphql.GraphQL
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
+import graphql.schema.DataFetcher
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
@@ -18,23 +21,24 @@ import graphql.schema.GraphQLUnionType
 import spock.lang.Specification
 
 import static graphql.TestUtil.schema
+import static graphql.schema.DataFetcherFactories.wrapDataFetcher
 
 class SchemaGeneratorDirectiveBehaviourHelperTest extends Specification {
 
-    def scalarType = new GraphQLScalarType("ScalarType", "", new Coercing() {
+    def customScalarType = new GraphQLScalarType("ScalarType", "", new Coercing() {
         @Override
-        Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-            return null
+        Object serialize(Object input) throws CoercingSerializeException {
+            return input
         }
 
         @Override
         Object parseValue(Object input) throws CoercingParseValueException {
-            return null
+            return input
         }
 
         @Override
         Object parseLiteral(Object input) throws CoercingParseLiteralException {
-            return null
+            return input
         }
     })
 
@@ -91,66 +95,66 @@ class SchemaGeneratorDirectiveBehaviourHelperTest extends Specification {
                 GraphQLDirective directive = environment.getDirective()
                 String target = directive.getArgument("target").getDefaultValue()
                 assert name == target, " The target $target is not equal to the object name $name"
-                return environment.getTypeElement()
+                return environment.getElement()
             }
 
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
 
             @Override
             GraphQLArgument onArgument(SchemaDirectiveWiringEnvironment<GraphQLArgument> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
 
             @Override
             GraphQLObjectType onObject(SchemaDirectiveWiringEnvironment<GraphQLObjectType> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
 
             @Override
             GraphQLInterfaceType onInterface(SchemaDirectiveWiringEnvironment<GraphQLInterfaceType> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
 
             @Override
             GraphQLUnionType onUnion(SchemaDirectiveWiringEnvironment<GraphQLUnionType> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
 
             @Override
             GraphQLEnumType onEnum(SchemaDirectiveWiringEnvironment<GraphQLEnumType> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
 
             @Override
             GraphQLEnumValueDefinition onEnumValue(SchemaDirectiveWiringEnvironment<GraphQLEnumValueDefinition> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
 
             @Override
             GraphQLScalarType onScalar(SchemaDirectiveWiringEnvironment<GraphQLScalarType> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
 
             @Override
             GraphQLInputObjectType onInputObjectType(SchemaDirectiveWiringEnvironment<GraphQLInputObjectType> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
 
             @Override
             GraphQLInputObjectField onInputObjectField(SchemaDirectiveWiringEnvironment<GraphQLInputObjectField> environment) {
-                String name = environment.getTypeElement().getName()
+                String name = environment.getElement().getName()
                 return assertDirectiveTarget(environment, name)
             }
         }
@@ -165,7 +169,7 @@ class SchemaGeneratorDirectiveBehaviourHelperTest extends Specification {
                 .directive("enumDirective", schemaDirectiveWiring)
                 .directive("enumValueDirective", schemaDirectiveWiring)
                 .directive("scalarDirective", schemaDirectiveWiring)
-                .scalar(scalarType)
+                .scalar(customScalarType)
                 .wiringFactory(new MockedWiringFactory())
                 .build()
 
@@ -194,4 +198,107 @@ class SchemaGeneratorDirectiveBehaviourHelperTest extends Specification {
 
         targetList.contains("ScalarType")
     }
+
+    def "can modify the existing behaviour"() {
+        def spec = '''
+            type Query {
+                lowerCaseValue : String @uppercase
+                upperCaseValue : String @lowercase
+                echoField1 : String @echoFieldName
+                echoField2 : String @echoFieldName @lowercase
+                echoField3 : String @echoFieldName @mixedcase
+                
+                #
+                # directives are applied in order hence this will be upper, then lower, then mixed then reversed
+                #
+                echoField4 : String @echoFieldName @lowercase @uppercase @mixedcase @reverse
+            }
+        '''
+
+        //
+        // This will modify the values returned so that they become different
+        // depending on the @directive used
+        //
+        def casingDirectiveWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> directiveEnv) {
+                GraphQLFieldDefinition field = directiveEnv.getElement()
+                def newFetcher = wrapDataFetcher(field.getDataFetcher(), { dfEnv, value ->
+                    def directiveName = directiveEnv.directive.name
+                    if (directiveName == "uppercase") {
+                        return String.valueOf(value).toUpperCase()
+                    } else if (directiveName == "lowercase") {
+                        return String.valueOf(value).toLowerCase()
+                    } else if (directiveName == "mixedcase") {
+                        return toMixedCase(String.valueOf(value))
+                    } else if (directiveName == "reverse") {
+                        return String.valueOf(value).reverse()
+                    }
+                })
+                field = field.transform({ builder -> builder.dataFetcher(newFetcher) })
+                return field
+            }
+
+            static String toMixedCase(String s) {
+                def out = ""
+                s.eachWithIndex { String ch, int i ->
+                    out += (i % 2 == 0) ? ch.toUpperCase() : ch.toLowerCase()
+                }
+                out
+            }
+        }
+
+        def echoFieldNameWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                def field = env.getElement()
+                def fieldName = field.getName()
+                DataFetcher echoDF = { dfEnv -> return fieldName }
+                field = field.transform({ builder -> builder.dataFetcher(echoDF) })
+                return field
+            }
+        }
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .directive("uppercase", casingDirectiveWiring)
+                .directive("lowercase", casingDirectiveWiring)
+                .directive("reverse", casingDirectiveWiring)
+                .directive("mixedcase", casingDirectiveWiring)
+                .directive("echoFieldName", echoFieldNameWiring)
+                .build()
+
+        def schema = schema(spec, runtimeWiring)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        def input = ExecutionInput.newExecutionInput()
+                .root(
+                [
+                        lowerCaseValue: "lowercasevalue",
+                        upperCaseValue: "UPPERCASEVALUE",
+                ])
+                .query("""
+                   query {
+                    lowerCaseValue
+                    upperCaseValue
+                    echoField1
+                    echoField2
+                    echoField3
+                    echoField4
+                   }
+                """)
+                .build()
+
+        when:
+        def executionResult = graphQL.execute(input)
+
+        then:
+        executionResult.data == [
+                lowerCaseValue: "LOWERCASEVALUE",
+                upperCaseValue: "uppercasevalue",
+                echoField1    : "echoField1",
+                echoField2    : "echofield2",
+                echoField3    : "EcHoFiElD3",
+                echoField4    : "4DlEiFoHcE",
+        ]
+    }
+
 }
