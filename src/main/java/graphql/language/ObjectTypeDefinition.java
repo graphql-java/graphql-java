@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> implements TypeDefinition<ObjectTypeDefinition> {
+public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> implements TypeDefinition<ObjectTypeDefinition>, NamedNode<ObjectTypeDefinition> {
     private String name;
     private Description description;
     private final List<Type> implementz;

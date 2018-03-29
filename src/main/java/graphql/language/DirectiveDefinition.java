@@ -7,7 +7,7 @@ import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition> {
+public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
     private Description description;
     private final List<InputValueDefinition> inputValueDefinitions;

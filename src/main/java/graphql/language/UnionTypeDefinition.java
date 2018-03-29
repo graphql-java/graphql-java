@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> implements TypeDefinition<UnionTypeDefinition> {
+public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> implements TypeDefinition<UnionTypeDefinition>,NamedNode<UnionTypeDefinition> {
     private final String name;
     private Description description;
     private final List<Directive> directives;
