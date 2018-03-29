@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Internal
-public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinition> {
+public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinition> implements NamedNode<OperationTypeDefinition> {
     private final String name;
     private Type type;
 

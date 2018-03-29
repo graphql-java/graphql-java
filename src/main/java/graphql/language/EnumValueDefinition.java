@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> {
+public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> implements NamedNode<EnumValueDefinition> {
     private final String name;
     private Description description;
     private final List<Directive> directives;

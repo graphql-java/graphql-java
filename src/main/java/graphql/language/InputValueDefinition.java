@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class InputValueDefinition extends AbstractNode<InputValueDefinition> {
+public class InputValueDefinition extends AbstractNode<InputValueDefinition> implements NamedNode<InputValueDefinition> {
     private final String name;
     private Type type;
     private Value defaultValue;

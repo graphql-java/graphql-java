@@ -9,7 +9,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition> {
+public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, NamedNode<EnumTypeDefinition> {
     private final String name;
     private Description description;
     private final List<EnumValueDefinition> enumValueDefinitions;

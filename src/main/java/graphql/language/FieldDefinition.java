@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class FieldDefinition extends AbstractNode<FieldDefinition> {
+public class FieldDefinition extends AbstractNode<FieldDefinition> implements NamedNode<FieldDefinition> {
     private final String name;
     private Type type;
     private Description description;
