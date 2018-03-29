@@ -18,7 +18,10 @@ import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLUnionType
+import readme.DirectivesExamples
 import spock.lang.Specification
+
+import java.time.LocalDateTime
 
 import static graphql.TestUtil.schema
 import static graphql.schema.DataFetcherFactories.wrapDataFetcher
@@ -301,4 +304,39 @@ class SchemaGeneratorDirectiveBehaviourHelperTest extends Specification {
         ]
     }
 
+    def "ensure the readme examples work"() {
+
+        def spec = '''
+            type Query {
+                dateField : String @dateFormat
+            }
+        '''
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .directive("dateFormat", new DirectivesExamples.DateFormatting())
+                .build()
+
+        def schema = schema(spec, runtimeWiring)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def day = LocalDateTime.of(1969, 10, 8, 0, 0)
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().root([dateField: day])
+                .query(''' 
+                    query {
+                        default: dateField
+                        usa: dateField(format : "MM-dd-YYYY")
+                        yearFirst: dateField(format : "YYYY, MMM dd")
+                    }
+                ''')
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.errors.isEmpty()
+        executionResult.data['default'] == '08-10-1969'
+        executionResult.data['usa'] == '10-08-1969'
+        executionResult.data['yearFirst'] == '1969, Oct 08'
+    }
 }

@@ -6,6 +6,7 @@ import graphql.GraphQL;
 import graphql.Scalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLSchema;
@@ -16,15 +17,79 @@ import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"Convert2Lambda", "unused"})
 public class DirectivesExamples {
 
-    static class DateFormatting implements SchemaDirectiveWiring {
+    static class AuthorisationCtx {
+        boolean hasRole(String roleName) {
+            return true;
+        }
+
+        static AuthorisationCtx obtain() {
+            return null;
+        }
+    }
+
+    class AuthorisationDirective implements SchemaDirectiveWiring {
+
+        @Override
+        public GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> schemaDirectiveWiringEnv) {
+            String targetAuthRole = (String) schemaDirectiveWiringEnv.getDirective().getArgument("role").getDefaultValue();
+
+            GraphQLFieldDefinition field = schemaDirectiveWiringEnv.getElement();
+            //
+            // build a data fetcher that first checks authorisation roles before then calling the original data fetcher
+            //
+            DataFetcher originalDataFetcher = field.getDataFetcher();
+            DataFetcher authDataFetcher = new DataFetcher() {
+                @Override
+                public Object get(DataFetchingEnvironment dataFetchingEnvironment) {
+                    Map<String, Object> contextMap = dataFetchingEnvironment.getContext();
+                    AuthorisationCtx authContext = (AuthorisationCtx) contextMap.get("authContext");
+
+                    if (authContext.hasRole(targetAuthRole)) {
+                        return originalDataFetcher.get(dataFetchingEnvironment);
+                    } else {
+                        return null;
+                    }
+                }
+            };
+            //
+            // now change the field definition to have the new authorising data fetcher
+            return field.transform(builder -> builder.dataFetcher(authDataFetcher));
+        }
+    }
+
+    void authWiring() {
+
+        //
+        // we wire this into the runtime by directive name
+        //
+        RuntimeWiring.newRuntimeWiring()
+                .directive("auth", new AuthorisationDirective())
+                .build();
+
+    }
+
+    String query = "";
+
+    void contextWiring() {
+
+        AuthorisationCtx authCtx = AuthorisationCtx.obtain();
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .context(authCtx)
+                .build();
+    }
+
+
+    public static class DateFormatting implements SchemaDirectiveWiring {
         @Override
         public GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
             GraphQLFieldDefinition field = environment.getElement();
@@ -33,9 +98,9 @@ public class DirectivesExamples {
             // along with POJOs
             //
             DataFetcher dataFetcher = DataFetcherFactories.wrapDataFetcher(field.getDataFetcher(), ((dataFetchingEnvironment, value) -> {
-                SimpleDateFormat simpleDateFormat = buildFormatter(dataFetchingEnvironment.getArgument("format"));
-                if (value instanceof Date) {
-                    return simpleDateFormat.format(value);
+                DateTimeFormatter dateTimeFormatter = buildFormatter(dataFetchingEnvironment.getArgument("format"));
+                if (value instanceof LocalDateTime) {
+                    return dateTimeFormatter.format((LocalDateTime) value);
                 }
                 return value;
             }));
@@ -56,9 +121,9 @@ public class DirectivesExamples {
             );
         }
 
-        private SimpleDateFormat buildFormatter(String format) {
+        private DateTimeFormatter buildFormatter(String format) {
             String dtFormat = format != null ? format : "dd-MM-YYYY";
-            return new SimpleDateFormat(dtFormat);
+            return DateTimeFormatter.ofPattern(dtFormat);
         }
     }
 
@@ -67,7 +132,7 @@ public class DirectivesExamples {
 
         String sdlSpec = "" +
                 "type Query {\n" +
-                "    nowField : String @dateFormat \n" +
+                "    dateField : String @dateFormat \n" +
                 "}";
 
         TypeDefinitionRegistry registry = new SchemaParser().parse(sdlSpec);
@@ -83,13 +148,13 @@ public class DirectivesExamples {
         GraphQLSchema schema = buildSchema();
         GraphQL graphql = GraphQL.newGraphQL(schema).build();
 
-        Map<String, Date> root = new HashMap<>();
-        root.put("nowField", new Date());
+        Map<String, Object> root = new HashMap<>();
+        root.put("dateField", LocalDateTime.of(1969, 10, 8, 0, 0));
 
         String query = "" +
                 "query {\n" +
-                "    d1 : nowField \n" +
-                "    iso : nowField(format : \"YYYY-MM-dd'T'HH:mm:ss\") \n" +
+                "    default : dateField \n" +
+                "    usa : dateField(format : \"MM-dd-YYYY\") \n" +
                 "}";
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
@@ -99,5 +164,8 @@ public class DirectivesExamples {
 
         ExecutionResult executionResult = graphql.execute(executionInput);
         Map<String, Object> data = executionResult.getData();
+
+        // data['default'] == '08-10-1969'
+        // data['usa'] == '10-08-1969'
     }
 }
