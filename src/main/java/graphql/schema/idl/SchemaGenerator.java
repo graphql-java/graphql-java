@@ -99,6 +99,7 @@ public class SchemaGenerator {
 
         private final Map<String, GraphQLOutputType> outputGTypes = new HashMap<>();
         private final Map<String, GraphQLInputType> inputGTypes = new HashMap<>();
+        private final Map<String, Object> directiveBehaviourContext = new HashMap<>();
 
         BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
             this.typeRegistry = typeRegistry;
@@ -136,7 +137,7 @@ public class SchemaGenerator {
         }
 
         SchemaGeneratorDirectiveBehaviourHelper.Parameters mkBehaviourParams() {
-            return new SchemaGeneratorDirectiveBehaviourHelper.Parameters(typeRegistry, wiring, new NodeInfo(nodeStack));
+            return new SchemaGeneratorDirectiveBehaviourHelper.Parameters(typeRegistry, wiring, new NodeInfo(nodeStack), directiveBehaviourContext);
         }
 
         GraphQLOutputType hasOutputType(TypeDefinition typeDefinition) {
@@ -566,12 +567,10 @@ public class SchemaGenerator {
         }
 
         if (!ScalarInfo.isStandardScalar(scalar) && !ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
-            scalar = scalar.transform(builder -> {
-                builder.withDirectives(
-                        buildDirectives(typeDefinition.getDirectives(),
-                                directivesOf(extensions), SCALAR)
-                );
-            });
+            scalar = scalar.transform(builder -> builder.withDirectives(
+                    buildDirectives(typeDefinition.getDirectives(),
+                            directivesOf(extensions), SCALAR)
+            ));
             //
             // only allow modification of custom scalars
             scalar = directiveBehaviour.onScalar(scalar, buildCtx.mkBehaviourParams());

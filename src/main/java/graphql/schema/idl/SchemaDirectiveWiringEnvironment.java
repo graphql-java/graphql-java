@@ -1,7 +1,10 @@
 package graphql.schema.idl;
 
+import graphql.PublicApi;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
+
+import java.util.Map;
 
 /**
  * {@link graphql.schema.idl.SchemaDirectiveWiring} is passed this object as parameters
@@ -9,6 +12,7 @@ import graphql.schema.GraphQLDirectiveContainer;
  *
  * @param <T> the type of the object in play
  */
+@PublicApi
 public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveContainer> {
 
     /**
@@ -34,5 +38,10 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      * @return the type registry
      */
     TypeDefinitionRegistry getRegistry();
+
+    /**
+     * @return a mpa that can be used by implementors to hold context during the SDL build process
+     */
+    Map<String,Object> getBuildContext();
 
 }
