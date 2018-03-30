@@ -14,6 +14,7 @@ import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
+import graphql.language.NamedNode;
 import graphql.language.Node;
 import graphql.language.NodeParentTree;
 import graphql.language.ObjectTypeDefinition;
@@ -138,7 +139,12 @@ public class SchemaGenerator {
         }
 
         SchemaGeneratorDirectiveHelper.Parameters mkBehaviourParams() {
-            return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, wiring, new NodeParentTree(nodeStack), directiveBehaviourContext);
+            List<NamedNode> list = nodeStack.stream()
+                    .filter(NamedNode.class::isInstance)
+                    .map(NamedNode.class::cast)
+                    .collect(Collectors.toList());
+            Deque<NamedNode> deque = new ArrayDeque<>(list);
+            return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, wiring, new NodeParentTree(deque), directiveBehaviourContext);
         }
 
         GraphQLOutputType hasOutputType(TypeDefinition typeDefinition) {

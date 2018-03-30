@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -28,7 +29,7 @@ class SchemaGeneratorDirectiveHelper {
         private final NodeParentTree nodeParentTree;
         private final Map<String, Object> context;
 
-        Parameters(TypeDefinitionRegistry typeRegistry, RuntimeWiring runtimeWiring, NodeParentTree nodeParentTree, Map<String, Object> context) {
+        Parameters(TypeDefinitionRegistry typeRegistry, RuntimeWiring runtimeWiring, NodeParentTree<NamedNode> nodeParentTree, Map<String, Object> context) {
             this.typeRegistry = typeRegistry;
             this.runtimeWiring = runtimeWiring;
             this.nodeParentTree = nodeParentTree;
@@ -43,7 +44,7 @@ class SchemaGeneratorDirectiveHelper {
             return runtimeWiring;
         }
 
-        public NodeParentTree getNodeParentTree() {
+        public NodeParentTree<NamedNode> getNodeParentTree() {
             return nodeParentTree;
         }
 
