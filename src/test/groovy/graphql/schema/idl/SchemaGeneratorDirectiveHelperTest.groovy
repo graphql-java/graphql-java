@@ -2,6 +2,7 @@ package graphql.schema.idl
 
 import graphql.ExecutionInput
 import graphql.GraphQL
+import graphql.language.ObjectTypeDefinition
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
@@ -26,7 +27,7 @@ import java.time.LocalDateTime
 import static graphql.TestUtil.schema
 import static graphql.schema.DataFetcherFactories.wrapDataFetcher
 
-class SchemaGeneratorDirectiveBehaviourHelperTest extends Specification {
+class SchemaGeneratorDirectiveHelperTest extends Specification {
 
     def customScalarType = new GraphQLScalarType("ScalarType", "", new Coercing() {
         @Override
@@ -339,4 +340,127 @@ class SchemaGeneratorDirectiveBehaviourHelperTest extends Specification {
         executionResult.data['usa'] == '10-08-1969'
         executionResult.data['yearFirst'] == '1969, Oct 08'
     }
+
+    def "can state-fully track wrapped elements"() {
+        def spec = '''
+            type Query {
+                secret : Secret
+                nonSecret : NonSecret
+            }
+            
+            
+            type Secret @secret {
+                identity : String @secret
+                age : Int
+            }
+            
+            type NonSecret {
+                identity : String
+                age : Int
+            }
+        '''
+
+        def directiveWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLObjectType onObject(SchemaDirectiveWiringEnvironment<GraphQLObjectType> environment) {
+                def objectType = environment.getElement()
+
+                def definitions = objectType.getFieldDefinitions()
+                def contextMap = environment.getBuildContext()
+
+                definitions = definitions.collect { fld -> wrapField(fld, objectType.getName(), contextMap) }
+
+                return objectType.transform({ builder -> builder.clearFields().fields(definitions) })
+            }
+
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
+                GraphQLFieldDefinition element = environment.getElement()
+                def tree = environment.getNodeParentTree()
+                ObjectTypeDefinition objectTypeDef = tree.parentInfo.get().node
+                def contextMap = environment.getBuildContext()
+
+                return wrapField(element, objectTypeDef.getName(), contextMap)
+            }
+
+            private GraphQLFieldDefinition wrapField(GraphQLFieldDefinition field, String objectTypeName, Map<String, Object> contextMap) {
+                def originalFetcher = field.getDataFetcher()
+
+                String key = mkFieldKey(objectTypeName, field.getName())
+
+                // are we already wrapped
+                if (contextMap.containsKey(key)) {
+                    return field
+                }
+                contextMap.put(key, true)
+
+                DataFetcher wrapper = { dfEnv ->
+                    def flag = dfEnv.getContext()['protectSecrets']
+                    if (flag == null || flag == false) {
+                        return originalFetcher.get(dfEnv)
+                    }
+                    return null
+                }
+                return field.transform({ builder -> builder.dataFetcher(wrapper) })
+            }
+
+            String mkFieldKey(String objectName, String fieldName) {
+                return "secret." + objectName + "." + fieldName
+            }
+        }
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .directive("secret", directiveWiring)
+                .build()
+
+        def schema = schema(spec, runtimeWiring)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        String query = ''' 
+            query {
+                secret {
+                    identity
+                    age
+                }
+                nonSecret {
+                    identity
+                    age
+                }
+            }
+        '''
+        def root = [secret   : [age: 42, identity: "BruceWayne"],
+                    nonSecret: [age: 42, identity: "BruceWayne"]]
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .root(root)
+                .query(query)
+                .context([protectSecrets: true])
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.errors.isEmpty()
+        executionResult.data['secret']['identity'] == null
+        executionResult.data['secret']['age'] == null
+        executionResult.data['nonSecret']['identity'] == "BruceWayne"
+        executionResult.data['nonSecret']['age'] == 42
+
+        when:
+        executionInput = ExecutionInput.newExecutionInput()
+                .root(root)
+                .query(query)
+                .context([protectSecrets: false])
+                .build()
+
+        executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.errors.isEmpty()
+        executionResult.data['secret']['identity'] == "BruceWayne"
+        executionResult.data['secret']['age'] == 42
+        executionResult.data['nonSecret']['identity'] == "BruceWayne"
+        executionResult.data['nonSecret']['age'] == 42
+    }
+
 }

@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.language.NodeParentTree;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
 
@@ -9,13 +10,13 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
 
     private final T element;
     private final GraphQLDirective directive;
-    private final NodeInfo nodeInfo;
+    private final NodeParentTree nodeParentTree;
     private final TypeDefinitionRegistry typeDefinitionRegistry;
-    private final Map<String,Object> context;
+    private final Map<String, Object> context;
 
-    public SchemaDirectiveWiringEnvironmentImpl(T element, GraphQLDirective directive, NodeInfo nodeInfo, TypeDefinitionRegistry typeDefinitionRegistry, Map<String, Object> context) {
+    public SchemaDirectiveWiringEnvironmentImpl(T element, GraphQLDirective directive, NodeParentTree nodeParentTree, TypeDefinitionRegistry typeDefinitionRegistry, Map<String, Object> context) {
         this.element = element;
-        this.nodeInfo = nodeInfo;
+        this.nodeParentTree = nodeParentTree;
         this.typeDefinitionRegistry = typeDefinitionRegistry;
         this.directive = directive;
         this.context = context;
@@ -32,8 +33,8 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     }
 
     @Override
-    public NodeInfo getNodeInfo() {
-        return nodeInfo;
+    public NodeParentTree getNodeParentTree() {
+        return nodeParentTree;
     }
 
     @Override

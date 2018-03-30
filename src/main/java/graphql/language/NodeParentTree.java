@@ -26,7 +26,7 @@ public class NodeParentTree {
     private final List<String> path;
 
     @Internal
-    NodeParentTree(Deque<Node> nodeStack) {
+    public NodeParentTree(Deque<Node> nodeStack) {
         assertNotNull(nodeStack, "You MUST have a non null stack of nodes");
         assertTrue(!nodeStack.isEmpty(), "You MUST have a non empty stack of nodes");
 

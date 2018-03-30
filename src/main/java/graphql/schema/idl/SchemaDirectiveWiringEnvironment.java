@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.PublicApi;
+import graphql.language.NodeParentTree;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
 
@@ -32,7 +33,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @return hierarchical graphql language node information
      */
-    NodeInfo getNodeInfo();
+    NodeParentTree getNodeParentTree();
 
     /**
      * @return the type registry

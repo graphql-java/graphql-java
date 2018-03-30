@@ -15,6 +15,7 @@ import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.Node;
+import graphql.language.NodeParentTree;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
@@ -136,8 +137,8 @@ public class SchemaGenerator {
             return t;
         }
 
-        SchemaGeneratorDirectiveBehaviourHelper.Parameters mkBehaviourParams() {
-            return new SchemaGeneratorDirectiveBehaviourHelper.Parameters(typeRegistry, wiring, new NodeInfo(nodeStack), directiveBehaviourContext);
+        SchemaGeneratorDirectiveHelper.Parameters mkBehaviourParams() {
+            return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, wiring, new NodeParentTree(nodeStack), directiveBehaviourContext);
         }
 
         GraphQLOutputType hasOutputType(TypeDefinition typeDefinition) {
@@ -171,7 +172,7 @@ public class SchemaGenerator {
 
     private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();
     private final SchemaGeneratorHelper schemaGeneratorHelper = new SchemaGeneratorHelper();
-    private final SchemaGeneratorDirectiveBehaviourHelper directiveBehaviour = new SchemaGeneratorDirectiveBehaviourHelper();
+    private final SchemaGeneratorDirectiveHelper directiveBehaviour = new SchemaGeneratorDirectiveHelper();
 
     public SchemaGenerator() {
     }
