@@ -41,4 +41,10 @@ public class Test {
         return assertions;
     }
 
+    @Override
+    public String toString() {
+        return "Test{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 }

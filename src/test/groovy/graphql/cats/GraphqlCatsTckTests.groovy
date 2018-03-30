@@ -12,12 +12,13 @@ class GraphqlCatsTckTests extends Specification {
     def "Cats TCK Parsing  '#testName'"() {
         expect:
 
-        testPassed
+        if (! result.passed) {
+            assert false, result.reason + " : '" + result.query + "'"
+        }
 
         where:
         result << cats("cats/scenarios/parsing/SchemaParser.yaml")
         testName = result.testName
-        testPassed = result.passed
     }
 
     List<TestResult> cats(String catsYamlFile) {

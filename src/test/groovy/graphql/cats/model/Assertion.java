@@ -24,7 +24,7 @@ public class Assertion {
     private static Assertion makeThen(Map yaml) {
         Assertion assertion = new Assertion();
         assertion.passes = yaml.containsKey("passes") ? true : null;
-        assertion.syntaxError = yaml.get("syntax-error");
+        assertion.syntaxError = yaml.containsKey("syntax-error") ? true : null;
         assertion.data = yaml.get("data");
         assertion.errorCount = (Integer) yaml.get("errorCount");
         assertion.error = (String) yaml.get("error");
@@ -38,7 +38,7 @@ public class Assertion {
         return Optional.ofNullable(passes);
     }
 
-    public Optional<Object> getSytaxError() {
+    public Optional<Object> getSyntaxError() {
         return Optional.ofNullable(syntaxError);
     }
 

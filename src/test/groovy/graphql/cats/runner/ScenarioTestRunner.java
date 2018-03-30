@@ -41,7 +41,7 @@ public class ScenarioTestRunner {
                 throw new IllegalStateException("Unhandled action!");
             }
         } catch (Exception e) {
-            return TestResult.failed(ctx.getTestName(), "Exception while running test", e);
+            return TestResult.failed(ctx.getTestName(), null, "Exception while running test", e);
         }
     }
 

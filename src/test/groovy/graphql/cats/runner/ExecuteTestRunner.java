@@ -24,17 +24,18 @@ class ExecuteTestRunner {
     @SuppressWarnings("ConstantConditions")
     static TestResult runTest(TestContext ctx) {
         Execute execute = ctx.getTest().getAction().getExecute().get();
-        ExecutionInput executionInput = buildInput(ctx.getTest().getGiven().getQuery(), execute);
+        String query = ctx.getTest().getGiven().getQuery();
+        ExecutionInput executionInput = buildInput(query, execute);
 
         GraphQL graphQL = buildEngine(ctx.getSchema(), ctx.getData());
 
         ExecutionResult executionResult = graphQL.execute(executionInput);
 
-        return assertResult(ctx, executionResult);
+        return assertResult(ctx, query, executionResult);
     }
 
-    private static TestResult assertResult(TestContext ctx, ExecutionResult executionResult) {
-        return TestResult.failed(ctx.getTestName(), "not written yet");
+    private static TestResult assertResult(TestContext ctx, String query, ExecutionResult executionResult) {
+        return TestResult.failed(ctx.getTestName(),query, "not written yet");
     }
 
 

@@ -21,7 +21,7 @@ public class TestContext {
     }
 
     public String getTestName() {
-        return scenario.getScenario() + " - " + test.getName();
+        return scenario.getScenario() + " - " + (test == null ? "" : test.getName());
     }
 
     public Test getTest() {
@@ -34,6 +34,11 @@ public class TestContext {
 
     public Object getData() {
         return data;
+    }
+
+    @Override
+    public String toString() {
+        return getTestName();
     }
 
     static Builder newContext() {
