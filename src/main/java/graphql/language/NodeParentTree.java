@@ -19,28 +19,28 @@ import static graphql.Assert.assertTrue;
  * on an ObjectTypeDefinition.
  */
 @PublicApi
-public class NodeParentTree {
+public class NodeParentTree<T extends Node> {
 
-    private final Node node;
-    private final Optional<NodeParentTree> parent;
+    private final T node;
+    private final Optional<NodeParentTree<T>> parent;
     private final List<String> path;
 
     @Internal
-    NodeParentTree(Deque<Node> nodeStack) {
+    public NodeParentTree(Deque<T> nodeStack) {
         assertNotNull(nodeStack, "You MUST have a non null stack of nodes");
         assertTrue(!nodeStack.isEmpty(), "You MUST have a non empty stack of nodes");
 
-        Deque<Node> copy = new ArrayDeque<>(nodeStack);
+        Deque<T> copy = new ArrayDeque<>(nodeStack);
         path = mkPath(copy);
         node = copy.pop();
         if (!copy.isEmpty()) {
-            parent = Optional.of(new NodeParentTree(copy));
+            parent = Optional.of(new NodeParentTree<T>(copy));
         } else {
             parent = Optional.empty();
         }
     }
 
-    private List<String> mkPath(Deque<Node> copy) {
+    private List<String> mkPath(Deque<T> copy) {
         return copy.stream()
                 .filter(node1 -> node1 instanceof NamedNode)
                 .map(node1 -> ((NamedNode) node1).getName())
@@ -51,19 +51,16 @@ public class NodeParentTree {
     /**
      * Returns the node represented by this info
      *
-     * @param <T> of the type you want
-     *
      * @return the node in play
      */
-    public <T extends Node> T getNode() {
-        //noinspection unchecked
-        return (T) node;
+    public T getNode() {
+        return node;
     }
 
     /**
      * @return a node MAY have an optional parent
      */
-    public Optional<NodeParentTree> getParentInfo() {
+    public Optional<NodeParentTree<T>> getParentInfo() {
         return parent;
     }
 

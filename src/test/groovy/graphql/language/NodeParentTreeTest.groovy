@@ -12,9 +12,9 @@ class NodeParentTreeTest extends Specification {
 
     def "basic hierarchy"() {
         given:
-        Deque<Node> stack = dequeOf([argument, fieldDef, objectTypeDef])
+        Deque<NamedNode> stack = dequeOf([argument, fieldDef, objectTypeDef])
         when:
-        def info = new NodeParentTree(stack)
+        NodeParentTree<NamedNode> info = new NodeParentTree<>(stack)
         then:
         info.getNode() instanceof Argument
         info.getParentInfo().isPresent()
@@ -28,7 +28,7 @@ class NodeParentTreeTest extends Specification {
         given:
         Deque<Node> stack = dequeOf([strValue, argument, fieldDef, objectTypeDef])
         when:
-        def info = new NodeParentTree(stack)
+        NodeParentTree<Node> info = new NodeParentTree<>(stack)
         then:
         info.getPath() == ["arg", "field", "object"]
     }
