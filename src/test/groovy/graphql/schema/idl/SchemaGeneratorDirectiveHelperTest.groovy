@@ -257,9 +257,11 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
                 def field = env.getElement()
                 def fieldName = field.getName()
-                DataFetcher echoDF = { dfEnv -> return fieldName }
-                field = field.transform({ builder -> builder.dataFetcher(echoDF) })
-                return field
+                DataFetcher echoDF = { dfEnv ->
+                    return fieldName
+                 }
+                GraphQLFieldDefinition newField = field.transform({ builder -> builder.dataFetcher(echoDF) })
+                return newField
             }
         }
 
@@ -295,6 +297,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def executionResult = graphQL.execute(input)
 
         then:
+        executionResult.errors.isEmpty()
         executionResult.data == [
                 lowerCaseValue: "LOWERCASEVALUE",
                 upperCaseValue: "uppercasevalue",
