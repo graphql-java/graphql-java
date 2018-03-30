@@ -7,7 +7,7 @@ import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValue> {
+public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValue>, NamedNode<EnumValue> {
 
     private String name;
 

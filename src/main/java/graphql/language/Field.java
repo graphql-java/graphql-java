@@ -16,7 +16,7 @@ import static graphql.language.NodeUtil.directivesByName;
 * This might change in the future.
  */
 @PublicApi
-public class Field extends AbstractNode<Field> implements Selection<Field> {
+public class Field extends AbstractNode<Field> implements Selection<Field>, NamedNode<Field> {
 
     private String name;
     private String alias;

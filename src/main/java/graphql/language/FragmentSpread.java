@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread> {
+public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, NamedNode<FragmentSpread> {
 
     private String name;
     private List<Directive> directives = new ArrayList<>();
