@@ -1443,6 +1443,44 @@ class SchemaGeneratorTest extends Specification {
         )
         directive.getArgument("knownArg").type == GraphQLString
         directive.getArgument("knownArg").defaultValue == "defaultValue"
+    }
 
+    def "missing directive arguments are transferred as are default values"() {
+        def spec = """
+            directive @testDirective(
+                knownArg1 : String = "defaultValue1", 
+                knownArg2 : Int = 666, 
+                knownArg3 : String, 
+                ) 
+                on FIELD_DEFINITION
+
+            type Query {
+                f : String @testDirective(knownArg1 : "overrideVal1")
+            }
+        """
+
+        when:
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        then:
+        options.isEnforceSchemaDirectives()
+
+        when:
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def directive = schema.getObjectType("Query").getFieldDefinition("f").getDirective("testDirective")
+        directive.getArgument("knownArg1").type == GraphQLString
+        directive.getArgument("knownArg1").value == "overrideVal1"
+        directive.getArgument("knownArg1").defaultValue == "defaultValue1"
+
+        directive.getArgument("knownArg2").type == GraphQLInt
+        directive.getArgument("knownArg2").value == 666
+        directive.getArgument("knownArg2").defaultValue == 666
+
+        directive.getArgument("knownArg3").type == GraphQLString
+        directive.getArgument("knownArg3").value == null
+        directive.getArgument("knownArg3").defaultValue == null
     }
 }
