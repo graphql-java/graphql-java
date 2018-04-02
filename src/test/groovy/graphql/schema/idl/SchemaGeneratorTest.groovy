@@ -1,5 +1,7 @@
 package graphql.schema.idl
 
+import graphql.TestUtil
+import graphql.introspection.Introspection
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
@@ -1400,4 +1402,47 @@ class SchemaGeneratorTest extends Specification {
         inputObjectType.directivesByName.containsKey("directive")
     }
 
+    def "directives definitions can be made"() {
+        def spec = """
+            directive @testDirective(knownArg : String = "defaultValue") on SCHEMA | SCALAR | 
+                            OBJECT | FIELD_DEFINITION |
+                            ARGUMENT_DEFINITION | INTERFACE | UNION | 
+                            ENUM | ENUM_VALUE | 
+                            INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+            type Query {
+                f : String @testDirective
+            }
+        """
+
+        when:
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        then:
+        options.isEnforceSchemaDirectives()
+
+        when:
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def directive = schema.getDirective("testDirective")
+        directive.name == "testDirective"
+        directive.validLocations() == EnumSet.of(
+                Introspection.DirectiveLocation.SCHEMA,
+                Introspection.DirectiveLocation.SCALAR,
+                Introspection.DirectiveLocation.OBJECT,
+                Introspection.DirectiveLocation.FIELD_DEFINITION,
+                Introspection.DirectiveLocation.ARGUMENT_DEFINITION,
+                Introspection.DirectiveLocation.INTERFACE,
+                Introspection.DirectiveLocation.UNION,
+                Introspection.DirectiveLocation.ENUM,
+                Introspection.DirectiveLocation.ENUM_VALUE,
+                Introspection.DirectiveLocation.INPUT_OBJECT,
+                Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION,
+        )
+        directive.getArgument("knownArg").type == GraphQLString
+        directive.getArgument("knownArg").defaultValue == "defaultValue"
+
+    }
 }

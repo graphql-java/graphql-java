@@ -125,6 +125,8 @@ class TestUtil {
         }
     }
 
+    static RuntimeWiring mockRuntimeWiring = RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build()
+
     static GraphQLScalarType mockScalar(String name) {
         new GraphQLScalarType(name, name, new Coercing() {
             @Override

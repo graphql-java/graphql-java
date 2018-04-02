@@ -63,6 +63,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -82,6 +83,45 @@ import static java.util.Collections.emptyList;
  */
 @PublicApi
 public class SchemaGenerator {
+
+    /**
+     * These options control how the schema generation works
+     */
+    public static class Options {
+        private final boolean enforceSchemaDirectives;
+
+        Options(boolean enforceSchemaDirectives) {
+            this.enforceSchemaDirectives = enforceSchemaDirectives;
+        }
+
+        /**
+         * This controls whether schema directives MUST be declared using
+         * directive definition syntax before use.
+         *
+         * @return true if directives must be fully declared; the default is false
+         */
+        public boolean isEnforceSchemaDirectives() {
+            return enforceSchemaDirectives;
+        }
+
+        public static Options defaultOptions() {
+            return new Options(false);
+        }
+
+        /**
+         * This controls whether schema directives MUST be declared using
+         * directive definition syntax before use.
+         *
+         * @param flag the value to use
+         *
+         * @return the new options
+         */
+        public Options enforceSchemaDirectives(boolean flag) {
+            return new Options(flag);
+        }
+
+    }
+
 
     /**
      * We pass this around so we know what we have defined in a stack like manner plus
@@ -167,7 +207,23 @@ public class SchemaGenerator {
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
-        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistry, wiring);
+        return makeExecutableSchema(Options.defaultOptions(), typeRegistry, wiring);
+    }
+
+    /**
+     * This will take a {@link TypeDefinitionRegistry} and a {@link RuntimeWiring} and put them together to create a executable schema
+     * controlled by the provided options.
+     *
+     * @param options      the controlling options
+     * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
+     * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
+     *
+     * @return an executable schema
+     *
+     * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
+     */
+    public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
+        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistry, wiring, options.enforceSchemaDirectives);
         if (!errors.isEmpty()) {
             throw new SchemaProblem(errors);
         }
@@ -227,10 +283,15 @@ public class SchemaGenerator {
             }
         }
 
+        Set<GraphQLDirective> additionalDirectives = buildAdditionalDirectives(buildCtx);
+        schemaBuilder.additionalDirectives(additionalDirectives);
+
         Set<GraphQLType> additionalTypes = buildAdditionalTypes(buildCtx);
+        schemaBuilder.additionalTypes(additionalTypes);
 
         schemaBuilder.fieldVisibility(buildCtx.getWiring().getFieldVisibility());
-        return schemaBuilder.build(additionalTypes);
+
+        return schemaBuilder.build();
     }
 
     private GraphQLObjectType buildOperation(BuildContext buildCtx, OperationTypeDefinition operation) {
@@ -263,6 +324,17 @@ public class SchemaGenerator {
             }
         });
         return additionalTypes;
+    }
+
+    private Set<GraphQLDirective> buildAdditionalDirectives(BuildContext buildCtx) {
+        Set<GraphQLDirective> additionalDirectives = new HashSet<>();
+        TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
+        typeRegistry.getDirectiveDefinitions().values().forEach(directiveDefinition -> {
+            Function<Type, GraphQLInputType> inputTypeFactory = inputType -> buildInputType(buildCtx, inputType);
+            GraphQLDirective directive = schemaGeneratorHelper.buildDirectiveFromDefinition(directiveDefinition, inputTypeFactory);
+            additionalDirectives.add(directive);
+        });
+        return additionalDirectives;
     }
 
     /**

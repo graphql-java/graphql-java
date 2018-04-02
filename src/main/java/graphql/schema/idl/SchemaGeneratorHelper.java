@@ -3,20 +3,23 @@ package graphql.schema.idl;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.Scalars;
-import graphql.introspection.Introspection;
+import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
 import graphql.language.Comment;
 import graphql.language.Description;
 import graphql.language.Directive;
+import graphql.language.DirectiveDefinition;
 import graphql.language.EnumValue;
 import graphql.language.FloatValue;
+import graphql.language.InputValueDefinition;
 import graphql.language.IntValue;
 import graphql.language.Node;
 import graphql.language.NullValue;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
+import graphql.language.Type;
 import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -33,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -51,7 +55,7 @@ public class SchemaGeneratorHelper {
             requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
         }
         if (requiredType instanceof GraphQLScalarType) {
-            result = parseLiteral(value,(GraphQLScalarType) requiredType);
+            result = parseLiteral(value, (GraphQLScalarType) requiredType);
         } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
             result = ((EnumValue) value).getName();
         } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
@@ -145,7 +149,7 @@ public class SchemaGeneratorHelper {
     }
 
     // builds directives from a type and its extensions
-    public GraphQLDirective buildDirective(Directive directive, Introspection.DirectiveLocation directiveLocation) {
+    public GraphQLDirective buildDirective(Directive directive, DirectiveLocation directiveLocation) {
         List<GraphQLArgument> arguments = directive.getArguments().stream()
                 .map(this::buildDirectiveArgument)
                 .collect(Collectors.toList());
@@ -168,6 +172,39 @@ public class SchemaGeneratorHelper {
         builder.type(inputType);
         builder.defaultValue(buildValue(arg.getValue(), inputType));
         return builder.build();
+    }
+
+    public GraphQLDirective buildDirectiveFromDefinition(DirectiveDefinition directiveDefinition, Function<Type, GraphQLInputType> inputTypeFactory) {
+
+        GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
+                .name(directiveDefinition.getName())
+                .description(buildDescription(directiveDefinition, directiveDefinition.getDescription()));
+
+
+        List<DirectiveLocation> locations = buildLocations(directiveDefinition);
+        locations.forEach(builder::validLocations);
+
+        List<GraphQLArgument> arguments = directiveDefinition.getInputValueDefinitions().stream()
+                .map(arg -> buildDirectiveArgument(arg, inputTypeFactory))
+                .collect(Collectors.toList());
+        arguments.forEach(builder::argument);
+        return builder.build();
+    }
+
+    private GraphQLArgument buildDirectiveArgument(InputValueDefinition arg, Function<Type, GraphQLInputType> inputTypeFactory) {
+        GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+        builder.name(arg.getName());
+
+        GraphQLInputType inputType = inputTypeFactory.apply(arg.getType());
+        builder.type(inputType);
+        builder.defaultValue(buildValue(arg.getDefaultValue(), inputType));
+        return builder.build();
+    }
+
+    private List<DirectiveLocation> buildLocations(DirectiveDefinition directiveDefinition) {
+        return directiveDefinition.getDirectiveLocations().stream()
+                .map(dl -> DirectiveLocation.valueOf(dl.getName().toUpperCase()))
+                .collect(Collectors.toList());
     }
 
 }
