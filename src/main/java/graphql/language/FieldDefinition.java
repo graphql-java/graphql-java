@@ -6,11 +6,8 @@ import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static graphql.language.NodeUtil.directivesByName;
-
-public class FieldDefinition extends AbstractNode<FieldDefinition> implements NamedNode<FieldDefinition> {
+public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
     private final String name;
     private Type type;
     private Description description;
@@ -60,15 +57,6 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Na
         return directives;
     }
 
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
-    }
-
-
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
@@ -85,7 +73,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Na
 
         FieldDefinition that = (FieldDefinition) o;
 
-         return NodeUtil.isEqualTo(this.name,that.name) ;
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override
