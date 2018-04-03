@@ -39,7 +39,7 @@ public class DirectivesExamples {
 
         @Override
         public GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> schemaDirectiveWiringEnv) {
-            String targetAuthRole = (String) schemaDirectiveWiringEnv.getDirective().getArgument("role").getDefaultValue();
+            String targetAuthRole = (String) schemaDirectiveWiringEnv.getDirective().getArgument("role").getValue();
 
             GraphQLFieldDefinition field = schemaDirectiveWiringEnv.getElement();
             //

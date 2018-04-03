@@ -26,7 +26,7 @@ For example imagine you have a type like the following
     }
 
 
-Now it publishing the ``salary`` to every one who can know this employees name might not be want you want.  Rather you want some sort of access control
+It publishing the ``salary`` to every one who can see this employee's name might not be want you want.  Rather you want some sort of access control
 to be in place such that if your role is that of a manager, you can see salaries, otherwise you get no data back.
 
 Directives can help you declare this more easily.  Our declaration above would become something like the following:
@@ -70,7 +70,7 @@ We now need to wire in the code that can handle any field with this ``@auth`` di
 
         @Override
         public GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> schemaDirectiveWiringEnv) {
-            String targetAuthRole = (String) schemaDirectiveWiringEnv.getDirective().getArgument("role").getDefaultValue();
+            String targetAuthRole = (String) schemaDirectiveWiringEnv.getDirective().getArgument("role").getValue();
 
             GraphQLFieldDefinition field = schemaDirectiveWiringEnv.getElement();
             //
@@ -235,6 +235,6 @@ The directives are applied in the order they are encountered.  For example imagi
 
 
 When the above was executed each directive would be applied one on top of the other.  Each directive implementation should be careful
-to preserve rhe previous data fetcher to retain behaviour (unless of course you mean to throw it away)
+to preserve the previous data fetcher to retain behaviour (unless of course you mean to throw it away)
 
 

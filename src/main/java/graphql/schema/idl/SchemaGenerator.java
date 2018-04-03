@@ -67,6 +67,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -184,7 +185,7 @@ public class SchemaGenerator {
                     .map(NamedNode.class::cast)
                     .collect(Collectors.toList());
             Deque<NamedNode> deque = new ArrayDeque<>(list);
-            return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, wiring, new NodeParentTree(deque), directiveBehaviourContext);
+            return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, wiring, new NodeParentTree<>(deque), directiveBehaviourContext);
         }
 
         GraphQLOutputType hasOutputType(TypeDefinition typeDefinition) {
@@ -657,7 +658,7 @@ public class SchemaGenerator {
         if (!ScalarInfo.isStandardScalar(scalar) && !ScalarInfo.isGraphqlSpecifiedScalar(scalar)) {
             scalar = scalar.transform(builder -> builder.withDirectives(
                     buildDirectives(typeDefinition.getDirectives(),
-                            directivesOf(extensions), SCALAR)
+                            directivesOf(extensions), SCALAR, buildCtx.getDirectiveDefinitions())
             ));
             //
             // only allow modification of custom scalars
@@ -804,7 +805,7 @@ public class SchemaGenerator {
 
         builder.withDirectives(
                 buildDirectives(valueDefinition.getDirectives(),
-                        Collections.emptyList(), ARGUMENT_DEFINITION)
+                        Collections.emptyList(), ARGUMENT_DEFINITION, buildCtx.getDirectiveDefinitions())
         );
 
         GraphQLArgument argument = builder.build();

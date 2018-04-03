@@ -97,7 +97,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             def assertDirectiveTarget(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment, String name) {
                 targetList.add(name)
                 GraphQLDirective directive = environment.getDirective()
-                String target = directive.getArgument("target").getDefaultValue()
+                String target = directive.getArgument("target").getValue()
                 assert name == target, " The target $target is not equal to the object name $name"
                 return environment.getElement()
             }
