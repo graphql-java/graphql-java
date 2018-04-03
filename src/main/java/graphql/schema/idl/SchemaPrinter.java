@@ -475,6 +475,10 @@ public class SchemaPrinter {
                     sb.append(" : ");
                     sb.append(printAst(arg.getValue(), arg.getType()));
                 }
+                if (arg.getDefaultValue() != null) {
+                    sb.append(" = ");
+                    sb.append(printAst(arg.getDefaultValue(), arg.getType()));
+                }
                 if (i < args.size() - 1) {
                     sb.append(", ");
                 }
