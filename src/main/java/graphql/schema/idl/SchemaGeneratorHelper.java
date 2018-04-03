@@ -1,22 +1,24 @@
 package graphql.schema.idl;
 
-import graphql.Assert;
 import graphql.Internal;
 import graphql.Scalars;
-import graphql.introspection.Introspection;
+import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
 import graphql.language.Comment;
 import graphql.language.Description;
 import graphql.language.Directive;
+import graphql.language.DirectiveDefinition;
 import graphql.language.EnumValue;
 import graphql.language.FloatValue;
+import graphql.language.InputValueDefinition;
 import graphql.language.IntValue;
 import graphql.language.Node;
 import graphql.language.NullValue;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
+import graphql.language.Type;
 import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -27,14 +29,19 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -49,9 +56,13 @@ public class SchemaGeneratorHelper {
         Object result = null;
         if (requiredType instanceof GraphQLNonNull) {
             requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
+            assertNotNull(value, "A AST value is required to be present for non null type ;" + requiredType.getName() + "'");
+        }
+        if (value == null) {
+            return null;
         }
         if (requiredType instanceof GraphQLScalarType) {
-            result = parseLiteral(value,(GraphQLScalarType) requiredType);
+            result = parseLiteral(value, (GraphQLScalarType) requiredType);
         } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
             result = ((EnumValue) value).getName();
         } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
@@ -62,7 +73,7 @@ public class SchemaGeneratorHelper {
         } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
             result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
         } else if (value != null && !(value instanceof NullValue)) {
-            Assert.assertShouldNeverHappen(
+            assertShouldNeverHappen(
                     "cannot build value of %s from %s", requiredType.getName(), String.valueOf(value));
         }
         return result;
@@ -141,33 +152,104 @@ public class SchemaGeneratorHelper {
         if (value instanceof BooleanValue) {
             return Scalars.GraphQLBoolean;
         }
-        return Assert.assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getName());
+        return assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getName());
     }
 
     // builds directives from a type and its extensions
-    public GraphQLDirective buildDirective(Directive directive, Introspection.DirectiveLocation directiveLocation) {
-        List<GraphQLArgument> arguments = directive.getArguments().stream()
-                .map(this::buildDirectiveArgument)
-                .collect(Collectors.toList());
-
+    public GraphQLDirective buildDirective(Directive directive, Set<GraphQLDirective> directiveDefinitions, DirectiveLocation directiveLocation) {
+        Optional<GraphQLDirective> directiveDefinition = directiveDefinitions.stream().filter(dd -> dd.getName().equals(directive.getName())).findFirst();
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directive.getName())
                 .description(buildDescription(directive, null))
                 .validLocations(directiveLocation);
 
-        for (GraphQLArgument argument : arguments) {
-            builder.argument(argument);
+        List<GraphQLArgument> arguments = directive.getArguments().stream()
+                .map(arg -> buildDirectiveArgument(arg, directiveDefinition))
+                .collect(Collectors.toList());
+
+        if (directiveDefinition.isPresent()) {
+            arguments = transferMissingArguments(arguments, directiveDefinition.get());
         }
+        arguments.forEach(builder::argument);
+
         return builder.build();
     }
 
-    private GraphQLArgument buildDirectiveArgument(Argument arg) {
+    private GraphQLArgument buildDirectiveArgument(Argument arg, Optional<GraphQLDirective> directiveDefinition) {
+        Optional<GraphQLArgument> directiveDefArgument = directiveDefinition.map(dd -> dd.getArgument(arg.getName()));
         GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
         builder.name(arg.getName());
-        GraphQLInputType inputType = buildDirectiveInputType(arg.getValue());
+        GraphQLInputType inputType;
+        Object defaultValue = null;
+        if (directiveDefArgument.isPresent()) {
+            inputType = directiveDefArgument.get().getType();
+            defaultValue = directiveDefArgument.get().getDefaultValue();
+        } else {
+            inputType = buildDirectiveInputType(arg.getValue());
+        }
         builder.type(inputType);
-        builder.defaultValue(buildValue(arg.getValue(), inputType));
+        builder.defaultValue(defaultValue);
+
+        Object value = buildValue(arg.getValue(), inputType);
+        //
+        // we put the default value in if the specified is null
+        builder.value(value == null ? defaultValue : value);
+
         return builder.build();
+    }
+
+    private List<GraphQLArgument> transferMissingArguments(List<GraphQLArgument> arguments, GraphQLDirective directiveDefinition) {
+        Map<String, GraphQLArgument> declaredArgs = FpKit.getByName(arguments, GraphQLArgument::getName, FpKit.mergeFirst());
+        List<GraphQLArgument> argumentsOut = new ArrayList<>(arguments);
+
+        for (GraphQLArgument directiveDefArg : directiveDefinition.getArguments()) {
+            if (!declaredArgs.containsKey(directiveDefArg.getName())) {
+                GraphQLArgument missingArg = GraphQLArgument.newArgument()
+                        .name(directiveDefArg.getName())
+                        .description(directiveDefArg.getDescription())
+                        .definition(directiveDefArg.getDefinition())
+                        .type(directiveDefArg.getType())
+                        .defaultValue(directiveDefArg.getDefaultValue())
+                        .value(directiveDefArg.getDefaultValue())
+                        .build();
+                argumentsOut.add(missingArg);
+            }
+        }
+        return argumentsOut;
+    }
+
+    public GraphQLDirective buildDirectiveFromDefinition(DirectiveDefinition directiveDefinition, Function<Type, GraphQLInputType> inputTypeFactory) {
+
+        GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
+                .name(directiveDefinition.getName())
+                .description(buildDescription(directiveDefinition, directiveDefinition.getDescription()));
+
+
+        List<DirectiveLocation> locations = buildLocations(directiveDefinition);
+        locations.forEach(builder::validLocations);
+
+        List<GraphQLArgument> arguments = directiveDefinition.getInputValueDefinitions().stream()
+                .map(arg -> buildDirectiveArgumentFromDefinition(arg, inputTypeFactory))
+                .collect(Collectors.toList());
+        arguments.forEach(builder::argument);
+        return builder.build();
+    }
+
+    private GraphQLArgument buildDirectiveArgumentFromDefinition(InputValueDefinition arg, Function<Type, GraphQLInputType> inputTypeFactory) {
+        GraphQLArgument.Builder builder = GraphQLArgument.newArgument()
+                .name(arg.getName())
+                .definition(arg);
+
+        GraphQLInputType inputType = inputTypeFactory.apply(arg.getType());
+        builder.type(inputType);
+        builder.defaultValue(buildValue(arg.getDefaultValue(), inputType));
+        return builder.build();
+    }
+
+    private List<DirectiveLocation> buildLocations(DirectiveDefinition directiveDefinition) {
+        return directiveDefinition.getDirectiveLocations().stream()
+                .map(dl -> DirectiveLocation.valueOf(dl.getName().toUpperCase()))
+                .collect(Collectors.toList());
     }
 
 }
