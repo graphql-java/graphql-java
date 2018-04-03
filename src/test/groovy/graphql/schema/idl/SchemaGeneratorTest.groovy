@@ -1121,7 +1121,7 @@ class SchemaGeneratorTest extends Specification {
 
         directive.arguments[argIndex].name == argName
         directive.arguments[argIndex].type == argType
-        directive.arguments[argIndex].defaultValue == argValue
+        directive.arguments[argIndex].value == argValue
 
         where:
         argIndex | argName    | argType        | argValue
