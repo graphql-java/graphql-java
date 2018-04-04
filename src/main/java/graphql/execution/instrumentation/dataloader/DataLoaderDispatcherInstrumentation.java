@@ -4,7 +4,6 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionStrategy;
-import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
@@ -21,13 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenDispatched;
 
 /**
  * This graphql {@link graphql.execution.instrumentation.Instrumentation} will dispatch
@@ -46,6 +40,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     private final DataLoaderRegistry dataLoaderRegistry;
     private final DataLoaderDispatcherInstrumentationOptions options;
+    private final FieldLevelTrackingApproach fieldLevelTrackingApproach;
 
     /**
      * You pass in a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
@@ -67,97 +62,20 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     public DataLoaderDispatcherInstrumentation(DataLoaderRegistry dataLoaderRegistry, DataLoaderDispatcherInstrumentationOptions options) {
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.options = options;
-    }
-
-
-    private static class CallStack implements InstrumentationState {
-        private boolean aggressivelyBatching = true;
-        private final Map<Integer, Integer> outstandingFieldFetchCounts = new ConcurrentHashMap<>();
-
-        private boolean isAggressivelyBatching() {
-            return aggressivelyBatching;
-        }
-
-        private void setAggressivelyBatching(boolean aggressivelyBatching) {
-            this.aggressivelyBatching = aggressivelyBatching;
-        }
-
-        private void setOutstandingFieldFetches(int level, int count) {
-            outstandingFieldFetchCounts.put(level, count);
-        }
-
-        // TODO: should be threadsafe
-        private int decrementOutstandingFieldFetches(int level) {
-            int newCount = outstandingFieldFetchCounts.getOrDefault(level, 1) - 1;
-            outstandingFieldFetchCounts.put(level, newCount);
-            return newCount;
-        }
-
-        private int getOutstandingFieldFetches(int level) {
-            return outstandingFieldFetchCounts.getOrDefault(level, 0);
-        }
-
-        private boolean thereAreOutstandingFieldFetches(int startLevel) {
-            while (startLevel >= 0) {
-                int count = getOutstandingFieldFetches(startLevel);
-                if (count > 0) {
-                    return true;
-                }
-                startLevel--;
-            }
-            return false;
-        }
-
+        this.fieldLevelTrackingApproach = new FieldLevelTrackingApproach(log, dataLoaderRegistry);
     }
 
 
     @Override
     public InstrumentationState createState() {
-        return new CallStack();
+        return fieldLevelTrackingApproach.createState();
     }
 
-    private void dispatch() {
-        log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
-
-        List<String> dlKeysWithData = dataLoaderRegistry.getKeys().stream().filter(key -> dataLoaderRegistry.getDataLoader(key).dispatchDepth() > 0).collect(Collectors.toList());
-        if (!dlKeysWithData.isEmpty()) {
-            System.out.println("\t\tDispatched!");
-        }
-        dlKeysWithData.forEach(key -> {
-            System.out.println(String.format("'%s' has %d depth", key, dataLoaderRegistry.getDataLoader(key).dispatchDepth()));
-        });
-
-        System.out.println("\n\n");
-        dataLoaderRegistry.dispatchAll();
-    }
-
-    private boolean isEndOfListImpl(ExecutionStrategyParameters executionStrategyParameters) {
-        if (executionStrategyParameters == null) {
-            return true;
-        }
-        if (executionStrategyParameters.getListSize() == 0) {
-            return true;
-        }
-        return executionStrategyParameters.getCurrentListIndex() + 1 == executionStrategyParameters.getListSize();
-    }
-
-    private boolean isEndOfListOnAllLevels(ExecutionStrategyParameters executionStrategyParameters) {
-        return isEndOfListImpl(executionStrategyParameters) &&
-                (executionStrategyParameters.getParent() == null || isEndOfListOnAllLevels(executionStrategyParameters.getParent()));
-    }
-
-    private void dispatchIfNeeded(CallStack callStack, ExecutionStrategyParameters executionStrategyParameters) {
-        int level = executionStrategyParameters.getPath().getLevel();
-        boolean outstandingDispatches = callStack.thereAreOutstandingFieldFetches(level);
-        if (isEndOfListOnAllLevels(executionStrategyParameters) && !outstandingDispatches) {
-            dispatch();
-        }
-    }
 
     @Override
     public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
-        if (callStack.isAggressivelyBatching()) {
+        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        if (state.isAggressivelyBatching()) {
             return dataFetcher;
         }
         //
@@ -166,7 +84,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         // which allows them to work if used.
         return (DataFetcher<Object>) environment -> {
             Object obj = dataFetcher.get(environment);
-            dispatch();
+            fieldLevelTrackingApproach.dispatch();
             return obj;
         };
     }
@@ -175,27 +93,20 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         ExecutionStrategy queryStrategy = parameters.getExecutionContext().getQueryStrategy();
         if (!(queryStrategy instanceof AsyncExecutionStrategy)) {
-            CallStack callStack = parameters.getInstrumentationState();
+            DataLoaderDispatcherInstrumentationState callStack = parameters.getInstrumentationState();
             callStack.setAggressivelyBatching(false);
         }
-        return whenDispatched((result) -> dispatch());
+        return fieldLevelTrackingApproach.beginExecuteOperation(parameters);
     }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
-        int level = parameters.getExecutionStrategyParameters().getPath().getLevel() + 1; // +1 because we are looking forward
-        int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
-        callStack.setOutstandingFieldFetches(level, fieldCount);
-        return whenDispatched((result) -> dispatchIfNeeded(callStack, parameters.getExecutionStrategyParameters()));
+        return fieldLevelTrackingApproach.beginExecutionStrategy(parameters);
     }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
-        int level = parameters.getEnvironment().getFieldTypeInfo().getPath().getLevel();
-        callStack.decrementOutstandingFieldFetches(level);
-        return super.beginFieldFetch(parameters);
+        return fieldLevelTrackingApproach.beginFieldFetch(parameters);
     }
 
     @Override
