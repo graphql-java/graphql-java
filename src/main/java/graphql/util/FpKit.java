@@ -14,6 +14,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static java.util.Collections.singletonList;
 import static java.util.function.Function.identity;
 
 @Internal
@@ -38,9 +39,7 @@ public class FpKit {
      * it alone if it is already is one.  Useful when you want to get the size of something
      *
      * @param iterableResult the result object
-     *
      * @return an Iterable from that object
-     *
      * @throws java.lang.ClassCastException if its not an Iterable
      */
     @SuppressWarnings("unchecked")
@@ -61,5 +60,32 @@ public class FpKit {
             list.add(iterator.next());
         }
         return list;
+    }
+
+    /**
+     * Concatenates (appends) a single elements to an existing list
+     *
+     * @param l the list onto which to append the element
+     * @param t the element to append
+     * @param <T> the type of elements of the list
+     * @return a <strong>new</strong> list componsed of the first list elements and the new element
+     */
+    public static <T> List<T> concat(List<T> l, T t) {
+        return concat(l, singletonList(t));
+    }
+
+    /**
+     * Concatenates two lists into one
+     *
+     * @param l1 the first list to concatenate
+     * @param l2 the second list to concatenate
+     * @param <T> the type of element of the lists
+     * @return a <strong>new</strong> list composed of the two concatenated lists elements
+     */
+    public static <T> List<T> concat(List<T> l1, List<T> l2) {
+        ArrayList<T> l = new ArrayList<>(l1);
+        l.addAll(l2);
+        l.trimToSize();
+        return l;
     }
 }
