@@ -151,7 +151,7 @@ class DataLoaderPerformanceTest extends Specification {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
         dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
-        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
+        def instrumentation = new BraidDataLoaderDispatcherInstrumentation(dataLoaderRegistry)
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
                 .instrumentation(instrumentation)
@@ -175,7 +175,7 @@ class DataLoaderPerformanceTest extends Specification {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
         dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
-        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
+        def instrumentation = new BraidDataLoaderDispatcherInstrumentation(dataLoaderRegistry)
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
                 .instrumentation(instrumentation)
