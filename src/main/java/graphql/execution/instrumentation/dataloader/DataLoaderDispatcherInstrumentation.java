@@ -7,6 +7,7 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -42,6 +43,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final DataLoaderDispatcherInstrumentationOptions options;
     private final FieldLevelTrackingApproach fieldLevelTrackingApproach;
+    private final CombinedCallsApproach combinedCallsApproach;
 
     /**
      * You pass in a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
@@ -64,12 +66,17 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.options = options;
         this.fieldLevelTrackingApproach = new FieldLevelTrackingApproach(log, dataLoaderRegistry);
+        this.combinedCallsApproach = new CombinedCallsApproach(log, dataLoaderRegistry);
     }
 
 
     @Override
     public InstrumentationState createState() {
-        return fieldLevelTrackingApproach.createState();
+        if (options.isUseCombinedApproach()) {
+            return combinedCallsApproach.createState();
+        } else {
+            return fieldLevelTrackingApproach.createState();
+        }
     }
 
 
@@ -85,9 +92,17 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         // which allows them to work if used.
         return (DataFetcher<Object>) environment -> {
             Object obj = dataFetcher.get(environment);
-            fieldLevelTrackingApproach.dispatch();
+            immediatelyDispatch();
             return obj;
         };
+    }
+
+    private void immediatelyDispatch() {
+        if (options.isUseCombinedApproach()) {
+            combinedCallsApproach.dispatch();
+        } else {
+            fieldLevelTrackingApproach.dispatch();
+        }
     }
 
     @Override
@@ -97,22 +112,38 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
             state.setAggressivelyBatching(false);
         }
-        return fieldLevelTrackingApproach.beginExecuteOperation();
+        if (options.isUseCombinedApproach()) {
+            return combinedCallsApproach.beginExecuteOperation(parameters);
+        } else {
+            return fieldLevelTrackingApproach.beginExecuteOperation();
+        }
     }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return fieldLevelTrackingApproach.beginExecutionStrategy(parameters);
+        if (options.isUseCombinedApproach()) {
+            return new SimpleInstrumentationContext<>();
+        } else {
+            return fieldLevelTrackingApproach.beginExecutionStrategy(parameters);
+        }
     }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        return fieldLevelTrackingApproach.beginDeferredField(parameters);
+        if (options.isUseCombinedApproach()) {
+            return combinedCallsApproach.beginDeferredField(parameters);
+        } else {
+            return fieldLevelTrackingApproach.beginDeferredField(parameters);
+        }
     }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        return fieldLevelTrackingApproach.beginFieldFetch(parameters);
+        if (options.isUseCombinedApproach()) {
+            return new SimpleInstrumentationContext<>();
+        } else {
+            return fieldLevelTrackingApproach.beginFieldFetch(parameters);
+        }
     }
 
     @Override
