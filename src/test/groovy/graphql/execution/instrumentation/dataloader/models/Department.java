@@ -1,16 +1,16 @@
-package graphql.execution.instrumentation.dataloader;
+package graphql.execution.instrumentation.dataloader.models;
 
 import java.util.List;
 
-public class Shop {
+public class Department {
     private final String id;
     private final String name;
-    private final List<String> departmentIds;
+    private final List<String> productIds;
 
-    public Shop(String id, String name, List<String> departmentIds) {
+    public Department(String id, String name, List<String> productIds) {
         this.id = id;
         this.name = name;
-        this.departmentIds = departmentIds;
+        this.productIds = productIds;
     }
 
     public String getId() {
@@ -21,16 +21,16 @@ public class Shop {
         return name;
     }
 
-    public List<String> getDepartmentIds() {
-        return departmentIds;
+    public List<String> getProductIds() {
+        return productIds;
     }
 
     @Override
     public String toString() {
-        return "Shop{" +
+        return "Department{" +
                 "id='" + id + '\'' +
                 ", name='" + name + '\'' +
-                ", departmentIds=" + departmentIds +
+                ", productIds=" + productIds +
                 '}';
     }
 }

@@ -4,6 +4,9 @@ import com.github.javafaker.Faker
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.instrumentation.dataloader.models.Company
+import graphql.execution.instrumentation.dataloader.models.Person
+import graphql.execution.instrumentation.dataloader.models.Product
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
@@ -176,13 +179,14 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         return registry
     }
 
-    def "ensure performant loading"() {
+    def "ensure performant loading with field tracking"() {
 
         DataLoaderRegistry registry = buildRegistry()
 
+        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedApproach(false)
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(registry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation(registry, options))
                 .build()
 
         when:
@@ -205,6 +209,39 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         companyBatchLoadKeyCount == 26
 
         companyBatchLoadInvocationCount == 2
+
+    }
+
+    def "ensure performant loading with combined calls"() {
+
+        DataLoaderRegistry registry = buildRegistry()
+
+        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedApproach(true)
+        GraphQL graphQL = GraphQL
+                .newGraphQL(graphQLSchema)
+                .instrumentation(new DataLoaderDispatcherInstrumentation(registry, options))
+                .build()
+
+        when:
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .context(registry)
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+
+        then:
+
+        (executionResult.data["products"] as Map).size() == 5
+
+        personBatchLoadKeyCount == 26
+        personBatchLoadInvocationCount == 1
+
+        companyBatchLoadKeyCount == 26
+
+        companyBatchLoadInvocationCount == 1 // WOOT - even better than field tracking
 
     }
 }

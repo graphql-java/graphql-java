@@ -1,6 +1,9 @@
 package graphql.execution.instrumentation.dataloader;
 
 import graphql.execution.batched.Batched;
+import graphql.execution.instrumentation.dataloader.models.Department;
+import graphql.execution.instrumentation.dataloader.models.Product;
+import graphql.execution.instrumentation.dataloader.models.Shop;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.dataloader.BatchLoader;
@@ -136,7 +139,7 @@ public class BatchCompareDataFetchers {
     private static BatchLoader<String, List<Product>> productsForDepartmentsBatchLoader = ids -> {
         productsForDepartmentsBatchLoaderCounter.incrementAndGet();
         List<Department> d = ids.stream().map(departments::get).collect(Collectors.toList());
-        return CompletableFuture.completedFuture(getProductsForDepartments(d));
+        return CompletableFuture.supplyAsync(() -> getProductsForDepartments(d));
     };
 
     public static DataLoader<String, List<Product>> productsForDepartmentDataLoader = new DataLoader<>(productsForDepartmentsBatchLoader);
@@ -146,8 +149,8 @@ public class BatchCompareDataFetchers {
             Department department = environment.getSource();
             return productsForDepartmentDataLoader.load(department.getId());
         };
-        //return async(supplier);
-        return supplier.get();
+        return async(supplier);
+        //return supplier.get();
     };
 
     private static <T> CompletableFuture<T> async(Supplier<CompletableFuture<T>> supplier) {
