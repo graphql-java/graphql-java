@@ -12,6 +12,7 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static graphql.Scalars.GraphQLBoolean;
@@ -44,6 +45,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
 
     private final String propertyName;
     private final Function<Object, Object> function;
+    private final ConcurrentHashMap<String, String> booleanMethodPrefixCache = new ConcurrentHashMap<>();
 
     /**
      * This constructor will use the property name and examine the {@link DataFetchingEnvironment#getSource()}
@@ -153,11 +155,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
 
     private Object getPropertyViaGetterMethod(Object object, GraphQLOutputType outputType, MethodFinder methodFinder) throws NoSuchMethodException {
         if (isBooleanProperty(outputType)) {
-            try {
-                return getPropertyViaGetterUsingPrefix(object, "is", methodFinder);
-            } catch (NoSuchMethodException e) {
-                return getPropertyViaGetterUsingPrefix(object, "get", methodFinder);
-            }
+            return getBooleanProperty(object, methodFinder);
         } else {
             return getPropertyViaGetterUsingPrefix(object, "get", methodFinder);
         }
@@ -170,6 +168,25 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
             return method.invoke(object);
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new GraphQLException(e);
+        }
+    }
+
+    /**
+     * Read the value of a boolean property, both via accessors named isXXX and getXXX.
+     * Cache the method prefix to avoid the performance hit of
+     * NoSuchMethodException.fillInStacktrace.
+     * Kotlin for example uses getXXX accessors for boolean properties.
+     */
+    private Object getBooleanProperty(Object object, MethodFinder methodFinder) throws NoSuchMethodException {
+        String className = object.getClass().getCanonicalName();
+        if (booleanMethodPrefixCache.containsKey(className)) {
+            return getPropertyViaGetterUsingPrefix(object, booleanMethodPrefixCache.get(className), methodFinder);
+        }
+        try {
+            return getPropertyViaGetterUsingPrefix(object, "is", methodFinder);
+        } catch (NoSuchMethodException e) {
+            booleanMethodPrefixCache.put(className, "get");
+            return getPropertyViaGetterUsingPrefix(object, "get", methodFinder);
         }
     }
 
