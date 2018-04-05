@@ -139,7 +139,7 @@ public class BatchCompareDataFetchers {
     private static BatchLoader<String, List<Product>> productsForDepartmentsBatchLoader = ids -> {
         productsForDepartmentsBatchLoaderCounter.incrementAndGet();
         List<Department> d = ids.stream().map(departments::get).collect(Collectors.toList());
-        return CompletableFuture.supplyAsync(() -> getProductsForDepartments(d));
+        return CompletableFuture.completedFuture(getProductsForDepartments(d));
     };
 
     public static DataLoader<String, List<Product>> productsForDepartmentDataLoader = new DataLoader<>(productsForDepartmentsBatchLoader);
@@ -149,8 +149,8 @@ public class BatchCompareDataFetchers {
             Department department = environment.getSource();
             return productsForDepartmentDataLoader.load(department.getId());
         };
-        return async(supplier);
-        //return supplier.get();
+        //return async(supplier);
+        return supplier.get();
     };
 
     private static <T> CompletableFuture<T> async(Supplier<CompletableFuture<T>> supplier) {
