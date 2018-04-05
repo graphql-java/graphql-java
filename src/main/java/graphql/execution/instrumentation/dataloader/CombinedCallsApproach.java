@@ -4,8 +4,6 @@ import graphql.ExecutionResult;
 import graphql.execution.DataFetcherResult;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.dataloader.impl.CompletableFutureKit;
@@ -40,11 +38,11 @@ public class CombinedCallsApproach {
         return new DataLoaderDispatcherInstrumentationState();
     }
 
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginExecuteOperation() {
         return whenDispatched(__ -> dispatch());
     }
 
-    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginDeferredField() {
         return whenDispatched(__ -> dispatch());
     }
 

@@ -113,7 +113,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             state.setAggressivelyBatching(false);
         }
         if (options.isUseCombinedApproach()) {
-            return combinedCallsApproach.beginExecuteOperation(parameters);
+            return combinedCallsApproach.beginExecuteOperation();
         } else {
             return fieldLevelTrackingApproach.beginExecuteOperation();
         }
@@ -131,7 +131,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     @Override
     public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
         if (options.isUseCombinedApproach()) {
-            return combinedCallsApproach.beginDeferredField(parameters);
+            return combinedCallsApproach.beginDeferredField();
         } else {
             return fieldLevelTrackingApproach.beginDeferredField(parameters);
         }
