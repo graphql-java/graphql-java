@@ -6,11 +6,11 @@ package graphql.execution.instrumentation.dataloader;
 public class DataLoaderDispatcherInstrumentationOptions {
 
     private final boolean includeStatistics;
-    private final boolean useCombinedApproach;
+    private final boolean useCombinedCallsApproach;
 
-    private DataLoaderDispatcherInstrumentationOptions(boolean includeStatistics, boolean useCombinedApproach) {
+    private DataLoaderDispatcherInstrumentationOptions(boolean includeStatistics, boolean useCombinedCallsApproach) {
         this.includeStatistics = includeStatistics;
-        this.useCombinedApproach = useCombinedApproach;
+        this.useCombinedCallsApproach = useCombinedCallsApproach;
     }
 
     public static DataLoaderDispatcherInstrumentationOptions newOptions() {
@@ -26,10 +26,10 @@ public class DataLoaderDispatcherInstrumentationOptions {
      * @return a new options object
      */
     public DataLoaderDispatcherInstrumentationOptions includeStatistics(boolean flag) {
-        return new DataLoaderDispatcherInstrumentationOptions(flag, this.useCombinedApproach);
+        return new DataLoaderDispatcherInstrumentationOptions(flag, this.useCombinedCallsApproach);
     }
 
-    public DataLoaderDispatcherInstrumentationOptions useCombinedApproach(boolean flag) {
+    public DataLoaderDispatcherInstrumentationOptions useCombinedCallsApproach(boolean flag) {
         return new DataLoaderDispatcherInstrumentationOptions(this.includeStatistics, flag);
     }
 
@@ -37,7 +37,7 @@ public class DataLoaderDispatcherInstrumentationOptions {
         return includeStatistics;
     }
 
-    public boolean isUseCombinedApproach() {
-        return useCombinedApproach;
+    public boolean isUseCombinedCallsApproach() {
+        return useCombinedCallsApproach;
     }
 }

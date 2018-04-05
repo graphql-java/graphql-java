@@ -11,6 +11,7 @@ import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -147,7 +148,8 @@ class DataLoaderPerformanceTest extends Specification {
         BatchCompareDataFetchers.resetState()
     }
 
-    def "760 ensure data loader is performant for lists"() {
+    @Unroll
+    def "760 ensure data loader is performant for lists with (approach: #approachName)"() {
 
         when:
 
@@ -155,7 +157,8 @@ class DataLoaderPerformanceTest extends Specification {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
         dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
-        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
+        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedCallsApproach(approachFlag)
+        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry, options)
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
                 .instrumentation(instrumentation)
@@ -169,9 +172,15 @@ class DataLoaderPerformanceTest extends Specification {
         //  eg 1 for shops-->departments and one for departments --> products
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+
+        where:
+        approachName    | approachFlag
+        "CombinedCalls" | true
+        "FieldTracking" | false
     }
 
-    def "970 ensure data loader is performant for multiple field with lists"() {
+    @Unroll
+    def "970 ensure data loader is performant for multiple field with lists with (approach: #approachName)"() {
 
         when:
 
@@ -179,7 +188,8 @@ class DataLoaderPerformanceTest extends Specification {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
         dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
-        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
+        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedCallsApproach(approachFlag)
+        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry, options)
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
                 .instrumentation(instrumentation)
@@ -193,6 +203,11 @@ class DataLoaderPerformanceTest extends Specification {
         //  ideally 1 for shops-->departments and one for departments --> products but currently not the case
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+
+        where:
+        approachName    | approachFlag
+        "CombinedCalls" | true
+        "FieldTracking" | false
     }
 
     def expectedDeferredData = [
@@ -235,7 +250,8 @@ class DataLoaderPerformanceTest extends Specification {
             }
             """
 
-    def "data loader will work with deferred queries"() {
+    @Unroll
+    def "data loader will work with deferred queries with (approach: #approachName)"() {
 
         when:
 
@@ -299,6 +315,11 @@ class DataLoaderPerformanceTest extends Specification {
         //  with deferred results, we don't achieve the same efficiency
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+
+        where:
+        approachName    | approachFlag
+        "CombinedCalls" | true
+        "FieldTracking" | false
 
     }
 }

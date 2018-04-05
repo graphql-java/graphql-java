@@ -183,7 +183,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         DataLoaderRegistry registry = buildRegistry()
 
-        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedApproach(false)
+        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedCallsApproach(false)
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
                 .instrumentation(new DataLoaderDispatcherInstrumentation(registry, options))
@@ -216,7 +216,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         DataLoaderRegistry registry = buildRegistry()
 
-        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedApproach(true)
+        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedCallsApproach(true)
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
                 .instrumentation(new DataLoaderDispatcherInstrumentation(registry, options))

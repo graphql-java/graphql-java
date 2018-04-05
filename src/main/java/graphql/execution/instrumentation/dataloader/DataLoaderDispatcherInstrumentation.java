@@ -72,7 +72,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationState createState() {
-        if (options.isUseCombinedApproach()) {
+        if (options.isUseCombinedCallsApproach()) {
             return combinedCallsApproach.createState();
         } else {
             return fieldLevelTrackingApproach.createState();
@@ -98,7 +98,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     private void immediatelyDispatch() {
-        if (options.isUseCombinedApproach()) {
+        if (options.isUseCombinedCallsApproach()) {
             combinedCallsApproach.dispatch();
         } else {
             fieldLevelTrackingApproach.dispatch();
@@ -112,7 +112,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
             state.setAggressivelyBatching(false);
         }
-        if (options.isUseCombinedApproach()) {
+        if (options.isUseCombinedCallsApproach()) {
             return combinedCallsApproach.beginExecuteOperation();
         } else {
             return fieldLevelTrackingApproach.beginExecuteOperation();
@@ -121,7 +121,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        if (options.isUseCombinedApproach()) {
+        if (options.isUseCombinedCallsApproach()) {
             return new SimpleInstrumentationContext<>();
         } else {
             return fieldLevelTrackingApproach.beginExecutionStrategy(parameters);
@@ -130,7 +130,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        if (options.isUseCombinedApproach()) {
+        if (options.isUseCombinedCallsApproach()) {
             return combinedCallsApproach.beginDeferredField();
         } else {
             return fieldLevelTrackingApproach.beginDeferredField(parameters);
@@ -139,7 +139,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        if (options.isUseCombinedApproach()) {
+        if (options.isUseCombinedCallsApproach()) {
             return new SimpleInstrumentationContext<>();
         } else {
             return fieldLevelTrackingApproach.beginFieldFetch(parameters);
