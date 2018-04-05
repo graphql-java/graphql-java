@@ -5,16 +5,14 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentationContext;
-import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenDispatched;
 
@@ -26,16 +24,21 @@ public class FieldLevelTrackingApproach {
     private final Logger log;
 
     private static class CallStack extends DataLoaderDispatcherInstrumentationState {
-        private final Map<Integer, Integer> outstandingFieldFetchCounts = new ConcurrentHashMap<>();
+
+        private final Map<Integer, Integer> outstandingFieldFetchCounts = new HashMap<>();
 
         private void setOutstandingFieldFetches(int level, int count) {
-            outstandingFieldFetchCounts.put(level, count);
+            synchronized (this) {
+                outstandingFieldFetchCounts.put(level, count);
+            }
         }
 
-        // TODO: should be threadsafe
         private int decrementOutstandingFieldFetches(int level) {
-            int newCount = outstandingFieldFetchCounts.getOrDefault(level, 1) - 1;
-            outstandingFieldFetchCounts.put(level, newCount);
+            int newCount;
+            synchronized (this) {
+                newCount = outstandingFieldFetchCounts.getOrDefault(level, 1) - 1;
+                outstandingFieldFetchCounts.put(level, newCount);
+            }
             return newCount;
         }
 
@@ -44,26 +47,48 @@ public class FieldLevelTrackingApproach {
         }
 
         private boolean thereAreOutstandingFieldFetches(int startLevel) {
-            while (startLevel >= 0) {
-                int count = getOutstandingFieldFetches(startLevel);
-                if (count > 0) {
-                    return true;
+            synchronized (this) {
+                while (startLevel >= 0) {
+                    int count = getOutstandingFieldFetches(startLevel);
+                    if (count > 0) {
+                        return true;
+                    }
+                    startLevel--;
                 }
-                startLevel--;
+                return false;
             }
-            return false;
         }
     }
 
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
+    public FieldLevelTrackingApproach(Logger log, DataLoaderRegistry dataLoaderRegistry) {
+        this.dataLoaderRegistry = dataLoaderRegistry;
+        this.log = log;
+    }
+
+    public InstrumentationState createState() {
+        return new CallStack();
+    }
+
+    InstrumentationContext<ExecutionResult> beginExecuteOperation() {
         return whenDispatched((result) -> dispatch());
     }
 
-    public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+    InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        int level = parameters.getExecutionStrategyParameters().getPath().getLevel() + 1; // +1 because we are looking forward
+        // +1 because here we are before any field dispatching
+        int targetLevel = parameters.getExecutionStrategyParameters().getPath().getLevel() + 1;
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
-        callStack.setOutstandingFieldFetches(level, fieldCount);
+        callStack.setOutstandingFieldFetches(targetLevel, fieldCount);
+        return whenDispatched((result) -> dispatchIfNeeded(callStack, parameters.getExecutionStrategyParameters()));
+    }
+
+    InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
+        CallStack callStack = parameters.getInstrumentationState();
+        int targetLevel = parameters.getTypeInfo().getPath().getLevel();
+        int fieldCount = 1;
+        callStack.setOutstandingFieldFetches(targetLevel, fieldCount);
+        // with deferred fields we aggressively dispatch the data loaders because the neat hierarchy of
+        // outstanding fields and so on is lost because the field has jumped out of the execution tree
         return whenDispatched((result) -> dispatchIfNeeded(callStack, parameters.getExecutionStrategyParameters()));
     }
 
@@ -74,52 +99,37 @@ public class FieldLevelTrackingApproach {
         return new SimpleInstrumentationContext<>();
     }
 
-    public InstrumentationState createState() {
-        return new CallStack();
-    }
-
-
-    public FieldLevelTrackingApproach(Logger log, DataLoaderRegistry dataLoaderRegistry) {
-        this.dataLoaderRegistry = dataLoaderRegistry;
-        this.log = log;
-    }
-
-    void dispatch() {
-        log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
-
-        List<String> dlKeysWithData = dataLoaderRegistry.getKeys().stream().filter(key -> dataLoaderRegistry.getDataLoader(key).dispatchDepth() > 0).collect(Collectors.toList());
-        if (!dlKeysWithData.isEmpty()) {
-            System.out.println("\t\tDispatched!");
-        }
-        dlKeysWithData.forEach(key -> {
-            System.out.println(String.format("'%s' has %d depth", key, dataLoaderRegistry.getDataLoader(key).dispatchDepth()));
-        });
-
-        System.out.println("\n\n");
-        dataLoaderRegistry.dispatchAll();
-    }
-
-    private boolean isEndOfListImpl(ExecutionStrategyParameters executionStrategyParameters) {
-        if (executionStrategyParameters == null) {
-            return true;
-        }
-        if (executionStrategyParameters.getListSize() == 0) {
-            return true;
-        }
-        return executionStrategyParameters.getCurrentListIndex() + 1 == executionStrategyParameters.getListSize();
-    }
-
-    private boolean isEndOfListOnAllLevels(ExecutionStrategyParameters executionStrategyParameters) {
-        return isEndOfListImpl(executionStrategyParameters) &&
-                (executionStrategyParameters.getParent() == null || isEndOfListOnAllLevels(executionStrategyParameters.getParent()));
-    }
-
     private void dispatchIfNeeded(CallStack callStack, ExecutionStrategyParameters executionStrategyParameters) {
         int level = executionStrategyParameters.getPath().getLevel();
         boolean outstandingDispatches = callStack.thereAreOutstandingFieldFetches(level);
-        if (isEndOfListOnAllLevels(executionStrategyParameters) && !outstandingDispatches) {
+        boolean endOfListOnAllLevels = isEndOfListOnAllLevels(executionStrategyParameters);
+        if (endOfListOnAllLevels && !outstandingDispatches) {
             dispatch();
         }
     }
 
+    void dispatch() {
+        log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
+        dataLoaderRegistry.dispatchAll();
+    }
+
+    @SuppressWarnings("SimplifiableIfStatement")
+    private boolean isEndOfListImpl(ExecutionStrategyParameters executionStrategyParameters) {
+        if (executionStrategyParameters == null) {
+            return true;
+        }
+        int listSize = executionStrategyParameters.getListSize();
+        if (listSize == 0) {
+            return true;
+        }
+        int index = executionStrategyParameters.getCurrentListIndex() + 1;
+        return index == listSize;
+    }
+
+    private boolean isEndOfListOnAllLevels(ExecutionStrategyParameters executionStrategyParameters) {
+        boolean endOfList = isEndOfListImpl(executionStrategyParameters);
+        ExecutionStrategyParameters parent = executionStrategyParameters.getParent();
+        return endOfList &&
+                (parent == null || isEndOfListOnAllLevels(parent));
+    }
 }

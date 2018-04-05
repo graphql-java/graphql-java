@@ -3,6 +3,7 @@ package graphql.execution.instrumentation;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
+import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -55,6 +56,11 @@ public class SimpleInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        return new SimpleInstrumentationContext<>();
+    }
+
+    @Override
+    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
         return new SimpleInstrumentationContext<>();
     }
 

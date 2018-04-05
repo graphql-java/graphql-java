@@ -6,13 +6,17 @@ import graphql.execution.defer.DeferredCall;
 import graphql.execution.defer.DeferredErrorSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.language.Field;
+import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
@@ -68,16 +72,43 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         return overallResult;
     }
 
-    private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters newParameters, List<Field> currentField) {
+    private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> currentField) {
         DeferSupport deferSupport = executionContext.getDeferSupport();
         if (deferSupport.checkForDeferDirective(currentField)) {
             DeferredErrorSupport errorSupport = new DeferredErrorSupport();
-            ExecutionStrategyParameters callParameters = newParameters.transform(builder -> builder.deferredErrorSupport(errorSupport));
 
-            DeferredCall call = new DeferredCall(() -> resolveField(executionContext, callParameters), errorSupport);
+            // with a deferred field we are really resetting where we execute from, that is from this current field onwards
+            Map<String, List<Field>> fields = new HashMap<>();
+            fields.put(currentField.get(0).getName(), currentField);
+
+            ExecutionStrategyParameters callParameters = parameters.transform(builder ->
+                    builder.deferredErrorSupport(errorSupport)
+                            .field(currentField)
+                            .fields(fields)
+                            .parent(null) // this is a break in the parent -> child chain - its a new start effectively
+                            .listSize(0)
+                            .currentListIndex(0)
+            );
+
+            DeferredCall call = new DeferredCall(deferredExecutionResult(executionContext, callParameters), errorSupport);
             deferSupport.enqueue(call);
             return true;
         }
         return false;
+    }
+
+    private Supplier<CompletableFuture<ExecutionResult>> deferredExecutionResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        return () -> {
+            GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().get(0));
+
+            Instrumentation instrumentation = executionContext.getInstrumentation();
+            InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginDeferredField(
+                    new InstrumentationDeferredFieldParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
+            );
+            CompletableFuture<ExecutionResult> result = resolveField(executionContext, parameters);
+            fieldCtx.onDispatched(result);
+            result.whenComplete(fieldCtx::onCompleted);
+            return result;
+        };
     }
 }

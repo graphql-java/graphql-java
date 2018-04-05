@@ -7,6 +7,7 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -93,15 +94,20 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         ExecutionStrategy queryStrategy = parameters.getExecutionContext().getQueryStrategy();
         if (!(queryStrategy instanceof AsyncExecutionStrategy)) {
-            DataLoaderDispatcherInstrumentationState callStack = parameters.getInstrumentationState();
-            callStack.setAggressivelyBatching(false);
+            DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+            state.setAggressivelyBatching(false);
         }
-        return fieldLevelTrackingApproach.beginExecuteOperation(parameters);
+        return fieldLevelTrackingApproach.beginExecuteOperation();
     }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         return fieldLevelTrackingApproach.beginExecutionStrategy(parameters);
+    }
+
+    @Override
+    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
+        return fieldLevelTrackingApproach.beginDeferredField(parameters);
     }
 
     @Override

@@ -1,14 +1,18 @@
 package graphql.execution.instrumentation.dataloader
 
+import graphql.Directives
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
-import graphql.execution.instrumentation.InstrumentationContext
-import graphql.execution.instrumentation.SimpleInstrumentationContext
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.schema.GraphQLSchema
+import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
+import org.reactivestreams.Publisher
+import org.reactivestreams.Subscriber
+import org.reactivestreams.Subscription
 import spock.lang.Specification
+
+import java.util.concurrent.atomic.AtomicBoolean
 
 class DataLoaderPerformanceTest extends Specification {
 
@@ -191,37 +195,110 @@ class DataLoaderPerformanceTest extends Specification {
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
-//    def "760 when list handling is missing, its less efficient"() {
-//
-//        when:
-//
-//        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema()
-//        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
-//        dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
-//        dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
-//        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry) {
-//            @Override
-//            InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
-//                // if we never call super.xxx() then it wont record we are in a list and it wont be efficient
-//                return new SimpleInstrumentationContext<>()
-//            }
-//        }
-//        GraphQL graphQL = GraphQL
-//                .newGraphQL(schema)
-//                .instrumentation(instrumentation)
-//                .build()
-//        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).build()
-//        def result = graphQL.execute(executionInput)
-//
-//        then:
-//        result.data == expectedData
-//
-//        //
-//        // notice how its much less efficient because the "list handling" is causing eager
-//        // data loader dispatches
-//        //
-//        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
-//        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
-//    }
+    def expectedDeferredData = [
+            shops: [
+                    [id: "shop-1", name: "Shop 1"],
+                    [id: "shop-2", name: "Shop 2"],
+                    [id: "shop-3", name: "Shop 3"],
+            ]
+    ]
 
+    def expectedListOfDeferredData = [
+            [[id: "department-1", name: "Department 1", products: [[id: "product-1", name: "Product 1"]]],
+             [id: "department-2", name: "Department 2", products: [[id: "product-2", name: "Product 2"]]],
+             [id: "department-3", name: "Department 3", products: [[id: "product-3", name: "Product 3"]]]]
+            ,
+
+            [[id: "department-4", name: "Department 4", products: [[id: "product-4", name: "Product 4"]]],
+             [id: "department-5", name: "Department 5", products: [[id: "product-5", name: "Product 5"]]],
+             [id: "department-6", name: "Department 6", products: [[id: "product-6", name: "Product 6"]]]]
+            ,
+            [[id: "department-7", name: "Department 7", products: [[id: "product-7", name: "Product 7"]]],
+             [id: "department-8", name: "Department 8", products: [[id: "product-8", name: "Product 8"]]],
+             [id: "department-9", name: "Department 9", products: [[id: "product-9", name: "Product 9"]]]]
+            ,
+
+    ]
+
+
+    def deferredQuery = """
+            query { 
+                shops { 
+                    id name 
+                    departments @defer { 
+                        id name 
+                        products { 
+                            id name 
+                        } 
+                    } 
+                } 
+            }
+            """
+
+    def "data loader will work with deferred queries"() {
+
+        when:
+
+        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema().transform({
+            it.additionalDirective(Directives.DeferDirective)
+        })
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
+        dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
+        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
+        GraphQL graphQL = GraphQL
+                .newGraphQL(schema)
+                .instrumentation(instrumentation)
+                .build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(deferredQuery).build()
+        def result = graphQL.execute(executionInput)
+
+        then:
+
+        Map<Object, Object> extensions = result.getExtensions()
+        Publisher<ExecutionResult> deferredResults = (Publisher<ExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
+
+        def done = new AtomicBoolean()
+        def results = []
+        deferredResults.subscribe(new Subscriber<ExecutionResult>() {
+
+            Subscription subscription
+
+            @Override
+            void onSubscribe(Subscription s) {
+                subscription = s
+                subscription.request(10)
+            }
+
+            @Override
+            void onNext(ExecutionResult executionResult) {
+                assert executionResult.errors.isEmpty(), "We don't expect graphql errors"
+                results.add(executionResult.data)
+                subscription.request(10)
+            }
+
+            @Override
+            void onError(Throwable t) {
+                assert false, "This should not happen"
+                done.set(true)
+            }
+
+            @Override
+            void onComplete() {
+                done.set(true)
+            }
+        })
+
+        Awaitility.await().untilTrue(done)
+
+        result.data == expectedDeferredData
+
+        results == expectedListOfDeferredData
+
+        //
+        //  with deferred results, we don't achieve the same efficiency
+        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
+        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+
+    }
 }
