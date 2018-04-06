@@ -12,6 +12,8 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import static graphql.Scalars.GraphQLBoolean;
@@ -175,11 +177,45 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
 
     @SuppressWarnings("SimplifiableIfStatement")
     private boolean isBooleanProperty(GraphQLOutputType outputType) {
-        if (outputType == GraphQLBoolean) return true;
+        if (outputType == GraphQLBoolean) {
+            return true;
+        }
         if (outputType instanceof GraphQLNonNull) {
             return ((GraphQLNonNull) outputType).getWrappedType() == GraphQLBoolean;
         }
         return false;
+    }
+
+    private static final ConcurrentMap<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
+
+    /**
+     * PropertyDataFetcher caches the methods and fields that map from a class -> a property for runtime performance reasons.
+     *
+     * However during development you might be using an assistance tool like JRebel to allow you to tweak your code base and this
+     * caching may interfere with this.  So you can call this method to clear the cache.  A JRebel plugin could
+     * be developer to do just that.
+     */
+    @SuppressWarnings("unused")
+    public static void clearReflectionCache() {
+        METHOD_CACHE.clear();
+        FIELD_CACHE.clear();
+    }
+
+    private String mkKey(Class clazz, String propertyName) {
+        return clazz.getCanonicalName() + "__" + propertyName;
+    }
+
+    // by not filling out the stack trace, we gain speed when using the exception as flow control
+    private static class FastNoSuchMethodException extends NoSuchMethodException {
+        public FastNoSuchMethodException(String methodName) {
+            super(methodName);
+        }
+
+        @Override
+        public synchronized Throwable fillInStackTrace() {
+            return this;
+        }
     }
 
     /**
@@ -190,48 +226,67 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
      * which have abstract public interfaces implemented by package-protected
      * (generated) subclasses.
      */
+    @SuppressWarnings("unchecked")
     private Method findPubliclyAccessibleMethod(Class root, String methodName) throws NoSuchMethodException {
-        Class cur = root;
-        while (cur != null) {
-            if (Modifier.isPublic(cur.getModifiers())) {
-                @SuppressWarnings("unchecked")
-                Method m = cur.getMethod(methodName);
-                if (Modifier.isPublic(m.getModifiers())) {
-                    return m;
+        Class currentClass = root;
+        while (currentClass != null) {
+            String key = mkKey(currentClass, propertyName);
+            Method method = METHOD_CACHE.get(key);
+            if (method != null) {
+                return method;
+            }
+            if (Modifier.isPublic(currentClass.getModifiers())) {
+                method = currentClass.getMethod(methodName);
+                if (Modifier.isPublic(method.getModifiers())) {
+                    METHOD_CACHE.putIfAbsent(key, method);
+                    return method;
                 }
             }
-            cur = cur.getSuperclass();
+            currentClass = currentClass.getSuperclass();
         }
-        //noinspection unchecked
         return root.getMethod(methodName);
     }
 
     private Method findViaSetAccessible(Class aClass, String methodName) throws NoSuchMethodException {
+        String key = mkKey(aClass, propertyName);
+        Method method = METHOD_CACHE.get(key);
+        if (method != null) {
+            return method;
+        }
+
         Method[] declaredMethods = aClass.getDeclaredMethods();
         Optional<Method> m = Arrays.stream(declaredMethods)
-                .filter(method -> methodName.equals(method.getName()))
+                .filter(mth -> methodName.equals(mth.getName()))
                 .findFirst();
         if (m.isPresent()) {
             try {
                 // few JVMs actually enforce this but it might happen
-                m.get().setAccessible(true);
-                return m.get();
+                method = m.get();
+                method.setAccessible(true);
+                METHOD_CACHE.putIfAbsent(key, method);
+                return method;
             } catch (SecurityException ignored) {
             }
         }
-        throw new NoSuchMethodException(methodName);
+        throw new FastNoSuchMethodException(methodName);
     }
 
     private Object getPropertyViaFieldAccess(Object object) {
         Class<?> aClass = object.getClass();
+        String key = mkKey(aClass, propertyName);
         try {
-            Field field = aClass.getField(propertyName);
+            Field field = FIELD_CACHE.get(key);
+            if (field == null) {
+                field = aClass.getField(propertyName);
+                FIELD_CACHE.putIfAbsent(key, field);
+            }
             return field.get(object);
         } catch (NoSuchFieldException e) {
             // if not public fields then try via setAccessible
             try {
                 Field field = aClass.getDeclaredField(propertyName);
                 field.setAccessible(true);
+                FIELD_CACHE.putIfAbsent(key, field);
                 return field.get(object);
             } catch (SecurityException | NoSuchFieldException ignored2) {
                 return null;
