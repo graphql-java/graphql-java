@@ -1,8 +1,8 @@
 package graphql;
 
 import graphql.execution.AbortExecutionException;
-import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.AsyncSerialExecutionStrategy;
+import graphql.execution.DeferringAsyncExecutionStrategy;
 import graphql.execution.Execution;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
@@ -148,7 +148,7 @@ public class GraphQL {
 
     private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider) {
         this.graphQLSchema = assertNotNull(graphQLSchema, "queryStrategy must be non null");
-        this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
+        this.queryStrategy = queryStrategy != null ? queryStrategy : new DeferringAsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SubscriptionExecutionStrategy();
         this.idProvider = assertNotNull(idProvider, "idProvider must be non null");
@@ -197,7 +197,7 @@ public class GraphQL {
     @PublicApi
     public static class Builder {
         private GraphQLSchema graphQLSchema;
-        private ExecutionStrategy queryExecutionStrategy = new AsyncExecutionStrategy();
+        private ExecutionStrategy queryExecutionStrategy = new DeferringAsyncExecutionStrategy();
         private ExecutionStrategy mutationExecutionStrategy = new AsyncSerialExecutionStrategy();
         private ExecutionStrategy subscriptionExecutionStrategy = new SubscriptionExecutionStrategy();
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;

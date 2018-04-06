@@ -62,5 +62,41 @@ class KnownDirectivesTest extends Specification {
 
     }
 
+    def "defer test"() {
+        given:
+        def query = """
+          query Foo  {
+                name @defer
+              }
+        """
 
+        Document document = new Parser().parseDocument(query)
+        LanguageTraversal languageTraversal = new LanguageTraversal()
+
+        when:
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+
+        then:
+        errorCollector.errors.isEmpty()
+
+    }
+
+    def "junk directive test"() {
+        given:
+        def query = """
+          query Foo  {
+                name @junk
+              }
+        """
+
+        Document document = new Parser().parseDocument(query)
+        LanguageTraversal languageTraversal = new LanguageTraversal()
+
+        when:
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.UnknownDirective)
+
+    }
 }

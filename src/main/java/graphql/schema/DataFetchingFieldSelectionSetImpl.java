@@ -5,6 +5,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionTypeInfo;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
+import graphql.execution.SimpleFieldCollector;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.Field;
@@ -133,7 +134,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
 
     private void traverseFields(List<Field> fieldList, GraphQLFieldsContainer parentFieldType, String fieldPrefix) {
-        FieldCollector fieldCollector = new FieldCollector();
+        FieldCollector fieldCollector = new SimpleFieldCollector();
         ValuesResolver valuesResolver = new ValuesResolver();
 
         FieldCollectorParameters parameters = FieldCollectorParameters.newParameters()

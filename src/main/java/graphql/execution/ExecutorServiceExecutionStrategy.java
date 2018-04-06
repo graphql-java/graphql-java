@@ -32,6 +32,8 @@ import java.util.concurrent.Future;
  * <p>Failure to follow 1. and 2. can result in a very large number of threads created or hanging. (deadlock)</p>
  *
  * See {@code graphql.execution.ExecutorServiceExecutionStrategyTest} for example usage.
+ *
+ * This does not yet support the @defer directive
  */
 @PublicApi
 public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
@@ -46,7 +48,6 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         super(dataFetcherExceptionHandler);
         this.executorService = executorService;
     }
-
 
     @Override
     public CompletableFuture<ExecutionResult> execute(final ExecutionContext executionContext, final ExecutionStrategyParameters parameters) {
@@ -68,7 +69,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
             Callable<CompletableFuture<ExecutionResult>> resolveField = () -> resolveField(executionContext, newParameters);
-            futures.put(fieldName, executorService.submit(resolveField));
+            if (resolveField != null) { futures.put(fieldName, executorService.submit(resolveField)); }
         }
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();

@@ -24,7 +24,7 @@ public class ConditionalNodes {
         return !skip && include;
     }
 
-    private Directive getDirectiveByName(List<Directive> directives, String name) {
+    static Directive getDirectiveByName(List<Directive> directives, String name) {
         if (directives.isEmpty()) {
             return null;
         }

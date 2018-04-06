@@ -69,7 +69,7 @@ public class GraphQLSchema {
         this.subscriptionType = subscriptionType;
         this.fieldVisibility = fieldVisibility;
         this.additionalTypes = additionalTypes;
-        this.directives = new LinkedHashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
+        this.directives = new LinkedHashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective));
         this.directives.addAll(directives);
         this.typeMap = schemaUtil.allTypes(this, additionalTypes);
         this.byInterface = schemaUtil.groupImplementations(this);

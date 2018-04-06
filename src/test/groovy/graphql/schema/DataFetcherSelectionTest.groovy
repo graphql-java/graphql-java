@@ -5,6 +5,7 @@ import graphql.GraphQL
 import graphql.StarWarsData
 import graphql.TestUtil
 import graphql.execution.FieldCollector
+import graphql.execution.SimpleFieldCollector
 import graphql.language.AstPrinter
 import graphql.language.Field
 import graphql.schema.idl.MapEnumValuesProvider
@@ -30,7 +31,7 @@ class DataFetcherSelectionTest extends Specification {
 
         SelectionCapturingDataFetcher(DataFetcher delegate, Map<String, String> captureMap, List<Map<String, Map<String, Object>>> captureFieldArgs) {
             this.delegate = delegate
-            this.fieldCollector = new FieldCollector()
+            this.fieldCollector = new SimpleFieldCollector()
             this.captureMap = captureMap
             this.captureFieldArgs = captureFieldArgs;
         }

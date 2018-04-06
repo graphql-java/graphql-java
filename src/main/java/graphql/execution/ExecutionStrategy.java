@@ -85,7 +85,7 @@ import static java.util.stream.Collectors.toList;
  * <p>
  * The first phase (data fetching) is handled by the method {@link #fetchField(ExecutionContext, ExecutionStrategyParameters)}
  * <p>
- * The second phase (value completion) is handled by the methods {@link #completeField(ExecutionContext, ExecutionStrategyParameters, Object)}
+ * The second phase (value completion) is handled by the methods {@link #completeField(ExecutionContext, ExecutionStrategyParameters, Object, boolean)}
  * and the other "completeXXX" methods.
  * <p>
  * The order of fields fetching and completion is up to the execution strategy. As the graphql specification
@@ -109,7 +109,8 @@ public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
 
     protected final ValuesResolver valuesResolver = new ValuesResolver();
-    protected final FieldCollector fieldCollector = new FieldCollector();
+    protected final FieldCollector simpleFieldCollector = new SimpleFieldCollector();
+    protected final FieldCollector nonDeferredFieldCollector = NonDeferredFieldCollector.nonDeferredFieldCollector();
 
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
@@ -160,7 +161,24 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        return resolveField(executionContext, parameters, false);
+    }
+
+    /**
+     * Deferred fields can be optionally be ignored.
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param skipDeferred     skip Deferred fields
+     *
+     * @return an {@link ExecutionResult}
+     *
+     * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
+     */
+    protected CompletableFuture<ExecutionResult> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters,
+                                                              boolean skipDeferred) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.field().get(0));
+        log.debug("resolveField {} {}", fieldDef.getName(), parameters.field().size());
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
@@ -169,7 +187,7 @@ public abstract class ExecutionStrategy {
 
         CompletableFuture<ExecutionResult> result = fetchField(executionContext, parameters)
                 .thenCompose((fetchedValue) ->
-                        completeField(executionContext, parameters, fetchedValue));
+                        completeField(executionContext, parameters, fetchedValue, skipDeferred));
 
         fieldCtx.onDispatched(result);
         result.whenComplete(fieldCtx::onCompleted);
@@ -192,6 +210,7 @@ public abstract class ExecutionStrategy {
      */
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         Field field = parameters.field().get(0);
+        log.debug("fetchField {} {}", field.getName(), parameters.field().size());
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
 
@@ -302,7 +321,13 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
+        return completeField(executionContext, parameters, fetchedValue, false);
+    }
+
+    protected CompletableFuture<ExecutionResult> completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue,
+                                                               boolean skipDeferred) {
         Field field = parameters.field().get(0);
+        log.debug("completeField {} {}", field.getName(), parameters.field().size());
         GraphQLObjectType parentType = parameters.typeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
         ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
@@ -329,8 +354,7 @@ public abstract class ExecutionStrategy {
                 .build();
 
         log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), fieldTypeInfo.getPath());
-
-        CompletableFuture<ExecutionResult> cf = completeValue(executionContext, newParameters);
+        CompletableFuture<ExecutionResult> cf = completeValue(executionContext, newParameters, skipDeferred);
 
         ctxCompleteField.onDispatched(cf);
         cf.whenComplete(ctxCompleteField::onCompleted);
@@ -354,6 +378,20 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        return completeValue(executionContext, parameters, false);
+    }
+
+    /**
+     * Called to complete a value for a field based on the type of the field, optionally skipping Deferred fields.
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param skipDeferred     skip Deferred fields
+     *
+     * @return an {@link ExecutionResult}
+     */
+    protected CompletableFuture<ExecutionResult> completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters,
+                                                               boolean skipDeferred) throws NonNullableFieldWasNullException {
         ExecutionTypeInfo typeInfo = parameters.typeInfo();
         Object result = unboxPossibleOptional(parameters.source());
         GraphQLType fieldType = typeInfo.getType();
@@ -361,7 +399,7 @@ public abstract class ExecutionStrategy {
         if (result == null) {
             return completeValueForNull(parameters);
         } else if (fieldType instanceof GraphQLList) {
-            return completeValueForList(executionContext, parameters, result);
+            return completeValueForList(executionContext, parameters, result, skipDeferred);
         } else if (fieldType instanceof GraphQLScalarType) {
             return completeValueForScalar(executionContext, parameters, (GraphQLScalarType) fieldType, result);
         } else if (fieldType instanceof GraphQLEnumType) {
@@ -373,7 +411,7 @@ public abstract class ExecutionStrategy {
         //
         GraphQLObjectType resolvedObjectType = resolveType(executionContext, parameters, fieldType);
 
-        return completeValueForObject(executionContext, parameters, resolvedObjectType, result);
+        return completeValueForObject(executionContext, parameters, resolvedObjectType, result, skipDeferred);
     }
 
     private CompletableFuture<ExecutionResult> completeValueForNull(ExecutionStrategyParameters parameters) {
@@ -392,25 +430,43 @@ public abstract class ExecutionStrategy {
      * @return an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
+        return completeValueForList(executionContext, parameters, result, false);
+    }
+
+    /**
+     * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
+     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters, boolean)} for each value.
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param result           the result to complete, raw result
+     * @param skipDeferred     skip Deferred fields
+     *
+     * @return an {@link ExecutionResult}
+     */
+    protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result,
+                                                                      boolean skipDeferred) {
         Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
         resultIterable = parameters.nonNullFieldValidator().validate(parameters.path(), resultIterable);
         if (resultIterable == null) {
             return completedFuture(new ExecutionResultImpl(null, null));
         }
-        return completeValueForList(executionContext, parameters, resultIterable);
+        return completeValueForList(executionContext, parameters, resultIterable, skipDeferred);
     }
 
     /**
      * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
-     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
+     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters, boolean)} for each value.
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param iterableValues   the values to complete, can't be null
+     * @param skipDeferred     skip Deferred fields
      *
      * @return an {@link ExecutionResult}
      */
-    protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
+    protected CompletableFuture<ExecutionResult> completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues,
+                                                                      boolean skipDeferred) {
 
         ExecutionTypeInfo typeInfo = parameters.typeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
@@ -445,7 +501,7 @@ public abstract class ExecutionStrategy {
                     .source(item)
                     .build();
 
-            return completeValue(executionContext, newParameters);
+            return completeValue(executionContext, newParameters, skipDeferred);
         });
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
@@ -524,10 +580,12 @@ public abstract class ExecutionStrategy {
      * @param parameters         contains the parameters holding the fields to be executed and source object
      * @param resolvedObjectType the resolved object type
      * @param result             the result to be coerced
+     * @param skipDeferred     skip Deferred fields
      *
      * @return an {@link ExecutionResult}
      */
-    protected CompletableFuture<ExecutionResult> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
+    protected CompletableFuture<ExecutionResult> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result,
+                                                                        boolean skipDeferred) {
         ExecutionTypeInfo typeInfo = parameters.typeInfo();
 
         FieldCollectorParameters collectorParameters = newParameters()
@@ -537,7 +595,16 @@ public abstract class ExecutionStrategy {
                 .variables(executionContext.getVariables())
                 .build();
 
-        Map<String, List<Field>> subFields = fieldCollector.collectFields(collectorParameters, parameters.field());
+        Map<String, List<Field>> subFields;
+        if (!skipDeferred) {
+            subFields = simpleFieldCollector.collectFields(collectorParameters, parameters.field());
+        } else {
+            subFields = nonDeferredFieldCollector.collectFields(collectorParameters, parameters.field());
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("completeValueForObject Fields: {}", subFields.size());
+            for (String key : subFields.keySet()) log.debug(" {}", key);
+        }
 
         ExecutionTypeInfo newTypeInfo = typeInfo.treatAs(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newTypeInfo);
@@ -550,7 +617,6 @@ public abstract class ExecutionStrategy {
                 .source(result).build();
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
-
         return executionContext.getQueryStrategy().execute(executionContext, newParameters);
     }
 

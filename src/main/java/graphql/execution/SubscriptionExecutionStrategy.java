@@ -67,7 +67,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
             Return {fieldStream}.
      */
 
-    private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+     CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
         CompletableFuture<Object> fieldFetched = fetchField(executionContext, newParameters);
@@ -102,7 +102,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
     }
 
-    private ExecutionResult wrapWithRootFieldName(ExecutionStrategyParameters parameters, ExecutionResult executionResult) {
+    static ExecutionResult wrapWithRootFieldName(ExecutionStrategyParameters parameters, ExecutionResult executionResult) {
         String rootFieldName = getRootFieldName(parameters);
         return new ExecutionResultImpl(
                 singletonMap(rootFieldName, executionResult.getData()),
@@ -110,12 +110,12 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         );
     }
 
-    private String getRootFieldName(ExecutionStrategyParameters parameters) {
+    static String getRootFieldName(ExecutionStrategyParameters parameters) {
         Field rootField = parameters.field().get(0);
         return rootField.getAlias() != null ? rootField.getAlias() : rootField.getName();
     }
 
-    private ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionStrategyParameters parameters) {
+    static ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionStrategyParameters parameters) {
         Map<String, List<Field>> fields = parameters.fields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
 

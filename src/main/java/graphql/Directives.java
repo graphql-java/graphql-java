@@ -37,6 +37,12 @@ public class Directives {
             .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
             .build();
 
+    public static final GraphQLDirective DeferDirective = GraphQLDirective.newDirective()
+            .name("defer")
+            .description("Directs the executor that it may skip this field or fragment in an initially returned result")
+            .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
+            .build();
+
     public static final GraphQLDirective FetchDirective = GraphQLDirective.newDirective()
             .name("fetch")
             .description("Directs the SDL type generation to create a data fetcher that uses this `from` argument as the property name")
@@ -46,6 +52,5 @@ public class Directives {
                     .description("The `name` used to fetch values from the underlying object"))
             .validLocations(FIELD_DEFINITION)
             .build();
-
 
 }

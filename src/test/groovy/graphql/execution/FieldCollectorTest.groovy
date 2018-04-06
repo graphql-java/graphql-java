@@ -33,7 +33,7 @@ class FieldCollectorTest extends Specification {
                 }
                 """)
         def objectType = schema.getType("Query") as GraphQLObjectType
-        FieldCollector fieldCollector = new FieldCollector()
+        FieldCollector fieldCollector = new SimpleFieldCollector()
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
                 .objectType(objectType)
@@ -66,7 +66,7 @@ class FieldCollectorTest extends Specification {
             }
                 """)
         def object = schema.getType("TestImpl") as GraphQLObjectType
-        FieldCollector fieldCollector = new FieldCollector()
+        FieldCollector fieldCollector = new SimpleFieldCollector()
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
                 .objectType(object)

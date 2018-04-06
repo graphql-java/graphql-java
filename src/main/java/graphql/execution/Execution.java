@@ -40,14 +40,15 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 public class Execution {
     private static final Logger log = LoggerFactory.getLogger(Execution.class);
 
-    private final FieldCollector fieldCollector = new FieldCollector();
+    private final FieldCollector fieldCollector = new SimpleFieldCollector();
+
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
 
     public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation) {
-        this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
+        this.queryStrategy = queryStrategy != null ? queryStrategy : new DeferringAsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
@@ -103,9 +104,7 @@ public class Execution {
         InstrumentationExecuteOperationParameters instrumentationParams = new InstrumentationExecuteOperationParameters(executionContext);
         InstrumentationContext<ExecutionResult> executeOperationCtx = instrumentation.beginExecuteOperation(instrumentationParams);
 
-        OperationDefinition.Operation operation = operationDefinition.getOperation();
         GraphQLObjectType operationRootType;
-
         try {
             operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
         } catch (RuntimeException rte) {
@@ -120,27 +119,12 @@ public class Execution {
             throw rte;
         }
 
-        FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
-                .schema(executionContext.getGraphQLSchema())
-                .objectType(operationRootType)
-                .fragments(executionContext.getFragmentsByName())
-                .variables(executionContext.getVariables())
-                .build();
+        Map<String, List<Field>> fields = collectFields(executionContext, operationRootType, operationDefinition,
+                fieldCollector);
 
-        Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+        ExecutionStrategyParameters parameters = getExecutionStrategyParameters(executionContext, root, operationRootType, fields);
 
-        ExecutionPath path = ExecutionPath.rootPath();
-        ExecutionTypeInfo typeInfo = newTypeInfo().type(operationRootType).path(path).build();
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo);
-
-        ExecutionStrategyParameters parameters = newParameters()
-                .typeInfo(typeInfo)
-                .source(root)
-                .fields(fields)
-                .nonNullFieldValidator(nonNullableFieldValidator)
-                .path(path)
-                .build();
-
+        OperationDefinition.Operation operation = operationDefinition.getOperation();
         CompletableFuture<ExecutionResult> result;
         try {
             ExecutionStrategy executionStrategy;
@@ -172,7 +156,7 @@ public class Execution {
         return result;
     }
 
-    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
+    static GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
         OperationDefinition.Operation operation = operationDefinition.getOperation();
         if (operation == MUTATION) {
             GraphQLObjectType mutationType = graphQLSchema.getMutationType();
@@ -196,4 +180,34 @@ public class Execution {
             return assertShouldNeverHappen("Unhandled case.  An extra operation enum has been added without code support");
         }
     }
+
+    static ExecutionStrategyParameters getExecutionStrategyParameters(ExecutionContext executionContext,
+                                                                      Object root, GraphQLObjectType operationRootType,
+                                                                      Map<String, List<Field>> fields) {
+        ExecutionPath path = ExecutionPath.rootPath();
+        ExecutionTypeInfo typeInfo = newTypeInfo().type(operationRootType).path(path).build();
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo);
+
+        return newParameters()
+                .typeInfo(typeInfo)
+                .source(root)
+                .fields(fields)
+                .nonNullFieldValidator(nonNullableFieldValidator)
+                .path(path)
+                .build();
+    }
+
+    // collectFields using supplied simpleFieldCollector
+    static Map<String, List<Field>> collectFields(ExecutionContext executionContext, GraphQLObjectType operationRootType,
+                                                  OperationDefinition operationDefinition, FieldCollector fieldCollector) {
+        FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
+                .schema(executionContext.getGraphQLSchema())
+                .objectType(operationRootType)
+                .fragments(executionContext.getFragmentsByName())
+                .variables(executionContext.getVariables())
+                .build();
+
+        return fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+    }
+
 }
