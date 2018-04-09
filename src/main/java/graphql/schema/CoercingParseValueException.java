@@ -1,13 +1,13 @@
 package graphql.schema;
 
+import java.util.Collections;
+import java.util.List;
+
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
-
-import java.util.Arrays;
-import java.util.List;
 
 @PublicApi
 public class CoercingParseValueException extends GraphQLException implements GraphQLError {
@@ -26,7 +26,7 @@ public class CoercingParseValueException extends GraphQLException implements Gra
 
     public CoercingParseValueException(String message, Throwable cause, SourceLocation sourceLocation) {
         super(message, cause);
-        this.sourceLocations = Arrays.asList(sourceLocation);
+        this.sourceLocations = Collections.singletonList(sourceLocation);
     }
 
     public CoercingParseValueException(Throwable cause) {
