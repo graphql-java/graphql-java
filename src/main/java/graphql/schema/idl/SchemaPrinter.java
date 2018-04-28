@@ -25,6 +25,7 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -158,7 +159,7 @@ public class SchemaPrinter {
         try {
             this.print(schema, out);
         } catch (IOException e) {
-            ;
+            throw new UncheckedIOException(e);
         }
 
         String result = sw.toString();
@@ -525,7 +526,7 @@ public class SchemaPrinter {
             try {
                 consumer.append(out);
             } catch (IOException e) {
-                ;
+                throw new UncheckedIOException(e);
             }
             out.append('\n'); // XXX for backwards compatibility
         });
