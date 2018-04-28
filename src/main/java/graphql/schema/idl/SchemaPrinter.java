@@ -1,15 +1,10 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
-import graphql.PublicApi;
 import graphql.language.AstPrinter;
 import graphql.language.AstValueHelper;
-import graphql.language.Comment;
-import graphql.language.Description;
 import graphql.language.Document;
-import graphql.language.Node;
 import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
@@ -27,15 +22,17 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Stack;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
@@ -46,7 +43,6 @@ import static java.util.stream.Collectors.toList;
 /**
  * This can print an in memory GraphQL schema back to a logical schema definition
  */
-@PublicApi
 public class SchemaPrinter {
 
     /**
@@ -115,7 +111,7 @@ public class SchemaPrinter {
         }
     }
 
-    private final Map<Class, TypePrinter<?>> printers = new LinkedHashMap<>();
+    private final Map<Class<?>, TypePrinter<?>> printers = new LinkedHashMap<>();
     private final Options options;
 
     public SchemaPrinter() {
@@ -160,32 +156,50 @@ public class SchemaPrinter {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
+        try {
+            this.print(schema, out);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        String result = sw.toString();
+        return result;
+    }
+
+    public void print(GraphQLSchema schema, Appendable appendable) throws IOException {
         GraphqlFieldVisibility visibility = schema.getFieldVisibility();
 
-        printer(schema.getClass()).print(out, schema, visibility);
+        Stream<TypePrinter.Appender> stream = printer(schema.getClass()).print(schema, visibility).map(Stream::of).orElse(Stream.empty());
 
         List<GraphQLType> typesAsList = schema.getAllTypesAsList()
                 .stream()
                 .sorted(Comparator.comparing(GraphQLType::getName))
                 .collect(toList());
 
-        printType(out, typesAsList, GraphQLInterfaceType.class, visibility);
-        printType(out, typesAsList, GraphQLUnionType.class, visibility);
-        printType(out, typesAsList, GraphQLObjectType.class, visibility);
-        printType(out, typesAsList, GraphQLEnumType.class, visibility);
-        printType(out, typesAsList, GraphQLScalarType.class, visibility);
-        printType(out, typesAsList, GraphQLInputObjectType.class, visibility);
+        stream = Stream.concat(stream, Stream.of(
+            GraphQLInterfaceType.class,
+            GraphQLUnionType.class,
+            GraphQLObjectType.class,
+            GraphQLEnumType.class,
+            GraphQLScalarType.class,
+            GraphQLInputObjectType.class).flatMap(type -> printType(typesAsList, type, visibility)));
 
-        String result = sw.toString();
-        if (result.endsWith("\n\n")) {
-            result = result.substring(0, result.length() - 1);
+        TypePrinter.Appender[] appenders = stream.toArray(TypePrinter.Appender[]::new);
+        for (int i = 0; i < appenders.length; i++) {
+            if (i > 0) {
+            	appendable.append('\n');	
+            }
+            appenders[i].append(appendable);
         }
-        return result;
     }
 
     private interface TypePrinter<T> {
 
-        void print(PrintWriter out, T type, GraphqlFieldVisibility visibility);
+        public interface Appender {
+            public void append(Appendable out) throws IOException;
+        }
+
+        Optional<Appender> print(T type, GraphqlFieldVisibility visibility);
 
     }
 
@@ -194,9 +208,9 @@ public class SchemaPrinter {
     }
 
     private TypePrinter<GraphQLScalarType> scalarPrinter() {
-        return (out, type, visibility) -> {
+        return (type, visibility) -> {
             if (!options.isIncludeScalars()) {
-                return;
+                return Optional.empty();
             }
             boolean printScalar;
             if (ScalarInfo.isStandardScalar(type)) {
@@ -208,127 +222,167 @@ public class SchemaPrinter {
             } else {
                 printScalar = true;
             }
-            if (printScalar) {
+            return printScalar ? Optional.of(out -> {
                 printComments(out, type, "");
-                out.format("scalar %s\n\n", type.getName());
-            }
+                out.append("scalar ");
+                out.append(type.getName());
+                out.append('\n');
+            }) : Optional.empty();
         };
     }
 
     private TypePrinter<GraphQLEnumType> enumPrinter() {
-        return (out, type, visibility) -> {
+        return (type, visibility) -> {
             if (isIntrospectionType(type)) {
-                return;
+                return Optional.empty();
             }
-            printComments(out, type, "");
-            out.format("enum %s {\n", type.getName());
-            List<GraphQLEnumValueDefinition> values = type.getValues()
-                    .stream()
-                    .sorted(Comparator.comparing(GraphQLEnumValueDefinition::getName))
-                    .collect(toList());
-            for (GraphQLEnumValueDefinition enumValueDefinition : values) {
-                printComments(out, enumValueDefinition, "  ");
-                out.format("  %s\n", enumValueDefinition.getName());
-            }
-            out.format("}\n\n");
+            return Optional.of(out -> {
+                printComments(out, type, "");
+                out.append("enum ");
+                out.append(type.getName());
+                out.append(" {\n");
+                List<GraphQLEnumValueDefinition> values = type.getValues()
+                        .stream()
+                        .sorted(Comparator.comparing(GraphQLEnumValueDefinition::getName))
+                        .collect(toList());
+                for (GraphQLEnumValueDefinition enumValueDefinition : values) {
+                    printComments(out, enumValueDefinition, "  ");
+                    out.append("  ");
+                    out.append(enumValueDefinition.getName());
+                    out.append('\n');
+                }
+                out.append("}\n");
+            });
         };
     }
 
     private TypePrinter<GraphQLInterfaceType> interfacePrinter() {
-        return (out, type, visibility) -> {
+        return (type, visibility) -> {
             if (isIntrospectionType(type)) {
-                return;
+                return Optional.empty();
             }
-            printComments(out, type, "");
-            out.format("interface %s {\n", type.getName());
-            visibility.getFieldDefinitions(type)
-                    .stream()
-                    .sorted(Comparator.comparing(GraphQLFieldDefinition::getName))
-                    .forEach(fd -> {
-                        printComments(out, fd, "  ");
-                        out.format("  %s%s: %s\n",
-                                fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
-                    });
-            out.format("}\n\n");
+            return Optional.of(out -> {
+                printComments(out, type, "");
+                out.append("interface ");
+                out.append(type.getName());
+                out.append(" {\n");
+                GraphQLFieldDefinition[] fieldDefinitions = visibility.getFieldDefinitions(type)
+                        .stream()
+                        .sorted(Comparator.comparing(GraphQLFieldDefinition::getName))
+                        .toArray(GraphQLFieldDefinition[]::new);
+                for (GraphQLFieldDefinition fd : fieldDefinitions) {
+                    printComments(out, fd, "  ");
+                    out.append("  ");
+                    out.append(fd.getName());
+                    out.append(argsString(fd.getArguments()));
+                    out.append(": ");
+                    out.append(typeString(fd.getType()));
+                    out.append('\n');
+                }
+                out.append("}\n");
+            });
         };
     }
 
     private TypePrinter<GraphQLUnionType> unionPrinter() {
-        return (out, type, visibility) -> {
+        return (type, visibility) -> {
             if (isIntrospectionType(type)) {
-                return;
+                return Optional.empty();
             }
-            printComments(out, type, "");
-            out.format("union %s = ", type.getName());
-            List<GraphQLOutputType> types = type.getTypes()
-                    .stream()
-                    .sorted(Comparator.comparing(GraphQLOutputType::getName))
-                    .collect(toList());
-            for (int i = 0; i < types.size(); i++) {
-                GraphQLOutputType objectType = types.get(i);
-                if (i > 0) {
-                    out.format(" | ");
+            return Optional.of(out -> {
+                printComments(out, type, "");
+                out.append("union ");
+                out.append(type.getName());
+                out.append(" = ");
+                List<GraphQLOutputType> types = type.getTypes()
+                        .stream()
+                        .sorted(Comparator.comparing(GraphQLOutputType::getName))
+                        .collect(toList());
+                for (int i = 0; i < types.size(); i++) {
+                    GraphQLOutputType objectType = types.get(i);
+                    if (i > 0) {
+                    	out.append(" | ");
+                    }
+                    out.append(objectType.getName());
                 }
-                out.format("%s", objectType.getName());
-            }
-            out.format("\n\n");
+                out.append("\n");
+            });
         };
     }
 
 
     private TypePrinter<GraphQLObjectType> objectPrinter() {
-        return (out, type, visibility) -> {
+        return (type, visibility) -> {
             if (isIntrospectionType(type)) {
-                return;
+                return Optional.empty();
             }
-            printComments(out, type, "");
-            if (type.getInterfaces().isEmpty()) {
-                out.format("type %s%s {\n", type.getName(), directivesString(type.getDirectives()));
-            } else {
-                Stream<String> interfaceNames = type.getInterfaces()
-                        .stream()
-                        .map(GraphQLType::getName)
-                        .sorted(Comparator.naturalOrder());
-                out.format("type %s implements %s {\n",
-                        type.getName(),
-                        interfaceNames.collect(joining(" & ")));
-            }
+            return Optional.<TypePrinter.Appender>of(out -> {
+                printComments(out, type, "");
+                if (type.getInterfaces().isEmpty()) {
+                    out.append("type ");
+                    out.append(type.getName());
+                    out.append(" {\n");
+                } else {
+                    Stream<String> interfaceNames = type.getInterfaces()
+                            .stream()
+                            .map(GraphQLType::getName)
+                            .sorted(Comparator.naturalOrder());
+                    out.append("type ");
+                    out.append(type.getName());
+                    out.append(" implements ");
+                    out.append(interfaceNames.collect(joining(", ")));
+                    out.append(" {\n");
+                }
 
-            visibility.getFieldDefinitions(type)
-                    .stream()
-                    .sorted(Comparator.comparing(GraphQLFieldDefinition::getName))
-                    .forEach(fd -> {
-                        printComments(out, fd, "  ");
-                        out.format("  %s%s: %s%s\n",
-                                fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()), directivesString(fd.getDirectives()));
-                    });
-            out.format("}\n\n");
+                GraphQLFieldDefinition[] fieldDefinitions = visibility.getFieldDefinitions(type)
+                        .stream()
+                        .sorted(Comparator.comparing(GraphQLFieldDefinition::getName))
+                        .toArray(GraphQLFieldDefinition[]::new);
+                for (GraphQLFieldDefinition fd : fieldDefinitions) {
+                    printComments(out, fd, "  ");
+                    out.append("  ");
+                    out.append(fd.getName());
+                    out.append(argsString(fd.getArguments()));
+                    out.append(": ");
+                    out.append(typeString(fd.getType()));
+                    out.append('\n');
+                }
+                out.append("}\n");
+            });
         };
     }
 
 
     private TypePrinter<GraphQLInputObjectType> inputObjectPrinter() {
-        return (out, type, visibility) -> {
+        return (type, visibility) -> {
             if (isIntrospectionType(type)) {
-                return;
+                return Optional.empty();
             }
-            printComments(out, type, "");
-            out.format("input %s {\n", type.getName());
-            visibility.getFieldDefinitions(type)
-                    .stream()
-                    .sorted(Comparator.comparing(GraphQLInputObjectField::getName))
-                    .forEach(fd -> {
-                        printComments(out, fd, "  ");
-                        out.format("  %s: %s",
-                                fd.getName(), typeString(fd.getType()));
-                        Object defaultValue = fd.getDefaultValue();
-                        if (defaultValue != null) {
-                            String astValue = printAst(defaultValue, fd.getType());
-                            out.format(" = %s", astValue);
-                        }
-                        out.format("\n");
-                    });
-            out.format("}\n\n");
+            return Optional.of(out -> {
+                printComments(out, type, "");
+                out.append("input ");
+                out.append(type.getName());
+                out.append(" {\n");
+                GraphQLInputObjectField[] fieldDefinitions = visibility.getFieldDefinitions(type)
+                        .stream()
+                        .sorted(Comparator.comparing(GraphQLInputObjectField::getName))
+                        .toArray(GraphQLInputObjectField[]::new);
+                for (GraphQLInputObjectField fd : fieldDefinitions) {
+                    printComments(out, fd, "  ");
+                    out.append("  ");
+                    out.append(fd.getName());
+                    out.append(": ");
+                    out.append(typeString(fd.getType()));
+                    Object defaultValue = fd.getDefaultValue();
+                    if (defaultValue != null) {
+                        String astValue = printAst(defaultValue, fd.getType());
+                        out.append(" = ");
+                        out.append(astValue);
+                    }
+                    out.append("\n");
+                }
+                out.append("}\n");
+            });
         };
     }
 
@@ -338,7 +392,7 @@ public class SchemaPrinter {
 
 
     private TypePrinter<GraphQLSchema> schemaPrinter() {
-        return (out, type, visibility) -> {
+        return (type, visibility) -> {
             GraphQLObjectType queryType = type.getQueryType();
             GraphQLObjectType mutationType = type.getMutationType();
             GraphQLObjectType subscriptionType = type.getSubscriptionType();
@@ -358,19 +412,25 @@ public class SchemaPrinter {
                 needsSchemaPrinted = true;
             }
 
-            if (needsSchemaPrinted) {
-                out.format("schema {\n");
+            return needsSchemaPrinted ? Optional.of(out -> {
+            	out.append("schema {\n");
                 if (queryType != null) {
-                    out.format("  query: %s\n", queryType.getName());
+                    out.append("  query: ");
+                    out.append(queryType.getName());
+                    out.append('\n');
                 }
                 if (mutationType != null) {
-                    out.format("  mutation: %s\n", mutationType.getName());
+                    out.append("  mutation: ");
+                    out.append(mutationType.getName());
+                    out.append('\n');
                 }
                 if (subscriptionType != null) {
-                    out.format("  subscription: %s\n", subscriptionType.getName());
+                    out.append("  subscription: ");
+                    out.append(subscriptionType.getName());
+                    out.append('\n');
                 }
-                out.format("}\n\n");
-            }
+                out.append("}\n");
+            }) : Optional.empty();
         };
     }
 
@@ -426,7 +486,7 @@ public class SchemaPrinter {
             Object defaultValue = argument.getDefaultValue();
             if (defaultValue != null) {
                 sb.append(" = ");
-                sb.append(printAst(defaultValue, argument.getType()));
+                sb.append(printAst(defaultValue,argument.getType()));
             }
             count++;
         }
@@ -439,51 +499,6 @@ public class SchemaPrinter {
         return sb.toString();
     }
 
-    private String directivesString(List<GraphQLDirective> directives) {
-        StringBuilder sb = new StringBuilder();
-        if (!directives.isEmpty()) {
-            sb.append(" ");
-        }
-        directives = directives
-                .stream()
-                .sorted(Comparator.comparing(GraphQLDirective::getName))
-                .collect(toList());
-        for (int i = 0; i < directives.size(); i++) {
-            GraphQLDirective directive = directives.get(i);
-            sb.append(directiveString(directive));
-            if (i < directives.size() - 1) {
-                sb.append(" ");
-            }
-        }
-        return sb.toString();
-    }
-
-    private String directiveString(GraphQLDirective directive) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("@").append(directive.getName());
-        List<GraphQLArgument> args = directive.getArguments();
-        args = args
-                .stream()
-                .sorted(Comparator.comparing(GraphQLArgument::getName))
-                .collect(toList());
-        if (!args.isEmpty()) {
-            sb.append("(");
-            for (int i = 0; i < args.size(); i++) {
-                GraphQLArgument arg = args.get(i);
-                sb.append(arg.getName());
-                if (arg.getDefaultValue() != null) {
-                    sb.append(" : ");
-                    sb.append(printAst(arg.getDefaultValue(), arg.getType()));
-                }
-                if (i < args.size() - 1) {
-                    sb.append(", ");
-                }
-            }
-            sb.append(")");
-        }
-        return sb.toString();
-    }
-
     @SuppressWarnings("unchecked")
     private <T> TypePrinter<T> printer(Class<?> clazz) {
         TypePrinter typePrinter = printers.computeIfAbsent(clazz, k -> {
@@ -492,7 +507,12 @@ public class SchemaPrinter {
             if (superClazz != Object.class)
                 result = printer(superClazz);
             else
-                result = (out, type, visibility) -> out.println("Type not implemented : " + type);
+                result = (type, visibility) -> Optional.<TypePrinter.Appender>of(out -> {
+                    out.append('#');
+                    out.append("Type not implemented : ");
+                    out.append(type.toString());
+                    out.append('\n');
+                });
             return result;
         });
         return (TypePrinter<T>) typePrinter;
@@ -502,121 +522,68 @@ public class SchemaPrinter {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
-        printType(out, type, DEFAULT_FIELD_VISIBILITY);
+        printType(type, DEFAULT_FIELD_VISIBILITY).ifPresent(consumer -> {
+            try {
+                consumer.append(out);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            out.append('\n'); // XXX for backwards compatibility
+        });
 
         return sw.toString();
     }
 
     @SuppressWarnings("unchecked")
-    private void printType(PrintWriter out, List<GraphQLType> typesAsList, Class typeClazz, GraphqlFieldVisibility visibility) {
-        typesAsList.stream()
+    private Stream<TypePrinter.Appender> printType(List<GraphQLType> typesAsList, Class typeClazz, GraphqlFieldVisibility visibility) {
+        return typesAsList.stream()
                 .filter(type -> typeClazz.isAssignableFrom(type.getClass()))
-                .forEach(type -> printType(out, type, visibility));
+                .map(type -> printType(type, visibility)).filter(Optional::isPresent).map(Optional::get);
     }
 
-    private void printType(PrintWriter out, GraphQLType type, GraphqlFieldVisibility visibility) {
+    private Optional<TypePrinter.Appender> printType(GraphQLType type, GraphqlFieldVisibility visibility) {
         TypePrinter<Object> printer = printer(type.getClass());
-        printer.print(out, type, visibility);
+        return printer.print(type, visibility);
     }
 
 
-    private void printComments(PrintWriter out, Object graphQLType, String prefix) {
-
-        AstDescriptionAndComments descriptionAndComments = getDescriptionAndComments(graphQLType);
-        if (descriptionAndComments == null) {
+    private void printComments(Appendable out, Object graphQLType, String prefix) throws IOException {
+        String description = getDescription(graphQLType);
+        if (isNullOrEmpty(description)) {
             return;
         }
-
-        Description astDescription = descriptionAndComments.descriptionAst;
-        if (astDescription != null) {
-            String quoteStr = "\"";
-            if (astDescription.isMultiLine()) {
-                quoteStr = "\"\"\"";
-            }
-            out.write(prefix);
-            out.write(quoteStr);
-            out.write(astDescription.getContent());
-            out.write(quoteStr);
-            out.write("\n");
-
-            return;
-        }
-
-        if (descriptionAndComments.comments != null) {
-            descriptionAndComments.comments.forEach(cmt -> {
-                out.write(prefix);
-                out.write("#");
-                out.write(cmt.getContent());
-                out.write("\n");
-            });
-        } else {
-            String runtimeDescription = descriptionAndComments.runtimeDescription;
-            if (!isNullOrEmpty(runtimeDescription)) {
-                Stream<String> stream = Arrays.stream(runtimeDescription.split("\n"));
-                stream.map(s -> prefix + "#" + s + "\n").forEach(out::write);
-            }
+        for (String s : description.split("\n" , -1)) {
+            out.append(prefix);
+            out.append('#');
+            out.append(s);
+            out.append('\n');
         }
     }
 
-    static class AstDescriptionAndComments {
-        String runtimeDescription;
-        Description descriptionAst;
-        List<Comment> comments;
-
-        public AstDescriptionAndComments(String runtimeDescription, Description descriptionAst, List<Comment> comments) {
-            this.runtimeDescription = runtimeDescription;
-            this.descriptionAst = descriptionAst;
-            this.comments = comments;
-        }
-    }
-
-    private AstDescriptionAndComments getDescriptionAndComments(Object descriptionHolder) {
+    private String getDescription(Object descriptionHolder) {
         if (descriptionHolder instanceof GraphQLObjectType) {
-            GraphQLObjectType type = (GraphQLObjectType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return ((GraphQLObjectType) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLEnumType) {
-            GraphQLEnumType type = (GraphQLEnumType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return ((GraphQLEnumType) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLFieldDefinition) {
-            GraphQLFieldDefinition type = (GraphQLFieldDefinition) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return ((GraphQLFieldDefinition) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLEnumValueDefinition) {
-            GraphQLEnumValueDefinition type = (GraphQLEnumValueDefinition) descriptionHolder;
-            return descriptionAndComments(type::getDescription, () -> null, () -> null);
+            return ((GraphQLEnumValueDefinition) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLUnionType) {
-            GraphQLUnionType type = (GraphQLUnionType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return ((GraphQLUnionType) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLInputObjectType) {
-            GraphQLInputObjectType type = (GraphQLInputObjectType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return ((GraphQLInputObjectType) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLInputObjectField) {
-            GraphQLInputObjectField type = (GraphQLInputObjectField) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return ((GraphQLInputObjectField) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLInterfaceType) {
-            GraphQLInterfaceType type = (GraphQLInterfaceType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return ((GraphQLInterfaceType) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLScalarType) {
-            GraphQLScalarType type = (GraphQLScalarType) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return ((GraphQLScalarType) descriptionHolder).getDescription();
         } else if (descriptionHolder instanceof GraphQLArgument) {
-            GraphQLArgument type = (GraphQLArgument) descriptionHolder;
-            return descriptionAndComments(type::getDescription, type::getDefinition, () -> type.getDefinition().getDescription());
+            return ((GraphQLArgument) descriptionHolder).getDescription();
         } else {
             return Assert.assertShouldNeverHappen();
         }
-    }
-
-    AstDescriptionAndComments descriptionAndComments(Supplier<String> stringSupplier, Supplier<Node> nodeSupplier, Supplier<Description> descriptionSupplier) {
-        String runtimeDesc = stringSupplier.get();
-        Node node = nodeSupplier.get();
-        Description description = null;
-        List<Comment> comments = null;
-        if (node != null) {
-            comments = node.getComments();
-            description = descriptionSupplier.get();
-        }
-        return new AstDescriptionAndComments(runtimeDesc, description, comments);
-
     }
 
     private static boolean isNullOrEmpty(String s) {
