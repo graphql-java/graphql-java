@@ -66,6 +66,7 @@ public class Async {
     private static <T, U> void eachSequentiallyImpl(Iterator<T> iterator, CFFactory<T, U> cfFactory, int index, List<U> tmpResult, CompletableFuture<List<U>> overallResult) {
         if (!iterator.hasNext()) {
             overallResult.complete(tmpResult);
+            return;
         }
         CompletableFuture<U> cf;
         try {
