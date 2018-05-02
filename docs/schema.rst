@@ -55,11 +55,11 @@ what ``GraphqlObjectType`` should be used to represent it, and hence what data f
             public GraphQLObjectType getType(TypeResolutionEnvironment env) {
                 Object javaObject = env.getObject();
                 if (javaObject instanceof Wizard) {
-                    return (GraphQLObjectType) env.getSchema().getType("WizardType");
+                    return env.getSchema().getObjectType("WizardType");
                 } else if (javaObject instanceof Witch) {
-                    return (GraphQLObjectType) env.getSchema().getType("WitchType");
+                    return env.getSchema().getObjectType("WitchType");
                 } else {
-                    return (GraphQLObjectType) env.getSchema().getType("NecromancerType");
+                    return env.getSchema().getObjectType("NecromancerType");
                 }
             }
         };
