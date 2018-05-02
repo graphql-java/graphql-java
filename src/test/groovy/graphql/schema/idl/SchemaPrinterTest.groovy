@@ -8,6 +8,7 @@ import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
@@ -22,10 +23,13 @@ import graphql.schema.GraphQLUnionType
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
+import java.util.Collections
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.mockDirective
 import static graphql.TestUtil.mockScalar
+import static graphql.TestUtil.mockTypeRuntimeWiring
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
@@ -716,30 +720,84 @@ type Query {
 
 
     def "directives will be printed"() {
-        def schema = generate("""
+        given:
+        def idl = """
+            
+            interface SomeInterface @interfaceTypeDirective {
+                fieldA : String @interfaceFieldDirective
+            }
+            
+            union SomeUnion @unionTypeDirective = Single | SomeImplementingType
             
             type Query @query1 @query2(arg1:"x") {
                 fieldA : String @fieldDirective1 @fieldDirective2(argStr:"str", argInt : 1, argFloat : 1.0, argBool : false)
-                fieldB : String
+                fieldB(input : SomeInput) : SomeScalar
+                fieldC : SomeEnum
+                fieldD : SomeInterface
+                fieldE : SomeUnion
             }
             
             type Single @single {
                 fieldA : String @singleField
             }
-        """)
+            
+            type SomeImplementingType implements SomeInterface @interfaceImplementingTypeDirective {
+                fieldA : String @interfaceImplementingFieldDirective
+            }
+            
+            enum SomeEnum @enumTypeDirective {
+                SOME_ENUM_VALUE @enumValueDirective
+            }
+            
+            scalar SomeScalar @scalarDirective
+            
+            input SomeInput @inputTypeDirective {
+                fieldA : String @inputFieldDirective
+            }
+        """
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring()
+            .scalar(mockScalar(registry.scalars().get("SomeScalar")))
+            .type(mockTypeRuntimeWiring("SomeInterface", true))
+            .type(mockTypeRuntimeWiring("SomeUnion", true))
+            .build()
+        def schema = new SchemaGenerator().makeExecutableSchema(registry, runtimeWiring)
 
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
 
-        def result = new SchemaPrinter().print(schema)
-
-        expect:
+        then:
         // args and directives are sorted like the rest of the schema printer
-        result == '''type Query @query1 @query2(arg1 : "x") {
+        result == '''interface SomeInterface @interfaceTypeDirective {
+  fieldA: String @interfaceFieldDirective
+}
+
+union SomeUnion @unionTypeDirective = Single | SomeImplementingType
+
+type Query @query1 @query2(arg1 : "x") {
   fieldA: String @fieldDirective1 @fieldDirective2(argBool : false, argFloat : 1.0, argInt : 1, argStr : "str")
-  fieldB: String
+  fieldB(input: SomeInput): SomeScalar
+  fieldC: SomeEnum
+  fieldD: SomeInterface
+  fieldE: SomeUnion
 }
 
 type Single @single {
   fieldA: String @singleField
+}
+
+type SomeImplementingType implements SomeInterface @interfaceImplementingTypeDirective {
+  fieldA: String @interfaceImplementingFieldDirective
+}
+
+enum SomeEnum @enumTypeDirective {
+  SOME_ENUM_VALUE @enumValueDirective
+}
+
+scalar SomeScalar @scalarDirective
+
+input SomeInput @inputTypeDirective {
+  fieldA: String @inputFieldDirective
 }
 '''
     }
