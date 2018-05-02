@@ -103,8 +103,8 @@ msgstr ""
 
 #: ../../schema.rst:77
 msgid ""
-"When defining a schema via SDL, you provide the needed ``DataFetcher`` "
-"and ``TypeResolver`` when the executable schema is created."
+"When defining a schema via SDL, you provide the needed ``DataFetcher`` s "
+"and ``TypeResolver`` s when the executable schema is created."
 msgstr ""
 
 #: ../../schema.rst:80
@@ -127,7 +127,7 @@ msgid ""
 msgstr ""
 
 #: ../../schema.rst:131
-msgid "You wire this together using this builder pattern"
+msgid "You wire this together using this builder pattern:"
 msgstr ""
 
 #: ../../schema.rst:161
