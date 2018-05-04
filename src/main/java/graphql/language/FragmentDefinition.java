@@ -15,7 +15,7 @@ import static graphql.language.NodeUtil.directivesByName;
  * Provided to the DataFetcher, therefore public API
  */
 @PublicApi
-public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer {
+public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition> {
 
     private String name;
     private TypeName typeCondition;

@@ -3,6 +3,8 @@ package graphql.analysis
 import graphql.TestUtil
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.FragmentDefinition
+import graphql.language.InlineFragment
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -46,12 +48,15 @@ class QueryTraversalTest extends Specification {
         queryTraversal.visitPreOrder(visitor)
 
         then:
-        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" &&
+        it.selectionSetContainer == null})
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
                     it.parentType.name == "Foo" &&
-                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo" &&
+                    it.selectionSetContainer == it.parentEnvironment.field
+
         })
         then:
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
@@ -293,11 +298,13 @@ class QueryTraversalTest extends Specification {
             }
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        def inlineFragment = query.children[0].children[0].children[1]
+        assert inlineFragment instanceof  InlineFragment
         when:
         queryTraversal."$visitFn"(visitor)
 
         then:
-        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" && it.selectionSetContainer == inlineFragment })
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
@@ -381,11 +388,13 @@ class QueryTraversalTest extends Specification {
             
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        def fragmentDefinition = query.children[1]
+        assert fragmentDefinition instanceof FragmentDefinition
         when:
         queryTraversal."$visitFn"(visitor)
 
         then:
-        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query"  && it.selectionSetContainer == fragmentDefinition})
         1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
@@ -902,7 +911,7 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo {id}} }
             """)
-        def root = query.getChildren()[0].getChildren()[0].getChildren()[0].getChildren()[0].getChildren()[0]
+        def root = query.children[0].children[0].children[0].children[0].children[0]
         assert root instanceof  Field
         ((Field)root).name == "subFoo"
         def rootParentType = schema.getType("Foo")
