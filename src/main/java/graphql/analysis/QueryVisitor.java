@@ -5,6 +5,8 @@ import graphql.PublicApi;
 @PublicApi
 public interface QueryVisitor {
 
-    void visitField(QueryVisitorEnvironment queryVisitorEnvironment);
+    void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment);
+
+
 
 }

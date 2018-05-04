@@ -4,7 +4,7 @@ import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.analysis.QueryTraversal;
-import graphql.analysis.QueryVisitorEnvironment;
+import graphql.analysis.QueryVisitorFieldEnvironment;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionPath;
 import graphql.language.Field;
@@ -54,26 +54,26 @@ class FieldValidationSupport {
     }
 
     private static class FieldAndArgumentsImpl implements FieldAndArguments {
-        private final QueryVisitorEnvironment traversalEnv;
+        private final QueryVisitorFieldEnvironment traversalEnv;
         private final FieldAndArguments parentArgs;
         private final ExecutionPath path;
 
-        FieldAndArgumentsImpl(QueryVisitorEnvironment traversalEnv) {
+        FieldAndArgumentsImpl(QueryVisitorFieldEnvironment traversalEnv) {
             this.traversalEnv = traversalEnv;
             this.parentArgs = mkParentArgs(traversalEnv);
             this.path = mkPath(traversalEnv);
         }
 
-        private FieldAndArguments mkParentArgs(QueryVisitorEnvironment traversalEnv) {
+        private FieldAndArguments mkParentArgs(QueryVisitorFieldEnvironment traversalEnv) {
             return traversalEnv.getParentEnvironment() != null ? new FieldAndArgumentsImpl(traversalEnv.getParentEnvironment()) : null;
         }
 
-        private ExecutionPath mkPath(QueryVisitorEnvironment traversalEnv) {
-            QueryVisitorEnvironment parentEnvironment = traversalEnv.getParentEnvironment();
+        private ExecutionPath mkPath(QueryVisitorFieldEnvironment traversalEnv) {
+            QueryVisitorFieldEnvironment parentEnvironment = traversalEnv.getParentEnvironment();
             if (parentEnvironment == null) {
                 return ExecutionPath.rootPath().segment(traversalEnv.getField().getName());
             } else {
-                Stack<QueryVisitorEnvironment> stack = new Stack<>();
+                Stack<QueryVisitorFieldEnvironment> stack = new Stack<>();
                 stack.push(traversalEnv);
                 while (parentEnvironment != null) {
                     stack.push(parentEnvironment);
@@ -81,7 +81,7 @@ class FieldValidationSupport {
                 }
                 ExecutionPath path = ExecutionPath.rootPath();
                 while (!stack.isEmpty()) {
-                    QueryVisitorEnvironment environment = stack.pop();
+                    QueryVisitorFieldEnvironment environment = stack.pop();
                     path = path.segment(environment.getField().getName());
                 }
                 return path;

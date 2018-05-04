@@ -6,5 +6,5 @@ import graphql.Internal;
 @FunctionalInterface
 public interface QueryReducer<T> {
 
-    T reduceField(QueryVisitorEnvironment reducerEnvironment, T acc);
+    T reduceField(QueryVisitorFieldEnvironment reducerEnvironment, T acc);
 }

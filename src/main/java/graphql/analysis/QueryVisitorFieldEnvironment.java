@@ -9,20 +9,20 @@ import graphql.schema.GraphQLFieldDefinition;
 import java.util.Map;
 
 @PublicApi
-public class QueryVisitorEnvironment {
+public class QueryVisitorFieldEnvironment {
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLCompositeType parentType;
     private final Map<String, Object> arguments;
-    private final QueryVisitorEnvironment parentEnvironment;
+    private final QueryVisitorFieldEnvironment parentEnvironment;
     private final SelectionSetContainer selectionSetContainer;
 
-    public QueryVisitorEnvironment(Field field,
-                                   GraphQLFieldDefinition fieldDefinition,
-                                   GraphQLCompositeType parentType,
-                                   QueryVisitorEnvironment parentEnvironment,
-                                   Map<String, Object> arguments,
-                                   SelectionSetContainer selectionSetContainer) {
+    public QueryVisitorFieldEnvironment(Field field,
+                                        GraphQLFieldDefinition fieldDefinition,
+                                        GraphQLCompositeType parentType,
+                                        QueryVisitorFieldEnvironment parentEnvironment,
+                                        Map<String, Object> arguments,
+                                        SelectionSetContainer selectionSetContainer) {
         this.field = field;
         this.fieldDefinition = fieldDefinition;
         this.parentType = parentType;
@@ -43,7 +43,7 @@ public class QueryVisitorEnvironment {
         return parentType;
     }
 
-    public QueryVisitorEnvironment getParentEnvironment() {
+    public QueryVisitorFieldEnvironment getParentEnvironment() {
         return parentEnvironment;
     }
 
@@ -60,7 +60,7 @@ public class QueryVisitorEnvironment {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        QueryVisitorEnvironment that = (QueryVisitorEnvironment) o;
+        QueryVisitorFieldEnvironment that = (QueryVisitorFieldEnvironment) o;
 
         if (field != null ? !field.equals(that.field) : that.field != null) return false;
         if (fieldDefinition != null ? !fieldDefinition.equals(that.fieldDefinition) : that.fieldDefinition != null)
@@ -83,7 +83,7 @@ public class QueryVisitorEnvironment {
 
     @Override
     public String toString() {
-        return "QueryVisitorEnvironment{" +
+        return "QueryVisitorFieldEnvironment{" +
                 "field=" + field +
                 ", fieldDefinition=" + fieldDefinition +
                 ", parentType=" + parentType +

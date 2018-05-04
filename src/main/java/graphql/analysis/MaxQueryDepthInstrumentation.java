@@ -4,13 +4,12 @@ import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.SimpleInstrumentation;
-import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
 
 import java.util.List;
 
-import static graphql.execution.instrumentation.SimpleInstrumentationContext.*;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
 
 /**
  * Prevents execution if the query depth is greater than the specified maxDepth
@@ -59,7 +58,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
         );
     }
 
-    private int getPathLength(QueryVisitorEnvironment path) {
+    private int getPathLength(QueryVisitorFieldEnvironment path) {
         int length = 1;
         while (path != null) {
             path = path.getParentEnvironment();

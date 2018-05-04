@@ -196,7 +196,7 @@ public class QueryTraversal {
 
             GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getType(), field.getName());
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
-            QueryVisitorEnvironment environment = new QueryVisitorEnvironment(field, fieldDefinition, parentEnv.getType(), parentEnv.getEnvironment(), argumentValues, parentEnv.getSelectionSetContainer());
+            QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironment(field, fieldDefinition, parentEnv.getType(), parentEnv.getEnvironment(), argumentValues, parentEnv.getSelectionSetContainer());
 
             LeaveOrEnter leaveOrEnter = context.getVar(LeaveOrEnter.class);
             if (leaveOrEnter == LEAVE) {
