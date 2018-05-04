@@ -1,9 +1,9 @@
 package graphql.analysis;
 
-import graphql.Internal;
+import graphql.PublicApi;
 
-@Internal
-public interface FieldVisitor {
+@PublicApi
+public interface QueryVisitor {
 
     void visitField(QueryVisitorEnvironment queryVisitorEnvironment);
 

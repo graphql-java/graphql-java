@@ -76,11 +76,11 @@ public class QueryTraversal {
         this.childrenOfSelectionProvider = new ChildrenOfSelectionProvider(fragmentsByName);
     }
 
-    public void visitPostOrder(FieldVisitor visitor) {
+    public void visitPostOrder(QueryVisitor visitor) {
         visitImpl(visitor, false);
     }
 
-    public void visitPreOrder(FieldVisitor visitor) {
+    public void visitPreOrder(QueryVisitor visitor) {
         visitImpl(visitor, true);
     }
 
@@ -117,14 +117,14 @@ public class QueryTraversal {
         return childrenOfSelectionProvider.getSelections((Selection) selection);
     }
 
-    private void visitImpl(FieldVisitor visitFieldCallback, boolean preOrder) {
+    private void visitImpl(QueryVisitor visitFieldCallback, boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
 
-        FieldVisitor noOp = notUsed -> {
+        QueryVisitor noOp = notUsed -> {
         };
-        FieldVisitor preOrderCallback = preOrder ? visitFieldCallback : noOp;
-        FieldVisitor postOrderCallback = !preOrder ? visitFieldCallback : noOp;
+        QueryVisitor preOrderCallback = preOrder ? visitFieldCallback : noOp;
+        QueryVisitor postOrderCallback = !preOrder ? visitFieldCallback : noOp;
 
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
         nodeTraverser.depthFirst(new NodeVisitorImpl(preOrderCallback, postOrderCallback), roots);
@@ -132,10 +132,10 @@ public class QueryTraversal {
 
     private class NodeVisitorImpl extends NodeVisitorStub {
 
-        final FieldVisitor preOrderCallback;
-        final FieldVisitor postOrderCallback;
+        final QueryVisitor preOrderCallback;
+        final QueryVisitor postOrderCallback;
 
-        NodeVisitorImpl(FieldVisitor preOrderCallback, FieldVisitor postOrderCallback) {
+        NodeVisitorImpl(QueryVisitor preOrderCallback, QueryVisitor postOrderCallback) {
             this.preOrderCallback = preOrderCallback;
             this.postOrderCallback = postOrderCallback;
         }
