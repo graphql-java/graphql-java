@@ -2,6 +2,7 @@ package graphql.analysis
 
 import graphql.TestUtil
 import graphql.language.Document
+import graphql.language.Field
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -882,4 +883,47 @@ class QueryTraversalTest extends Specification {
         'preOrder'  | 'visitPreOrder'
 
     }
+
+
+    def "can select an arbitrary root node"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+            }
+            type Foo {
+                subFoo: SubFoo
+            }
+            type SubFoo {
+               id: String 
+            }
+        """)
+        def visitor = Mock(FieldVisitor)
+        def query = createQuery("""
+            {foo { subFoo {id}} }
+            """)
+        def root = query.getChildren()[0].getChildren()[0].getChildren()[0].getChildren()[0].getChildren()[0]
+        assert root instanceof  Field
+        ((Field)root).name == "subFoo"
+        def rootParentType = schema.getType("Foo")
+        QueryTraversal queryTraversal = new QueryTraversal(
+                schema,
+                root,
+                rootParentType,
+                Collections.emptyMap(),
+                Collections.emptyMap()
+        )
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "SubFoo"
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorEnvironment it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && it.parentType.name == "SubFoo" })
+
+    }
+
+
 }

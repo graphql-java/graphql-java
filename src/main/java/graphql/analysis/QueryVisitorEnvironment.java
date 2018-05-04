@@ -1,30 +1,34 @@
 package graphql.analysis;
 
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.language.Field;
+import graphql.language.SelectionSetContainer;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.Map;
 
-@Internal
+@PublicApi
 public class QueryVisitorEnvironment {
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLCompositeType parentType;
     private final Map<String, Object> arguments;
     private final QueryVisitorEnvironment parentEnvironment;
+    private final SelectionSetContainer selectionSetContainer;
 
     public QueryVisitorEnvironment(Field field,
                                    GraphQLFieldDefinition fieldDefinition,
                                    GraphQLCompositeType parentType,
                                    QueryVisitorEnvironment parentEnvironment,
-                                   Map<String, Object> arguments) {
+                                   Map<String, Object> arguments,
+                                   SelectionSetContainer selectionSetContainer) {
         this.field = field;
         this.fieldDefinition = fieldDefinition;
         this.parentType = parentType;
         this.parentEnvironment = parentEnvironment;
         this.arguments = arguments;
+        this.selectionSetContainer = selectionSetContainer;
     }
 
     public Field getField() {
@@ -45,6 +49,10 @@ public class QueryVisitorEnvironment {
 
     public Map<String, Object> getArguments() {
         return arguments;
+    }
+
+    public SelectionSetContainer getSelectionSetContainer() {
+        return selectionSetContainer;
     }
 
     @Override

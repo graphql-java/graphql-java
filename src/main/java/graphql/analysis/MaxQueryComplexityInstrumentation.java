@@ -57,7 +57,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
             Map<QueryVisitorEnvironment, List<Integer>> valuesByParent = new LinkedHashMap<>();
             queryTraversal.visitPostOrder(env -> {
                 int childsComplexity = 0;
-                QueryVisitorEnvironment thisNodeAsParent = new QueryVisitorEnvironment(env.getField(), env.getFieldDefinition(), env.getParentType(), env.getParentEnvironment(), env.getArguments());
+                QueryVisitorEnvironment thisNodeAsParent = new QueryVisitorEnvironment(env.getField(), env.getFieldDefinition(), env.getParentType(), env.getParentEnvironment(), env.getArguments(), env.getSelectionSetContainer());
                 if (valuesByParent.containsKey(thisNodeAsParent)) {
                     childsComplexity = valuesByParent.get(thisNodeAsParent).stream().mapToInt(Integer::intValue).sum();
                 }

@@ -1,6 +1,6 @@
 package graphql.analysis;
 
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
@@ -16,7 +16,6 @@ import graphql.language.NodeUtil;
 import graphql.language.NodeVisitorStub;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
-import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -27,6 +26,8 @@ import graphql.schema.SchemaUtil;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,10 +36,10 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
 
-@Internal
+@PublicApi
 public class QueryTraversal {
 
-    private final OperationDefinition operationDefinition;
+    private final Collection<? extends Node> roots;
     private final GraphQLSchema schema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
@@ -47,29 +48,43 @@ public class QueryTraversal {
     private final ValuesResolver valuesResolver = new ValuesResolver();
     private final SchemaUtil schemaUtil = new SchemaUtil();
     private final ChildrenOfSelectionProvider childrenOfSelectionProvider;
+    private final GraphQLObjectType rootParentType;
 
     public QueryTraversal(GraphQLSchema schema,
                           Document document,
                           String operation,
                           Map<String, Object> variables) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
-
-        this.operationDefinition = getOperationResult.operationDefinition;
-        this.fragmentsByName = getOperationResult.fragmentsByName;
-        this.childrenOfSelectionProvider = new ChildrenOfSelectionProvider(fragmentsByName);
         this.schema = schema;
         this.variables = variables;
+        this.fragmentsByName = getOperationResult.fragmentsByName;
+        this.roots = getOperationResult.operationDefinition.getSelectionSet().getChildren();
+        this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
+        this.childrenOfSelectionProvider = new ChildrenOfSelectionProvider(fragmentsByName);
+    }
+
+    public QueryTraversal(GraphQLSchema schema,
+                          Node root,
+                          GraphQLObjectType rootParentType,
+                          Map<String, FragmentDefinition> fragmentsByName,
+                          Map<String, Object> variables) {
+        this.schema = schema;
+        this.variables = variables;
+        this.roots = Collections.singleton(root);
+        this.rootParentType = rootParentType;
+        this.fragmentsByName = fragmentsByName;
+        this.childrenOfSelectionProvider = new ChildrenOfSelectionProvider(fragmentsByName);
     }
 
     public void visitPostOrder(FieldVisitor visitor) {
-        visitImpl(visitor, operationDefinition.getSelectionSet(), getRootType(), false);
+        visitImpl(visitor, false);
     }
 
     public void visitPreOrder(FieldVisitor visitor) {
-        visitImpl(visitor, operationDefinition.getSelectionSet(), getRootType(), true);
+        visitImpl(visitor, true);
     }
 
-    private GraphQLObjectType getRootType() {
+    private GraphQLObjectType getRootTypeFromOperation(OperationDefinition operationDefinition) {
         switch (operationDefinition.getOperation()) {
             case MUTATION:
                 return assertNotNull(schema.getMutationType());
@@ -102,9 +117,9 @@ public class QueryTraversal {
         return childrenOfSelectionProvider.getSelections((Selection) selection);
     }
 
-    private void visitImpl(FieldVisitor visitFieldCallback, SelectionSet selectionSet, GraphQLCompositeType type, boolean preOrder) {
+    private void visitImpl(FieldVisitor visitFieldCallback, boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
-        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(type, null));
+        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
 
         FieldVisitor noOp = notUsed -> {
         };
@@ -112,7 +127,7 @@ public class QueryTraversal {
         FieldVisitor postOrderCallback = !preOrder ? visitFieldCallback : noOp;
 
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
-        nodeTraverser.depthFirst(new NodeVisitorImpl(preOrderCallback, postOrderCallback), selectionSet.getSelections());
+        nodeTraverser.depthFirst(new NodeVisitorImpl(preOrderCallback, postOrderCallback), roots);
     }
 
     private class NodeVisitorImpl extends NodeVisitorStub {
@@ -146,7 +161,7 @@ public class QueryTraversal {
                 fragmentCondition = parentEnv.getType();
             }
             // for unions we only have other fragments inside
-            context.setVar(QueryTraversalContext.class, new QueryTraversalContext(fragmentCondition, parentEnv.getEnvironment()));
+            context.setVar(QueryTraversalContext.class, new QueryTraversalContext(fragmentCondition, parentEnv.getEnvironment(), inlineFragment));
             return TraversalControl.CONTINUE;
         }
 
@@ -169,7 +184,7 @@ public class QueryTraversal {
             GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
 
             context
-                    .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment()));
+                    .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
             return TraversalControl.CONTINUE;
         }
 
@@ -181,7 +196,7 @@ public class QueryTraversal {
 
             GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getType(), field.getName());
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
-            QueryVisitorEnvironment environment = new QueryVisitorEnvironment(field, fieldDefinition, parentEnv.getType(), parentEnv.getEnvironment(), argumentValues);
+            QueryVisitorEnvironment environment = new QueryVisitorEnvironment(field, fieldDefinition, parentEnv.getType(), parentEnv.getEnvironment(), argumentValues, parentEnv.getSelectionSetContainer());
 
             LeaveOrEnter leaveOrEnter = context.getVar(LeaveOrEnter.class);
             if (leaveOrEnter == LEAVE) {
@@ -196,8 +211,8 @@ public class QueryTraversal {
 
             GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
             QueryTraversalContext fieldEnv = (unmodifiedType instanceof GraphQLCompositeType)
-                    ? new QueryTraversalContext((GraphQLCompositeType) unmodifiedType, environment)
-                    : new QueryTraversalContext(null, environment);// Terminal (scalar) node, EMPTY FRAME
+                    ? new QueryTraversalContext((GraphQLCompositeType) unmodifiedType, environment, field)
+                    : new QueryTraversalContext(null, environment, field);// Terminal (scalar) node, EMPTY FRAME
 
 
             context.setVar(QueryTraversalContext.class, fieldEnv);
