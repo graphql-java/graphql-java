@@ -1,8 +1,8 @@
 package graphql.analysis;
 
-import graphql.Internal;
+import graphql.PublicApi;
 
-@Internal
+@PublicApi
 @FunctionalInterface
 public interface QueryReducer<T> {
 

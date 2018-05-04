@@ -101,7 +101,12 @@ public class QueryTraversal {
     public <T> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
         // compiler hack to make acc final and mutable :-)
         final Object[] acc = {initialValue};
-        visitPostOrder((env) -> acc[0] = queryReducer.reduceField(env, (T) acc[0]));
+        visitPostOrder(new QueryVisitorStub() {
+            @Override
+            public void visitField(QueryVisitorFieldEnvironment env) {
+                acc[0] = queryReducer.reduceField(env, (T) acc[0]);
+            }
+        });
         return (T) acc[0];
     }
 
@@ -109,7 +114,12 @@ public class QueryTraversal {
     public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
         // compiler hack to make acc final and mutable :-)
         final Object[] acc = {initialValue};
-        visitPreOrder((env) -> acc[0] = queryReducer.reduceField(env, (T) acc[0]));
+        visitPreOrder(new QueryVisitorStub() {
+            @Override
+            public void visitField(QueryVisitorFieldEnvironment env) {
+                acc[0] = queryReducer.reduceField(env, (T) acc[0]);
+            }
+        });
         return (T) acc[0];
     }
 
@@ -121,8 +131,7 @@ public class QueryTraversal {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
 
-        QueryVisitor noOp = notUsed -> {
-        };
+        QueryVisitor noOp = new QueryVisitorStub();
         QueryVisitor preOrderCallback = preOrder ? visitFieldCallback : noOp;
         QueryVisitor postOrderCallback = !preOrder ? visitFieldCallback : noOp;
 

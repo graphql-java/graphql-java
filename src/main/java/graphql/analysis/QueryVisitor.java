@@ -7,6 +7,8 @@ public interface QueryVisitor {
 
     void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment);
 
+    void visitInlineFragment(QueryVisitorInlineFragmentEnvironment queryVisitorInlineFragmentEnvironment);
 
+    void visitFragmentSpread(QueryVisitorInlineFragmentEnvironment queryVisitorInlineFragmentEnvironment);
 
 }
