@@ -151,11 +151,17 @@ public class QueryTraversal {
 
         @Override
         public TraversalControl visitInlineFragment(InlineFragment inlineFragment, TraverserContext<Node> context) {
-            if (context.getVar(LeaveOrEnter.class) == LEAVE) {
-                return TraversalControl.CONTINUE;
-            }
             if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives()))
                 return TraversalControl.ABORT;
+
+            QueryVisitorInlineFragmentEnvironment inlineFragmentEnvironment = new QueryVisitorInlineFragmentEnvironment(inlineFragment);
+
+            if (context.getVar(LeaveOrEnter.class) == LEAVE) {
+                postOrderCallback.visitInlineFragment(inlineFragmentEnvironment);
+                return TraversalControl.CONTINUE;
+            }
+
+            preOrderCallback.visitInlineFragment(inlineFragmentEnvironment);
 
             // inline fragments are allowed not have type conditions, if so the parent type counts
             QueryTraversalContext parentEnv = context
@@ -176,9 +182,6 @@ public class QueryTraversal {
 
         @Override
         public TraversalControl visitFragmentSpread(FragmentSpread fragmentSpread, TraverserContext<Node> context) {
-            if (context.getVar(LeaveOrEnter.class) == LEAVE) {
-                return TraversalControl.CONTINUE;
-            }
             if (!conditionalNodes.shouldInclude(variables, fragmentSpread.getDirectives()))
                 return TraversalControl.ABORT;
 

@@ -63,6 +63,50 @@ class QueryTraversalTest extends Specification {
 
     }
 
+
+    def "test preOrder order for inline fragments"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+                {
+                    ... on Query {
+                        ... on Query {
+                            foo {subFoo}
+                        }
+                        ... on Query {
+                            foo {subFoo}
+                         }
+                    }
+                }
+                """)
+        def inlineFragmentRoot = query.children[0].children[0].children[0]
+        assert inlineFragmentRoot instanceof InlineFragment
+        def inlineFragmentLeft = inlineFragmentRoot.selectionSet.children[0]
+        assert inlineFragmentLeft instanceof InlineFragment
+        def inlineFragmentRight = inlineFragmentRoot.selectionSet.children[1]
+        assert inlineFragmentRight instanceof InlineFragment
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRoot })
+        then:
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentLeft })
+        then:
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRight })
+
+    }
+
     def "test postOrder order"() {
         given:
         def schema = TestUtil.schema("""
@@ -92,6 +136,49 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+
+    }
+
+    def "test postOrder order for inline fragments"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+                {
+                    ... on Query @root {
+                        ... on Query @left {
+                            foo {subFoo}
+                        }
+                        ... on Query @right {
+                            foo {subFoo}
+                         }
+                    }
+                }
+                """)
+        def inlineFragmentRoot = query.children[0].children[0].children[0]
+        assert inlineFragmentRoot instanceof InlineFragment
+        def inlineFragmentLeft = inlineFragmentRoot.selectionSet.children[0]
+        assert inlineFragmentLeft instanceof InlineFragment
+        def inlineFragmentRight = inlineFragmentRoot.selectionSet.children[1]
+        assert inlineFragmentRight instanceof InlineFragment
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPostOrder(visitor)
+
+        then:
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentLeft })
+        then:
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRight })
+        then:
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRoot })
 
     }
 
@@ -299,7 +386,7 @@ class QueryTraversalTest extends Specification {
             """)
         QueryTraversal queryTraversal = createQueryTraversal(query, schema)
         def inlineFragment = query.children[0].children[0].children[1]
-        assert inlineFragment instanceof  InlineFragment
+        assert inlineFragment instanceof InlineFragment
         when:
         queryTraversal."$visitFn"(visitor)
 
@@ -394,7 +481,7 @@ class QueryTraversalTest extends Specification {
         queryTraversal."$visitFn"(visitor)
 
         then:
-        1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query"  && it.selectionSetContainer == fragmentDefinition})
+        1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" && it.selectionSetContainer == fragmentDefinition })
         1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorFieldEnvironment it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
@@ -912,8 +999,8 @@ class QueryTraversalTest extends Specification {
             {foo { subFoo {id}} }
             """)
         def root = query.children[0].children[0].children[0].children[0].children[0]
-        assert root instanceof  Field
-        ((Field)root).name == "subFoo"
+        assert root instanceof Field
+        ((Field) root).name == "subFoo"
         def rootParentType = schema.getType("Foo")
         QueryTraversal queryTraversal = new QueryTraversal(
                 schema,
