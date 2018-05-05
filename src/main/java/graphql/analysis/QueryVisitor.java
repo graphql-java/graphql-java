@@ -9,6 +9,6 @@ public interface QueryVisitor {
 
     void visitInlineFragment(QueryVisitorInlineFragmentEnvironment queryVisitorInlineFragmentEnvironment);
 
-    void visitFragmentSpread(QueryVisitorInlineFragmentEnvironment queryVisitorInlineFragmentEnvironment);
+    void visitFragmentSpread(QueryVisitorFragmentSpreadEnvironment queryVisitorFragmentSpreadEnvironment);
 
 }

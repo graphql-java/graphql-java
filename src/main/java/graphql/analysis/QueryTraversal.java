@@ -189,6 +189,14 @@ public class QueryTraversal {
             if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives()))
                 return TraversalControl.ABORT;
 
+            QueryVisitorFragmentSpreadEnvironment fragmentSpreadEnvironment = new QueryVisitorFragmentSpreadEnvironment(fragmentSpread, fragmentDefinition);
+            if (context.getVar(LeaveOrEnter.class) == LEAVE) {
+                postOrderCallback.visitFragmentSpread(fragmentSpreadEnvironment);
+                return TraversalControl.CONTINUE;
+            }
+
+            preOrderCallback.visitFragmentSpread(fragmentSpreadEnvironment);
+
             QueryTraversalContext parentEnv = context
                     .getParentContext()
                     .getVar(QueryTraversalContext.class);

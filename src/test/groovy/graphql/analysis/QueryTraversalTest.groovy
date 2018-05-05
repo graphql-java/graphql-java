@@ -1,10 +1,7 @@
 package graphql.analysis
 
 import graphql.TestUtil
-import graphql.language.Document
-import graphql.language.Field
-import graphql.language.FragmentDefinition
-import graphql.language.InlineFragment
+import graphql.language.*
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -28,7 +25,7 @@ class QueryTraversalTest extends Specification {
         return queryTraversal
     }
 
-    def "test preOrder order"() {
+    def "test preOrder order for visitField"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -58,6 +55,38 @@ class QueryTraversalTest extends Specification {
                     it.selectionSetContainer == it.parentEnvironment.field
 
         })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+
+    }
+
+    def "test postOrder order for visitField"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {foo { subFoo} bar }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPostOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironment it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parentType.name == "Foo" &&
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
 
@@ -107,37 +136,6 @@ class QueryTraversalTest extends Specification {
 
     }
 
-    def "test postOrder order"() {
-        given:
-        def schema = TestUtil.schema("""
-            type Query{
-                foo: Foo
-                bar: String
-            }
-            type Foo {
-                subFoo: String  
-            }
-        """)
-        def visitor = Mock(QueryVisitor)
-        def query = createQuery("""
-            {foo { subFoo} bar }
-            """)
-        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
-        when:
-        queryTraversal.visitPostOrder(visitor)
-
-        then:
-        1 * visitor.visitField({ QueryVisitorFieldEnvironment it ->
-            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
-                    it.parentType.name == "Foo" &&
-                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo"
-        })
-        then:
-        1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" })
-        then:
-        1 * visitor.visitField({ QueryVisitorFieldEnvironment it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
-
-    }
 
     def "test postOrder order for inline fragments"() {
         given:
@@ -179,6 +177,114 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRight })
         then:
         1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRoot })
+
+    }
+
+    def "test preOrder order for fragment spreads"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+                {
+                    ...F1
+                }
+                fragment F1 on Query {
+                    ...F2
+                    ...F3
+                }
+                fragment F2 on Query {
+                    bar 
+                }
+                fragment F3 on Query {
+                    bar 
+                }
+                """)
+
+        def fragmentF1 = query.definitions[1]
+        assert fragmentF1 instanceof FragmentDefinition
+        def fragmentF2 = query.definitions[2]
+        assert fragmentF2 instanceof FragmentDefinition
+        def fragmentF3 = query.definitions[3]
+        assert fragmentF3 instanceof FragmentDefinition
+
+        def fragmentSpreadRoot = query.definitions[0].children[0].children[0]
+        assert fragmentSpreadRoot instanceof FragmentSpread
+        def fragmentSpreadLeft = fragmentF1.selectionSet.children[0]
+        assert fragmentSpreadLeft instanceof FragmentSpread
+        def fragmentSpreadRight = fragmentF1.selectionSet.children[1]
+        assert fragmentSpreadRight instanceof FragmentSpread
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadRoot && env.fragmentDefinition == fragmentF1})
+        then:
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadLeft && env.fragmentDefinition == fragmentF2 })
+        then:
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadRight && env.fragmentDefinition == fragmentF3 })
+
+    }
+
+    def "test postOrder order for fragment spreads"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+                {
+                    ...F1
+                }
+                fragment F1 on Query {
+                    ...F2
+                    ...F3
+                }
+                fragment F2 on Query {
+                    bar 
+                }
+                fragment F3 on Query {
+                    bar 
+                }
+                """)
+
+        def fragmentF1 = query.definitions[1]
+        assert fragmentF1 instanceof FragmentDefinition
+        def fragmentF2 = query.definitions[2]
+        assert fragmentF2 instanceof FragmentDefinition
+        def fragmentF3 = query.definitions[3]
+        assert fragmentF3 instanceof FragmentDefinition
+
+        def fragmentSpreadRoot = query.definitions[0].children[0].children[0]
+        assert fragmentSpreadRoot instanceof FragmentSpread
+        def fragmentSpreadLeft = fragmentF1.selectionSet.children[0]
+        assert fragmentSpreadLeft instanceof FragmentSpread
+        def fragmentSpreadRight = fragmentF1.selectionSet.children[1]
+        assert fragmentSpreadRight instanceof FragmentSpread
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPostOrder(visitor)
+
+        then:
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadLeft && env.fragmentDefinition == fragmentF2 })
+        then:
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadRight && env.fragmentDefinition == fragmentF3 })
+        then:
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadRoot && env.fragmentDefinition == fragmentF1})
 
     }
 
