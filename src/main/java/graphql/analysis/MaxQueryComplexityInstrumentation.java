@@ -55,15 +55,18 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
             QueryTraversal queryTraversal = newQueryTraversal(parameters);
 
             Map<QueryVisitorFieldEnvironment, List<Integer>> valuesByParent = new LinkedHashMap<>();
-            queryTraversal.visitPostOrder(env -> {
-                int childsComplexity = 0;
-                QueryVisitorFieldEnvironment thisNodeAsParent = new QueryVisitorFieldEnvironment(env.getField(), env.getFieldDefinition(), env.getParentType(), env.getParentEnvironment(), env.getArguments(), env.getSelectionSetContainer());
-                if (valuesByParent.containsKey(thisNodeAsParent)) {
-                    childsComplexity = valuesByParent.get(thisNodeAsParent).stream().mapToInt(Integer::intValue).sum();
+            queryTraversal.visitPostOrder(new QueryVisitorStub() {
+                @Override
+                public void visitField(QueryVisitorFieldEnvironment env) {
+                    int childsComplexity = 0;
+                    QueryVisitorFieldEnvironment thisNodeAsParent = new QueryVisitorFieldEnvironment(env.getField(), env.getFieldDefinition(), env.getParentType(), env.getParentEnvironment(), env.getArguments(), env.getSelectionSetContainer());
+                    if (valuesByParent.containsKey(thisNodeAsParent)) {
+                        childsComplexity = valuesByParent.get(thisNodeAsParent).stream().mapToInt(Integer::intValue).sum();
+                    }
+                    int value = calculateComplexity(env, childsComplexity);
+                    valuesByParent.putIfAbsent(env.getParentEnvironment(), new ArrayList<>());
+                    valuesByParent.get(env.getParentEnvironment()).add(value);
                 }
-                int value = calculateComplexity(env, childsComplexity);
-                valuesByParent.putIfAbsent(env.getParentEnvironment(), new ArrayList<>());
-                valuesByParent.get(env.getParentEnvironment()).add(value);
             });
             int totalComplexity = valuesByParent.get(null).stream().mapToInt(Integer::intValue).sum();
             if (totalComplexity > maxComplexity) {

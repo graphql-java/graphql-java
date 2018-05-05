@@ -5,6 +5,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.analysis.QueryTraversal;
 import graphql.analysis.QueryVisitorFieldEnvironment;
+import graphql.analysis.QueryVisitorStub;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionPath;
 import graphql.language.Field;
@@ -33,17 +34,20 @@ class FieldValidationSupport {
                 executionContext.getOperationDefinition().getName(),
                 executionContext.getVariables()
         );
-        queryTraversal.visitPreOrder(traversalEnv -> {
-            Field field = traversalEnv.getField();
-            if (field.getArguments() != null && !field.getArguments().isEmpty()) {
-                //
-                // only fields that have arguments make any sense to placed in play
-                // since only they have variable input
-                FieldAndArguments fieldArguments = new FieldAndArgumentsImpl(traversalEnv);
-                ExecutionPath path = fieldArguments.getPath();
-                List<FieldAndArguments> list = fieldArgumentsMap.getOrDefault(path, new ArrayList<>());
-                list.add(fieldArguments);
-                fieldArgumentsMap.put(path, list);
+        queryTraversal.visitPreOrder(new QueryVisitorStub() {
+            @Override
+            public void visitField(QueryVisitorFieldEnvironment env) {
+                Field field = env.getField();
+                if (field.getArguments() != null && !field.getArguments().isEmpty()) {
+                    //
+                    // only fields that have arguments make any sense to placed in play
+                    // since only they have variable input
+                    FieldAndArguments fieldArguments = new FieldAndArgumentsImpl(env);
+                    ExecutionPath path = fieldArguments.getPath();
+                    List<FieldAndArguments> list = fieldArgumentsMap.getOrDefault(path, new ArrayList<>());
+                    list.add(fieldArguments);
+                    fieldArgumentsMap.put(path, list);
+                }
             }
         });
 
