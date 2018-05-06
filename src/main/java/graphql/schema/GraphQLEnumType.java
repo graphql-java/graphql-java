@@ -8,13 +8,15 @@ import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.util.FpKit.getByName;
+import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -118,7 +120,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
                 return valueDefinition.getName();
             }
             // we can treat enum backing values as strings in effect
-            if (definitionValue instanceof Enum  && value instanceof String) {
+            if (definitionValue instanceof Enum && value instanceof String) {
                 if (value.equals(((Enum) definitionValue).name())) {
                     return valueDefinition.getName();
                 }
@@ -158,8 +160,26 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         return new ArrayList<>(directives);
     }
 
+    /**
+     * This helps you transform the current GraphQLEnumType into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new field based on calling build on that builder
+     */
+    public GraphQLEnumType transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newEnum(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static Builder newEnum() {
         return new Builder();
+    }
+
+    public static Builder newEnum(GraphQLEnumType existing) {
+        return new Builder(existing);
     }
 
     public static class Builder {
@@ -167,8 +187,19 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         private String name;
         private String description;
         private EnumTypeDefinition definition;
-        private final List<GraphQLEnumValueDefinition> values = new ArrayList<>();
-        private final List<GraphQLDirective> directives = new ArrayList<>();
+        private final Map<String, GraphQLEnumValueDefinition> values = new LinkedHashMap<>();
+        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+
+        public Builder() {
+        }
+
+        public Builder(GraphQLEnumType existing) {
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.definition = existing.getDefinition();
+            this.values.putAll(getByName(existing.getValues(), GraphQLEnumValueDefinition::getName));
+            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+        }
 
         public Builder name(String name) {
             this.name = name;
@@ -185,43 +216,75 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
             return this;
         }
 
+
         public Builder value(String name, Object value, String description, String deprecationReason) {
-            values.add(new GraphQLEnumValueDefinition(name, description, value, deprecationReason));
+            value(new GraphQLEnumValueDefinition(name, description, value, deprecationReason));
             return this;
         }
 
         public Builder value(String name, Object value, String description) {
-            values.add(new GraphQLEnumValueDefinition(name, description, value));
-            return this;
+            return value(new GraphQLEnumValueDefinition(name, description, value));
         }
 
         public Builder value(String name, Object value) {
             assertNotNull(value, "value can't be null");
-            values.add(new GraphQLEnumValueDefinition(name, null, value));
-            return this;
+            return value(new GraphQLEnumValueDefinition(name, null, value));
         }
 
         public Builder value(String name) {
-            values.add(new GraphQLEnumValueDefinition(name, null, name));
-            return this;
+            return value(new GraphQLEnumValueDefinition(name, null, name));
         }
 
         public Builder value(GraphQLEnumValueDefinition enumValueDefinition) {
-            values.add(enumValueDefinition);
+            assertNotNull(enumValueDefinition, "enumValueDefinition can't be null");
+            values.put(enumValueDefinition.getName(), enumValueDefinition);
             return this;
         }
 
         public boolean hasValue(String name) {
-            return values.stream().anyMatch(evd -> evd.getName().equals(name));
+            return values.containsKey(name);
+        }
+
+        /**
+         * This is used to clear all the values in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearValues() {
+            values.clear();
+            return this;
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            Collections.addAll(this.directives, directives);
+            assertNotNull(directives, "directives can't be null");
+            for (GraphQLDirective directive : directives) {
+                withDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective directive) {
+            assertNotNull(directive, "directive can't be null");
+            directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective.Builder builder) {
+            return withDirective(builder.build());
+        }
+
+        /**
+         * This is used to clear all the directives in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearDirectives() {
+            directives.clear();
             return this;
         }
 
         public GraphQLEnumType build() {
-            return new GraphQLEnumType(name, description, values, directives, definition);
+            return new GraphQLEnumType(name, description, valuesToList(values), valuesToList(directives), definition);
         }
     }
 }

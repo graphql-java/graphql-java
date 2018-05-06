@@ -5,11 +5,8 @@ import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static graphql.language.NodeUtil.directivesByName;
-
-public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition> {
+public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition> {
     private final String name;
     private Description description;
     private final List<EnumValueDefinition> enumValueDefinitions;
@@ -36,15 +33,6 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
     public List<Directive> getDirectives() {
         return directives;
     }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
-    }
-
 
     @Override
     public String getName() {

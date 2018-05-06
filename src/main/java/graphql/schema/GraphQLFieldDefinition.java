@@ -7,13 +7,17 @@ import graphql.language.FieldDefinition;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
+import static graphql.util.FpKit.getByName;
+import static graphql.util.FpKit.valuesToList;
 
 /**
  * Fields are the ways you get data values in graphql and a field definition represents a field, its type, the arguments it takes
@@ -125,6 +129,24 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
                 '}';
     }
 
+    /**
+     * This helps you transform the current GraphQLFieldDefinition into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new field based on calling build on that builder
+     */
+    public GraphQLFieldDefinition transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newFieldDefinition(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    public static Builder newFieldDefinition(GraphQLFieldDefinition existing) {
+        return new Builder(existing);
+    }
+
     public static Builder newFieldDefinition() {
         return new Builder();
     }
@@ -136,10 +158,25 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         private String description;
         private GraphQLOutputType type;
         private DataFetcherFactory<?> dataFetcherFactory;
-        private final List<GraphQLArgument> arguments = new ArrayList<>();
-        private final List<GraphQLDirective> directives = new ArrayList<>();
         private String deprecationReason;
         private FieldDefinition definition;
+        private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
+        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+
+        public Builder() {
+        }
+
+        @SuppressWarnings("unchecked")
+        public Builder(GraphQLFieldDefinition existing) {
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.type = existing.getType();
+            this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(existing.getDataFetcher());
+            this.deprecationReason = existing.getDeprecationReason();
+            this.definition = existing.getDefinition();
+            this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
+            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+        }
 
 
         public Builder name(String name) {
@@ -213,7 +250,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         }
 
         public Builder argument(GraphQLArgument argument) {
-            this.arguments.add(argument);
+            assertNotNull(argument, "argument can't be null");
+            this.arguments.put(argument.getName(), argument);
             return this;
         }
 
@@ -245,14 +283,28 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          * @return this
          */
         public Builder argument(GraphQLArgument.Builder builder) {
-            this.arguments.add(builder.build());
+            argument(builder.build());
             return this;
         }
 
         public Builder argument(List<GraphQLArgument> arguments) {
-            this.arguments.addAll(arguments);
+            assertNotNull(arguments, "arguments can't be null");
+            for (GraphQLArgument argument : arguments) {
+                argument(argument);
+            }
             return this;
         }
+
+        /**
+         * This is used to clear all the arguments in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearArguments() {
+            arguments.clear();
+            return this;
+        }
+
 
         public Builder deprecate(String deprecationReason) {
             this.deprecationReason = deprecationReason;
@@ -260,7 +312,30 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            Collections.addAll(this.directives, directives);
+            assertNotNull(directives, "directives can't be null");
+            for (GraphQLDirective directive : directives) {
+                withDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective directive) {
+            assertNotNull(directive, "directive can't be null");
+            directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective.Builder builder) {
+            return withDirective(builder.build());
+        }
+
+        /**
+         * This is used to clear all the directives in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearDirectives() {
+            directives.clear();
             return this;
         }
 
@@ -268,7 +343,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
             if (dataFetcherFactory == null) {
                 dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(name));
             }
-            return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory, arguments, deprecationReason, directives, definition);
+            return new GraphQLFieldDefinition(name, description, type, dataFetcherFactory,
+                    valuesToList(arguments), deprecationReason, valuesToList(directives), definition);
         }
     }
 }

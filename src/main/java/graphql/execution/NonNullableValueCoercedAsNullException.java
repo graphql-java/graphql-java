@@ -1,5 +1,10 @@
 package graphql.execution;
 
+import static java.lang.String.format;
+
+import java.util.Collections;
+import java.util.List;
+
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
@@ -9,11 +14,6 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
-
-import java.util.Arrays;
-import java.util.List;
-
-import static java.lang.String.format;
 
 /**
  * This is thrown if a non nullable value is coerced to a null value
@@ -25,7 +25,7 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
     public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, GraphQLType graphQLType) {
         super(format("Variable '%s' has coerced Null value for NonNull type '%s'",
                 variableDefinition.getName(), GraphQLTypeUtil.getUnwrappedTypeName(graphQLType)));
-        this.sourceLocations = Arrays.asList(variableDefinition.getSourceLocation());
+        this.sourceLocations = Collections.singletonList(variableDefinition.getSourceLocation());
     }
 
     public NonNullableValueCoercedAsNullException(GraphQLInputObjectField inputTypeField) {
