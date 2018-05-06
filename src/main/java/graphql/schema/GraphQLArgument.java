@@ -43,7 +43,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
-        this(name, description, type, defaultValue, null, definition, Collections.emptyList());
+        this(name, description, type, null, defaultValue, definition, Collections.emptyList());
     }
 
     private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value, InputValueDefinition definition, List<GraphQLDirective> directives) {

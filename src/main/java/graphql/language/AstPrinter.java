@@ -1,6 +1,8 @@
 package graphql.language;
 
-import graphql.AssertException;
+import static graphql.Assert.assertTrue;
+import static java.lang.String.valueOf;
+import static java.util.stream.Collectors.joining;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -11,9 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Assert.assertTrue;
-import static java.lang.String.valueOf;
-import static java.util.stream.Collectors.joining;
+import graphql.AssertException;
 
 /**
  * This can take graphql language AST and print it out as a string
@@ -169,7 +169,7 @@ public class AstPrinter {
     }
 
     private static boolean hasComments(List<? extends Node> nodes) {
-        return nodes.stream().filter(it -> it.getComments().size() > 0).count() > 0;
+        return nodes.stream().anyMatch(it -> it.getComments().size() > 0);
     }
 
     private static NodePrinter<FragmentDefinition> fragmentDefinition() {

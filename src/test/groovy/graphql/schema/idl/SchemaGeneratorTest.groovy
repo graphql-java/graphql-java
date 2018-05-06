@@ -1436,6 +1436,7 @@ class SchemaGeneratorTest extends Specification {
         directiveArg.type == GraphQLBoolean
         directiveArg.getValue() == true
     }
+
     def "directives definitions can be made"() {
         def spec = """
             directive @testDirective(knownArg : String = "defaultValue") on SCHEMA | SCALAR | 
