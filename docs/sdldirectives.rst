@@ -4,12 +4,10 @@ Schema Directives
 Adding Behaviour
 ----------------
 
-Schema Definition Language allows you to define your types in way transparent way.  However you still need to wire in all the
-logic that backs those types and fields.
+Schema Definition Language (SDL) allows you to define your graphql types in a declarative manner without using code.  However you still need to wire in all the
+logic that backs those types and their fields.
 
-What if you could declare behaviours on fields and types to make it easier to compose a schema?
-
-Schema directives allow you to do this.  You can place @directive elements on SDL elements and then write the backing logic
+Schema directives allow you to do this.  You can place directives on SDL elements and then write the backing logic
 once and have it apply in many places.
 
 
@@ -26,7 +24,7 @@ For example imagine you have a type like the following
     }
 
 
-It publishing the ``salary`` to every one who can see this employee's name might not be want you want.  Rather you want some sort of access control
+Publishing ``salary`` information to every one who can see this employee's ``name`` might not be want you want.  Rather you want some sort of access control
 to be in place such that if your role is that of a manager, you can see salaries, otherwise you get no data back.
 
 Directives can help you declare this more easily.  Our declaration above would become something like the following:
@@ -122,9 +120,9 @@ You would provide this authorisation checker into the execution "context" object
 Date Formatting
 ---------------
 
-Date formatting is a cross cutting concern that we should have to write only once and apply it in many areas.
+Date formatting is a cross cutting concern that we should only have to write once and apply it in many areas.
 
-The following demonstrates created a schema directive that can apply date formatting to fields that are ``LocaleDate`` objects.
+The following demonstrates a schema directive that can apply date formatting to fields that are ``LocaleDate`` objects.
 
 Whats great there is that it adds an extra ``format`` argument to each field that it is applied to.  So the clients can
 opt into what ever date formatting you provide per request.
@@ -211,7 +209,7 @@ opt into what ever date formatting you provide per request.
         // data['usa'] == '10-08-1969'
     }
 
-Notice the DSL definition did not have a ``format`` argument yet once the directive wiring is applied, it is added
+Notice the SDL definition did not have a ``format`` argument yet once the directive wiring is applied, it is added
 to the field definition and hence clients can begin to use it.
 
 
