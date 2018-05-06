@@ -190,11 +190,11 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
     private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
 
     /**
-     * PropertyDataFetcher caches the methods and fields that map from a class -> a property for runtime performance reasons.
+     * PropertyDataFetcher caches the methods and fields that map from a class to a property for runtime performance reasons.
      *
      * However during development you might be using an assistance tool like JRebel to allow you to tweak your code base and this
      * caching may interfere with this.  So you can call this method to clear the cache.  A JRebel plugin could
-     * be developer to do just that.
+     * be developed to do just that.
      */
     @SuppressWarnings("unused")
     public static void clearReflectionCache() {
@@ -203,7 +203,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
     }
 
     private String mkKey(Class clazz, String propertyName) {
-        return clazz.getCanonicalName() + "__" + propertyName;
+        return clazz.getName() + "__" + propertyName;
     }
 
     // by not filling out the stack trace, we gain speed when using the exception as flow control
