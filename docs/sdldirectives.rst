@@ -31,6 +31,8 @@ Directives can help you declare this more easily.  Our declaration above would b
 
 .. code-block:: graphql
 
+    directive @auth(role : String!) on FIELD_DEFINITION
+
     type Employee
         id : ID
         name : String!
@@ -43,6 +45,8 @@ that needs manager role authorisation.
 
 
 .. code-block:: graphql
+
+    directive @auth(role : String!) on FIELD_DEFINITION
 
     type Employee
         id : ID
@@ -117,14 +121,61 @@ You would provide this authorisation checker into the execution "context" object
             .context(authCtx)
             .build();
 
-Date Formatting
----------------
+
+Declaring Directives
+--------------------
+
+In order to use a directive in SDL, the graphql specification requires that you MUST declare its shape before using it.  Our ``@auth`` directive example above needs to be
+declared like so before use.
+
+.. code-block:: graphql
+
+    # This is a directive declaration
+    directive @auth(role : String!) on FIELD_DEFINITION
+
+    type Employee
+        id : ID
+
+        # and this is a usage of that declared directive
+        salary : Float @auth(role : "manager")
+    }
+
+The one exception to this is the ``@deprecated`` directive which is implicitly declared for you as follows :
+
+
+.. code-block:: graphql
+
+        directive @deprecated(  reason: String = "No longer supported") on FIELD_DEFINITION | ENUM_VALUE
+
+The valid SDL directive locations are as follows :
+
+.. code-block:: graphql
+
+        SCHEMA,
+        SCALAR,
+        OBJECT,
+        FIELD_DEFINITION,
+        ARGUMENT_DEFINITION,
+        INTERFACE,
+        UNION,
+        ENUM,
+        ENUM_VALUE,
+        INPUT_OBJECT,
+        INPUT_FIELD_DEFINITION
+
+
+Directives are commonly applied to fields definitions but as you can see there are a number of places they can be applied.
+
+
+
+Another Example - Date Formatting
+---------------------------------
 
 Date formatting is a cross cutting concern that we should only have to write once and apply it in many areas.
 
-The following demonstrates a schema directive that can apply date formatting to fields that are ``LocaleDate`` objects.
+The following demonstrates an example schema directive that can apply date formatting to fields that are ``LocaleDate`` objects.
 
-Whats great there is that it adds an extra ``format`` argument to each field that it is applied to.  So the clients can
+Whats great in this example is that it adds an extra ``format`` argument to each field that it is applied to.  So the clients can
 opt into what ever date formatting you provide per request.
 
 
@@ -212,6 +263,9 @@ opt into what ever date formatting you provide per request.
 Notice the SDL definition did not have a ``format`` argument yet once the directive wiring is applied, it is added
 to the field definition and hence clients can begin to use it.
 
+Please note that graphql-java does not ship with this implementation.  It is merely provided here as
+an example of what you could add yourself.
+
 
 Chaining Behaviour
 ------------------
@@ -219,6 +273,11 @@ Chaining Behaviour
 The directives are applied in the order they are encountered.  For example imagine directives that changed the case of a field value.
 
 .. code-block:: graphql
+
+            directive @uppercase on FIELD_DEFINITION
+            directive @lowercase on FIELD_DEFINITION
+            directive @mixedcase on FIELD_DEFINITION
+            directive @reversed on FIELD_DEFINITION
 
             type Query {
                 lowerCaseValue : String @uppercase
