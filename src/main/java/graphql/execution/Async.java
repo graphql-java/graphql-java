@@ -1,8 +1,5 @@
 package graphql.execution;
 
-import graphql.Assert;
-import graphql.Internal;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -10,6 +7,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
+
+import graphql.Assert;
+import graphql.Internal;
 
 @Internal
 public class Async {
@@ -23,7 +23,7 @@ public class Async {
         CompletableFuture<List<U>> overallResult = new CompletableFuture<>();
 
         CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[futures.size()]))
+                .allOf(futures.toArray(new CompletableFuture[0]))
                 .whenComplete((noUsed, exception) -> {
                     if (exception != null) {
                         overallResult.completeExceptionally(exception);
@@ -66,6 +66,7 @@ public class Async {
     private static <T, U> void eachSequentiallyImpl(Iterator<T> iterator, CFFactory<T, U> cfFactory, int index, List<U> tmpResult, CompletableFuture<List<U>> overallResult) {
         if (!iterator.hasNext()) {
             overallResult.complete(tmpResult);
+            return;
         }
         CompletableFuture<U> cf;
         try {

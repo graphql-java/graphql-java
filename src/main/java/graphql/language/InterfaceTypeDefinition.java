@@ -6,11 +6,8 @@ import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static graphql.language.NodeUtil.directivesByName;
-
-public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition> {
+public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition> {
     private final String name;
     private Description description;
     private final List<FieldDefinition> definitions;
@@ -32,14 +29,6 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
 
     public List<Directive> getDirectives() {
         return directives;
-    }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
     }
 
     @Override
@@ -70,7 +59,7 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
 
         InterfaceTypeDefinition that = (InterfaceTypeDefinition) o;
 
-         return NodeUtil.isEqualTo(this.name,that.name) ;
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override

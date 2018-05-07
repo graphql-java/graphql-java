@@ -7,7 +7,7 @@ import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ObjectField extends AbstractNode<ObjectField> {
+public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<ObjectField> {
 
     private final String name;
     private final Value value;

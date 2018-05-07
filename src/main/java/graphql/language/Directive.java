@@ -11,7 +11,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.argumentsByName;
 
-public class Directive extends AbstractNode<Directive> {
+public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {
     private final String name;
     private final List<Argument> arguments = new ArrayList<>();
 

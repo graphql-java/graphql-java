@@ -1402,6 +1402,40 @@ class SchemaGeneratorTest extends Specification {
         inputObjectType.directivesByName.containsKey("directive")
     }
 
+    def "arguments can have directives (which themselves can have arguments)"() {
+        def spec = """
+            type Query {
+                obj : Object
+            }
+            
+            type Object {
+                field(argStr : String @strDirective @secondDirective, argInt : Int @intDirective(inception : true) @thirdDirective ) : String
+            }
+        """
+
+        def schema = schema(spec)
+        GraphQLObjectType type = schema.getType("Object") as GraphQLObjectType
+        def fieldDefinition = type.getFieldDefinition("field")
+        def argStr = fieldDefinition.getArgument("argStr")
+        def argInt = fieldDefinition.getArgument("argInt")
+
+        expect:
+        argStr.getDirectives().size() == 2
+        argStr.getDirective("strDirective") != null
+        argStr.getDirective("secondDirective") != null
+
+        argInt.getDirectives().size() == 2
+
+        argInt.getDirective("thirdDirective") != null
+
+        def intDirective = argInt.getDirective("intDirective")
+        intDirective.name == "intDirective"
+        intDirective.arguments.size() == 1
+        def directiveArg = intDirective.getArgument("inception")
+        directiveArg.name == "inception"
+        directiveArg.type == GraphQLBoolean
+        directiveArg.defaultValue == true
+    }
     def "directives definitions can be made"() {
         def spec = """
             directive @testDirective(knownArg : String = "defaultValue") on SCHEMA | SCALAR | 

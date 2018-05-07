@@ -1,6 +1,9 @@
 package graphql.validation;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -16,9 +19,6 @@ import graphql.language.SourceLocation;
 import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Internal
 public class AbstractRule {
@@ -76,6 +76,10 @@ public class AbstractRule {
 
     protected List<String> getQueryPath() {
         return validationContext.getQueryPath();
+    }
+
+    public void checkDocument(Document document) {
+
     }
 
     public void checkArgument(Argument argument) {

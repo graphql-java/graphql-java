@@ -1,5 +1,20 @@
 package graphql.schema.idl;
 
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.language.AstPrinter;
@@ -26,21 +41,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
-import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 
 /**
@@ -210,7 +210,7 @@ public class SchemaPrinter {
             }
             if (printScalar) {
                 printComments(out, type, "");
-                out.format("scalar %s\n\n", type.getName());
+                out.format("scalar %s%s\n\n", type.getName(), directivesString(type.getDirectives()));
             }
         };
     }
@@ -221,14 +221,14 @@ public class SchemaPrinter {
                 return;
             }
             printComments(out, type, "");
-            out.format("enum %s {\n", type.getName());
+            out.format("enum %s%s {\n", type.getName(), directivesString(type.getDirectives()));
             List<GraphQLEnumValueDefinition> values = type.getValues()
                     .stream()
                     .sorted(Comparator.comparing(GraphQLEnumValueDefinition::getName))
                     .collect(toList());
             for (GraphQLEnumValueDefinition enumValueDefinition : values) {
                 printComments(out, enumValueDefinition, "  ");
-                out.format("  %s\n", enumValueDefinition.getName());
+                out.format("  %s%s\n", enumValueDefinition.getName(), directivesString(enumValueDefinition.getDirectives()));
             }
             out.format("}\n\n");
         };
@@ -240,14 +240,14 @@ public class SchemaPrinter {
                 return;
             }
             printComments(out, type, "");
-            out.format("interface %s {\n", type.getName());
+            out.format("interface %s%s {\n", type.getName(), directivesString(type.getDirectives()));
             visibility.getFieldDefinitions(type)
                     .stream()
                     .sorted(Comparator.comparing(GraphQLFieldDefinition::getName))
                     .forEach(fd -> {
                         printComments(out, fd, "  ");
-                        out.format("  %s%s: %s\n",
-                                fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
+                        out.format("  %s%s: %s%s\n",
+                                fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()), directivesString(fd.getDirectives()));
                     });
             out.format("}\n\n");
         };
@@ -259,7 +259,7 @@ public class SchemaPrinter {
                 return;
             }
             printComments(out, type, "");
-            out.format("union %s = ", type.getName());
+            out.format("union %s%s = ", type.getName(), directivesString(type.getDirectives()));
             List<GraphQLOutputType> types = type.getTypes()
                     .stream()
                     .sorted(Comparator.comparing(GraphQLOutputType::getName))
@@ -289,9 +289,10 @@ public class SchemaPrinter {
                         .stream()
                         .map(GraphQLType::getName)
                         .sorted(Comparator.naturalOrder());
-                out.format("type %s implements %s {\n",
+                out.format("type %s implements %s%s {\n",
                         type.getName(),
-                        interfaceNames.collect(joining(" & ")));
+                        interfaceNames.collect(joining(" & ")),
+                        directivesString(type.getDirectives()));
             }
 
             visibility.getFieldDefinitions(type)
@@ -313,7 +314,7 @@ public class SchemaPrinter {
                 return;
             }
             printComments(out, type, "");
-            out.format("input %s {\n", type.getName());
+            out.format("input %s%s {\n", type.getName(), directivesString(type.getDirectives()));
             visibility.getFieldDefinitions(type)
                     .stream()
                     .sorted(Comparator.comparing(GraphQLInputObjectField::getName))
@@ -326,6 +327,7 @@ public class SchemaPrinter {
                             String astValue = printAst(defaultValue, fd.getType());
                             out.format(" = %s", astValue);
                         }
+                        out.format(directivesString(fd.getDirectives()));
                         out.format("\n");
                     });
             out.format("}\n\n");
@@ -400,7 +402,7 @@ public class SchemaPrinter {
     }
 
     String argsString(List<GraphQLArgument> arguments) {
-        boolean hasDescriptions = arguments.stream().filter(arg -> !isNullOrEmpty(arg.getDescription())).count() > 0;
+        boolean hasDescriptions = arguments.stream().anyMatch(arg -> !isNullOrEmpty(arg.getDescription()));
         String prefix = hasDescriptions ? "  " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
