@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionTypeInfo;
 import graphql.language.Field;
@@ -143,4 +144,6 @@ public interface DataFetchingEnvironment {
      * @return the {@link DataFetchingFieldSelectionSet} for the current data fetch operation
      */
     DataFetchingFieldSelectionSet getSelectionSet();
+
+    ExecutionContext getExecutionContext();
 }

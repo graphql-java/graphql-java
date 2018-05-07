@@ -17,6 +17,7 @@ import java.util.Map;
 @PublicApi
 public class DataFetchingEnvironmentBuilder {
 
+
     /**
      * @return a new {@link DataFetchingEnvironmentBuilder}
      */
@@ -38,6 +39,7 @@ public class DataFetchingEnvironmentBuilder {
                 .fragmentsByName(environment.getFragmentsByName())
                 .executionId(environment.getExecutionId())
                 .selectionSet(environment.getSelectionSet())
+                .executionContext(environment.getExecutionContext())
                 ;
     }
 
@@ -47,7 +49,9 @@ public class DataFetchingEnvironmentBuilder {
                 .root(executionContext.getRoot())
                 .graphQLSchema(executionContext.getGraphQLSchema())
                 .fragmentsByName(executionContext.getFragmentsByName())
-                .executionId(executionContext.getExecutionId());
+                .executionId(executionContext.getExecutionId())
+                .executionContext(executionContext);
+
     }
 
 
@@ -64,6 +68,7 @@ public class DataFetchingEnvironmentBuilder {
     private ExecutionId executionId;
     private DataFetchingFieldSelectionSet selectionSet;
     private ExecutionTypeInfo typeInfo;
+    private ExecutionContext executionContext;
 
     public DataFetchingEnvironmentBuilder source(Object source) {
         this.source = source;
@@ -130,9 +135,15 @@ public class DataFetchingEnvironmentBuilder {
         return this;
     }
 
+    public DataFetchingEnvironmentBuilder executionContext(ExecutionContext executionContext) {
+        this.executionContext = executionContext;
+        return this;
+    }
+
     public DataFetchingEnvironment build() {
         return new DataFetchingEnvironmentImpl(source, arguments, context, root,
                 fieldDefinition, fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
-                typeInfo);
+                typeInfo,
+                executionContext);
     }
 }
