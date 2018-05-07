@@ -1481,6 +1481,35 @@ class SchemaGeneratorTest extends Specification {
         directive.getArgument("knownArg").defaultValue == "defaultValue"
     }
 
+    def "directives don't have to provide default values"() {
+        def spec = """
+            directive @test1(include: Boolean!) on FIELD_DEFINITION
+            
+            directive @test2(include: Boolean!  = true) on FIELD_DEFINITION
+            
+            type Query {
+                f : String @test1
+            }
+        """
+
+        when:
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def directiveTest1 = schema.getDirective("test1")
+        directiveTest1.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
+        directiveTest1.getArgument("include").value == null
+
+        def directiveTest2 = schema.getDirective("test2")
+        directiveTest2.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
+        directiveTest2.getArgument("include").value == null
+        directiveTest2.getArgument("include").defaultValue == true
+
+    }
+
     def "missing directive arguments are transferred as are default values"() {
         def spec = """
             directive @testDirective(

@@ -56,7 +56,6 @@ public class SchemaGeneratorHelper {
         Object result = null;
         if (requiredType instanceof GraphQLNonNull) {
             requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
-            assertNotNull(value, "A AST value is required to be present for non null type ;" + requiredType.getName() + "'");
         }
         if (value == null) {
             return null;
