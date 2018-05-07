@@ -166,9 +166,46 @@ class TypeDefinitionRegistryTest extends Specification {
         e.getErrors().get(0).getMessage().contains("tried to redefine existing 'Url'")
     }
 
+    def "test merge of directive defs"() {
+
+        def spec1 = """ 
+
+          directive @example on FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+          type Post {
+              id: Int!
+            }
+            
+        """
+
+        def spec2 = """ 
+         
+         type Post2 {
+            id : Int
+        }
+         
+          directive @example on FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+        """
+
+        def result1 = parse(spec1)
+        def result2 = parse(spec2)
+
+        when:
+        result1.merge(result2)
+
+        then:
+
+        SchemaProblem e = thrown(SchemaProblem)
+        e.getErrors().get(0).getMessage().contains("tried to redefine existing directive 'example'")
+    }
+
     def "test successful merge of types"() {
 
         def spec1 = """ 
+
+          directive @example on FIELD_DEFINITION | ARGUMENT_DEFINITION
+
           type Post {
               id: Int!
               title: String
@@ -181,7 +218,10 @@ class TypeDefinitionRegistryTest extends Specification {
 
         """
 
-        def spec2 = """ 
+        def spec2 = """
+
+          directive @anotherExample on FIELD_DEFINITION | ARGUMENT_DEFINITION
+ 
           type Author {
               id: Int!
               name: String
@@ -217,6 +257,9 @@ class TypeDefinitionRegistryTest extends Specification {
 
         def typeExtensions = result1.objectTypeExtensions().get("Post")
         typeExtensions.size() == 2
+
+        result1.getDirectiveDefinitions().get("example") != null
+        result1.getDirectiveDefinitions().get("anotherExample") != null
     }
 
     def commonSpec = '''
@@ -419,7 +462,7 @@ class TypeDefinitionRegistryTest extends Specification {
 
         // unwraps all the way down
         registry.isSubTypeOf(listType(nonNullType(listType(type("Dog")))), listType(nonNullType(listType(type("Mammal")))))
-        ! registry.isSubTypeOf(listType(nonNullType(listType(type("Turtle")))), listType(nonNullType(listType(type("Mammal")))))
+        !registry.isSubTypeOf(listType(nonNullType(listType(type("Turtle")))), listType(nonNullType(listType(type("Mammal")))))
 
     }
 }

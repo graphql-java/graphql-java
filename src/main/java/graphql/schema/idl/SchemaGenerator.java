@@ -99,14 +99,14 @@ public class SchemaGenerator {
          * This controls whether schema directives MUST be declared using
          * directive definition syntax before use.
          *
-         * @return true if directives must be fully declared; the default is false
+         * @return true if directives must be fully declared; the default is true
          */
         public boolean isEnforceSchemaDirectives() {
             return enforceSchemaDirectives;
         }
 
         public static Options defaultOptions() {
-            return new Options(false);
+            return new Options(true);
         }
 
         /**
