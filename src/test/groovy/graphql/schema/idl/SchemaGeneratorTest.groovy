@@ -1434,8 +1434,10 @@ class SchemaGeneratorTest extends Specification {
         def directiveArg = intDirective.getArgument("inception")
         directiveArg.name == "inception"
         directiveArg.type == GraphQLBoolean
-        directiveArg.defaultValue == true
+        directiveArg.value == true
+        directiveArg.defaultValue == null
     }
+
     def "directives definitions can be made"() {
         def spec = """
             directive @testDirective(knownArg : String = "defaultValue") on SCHEMA | SCALAR | 

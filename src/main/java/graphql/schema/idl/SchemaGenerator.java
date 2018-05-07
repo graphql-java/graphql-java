@@ -732,7 +732,7 @@ public class SchemaGenerator {
 
         builder.withDirectives(
                 buildDirectives(valueDefinition.getDirectives(),
-                        Collections.emptyList(), ARGUMENT_DEFINITION)
+                        emptyList(), ARGUMENT_DEFINITION, buildCtx.getDirectiveDefinitions())
         );
         return builder.build();
     }
