@@ -145,5 +145,8 @@ public interface DataFetchingEnvironment {
      */
     DataFetchingFieldSelectionSet getSelectionSet();
 
+    /**
+     * @return the current {@link ExecutionContext}. It gives access to the overall schema and other things related to the overall execution of the current request.
+     */
     ExecutionContext getExecutionContext();
 }
