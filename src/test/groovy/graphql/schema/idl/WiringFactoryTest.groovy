@@ -300,7 +300,9 @@ class WiringFactoryTest extends Specification {
     }
 
     def "@fetch directive is respected by default data fetcher wiring"() {
-        def spec = """             
+        def spec = """
+
+            directive @fetch(from : String!) on FIELD_DEFINITION              
 
             type Query {
                 name : String,
@@ -322,7 +324,7 @@ class WiringFactoryTest extends Specification {
         def fetcher = type.getFieldDefinition("homePlanet").getDataFetcher()
         fetcher instanceof PropertyDataFetcher
 
-        PropertyDataFetcher propertyDataFetcher = fetcher
+        PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
         propertyDataFetcher.getPropertyName() == "planetOfBirth"
         //
         // no directive - plain name
@@ -330,7 +332,7 @@ class WiringFactoryTest extends Specification {
         def fetcher2 = type.getFieldDefinition("name").getDataFetcher()
         fetcher2 instanceof PropertyDataFetcher
 
-        PropertyDataFetcher propertyDataFetcher2 = fetcher2
+        PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
         propertyDataFetcher2.getPropertyName() == "name"
 
     }
