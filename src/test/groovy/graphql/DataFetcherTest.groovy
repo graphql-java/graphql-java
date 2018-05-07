@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.ExecutionContext
 import graphql.schema.GraphQLOutputType
 import graphql.schema.PropertyDataFetcher
 import spock.lang.Specification
@@ -51,10 +52,11 @@ class DataFetcherTest extends Specification {
         dataHolder.setProperty("propertyValue")
         dataHolder.setBooleanField(true)
         dataHolder.setBooleanFieldWithGet(false)
+
     }
 
     def env(GraphQLOutputType type) {
-        newDataFetchingEnvironment().source(dataHolder).fieldType(type).build()
+        newDataFetchingEnvironment().source(dataHolder).executionContext(Mock(ExecutionContext)).fieldType(type).build()
     }
 
     def "get property value"() {
