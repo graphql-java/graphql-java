@@ -25,8 +25,6 @@ import graphql.schema.idl.UnionWiringEnvironment
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
 
-import java.util.EnumSet
-import java.util.Collections
 import java.util.stream.Collectors
 
 import static graphql.Scalars.GraphQLString
@@ -85,6 +83,15 @@ class TestUtil {
         try {
             def registry = new SchemaParser().parse(spec)
             def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+            return new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+        } catch (SchemaProblem e) {
+            assert false: "The schema could not be compiled : ${e}"
+        }
+    }
+
+    static GraphQLSchema schema(SchemaGenerator.Options options, String spec, RuntimeWiring runtimeWiring) {
+        try {
+            def registry = new SchemaParser().parse(spec)
             return new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
         } catch (SchemaProblem e) {
             assert false: "The schema could not be compiled : ${e}"
@@ -161,11 +168,11 @@ class TestUtil {
 
     static GraphQLScalarType mockScalar(ScalarTypeDefinition definition) {
         new GraphQLScalarType(
-            definition.getName(),
-            definition.getDescription(),
-            mockCoercing(),
-            definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()),
-            definition);
+                definition.getName(),
+                definition.getDescription(),
+                mockCoercing(),
+                definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()),
+                definition);
     }
 
     static GraphQLDirective mockDirective(String name) {

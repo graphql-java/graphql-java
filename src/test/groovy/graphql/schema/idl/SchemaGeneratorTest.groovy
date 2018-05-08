@@ -1548,4 +1548,45 @@ class SchemaGeneratorTest extends Specification {
         directive.getArgument("knownArg3").value == null
         directive.getArgument("knownArg3").defaultValue == null
     }
+
+    def "deprecated directive is implicit"() {
+        def spec = """
+
+            type Query {
+                f1 : String @deprecated
+                f2 : String @deprecated(reason : "Just because")
+            }
+        """
+
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        when:
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def f1 = schema.getObjectType("Query").getFieldDefinition("f1")
+        f1.getDeprecationReason() == "No longer supported" // spec default text
+
+        def directive = f1.getDirective("deprecated")
+        directive.name == "deprecated"
+        directive.getArgument("reason").type == GraphQLString
+        directive.getArgument("reason").value == "No longer supported"
+        directive.getArgument("reason").defaultValue == "No longer supported"
+        directive.validLocations().collect {it.name()} == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+
+        when:
+        def f2 = schema.getObjectType("Query").getFieldDefinition("f2")
+
+        then:
+        f2.getDeprecationReason() == "Just because"
+
+        def directive2 = f2.getDirective("deprecated")
+        directive2.name == "deprecated"
+        directive2.getArgument("reason").type == GraphQLString
+        directive2.getArgument("reason").value == "Just because"
+        directive2.getArgument("reason").defaultValue == "No longer supported"
+        directive2.validLocations().collect {it.name()} == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+
+    }
 }

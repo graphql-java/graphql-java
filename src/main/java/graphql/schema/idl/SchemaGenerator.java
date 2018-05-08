@@ -233,11 +233,17 @@ public class SchemaGenerator {
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
-        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistry, wiring, options.enforceSchemaDirectives);
+
+        TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
+        typeRegistryCopy.merge(typeRegistry);
+
+        schemaGeneratorHelper.addDeprecatedDirectiveDefinition(typeRegistryCopy);
+
+        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring, options.enforceSchemaDirectives);
         if (!errors.isEmpty()) {
             throw new SchemaProblem(errors);
         }
-        BuildContext buildCtx = new BuildContext(typeRegistry, wiring);
+        BuildContext buildCtx = new BuildContext(typeRegistryCopy, wiring);
 
         return makeExecutableSchemaImpl(buildCtx);
     }
@@ -616,7 +622,7 @@ public class SchemaGenerator {
         builder.deprecate(schemaGeneratorHelper.buildDeprecationReason(fieldDef.getDirectives()));
 
         GraphQLDirective[] directives = buildDirectives(fieldDef.getDirectives(),
-                Collections.emptyList(), Introspection.DirectiveLocation.FIELD, buildCtx.getDirectiveDefinitions());
+                Collections.emptyList(), DirectiveLocation.FIELD_DEFINITION, buildCtx.getDirectiveDefinitions());
         builder.withDirectives(
                 directives
         );
