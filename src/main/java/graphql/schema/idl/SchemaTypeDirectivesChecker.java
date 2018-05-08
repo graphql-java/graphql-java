@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
+import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeDefinition;
@@ -12,6 +13,7 @@ import graphql.language.InputObjectTypeDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
+import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
@@ -19,6 +21,7 @@ import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
+import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError;
 import graphql.schema.idl.errors.DirectiveUndeclaredError;
 import graphql.schema.idl.errors.DirectiveUnknownArgumentError;
 
@@ -135,6 +138,7 @@ class SchemaTypeDirectivesChecker {
 
     private void checkDirectiveArguments(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, Node element, String elementName, Directive directive, DirectiveDefinition directiveDefinition) {
         Map<String, InputValueDefinition> allowedArgs = getByName(directiveDefinition.getInputValueDefinitions(), (InputValueDefinition::getName), mergeFirst());
+        Map<String, Argument> providedArgs = getByName(directive.getArguments(), (Argument::getName), mergeFirst());
         directive.getArguments().forEach(argument -> {
             InputValueDefinition allowedArg = allowedArgs.get(argument.getName());
             if (allowedArg == null) {
@@ -143,6 +147,17 @@ class SchemaTypeDirectivesChecker {
                 errors.add(new DirectiveIllegalArgumentTypeError(element, elementName, directive.getName(), argument.getName()));
             }
         });
+        allowedArgs.forEach((argName, definitionArgument) -> {
+            if (isNoNullArgWithoutDefaultValue(definitionArgument)) {
+                if (!providedArgs.containsKey(argName)) {
+                    errors.add(new DirectiveMissingNonNullArgumentError(element, elementName, directive.getName(), argName));
+                }
+            }
+        });
+    }
+
+    private boolean isNoNullArgWithoutDefaultValue(InputValueDefinition definitionArgument) {
+        return definitionArgument.getType() instanceof NonNullType && definitionArgument.getDefaultValue() == null;
     }
 
     private boolean argValueMatchesAllowedType(TypeDefinitionRegistry typeRegistry, Value instanceValue, Type allowedArgType) {

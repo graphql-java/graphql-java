@@ -1,6 +1,7 @@
 package graphql.schema.idl
 
 import graphql.schema.idl.errors.DirectiveIllegalLocationError
+import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError
 import graphql.schema.idl.errors.DirectiveUndeclaredError
 import graphql.schema.idl.errors.DirectiveUnknownArgumentError
 import spock.lang.Specification
@@ -175,4 +176,31 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         errors.size() == 12
     }
 
+    def "catches directives that fail to provide non null arguments"() {
+        def spec = '''
+
+            directive @testDirective1(nonNullArg : String!) on FIELD_DEFINITION
+            
+            directive @testDirective2(nonNullArg : String! = "default") on FIELD_DEFINITION
+            
+            directive @testDirective3(nonNullArg : String) on FIELD_DEFINITION
+
+            type Query {
+                f1 : String @testDirective1
+                f2 : String @testDirective1(nonNullArg : "someValue")
+                f3 : String @testDirective2
+                f4 : String @testDirective3
+            }
+
+        '''
+        def registry = parse(spec)
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker().checkTypeDirectives(errors, registry)
+
+        then:
+        errors.size() == 1
+        errors.each { assert it instanceof DirectiveMissingNonNullArgumentError }
+    }
 }
