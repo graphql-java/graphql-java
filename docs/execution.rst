@@ -4,7 +4,7 @@ Execution
 Queries
 -------
 
-To execute a query against a schema build a new ``GraphQL`` object with the appropriate arguments and then
+To execute a query against a schema, build a new ``GraphQL`` object with the appropriate arguments and then
 call ``execute()``.
 
 The result of a query is an ``ExecutionResult`` which is the query data and/or a list of errors.
