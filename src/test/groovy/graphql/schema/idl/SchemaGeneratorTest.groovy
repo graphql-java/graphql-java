@@ -1434,7 +1434,8 @@ class SchemaGeneratorTest extends Specification {
         def directiveArg = intDirective.getArgument("inception")
         directiveArg.name == "inception"
         directiveArg.type == GraphQLBoolean
-        directiveArg.getValue() == true
+        directiveArg.value == true
+        directiveArg.defaultValue == null
     }
 
     def "directives definitions can be made"() {
@@ -1480,6 +1481,36 @@ class SchemaGeneratorTest extends Specification {
         directive.getArgument("knownArg").defaultValue == "defaultValue"
     }
 
+    def "directive definitions don't have to provide default values"() {
+        def spec = """
+            directive @test1(include: Boolean!) on FIELD_DEFINITION
+            
+            directive @test2(include: Boolean!  = true) on FIELD_DEFINITION
+            
+            type Query {
+                f1 : String @test1(include : false)
+                f2 : String @test2
+            }
+        """
+
+        when:
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def directiveTest1 = schema.getDirective("test1")
+        directiveTest1.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
+        directiveTest1.getArgument("include").value == null
+
+        def directiveTest2 = schema.getDirective("test2")
+        directiveTest2.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
+        directiveTest2.getArgument("include").value == true
+        directiveTest2.getArgument("include").defaultValue == true
+
+    }
+
     def "missing directive arguments are transferred as are default values"() {
         def spec = """
             directive @testDirective(
@@ -1517,5 +1548,46 @@ class SchemaGeneratorTest extends Specification {
         directive.getArgument("knownArg3").type == GraphQLString
         directive.getArgument("knownArg3").value == null
         directive.getArgument("knownArg3").defaultValue == null
+    }
+
+    def "deprecated directive is implicit"() {
+        def spec = """
+
+            type Query {
+                f1 : String @deprecated
+                f2 : String @deprecated(reason : "Just because")
+            }
+        """
+
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        when:
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def f1 = schema.getObjectType("Query").getFieldDefinition("f1")
+        f1.getDeprecationReason() == "No longer supported" // spec default text
+
+        def directive = f1.getDirective("deprecated")
+        directive.name == "deprecated"
+        directive.getArgument("reason").type == GraphQLString
+        directive.getArgument("reason").value == "No longer supported"
+        directive.getArgument("reason").defaultValue == "No longer supported"
+        directive.validLocations().collect {it.name()} == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+
+        when:
+        def f2 = schema.getObjectType("Query").getFieldDefinition("f2")
+
+        then:
+        f2.getDeprecationReason() == "Just because"
+
+        def directive2 = f2.getDirective("deprecated")
+        directive2.name == "deprecated"
+        directive2.getArgument("reason").type == GraphQLString
+        directive2.getArgument("reason").value == "Just because"
+        directive2.getArgument("reason").defaultValue == "No longer supported"
+        directive2.validLocations().collect {it.name()} == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+
     }
 }

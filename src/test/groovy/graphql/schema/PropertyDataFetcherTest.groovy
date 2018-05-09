@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.execution.ExecutionContext
 import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
@@ -11,7 +12,9 @@ import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvir
 class PropertyDataFetcherTest extends Specification {
 
     def env(obj) {
-        newDataFetchingEnvironment().source(obj).build()
+        newDataFetchingEnvironment()
+                .executionContext(Mock(ExecutionContext))
+                .source(obj).build()
     }
 
     class SomeObject {

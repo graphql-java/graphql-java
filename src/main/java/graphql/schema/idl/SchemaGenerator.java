@@ -104,14 +104,14 @@ public class SchemaGenerator {
          * This controls whether schema directives MUST be declared using
          * directive definition syntax before use.
          *
-         * @return true if directives must be fully declared; the default is false
+         * @return true if directives must be fully declared; the default is true
          */
         public boolean isEnforceSchemaDirectives() {
             return enforceSchemaDirectives;
         }
 
         public static Options defaultOptions() {
-            return new Options(false);
+            return new Options(true);
         }
 
         /**
@@ -259,11 +259,17 @@ public class SchemaGenerator {
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
-        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistry, wiring, options.enforceSchemaDirectives);
+
+        TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
+        typeRegistryCopy.merge(typeRegistry);
+
+        schemaGeneratorHelper.addDeprecatedDirectiveDefinition(typeRegistryCopy);
+
+        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring, options.enforceSchemaDirectives);
         if (!errors.isEmpty()) {
             throw new SchemaProblem(errors);
         }
-        BuildContext buildCtx = new BuildContext(typeRegistry, wiring);
+        BuildContext buildCtx = new BuildContext(typeRegistryCopy, wiring);
 
         return makeExecutableSchemaImpl(buildCtx);
     }
@@ -678,7 +684,7 @@ public class SchemaGenerator {
         builder.deprecate(schemaGeneratorHelper.buildDeprecationReason(fieldDef.getDirectives()));
 
         GraphQLDirective[] directives = buildDirectives(fieldDef.getDirectives(),
-                Collections.emptyList(), Introspection.DirectiveLocation.FIELD, buildCtx.getDirectiveDefinitions());
+                Collections.emptyList(), DirectiveLocation.FIELD_DEFINITION, buildCtx.getDirectiveDefinitions());
         builder.withDirectives(
                 directives
         );
@@ -805,7 +811,7 @@ public class SchemaGenerator {
 
         builder.withDirectives(
                 buildDirectives(valueDefinition.getDirectives(),
-                        Collections.emptyList(), ARGUMENT_DEFINITION, buildCtx.getDirectiveDefinitions())
+                        emptyList(), ARGUMENT_DEFINITION, buildCtx.getDirectiveDefinitions())
         );
 
         GraphQLArgument argument = builder.build();

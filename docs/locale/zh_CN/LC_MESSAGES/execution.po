@@ -26,7 +26,7 @@ msgstr "查询(Queries)"
 
 #: ../../execution.rst:7
 msgid ""
-"To execute a query against a schema build a new ``GraphQL`` object with "
+"To execute a query against a schema, build a new ``GraphQL`` object with "
 "the appropriate arguments and then call ``execute()``."
 msgstr "为了对 一个Schema  执行查询。需要先构造一个 ``GraphQL`` 对象，并带着一些参数去调用 ``execute()`` 方法."
 

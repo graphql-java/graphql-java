@@ -19,6 +19,7 @@ import graphql.language.NullValue;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
 import graphql.language.Type;
+import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -40,7 +41,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
@@ -52,11 +52,19 @@ import static java.util.stream.Collectors.toMap;
 @Internal
 public class SchemaGeneratorHelper {
 
+    static final String NO_LONGER_SUPPORTED = "No longer supported";
+    static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION = new DirectiveDefinition("deprecated");
+
+    static {
+        DEPRECATED_DIRECTIVE_DEFINITION.getDirectiveLocations().add(new graphql.language.DirectiveLocation(DirectiveLocation.FIELD_DEFINITION.name()));
+        DEPRECATED_DIRECTIVE_DEFINITION.getDirectiveLocations().add(new graphql.language.DirectiveLocation(DirectiveLocation.ENUM_VALUE.name()));
+        DEPRECATED_DIRECTIVE_DEFINITION.getInputValueDefinitions().add(new InputValueDefinition("reason", new TypeName("String"), new StringValue(NO_LONGER_SUPPORTED)));
+    }
+
     public Object buildValue(Value value, GraphQLType requiredType) {
         Object result = null;
         if (requiredType instanceof GraphQLNonNull) {
             requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
-            assertNotNull(value, "A AST value is required to be present for non null type ;" + requiredType.getName() + "'");
         }
         if (value == null) {
             return null;
@@ -120,13 +128,18 @@ public class SchemaGeneratorHelper {
                     Argument::getName, arg -> ((StringValue) arg.getValue()).getValue()
             ));
             if (args.isEmpty()) {
-                return "No longer supported"; // default value from spec
+                return NO_LONGER_SUPPORTED; // default value from spec
             } else {
                 // pre flight checks have ensured its valid
                 return args.get("reason");
             }
         }
         return null;
+    }
+
+    public void addDeprecatedDirectiveDefinition(TypeDefinitionRegistry typeRegistry) {
+        // we synthesize this into the type registry - no need for them to add it
+        typeRegistry.add(DEPRECATED_DIRECTIVE_DEFINITION);
     }
 
     /**
@@ -242,6 +255,7 @@ public class SchemaGeneratorHelper {
 
         GraphQLInputType inputType = inputTypeFactory.apply(arg.getType());
         builder.type(inputType);
+        builder.value(buildValue(arg.getDefaultValue(), inputType));
         builder.defaultValue(buildValue(arg.getDefaultValue(), inputType));
         return builder.build();
     }

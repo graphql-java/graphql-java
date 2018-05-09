@@ -95,6 +95,7 @@ public class TypeDefinitionRegistry {
         // ok commit to the merge
         this.types.putAll(tempTypes);
         this.scalarTypes.putAll(tempScalarTypes);
+        this.directiveDefinitions.putAll(tempDirectiveDefs);
         //
         // merge type extensions since they can be redefined by design
         typeRegistry.typeExtensions.forEach((key, value) -> {
