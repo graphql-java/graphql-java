@@ -178,6 +178,15 @@ The following demonstrates an example schema directive that can apply date forma
 Whats great in this example is that it adds an extra ``format`` argument to each field that it is applied to.  So the clients can
 opt into what ever date formatting you provide per request.
 
+.. code-block:: graphql
+
+    directive @dateFormat on FIELD_DEFINITION
+
+    type Query {
+        dateField : String @dateFormat
+    }
+
+Then our runtime code could be :
 
 .. code-block:: java
 

@@ -97,6 +97,8 @@ public class RuntimeWiring {
 
         private Builder() {
             ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);
+            // we give this out by default
+            directiveWiring.put(FetchSchemaDirectiveWiring.FETCH, new FetchSchemaDirectiveWiring());
         }
 
         /**
@@ -189,8 +191,9 @@ public class RuntimeWiring {
         /**
          * This provides the wiring code for a named directive.
          *
-         * @param directiveName the name of the directive to wire
+         * @param directiveName         the name of the directive to wire
          * @param schemaDirectiveWiring the runtime behaviour of this wiring
+         *
          * @return the runtime wiring builder
          *
          * @see graphql.schema.idl.SchemaDirectiveWiring

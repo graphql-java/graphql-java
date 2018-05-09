@@ -38,6 +38,10 @@ public class Directives {
             .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
             .build();
 
+    /**
+     * @deprecated - this is no longer needed and will be removed in a future version
+     */
+    @Deprecated
     public static final GraphQLDirective FetchDirective = GraphQLDirective.newDirective()
             .name("fetch")
             .description("Directs the SDL type generation to create a data fetcher that uses this `from` argument as the property name")

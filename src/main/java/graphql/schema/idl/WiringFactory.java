@@ -1,8 +1,6 @@
 package graphql.schema.idl;
 
 import graphql.PublicSpi;
-import graphql.introspection.Introspection;
-import graphql.language.Directive;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLScalarType;
@@ -10,7 +8,6 @@ import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.DirectivesUtil.atFetchFromSupport;
 
 /**
  * A WiringFactory allows you to more dynamically wire in {@link TypeResolver}s and {@link DataFetcher}s
@@ -118,7 +115,6 @@ public interface WiringFactory {
     }
 
 
-
     /**
      * This is called to ask if this factory can provide a data fetcher for the definition
      *
@@ -150,9 +146,7 @@ public interface WiringFactory {
      * @return a {@link DataFetcher}
      */
     default DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
-
         String fieldName = environment.getFieldDefinition().getName();
-        String fetchName = atFetchFromSupport(fieldName, environment.getDirectives());
-        return new PropertyDataFetcher(fetchName);
+        return new PropertyDataFetcher(fieldName);
     }
 }
