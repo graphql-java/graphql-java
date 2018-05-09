@@ -17,7 +17,7 @@ import graphql.schema.GraphQLUnionType;
  * element in the Schema Definition Language (SDL).
  *
  * It can enhance the graphql runtime element and add new behaviour for example by changing
- * a fields {@link graphql.schema.DataFetcher}
+ * the fields {@link graphql.schema.DataFetcher}
  */
 @PublicApi
 public interface SchemaDirectiveWiring {
