@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Internal;
+import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionTypeInfo;
 import graphql.language.Field;
@@ -9,6 +10,8 @@ import graphql.language.FragmentDefinition;
 
 import java.util.List;
 import java.util.Map;
+
+import static graphql.Assert.assertNotNull;
 
 @SuppressWarnings("unchecked")
 @Internal
@@ -26,8 +29,22 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
     private final ExecutionTypeInfo fieldTypeInfo;
+    private ExecutionContext executionContext;
 
-    public DataFetchingEnvironmentImpl(Object source, Map<String, Object> arguments, Object context, Object root, GraphQLFieldDefinition fieldDefinition, List<Field> fields, GraphQLOutputType fieldType, GraphQLType parentType, GraphQLSchema graphQLSchema, Map<String, FragmentDefinition> fragmentsByName, ExecutionId executionId, DataFetchingFieldSelectionSet selectionSet, ExecutionTypeInfo fieldTypeInfo) {
+    public DataFetchingEnvironmentImpl(Object source,
+                                       Map<String, Object> arguments,
+                                       Object context,
+                                       Object root,
+                                       GraphQLFieldDefinition fieldDefinition,
+                                       List<Field> fields,
+                                       GraphQLOutputType fieldType,
+                                       GraphQLType parentType,
+                                       GraphQLSchema graphQLSchema,
+                                       Map<String, FragmentDefinition> fragmentsByName,
+                                       ExecutionId executionId,
+                                       DataFetchingFieldSelectionSet selectionSet,
+                                       ExecutionTypeInfo fieldTypeInfo,
+                                       ExecutionContext executionContext) {
         this.source = source;
         this.arguments = arguments;
         this.context = context;
@@ -41,6 +58,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.executionId = executionId;
         this.selectionSet = selectionSet;
         this.fieldTypeInfo = fieldTypeInfo;
+        this.executionContext = assertNotNull(executionContext);
     }
 
     @Override
@@ -121,6 +139,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public ExecutionTypeInfo getFieldTypeInfo() {
         return fieldTypeInfo;
+    }
+
+    @Override
+    public ExecutionContext getExecutionContext() {
+        return executionContext;
     }
 
     @Override
