@@ -1,6 +1,7 @@
 package graphql.schema
 
 import graphql.execution.ExecutionContext
+import graphql.language.Field
 import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
@@ -11,10 +12,16 @@ import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvir
 
 class PropertyDataFetcherTest extends Specification {
 
-    def env(obj) {
-        newDataFetchingEnvironment()
+    def env(obj, Field field=null) {
+        def env = newDataFetchingEnvironment()
                 .executionContext(Mock(ExecutionContext))
-                .source(obj).build()
+                .source(obj)
+        if (field != null) {
+            List<Field> fields = new ArrayList<>()
+            fields.add(field)
+            env.fields(fields)
+        }
+        env.build()
     }
 
     class SomeObject {
@@ -46,6 +53,14 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via map lookup"() {
         def environment = env(["mapProperty": "aValue"])
+        def fetcher = PropertyDataFetcher.fetching("mapProperty")
+        expect:
+        fetcher.get(environment) == "aValue"
+    }
+
+    def "fetch via map lookup_with_alias"() {
+        Field f = new Field("mapProperty", "mapPropertyAlias", null, null, null)
+        def environment = env(["mapPropertyAlias": "aValue"], f)
         def fetcher = PropertyDataFetcher.fetching("mapProperty")
         expect:
         fetcher.get(environment) == "aValue"
