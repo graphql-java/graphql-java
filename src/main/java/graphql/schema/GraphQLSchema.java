@@ -9,7 +9,6 @@ import graphql.schema.validation.SchemaValidator;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,6 +22,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 
 /**
  * The schema represents the combined type system of the graphql engine.  This is how the engine knows
@@ -69,7 +69,9 @@ public class GraphQLSchema {
         this.subscriptionType = subscriptionType;
         this.fieldVisibility = fieldVisibility;
         this.additionalTypes = additionalTypes;
-        this.directives = new LinkedHashSet<>(Arrays.asList(Directives.IncludeDirective, Directives.SkipDirective));
+        this.directives = new LinkedHashSet<>(
+                asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective)
+        );
         this.directives.addAll(directives);
         this.typeMap = schemaUtil.allTypes(this, additionalTypes);
         this.byInterface = schemaUtil.groupImplementations(this);
@@ -242,6 +244,7 @@ public class GraphQLSchema {
             this.additionalTypes.addAll(additionalTypes);
             return this;
         }
+
         public Builder additionalType(GraphQLType additionalType) {
             this.additionalTypes.add(additionalType);
             return this;

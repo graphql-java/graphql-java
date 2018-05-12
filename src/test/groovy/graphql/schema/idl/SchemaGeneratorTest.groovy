@@ -13,6 +13,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
+import graphql.schema.PropertyDataFetcher
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.visibility.GraphqlFieldVisibility
@@ -1398,6 +1399,74 @@ class SchemaGeneratorTest extends Specification {
         inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldC") })
         inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldD") })
         inputObjectType.directivesByName.containsKey("directive")
+    }
+
+    def "arguments can have directives (which themselves can have arguments)"() {
+        def spec = """
+            type Query {
+                obj : Object
+            }
+            
+            type Object {
+                field(argStr : String @strDirective @secondDirective, argInt : Int @intDirective(inception : true) @thirdDirective ) : String
+            }
+        """
+
+        def schema = schema(spec)
+        GraphQLObjectType type = schema.getType("Object") as GraphQLObjectType
+        def fieldDefinition = type.getFieldDefinition("field")
+        def argStr = fieldDefinition.getArgument("argStr")
+        def argInt = fieldDefinition.getArgument("argInt")
+
+        expect:
+        argStr.getDirectives().size() == 2
+        argStr.getDirective("strDirective") != null
+        argStr.getDirective("secondDirective") != null
+
+        argInt.getDirectives().size() == 2
+
+        argInt.getDirective("thirdDirective") != null
+
+        def intDirective = argInt.getDirective("intDirective")
+        intDirective.name == "intDirective"
+        intDirective.arguments.size() == 1
+        def directiveArg = intDirective.getArgument("inception")
+        directiveArg.name == "inception"
+        directiveArg.type == GraphQLBoolean
+        directiveArg.defaultValue == true
+    }
+
+    def "@fetch directive is respected"() {
+        def spec = """             
+
+            directive @fetch(from : String!) on FIELD_DEFINITION
+
+            type Query {
+                name : String,
+                homePlanet: String @fetch(from : "planetOfBirth")
+            }
+        """
+
+        def wiring = RuntimeWiring.newRuntimeWiring().build()
+        def schema = schema(spec,wiring)
+
+        GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        def fetcher = type.getFieldDefinition("homePlanet").getDataFetcher()
+        fetcher instanceof PropertyDataFetcher
+
+        PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
+        propertyDataFetcher.getPropertyName() == "planetOfBirth"
+        //
+        // no directive - plain name
+        //
+        def fetcher2 = type.getFieldDefinition("name").getDataFetcher()
+        fetcher2 instanceof PropertyDataFetcher
+
+        PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
+        propertyDataFetcher2.getPropertyName() == "name"
+
     }
 
 }

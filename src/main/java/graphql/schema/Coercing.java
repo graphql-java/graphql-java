@@ -54,7 +54,7 @@ public interface Coercing<I, O> {
      * object will be an instance of {@link graphql.language.Value}.
      *
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather
-     * catch them and return null as per the method contract to indicate that the AST literal cannot be parsed into this scalar.
+     * catch them and fire them as {@link graphql.schema.CoercingParseLiteralException} instead as per the method contract.
      *
      * @param input is never null
      *

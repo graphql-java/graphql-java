@@ -82,6 +82,32 @@ class AbsoluteGraphQLErrorTest extends Specification {
         error.getPath() == null
     }
 
+    def "when constructor receives empty path it should return the base field path"() {
+        given:
+
+        def field = new Field("test")
+        field.setSourceLocation(new SourceLocation(4, 5))
+
+        def parameters = newParameters()
+                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .source(new Object())
+                .fields(["fld": [new Field()]])
+                .field([field])
+                .path(ExecutionPath.fromList(["foo", "bar"]))
+                .build()
+
+        def relativeError = new DataFetchingErrorGraphQLError("blah")
+        relativeError.path = []
+
+        when:
+
+        def error = new AbsoluteGraphQLError(parameters, relativeError)
+
+        then:
+
+        error.getPath() == ["foo", "bar"]
+    }
+
     def "constructor handles missing locations as null"() {
         given:
 
@@ -104,6 +130,32 @@ class AbsoluteGraphQLErrorTest extends Specification {
         then:
 
         error.getLocations() == null
+    }
+
+    def "when constructor receives empty locations it should return the base field locations"() {
+        given:
+
+        def field = new Field("test")
+        def expectedSourceLocation = new SourceLocation(1, 2)
+        field.setSourceLocation(expectedSourceLocation)
+
+        def parameters = newParameters()
+                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .source(new Object())
+                .fields(["fld": [new Field()]])
+                .field([field])
+                .path(ExecutionPath.fromList(["foo", "bar"]))
+                .build()
+
+        def relativeError = new DataFetchingErrorGraphQLError("blah")
+        relativeError.locations = []
+
+        when:
+        def error = new AbsoluteGraphQLError(parameters, relativeError)
+
+        then:
+
+        error.getLocations() == [expectedSourceLocation]
     }
 
     def "constructor transforms multiple source locations"() {

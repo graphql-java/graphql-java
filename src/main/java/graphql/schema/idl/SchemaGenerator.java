@@ -45,6 +45,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
@@ -67,6 +68,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.DirectivesUtil.atFetchFromSupport;
+import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
@@ -576,14 +579,21 @@ public class SchemaGenerator {
                     dataFetcher = runtimeWiring.getDefaultDataFetcherForType(parentTypeName);
                     if (dataFetcher == null) {
                         dataFetcher = wiringFactory.getDefaultDataFetcher(wiringEnvironment);
-                        assertNotNull(dataFetcher, "The WiringFactory indicated MUST provide a default data fetcher as part of its contract");
+                        if (dataFetcher == null) {
+                            dataFetcher = dataFetcherOfLastResort(wiringEnvironment);
+                        }
                     }
                 }
             }
             dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
         }
-
         return dataFetcherFactory;
+    }
+
+    private DataFetcher<?> dataFetcherOfLastResort(FieldWiringEnvironment environment) {
+        String fieldName = environment.getFieldDefinition().getName();
+        String fetchName = atFetchFromSupport(fieldName, environment.getDirectives());
+        return new PropertyDataFetcher(fetchName);
     }
 
     private GraphQLInputObjectType buildInputObjectType(BuildContext buildCtx, InputObjectTypeDefinition typeDefinition) {
@@ -647,6 +657,10 @@ public class SchemaGenerator {
             builder.defaultValue(schemaGeneratorHelper.buildValue(defaultValue, inputType));
         }
 
+        builder.withDirectives(
+                buildDirectives(valueDefinition.getDirectives(),
+                        Collections.emptyList(), ARGUMENT_DEFINITION)
+        );
         return builder.build();
     }
 

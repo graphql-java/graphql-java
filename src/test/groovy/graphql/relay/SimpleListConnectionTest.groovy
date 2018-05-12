@@ -1,5 +1,6 @@
 package graphql.relay
 
+import graphql.execution.ExecutionContext
 import graphql.schema.DataFetchingEnvironment
 import spock.lang.Specification
 
@@ -10,7 +11,7 @@ import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvir
 class SimpleListConnectionTest extends Specification {
 
     DataFetchingEnvironment afterCursorEnv(String cursor) {
-        newDataFetchingEnvironment().arguments(["after": cursor]).build()
+        newDataFetchingEnvironment().executionContext(Mock(ExecutionContext)).arguments(["after": cursor]).build()
     }
 
     def createCursor(int offset) {
@@ -71,7 +72,7 @@ class SimpleListConnectionTest extends Specification {
     def "can accept a list with nulls"() {
         given:
         def dataWithNull = ["a", null, "b"]
-        def env = newDataFetchingEnvironment().build()
+        def env = newDataFetchingEnvironment().executionContext(Mock(ExecutionContext)).build()
 
         when:
         def connection = new SimpleListConnection(dataWithNull).get(env)
