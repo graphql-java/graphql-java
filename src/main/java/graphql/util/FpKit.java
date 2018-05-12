@@ -7,7 +7,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
@@ -74,9 +73,10 @@ public class FpKit {
     /**
      * Concatenates (appends) a single elements to an existing list
      *
-     * @param l the list onto which to append the element
-     * @param t the element to append
+     * @param l   the list onto which to append the element
+     * @param t   the element to append
      * @param <T> the type of elements of the list
+     *
      * @return a <strong>new</strong> list componsed of the first list elements and the new element
      */
     public static <T> List<T> concat(List<T> l, T t) {
@@ -86,9 +86,10 @@ public class FpKit {
     /**
      * Concatenates two lists into one
      *
-     * @param l1 the first list to concatenate
-     * @param l2 the second list to concatenate
+     * @param l1  the first list to concatenate
+     * @param l2  the second list to concatenate
      * @param <T> the type of element of the lists
+     *
      * @return a <strong>new</strong> list composed of the two concatenated lists elements
      */
     public static <T> List<T> concat(List<T> l1, List<T> l2) {
