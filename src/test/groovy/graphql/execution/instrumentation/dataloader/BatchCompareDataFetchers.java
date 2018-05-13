@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -36,8 +37,22 @@ public class BatchCompareDataFetchers {
         expensiveShops.put("exshop-3", new Shop("exshop-3", "ExShop 3", Arrays.asList("department-7", "department-8", "department-9")));
     }
 
-    public static DataFetcher<List<Shop>> shopsDataFetcher = environment -> new ArrayList<>(shops.values());
-    public static DataFetcher<List<Shop>> expensiveShopsDataFetcher = environment -> new ArrayList<>(expensiveShops.values());
+    public static DataFetcher<CompletableFuture<List<Shop>>> shopsDataFetcher = environment -> CompletableFuture.supplyAsync(() -> {
+        try {
+            Thread.sleep(new Random().nextInt(100));
+            return new ArrayList<>(shops.values());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    });
+    public static DataFetcher<CompletableFuture<List<Shop>>> expensiveShopsDataFetcher = environment -> CompletableFuture.supplyAsync(() -> {
+        try {
+            Thread.sleep(new Random().nextInt(100));
+            return new ArrayList<>(expensiveShops.values());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    });
 
     // Departments
     private static Map<String, Department> departments = new LinkedHashMap<>();
