@@ -25,8 +25,6 @@ import graphql.schema.idl.UnionWiringEnvironment
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
 
-import java.util.EnumSet
-import java.util.Collections
 import java.util.stream.Collectors
 
 import static graphql.Scalars.GraphQLString

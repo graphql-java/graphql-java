@@ -3,10 +3,11 @@ package graphql.execution;
 import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
 
 /**
  * This is thrown if a {@link graphql.schema.TypeResolver} fails to give back a concrete type
- * for an interface or union type at runtime.
+ * or provides a type that doesn't implement the given interface or union.
  */
 @PublicApi
 public class UnresolvedTypeException extends GraphQLException {
@@ -27,6 +28,11 @@ public class UnresolvedTypeException extends GraphQLException {
 
     public UnresolvedTypeException(GraphQLOutputType interfaceOrUnionType) {
         this("Could not determine the exact type of '" + interfaceOrUnionType.getName() + "'", interfaceOrUnionType);
+    }
+
+    public UnresolvedTypeException(GraphQLOutputType interfaceOrUnionType, GraphQLType providedType) {
+        this("Runtime Object type '" + providedType.getName() + "' is not a possible type for "
+                + "'" + interfaceOrUnionType.getName() + "'.", interfaceOrUnionType);
     }
 
     public GraphQLOutputType getInterfaceOrUnionType() {

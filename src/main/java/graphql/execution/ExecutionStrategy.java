@@ -667,6 +667,7 @@ public abstract class ExecutionStrategy {
         } else {
             resolvedType = (GraphQLObjectType) fieldType;
         }
+
         return resolvedType;
     }
 
@@ -684,6 +685,11 @@ public abstract class ExecutionStrategy {
         if (result == null) {
             throw new UnresolvedTypeException(abstractType);
         }
+
+        if (!params.getSchema().isPossibleType(abstractType, result)) {
+            throw new UnresolvedTypeException(abstractType, result);
+        }
+
         return result;
     }
 
@@ -701,6 +707,11 @@ public abstract class ExecutionStrategy {
         if (result == null) {
             throw new UnresolvedTypeException(abstractType);
         }
+
+        if (!params.getSchema().isPossibleType(abstractType, result)) {
+            throw new UnresolvedTypeException(abstractType, result);
+        }
+
         return result;
     }
 

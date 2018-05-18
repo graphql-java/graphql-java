@@ -39,6 +39,14 @@ class TypeResolverExecutionTest extends Specification {
         }
     }
 
+    def aberrantTypeResolver = new TypeResolver() {
+        @Override
+        GraphQLObjectType getType(TypeResolutionEnvironment env) {
+            // returns an irrelevant type that doesn't implement the interface
+            return env.schema.getObjectType('OtherType')
+        }
+    }
+
     class SimpleTestWiringFactory implements WiringFactory {
 
         TypeResolver typeResolver
@@ -131,6 +139,100 @@ class TypeResolverExecutionTest extends Specification {
         res.errors.empty
     }
 
+
+    def "interface:  when typeResolver returns an aberrant type it should yield a GraphQL error"() {
+        def idl = """
+            type Query {
+                event: Event
+            }
+            
+            interface Event {
+                id: String
+            }
+            
+            type Concert implements Event {
+                id: String
+                name: String
+            }
+            
+            type Conference implements Event {
+                id: String
+                topic: String    
+            }
+            
+            type OtherType {
+                id: String
+            }
+        """
+
+        def runTimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(new SimpleTestWiringFactory(aberrantTypeResolver))
+        def schema = TestUtil.schema(idl, runTimeWiring)
+        def graphql = new GraphQL(schema)
+
+        when:
+        def res = graphql.execute('''
+            { 
+                event { 
+                    id 
+                    ...on Conference { 
+                        topic 
+                    } 
+                } 
+            }''')
+
+        then:
+        (res.data as Map)['event'] == null
+        res.errors[0] instanceof UnresolvedTypeError
+    }
+
+    def "interface: when typeResolver returns an aberrant type and the field is non-nullable, it should yield a GraphQL error"() {
+        def idl = """
+            type Query {
+                event: Event!
+            }
+            
+            interface Event {
+                id: String
+            }
+            
+            type Concert implements Event {
+                id: String
+                name: String
+            }
+            
+            type Conference implements Event {
+                id: String
+                topic: String    
+            }
+            
+            type OtherType {
+                id: String
+            }
+        """
+
+        def runTimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(new SimpleTestWiringFactory(aberrantTypeResolver))
+        def schema = TestUtil.schema(idl, runTimeWiring)
+        def graphql = new GraphQL(schema)
+
+        when:
+        def res = graphql.execute('''
+            { 
+                event { 
+                    id 
+                    ...on Conference { 
+                        topic 
+                    } 
+                } 
+            }''')
+
+        then:
+        res.data == null
+        res.errors[0] instanceof UnresolvedTypeError
+    }
+
+
     def "interface: when typeResolver returns null (meaning it couldn't find an appropriate type), it should yield a UnresolvedTypeError GraphQL error"() {
         def idl = """
             type Query {
@@ -217,6 +319,95 @@ class TypeResolverExecutionTest extends Specification {
         res.data == null
         res.errors[0] instanceof UnresolvedTypeError
     }
+
+    def "union:  when typeResolver returns an aberrant type it should yield a GraphQL error"() {
+        def idl = """
+            type Query {
+                event: Event
+            }
+                        
+            type Concert {
+                id: String
+                name: String
+            }
+            
+            type Conference {
+                id: String
+                topic: String    
+            }
+            
+            union Event = Concert | Conference
+            
+            type OtherType {
+                id: String
+            }
+        """
+
+        def runTimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(new SimpleTestWiringFactory(aberrantTypeResolver))
+        def schema = TestUtil.schema(idl, runTimeWiring)
+        def graphql = new GraphQL(schema)
+
+        when:
+        def res = graphql.execute('''
+            { 
+                event { 
+                    ...on Conference { 
+                        id
+                        topic 
+                    } 
+                } 
+            }''')
+
+        then:
+        (res.data as Map)['event'] == null
+        res.errors[0] instanceof UnresolvedTypeError
+    }
+
+    def "union: when typeResolver returns an aberrant type and the field is non-nullable, it should yield a GraphQL error"() {
+        def idl = """
+            type Query {
+                event: Event!
+            }
+                        
+            type Concert {
+                id: String
+                name: String
+            }
+            
+            type Conference {
+                id: String
+                topic: String    
+            }
+            
+            union Event = Concert | Conference
+            
+            type OtherType {
+                id: String
+            }
+        """
+
+        def runTimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(new SimpleTestWiringFactory(aberrantTypeResolver))
+        def schema = TestUtil.schema(idl, runTimeWiring)
+        def graphql = new GraphQL(schema)
+
+        when:
+        def res = graphql.execute('''
+            { 
+                event { 
+                    ...on Conference { 
+                        id
+                        topic 
+                    } 
+                } 
+            }''')
+
+        then:
+        res.data == null
+        res.errors[0] instanceof UnresolvedTypeError
+    }
+
 
     def "union: when typeResolver returns null (meaning it couldn't find an appropriate type), it should yield a UnresolvedTypeError GraphQL error"() {
         def idl = """
