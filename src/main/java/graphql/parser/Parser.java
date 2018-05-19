@@ -7,18 +7,24 @@ import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.IntStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.List;
+import java.util.Optional;
 
 @Internal
 public class Parser {
 
     public Document parseDocument(String input) {
+        return parseDocument(input, null);
+    }
 
-        GraphqlLexer lexer = new GraphqlLexer(CharStreams.fromString(input));
+    public Document parseDocument(String input, String sourceName) {
+
+        GraphqlLexer lexer = new GraphqlLexer(CharStreams.fromString(input, Optional.ofNullable(sourceName).orElse(IntStream.UNKNOWN_SOURCE_NAME)));
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 

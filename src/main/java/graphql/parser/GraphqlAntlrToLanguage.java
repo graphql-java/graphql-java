@@ -829,7 +829,9 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
 
 
     private SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
-        return new SourceLocation(parserRuleContext.getStart().getLine(), parserRuleContext.getStart().getCharPositionInLine() + 1);
+        Token startToken = parserRuleContext.getStart();
+        String sourceName = startToken.getTokenSource().getSourceName();
+        return new SourceLocation(startToken.getLine(), startToken.getCharPositionInLine() + 1, sourceName);
     }
 
     private List<Comment> getComments(ParserRuleContext ctx) {
