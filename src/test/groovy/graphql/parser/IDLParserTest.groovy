@@ -34,6 +34,7 @@ import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.UnionTypeExtensionDefinition
 import graphql.language.VariableReference
+import org.antlr.v4.runtime.IntStream
 import spock.lang.Specification
 
 import java.util.stream.Collectors
@@ -794,6 +795,24 @@ input Gun {
         fromDoc(doc, 2, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
         fromDoc(doc, 2, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
         fromDoc(doc, 2, InputObjectTypeExtensionDefinition).inputValueDefinitions[0].name == 'inputField'
+    }
+
+    def "source name is available when specified"() {
+
+        def input = 'type Query { hello: String }'
+        def sourceName = 'named.graphql'
+
+        when:
+        def defaultDoc = new Parser().parseDocument(input)
+        def namedDocNull = new Parser().parseDocument(input, null)
+        def namedDoc = new Parser().parseDocument(input, sourceName)
+
+        then:
+
+        defaultDoc.definitions[0].sourceLocation.sourceName == IntStream.UNKNOWN_SOURCE_NAME
+        namedDocNull.definitions[0].sourceLocation.sourceName == IntStream.UNKNOWN_SOURCE_NAME
+        namedDoc.definitions[0].sourceLocation.sourceName == sourceName
+
     }
 
     static <T> T fromDoc(Document document, int index, Class<T> asClass) {

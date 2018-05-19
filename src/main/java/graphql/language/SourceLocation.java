@@ -5,10 +5,16 @@ public class SourceLocation {
 
     private final int line;
     private final int column;
+    private final String sourceName;
 
     public SourceLocation(int line, int column) {
+        this(line, column, null);
+    }
+
+    public SourceLocation(int line, int column, String sourceName) {
         this.line = line;
         this.column = column;
+        this.sourceName = sourceName;
     }
 
     public int getLine() {
@@ -17,6 +23,10 @@ public class SourceLocation {
 
     public int getColumn() {
         return column;
+    }
+
+    public String getSourceName() {
+        return sourceName;
     }
 
     @Override
