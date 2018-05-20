@@ -3,7 +3,6 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.ExecutionResult;
 import graphql.execution.CompleteValueInfo;
 import graphql.execution.ExecutionPath;
-import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.ExecutionStrategyContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -13,7 +12,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,9 +103,8 @@ public class FieldLevelTrackingApproach {
         ExecutionPath path = parameters.getExecutionStrategyParameters().getPath();
         int parentLevel = path.getLevel();
         int curLevel = parentLevel + 1;
-        ArrayList<String> fieldNames = new ArrayList<>(parameters.getExecutionStrategyParameters().getFields().keySet());
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
-        int expected = callStack.increaseExpectedFetchCount(curLevel, fieldCount);
+        callStack.increaseExpectedFetchCount(curLevel, fieldCount);
 
         return new ExecutionStrategyContext() {
             @Override
@@ -198,18 +195,4 @@ public class FieldLevelTrackingApproach {
         System.out.println("Dispatching data loaders " + dataLoaderRegistry.getKeys());
         dataLoaderRegistry.dispatchAll();
     }
-
-    @SuppressWarnings("SimplifiableIfStatement")
-    private boolean isEndOfListImpl(ExecutionStrategyParameters executionStrategyParameters) {
-        if (executionStrategyParameters == null) {
-            return true;
-        }
-        int listSize = executionStrategyParameters.getListSize();
-        if (listSize == 0) {
-            return true;
-        }
-        int index = executionStrategyParameters.getCurrentListIndex() + 1;
-        return index == listSize;
-    }
-
 }
