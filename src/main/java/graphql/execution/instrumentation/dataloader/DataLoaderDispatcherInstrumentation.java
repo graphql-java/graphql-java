@@ -116,7 +116,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         if (options.isUseCombinedCallsApproach()) {
             return combinedCallsApproach.beginExecuteOperation();
         } else {
-            return fieldLevelTrackingApproach.beginExecuteOperation();
+            return new SimpleInstrumentationContext<>();
         }
     }
 

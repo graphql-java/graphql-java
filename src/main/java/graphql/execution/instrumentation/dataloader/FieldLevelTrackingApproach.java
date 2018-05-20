@@ -46,16 +46,16 @@ public class FieldLevelTrackingApproach {
             return expectedFetchCountPerLevel.get(level);
         }
 
-        synchronized void increaseFetchCount(int level, int count) {
-            fetchCountPerLevel.put(level, fetchCountPerLevel.getOrDefault(level, 0) + count);
+        synchronized void increaseFetchCount(int level)  {
+            fetchCountPerLevel.put(level, fetchCountPerLevel.getOrDefault(level, 0) + 1);
         }
 
         synchronized void increaseExpectedStrategyCalls(int level, int count) {
             expectedStrategyCallsPerLevel.put(level, expectedStrategyCallsPerLevel.getOrDefault(level, 0) + count);
         }
 
-        synchronized void increaseHappenedStrategyCalls(int level, int count) {
-            happenedStrategyCallsPerLevel.put(level, happenedStrategyCallsPerLevel.getOrDefault(level, 0) + count);
+        synchronized void increaseHappenedStrategyCalls(int level) {
+            happenedStrategyCallsPerLevel.put(level, happenedStrategyCallsPerLevel.getOrDefault(level, 0) + 1);
         }
 
         synchronized boolean allStrategyCallsHappened(int level) {
@@ -93,11 +93,6 @@ public class FieldLevelTrackingApproach {
         return new CallStack();
     }
 
-    InstrumentationContext<ExecutionResult> beginExecuteOperation() {
-        return whenDispatched((result) -> {
-        });
-    }
-
     ExecutionStrategyContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
         ExecutionPath path = parameters.getExecutionStrategyParameters().getPath();
@@ -119,7 +114,7 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void completeValuesInfo(List<CompleteValueInfo> completeValueInfoList) {
-                callStack.increaseHappenedStrategyCalls(curLevel, 1);
+                callStack.increaseHappenedStrategyCalls(curLevel);
                 int expectedStrategyCalls = 0;
                 for (CompleteValueInfo completeValueInfo : completeValueInfoList) {
                     if (completeValueInfo.getCompleteValueType() == CompleteValueInfo.CompleteValueType.OBJECT) {
@@ -162,7 +157,7 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onDispatched(CompletableFuture result) {
-                callStack.increaseFetchCount(level, 1);
+                callStack.increaseFetchCount(level);
                 dispatchIfNeeded(callStack, level);
             }
 
