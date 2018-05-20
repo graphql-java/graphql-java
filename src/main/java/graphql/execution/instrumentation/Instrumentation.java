@@ -88,7 +88,7 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters);
+    ExecutionStrategyContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters);
 
     /**
      * This is called just before a deferred field is resolved into a value.

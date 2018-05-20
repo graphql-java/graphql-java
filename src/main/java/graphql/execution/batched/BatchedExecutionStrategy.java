@@ -254,7 +254,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationFieldFetchParameters instrumentationFieldFetchParameters =
-                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment);
+                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParameters);
 
         CompletableFuture<Object> fetchedValue;

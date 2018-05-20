@@ -97,13 +97,25 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return new ChainedInstrumentationContext<>(instrumentations.stream()
+    public ExecutionStrategyContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        ChainedInstrumentationContext<ExecutionResult> chainedInstrumentationContext = new ChainedInstrumentationContext<>(instrumentations.stream()
                 .map(instrumentation -> {
                     InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
                     return instrumentation.beginExecutionStrategy(parameters.withNewState(state));
                 })
                 .collect(toList()));
+        return new ExecutionStrategyContext() {
+            @Override
+            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+               chainedInstrumentationContext.onDispatched(result);
+            }
+
+            @Override
+            public void onCompleted(ExecutionResult result, Throwable t) {
+                chainedInstrumentationContext.onCompleted(result, t);
+
+            }
+        };
     }
 
     @Override

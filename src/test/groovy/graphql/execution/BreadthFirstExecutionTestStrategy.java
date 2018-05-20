@@ -64,7 +64,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
     }
 
     private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, Object fetchedValue, ExecutionStrategyParameters newParameters) {
-        ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).join();
+        ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).getExecutionResultFuture().join();
         results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
     }
 

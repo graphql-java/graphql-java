@@ -1,18 +1,24 @@
 package graphql.execution.instrumentation.dataloader;
 
 import graphql.ExecutionResult;
+import graphql.execution.CompleteValueInfo;
+import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStrategyParameters;
+import graphql.execution.instrumentation.ExecutionStrategyContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenDispatched;
 
@@ -25,38 +31,60 @@ public class FieldLevelTrackingApproach {
 
     private static class CallStack extends DataLoaderDispatcherInstrumentationState {
 
-        private final Map<Integer, Integer> outstandingFieldFetchCounts = new HashMap<>();
+        private final Map<Integer, Integer> expectedFetchCountPerLevel = new LinkedHashMap<>();
+        private final Map<Integer, Integer> fetchCountPerLevel = new LinkedHashMap<>();
+        private final Map<Integer, Integer> expectedStrategyCallsPerLevel = new LinkedHashMap<>();
+        private final Map<Integer, Integer> happenedStrategyCallsPerLevel = new LinkedHashMap<>();
 
-        private void setOutstandingFieldFetches(int level, int count) {
-            synchronized (this) {
-                outstandingFieldFetchCounts.put(level, count);
-            }
+        private final Map<Integer,Integer> completeValuesHappenedPerLevel = new LinkedHashMap<>();
+
+        private int lastDispatchedLevel;
+
+        CallStack() {
+            expectedStrategyCallsPerLevel.put(1, 1);
         }
 
-        private int decrementOutstandingFieldFetches(int level) {
-            int newCount;
-            synchronized (this) {
-                newCount = outstandingFieldFetchCounts.getOrDefault(level, 1) - 1;
-                outstandingFieldFetchCounts.put(level, newCount);
-            }
-            return newCount;
+        synchronized int increaseExpectedFetchCount(int level, int count) {
+            expectedFetchCountPerLevel.put(level, expectedFetchCountPerLevel.getOrDefault(level, 0) + count);
+            return expectedFetchCountPerLevel.get(level);
         }
 
-        private int getOutstandingFieldFetches(int level) {
-            return outstandingFieldFetchCounts.getOrDefault(level, 0);
+        synchronized void increaseFetchCount(int level, int count) {
+            fetchCountPerLevel.put(level, fetchCountPerLevel.getOrDefault(level, 0) + count);
         }
 
-        private boolean thereAreOutstandingFieldFetches(int startLevel) {
-            synchronized (this) {
-                while (startLevel >= 0) {
-                    int count = getOutstandingFieldFetches(startLevel);
-                    if (count > 0) {
-                        return true;
-                    }
-                    startLevel--;
-                }
-                return false;
+        synchronized void increaseExpectedStrategyCalls(int level, int count) {
+            expectedStrategyCallsPerLevel.put(level, expectedStrategyCallsPerLevel.getOrDefault(level, 0) + count);
+        }
+
+        synchronized void increaseHappenedStrategyCalls(int level, int count) {
+            happenedStrategyCallsPerLevel.put(level, happenedStrategyCallsPerLevel.getOrDefault(level, 0) + count);
+            System.out.println("Strategy calls " + level + " total count "+ happenedStrategyCallsPerLevel.get(level)) ;
+        }
+
+        synchronized boolean allStrategyCallsHappened(int level) {
+            return Objects.equals(happenedStrategyCallsPerLevel.get(level), expectedStrategyCallsPerLevel.get(level));
+        }
+
+        synchronized boolean allFetchsHappened(int level) {
+            return Objects.equals(fetchCountPerLevel.get(level), expectedFetchCountPerLevel.get(level));
+        }
+
+        @Override
+        public String toString() {
+            return "CallStack{" +
+                    "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
+                    ", fetchCountPerLevel=" + fetchCountPerLevel +
+                    ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
+                    ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
+                    '}';
+        }
+
+        public synchronized void markAsDispatched(int level) {
+            if (lastDispatchedLevel + 1 != level) {
+                System.err.println("lastDispatched Level : " + lastDispatchedLevel + " but tyring to dispatch " + level);
             }
+            lastDispatchedLevel++;
         }
     }
 
@@ -70,46 +98,112 @@ public class FieldLevelTrackingApproach {
     }
 
     InstrumentationContext<ExecutionResult> beginExecuteOperation() {
-        return whenDispatched((result) -> dispatch());
+        return whenDispatched((result) -> {
+        });
     }
 
-    InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+    ExecutionStrategyContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        // +1 because here we are before any field dispatching
-        int targetLevel = parameters.getExecutionStrategyParameters().getPath().getLevel() + 1;
+        ExecutionPath path = parameters.getExecutionStrategyParameters().getPath();
+        int parentLevel = path.getLevel();
+        int curLevel = parentLevel + 1;
+        ArrayList<String> fieldNames = new ArrayList<>(parameters.getExecutionStrategyParameters().getFields().keySet());
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
-        callStack.setOutstandingFieldFetches(targetLevel, fieldCount);
-        return whenDispatched((result) -> dispatchIfNeeded(callStack, parameters.getExecutionStrategyParameters()));
+        int expected = callStack.increaseExpectedFetchCount(curLevel, fieldCount);
+        System.out.println("begin strategy with " + fieldNames + " level " + curLevel + " field count: " + fieldCount + " expected field count " + expected);
+
+        return new ExecutionStrategyContext() {
+            @Override
+            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+
+            }
+
+            @Override
+            public void onCompleted(ExecutionResult result, Throwable t) {
+//                dispatchIfNeeded(callStack, curLevel + 1);
+
+            }
+
+            @Override
+            public void completeValuesInfo(List<CompleteValueInfo> completeValueInfoList) {
+                callStack.increaseHappenedStrategyCalls(curLevel, 1);
+                int expectedStrategyCalls = 0;
+                for (CompleteValueInfo completeValueInfo : completeValueInfoList) {
+                    if (completeValueInfo.getCompleteValueType() == CompleteValueInfo.CompleteValueType.OBJECT) {
+                        expectedStrategyCalls++;
+                    } else if (completeValueInfo.getCompleteValueType() == CompleteValueInfo.CompleteValueType.LIST) {
+                        expectedStrategyCalls += getCountForList(completeValueInfo);
+                    }
+                }
+                System.out.println("Level " + (curLevel + 1) + " fields " + fieldNames + " completed values " + completeValueInfoList + " increase " + expectedStrategyCalls );
+                callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
+                System.out.println("add expected strategy calls for " + (curLevel + 1) + ": " + expectedStrategyCalls + " state: " + callStack);
+                dispatchIfNeeded(callStack, curLevel );
+            }
+        };
+    }
+
+    private int getCountForList(CompleteValueInfo completeValueInfo) {
+        int result = 0;
+        for (CompleteValueInfo cvi : completeValueInfo.getListInfos()) {
+            if (cvi.getCompleteValueType() == CompleteValueInfo.CompleteValueType.OBJECT) {
+                result++;
+            } else if (cvi.getCompleteValueType() == CompleteValueInfo.CompleteValueType.LIST) {
+                result += getCountForList(cvi);
+            }
+        }
+        return result;
     }
 
     InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
         int targetLevel = parameters.getTypeInfo().getPath().getLevel();
-        int fieldCount = 1;
-        callStack.setOutstandingFieldFetches(targetLevel, fieldCount);
         // with deferred fields we aggressively dispatch the data loaders because the neat hierarchy of
         // outstanding fields and so on is lost because the field has jumped out of the execution tree
-        return whenDispatched((result) -> dispatchIfNeeded(callStack, parameters.getExecutionStrategyParameters()));
+        return whenDispatched((result) -> dispatchIfNeeded(callStack, targetLevel));
     }
 
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        int level = parameters.getEnvironment().getFieldTypeInfo().getPath().getLevel();
-        callStack.decrementOutstandingFieldFetches(level);
-        return new SimpleInstrumentationContext<>();
+        ExecutionPath path = parameters.getEnvironment().getFieldTypeInfo().getPath();
+        int level = path.getLevel();
+        return new InstrumentationContext<Object>() {
+
+            @Override
+            public void onDispatched(CompletableFuture result) {
+                callStack.increaseFetchCount(level, 1);
+                System.out.println("field " + parameters.getEnvironment().getField().getName() + " on level " + level);
+                dispatchIfNeeded(callStack, level);
+            }
+
+            @Override
+            public void onCompleted(Object result, Throwable t) {
+            }
+        };
     }
 
-    private void dispatchIfNeeded(CallStack callStack, ExecutionStrategyParameters executionStrategyParameters) {
-        int level = executionStrategyParameters.getPath().getLevel();
-        boolean outstandingDispatches = callStack.thereAreOutstandingFieldFetches(level);
-        boolean endOfListOnAllLevels = isEndOfListOnAllLevels(executionStrategyParameters);
-        if (endOfListOnAllLevels && !outstandingDispatches) {
+
+    private void dispatchIfNeeded(CallStack callStack, int level) {
+        if (levelReady(callStack, level)) {
+            System.out.println("dispatch for level " + level + " because " + callStack);
+            callStack.markAsDispatched(level);
             dispatch();
         }
     }
 
+    private boolean levelReady(CallStack callStack, int level) {
+        if (level == 0) {
+            return true;
+        }
+        if (levelReady(callStack, level - 1) && callStack.allStrategyCallsHappened(level) && callStack.allFetchsHappened(level)) {
+            return true;
+        }
+        return false;
+    }
+
     void dispatch() {
         log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
+        System.out.println("Dispatching data loaders " + dataLoaderRegistry.getKeys());
         dataLoaderRegistry.dispatchAll();
     }
 

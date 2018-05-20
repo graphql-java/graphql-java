@@ -4,6 +4,7 @@ import graphql.ExecutionResult;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.defer.DeferredCall;
 import graphql.execution.defer.DeferredErrorSupport;
+import graphql.execution.instrumentation.ExecutionStrategyContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
@@ -45,11 +47,11 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
-        InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
+        ExecutionStrategyContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
         Map<String, List<Field>> fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
-        List<CompletableFuture<ExecutionResult>> futures = new ArrayList<>();
+        List<CompletableFuture<CompleteValueInfo>> futures = new ArrayList<>();
         for (String fieldName : fieldNames) {
             List<Field> currentField = fields.get(fieldName);
 
@@ -60,13 +62,17 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             if (isDeferred(executionContext, newParameters, currentField)) {
                 continue;
             }
-            CompletableFuture<ExecutionResult> future = resolveField(executionContext, newParameters);
+            CompletableFuture<CompleteValueInfo> future = resolveField2(executionContext, newParameters);
             futures.add(future);
         }
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched(overallResult);
 
-        Async.each(futures).whenComplete(handleResults(executionContext, fieldNames, overallResult));
+        Async.each(futures).whenComplete((completeValueInfos, throwable) -> {
+            List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(CompleteValueInfo::getExecutionResultFuture).collect(Collectors.toList());
+            executionStrategyCtx.completeValuesInfo(completeValueInfos);
+            Async.each(executionResultFuture).whenComplete(handleResults(executionContext, fieldNames, overallResult));
+        });
 
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
