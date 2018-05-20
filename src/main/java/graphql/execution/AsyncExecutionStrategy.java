@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -69,9 +70,14 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         executionStrategyCtx.onDispatched(overallResult);
 
         Async.each(futures).whenComplete((completeValueInfos, throwable) -> {
+            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldNames, overallResult);
+            if (throwable != null) {
+                handleResultsConsumer.accept(null, throwable.getCause() );
+                return;
+            }
             List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(CompleteValueInfo::getExecutionResultFuture).collect(Collectors.toList());
             executionStrategyCtx.completeValuesInfo(completeValueInfos);
-            Async.each(executionResultFuture).whenComplete(handleResults(executionContext, fieldNames, overallResult));
+            Async.each(executionResultFuture).whenComplete(handleResultsConsumer);
         });
 
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
