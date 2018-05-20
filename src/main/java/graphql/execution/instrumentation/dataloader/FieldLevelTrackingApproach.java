@@ -36,7 +36,6 @@ public class FieldLevelTrackingApproach {
         private final Map<Integer, Integer> expectedStrategyCallsPerLevel = new LinkedHashMap<>();
         private final Map<Integer, Integer> happenedStrategyCallsPerLevel = new LinkedHashMap<>();
 
-        private final Map<Integer,Integer> completeValuesHappenedPerLevel = new LinkedHashMap<>();
 
         private int lastDispatchedLevel;
 
@@ -59,7 +58,6 @@ public class FieldLevelTrackingApproach {
 
         synchronized void increaseHappenedStrategyCalls(int level, int count) {
             happenedStrategyCallsPerLevel.put(level, happenedStrategyCallsPerLevel.getOrDefault(level, 0) + count);
-            System.out.println("Strategy calls " + level + " total count "+ happenedStrategyCallsPerLevel.get(level)) ;
         }
 
         synchronized boolean allStrategyCallsHappened(int level) {
@@ -110,7 +108,6 @@ public class FieldLevelTrackingApproach {
         ArrayList<String> fieldNames = new ArrayList<>(parameters.getExecutionStrategyParameters().getFields().keySet());
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
         int expected = callStack.increaseExpectedFetchCount(curLevel, fieldCount);
-        System.out.println("begin strategy with " + fieldNames + " level " + curLevel + " field count: " + fieldCount + " expected field count " + expected);
 
         return new ExecutionStrategyContext() {
             @Override
@@ -120,7 +117,6 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onCompleted(ExecutionResult result, Throwable t) {
-//                dispatchIfNeeded(callStack, curLevel + 1);
 
             }
 
@@ -135,9 +131,7 @@ public class FieldLevelTrackingApproach {
                         expectedStrategyCalls += getCountForList(completeValueInfo);
                     }
                 }
-                System.out.println("Level " + (curLevel + 1) + " fields " + fieldNames + " completed values " + completeValueInfoList + " increase " + expectedStrategyCalls );
                 callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
-                System.out.println("add expected strategy calls for " + (curLevel + 1) + ": " + expectedStrategyCalls + " state: " + callStack);
                 dispatchIfNeeded(callStack, curLevel );
             }
         };
@@ -172,7 +166,6 @@ public class FieldLevelTrackingApproach {
             @Override
             public void onDispatched(CompletableFuture result) {
                 callStack.increaseFetchCount(level, 1);
-                System.out.println("field " + parameters.getEnvironment().getField().getName() + " on level " + level);
                 dispatchIfNeeded(callStack, level);
             }
 
@@ -185,7 +178,6 @@ public class FieldLevelTrackingApproach {
 
     private void dispatchIfNeeded(CallStack callStack, int level) {
         if (levelReady(callStack, level)) {
-            System.out.println("dispatch for level " + level + " because " + callStack);
             callStack.markAsDispatched(level);
             dispatch();
         }
@@ -220,10 +212,4 @@ public class FieldLevelTrackingApproach {
         return index == listSize;
     }
 
-    private boolean isEndOfListOnAllLevels(ExecutionStrategyParameters executionStrategyParameters) {
-        boolean endOfList = isEndOfListImpl(executionStrategyParameters);
-        ExecutionStrategyParameters parent = executionStrategyParameters.getParent();
-        return endOfList &&
-                (parent == null || isEndOfListOnAllLevels(parent));
-    }
 }

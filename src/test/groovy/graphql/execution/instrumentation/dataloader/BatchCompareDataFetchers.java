@@ -14,13 +14,12 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class BatchCompareDataFetchers {
     // Shops
@@ -75,7 +74,9 @@ public class BatchCompareDataFetchers {
 
     private static List<List<Department>> getDepartmentsForShops(List<Shop> shops) {
         System.out.println("getDepartmentsForShops batch: " + shops);
-        return shops.stream().map(BatchCompareDataFetchers::getDepartmentsForShop).collect(Collectors.toList());
+        List<List<Department>> departmentsResult = shops.stream().map(BatchCompareDataFetchers::getDepartmentsForShop).collect(Collectors.toList());
+        System.out.println("result " + departmentsResult);
+        return departmentsResult;
     }
 
     public static DataFetcher<List<List<Department>>> departmentsForShopsBatchedDataFetcher = new DataFetcher<List<List<Department>>>() {
@@ -97,10 +98,18 @@ public class BatchCompareDataFetchers {
     static AtomicLong departmentsForShopsBatchLoaderCounter = new AtomicLong();
 
     private static BatchLoader<String, List<Department>> departmentsForShopsBatchLoader = ids -> {
+        System.out.println("ids" + ids);
         departmentsForShopsBatchLoaderCounter.incrementAndGet();
-        Stream<Shop> shopStream = ids.stream().map(shops::get).filter(Objects::nonNull);
-        Stream<Shop> exShopStream = ids.stream().map(expensiveShops::get).filter(Objects::nonNull);
-        List<Shop> shopList = Stream.concat(shopStream, exShopStream).collect(Collectors.toList());
+        List<Shop> shopList = new ArrayList<>();
+        for (String id : ids) {
+            Optional<Shop> shop1 = Optional.ofNullable(shops.get(id));
+            Optional<Shop> shop2 = Optional.ofNullable(expensiveShops.get(id));
+            if(shop1.isPresent()) {
+                shopList.add(shop1.get());
+            } else {
+                shopList.add(shop2.get());
+            }
+        }
         return CompletableFuture.completedFuture(getDepartmentsForShops(shopList));
     };
 

@@ -197,40 +197,16 @@ class DataLoaderPerformanceTest extends Specification {
         def result = graphQL.execute(executionInput)
 
         then:
-//        result.data == expectedExpensiveData
-        //
-        //  ideally 1 for shops-->departments and one for departments --> products but currently not the case
+        result.data == expectedExpensiveData
+
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
-
-        assertMapEqualsWithoutListOrder(result.data, expectedExpensiveData)
 
 //        where:
 //        approachName    | approachFlag
 ////        "CombinedCalls" | true
 //        "FieldTracking" | false
     }
-
-    boolean assertMapEqualsWithoutListOrder(Map map1, Map map2) {
-        def modifiedMap1 = replaceListWithSet(map1)
-        def modifiedMap2 = replaceListWithSet(map2)
-        assert modifiedMap1 == modifiedMap2
-        return true
-    }
-
-    Map replaceListWithSet(Map map) {
-        map.collectEntries { k, v ->
-            if (v instanceof List) {
-                [k, new LinkedHashSet<>(v)]
-            } else if (v instanceof Map) {
-                [k, replaceListWithSet(v)]
-            } else {
-                [k, v]
-            }
-        }
-    }
-
-
 
     def expectedDeferredData = [
             shops: [
