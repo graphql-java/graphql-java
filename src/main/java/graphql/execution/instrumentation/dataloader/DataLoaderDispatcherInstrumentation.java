@@ -4,7 +4,7 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionStrategy;
-import graphql.execution.instrumentation.ExecutionStrategyContext;
+import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
@@ -121,9 +121,9 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public ExecutionStrategyContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         if (options.isUseCombinedCallsApproach()) {
-            return new ExecutionStrategyContext() {
+            return new ExecutionStrategyInstrumentationContext() {
                 @Override
                 public void onDispatched(CompletableFuture<ExecutionResult> result) {
 

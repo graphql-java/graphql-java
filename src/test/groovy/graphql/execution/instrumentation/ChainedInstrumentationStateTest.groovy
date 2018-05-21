@@ -57,7 +57,7 @@ class ChainedInstrumentationStateTest extends Specification {
         }
 
         @Override
-        ExecutionStrategyContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
             assertState(parameters.getInstrumentationState())
             return super.beginExecutionStrategy(parameters)
         }

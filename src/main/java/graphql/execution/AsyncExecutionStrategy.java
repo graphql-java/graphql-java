@@ -4,7 +4,7 @@ import graphql.ExecutionResult;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.defer.DeferredCall;
 import graphql.execution.defer.DeferredErrorSupport;
-import graphql.execution.instrumentation.ExecutionStrategyContext;
+import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
@@ -48,7 +48,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
-        ExecutionStrategyContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
+        ExecutionStrategyInstrumentationContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
         Map<String, List<Field>> fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());

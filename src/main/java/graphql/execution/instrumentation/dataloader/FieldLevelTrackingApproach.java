@@ -3,7 +3,7 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.ExecutionResult;
 import graphql.execution.CompleteValueInfo;
 import graphql.execution.ExecutionPath;
-import graphql.execution.instrumentation.ExecutionStrategyContext;
+import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
@@ -93,7 +93,7 @@ public class FieldLevelTrackingApproach {
         return new CallStack();
     }
 
-    ExecutionStrategyContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
         ExecutionPath path = parameters.getExecutionStrategyParameters().getPath();
         int parentLevel = path.getLevel();
@@ -101,7 +101,7 @@ public class FieldLevelTrackingApproach {
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
         callStack.increaseExpectedFetchCount(curLevel, fieldCount);
 
-        return new ExecutionStrategyContext() {
+        return new ExecutionStrategyInstrumentationContext() {
             @Override
             public void onDispatched(CompletableFuture<ExecutionResult> result) {
 

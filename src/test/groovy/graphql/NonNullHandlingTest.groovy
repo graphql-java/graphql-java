@@ -345,7 +345,7 @@ class NonNullHandlingTest extends Specification {
     }
 
     @Unroll
-    def "#561 - null entry in non null list type with nullable wrapper list(strategy: #strategy)"() {
+    def "#561 - null entry in non null list type with nullable wrapper list(strategy: #strategyName)"() {
 
         given:
 

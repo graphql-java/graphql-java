@@ -5,8 +5,9 @@ import graphql.execution.CompleteValueInfo;
 
 import java.util.List;
 
-public interface ExecutionStrategyContext extends InstrumentationContext<ExecutionResult> {
+public interface ExecutionStrategyInstrumentationContext extends InstrumentationContext<ExecutionResult> {
 
+    // onValuesInfo and FieldValueInfo
     default void completeValuesInfo(List<CompleteValueInfo> completeValueInfoList) {
 
     }
