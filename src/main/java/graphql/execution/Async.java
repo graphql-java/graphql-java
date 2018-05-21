@@ -1,5 +1,8 @@
 package graphql.execution;
 
+import graphql.Assert;
+import graphql.Internal;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -7,9 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
-
-import graphql.Assert;
-import graphql.Internal;
+import java.util.function.Supplier;
 
 @Internal
 public class Async {
@@ -102,6 +103,22 @@ public class Async {
         } else {
             return CompletableFuture.completedFuture(t);
         }
+    }
+
+    public static <T> CompletableFuture<T> tryCatch(Supplier<CompletableFuture<T>> supplier) {
+        try {
+            return supplier.get();
+        } catch (Exception e) {
+            CompletableFuture<T> result = new CompletableFuture<>();
+            result.completeExceptionally(e);
+            return result;
+        }
+    }
+
+    public static <T> CompletableFuture<T> exceptionallyCompletedFuture(Throwable exception) {
+        CompletableFuture<T> result = new CompletableFuture<>();
+        result.completeExceptionally(exception);
+        return result;
     }
 
 }
