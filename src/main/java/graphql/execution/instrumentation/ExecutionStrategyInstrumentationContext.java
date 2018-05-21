@@ -1,14 +1,13 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
-import graphql.execution.CompleteValueInfo;
+import graphql.execution.FieldValueInfo;
 
 import java.util.List;
 
 public interface ExecutionStrategyInstrumentationContext extends InstrumentationContext<ExecutionResult> {
 
-    // onValuesInfo and FieldValueInfo
-    default void completeValuesInfo(List<CompleteValueInfo> completeValueInfoList) {
+    default void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
 
     }
 }

@@ -52,7 +52,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         Map<String, List<Field>> fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
-        List<CompletableFuture<CompleteValueInfo>> futures = new ArrayList<>();
+        List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
         for (String fieldName : fieldNames) {
             List<Field> currentField = fields.get(fieldName);
 
@@ -63,7 +63,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             if (isDeferred(executionContext, newParameters, currentField)) {
                 continue;
             }
-            CompletableFuture<CompleteValueInfo> future = resolveField2(executionContext, newParameters);
+            CompletableFuture<FieldValueInfo> future = resolveField2(executionContext, newParameters);
             futures.add(future);
         }
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
@@ -75,8 +75,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 handleResultsConsumer.accept(null, throwable.getCause() );
                 return;
             }
-            List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(CompleteValueInfo::getExecutionResultFuture).collect(Collectors.toList());
-            executionStrategyCtx.completeValuesInfo(completeValueInfos);
+            List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(FieldValueInfo::getExecutionResultFuture).collect(Collectors.toList());
+            executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             Async.each(executionResultFuture).whenComplete(handleResultsConsumer);
         });
 

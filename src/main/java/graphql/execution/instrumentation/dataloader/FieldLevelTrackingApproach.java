@@ -1,8 +1,8 @@
 package graphql.execution.instrumentation.dataloader;
 
 import graphql.ExecutionResult;
-import graphql.execution.CompleteValueInfo;
 import graphql.execution.ExecutionPath;
+import graphql.execution.FieldValueInfo;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -113,14 +113,14 @@ public class FieldLevelTrackingApproach {
             }
 
             @Override
-            public void completeValuesInfo(List<CompleteValueInfo> completeValueInfoList) {
+            public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
                 callStack.increaseHappenedStrategyCalls(curLevel);
                 int expectedStrategyCalls = 0;
-                for (CompleteValueInfo completeValueInfo : completeValueInfoList) {
-                    if (completeValueInfo.getCompleteValueType() == CompleteValueInfo.CompleteValueType.OBJECT) {
+                for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
+                    if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
                         expectedStrategyCalls++;
-                    } else if (completeValueInfo.getCompleteValueType() == CompleteValueInfo.CompleteValueType.LIST) {
-                        expectedStrategyCalls += getCountForList(completeValueInfo);
+                    } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
+                        expectedStrategyCalls += getCountForList(fieldValueInfo);
                     }
                 }
                 callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
@@ -129,12 +129,12 @@ public class FieldLevelTrackingApproach {
         };
     }
 
-    private int getCountForList(CompleteValueInfo completeValueInfo) {
+    private int getCountForList(FieldValueInfo fieldValueInfo) {
         int result = 0;
-        for (CompleteValueInfo cvi : completeValueInfo.getListInfos()) {
-            if (cvi.getCompleteValueType() == CompleteValueInfo.CompleteValueType.OBJECT) {
+        for (FieldValueInfo cvi : fieldValueInfo.getListInfos()) {
+            if (cvi.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
                 result++;
-            } else if (cvi.getCompleteValueType() == CompleteValueInfo.CompleteValueType.LIST) {
+            } else if (cvi.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
                 result += getCountForList(cvi);
             }
         }

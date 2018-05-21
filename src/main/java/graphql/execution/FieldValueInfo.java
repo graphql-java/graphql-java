@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-public class CompleteValueInfo {
+public class FieldValueInfo {
 
     public enum CompleteValueType {
         OBJECT,
@@ -19,15 +19,15 @@ public class CompleteValueInfo {
 
     CompleteValueType completeValueType;
     CompletableFuture<ExecutionResult> executionResultFuture;
-    List<CompleteValueInfo> listInfos;
+    List<FieldValueInfo> listInfos;
 
-    public CompleteValueInfo(CompleteValueType completeValueType, CompletableFuture<ExecutionResult> executionResultFuture)  {
+    public FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<ExecutionResult> executionResultFuture)  {
         this.completeValueType = completeValueType;
         this.executionResultFuture = executionResultFuture;
         this.listInfos = Collections.emptyList();
     }
 
-    public CompleteValueInfo(CompleteValueType completeValueType, CompletableFuture<ExecutionResult> executionResultFuture, List<CompleteValueInfo> listInfos) {
+    public FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<ExecutionResult> executionResultFuture, List<FieldValueInfo> listInfos) {
         this.completeValueType = completeValueType;
         this.executionResultFuture = executionResultFuture;
         this.listInfos = listInfos;
@@ -49,17 +49,17 @@ public class CompleteValueInfo {
         this.executionResultFuture = executionResultFuture;
     }
 
-    public List<CompleteValueInfo> getListInfos() {
+    public List<FieldValueInfo> getListInfos() {
         return listInfos;
     }
 
-    public void setListInfos(List<CompleteValueInfo> listInfos) {
+    public void setListInfos(List<FieldValueInfo> listInfos) {
         this.listInfos = listInfos;
     }
 
     @Override
     public String toString() {
-        return "CompleteValueInfo{" +
+        return "FieldValueInfo{" +
                 "completeValueType=" + completeValueType +
                 ", executionResultFuture=" + executionResultFuture +
                 ", listInfos=" + listInfos +
