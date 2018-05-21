@@ -44,7 +44,6 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final DataLoaderDispatcherInstrumentationOptions options;
     private final FieldLevelTrackingApproach fieldLevelTrackingApproach;
-    private final CombinedCallsApproach combinedCallsApproach;
 
     /**
      * You pass in a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
@@ -67,17 +66,12 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.options = options;
         this.fieldLevelTrackingApproach = new FieldLevelTrackingApproach(log, dataLoaderRegistry);
-        this.combinedCallsApproach = new CombinedCallsApproach(log, dataLoaderRegistry);
     }
 
 
     @Override
     public InstrumentationState createState() {
-        if (options.isUseCombinedCallsApproach()) {
-            return combinedCallsApproach.createState();
-        } else {
-            return fieldLevelTrackingApproach.createState();
-        }
+        return fieldLevelTrackingApproach.createState();
     }
 
 
@@ -99,11 +93,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     private void immediatelyDispatch() {
-        if (options.isUseCombinedCallsApproach()) {
-            combinedCallsApproach.dispatch();
-        } else {
-            fieldLevelTrackingApproach.dispatch();
-        }
+        fieldLevelTrackingApproach.dispatch();
     }
 
     @Override
@@ -113,48 +103,22 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
             state.setAggressivelyBatching(false);
         }
-        if (options.isUseCombinedCallsApproach()) {
-            return combinedCallsApproach.beginExecuteOperation();
-        } else {
-            return new SimpleInstrumentationContext<>();
-        }
+        return new SimpleInstrumentationContext<>();
     }
 
     @Override
     public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        if (options.isUseCombinedCallsApproach()) {
-            return new ExecutionStrategyInstrumentationContext() {
-                @Override
-                public void onDispatched(CompletableFuture<ExecutionResult> result) {
-
-                }
-
-                @Override
-                public void onCompleted(ExecutionResult result, Throwable t) {
-
-                }
-            };
-        } else {
-            return fieldLevelTrackingApproach.beginExecutionStrategy(parameters);
-        }
+        return fieldLevelTrackingApproach.beginExecutionStrategy(parameters);
     }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        if (options.isUseCombinedCallsApproach()) {
-            return combinedCallsApproach.beginDeferredField();
-        } else {
-            return fieldLevelTrackingApproach.beginDeferredField(parameters);
-        }
+        return fieldLevelTrackingApproach.beginDeferredField(parameters);
     }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        if (options.isUseCombinedCallsApproach()) {
-            return new SimpleInstrumentationContext<>();
-        } else {
-            return fieldLevelTrackingApproach.beginFieldFetch(parameters);
-        }
+        return fieldLevelTrackingApproach.beginFieldFetch(parameters);
     }
 
     @Override
