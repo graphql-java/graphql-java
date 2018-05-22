@@ -142,7 +142,7 @@ public class TraversalContext implements DocumentVisitor {
 
     private void enterImpl(VariableDefinition variableDefinition) {
         GraphQLType type = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
-        addInputType(type != null ? (GraphQLInputType) type : null);
+        addInputType(type instanceof GraphQLInputType ? (GraphQLInputType) type : null);
     }
 
     private void enterImpl(Argument argument) {
