@@ -42,6 +42,11 @@ These are not graphql errors in execution but rather totally unacceptable condit
  is thrown if the schema is not valid when built via
   graphql.schema.GraphQLSchema.Builder#build()`
 
+ -  `graphql.execution.UnknownOperationException`
+
+if multiple operations are defined in the query and
+the operation name is missing or there is no matching operation name
+contained in the GraphQL query.
 
  -  `graphql.GraphQLException`
 

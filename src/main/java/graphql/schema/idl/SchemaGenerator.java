@@ -307,7 +307,7 @@ public class SchemaGenerator {
             outputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
         } else {
             // typeDefinition is not a valid output type
-            throw new NotAnOutputTypeError(typeDefinition);
+            throw new NotAnOutputTypeError(rawType, typeDefinition);
         }
 
         buildCtx.put(outputType);
@@ -340,7 +340,7 @@ public class SchemaGenerator {
             inputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
         } else {
             // typeDefinition is not a valid InputType
-            throw new NotAnInputTypeError(typeDefinition);
+            throw new NotAnInputTypeError(rawType, typeDefinition);
         }
 
         buildCtx.put(inputType);

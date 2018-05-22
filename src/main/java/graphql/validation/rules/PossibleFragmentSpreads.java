@@ -34,7 +34,7 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (fragType == null || parentType == null) return;
         if (!doTypesOverlap(fragType, parentType)) {
             String message = String.format("Fragment cannot be spread here as objects of " +
-                    "type %s can never be of type %s", parentType, fragType);
+                    "type %s can never be of type %s", parentType.getName(), fragType.getName());
             addError(ValidationErrorType.InvalidFragmentType, inlineFragment.getSourceLocation(), message);
 
         }
@@ -50,7 +50,7 @@ public class PossibleFragmentSpreads extends AbstractRule {
 
         if (!doTypesOverlap(typeCondition, parentType)) {
             String message = String.format("Fragment %s cannot be spread here as objects of " +
-                    "type %s can never be of type %s", fragmentSpread.getName(), parentType, typeCondition);
+                    "type %s can never be of type %s", fragmentSpread.getName(), parentType.getName(), typeCondition.getName());
             addError(ValidationErrorType.InvalidFragmentType, fragmentSpread.getSourceLocation(), message);
         }
     }
