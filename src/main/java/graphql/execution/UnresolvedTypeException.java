@@ -13,12 +13,24 @@ public class UnresolvedTypeException extends GraphQLException {
 
     private final GraphQLOutputType interfaceOrUnionType;
 
-    public UnresolvedTypeException(GraphQLOutputType interfaceOrUnionType) {
-        super("Could not determine the exact type of '" + interfaceOrUnionType.getName() + "'");
+    /**
+     * Constructor to use a custom error message
+     * for an error that happened during type resolution.
+     *
+     * @param message              custom error message.
+     * @param interfaceOrUnionType expected type.
+     */
+    public UnresolvedTypeException(String message, GraphQLOutputType interfaceOrUnionType) {
+        super(message);
         this.interfaceOrUnionType = interfaceOrUnionType;
+    }
+
+    public UnresolvedTypeException(GraphQLOutputType interfaceOrUnionType) {
+        this("Could not determine the exact type of '" + interfaceOrUnionType.getName() + "'", interfaceOrUnionType);
     }
 
     public GraphQLOutputType getInterfaceOrUnionType() {
         return interfaceOrUnionType;
     }
+
 }

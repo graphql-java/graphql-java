@@ -210,6 +210,48 @@ type Subscription {
 """
     }
 
+    def "schema prints if forced with default root names"() {
+        def schema = generate("""
+            type Query {
+                field: String
+            }
+
+            type Mutation {
+                field: String
+            }
+
+            type Subscription {
+                field: String
+            }
+        """)
+
+        def options = defaultOptions()
+                .includeSchemaDefintion(true)
+
+        def result = new SchemaPrinter(options).print(schema)
+
+        expect:
+        result == """schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+type Mutation {
+  field: String
+}
+
+type Query {
+  field: String
+}
+
+type Subscription {
+  field: String
+}
+"""
+    }
+
+
     def "schema is printed if default root names are not ALL present"() {
         def schema = generate("""
             type Query {

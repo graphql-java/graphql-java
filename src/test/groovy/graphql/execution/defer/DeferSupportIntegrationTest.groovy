@@ -1,6 +1,5 @@
 package graphql.execution.defer
 
-import graphql.Directives
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
@@ -127,9 +126,6 @@ class DeferSupportIntegrationTest extends Specification {
                 .type(newTypeWiring("Review").dataFetcher("comments", commentsFetcher))
                 .build()
         def schema = TestUtil.schema(schemaSpec, runtimeWiring)
-        schema = schema.transform({ builder ->
-            builder.additionalDirective(Directives.DeferDirective)
-        })
 
         graphQL = GraphQL.newGraphQL(schema).build()
     }

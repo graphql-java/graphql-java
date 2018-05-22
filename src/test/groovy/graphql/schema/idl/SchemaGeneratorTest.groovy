@@ -15,6 +15,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
+import graphql.schema.PropertyDataFetcher
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.visibility.GraphqlFieldVisibility
@@ -635,7 +636,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnInputTypeError.class)
-        err.message == "expected InputType, but found CharacterInput type [@11:13]"
+        err.message == "The type 'CharacterInput' [@11:13] is not an input type, but was used as an input type [@7:42]"
     }
 
     def "InputType used as type should throw appropriate error #425"() {
@@ -660,7 +661,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnOutputTypeError.class)
-        err.message == "expected OutputType, but found CharacterInput type [@11:13]"
+        err.message == "The type 'CharacterInput' [@11:13] is not an output type, but was used to declare the output type of a field [@7:32]"
     }
 
     def "schema with subscription"() {
@@ -1590,4 +1591,38 @@ class SchemaGeneratorTest extends Specification {
         directive2.validLocations().collect {it.name()} == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
 
     }
+
+    def "@fetch directive is respected"() {
+        def spec = """             
+
+            directive @fetch(from : String!) on FIELD_DEFINITION
+
+            type Query {
+                name : String,
+                homePlanet: String @fetch(from : "planetOfBirth")
+            }
+        """
+
+        def wiring = RuntimeWiring.newRuntimeWiring().build()
+        def schema = schema(spec,wiring)
+
+        GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        def fetcher = type.getFieldDefinition("homePlanet").getDataFetcher()
+        fetcher instanceof PropertyDataFetcher
+
+        PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
+        propertyDataFetcher.getPropertyName() == "planetOfBirth"
+        //
+        // no directive - plain name
+        //
+        def fetcher2 = type.getFieldDefinition("name").getDataFetcher()
+        fetcher2 instanceof PropertyDataFetcher
+
+        PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
+        propertyDataFetcher2.getPropertyName() == "name"
+
+    }
+
 }
