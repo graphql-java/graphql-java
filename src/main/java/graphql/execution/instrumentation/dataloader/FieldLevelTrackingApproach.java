@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.dataloader;
 
+import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.execution.ExecutionPath;
 import graphql.execution.FieldValueInfo;
@@ -13,9 +14,11 @@ import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenDispatched;
@@ -33,9 +36,10 @@ public class FieldLevelTrackingApproach {
         private final Map<Integer, Integer> fetchCountPerLevel = new LinkedHashMap<>();
         private final Map<Integer, Integer> expectedStrategyCallsPerLevel = new LinkedHashMap<>();
         private final Map<Integer, Integer> happenedStrategyCallsPerLevel = new LinkedHashMap<>();
+        private final Map<Integer, Integer> happenedOnFieldValueCallsPerLevel = new LinkedHashMap<>();
 
 
-        private int lastDispatchedLevel;
+        private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
 
         CallStack() {
             expectedStrategyCallsPerLevel.put(1, 1);
@@ -46,7 +50,7 @@ public class FieldLevelTrackingApproach {
             return expectedFetchCountPerLevel.get(level);
         }
 
-        synchronized void increaseFetchCount(int level)  {
+        synchronized void increaseFetchCount(int level) {
             fetchCountPerLevel.put(level, fetchCountPerLevel.getOrDefault(level, 0) + 1);
         }
 
@@ -58,8 +62,16 @@ public class FieldLevelTrackingApproach {
             happenedStrategyCallsPerLevel.put(level, happenedStrategyCallsPerLevel.getOrDefault(level, 0) + 1);
         }
 
+        synchronized void increaseHappenedOnFieldValueCalls(int level) {
+            happenedOnFieldValueCallsPerLevel.put(level, happenedOnFieldValueCallsPerLevel.getOrDefault(level, 0) + 1);
+        }
+
         synchronized boolean allStrategyCallsHappened(int level) {
             return Objects.equals(happenedStrategyCallsPerLevel.get(level), expectedStrategyCallsPerLevel.get(level));
+        }
+
+        synchronized boolean allOnFieldCallsHappened(int level) {
+            return Objects.equals(happenedOnFieldValueCallsPerLevel.get(level), expectedStrategyCallsPerLevel.get(level));
         }
 
         synchronized boolean allFetchsHappened(int level) {
@@ -73,14 +85,18 @@ public class FieldLevelTrackingApproach {
                     ", fetchCountPerLevel=" + fetchCountPerLevel +
                     ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
                     ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
+                    ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
+                    ", dispatchedLevels" + dispatchedLevels +
                     '}';
         }
 
-        public synchronized void markAsDispatched(int level) {
-            if (lastDispatchedLevel + 1 != level) {
-                System.err.println("lastDispatched Level : " + lastDispatchedLevel + " but tyring to dispatch " + level);
+        public synchronized void dispatchIfNotDispatchedBefore(int level, Runnable dispatch) {
+            if (dispatchedLevels.contains(level)) {
+                Assert.assertShouldNeverHappen("level " + level + " already dispatched");
+                return;
             }
-            lastDispatchedLevel++;
+            dispatchedLevels.add(level);
+            dispatch.run();
         }
     }
 
@@ -100,6 +116,7 @@ public class FieldLevelTrackingApproach {
         int curLevel = parentLevel + 1;
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
         callStack.increaseExpectedFetchCount(curLevel, fieldCount);
+        callStack.increaseHappenedStrategyCalls(curLevel);
 
         return new ExecutionStrategyInstrumentationContext() {
             @Override
@@ -114,7 +131,7 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
-                callStack.increaseHappenedStrategyCalls(curLevel);
+                callStack.increaseHappenedOnFieldValueCalls(curLevel);
                 int expectedStrategyCalls = 0;
                 for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
                     if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
@@ -124,7 +141,7 @@ public class FieldLevelTrackingApproach {
                     }
                 }
                 callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
-                dispatchIfNeeded(callStack, curLevel );
+                dispatchIfNeeded(callStack, curLevel + 1);
             }
         };
     }
@@ -170,16 +187,17 @@ public class FieldLevelTrackingApproach {
 
     private void dispatchIfNeeded(CallStack callStack, int level) {
         if (levelReady(callStack, level)) {
-            callStack.markAsDispatched(level);
-            dispatch();
+            callStack.dispatchIfNotDispatchedBefore(level, this::dispatch);
         }
     }
 
     private boolean levelReady(CallStack callStack, int level) {
-        if (level == 0) {
-            return true;
+        if (level == 1) {
+            // level 1 is special: there is only one strategy call and that's it
+            return callStack.allFetchsHappened(1);
         }
-        if (levelReady(callStack, level - 1) && callStack.allStrategyCallsHappened(level) && callStack.allFetchsHappened(level)) {
+        if (levelReady(callStack, level - 1) && callStack.allOnFieldCallsHappened(level - 1)
+                && callStack.allStrategyCallsHappened(level) && callStack.allFetchsHappened(level)) {
             return true;
         }
         return false;
