@@ -803,7 +803,8 @@ type Query {
             .type(mockTypeRuntimeWiring("SomeInterface", true))
             .type(mockTypeRuntimeWiring("SomeUnion", true))
             .build()
-        def schema = new SchemaGenerator().makeExecutableSchema(registry, runtimeWiring)
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
         def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)

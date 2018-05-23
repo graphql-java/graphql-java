@@ -7,10 +7,17 @@ import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.TypeResolver
+import graphql.schema.idl.errors.DirectiveIllegalLocationError
+import graphql.schema.idl.errors.DirectiveUndeclaredError
+import graphql.schema.idl.errors.MissingTypeError
+import graphql.schema.idl.errors.NonUniqueNameError
 import graphql.schema.idl.errors.SchemaMissingError
 import spock.lang.Specification
 
 class SchemaTypeCheckerTest extends Specification {
+
+    def enforceSchemaDirectives = false
+
 
     TypeDefinitionRegistry parse(String spec) {
         new SchemaParser().parse(spec)
@@ -97,7 +104,7 @@ class SchemaTypeCheckerTest extends Specification {
         for (String name : resolvingNames) {
             runtimeBuilder.type(TypeRuntimeWiring.newTypeWiring(name).typeResolver(resolver))
         }
-        return new SchemaTypeChecker().checkTypeRegistry(types, runtimeBuilder.build())
+        return new SchemaTypeChecker().checkTypeRegistry(types, runtimeBuilder.build(), enforceSchemaDirectives)
     }
 
     def "test missing type in object"() {
@@ -1268,4 +1275,98 @@ class SchemaTypeCheckerTest extends Specification {
         errorContaining(result, "The object type 'PlanetsConnection' [@n:n] has tried to redefine field 'edges' defined via interface 'UnpaginatedConnection' [@n:n] from '[Edge]!' to 'PlanetEdge'")
         errorContaining(result, "The object type 'PlanetsConnection' [@n:n] has tried to redefine field 'edges' defined via interface 'UnpaginatedConnection' [@n:n] from '[Edge]!' to 'PlanetEdge'")
     }
+
+    def "directive definition bad location"() {
+        def spec = """
+            directive @badDirective on UNKNOWN 
+                            
+            type Query {
+                f : String
+            }
+        """
+
+        enforceSchemaDirectives = true
+        def result = check(spec)
+
+        expect:
+
+        result.get(0) instanceof DirectiveIllegalLocationError
+    }
+
+    def "directive definition non unique arg name"() {
+        def spec = """
+            directive @badDirective(arg1 : String, arg1 : String) on OBJECT 
+                            
+            type Query {
+                f : String
+            }
+        """
+
+        enforceSchemaDirectives = true
+        def result = check(spec)
+
+        expect:
+
+        result.get(0) instanceof NonUniqueNameError
+    }
+
+    def "directive definition unknown arg type"() {
+        def spec = """
+            directive @badDirective(arg1 : UnknownType, arg2 : String) on OBJECT 
+                            
+            type Query {
+                f : String
+            }
+        """
+
+        enforceSchemaDirectives = true
+        def result = check(spec)
+
+        expect:
+
+        result.get(0) instanceof MissingTypeError
+    }
+
+    def "undeclared directive definition will be caught"() {
+        def spec = """
+            directive @testDirective(knownArg : String = "defaultValue") on SCHEMA | SCALAR | 
+                            OBJECT | FIELD_DEFINITION |
+                            ARGUMENT_DEFINITION | INTERFACE | UNION | 
+                            ENUM | ENUM_VALUE | 
+                            INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+            type Query {
+                f : String @testDirectiveNotDeclared
+            }
+        """
+
+        enforceSchemaDirectives = true
+        def result = check(spec)
+
+        expect:
+
+        result.get(0) instanceof DirectiveUndeclaredError
+    }
+
+    def "directive definition can be valid"() {
+        def spec = """
+            directive @testDirective(knownArg : String = "defaultValue") on SCHEMA | SCALAR | 
+                            OBJECT | FIELD_DEFINITION |
+                            ARGUMENT_DEFINITION | INTERFACE | UNION | 
+                            ENUM | ENUM_VALUE | 
+                            INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+            type Query {
+                f : String @testDirective
+            }
+        """
+
+        enforceSchemaDirectives = true
+        def result = check(spec)
+
+        expect:
+
+        result.isEmpty()
+    }
+
 }

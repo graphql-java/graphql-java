@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.language.Definition;
+import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InterfaceTypeDefinition;
@@ -17,6 +18,7 @@ import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
+import graphql.schema.idl.errors.DirectiveRedefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
@@ -47,6 +49,7 @@ public class TypeDefinitionRegistry {
     private final Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions = new LinkedHashMap<>();
     private final Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions = new LinkedHashMap<>();
     private final Map<String, TypeDefinition> types = new LinkedHashMap<>();
+    private final Map<String, DirectiveDefinition> directiveDefinitions = new LinkedHashMap<>();
     private SchemaDefinition schema;
 
     /**
@@ -64,6 +67,12 @@ public class TypeDefinitionRegistry {
         Map<String, TypeDefinition> tempTypes = new LinkedHashMap<>();
         typeRegistry.types.values().forEach(newEntry -> {
             Optional<GraphQLError> defined = define(this.types, tempTypes, newEntry);
+            defined.ifPresent(errors::add);
+        });
+
+        Map<String, DirectiveDefinition> tempDirectiveDefs = new LinkedHashMap<>();
+        typeRegistry.directiveDefinitions.values().forEach(newEntry -> {
+            Optional<GraphQLError> defined = define(this.directiveDefinitions, tempDirectiveDefs, newEntry);
             defined.ifPresent(errors::add);
         });
 
@@ -86,6 +95,7 @@ public class TypeDefinitionRegistry {
         // ok commit to the merge
         this.types.putAll(tempTypes);
         this.scalarTypes.putAll(tempScalarTypes);
+        this.directiveDefinitions.putAll(tempDirectiveDefs);
         //
         // merge type extensions since they can be redefined by design
         typeRegistry.typeExtensions.forEach((key, value) -> {
@@ -157,6 +167,9 @@ public class TypeDefinitionRegistry {
         } else if (definition instanceof TypeDefinition) {
             TypeDefinition newEntry = (TypeDefinition) definition;
             return define(types, types, newEntry);
+        } else if (definition instanceof DirectiveDefinition) {
+            DirectiveDefinition newEntry = (DirectiveDefinition) definition;
+            return define(directiveDefinitions, directiveDefinitions, newEntry);
         } else if (definition instanceof SchemaDefinition) {
             SchemaDefinition newSchema = (SchemaDefinition) definition;
             if (schema != null) {
@@ -169,6 +182,18 @@ public class TypeDefinitionRegistry {
     }
 
     private <T extends TypeDefinition> Optional<GraphQLError> define(Map<String, T> source, Map<String, T> target, T newEntry) {
+        String name = newEntry.getName();
+
+        T olderEntry = source.get(name);
+        if (olderEntry != null) {
+            return Optional.of(handleReDefinition(olderEntry, newEntry));
+        } else {
+            target.put(name, newEntry);
+        }
+        return Optional.empty();
+    }
+
+    private <T extends DirectiveDefinition> Optional<GraphQLError> define(Map<String, T> source, Map<String, T> target, T newEntry) {
         String name = newEntry.getName();
 
         T olderEntry = source.get(name);
@@ -226,6 +251,18 @@ public class TypeDefinitionRegistry {
 
     private GraphQLError handleReDefinition(TypeDefinition oldEntry, TypeDefinition newEntry) {
         return new TypeRedefinitionError(newEntry, oldEntry);
+    }
+
+    private GraphQLError handleReDefinition(DirectiveDefinition oldEntry, DirectiveDefinition newEntry) {
+        return new DirectiveRedefinitionError(newEntry, oldEntry);
+    }
+
+    public Optional<DirectiveDefinition> getDirectiveDefinition(String directiveName) {
+        return Optional.ofNullable(directiveDefinitions.get(directiveName));
+    }
+
+    public Map<String, DirectiveDefinition> getDirectiveDefinitions() {
+        return new LinkedHashMap<>(directiveDefinitions);
     }
 
     public boolean hasType(TypeName typeName) {

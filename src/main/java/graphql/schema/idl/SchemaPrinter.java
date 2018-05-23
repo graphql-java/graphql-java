@@ -496,8 +496,12 @@ public class SchemaPrinter {
             for (int i = 0; i < args.size(); i++) {
                 GraphQLArgument arg = args.get(i);
                 sb.append(arg.getName());
-                if (arg.getDefaultValue() != null) {
+                if (arg.getValue() != null) {
                     sb.append(" : ");
+                    sb.append(printAst(arg.getValue(), arg.getType()));
+                }
+                if (arg.getDefaultValue() != null) {
+                    sb.append(" = ");
                     sb.append(printAst(arg.getDefaultValue(), arg.getType()));
                 }
                 if (i < args.size() - 1) {
