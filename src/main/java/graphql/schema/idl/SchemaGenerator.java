@@ -2,7 +2,6 @@ package graphql.schema.idl;
 
 import graphql.GraphQLError;
 import graphql.PublicApi;
-import graphql.introspection.Introspection;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
@@ -69,12 +68,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.DirectivesUtil.atFetchFromSupport;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
@@ -744,8 +741,7 @@ public class SchemaGenerator {
 
     private DataFetcher<?> dataFetcherOfLastResort(FieldWiringEnvironment environment) {
         String fieldName = environment.getFieldDefinition().getName();
-        String fetchName = atFetchFromSupport(fieldName, environment.getDirectives());
-        return new PropertyDataFetcher(fetchName);
+        return new PropertyDataFetcher(fieldName);
     }
 
     private GraphQLInputObjectType buildInputObjectType(BuildContext buildCtx, InputObjectTypeDefinition typeDefinition) {

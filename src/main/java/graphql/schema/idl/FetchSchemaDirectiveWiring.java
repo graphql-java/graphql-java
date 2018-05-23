@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Internal;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -14,6 +15,7 @@ import static graphql.DirectivesUtil.directiveWithArg;
 /**
  * This adds ' @fetch(from : "otherName") ' support so you can rename what property is read for a given field
  */
+@Internal
 public class FetchSchemaDirectiveWiring implements SchemaDirectiveWiring {
 
     public static final String FETCH = "fetch";
