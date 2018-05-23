@@ -34,7 +34,6 @@ import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.UnionTypeExtensionDefinition
 import graphql.language.VariableReference
-import org.antlr.v4.runtime.IntStream
 import spock.lang.Specification
 
 import java.util.stream.Collectors
@@ -809,8 +808,8 @@ input Gun {
 
         then:
 
-        defaultDoc.definitions[0].sourceLocation.sourceName == IntStream.UNKNOWN_SOURCE_NAME
-        namedDocNull.definitions[0].sourceLocation.sourceName == IntStream.UNKNOWN_SOURCE_NAME
+        defaultDoc.definitions[0].sourceLocation.sourceName == null
+        namedDocNull.definitions[0].sourceLocation.sourceName == null
         namedDoc.definitions[0].sourceLocation.sourceName == sourceName
 
     }
