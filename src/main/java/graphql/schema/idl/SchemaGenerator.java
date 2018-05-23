@@ -48,6 +48,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
@@ -68,10 +69,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.DirectivesUtil.atFetchFromSupport;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
@@ -419,7 +422,7 @@ public class SchemaGenerator {
             outputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
         } else {
             // typeDefinition is not a valid output type
-            throw new NotAnOutputTypeError(typeDefinition);
+            throw new NotAnOutputTypeError(rawType, typeDefinition);
         }
 
         buildCtx.put(outputType);
@@ -452,7 +455,7 @@ public class SchemaGenerator {
             inputType = buildScalar(buildCtx, (ScalarTypeDefinition) typeDefinition);
         } else {
             // typeDefinition is not a valid InputType
-            throw new NotAnInputTypeError(typeDefinition);
+            throw new NotAnInputTypeError(rawType, typeDefinition);
         }
 
         buildCtx.put(inputType);
@@ -728,14 +731,21 @@ public class SchemaGenerator {
                     dataFetcher = runtimeWiring.getDefaultDataFetcherForType(parentTypeName);
                     if (dataFetcher == null) {
                         dataFetcher = wiringFactory.getDefaultDataFetcher(wiringEnvironment);
-                        assertNotNull(dataFetcher, "The WiringFactory indicated MUST provide a default data fetcher as part of its contract");
+                        if (dataFetcher == null) {
+                            dataFetcher = dataFetcherOfLastResort(wiringEnvironment);
+                        }
                     }
                 }
             }
             dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
         }
-
         return dataFetcherFactory;
+    }
+
+    private DataFetcher<?> dataFetcherOfLastResort(FieldWiringEnvironment environment) {
+        String fieldName = environment.getFieldDefinition().getName();
+        String fetchName = atFetchFromSupport(fieldName, environment.getDirectives());
+        return new PropertyDataFetcher(fetchName);
     }
 
     private GraphQLInputObjectType buildInputObjectType(BuildContext buildCtx, InputObjectTypeDefinition typeDefinition) {

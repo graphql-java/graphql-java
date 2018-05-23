@@ -51,6 +51,6 @@ public class NoopWiringFactory implements WiringFactory {
 
     @Override
     public DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
-        return new PropertyDataFetcher(environment.getFieldDefinition().getName());
+        return null;
     }
 }

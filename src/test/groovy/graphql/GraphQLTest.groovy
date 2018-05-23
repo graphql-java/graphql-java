@@ -812,6 +812,7 @@ class GraphQLTest extends Specification {
 
         GraphQLSchema schema = newSchema()
                 .query(query)
+                .additionalType(foo)
                 .build()
 
         GraphQL graphQL = GraphQL.newGraphQL(schema)

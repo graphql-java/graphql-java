@@ -33,7 +33,8 @@ public class ProvidedNonNullArguments extends AbstractRule {
         for (GraphQLArgument graphQLArgument : fieldDef.getArguments()) {
             Argument argument = argumentMap.get(graphQLArgument.getName());
             if (argument == null
-                    && (graphQLArgument.getType() instanceof GraphQLNonNull)) {
+                    && (graphQLArgument.getType() instanceof GraphQLNonNull)
+                    && (graphQLArgument.getDefaultValue() == null)) {
                 String message = String.format("Missing field argument %s", graphQLArgument.getName());
                 addError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message);
             }
