@@ -37,14 +37,15 @@ public class SourceLocation {
         SourceLocation that = (SourceLocation) o;
 
         if (line != that.line) return false;
-        return column == that.column;
-
+        if (column != that.column) return false;
+        return sourceName != null ? sourceName.equals(that.sourceName) : that.sourceName == null;
     }
 
     @Override
     public int hashCode() {
         int result = line;
         result = 31 * result + column;
+        result = 31 * result + (sourceName != null ? sourceName.hashCode() : 0);
         return result;
     }
 
@@ -53,6 +54,7 @@ public class SourceLocation {
         return "SourceLocation{" +
                 "line=" + line +
                 ", column=" + column +
+                (sourceName != null ? ", sourceName=" + sourceName : "") +
                 '}';
     }
 }
