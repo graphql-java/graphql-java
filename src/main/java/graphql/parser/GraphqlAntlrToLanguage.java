@@ -53,6 +53,7 @@ import graphql.language.VariableReference;
 import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.IntStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 
@@ -831,6 +832,12 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
     private SourceLocation getSourceLocation(ParserRuleContext parserRuleContext) {
         Token startToken = parserRuleContext.getStart();
         String sourceName = startToken.getTokenSource().getSourceName();
+        if (IntStream.UNKNOWN_SOURCE_NAME.equals(sourceName)) {
+            // UNKNOWN_SOURCE_NAME is Antrl's way of indicating that no source name was given during parsing --
+            // which is the case when queries and other operations are parsed. We don't want this hardcoded
+            // '<unknown>' sourceName to leak to clients when the response is serialized as JSON, so we null it.
+            sourceName = null;
+        }
         return new SourceLocation(startToken.getLine(), startToken.getCharPositionInLine() + 1, sourceName);
     }
 
