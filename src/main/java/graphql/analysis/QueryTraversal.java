@@ -43,7 +43,7 @@ import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
  * defined type. See {@link QueryVisitorFieldEnvironment}.
  * <p/>
  * Further are the built in Directives skip/include automatically evaluated: if parts of the Document should be ignored they will not
- * be visited.
+ * be visited. But this is not a full evaluation of a Query: every fragment will be visited/followed regardless of the type condition.
  */
 @PublicApi
 public class QueryTraversal {
