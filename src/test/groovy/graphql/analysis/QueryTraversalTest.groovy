@@ -133,11 +133,11 @@ class QueryTraversalTest extends Specification {
         queryTraversal.visitPreOrder(visitor)
 
         then:
-        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRoot })
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironmentImpl env -> env.inlineFragment == inlineFragmentRoot })
         then:
-        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentLeft })
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironmentImpl env -> env.inlineFragment == inlineFragmentLeft })
         then:
-        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRight })
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironmentImpl env -> env.inlineFragment == inlineFragmentRight })
 
     }
 
@@ -177,11 +177,11 @@ class QueryTraversalTest extends Specification {
         queryTraversal.visitPostOrder(visitor)
 
         then:
-        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentLeft })
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironmentImpl env -> env.inlineFragment == inlineFragmentLeft })
         then:
-        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRight })
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironmentImpl env -> env.inlineFragment == inlineFragmentRight })
         then:
-        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironment env -> env.inlineFragment == inlineFragmentRoot })
+        1 * visitor.visitInlineFragment({ QueryVisitorInlineFragmentEnvironmentImpl env -> env.inlineFragment == inlineFragmentRoot })
 
     }
 
@@ -231,11 +231,11 @@ class QueryTraversalTest extends Specification {
         queryTraversal.visitPreOrder(visitor)
 
         then:
-        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadRoot && env.fragmentDefinition == fragmentF1})
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironmentImpl env -> env.fragmentSpread == fragmentSpreadRoot && env.fragmentDefinition == fragmentF1 })
         then:
-        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadLeft && env.fragmentDefinition == fragmentF2 })
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironmentImpl env -> env.fragmentSpread == fragmentSpreadLeft && env.fragmentDefinition == fragmentF2 })
         then:
-        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadRight && env.fragmentDefinition == fragmentF3 })
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironmentImpl env -> env.fragmentSpread == fragmentSpreadRight && env.fragmentDefinition == fragmentF3 })
 
     }
 
@@ -285,11 +285,11 @@ class QueryTraversalTest extends Specification {
         queryTraversal.visitPostOrder(visitor)
 
         then:
-        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadLeft && env.fragmentDefinition == fragmentF2 })
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironmentImpl env -> env.fragmentSpread == fragmentSpreadLeft && env.fragmentDefinition == fragmentF2 })
         then:
-        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadRight && env.fragmentDefinition == fragmentF3 })
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironmentImpl env -> env.fragmentSpread == fragmentSpreadRight && env.fragmentDefinition == fragmentF3 })
         then:
-        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironment env -> env.fragmentSpread == fragmentSpreadRoot && env.fragmentDefinition == fragmentF1})
+        1 * visitor.visitFragmentSpread({ QueryVisitorFragmentSpreadEnvironmentImpl env -> env.fragmentSpread == fragmentSpreadRoot && env.fragmentDefinition == fragmentF1 })
 
     }
 

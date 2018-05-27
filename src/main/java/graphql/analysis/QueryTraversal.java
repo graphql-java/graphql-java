@@ -154,7 +154,7 @@ public class QueryTraversal {
             if (!conditionalNodes.shouldInclude(variables, inlineFragment.getDirectives()))
                 return TraversalControl.ABORT;
 
-            QueryVisitorInlineFragmentEnvironment inlineFragmentEnvironment = new QueryVisitorInlineFragmentEnvironment(inlineFragment);
+            QueryVisitorInlineFragmentEnvironment inlineFragmentEnvironment = new QueryVisitorInlineFragmentEnvironmentImpl(inlineFragment);
 
             if (context.getVar(LeaveOrEnter.class) == LEAVE) {
                 postOrderCallback.visitInlineFragment(inlineFragmentEnvironment);
@@ -189,7 +189,7 @@ public class QueryTraversal {
             if (!conditionalNodes.shouldInclude(variables, fragmentDefinition.getDirectives()))
                 return TraversalControl.ABORT;
 
-            QueryVisitorFragmentSpreadEnvironment fragmentSpreadEnvironment = new QueryVisitorFragmentSpreadEnvironment(fragmentSpread, fragmentDefinition);
+            QueryVisitorFragmentSpreadEnvironment fragmentSpreadEnvironment = new QueryVisitorFragmentSpreadEnvironmentImpl(fragmentSpread, fragmentDefinition);
             if (context.getVar(LeaveOrEnter.class) == LEAVE) {
                 postOrderCallback.visitFragmentSpread(fragmentSpreadEnvironment);
                 return TraversalControl.CONTINUE;
