@@ -59,7 +59,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
                 @Override
                 public void visitField(QueryVisitorFieldEnvironment env) {
                     int childsComplexity = 0;
-                    QueryVisitorFieldEnvironment thisNodeAsParent = new QueryVisitorFieldEnvironment(env.getField(), env.getFieldDefinition(), env.getParentType(), env.getParentEnvironment(), env.getArguments(), env.getSelectionSetContainer());
+                    QueryVisitorFieldEnvironment thisNodeAsParent = new QueryVisitorFieldEnvironmentImpl(env.getField(), env.getFieldDefinition(), env.getParentType(), env.getParentEnvironment(), env.getArguments(), env.getSelectionSetContainer());
                     if (valuesByParent.containsKey(thisNodeAsParent)) {
                         childsComplexity = valuesByParent.get(thisNodeAsParent).stream().mapToInt(Integer::intValue).sum();
                     }
@@ -96,21 +96,21 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
         );
     }
 
-    private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childsComplexity) {
-        FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(queryVisitorFieldEnvironment);
+    private int calculateComplexity(QueryVisitorFieldEnvironment QueryVisitorFieldEnvironment, int childsComplexity) {
+        FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(QueryVisitorFieldEnvironment);
         return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childsComplexity);
     }
 
-    private FieldComplexityEnvironment convertEnv(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
+    private FieldComplexityEnvironment convertEnv(QueryVisitorFieldEnvironment QueryVisitorFieldEnvironment) {
         FieldComplexityEnvironment parentEnv = null;
-        if (queryVisitorFieldEnvironment.getParentEnvironment() != null) {
-            parentEnv = convertEnv(queryVisitorFieldEnvironment.getParentEnvironment());
+        if (QueryVisitorFieldEnvironment.getParentEnvironment() != null) {
+            parentEnv = convertEnv(QueryVisitorFieldEnvironment.getParentEnvironment());
         }
         return new FieldComplexityEnvironment(
-                queryVisitorFieldEnvironment.getField(),
-                queryVisitorFieldEnvironment.getFieldDefinition(),
-                queryVisitorFieldEnvironment.getParentType(),
-                queryVisitorFieldEnvironment.getArguments(),
+                QueryVisitorFieldEnvironment.getField(),
+                QueryVisitorFieldEnvironment.getFieldDefinition(),
+                QueryVisitorFieldEnvironment.getParentType(),
+                QueryVisitorFieldEnvironment.getArguments(),
                 parentEnv
         );
     }

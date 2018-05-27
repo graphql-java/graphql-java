@@ -7,7 +7,7 @@ public class QueryVisitorStub implements QueryVisitor {
 
 
     @Override
-    public void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
+    public void visitField(QueryVisitorFieldEnvironment QueryVisitorFieldEnvironment) {
 
     }
 
