@@ -36,6 +36,15 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
 
+/**
+ * Helps to traverse (or reduce) a Document (or parts of it) and tracks at the same time the corresponding Schema types.
+ * <p/>
+ * This is an important distinction to just traversing the Document without any type information: Each field has a clearly
+ * defined type. See {@link QueryVisitorFieldEnvironment}.
+ * <p/>
+ * Further are the built in Directives skip/include automatically evaluated: if parts of the Document should be ignored they will not
+ * be visited.
+ */
 @PublicApi
 public class QueryTraversal {
 
@@ -76,27 +85,33 @@ public class QueryTraversal {
         this.childrenOfSelectionProvider = new ChildrenOfSelectionProvider(fragmentsByName);
     }
 
+    /**
+     * Visits the Document (or parts of it) in post-order.
+     *
+     * @param visitor
+     */
     public void visitPostOrder(QueryVisitor visitor) {
         visitImpl(visitor, false);
     }
 
+    /**
+     * Visits the Document (or parts of it) in pre-order.
+     *
+     * @param visitor
+     */
     public void visitPreOrder(QueryVisitor visitor) {
         visitImpl(visitor, true);
     }
 
-    private GraphQLObjectType getRootTypeFromOperation(OperationDefinition operationDefinition) {
-        switch (operationDefinition.getOperation()) {
-            case MUTATION:
-                return assertNotNull(schema.getMutationType());
-            case QUERY:
-                return assertNotNull(schema.getQueryType());
-            case SUBSCRIPTION:
-                return assertNotNull(schema.getSubscriptionType());
-            default:
-                return assertShouldNeverHappen();
-        }
-    }
-
+    /**
+     * Reduces the fields of a Document (or parts of it) to a single value. The fields are visited in post-order.
+     *
+     * @param queryReducer
+     * @param initialValue
+     * @param <T>
+     *
+     * @return the calculated overall value
+     */
     @SuppressWarnings("unchecked")
     public <T> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
         // compiler hack to make acc final and mutable :-)
@@ -110,6 +125,15 @@ public class QueryTraversal {
         return (T) acc[0];
     }
 
+    /**
+     * Reduces the fields of a Document (or parts of it) to a single value. The fields are visited in pre-order.
+     *
+     * @param queryReducer
+     * @param initialValue
+     * @param <T>
+     *
+     * @return the calucalated overall value
+     */
     @SuppressWarnings("unchecked")
     public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
         // compiler hack to make acc final and mutable :-)
@@ -121,6 +145,19 @@ public class QueryTraversal {
             }
         });
         return (T) acc[0];
+    }
+
+    private GraphQLObjectType getRootTypeFromOperation(OperationDefinition operationDefinition) {
+        switch (operationDefinition.getOperation()) {
+            case MUTATION:
+                return assertNotNull(schema.getMutationType());
+            case QUERY:
+                return assertNotNull(schema.getQueryType());
+            case SUBSCRIPTION:
+                return assertNotNull(schema.getSubscriptionType());
+            default:
+                return assertShouldNeverHappen();
+        }
     }
 
     private List<Node> childrenOf(Node selection) {

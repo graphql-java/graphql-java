@@ -2,6 +2,11 @@ package graphql.analysis;
 
 import graphql.PublicApi;
 
+/**
+ * User by {@link QueryTraversal} to visit the nodes of a Query.
+ * <p/>
+ * How this happens in detail (pre vs post-order for example) is defined by {@link QueryTraversal}.
+ */
 @PublicApi
 public interface QueryVisitor {
 
