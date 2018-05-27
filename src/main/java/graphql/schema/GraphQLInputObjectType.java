@@ -6,14 +6,16 @@ import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.util.FpKit.getByName;
+import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
 
 /**
@@ -79,11 +81,6 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         return new ArrayList<>(directives);
     }
 
-    public static Builder newInputObject() {
-        return new Builder();
-    }
-
-
     @Override
     public GraphQLInputObjectField getFieldDefinition(String name) {
         return fieldMap.get(name);
@@ -98,13 +95,46 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         return definition;
     }
 
+    /**
+     * This helps you transform the current GraphQLInputObjectType into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new object based on calling build on that builder
+     */
+    public GraphQLInputObjectType transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newInputObject(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    public static Builder newInputObject(GraphQLInputObjectType existing) {
+        return new Builder(existing);
+    }
+
+    public static Builder newInputObject() {
+        return new Builder();
+    }
+
     @PublicApi
     public static class Builder {
         private String name;
         private String description;
         private InputObjectTypeDefinition definition;
-        private final List<GraphQLInputObjectField> fields = new ArrayList<>();
-        private final List<GraphQLDirective> directives = new ArrayList<>();
+        private final Map<String, GraphQLInputObjectField> fields = new LinkedHashMap<>();
+        private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+
+        public Builder() {
+        }
+
+        public Builder(GraphQLInputObjectType existing) {
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.definition = existing.getDefinition();
+            this.fields.putAll(getByName(existing.getFields(), GraphQLInputObjectField::getName));
+            this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+        }
 
         public Builder name(String name) {
             this.name = name;
@@ -123,7 +153,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
 
         public Builder field(GraphQLInputObjectField field) {
             assertNotNull(field, "field can't be null");
-            fields.add(field);
+            fields.put(field.getName(), field);
             return this;
         }
 
@@ -156,28 +186,57 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
          * @return this
          */
         public Builder field(GraphQLInputObjectField.Builder builder) {
-            this.fields.add(builder.build());
-            return this;
+            return field(builder.build());
         }
 
         public Builder fields(List<GraphQLInputObjectField> fields) {
-            for (GraphQLInputObjectField field : fields) {
-                field(field);
-            }
+            fields.forEach(this::field);
             return this;
         }
 
         public boolean hasField(String fieldName) {
-            return fields.stream().anyMatch(fld -> fld.getName().equals(fieldName));
+            return fields.containsKey(fieldName);
+        }
+
+        /**
+         * This is used to clear all the fields in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearFields() {
+            fields.clear();
+            return this;
         }
 
         public Builder withDirectives(GraphQLDirective... directives) {
-            Collections.addAll(this.directives, directives);
+            for (GraphQLDirective directive : directives) {
+                withDirective(directive);
+            }
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective directive) {
+            assertNotNull(directive, "directive can't be null");
+            directives.put(directive.getName(), directive);
+            return this;
+        }
+
+        public Builder withDirective(GraphQLDirective.Builder builder) {
+            return withDirective(builder.build());
+        }
+
+        /**
+         * This is used to clear all the directives in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearDirectives() {
+            directives.clear();
             return this;
         }
 
         public GraphQLInputObjectType build() {
-            return new GraphQLInputObjectType(name, description, fields, directives, definition);
+            return new GraphQLInputObjectType(name, description, valuesToList(fields), valuesToList(directives), definition);
         }
     }
 }

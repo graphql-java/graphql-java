@@ -15,7 +15,7 @@ import java.util.List;
 //    FRAGMENT_DEFINITION
 //    FRAGMENT_SPREAD
 //    INLINE_FRAGMENT
-public class DirectiveLocation extends AbstractNode<DirectiveLocation> {
+public class DirectiveLocation extends AbstractNode<DirectiveLocation> implements NamedNode<DirectiveLocation> {
     private final String name;
 
     public DirectiveLocation(String name) {

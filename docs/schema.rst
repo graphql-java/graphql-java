@@ -55,11 +55,11 @@ what ``GraphqlObjectType`` should be used to represent it, and hence what data f
             public GraphQLObjectType getType(TypeResolutionEnvironment env) {
                 Object javaObject = env.getObject();
                 if (javaObject instanceof Wizard) {
-                    return (GraphQLObjectType) env.getSchema().getType("WizardType");
+                    return env.getSchema().getObjectType("WizardType");
                 } else if (javaObject instanceof Witch) {
-                    return (GraphQLObjectType) env.getSchema().getType("WitchType");
+                    return env.getSchema().getObjectType("WitchType");
                 } else {
-                    return (GraphQLObjectType) env.getSchema().getType("NecromancerType");
+                    return env.getSchema().getObjectType("NecromancerType");
                 }
             }
         };
@@ -69,7 +69,7 @@ what ``GraphqlObjectType`` should be used to represent it, and hence what data f
 Creating a schema using the SDL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When defining a schema via SDL, you provide the needed ``DataFetcher`` and ``TypeResolver``
+When defining a schema via SDL, you provide the needed ``DataFetcher`` s and ``TypeResolver`` s
 when the executable schema is created.
 
 Take for example the following static schema definition file called ``starWarsSchema.graphqls``:
@@ -123,7 +123,7 @@ runtime wiring to make it a truly executable schema.
 The runtime wiring contains ``DataFetcher`` s, ``TypeResolvers`` s and custom ``Scalar`` s that are needed to make a fully
 executable schema.
 
-You wire this together using this builder pattern
+You wire this together using this builder pattern:
 
 .. code-block:: java
 
@@ -337,12 +337,12 @@ SDL Example:
 
 .. code-block:: graphql
 
-    interface Cat {
+    type Cat {
         name: String;
         lives: Int;
     }
 
-    interface Dog {
+    type Dog {
         name: String;
         bonesOwned: int;
     }

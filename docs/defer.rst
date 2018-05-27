@@ -45,23 +45,7 @@ usual.  There will be the usual  ``ExecutionResult`` of initial data and then a 
 In the query above, the ``post`` data will be send out in the initial result and then the comments and review data will be sent (in query order)
 down a ``Publisher`` later.
 
-The first thing you need to put in place is including the ``defer`` directive into your schema.  It wont work without it and graphql-java will
-give you an error if you don't.
-
-
-.. code-block:: java
-
-    GraphQLSchema buildSchemaWithDirective() {
-
-        GraphQLSchema schema = buildSchema();
-        schema = schema.transform(builder ->
-                builder.additionalDirective(Directives.DeferDirective)
-        );
-        return schema;
-    }
-
-
-Then you execute your query as you would any other graphql query.  The deferred results ``Publisher`` will be given to you via
+You execute your query as you would any other graphql query.  The deferred results ``Publisher`` will be given to you via
 the ``extensions`` map
 
 

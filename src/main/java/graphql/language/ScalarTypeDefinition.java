@@ -6,11 +6,8 @@ import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static graphql.language.NodeUtil.directivesByName;
-
-public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition> {
+public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition> {
     private final String name;
     private Description description;
     private final List<Directive> directives;
@@ -26,14 +23,6 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
     public List<Directive> getDirectives() {
         return directives;
-    }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
     }
 
     @Override

@@ -1,6 +1,13 @@
 package graphql.validation;
 
 
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -15,13 +22,6 @@ import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
-
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @Internal
 public class RulesVisitor implements DocumentVisitor {
@@ -59,7 +59,9 @@ public class RulesVisitor implements DocumentVisitor {
         Set<AbstractRule> tmpRulesSet = new LinkedHashSet<>(this.rules);
         tmpRulesSet.removeAll(rulesToSkip);
         List<AbstractRule> rulesToConsider = new ArrayList<>(tmpRulesSet);
-        if (node instanceof Argument) {
+        if (node instanceof Document){
+            checkDocument((Document) node, rulesToConsider);
+        } else if (node instanceof Argument) {
             checkArgument((Argument) node, rulesToConsider);
         } else if (node instanceof TypeName) {
             checkTypeName((TypeName) node, rulesToConsider);
@@ -82,7 +84,12 @@ public class RulesVisitor implements DocumentVisitor {
         } else if (node instanceof SelectionSet) {
             checkSelectionSet((SelectionSet) node, rulesToConsider);
         }
+    }
 
+    private void checkDocument(Document node, List<AbstractRule> rules) {
+        for (AbstractRule rule : rules) {
+            rule.checkDocument(node);
+        }
     }
 
 

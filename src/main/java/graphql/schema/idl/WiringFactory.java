@@ -130,7 +130,7 @@ public interface WiringFactory {
     }
 
     /**
-     * All fields need a data fetcher of some sort and this  method is called to provide the data fetcher
+     * All fields need a data fetcher of some sort and this method is called to provide the data fetcher
      * that will be used if no specific one has been provided
      *
      * @param environment the wiring environment
@@ -138,9 +138,6 @@ public interface WiringFactory {
      * @return a {@link DataFetcher}
      */
     default DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
-
-        String fieldName = environment.getFieldDefinition().getName();
-        String fetchName = atFetchFromSupport(fieldName, environment.getDirectives());
-        return new PropertyDataFetcher(fetchName);
+        return null;
     }
 }

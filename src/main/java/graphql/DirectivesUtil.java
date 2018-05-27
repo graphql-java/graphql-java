@@ -27,7 +27,7 @@ public class DirectivesUtil {
     public static String atFetchFromSupport(String fieldName, List<GraphQLDirective> directives) {
         // @fetch(from : "name")
         Optional<GraphQLArgument> from = directiveWithArg(directives, Directives.FetchDirective.getName(), "from");
-        return from.map(arg -> String.valueOf(arg.getDefaultValue())).orElse(fieldName);
+        return from.map(arg -> String.valueOf(arg.getValue())).orElse(fieldName);
     }
 
 }

@@ -7,7 +7,7 @@ import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VariableDefinition extends AbstractNode<VariableDefinition> {
+public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
 
     private String name;
     private Type type;

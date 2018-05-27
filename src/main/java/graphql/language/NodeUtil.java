@@ -1,7 +1,7 @@
 package graphql.language;
 
-import graphql.GraphQLException;
 import graphql.Internal;
+import graphql.execution.UnknownOperationException;
 import graphql.util.FpKit;
 
 import java.util.LinkedHashMap;
@@ -71,7 +71,7 @@ public class NodeUtil {
             }
         }
         if (operationName == null && operationsByName.size() > 1) {
-            throw new GraphQLException("missing operation name");
+            throw new UnknownOperationException("Must provide operation name if query contains multiple operations.");
         }
         OperationDefinition operation;
 
@@ -81,7 +81,7 @@ public class NodeUtil {
             operation = operationsByName.get(operationName);
         }
         if (operation == null) {
-            throw new GraphQLException("no operation found");
+            throw new UnknownOperationException(String.format("Unknown operation named '%s'.", operationName));
         }
         GetOperationResult result = new GetOperationResult();
         result.fragmentsByName = fragmentsByName;

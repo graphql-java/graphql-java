@@ -7,7 +7,7 @@ import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Argument extends AbstractNode<Argument> {
+public class Argument extends AbstractNode<Argument> implements NamedNode<Argument> {
 
     private final String name;
     private final Value value;

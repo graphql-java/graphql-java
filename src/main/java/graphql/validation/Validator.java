@@ -1,10 +1,14 @@
 package graphql.validation;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import graphql.Internal;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.rules.ArgumentsOfCorrectType;
+import graphql.validation.rules.ExecutableDefinitions;
 import graphql.validation.rules.FieldsOnCorrectType;
 import graphql.validation.rules.FragmentsOnCompositeType;
 import graphql.validation.rules.KnownArgumentNames;
@@ -24,9 +28,6 @@ import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
 import graphql.validation.rules.VariableTypesMatchRule;
 import graphql.validation.rules.VariablesAreInputTypes;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Internal
 public class Validator {
 
@@ -44,6 +45,9 @@ public class Validator {
 
     private List<AbstractRule> createRules(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         List<AbstractRule> rules = new ArrayList<>();
+
+        ExecutableDefinitions executableDefinitions = new ExecutableDefinitions(validationContext, validationErrorCollector);
+        rules.add(executableDefinitions);
 
         ArgumentsOfCorrectType argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, validationErrorCollector);
         rules.add(argumentsOfCorrectType);

@@ -1,5 +1,20 @@
 package graphql.schema.idl;
 
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.language.AstPrinter;
@@ -27,21 +42,6 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
-import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-
 
 /**
  * This can print an in memory GraphQL schema back to a logical schema definition
@@ -57,11 +57,16 @@ public class SchemaPrinter {
 
         private final boolean includeScalars;
         private final boolean includeExtendedScalars;
+        private final boolean includeSchemaDefinition;
 
-        private Options(boolean includeIntrospectionTypes, boolean includeScalars, boolean includeExtendedScalars) {
+        private Options(boolean includeIntrospectionTypes,
+                        boolean includeScalars,
+                        boolean includeExtendedScalars,
+                        boolean includeSchemaDefinition) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
+            this.includeSchemaDefinition = includeSchemaDefinition;
         }
 
         public boolean isIncludeIntrospectionTypes() {
@@ -76,8 +81,10 @@ public class SchemaPrinter {
             return includeExtendedScalars;
         }
 
+        public boolean isIncludeSchemaDefinition() { return includeSchemaDefinition; }
+
         public static Options defaultOptions() {
-            return new Options(false, false, false);
+            return new Options(false, false, false, false);
         }
 
         /**
@@ -88,7 +95,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars, includeExtendedScalars);
+            return new Options(flag, this.includeScalars, includeExtendedScalars, this.includeSchemaDefinition);
         }
 
         /**
@@ -99,7 +106,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars);
+            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars, this.includeSchemaDefinition);
         }
 
         /**
@@ -111,7 +118,21 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeExtendedScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition);
+        }
+
+        /**
+         * This will force the printing of the graphql schema definition even if the query, mutation, and/or subscription
+         * types use the default names.  Some graphql parsers require this information even if the schema uses the
+         * default type names.  The schema definition will always be printed if any of the query, mutation, or subscription
+         * types do not use the default names.
+         *
+         * @param flag whether to force include the schema definition
+         *
+         * @return options
+         */
+        public Options includeSchemaDefintion(boolean flag) {
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag);
         }
     }
 
@@ -210,7 +231,7 @@ public class SchemaPrinter {
             }
             if (printScalar) {
                 printComments(out, type, "");
-                out.format("scalar %s\n\n", type.getName());
+                out.format("scalar %s%s\n\n", type.getName(), directivesString(type.getDirectives()));
             }
         };
     }
@@ -221,14 +242,14 @@ public class SchemaPrinter {
                 return;
             }
             printComments(out, type, "");
-            out.format("enum %s {\n", type.getName());
+            out.format("enum %s%s {\n", type.getName(), directivesString(type.getDirectives()));
             List<GraphQLEnumValueDefinition> values = type.getValues()
                     .stream()
                     .sorted(Comparator.comparing(GraphQLEnumValueDefinition::getName))
                     .collect(toList());
             for (GraphQLEnumValueDefinition enumValueDefinition : values) {
                 printComments(out, enumValueDefinition, "  ");
-                out.format("  %s\n", enumValueDefinition.getName());
+                out.format("  %s%s\n", enumValueDefinition.getName(), directivesString(enumValueDefinition.getDirectives()));
             }
             out.format("}\n\n");
         };
@@ -240,14 +261,14 @@ public class SchemaPrinter {
                 return;
             }
             printComments(out, type, "");
-            out.format("interface %s {\n", type.getName());
+            out.format("interface %s%s {\n", type.getName(), directivesString(type.getDirectives()));
             visibility.getFieldDefinitions(type)
                     .stream()
                     .sorted(Comparator.comparing(GraphQLFieldDefinition::getName))
                     .forEach(fd -> {
                         printComments(out, fd, "  ");
-                        out.format("  %s%s: %s\n",
-                                fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()));
+                        out.format("  %s%s: %s%s\n",
+                                fd.getName(), argsString(fd.getArguments()), typeString(fd.getType()), directivesString(fd.getDirectives()));
                     });
             out.format("}\n\n");
         };
@@ -259,7 +280,7 @@ public class SchemaPrinter {
                 return;
             }
             printComments(out, type, "");
-            out.format("union %s = ", type.getName());
+            out.format("union %s%s = ", type.getName(), directivesString(type.getDirectives()));
             List<GraphQLOutputType> types = type.getTypes()
                     .stream()
                     .sorted(Comparator.comparing(GraphQLOutputType::getName))
@@ -289,9 +310,10 @@ public class SchemaPrinter {
                         .stream()
                         .map(GraphQLType::getName)
                         .sorted(Comparator.naturalOrder());
-                out.format("type %s implements %s {\n",
+                out.format("type %s implements %s%s {\n",
                         type.getName(),
-                        interfaceNames.collect(joining(" & ")));
+                        interfaceNames.collect(joining(" & ")),
+                        directivesString(type.getDirectives()));
             }
 
             visibility.getFieldDefinitions(type)
@@ -313,7 +335,7 @@ public class SchemaPrinter {
                 return;
             }
             printComments(out, type, "");
-            out.format("input %s {\n", type.getName());
+            out.format("input %s%s {\n", type.getName(), directivesString(type.getDirectives()));
             visibility.getFieldDefinitions(type)
                     .stream()
                     .sorted(Comparator.comparing(GraphQLInputObjectField::getName))
@@ -326,6 +348,7 @@ public class SchemaPrinter {
                             String astValue = printAst(defaultValue, fd.getType());
                             out.format(" = %s", astValue);
                         }
+                        out.format(directivesString(fd.getDirectives()));
                         out.format("\n");
                     });
             out.format("}\n\n");
@@ -346,16 +369,18 @@ public class SchemaPrinter {
 
             // when serializing a GraphQL schema using the type system language, a
             // schema definition should be omitted if only uses the default root type names.
-            boolean needsSchemaPrinted = false;
+            boolean needsSchemaPrinted = options.includeSchemaDefinition;
 
-            if (queryType != null && !queryType.getName().equals("Query")) {
-                needsSchemaPrinted = true;
-            }
-            if (mutationType != null && !mutationType.getName().equals("Mutation")) {
-                needsSchemaPrinted = true;
-            }
-            if (subscriptionType != null && !subscriptionType.getName().equals("Subscription")) {
-                needsSchemaPrinted = true;
+            if (!needsSchemaPrinted) {
+                if (queryType != null && !queryType.getName().equals("Query")) {
+                    needsSchemaPrinted = true;
+                }
+                if (mutationType != null && !mutationType.getName().equals("Mutation")) {
+                    needsSchemaPrinted = true;
+                }
+                if (subscriptionType != null && !subscriptionType.getName().equals("Subscription")) {
+                    needsSchemaPrinted = true;
+                }
             }
 
             if (needsSchemaPrinted) {
@@ -400,7 +425,7 @@ public class SchemaPrinter {
     }
 
     String argsString(List<GraphQLArgument> arguments) {
-        boolean hasDescriptions = arguments.stream().filter(arg -> !isNullOrEmpty(arg.getDescription())).count() > 0;
+        boolean hasDescriptions = arguments.stream().anyMatch(arg -> !isNullOrEmpty(arg.getDescription()));
         String prefix = hasDescriptions ? "  " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
@@ -471,8 +496,12 @@ public class SchemaPrinter {
             for (int i = 0; i < args.size(); i++) {
                 GraphQLArgument arg = args.get(i);
                 sb.append(arg.getName());
-                if (arg.getDefaultValue() != null) {
+                if (arg.getValue() != null) {
                     sb.append(" : ");
+                    sb.append(printAst(arg.getValue(), arg.getType()));
+                }
+                if (arg.getDefaultValue() != null) {
+                    sb.append(" = ");
                     sb.append(printAst(arg.getDefaultValue(), arg.getType()));
                 }
                 if (i < args.size() - 1) {

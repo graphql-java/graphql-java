@@ -796,6 +796,24 @@ input Gun {
         fromDoc(doc, 2, InputObjectTypeExtensionDefinition).inputValueDefinitions[0].name == 'inputField'
     }
 
+    def "source name is available when specified"() {
+
+        def input = 'type Query { hello: String }'
+        def sourceName = 'named.graphql'
+
+        when:
+        def defaultDoc = new Parser().parseDocument(input)
+        def namedDocNull = new Parser().parseDocument(input, null)
+        def namedDoc = new Parser().parseDocument(input, sourceName)
+
+        then:
+
+        defaultDoc.definitions[0].sourceLocation.sourceName == null
+        namedDocNull.definitions[0].sourceLocation.sourceName == null
+        namedDoc.definitions[0].sourceLocation.sourceName == sourceName
+
+    }
+
     static <T> T fromDoc(Document document, int index, Class<T> asClass) {
         def definition = document.definitions[index]
         assert asClass == definition.getClass(), "Could not find expected definition of type " + asClass.getName() + " but was " + definition.getClass().getName()
