@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Internal;
 import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
 import graphql.schema.GraphQLDirective;
@@ -7,6 +8,7 @@ import graphql.schema.GraphQLDirectiveContainer;
 
 import java.util.Map;
 
+@Internal
 public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveContainer> implements SchemaDirectiveWiringEnvironment<T> {
 
     private final T element;

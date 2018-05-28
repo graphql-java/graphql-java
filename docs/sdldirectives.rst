@@ -10,6 +10,11 @@ logic that backs those types and their fields.
 Schema directives allow you to do this.  You can place directives on SDL elements and then write the backing logic
 once and have it apply in many places.
 
+This idea of "writing it once" is the key concept here.  There is only code place where
+logic needs to be written and it is then applied to all the places in the SDL that have a named directive.
+
+This is a more powerful model than wiring in 10-100s of data fetchers like you might
+with the conventional runtime wiring.
 
 For example imagine you have a type like the following
 
