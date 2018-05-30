@@ -8,7 +8,6 @@ import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.DirectivesUtil.atFetchFromSupport;
 
 /**
  * A WiringFactory allows you to more dynamically wire in {@link TypeResolver}s and {@link DataFetcher}s
@@ -106,6 +105,15 @@ public interface WiringFactory {
     default <T> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
         return assertShouldNeverHappen();
     }
+
+    default boolean providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+        return false;
+    }
+
+    default SchemaDirectiveWiring getSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+        return assertShouldNeverHappen();
+    }
+
 
     /**
      * This is called to ask if this factory can provide a data fetcher for the definition

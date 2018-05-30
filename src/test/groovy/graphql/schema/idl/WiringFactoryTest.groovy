@@ -255,7 +255,7 @@ class WiringFactoryTest extends Specification {
 
     def "default data fetcher is used"() {
 
-        def spec = """             
+        def spec = """   
 
             type Query {
                 id: ID!

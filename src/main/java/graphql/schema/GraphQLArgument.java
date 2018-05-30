@@ -155,6 +155,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         public Builder(GraphQLArgument existing) {
             this.name = existing.getName();
             this.type = existing.getType();
+            this.value = existing.getValue();
             this.defaultValue = existing.getDefaultValue();
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();

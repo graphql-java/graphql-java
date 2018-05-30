@@ -175,11 +175,13 @@ It supports a ``Map`` approach and a ``POJO`` approach in a Java idiomatic way. 
 called ``fieldX``.
 
 However you may have small differences between your graphql schema naming and runtime object naming.  For example imagine that ``Product.description`` is actually
-represented as ``getDesc()` in the rgit fetch time backing object.
+represented as ``getDesc()` in the runtime backing Java object.
 
 If you are using SDL to specify your schema then you can use the ``@fetch`` directive to indicate this remapping.
 
 .. code-block:: graphql
+
+    directive @fetch(from : String!) on FIELD_DEFINITION
 
     type Product {
         id : ID
