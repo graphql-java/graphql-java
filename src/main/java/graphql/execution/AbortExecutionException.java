@@ -2,7 +2,7 @@ package graphql.execution;
 
 import graphql.ErrorType;
 import graphql.GraphQLError;
-import graphql.GraphQLException;
+import graphql.GraphQLQueryException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
 
@@ -17,7 +17,7 @@ import static java.util.Collections.emptyList;
  * This Exception indicates that the current execution should be aborted.
  */
 @PublicApi
-public class AbortExecutionException extends GraphQLException implements GraphQLError {
+public class AbortExecutionException extends GraphQLQueryException implements GraphQLError {
 
     private final List<GraphQLError> underlyingErrors;
 

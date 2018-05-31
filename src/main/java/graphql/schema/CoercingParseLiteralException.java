@@ -1,16 +1,16 @@
 package graphql.schema;
 
-import java.util.Collections;
-import java.util.List;
-
 import graphql.ErrorType;
 import graphql.GraphQLError;
-import graphql.GraphQLException;
+import graphql.GraphQLQueryException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
 
+import java.util.Collections;
+import java.util.List;
+
 @PublicApi
-public class CoercingParseLiteralException extends GraphQLException implements GraphQLError {
+public class CoercingParseLiteralException extends GraphQLQueryException implements GraphQLError {
     private List<SourceLocation> sourceLocations;
 
     public CoercingParseLiteralException() {

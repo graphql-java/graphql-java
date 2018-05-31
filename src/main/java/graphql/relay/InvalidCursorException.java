@@ -2,6 +2,7 @@ package graphql.relay;
 
 import graphql.ErrorType;
 import graphql.GraphQLError;
+import graphql.GraphQLQueryException;
 import graphql.GraphqlErrorHelper;
 import graphql.language.SourceLocation;
 
@@ -9,7 +10,7 @@ import java.util.List;
 
 import static graphql.ErrorType.DataFetchingException;
 
-public class InvalidCursorException extends RuntimeException implements GraphQLError {
+public class InvalidCursorException extends GraphQLQueryException implements GraphQLError {
 
     InvalidCursorException(String message) {
         this(message, null);

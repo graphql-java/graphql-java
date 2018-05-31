@@ -2,7 +2,7 @@ package graphql.execution;
 
 import graphql.ErrorType;
 import graphql.GraphQLError;
-import graphql.GraphQLException;
+import graphql.GraphQLQueryException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLType;
@@ -16,7 +16,7 @@ import java.util.List;
  * - This unordered map should not contain any entries with names not defined by a field of this input object type, otherwise an error should be thrown.
  */
 @PublicApi
-public class InputMapDefinesTooManyFieldsException extends GraphQLException implements GraphQLError {
+public class InputMapDefinesTooManyFieldsException extends GraphQLQueryException implements GraphQLError {
 
     public InputMapDefinesTooManyFieldsException(GraphQLType graphQLType, String fieldName) {
         super(String.format("The variables input contains a field name '%s' that is not defined for input object type '%s' ", fieldName, GraphQLTypeUtil.getUnwrappedTypeName(graphQLType)));

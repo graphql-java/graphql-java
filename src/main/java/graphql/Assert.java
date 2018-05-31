@@ -22,11 +22,11 @@ public class Assert {
     }
 
     public static <T> T assertShouldNeverHappen(String format, Object... args) {
-        throw new AssertException("Internal error: should never happen: " + format(format, args));
+        throw new AssertInternalException("Internal error: should never happen: " + format(format, args));
     }
 
     public static <T> T assertShouldNeverHappen() {
-        throw new AssertException("Internal error: should never happen");
+        throw new AssertInternalException("Internal error: should never happen");
     }
 
     public static <T> Collection<T> assertNotEmpty(Collection<T> c, String format, Object... args) {

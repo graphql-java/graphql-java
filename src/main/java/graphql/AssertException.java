@@ -2,7 +2,7 @@ package graphql;
 
 
 @PublicApi
-public class AssertException extends GraphQLException {
+public class AssertException extends GraphQLInstanceException {
 
     public AssertException(String message) {
         super(message);

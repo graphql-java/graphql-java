@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>graphql.execution.AbortExecutionException</OriginalElement>
+  <nodes>
+    <node x="0.0" y="794.0">graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError</node>
+    <node x="1589.6249999999998" y="79.0">java.lang.Throwable</node>
+    <node x="5501.0" y="794.0">graphql.schema.idl.errors.SchemaMissingError</node>
+    <node x="2859.0" y="625.0">graphql.schema.idl.errors.BaseError</node>
+    <node x="2087.0" y="794.0">graphql.schema.idl.errors.NonUniqueDirectiveError</node>
+    <node x="4024.0" y="625.0">graphql.schema.CoercingParseLiteralException</node>
+    <node x="1707.9999999999998" y="625.0">graphql.relay.InvalidCursorException</node>
+    <node x="5011.0" y="794.0">graphql.schema.idl.errors.MissingInterfaceTypeError</node>
+    <node x="1917.9999999999998" y="625.0">graphql.execution.AbortExecutionException</node>
+    <node x="3313.0" y="625.0">graphql.schema.validation.InvalidSchemaException</node>
+    <node x="3858.0" y="625.0">graphql.schema.idl.errors.SchemaProblem</node>
+    <node x="968.9999999999998" y="794.0">graphql.schema.idl.errors.MissingTypeResolverError</node>
+    <node x="2372.0" y="625.0">graphql.execution.MissingRootTypeException</node>
+    <node x="2143.0" y="625.0">graphql.execution.UnresolvedTypeException</node>
+    <node x="3475.0" y="794.0">graphql.schema.idl.errors.MissingInterfaceFieldError</node>
+    <node x="3905.0" y="794.0">graphql.schema.idl.errors.TypeExtensionFieldRedefinitionError</node>
+    <node x="2988.0" y="625.0">graphql.execution.InputMapDefinesTooManyFieldsException</node>
+    <node x="1196.9999999999998" y="794.0">graphql.schema.idl.errors.MissingScalarImplementationError</node>
+    <node x="2656.083333333333" y="406.0">graphql.GraphQLError</node>
+    <node x="1770.9999999999998" y="794.0">graphql.schema.idl.errors.TypeExtensionDirectiveRedefinitionError</node>
+    <node x="1473.9999999999998" y="794.0">graphql.schema.idl.errors.TypeExtensionMissingBaseTypeError</node>
+    <node x="2485.0" y="794.0">graphql.schema.idl.errors.TypeExtensionEnumValueRedefinitionError</node>
+    <node x="3329.0" y="406.0">graphql.GraphQLException</node>
+    <node x="3231.0" y="794.0">graphql.schema.idl.errors.QueryOperationMissingError</node>
+    <node x="4279.0" y="625.0">graphql.execution.UnknownOperationException</node>
+    <node x="3030.0" y="794.0">graphql.schema.idl.errors.NotAnInputTypeError</node>
+    <node x="4528.0" y="625.0">graphql.schema.CoercingSerializeException</node>
+    <node x="3703.0" y="794.0">graphql.schema.idl.errors.TypeRedefinitionError</node>
+    <node x="545.0" y="794.0">graphql.schema.idl.errors.NonUniqueNameError</node>
+    <node x="1262.2499999999998" y="406.0">graphql.execution.NonNullableFieldWasNullException</node>
+    <node x="4757.0" y="794.0">graphql.schema.idl.errors.InterfaceFieldRedefinitionError</node>
+    <node x="5241.0" y="794.0">graphql.schema.idl.errors.OperationTypesMustBeObjects</node>
+    <node x="4492.0" y="794.0">graphql.schema.idl.errors.InvalidDeprecationDirectiveError</node>
+    <node x="4196.0" y="794.0">graphql.schema.idl.errors.MissingInterfaceFieldArgumentsError</node>
+    <node x="1566.1249999999998" y="237.0">java.lang.RuntimeException</node>
+    <node x="2607.0" y="625.0">graphql.schema.CoercingParseValueException</node>
+    <node x="1591.1249999999998" y="158.0">java.lang.Exception</node>
+    <node x="4762.0" y="625.0">graphql.AssertException</node>
+    <node x="1587.6249999999998" y="0.0">java.io.Serializable</node>
+    <node x="1484.9999999999998" y="625.0">graphql.relay.InvalidPageSizeException</node>
+    <node x="2309.0" y="794.0">graphql.schema.idl.errors.MissingTypeError</node>
+    <node x="2817.0" y="794.0">graphql.schema.idl.errors.NotAnOutputTypeError</node>
+    <node x="3088.0" y="237.0">graphql.PublicApi</node>
+    <node x="749.0" y="794.0">graphql.schema.idl.errors.SchemaRedefinitionError</node>
+    <node x="315.0" y="794.0">graphql.schema.idl.errors.NonUniqueArgumentError</node>
+    <node x="3529.0" y="625.0">graphql.execution.NonNullableValueCoercedAsNullException</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="graphql.relay.InvalidPageSizeException" target="graphql.GraphQLError">
+      <point x="50.75" y="-14.5" />
+      <point x="1637.2499999999998" y="515.0" />
+      <point x="2663.5277777777774" y="515.0" />
+      <point x="-59.55555555555566" y="14.5" />
+    </edge>
+    <edge source="graphql.relay.InvalidPageSizeException" target="java.lang.RuntimeException">
+      <point x="-50.75" y="-14.5" />
+      <point x="1535.7499999999998" y="386.0" />
+      <point x="1625.7499999999998" y="386.0" />
+      <point x="-19.875" y="14.5" />
+    </edge>
+    <edge source="java.lang.Throwable" target="java.io.Serializable">
+      <point x="0.0" y="-14.5" />
+      <point x="0.0" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.TypeRedefinitionError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="3794.0" y="744.0" />
+      <point x="2932.45652173913" y="744.0" />
+      <point x="18.956521739130494" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.InputMapDefinesTooManyFieldsException" target="graphql.PublicApi">
+      <point x="0.0" y="-14.5" />
+      <point x="0.0" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.CoercingParseValueException" target="graphql.PublicApi">
+      <point x="-77.33333333333348" y="-14.5" />
+      <point x="2645.583333333333" y="376.0" />
+      <point x="3121.409090909091" y="376.0" />
+      <point x="-19.09090909090901" y="14.5" />
+    </edge>
+    <edge source="graphql.AssertException" target="graphql.GraphQLException">
+      <point x="-37.25" y="-14.5" />
+      <point x="4799.25" y="455.0" />
+      <point x="3486.6923076923076" y="455.0" />
+      <point x="75.69230769230762" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.TypeExtensionEnumValueRedefinitionError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="2641.0" y="774.0" />
+      <point x="2908.760869565217" y="774.0" />
+      <point x="-4.73913043478251" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.TypeExtensionMissingBaseTypeError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="1612.4999999999998" y="734.0" />
+      <point x="2889.804347826087" y="734.0" />
+      <point x="-23.695652173913004" y="14.5" />
+    </edge>
+    <edge source="java.lang.RuntimeException" target="java.lang.Exception">
+      <point x="0.0" y="-14.5" />
+      <point x="0.0" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.MissingRootTypeException" target="graphql.GraphQLError">
+      <point x="0.0" y="-14.5" />
+      <point x="2479.5" y="545.0" />
+      <point x="2708.1944444444443" y="545.0" />
+      <point x="-14.888888888888687" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.UnknownOperationException" target="graphql.GraphQLException">
+      <point x="-57.25" y="-14.5" />
+      <point x="4336.25" y="475.0" />
+      <point x="3461.461538461538" y="475.0" />
+      <point x="50.46153846153857" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.MissingTypeResolverError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="1072.9999999999998" y="714.0" />
+      <point x="2880.326086956521" y="714.0" />
+      <point x="-33.17391304347848" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.AbortExecutionException" target="graphql.GraphQLError">
+      <point x="0.0" y="-14.5" />
+      <point x="2020.4999999999998" y="535.0" />
+      <point x="2693.305555555555" y="535.0" />
+      <point x="-29.77777777777783" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.TypeExtensionFieldRedefinitionError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="4040.5" y="734.0" />
+      <point x="2937.195652173913" y="734.0" />
+      <point x="23.695652173913004" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.UnresolvedTypeException" target="graphql.PublicApi">
+      <point x="-52.25" y="-14.5" />
+      <point x="2195.25" y="356.0" />
+      <point x="3102.318181818182" y="356.0" />
+      <point x="-38.18181818181802" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.AbortExecutionException" target="graphql.GraphQLException">
+      <point x="68.33333333333348" y="-14.5" />
+      <point x="2088.833333333333" y="555.0" />
+      <point x="3335.3076923076924" y="555.0" />
+      <point x="-75.69230769230762" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.MissingInterfaceFieldError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="3579.0" y="754.0" />
+      <point x="2927.717391304348" y="754.0" />
+      <point x="14.217391304347984" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.NotAnOutputTypeError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="0.0" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.MissingRootTypeException" target="graphql.GraphQLException">
+      <point x="71.66666666666652" y="-14.5" />
+      <point x="2551.166666666666" y="575.0" />
+      <point x="3360.538461538461" y="575.0" />
+      <point x="-50.46153846153857" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.OperationTypesMustBeObjects" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="5361.0" y="684.0" />
+      <point x="2960.891304347826" y="684.0" />
+      <point x="47.39130434782601" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.SchemaProblem" target="graphql.GraphQLException">
+      <point x="0.0" y="-14.5" />
+      <point x="3931.0" y="505.0" />
+      <point x="3436.2307692307686" y="505.0" />
+      <point x="25.230769230769056" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.InterfaceFieldRedefinitionError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="4874.0" y="704.0" />
+      <point x="2951.413043478261" y="704.0" />
+      <point x="37.91304347826099" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="147.5" y="674.0" />
+      <point x="2861.369565217391" y="674.0" />
+      <point x="-52.13043478260852" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.CoercingParseLiteralException" target="graphql.GraphQLError">
+      <point x="-78.33333333333326" y="-14.5" />
+      <point x="4063.1666666666665" y="495.0" />
+      <point x="2782.6388888888887" y="495.0" />
+      <point x="59.55555555555566" y="14.5" />
+    </edge>
+    <edge source="graphql.relay.InvalidCursorException" target="graphql.GraphQLError">
+      <point x="47.5" y="-14.5" />
+      <point x="1850.4999999999998" y="525.0" />
+      <point x="2678.4166666666665" y="525.0" />
+      <point x="-44.666666666666515" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.TypeExtensionDirectiveRedefinitionError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="1918.9999999999998" y="744.0" />
+      <point x="2894.543478260869" y="744.0" />
+      <point x="-18.956521739130494" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.MissingScalarImplementationError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="1325.4999999999998" y="724.0" />
+      <point x="2885.065217391304" y="724.0" />
+      <point x="-28.434782608695514" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.NonUniqueArgumentError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="420.0" y="684.0" />
+      <point x="2866.108695652174" y="684.0" />
+      <point x="-47.39130434782601" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.NonNullableValueCoercedAsNullException" target="graphql.PublicApi">
+      <point x="103.0" y="-14.5" />
+      <point x="3786.5" y="326.0" />
+      <point x="3150.045454545454" y="326.0" />
+      <point x="9.545454545454504" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.MissingInterfaceFieldArgumentsError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="4334.0" y="724.0" />
+      <point x="2941.934782608695" y="724.0" />
+      <point x="28.434782608695514" y="14.5" />
+    </edge>
+    <edge source="graphql.relay.InvalidCursorException" target="java.lang.RuntimeException">
+      <point x="-47.5" y="-14.5" />
+      <point x="1755.4999999999998" y="386.0" />
+      <point x="1665.4999999999998" y="386.0" />
+      <point x="19.875" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.CoercingParseLiteralException" target="graphql.GraphQLException">
+      <point x="0.0" y="-14.5" />
+      <point x="4141.5" y="485.0" />
+      <point x="3448.8461538461534" y="485.0" />
+      <point x="37.84615384615381" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.BaseError" target="graphql.GraphQLError">
+      <point x="-27.25" y="-14.5" />
+      <point x="2886.25" y="545.0" />
+      <point x="2737.9722222222217" y="545.0" />
+      <point x="14.888888888888687" y="14.5" />
+    </edge>
+    <edge source="graphql.GraphQLException" target="java.lang.RuntimeException">
+      <point x="0.0" y="-14.5" />
+      <point x="3411.0" y="336.0" />
+      <point x="1705.2499999999998" y="336.0" />
+      <point x="59.625" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.NonUniqueNameError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="637.0" y="694.0" />
+      <point x="2870.847826086956" y="694.0" />
+      <point x="-42.6521739130435" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.AbortExecutionException" target="graphql.PublicApi">
+      <point x="-68.33333333333348" y="-14.5" />
+      <point x="1952.1666666666663" y="346.0" />
+      <point x="3092.772727272727" y="346.0" />
+      <point x="-47.72727272727252" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.CoercingSerializeException" target="graphql.PublicApi">
+      <point x="53.5" y="-14.5" />
+      <point x="4688.5" y="296.0" />
+      <point x="3178.681818181818" y="296.0" />
+      <point x="38.18181818181802" y="14.5" />
+    </edge>
+    <edge source="graphql.GraphQLError" target="graphql.PublicApi">
+      <point x="0.0" y="-14.5" />
+      <point x="2723.083333333333" y="386.0" />
+      <point x="3130.954545454545" y="386.0" />
+      <point x="-9.545454545454504" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.CoercingParseLiteralException" target="graphql.PublicApi">
+      <point x="78.33333333333348" y="-14.5" />
+      <point x="4219.833333333333" y="316.0" />
+      <point x="3159.590909090909" y="316.0" />
+      <point x="19.09090909090901" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.NonNullableValueCoercedAsNullException" target="graphql.GraphQLException">
+      <point x="0.0" y="-14.5" />
+      <point x="3683.5" y="515.0" />
+      <point x="3423.6153846153848" y="515.0" />
+      <point x="12.615384615384755" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.MissingRootTypeException" target="graphql.PublicApi">
+      <point x="-71.66666666666652" y="-14.5" />
+      <point x="2407.833333333333" y="366.0" />
+      <point x="3111.863636363636" y="366.0" />
+      <point x="-28.636363636363512" y="14.5" />
+    </edge>
+    <edge source="java.lang.Exception" target="java.lang.Throwable">
+      <point x="0.0" y="-14.5" />
+      <point x="0.0" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.NonUniqueDirectiveError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="2188.0" y="754.0" />
+      <point x="2899.282608695652" y="754.0" />
+      <point x="-14.217391304347984" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.InvalidDeprecationDirectiveError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="4614.5" y="714.0" />
+      <point x="2946.673913043478" y="714.0" />
+      <point x="33.17391304347848" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.BaseError" target="graphql.GraphQLException">
+      <point x="27.25" y="-14.5" />
+      <point x="2940.75" y="595.0" />
+      <point x="3385.7692307692305" y="595.0" />
+      <point x="-25.230769230769056" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.NotAnInputTypeError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="3120.5" y="774.0" />
+      <point x="2918.239130434782" y="774.0" />
+      <point x="4.73913043478251" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.SchemaRedefinitionError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="849.0" y="704.0" />
+      <point x="2875.586956521739" y="704.0" />
+      <point x="-37.91304347826099" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.CoercingParseValueException" target="graphql.GraphQLError">
+      <point x="0.0" y="-14.5" />
+      <point x="0.0" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.SchemaMissingError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="5588.0" y="674.0" />
+      <point x="2965.630434782608" y="674.0" />
+      <point x="52.13043478260852" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.NonNullableValueCoercedAsNullException" target="graphql.GraphQLError">
+      <point x="-103.0" y="-14.5" />
+      <point x="3580.5" y="525.0" />
+      <point x="2767.7499999999995" y="525.0" />
+      <point x="44.666666666666515" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.validation.InvalidSchemaException" target="graphql.GraphQLException">
+      <point x="0.0" y="-14.5" />
+      <point x="0.0" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.NonNullableFieldWasNullException" target="java.lang.RuntimeException">
+      <point x="0.0" y="-14.5" />
+      <point x="1393.7499999999998" y="376.0" />
+      <point x="1585.9999999999998" y="376.0" />
+      <point x="-59.625" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.UnresolvedTypeException" target="graphql.GraphQLException">
+      <point x="52.25" y="-14.5" />
+      <point x="2299.75" y="565.0" />
+      <point x="3347.923076923077" y="565.0" />
+      <point x="-63.07692307692287" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.InputMapDefinesTooManyFieldsException" target="graphql.GraphQLException">
+      <point x="101.66666666666652" y="-14.5" />
+      <point x="3242.166666666666" y="605.0" />
+      <point x="3398.3846153846152" y="605.0" />
+      <point x="-12.615384615384755" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.MissingInterfaceTypeError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="5116.0" y="694.0" />
+      <point x="2956.152173913043" y="694.0" />
+      <point x="42.6521739130435" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.CoercingParseValueException" target="graphql.GraphQLException">
+      <point x="77.33333333333348" y="-14.5" />
+      <point x="2800.333333333333" y="585.0" />
+      <point x="3373.1538461538457" y="585.0" />
+      <point x="-37.84615384615381" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.UnknownOperationException" target="graphql.PublicApi">
+      <point x="57.25" y="-14.5" />
+      <point x="4450.75" y="306.0" />
+      <point x="3169.136363636363" y="306.0" />
+      <point x="28.636363636363512" y="14.5" />
+    </edge>
+    <edge source="graphql.execution.InputMapDefinesTooManyFieldsException" target="graphql.GraphQLError">
+      <point x="-101.66666666666652" y="-14.5" />
+      <point x="3038.833333333333" y="535.0" />
+      <point x="2752.861111111111" y="535.0" />
+      <point x="29.77777777777783" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.CoercingSerializeException" target="graphql.GraphQLException">
+      <point x="-53.5" y="-14.5" />
+      <point x="4581.5" y="465.0" />
+      <point x="3474.076923076923" y="465.0" />
+      <point x="63.07692307692287" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.MissingTypeError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="2387.0" y="764.0" />
+      <point x="2904.021739130435" y="764.0" />
+      <point x="-9.47826086956502" y="14.5" />
+    </edge>
+    <edge source="graphql.AssertException" target="graphql.PublicApi">
+      <point x="37.25" y="-14.5" />
+      <point x="4873.75" y="286.0" />
+      <point x="3188.227272727272" y="286.0" />
+      <point x="47.72727272727252" y="14.5" />
+    </edge>
+    <edge source="graphql.schema.idl.errors.QueryOperationMissingError" target="graphql.schema.idl.errors.BaseError">
+      <point x="0.0" y="-14.5" />
+      <point x="3343.0" y="764.0" />
+      <point x="2922.978260869565" y="764.0" />
+      <point x="9.47826086956502" y="14.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0313574392412566" x="585.5126731421346" y="475.5360078165412" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

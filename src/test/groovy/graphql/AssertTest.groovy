@@ -56,7 +56,7 @@ class AssertTest extends Specification {
         Assert.assertShouldNeverHappen()
 
         then:
-        def e = thrown(AssertException)
+        def e = thrown(AssertInternalException)
         e.message == "Internal error: should never happen"
     }
 
@@ -65,7 +65,7 @@ class AssertTest extends Specification {
         Assert.assertShouldNeverHappen(format, arg)
 
         then:
-        def error = thrown(AssertException)
+        def error = thrown(AssertInternalException)
         error.message == "Internal error: should never happen: " + expectedMessage
 
         where:
@@ -147,7 +147,7 @@ class AssertTest extends Specification {
         where:
         name   | _
         "0abc" | _
-        "едц"  | _
+        "пїЅпїЅпїЅ"  | _
         "_()"  | _
     }
 }

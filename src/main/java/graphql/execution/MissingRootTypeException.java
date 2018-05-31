@@ -1,19 +1,19 @@
 package graphql.execution;
 
-import java.util.Collections;
-import java.util.List;
-
 import graphql.ErrorType;
 import graphql.GraphQLError;
-import graphql.GraphQLException;
+import graphql.GraphQLQueryException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * This is thrown if a query is attempting to perform an operation not defined in the GraphQL schema
  */
 @PublicApi
-public class MissingRootTypeException extends GraphQLException implements GraphQLError {
+public class MissingRootTypeException extends GraphQLQueryException implements GraphQLError {
     private List<SourceLocation> sourceLocations;
 
     public MissingRootTypeException(String message, SourceLocation sourceLocation) {

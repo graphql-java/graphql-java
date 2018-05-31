@@ -1,6 +1,6 @@
 package graphql.schema
 
-import graphql.AssertException
+import graphql.AssertInternalException
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
@@ -35,7 +35,7 @@ class GraphQLSchemaTest extends Specification {
         when:
         starWarsSchema.isPossibleType(humanType, humanType)
         then:
-        thrown(AssertException)
+        thrown(AssertInternalException)
     }
 
     def "#698 interfaces copied as expected"() {

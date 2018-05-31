@@ -1,6 +1,6 @@
 package graphql.execution;
 
-import graphql.GraphQLException;
+import graphql.GraphQLQueryException;
 import graphql.PublicApi;
 
 /**
@@ -9,7 +9,7 @@ import graphql.PublicApi;
  * contained in the GraphQL query.
  */
 @PublicApi
-public class UnknownOperationException extends GraphQLException {
+public class UnknownOperationException extends GraphQLQueryException {
 
     public UnknownOperationException(String message) {
         super(message);
