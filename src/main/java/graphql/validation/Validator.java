@@ -1,9 +1,6 @@
 package graphql.validation;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
 import graphql.Internal;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
@@ -24,9 +21,13 @@ import graphql.validation.rules.OverlappingFieldsCanBeMerged;
 import graphql.validation.rules.PossibleFragmentSpreads;
 import graphql.validation.rules.ProvidedNonNullArguments;
 import graphql.validation.rules.ScalarLeafs;
+import graphql.validation.rules.UniqueOperationNames;
 import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
 import graphql.validation.rules.VariableTypesMatchRule;
 import graphql.validation.rules.VariablesAreInputTypes;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Internal
 public class Validator {
@@ -95,6 +96,9 @@ public class Validator {
 
         LoneAnonymousOperation loneAnonymousOperation = new LoneAnonymousOperation(validationContext, validationErrorCollector);
         rules.add(loneAnonymousOperation);
+
+        UniqueOperationNames uniqueOperationNames = new UniqueOperationNames(validationContext, validationErrorCollector);
+        rules.add(uniqueOperationNames);
 
         return rules;
     }
