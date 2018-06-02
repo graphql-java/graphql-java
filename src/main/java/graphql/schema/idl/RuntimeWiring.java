@@ -25,15 +25,17 @@ public class RuntimeWiring {
     private final Map<String, DataFetcher> defaultDataFetchers;
     private final Map<String, GraphQLScalarType> scalars;
     private final Map<String, TypeResolver> typeResolvers;
+    private final Map<String, SchemaDirectiveWiring> directiveWiring;
     private final WiringFactory wiringFactory;
     private final Map<String, EnumValuesProvider> enumValuesProviders;
     private final GraphqlFieldVisibility fieldVisibility;
 
-    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory, GraphqlFieldVisibility fieldVisibility) {
+    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, SchemaDirectiveWiring> directiveWiring, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory, GraphqlFieldVisibility fieldVisibility) {
         this.dataFetchers = dataFetchers;
         this.defaultDataFetchers = defaultDataFetchers;
         this.scalars = scalars;
         this.typeResolvers = typeResolvers;
+        this.directiveWiring = directiveWiring;
         this.wiringFactory = wiringFactory;
         this.enumValuesProviders = enumValuesProviders;
         this.fieldVisibility = fieldVisibility;
@@ -78,6 +80,10 @@ public class RuntimeWiring {
         return fieldVisibility;
     }
 
+    public Map<String, SchemaDirectiveWiring> getDirectiveWiring() {
+        return directiveWiring;
+    }
+
     @PublicApi
     public static class Builder {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
@@ -85,11 +91,14 @@ public class RuntimeWiring {
         private final Map<String, GraphQLScalarType> scalars = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolvers = new LinkedHashMap<>();
         private final Map<String, EnumValuesProvider> enumValuesProviders = new LinkedHashMap<>();
+        private final Map<String, SchemaDirectiveWiring> directiveWiring = new LinkedHashMap<>();
         private WiringFactory wiringFactory = new NoopWiringFactory();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
 
         private Builder() {
             ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);
+            // we give this out by default
+            directiveWiring.put(FetchSchemaDirectiveWiring.FETCH, new FetchSchemaDirectiveWiring());
         }
 
         /**
@@ -180,10 +189,25 @@ public class RuntimeWiring {
         }
 
         /**
+         * This provides the wiring code for a named directive.
+         *
+         * @param directiveName         the name of the directive to wire
+         * @param schemaDirectiveWiring the runtime behaviour of this wiring
+         *
+         * @return the runtime wiring builder
+         *
+         * @see graphql.schema.idl.SchemaDirectiveWiring
+         */
+        public Builder directive(String directiveName, SchemaDirectiveWiring schemaDirectiveWiring) {
+            directiveWiring.put(directiveName, schemaDirectiveWiring);
+            return this;
+        }
+
+        /**
          * @return the built runtime wiring
          */
         public RuntimeWiring build() {
-            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, enumValuesProviders, wiringFactory, fieldVisibility);
+            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, directiveWiring, enumValuesProviders, wiringFactory, fieldVisibility);
         }
 
     }

@@ -54,6 +54,7 @@ graphql-java is licensed under the MIT License.
     subscriptions
     defer
     exceptions
+    sdldirecives
     batching
     instrumentation
     relay

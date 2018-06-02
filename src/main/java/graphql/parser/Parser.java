@@ -5,6 +5,7 @@ import graphql.language.Document;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
@@ -17,8 +18,19 @@ import java.util.List;
 public class Parser {
 
     public Document parseDocument(String input) {
+        return parseDocument(input, null);
+    }
 
-        GraphqlLexer lexer = new GraphqlLexer(CharStreams.fromString(input));
+    public Document parseDocument(String input, String sourceName) {
+
+        CharStream charStream;
+        if(sourceName == null) {
+            charStream = CharStreams.fromString(input);
+        } else{
+            charStream = CharStreams.fromString(input, sourceName);
+        }
+
+        GraphqlLexer lexer = new GraphqlLexer(charStream);
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 

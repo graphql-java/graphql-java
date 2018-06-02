@@ -1,5 +1,6 @@
 package graphql.schema.idl.errors;
 
+import graphql.language.DirectiveDefinition;
 import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
@@ -34,6 +35,11 @@ public class NonUniqueNameError extends BaseError {
     public NonUniqueNameError(UnionTypeDefinition typeDefinition, String memberName) {
         super(typeDefinition, format("The type '%s' %s has declared an union member with a non unique name '%s'",
                 typeDefinition.getName(), lineCol(typeDefinition), memberName));
+    }
+
+    public NonUniqueNameError(DirectiveDefinition typeDefinition, InputValueDefinition inputValueDefinition) {
+        super(typeDefinition, format("The directive definition '%s' %s has declared an argument with a non unique name '%s'",
+                typeDefinition.getName(), lineCol(typeDefinition), inputValueDefinition.getName()));
     }
 
 }
