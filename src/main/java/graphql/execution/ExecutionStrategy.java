@@ -394,18 +394,19 @@ public abstract class ExecutionStrategy {
         // and we must go deeper
         //
         GraphQLObjectType resolvedObjectType;
+        CompletableFuture<ExecutionResult> erCF;
         try {
             resolvedObjectType = resolveType(executionContext, parameters, fieldType);
+            erCF = completeValueForObject(executionContext, parameters, resolvedObjectType, result);
         } catch (UnresolvedTypeException ex) {
             // consider the result to be null and add the error on the context
             handleUnresolvedTypeProblem(executionContext, parameters, ex);
             // and validate the field is nullable, if non-nullable throw exception
             parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
-            // complete the field
-            return completedFuture(new ExecutionResultImpl(null, null));
+            // complete the field as null
+            erCF = completedFuture(new ExecutionResultImpl(null, null));
         }
-
-        return new FieldValueInfo(FieldValueInfo.CompleteValueType.OBJECT, completeValueForObject(executionContext, parameters, resolvedObjectType, result));
+        return new FieldValueInfo(FieldValueInfo.CompleteValueType.OBJECT, erCF);
     }
 
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
