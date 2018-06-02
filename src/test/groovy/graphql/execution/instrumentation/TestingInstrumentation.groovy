@@ -46,7 +46,7 @@ class TestingInstrumentation implements Instrumentation {
     @Override
     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("execution-strategy", executionList, throwableList)
+        return new TestingExecutionStrategyInstrumentationContext("execution-strategy", executionList, throwableList)
     }
 
     @Override

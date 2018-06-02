@@ -98,7 +98,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
-        return completeField(newExecutionContext, newParameters, eventPayload).getExecutionResultFuture()
+        return completeField(newExecutionContext, newParameters, eventPayload).getFieldValue()
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
     }
 

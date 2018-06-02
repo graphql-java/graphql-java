@@ -75,7 +75,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 handleResultsConsumer.accept(null, throwable.getCause() );
                 return;
             }
-            List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(FieldValueInfo::getExecutionResultFuture).collect(Collectors.toList());
+            List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(FieldValueInfo::getFieldValue).collect(Collectors.toList());
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             Async.each(executionResultFuture).whenComplete(handleResultsConsumer);
         });

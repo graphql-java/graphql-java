@@ -183,10 +183,9 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         DataLoaderRegistry registry = buildRegistry()
 
-        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedCallsApproach(false)
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(registry, options))
+                .instrumentation(new DataLoaderDispatcherInstrumentation(registry))
                 .build()
 
         when:
@@ -208,40 +207,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         companyBatchLoadKeyCount == 26
 
-        companyBatchLoadInvocationCount == 2
-
-    }
-
-    def "ensure performant loading with combined calls"() {
-
-        DataLoaderRegistry registry = buildRegistry()
-
-        def options = DataLoaderDispatcherInstrumentationOptions.newOptions().useCombinedCallsApproach(true)
-        GraphQL graphQL = GraphQL
-                .newGraphQL(graphQLSchema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(registry, options))
-                .build()
-
-        when:
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .context(registry)
-                .build()
-
-        def executionResult = graphQL.execute(executionInput)
-
-
-        then:
-
-        (executionResult.data["products"] as Map).size() == 5
-
-        personBatchLoadKeyCount == 26
-        personBatchLoadInvocationCount == 1
-
-        companyBatchLoadKeyCount == 26
-
-        companyBatchLoadInvocationCount == 1 // WOOT - even better than field tracking
+        companyBatchLoadInvocationCount == 1
 
     }
 }

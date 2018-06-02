@@ -148,7 +148,7 @@ public class FieldLevelTrackingApproach {
 
     private int getCountForList(FieldValueInfo fieldValueInfo) {
         int result = 0;
-        for (FieldValueInfo cvi : fieldValueInfo.getListInfos()) {
+        for (FieldValueInfo cvi : fieldValueInfo.getFieldValueInfos()) {
             if (cvi.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
                 result++;
             } else if (cvi.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
