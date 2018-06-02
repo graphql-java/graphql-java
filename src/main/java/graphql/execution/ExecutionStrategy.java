@@ -143,9 +143,9 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
-     * @return an {@link ExecutionResult}
+     * @return a promise to an {@link ExecutionResult}
      *
-     * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
+     * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     public abstract CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException;
 
@@ -161,29 +161,31 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
-     * @return an {@link ExecutionResult}
+     * @return a promise to an {@link ExecutionResult}
      *
-     * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
+     * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().get(0));
-
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
-                new InstrumentationFieldParameters(executionContext, fieldDef, fieldTypeInfo(parameters, fieldDef))
-        );
-
-        CompletableFuture<ExecutionResult> result = fetchField(executionContext, parameters)
-                .thenCompose((fetchedValue) ->
-                        completeField(executionContext, parameters, fetchedValue).getFieldValue());
-
-        fieldCtx.onDispatched(result);
-        result.whenComplete(fieldCtx::onCompleted);
-        return result;
+        return resolveFieldWithInfo(executionContext,parameters).thenCompose(FieldValueInfo::getFieldValue);
     }
 
-
-    protected CompletableFuture<FieldValueInfo> resolveField2(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    /**
+     * Called to fetch a value for a field and its extra runtime info and resolve it further in terms of the graphql query.  This will call
+     * #fetchField followed by #completeField and the completed {@link graphql.execution.FieldValueInfo} is returned.
+     * <p>
+     * An execution strategy can iterate the fields to be executed and call this method for each one
+     * <p>
+     * Graphql fragments mean that for any give logical field can have one or more {@link Field} values associated with it
+     * in the query, hence the fieldList.  However the first entry is representative of the field for most purposes.
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     *
+     * @return a promise to a {@link FieldValueInfo}
+     *
+     * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValue()} future if a non null field resolves to a null value
+     */
+    protected CompletableFuture<FieldValueInfo> resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().get(0));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -212,9 +214,9 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
-     * @return a fetched object
+     * @return a promise to a fetched object
      *
-     * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
+     * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         Field field = parameters.getField().get(0);
@@ -325,9 +327,9 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param fetchedValue     the fetched raw value
      *
-     * @return an {@link ExecutionResult}
+     * @return a {@link FieldValueInfo}
      *
-     * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
+     * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValue()} future if a non null field resolves to a null value
      */
     protected FieldValueInfo completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
         Field field = parameters.getField().get(0);
@@ -376,7 +378,7 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
-     * @return an {@link ExecutionResult}
+     * @return a {@link FieldValueInfo}
      *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
@@ -440,7 +442,7 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param result           the result to complete, raw result
      *
-     * @return an {@link ExecutionResult}
+     * @return a {@link FieldValueInfo}
      */
     protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
         Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
@@ -463,7 +465,7 @@ public abstract class ExecutionStrategy {
      * @param parameters       contains the parameters holding the fields to be executed and source object
      * @param iterableValues   the values to complete, can't be null
      *
-     * @return an {@link ExecutionResult}
+     * @return a {@link FieldValueInfo}
      */
     protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
 
@@ -541,7 +543,7 @@ public abstract class ExecutionStrategy {
      * @param scalarType       the type of the scalar
      * @param result           the result to be coerced
      *
-     * @return an {@link ExecutionResult}
+     * @return a promise to an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
         Object serialized;
@@ -572,7 +574,7 @@ public abstract class ExecutionStrategy {
      * @param enumType         the type of the enum
      * @param result           the result to be coerced
      *
-     * @return an {@link ExecutionResult}
+     * @return a promise to an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
         Object serialized;
@@ -597,7 +599,7 @@ public abstract class ExecutionStrategy {
      * @param resolvedObjectType the resolved object type
      * @param result             the result to be coerced
      *
-     * @return an {@link ExecutionResult}
+     * @return a promise to an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionTypeInfo typeInfo = parameters.getTypeInfo();

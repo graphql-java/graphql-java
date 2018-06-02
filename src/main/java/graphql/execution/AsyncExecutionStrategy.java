@@ -63,7 +63,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             if (isDeferred(executionContext, newParameters, currentField)) {
                 continue;
             }
-            CompletableFuture<FieldValueInfo> future = resolveField2(executionContext, newParameters);
+            CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
             futures.add(future);
         }
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
