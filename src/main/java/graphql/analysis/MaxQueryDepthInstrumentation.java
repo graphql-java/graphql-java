@@ -50,12 +50,12 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
     }
 
     QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
-        return new QueryTraversal(
-                parameters.getSchema(),
-                parameters.getDocument(),
-                parameters.getOperation(),
-                parameters.getVariables()
-        );
+        return QueryTraversal.newQueryTraversal()
+                .schema(parameters.getSchema())
+                .document(parameters.getDocument())
+                .operationName(parameters.getOperation())
+                .variables(parameters.getVariables())
+                .build();
     }
 
     private int getPathLength(QueryVisitorFieldEnvironment path) {

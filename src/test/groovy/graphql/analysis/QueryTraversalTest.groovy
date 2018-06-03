@@ -7,9 +7,12 @@ import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
 import graphql.parser.Parser
+import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import static java.util.Collections.emptyMap
 
 class QueryTraversalTest extends Specification {
 
@@ -20,12 +23,11 @@ class QueryTraversalTest extends Specification {
     }
 
     QueryTraversal createQueryTraversal(Document document, GraphQLSchema schema, Map variables = [:]) {
-        QueryTraversal queryTraversal = new QueryTraversal(
-                schema,
-                document,
-                null,
-                variables
-        )
+        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+                .schema(schema)
+                .document(document)
+                .variables(variables)
+                .build()
         return queryTraversal
     }
 
@@ -51,7 +53,8 @@ class QueryTraversalTest extends Specification {
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
             it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" &&
-        it.selectionSetContainer == null})
+                    it.selectionSetContainer == null
+        })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
@@ -1113,13 +1116,13 @@ class QueryTraversalTest extends Specification {
         assert root instanceof Field
         ((Field) root).name == "subFoo"
         def rootParentType = schema.getType("Foo")
-        QueryTraversal queryTraversal = new QueryTraversal(
-                schema,
-                root,
-                rootParentType,
-                Collections.emptyMap(),
-                Collections.emptyMap()
-        )
+        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+                .schema(schema)
+                .root(root)
+                .rootParentType(rootParentType)
+                .variables(emptyMap())
+                .fragmentsByName(emptyMap())
+                .build()
         when:
         queryTraversal.visitPreOrder(visitor)
 
@@ -1129,6 +1132,42 @@ class QueryTraversalTest extends Specification {
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && it.parentType.name == "SubFoo" })
+
+    }
+
+    @Unroll
+    def "builder doesn't allow ambiguous arguments"() {
+//        def document = createQuery("""
+//            {foo}
+//            """)
+//        def root = new Field()
+
+        when:
+        def queryTraversal = QueryTraversal.newQueryTraversal()
+                .document(document)
+                .operationName(operationName)
+                .root(root)
+                .rootParentType(rootParentType)
+                .fragmentsByName(fragmentsByName)
+                .build()
+
+        then:
+        thrown(IllegalStateException)
+
+        where:
+        document             | operationName | root        | rootParentType          | fragmentsByName
+        createQuery("{foo}") | null          | new Field() | null                    | null
+        createQuery("{foo}") | "foo"         | new Field() | null                    | null
+        createQuery("{foo}") | "foo"         | new Field() | Mock(GraphQLObjectType) | null
+        createQuery("{foo}") | "foo"         | new Field() | null                    | emptyMap()
+        null                 | "foo"         | new Field() | Mock(GraphQLObjectType) | null
+        null                 | "foo"         | new Field() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | new Field() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | new Field() | null                    | emptyMap()
+        null                 | "foo"         | null        | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | null        | Mock(GraphQLObjectType) | null
+        null                 | "foo"         | null        | null                    | emptyMap()
+
 
     }
 

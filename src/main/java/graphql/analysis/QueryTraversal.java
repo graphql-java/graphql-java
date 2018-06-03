@@ -59,29 +59,31 @@ public class QueryTraversal {
     private final ChildrenOfSelectionProvider childrenOfSelectionProvider;
     private final GraphQLObjectType rootParentType;
 
-    public QueryTraversal(GraphQLSchema schema,
-                          Document document,
-                          String operation,
-                          Map<String, Object> variables) {
+    private QueryTraversal(GraphQLSchema schema,
+                           Document document,
+                           String operation,
+                           Map<String, Object> variables) {
+        assertNotNull(document, "document  can't be null");
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
-        this.schema = schema;
-        this.variables = variables;
+        this.schema = assertNotNull(schema, "schema can't be null");
+        this.variables = assertNotNull(variables, "variables can't be null");
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = getOperationResult.operationDefinition.getSelectionSet().getChildren();
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
         this.childrenOfSelectionProvider = new ChildrenOfSelectionProvider(fragmentsByName);
     }
 
-    public QueryTraversal(GraphQLSchema schema,
-                          Node root,
-                          GraphQLObjectType rootParentType,
-                          Map<String, FragmentDefinition> fragmentsByName,
-                          Map<String, Object> variables) {
-        this.schema = schema;
-        this.variables = variables;
+    private QueryTraversal(GraphQLSchema schema,
+                           Node root,
+                           GraphQLObjectType rootParentType,
+                           Map<String, FragmentDefinition> fragmentsByName,
+                           Map<String, Object> variables) {
+        this.schema = assertNotNull(schema, "schema can't be null");
+        this.variables = assertNotNull(variables, "variables can't be null");
+        assertNotNull(root, "root can't be null");
         this.roots = Collections.singleton(root);
-        this.rootParentType = rootParentType;
-        this.fragmentsByName = fragmentsByName;
+        this.rootParentType = assertNotNull(rootParentType, "rootParentType can't be null");
+        this.fragmentsByName = assertNotNull(fragmentsByName, "fragmentsByName can't be null");
         this.childrenOfSelectionProvider = new ChildrenOfSelectionProvider(fragmentsByName);
     }
 
@@ -274,6 +276,128 @@ public class QueryTraversal {
 
             context.setVar(QueryTraversalContext.class, fieldEnv);
             return TraversalControl.CONTINUE;
+        }
+
+    }
+
+    public static Builder newQueryTraversal() {
+        return new Builder();
+    }
+
+    @PublicApi
+    public static class Builder {
+        private GraphQLSchema schema;
+        private Document document;
+        private String operation;
+        private Map<String, Object> variables;
+
+        private Node root;
+        private GraphQLObjectType rootParentType;
+        private Map<String, FragmentDefinition> fragmentsByName;
+
+
+        /**
+         * The schema used to identify the types of the query.
+         *
+         * @param schema
+         *
+         * @return
+         */
+        public Builder schema(GraphQLSchema schema) {
+            this.schema = schema;
+            return this;
+        }
+
+        /**
+         * specify the operation if a document is traversed and there
+         * are more than one operation.
+         *
+         * @param operationName
+         *
+         * @return
+         */
+        public Builder operationName(String operationName) {
+            this.operation = operationName;
+            return this;
+        }
+
+        /**
+         * document to be used to traverse the whole query.
+         * If set a {@link Builder#operationName(String)} might be required.
+         *
+         * @param document
+         *
+         * @return
+         */
+        public Builder document(Document document) {
+            this.document = document;
+            return this;
+        }
+
+        /**
+         * Variables used in the query.
+         *
+         * @param variables
+         *
+         * @return
+         */
+        public Builder variables(Map<String, Object> variables) {
+            this.variables = variables;
+            return this;
+        }
+
+        /**
+         * Specify the root node for the traversal. Needs to be provided if there is
+         * no {@link Builder#document(Document)}.
+         *
+         * @param root
+         *
+         * @return
+         */
+        public Builder root(Node root) {
+            this.root = root;
+            return this;
+        }
+
+        /**
+         * The type of the parent of the root node. (See {@link Builder#root(Node)}
+         *
+         * @param rootParentType
+         *
+         * @return
+         */
+        public Builder rootParentType(GraphQLObjectType rootParentType) {
+            this.rootParentType = rootParentType;
+            return this;
+        }
+
+        /**
+         * Fragment by name map. Needs to be provided together with a {@link Builder#root(Node)} and {@link Builder#rootParentType(GraphQLObjectType)}
+         *
+         * @param fragmentsByName
+         *
+         * @return
+         */
+        public Builder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
+            this.fragmentsByName = fragmentsByName;
+            return this;
+        }
+
+        public QueryTraversal build() {
+            checkState();
+            if (document != null) {
+                return new QueryTraversal(schema, document, operation, variables);
+            } else {
+                return new QueryTraversal(schema, root, rootParentType, fragmentsByName, variables);
+            }
+        }
+
+        private void checkState() {
+            if (document != null || operation != null) {
+                if (root != null || rootParentType != null || fragmentsByName != null) {
+                    throw new IllegalStateException("ambiguous builder");
+                }
+            }
         }
 
     }

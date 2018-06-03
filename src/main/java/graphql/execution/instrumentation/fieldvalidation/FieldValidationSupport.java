@@ -28,12 +28,13 @@ class FieldValidationSupport {
 
         Map<ExecutionPath, List<FieldAndArguments>> fieldArgumentsMap = new LinkedHashMap<>();
 
-        QueryTraversal queryTraversal = new QueryTraversal(
-                executionContext.getGraphQLSchema(),
-                executionContext.getDocument(),
-                executionContext.getOperationDefinition().getName(),
-                executionContext.getVariables()
-        );
+        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+                .schema(executionContext.getGraphQLSchema())
+                .document(executionContext.getDocument())
+                .operationName(executionContext.getOperationDefinition().getName())
+                .variables(executionContext.getVariables())
+                .build();
+
         queryTraversal.visitPreOrder(new QueryVisitorStub() {
             @Override
             public void visitField(QueryVisitorFieldEnvironment env) {
