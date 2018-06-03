@@ -42,6 +42,18 @@ public class NodeUtil {
         public Map<String, FragmentDefinition> fragmentsByName;
     }
 
+    public static Map<String, FragmentDefinition> getFragmentsByName(Document document) {
+        Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
+
+        for (Definition definition : document.getDefinitions()) {
+            if (definition instanceof FragmentDefinition) {
+                FragmentDefinition fragmentDefinition = (FragmentDefinition) definition;
+                fragmentsByName.put(fragmentDefinition.getName(), fragmentDefinition);
+            }
+        }
+        return fragmentsByName;
+    }
+
     public static GetOperationResult getOperation(Document document, String operationName) {
 
 

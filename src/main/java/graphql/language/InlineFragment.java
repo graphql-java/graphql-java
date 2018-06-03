@@ -10,7 +10,7 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
-public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment> {
+public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment> {
     private TypeName typeCondition;
     private List<Directive> directives;
     private SelectionSet selectionSet;

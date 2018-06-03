@@ -12,7 +12,7 @@ import java.util.List;
  * Provided to the DataFetcher, therefore public API
  */
 @PublicApi
-public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, DirectivesContainer<FragmentDefinition> {
+public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition> {
 
     private String name;
     private TypeName typeCondition;
