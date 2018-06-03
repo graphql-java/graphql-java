@@ -1137,13 +1137,8 @@ class QueryTraversalTest extends Specification {
 
     @Unroll
     def "builder doesn't allow ambiguous arguments"() {
-//        def document = createQuery("""
-//            {foo}
-//            """)
-//        def root = new Field()
-
         when:
-        def queryTraversal = QueryTraversal.newQueryTraversal()
+        QueryTraversal.newQueryTraversal()
                 .document(document)
                 .operationName(operationName)
                 .root(root)
