@@ -2,14 +2,17 @@ package graphql.execution.instrumentation.dataloader;
 
 import graphql.Assert;
 import graphql.ExecutionResult;
+import graphql.Internal;
 import graphql.execution.ExecutionPath;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.language.Field;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
@@ -21,11 +24,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenDispatched;
-
 /**
  * This approach uses field level tracking to achieve its aims of making the data loader more efficient
  */
+@Internal
 public class FieldLevelTrackingApproach {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final Logger log;
@@ -44,6 +46,7 @@ public class FieldLevelTrackingApproach {
         CallStack() {
             expectedStrategyCallsPerLevel.put(1, 1);
         }
+
 
         synchronized int increaseExpectedFetchCount(int level, int count) {
             expectedFetchCountPerLevel.put(level, expectedFetchCountPerLevel.getOrDefault(level, 0) + count);
@@ -143,6 +146,13 @@ public class FieldLevelTrackingApproach {
                 callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
                 dispatchIfNeeded(callStack, curLevel + 1);
             }
+
+            @Override
+            public void onDeferredField(List<Field> field) {
+                // fake fetch count for this field
+                callStack.increaseFetchCount(curLevel);
+                dispatchIfNeeded(callStack, curLevel);
+            }
         };
     }
 
@@ -160,10 +170,8 @@ public class FieldLevelTrackingApproach {
 
     InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        int targetLevel = parameters.getTypeInfo().getPath().getLevel();
-        // with deferred fields we aggressively dispatch the data loaders because the neat hierarchy of
-        // outstanding fields and so on is lost because the field has jumped out of the execution tree
-        return whenDispatched((result) -> dispatchIfNeeded(callStack, targetLevel));
+        System.out.println("BEGIN deferred field!");
+        return new SimpleInstrumentationContext<>();
     }
 
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
@@ -175,6 +183,7 @@ public class FieldLevelTrackingApproach {
             @Override
             public void onDispatched(CompletableFuture result) {
                 callStack.increaseFetchCount(level);
+                System.out.println("onDispatch " + parameters.getEnvironment().getField().getName() + " l: " + level + " stack:" + callStack);
                 dispatchIfNeeded(callStack, level);
             }
 

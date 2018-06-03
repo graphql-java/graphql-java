@@ -61,6 +61,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                     .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
 
             if (isDeferred(executionContext, newParameters, currentField)) {
+                executionStrategyCtx.onDeferredField(currentField);
                 continue;
             }
             CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);

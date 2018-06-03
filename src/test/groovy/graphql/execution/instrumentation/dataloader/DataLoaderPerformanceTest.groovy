@@ -10,7 +10,6 @@ import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -237,7 +236,6 @@ class DataLoaderPerformanceTest extends Specification {
             }
             """
 
-    @Ignore
     def "data loader will work with deferred queries"() {
 
         when:
@@ -292,10 +290,10 @@ class DataLoaderPerformanceTest extends Specification {
             }
         })
 
-        Awaitility.await().untilTrue(done)
 
         result.data == expectedDeferredData
 
+        Awaitility.await().untilTrue(done)
         results == expectedListOfDeferredData
 
         //
