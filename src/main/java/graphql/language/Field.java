@@ -9,11 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*
-* This is provided to a DataFetcher, therefore it is a public API.
-* This might change in the future.
+ * This is provided to a DataFetcher, therefore it is a public API.
+ * This might change in the future.
  */
 @PublicApi
-public class Field extends AbstractNode<Field> implements Selection<Field>, DirectivesContainer<Field> {
+public class Field extends AbstractNode<Field> implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field> {
 
     private String name;
     private String alias;

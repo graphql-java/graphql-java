@@ -4,7 +4,8 @@ import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.analysis.QueryTraversal;
-import graphql.analysis.QueryVisitorEnvironment;
+import graphql.analysis.QueryVisitorFieldEnvironment;
+import graphql.analysis.QueryVisitorStub;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionPath;
 import graphql.language.Field;
@@ -27,23 +28,27 @@ class FieldValidationSupport {
 
         Map<ExecutionPath, List<FieldAndArguments>> fieldArgumentsMap = new LinkedHashMap<>();
 
-        QueryTraversal queryTraversal = new QueryTraversal(
-                executionContext.getGraphQLSchema(),
-                executionContext.getDocument(),
-                executionContext.getOperationDefinition().getName(),
-                executionContext.getVariables()
-        );
-        queryTraversal.visitPreOrder(traversalEnv -> {
-            Field field = traversalEnv.getField();
-            if (field.getArguments() != null && !field.getArguments().isEmpty()) {
-                //
-                // only fields that have arguments make any sense to placed in play
-                // since only they have variable input
-                FieldAndArguments fieldArguments = new FieldAndArgumentsImpl(traversalEnv);
-                ExecutionPath path = fieldArguments.getPath();
-                List<FieldAndArguments> list = fieldArgumentsMap.getOrDefault(path, new ArrayList<>());
-                list.add(fieldArguments);
-                fieldArgumentsMap.put(path, list);
+        QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
+                .schema(executionContext.getGraphQLSchema())
+                .document(executionContext.getDocument())
+                .operationName(executionContext.getOperationDefinition().getName())
+                .variables(executionContext.getVariables())
+                .build();
+
+        queryTraversal.visitPreOrder(new QueryVisitorStub() {
+            @Override
+            public void visitField(QueryVisitorFieldEnvironment env) {
+                Field field = env.getField();
+                if (field.getArguments() != null && !field.getArguments().isEmpty()) {
+                    //
+                    // only fields that have arguments make any sense to placed in play
+                    // since only they have variable input
+                    FieldAndArguments fieldArguments = new FieldAndArgumentsImpl(env);
+                    ExecutionPath path = fieldArguments.getPath();
+                    List<FieldAndArguments> list = fieldArgumentsMap.getOrDefault(path, new ArrayList<>());
+                    list.add(fieldArguments);
+                    fieldArgumentsMap.put(path, list);
+                }
             }
         });
 
@@ -54,26 +59,26 @@ class FieldValidationSupport {
     }
 
     private static class FieldAndArgumentsImpl implements FieldAndArguments {
-        private final QueryVisitorEnvironment traversalEnv;
+        private final QueryVisitorFieldEnvironment traversalEnv;
         private final FieldAndArguments parentArgs;
         private final ExecutionPath path;
 
-        FieldAndArgumentsImpl(QueryVisitorEnvironment traversalEnv) {
+        FieldAndArgumentsImpl(QueryVisitorFieldEnvironment traversalEnv) {
             this.traversalEnv = traversalEnv;
             this.parentArgs = mkParentArgs(traversalEnv);
             this.path = mkPath(traversalEnv);
         }
 
-        private FieldAndArguments mkParentArgs(QueryVisitorEnvironment traversalEnv) {
+        private FieldAndArguments mkParentArgs(QueryVisitorFieldEnvironment traversalEnv) {
             return traversalEnv.getParentEnvironment() != null ? new FieldAndArgumentsImpl(traversalEnv.getParentEnvironment()) : null;
         }
 
-        private ExecutionPath mkPath(QueryVisitorEnvironment traversalEnv) {
-            QueryVisitorEnvironment parentEnvironment = traversalEnv.getParentEnvironment();
+        private ExecutionPath mkPath(QueryVisitorFieldEnvironment traversalEnv) {
+            QueryVisitorFieldEnvironment parentEnvironment = traversalEnv.getParentEnvironment();
             if (parentEnvironment == null) {
                 return ExecutionPath.rootPath().segment(traversalEnv.getField().getName());
             } else {
-                Stack<QueryVisitorEnvironment> stack = new Stack<>();
+                Stack<QueryVisitorFieldEnvironment> stack = new Stack<>();
                 stack.push(traversalEnv);
                 while (parentEnvironment != null) {
                     stack.push(parentEnvironment);
@@ -81,7 +86,7 @@ class FieldValidationSupport {
                 }
                 ExecutionPath path = ExecutionPath.rootPath();
                 while (!stack.isEmpty()) {
-                    QueryVisitorEnvironment environment = stack.pop();
+                    QueryVisitorFieldEnvironment environment = stack.pop();
                     path = path.segment(environment.getField().getName());
                 }
                 return path;

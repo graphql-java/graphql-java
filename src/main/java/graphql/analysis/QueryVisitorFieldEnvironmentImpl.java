@@ -2,49 +2,63 @@ package graphql.analysis;
 
 import graphql.Internal;
 import graphql.language.Field;
+import graphql.language.SelectionSetContainer;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.Map;
 
 @Internal
-public class QueryVisitorEnvironment {
+public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnvironment {
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLCompositeType parentType;
     private final Map<String, Object> arguments;
-    private final QueryVisitorEnvironment parentEnvironment;
+    private final QueryVisitorFieldEnvironment parentEnvironment;
+    private final SelectionSetContainer selectionSetContainer;
 
-    public QueryVisitorEnvironment(Field field,
-                                   GraphQLFieldDefinition fieldDefinition,
-                                   GraphQLCompositeType parentType,
-                                   QueryVisitorEnvironment parentEnvironment,
-                                   Map<String, Object> arguments) {
+    public QueryVisitorFieldEnvironmentImpl(Field field,
+                                            GraphQLFieldDefinition fieldDefinition,
+                                            GraphQLCompositeType parentType,
+                                            QueryVisitorFieldEnvironment parentEnvironment,
+                                            Map<String, Object> arguments,
+                                            SelectionSetContainer selectionSetContainer) {
         this.field = field;
         this.fieldDefinition = fieldDefinition;
         this.parentType = parentType;
         this.parentEnvironment = parentEnvironment;
         this.arguments = arguments;
+        this.selectionSetContainer = selectionSetContainer;
     }
 
+    @Override
     public Field getField() {
         return field;
     }
 
+    @Override
     public GraphQLFieldDefinition getFieldDefinition() {
         return fieldDefinition;
     }
 
+    @Override
     public GraphQLCompositeType getParentType() {
         return parentType;
     }
 
-    public QueryVisitorEnvironment getParentEnvironment() {
+    @Override
+    public QueryVisitorFieldEnvironment getParentEnvironment() {
         return parentEnvironment;
     }
 
+    @Override
     public Map<String, Object> getArguments() {
         return arguments;
+    }
+
+    @Override
+    public SelectionSetContainer getSelectionSetContainer() {
+        return selectionSetContainer;
     }
 
     @Override
@@ -52,7 +66,7 @@ public class QueryVisitorEnvironment {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        QueryVisitorEnvironment that = (QueryVisitorEnvironment) o;
+        QueryVisitorFieldEnvironmentImpl that = (QueryVisitorFieldEnvironmentImpl) o;
 
         if (field != null ? !field.equals(that.field) : that.field != null) return false;
         if (fieldDefinition != null ? !fieldDefinition.equals(that.fieldDefinition) : that.fieldDefinition != null)
@@ -75,7 +89,7 @@ public class QueryVisitorEnvironment {
 
     @Override
     public String toString() {
-        return "QueryVisitorEnvironment{" +
+        return "QueryVisitorFieldEnvironmentImpl{" +
                 "field=" + field +
                 ", fieldDefinition=" + fieldDefinition +
                 ", parentType=" + parentType +

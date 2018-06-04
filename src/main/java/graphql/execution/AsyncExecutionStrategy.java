@@ -53,6 +53,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         Map<String, List<Field>> fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
+        List<String> resolvedFields = new ArrayList<>();
         for (String fieldName : fieldNames) {
             List<Field> currentField = fields.get(fieldName);
 
@@ -64,6 +65,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 executionStrategyCtx.onDeferredField(currentField);
                 continue;
             }
+            resolvedFields.add(fieldName);
             CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
             futures.add(future);
         }
@@ -71,7 +73,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         executionStrategyCtx.onDispatched(overallResult);
 
         Async.each(futures).whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldNames, overallResult);
+            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, resolvedFields, overallResult);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
