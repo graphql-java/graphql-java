@@ -161,7 +161,13 @@ bintray {
         vcsUrl = 'https://github.com/graphql-java/graphql-java'
 
         version {
-            version = versionToPublish
+            name = project.version
+            desc = project.description
+            released  = new Date()
+            vcsTag = 'v'+ project.version
+            gpg {
+                sign = true
+            }
             mavenCentralSync {
                 sync = true
                 user = System.env.MAVEN_CENTRAL_USER
