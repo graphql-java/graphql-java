@@ -51,7 +51,7 @@ This is the famous "hello world" in ``graphql-java``:
 Using the latest development build
 ----------------------------------
 
-The latest development build is available on Bintray.
+The latest development build is also available on maven-central.
 
 Please look at `Latest Build <https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion>`_ for the
 latest version value.
@@ -60,13 +60,12 @@ latest version value.
 How to use the latest build with Gradle
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Add the repositories:
+Make sure ``mavenCentral`` is among your repos:
 
 .. code-block:: groovy
 
     repositories {
         mavenCentral()
-        maven { url  "http://dl.bintray.com/andimarek/graphql-java" }
     }
 
 
@@ -83,19 +82,6 @@ Dependency:
 How to use the latest build with Maven
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-Add the repository:
-
-.. code-block:: xml
-
-    <repository>
-        <snapshots>
-            <enabled>false</enabled>
-        </snapshots>
-        <id>bintray-andimarek-graphql-java</id>
-        <name>bintray</name>
-        <url>http://dl.bintray.com/andimarek/graphql-java</url>
-    </repository>
 
 Dependency:
 
