@@ -38,10 +38,10 @@ import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
 
 /**
  * Helps to traverse (or reduce) a Document (or parts of it) and tracks at the same time the corresponding Schema types.
- * <p/>
+ * <p>
  * This is an important distinction to just traversing the Document without any type information: Each field has a clearly
  * defined type. See {@link QueryVisitorFieldEnvironment}.
- * <p/>
+ * <p>
  * Further are the built in Directives skip/include automatically evaluated: if parts of the Document should be ignored they will not
  * be visited. But this is not a full evaluation of a Query: every fragment will be visited/followed regardless of the type condition.
  */
@@ -90,7 +90,7 @@ public class QueryTraversal {
     /**
      * Visits the Document (or parts of it) in post-order.
      *
-     * @param visitor
+     * @param visitor the query visitor that will be called back
      */
     public void visitPostOrder(QueryVisitor visitor) {
         visitImpl(visitor, false);
@@ -99,7 +99,7 @@ public class QueryTraversal {
     /**
      * Visits the Document (or parts of it) in pre-order.
      *
-     * @param visitor
+     * @param visitor the query visitor that will be called back
      */
     public void visitPreOrder(QueryVisitor visitor) {
         visitImpl(visitor, true);
@@ -108,9 +108,9 @@ public class QueryTraversal {
     /**
      * Reduces the fields of a Document (or parts of it) to a single value. The fields are visited in post-order.
      *
-     * @param queryReducer
-     * @param initialValue
-     * @param <T>
+     * @param queryReducer the query reducer
+     * @param initialValue the initial value to pass to the reducer
+     * @param <T>          the type of reduced value
      *
      * @return the calculated overall value
      */
@@ -130,9 +130,9 @@ public class QueryTraversal {
     /**
      * Reduces the fields of a Document (or parts of it) to a single value. The fields are visited in pre-order.
      *
-     * @param queryReducer
-     * @param initialValue
-     * @param <T>
+     * @param queryReducer the query reducer
+     * @param initialValue the initial value to pass to the reducer
+     * @param <T>          the type of reduced value
      *
      * @return the calucalated overall value
      */
@@ -299,9 +299,9 @@ public class QueryTraversal {
         /**
          * The schema used to identify the types of the query.
          *
-         * @param schema
+         * @param schema the schema to use
          *
-         * @return
+         * @return this builder
          */
         public Builder schema(GraphQLSchema schema) {
             this.schema = schema;
@@ -312,9 +312,9 @@ public class QueryTraversal {
          * specify the operation if a document is traversed and there
          * are more than one operation.
          *
-         * @param operationName
+         * @param operationName the operation name to use
          *
-         * @return
+         * @return this builder
          */
         public Builder operationName(String operationName) {
             this.operation = operationName;
@@ -325,9 +325,9 @@ public class QueryTraversal {
          * document to be used to traverse the whole query.
          * If set a {@link Builder#operationName(String)} might be required.
          *
-         * @param document
+         * @param document the document to use
          *
-         * @return
+         * @return this builder
          */
         public Builder document(Document document) {
             this.document = document;
@@ -337,9 +337,9 @@ public class QueryTraversal {
         /**
          * Variables used in the query.
          *
-         * @param variables
+         * @param variables the variables to use
          *
-         * @return
+         * @return this builder
          */
         public Builder variables(Map<String, Object> variables) {
             this.variables = variables;
@@ -350,9 +350,9 @@ public class QueryTraversal {
          * Specify the root node for the traversal. Needs to be provided if there is
          * no {@link Builder#document(Document)}.
          *
-         * @param root
+         * @param root the root node to use
          *
-         * @return
+         * @return this builder
          */
         public Builder root(Node root) {
             this.root = root;
@@ -362,9 +362,9 @@ public class QueryTraversal {
         /**
          * The type of the parent of the root node. (See {@link Builder#root(Node)}
          *
-         * @param rootParentType
+         * @param rootParentType the root parent type
          *
-         * @return
+         * @return this builder
          */
         public Builder rootParentType(GraphQLObjectType rootParentType) {
             this.rootParentType = rootParentType;
@@ -374,15 +374,18 @@ public class QueryTraversal {
         /**
          * Fragment by name map. Needs to be provided together with a {@link Builder#root(Node)} and {@link Builder#rootParentType(GraphQLObjectType)}
          *
-         * @param fragmentsByName
+         * @param fragmentsByName the map of fragments
          *
-         * @return
+         * @return this builder
          */
         public Builder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
             this.fragmentsByName = fragmentsByName;
             return this;
         }
 
+        /**
+         * @return a built {@link graphql.analysis.QueryTraversal} object
+         */
         public QueryTraversal build() {
             checkState();
             if (document != null) {
