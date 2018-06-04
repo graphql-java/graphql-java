@@ -158,6 +158,15 @@ bintray {
         desc = 'GraphQL in Java'
         licenses = ['MIT']
         vcsUrl = 'https://github.com/graphql-java/graphql-java'
+
+        version {
+            mavenCentralSync {
+                sync = true
+                user = System.env.MAVEN_CENTRAL_USER
+                password = System.env.MAVEN_CENTRAL_PASSWORD
+                close = '1'
+            }
+        }
     }
 }
 
