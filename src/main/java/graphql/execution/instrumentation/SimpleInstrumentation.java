@@ -70,8 +70,18 @@ public class SimpleInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        return new SimpleInstrumentationContext<>();
+    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
+        return new DeferredFieldInstrumentationContext() {
+            @Override
+            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+
+            }
+
+            @Override
+            public void onCompleted(ExecutionResult result, Throwable t) {
+
+            }
+        };
     }
 
     @Override

@@ -4,9 +4,9 @@ import graphql.ExecutionResult;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.defer.DeferredCall;
 import graphql.execution.defer.DeferredErrorSupport;
+import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.language.Field;
@@ -73,7 +73,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         Async.each(futures).whenComplete((completeValueInfos, throwable) -> {
             BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldNames, overallResult);
             if (throwable != null) {
-                handleResultsConsumer.accept(null, throwable.getCause() );
+                handleResultsConsumer.accept(null, throwable.getCause());
                 return;
             }
             List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(FieldValueInfo::getFieldValue).collect(Collectors.toList());
@@ -115,12 +115,24 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().get(0));
 
             Instrumentation instrumentation = executionContext.getInstrumentation();
-            InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginDeferredField(
+            DeferredFieldInstrumentationContext fieldCtx = instrumentation.beginDeferredField(
                     new InstrumentationDeferredFieldParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
             );
-            CompletableFuture<ExecutionResult> result = resolveField(executionContext, parameters);
+            CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
             fieldCtx.onDispatched(result);
-            result.whenComplete(fieldCtx::onCompleted);
+            CompletableFuture<FieldValueInfo> fieldValueInfoFuture = resolveFieldWithInfo(executionContext, parameters);
+            fieldValueInfoFuture.whenComplete((fieldValueInfo, throwable) -> {
+                fieldCtx.onFieldValueInfo(fieldValueInfo);
+                CompletableFuture<ExecutionResult> execResultFuture = fieldValueInfo.getFieldValue();
+                execResultFuture.whenComplete(fieldCtx::onCompleted);
+                execResultFuture.whenComplete((executionResult, throwable1) -> {
+                    if (throwable1 != null) {
+                        result.completeExceptionally(throwable1);
+                        return;
+                    }
+                    result.complete(executionResult);
+                });
+            });
             return result;
         };
     }

@@ -5,10 +5,10 @@ import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.execution.ExecutionPath;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -16,6 +16,7 @@ import graphql.language.Field;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -42,6 +43,8 @@ public class FieldLevelTrackingApproach {
 
 
         private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
+
+        private int deferredRootLevel;
 
         CallStack() {
             expectedStrategyCallsPerLevel.put(1, 1);
@@ -101,6 +104,20 @@ public class FieldLevelTrackingApproach {
             dispatchedLevels.add(level);
             dispatch.run();
         }
+
+        public void clearAndMarkCurrentLevelAsReady(int level) {
+            expectedFetchCountPerLevel.clear();
+            fetchCountPerLevel.clear();
+            expectedStrategyCallsPerLevel.clear();
+            happenedStrategyCallsPerLevel.clear();
+            happenedOnFieldValueCallsPerLevel.clear();
+            dispatchedLevels.clear();
+
+            // make sure the level is ready
+            expectedFetchCountPerLevel.put(level, 1);
+            expectedStrategyCallsPerLevel.put(level, 1);
+            happenedStrategyCallsPerLevel.put(level, 1);
+        }
     }
 
     public FieldLevelTrackingApproach(Logger log, DataLoaderRegistry dataLoaderRegistry) {
@@ -134,17 +151,7 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
-                callStack.increaseHappenedOnFieldValueCalls(curLevel);
-                int expectedStrategyCalls = 0;
-                for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
-                    if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
-                        expectedStrategyCalls++;
-                    } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
-                        expectedStrategyCalls += getCountForList(fieldValueInfo);
-                    }
-                }
-                callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
-                dispatchIfNeeded(callStack, curLevel + 1);
+                handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
             }
 
             @Override
@@ -154,6 +161,20 @@ public class FieldLevelTrackingApproach {
                 dispatchIfNeeded(callStack, curLevel);
             }
         };
+    }
+
+    private void handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
+        callStack.increaseHappenedOnFieldValueCalls(curLevel);
+        int expectedStrategyCalls = 0;
+        for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
+            if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
+                expectedStrategyCalls++;
+            } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
+                expectedStrategyCalls += getCountForList(fieldValueInfo);
+            }
+        }
+        callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
+        dispatchIfNeeded(callStack, curLevel + 1);
     }
 
     private int getCountForList(FieldValueInfo fieldValueInfo) {
@@ -168,10 +189,26 @@ public class FieldLevelTrackingApproach {
         return result;
     }
 
-    InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
+    DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        System.out.println("BEGIN deferred field!");
-        return new SimpleInstrumentationContext<>();
+        int level = parameters.getExecutionStrategyParameters().getPath().getLevel();
+        callStack.clearAndMarkCurrentLevelAsReady(level);
+
+        return new DeferredFieldInstrumentationContext() {
+            @Override
+            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+
+            }
+
+            @Override
+            public void onCompleted(ExecutionResult result, Throwable t) {
+            }
+
+            @Override
+            public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
+                handleOnFieldValuesInfo(Collections.singletonList(fieldValueInfo), callStack, level);
+            }
+        };
     }
 
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
@@ -183,7 +220,6 @@ public class FieldLevelTrackingApproach {
             @Override
             public void onDispatched(CompletableFuture result) {
                 callStack.increaseFetchCount(level);
-                System.out.println("onDispatch " + parameters.getEnvironment().getField().getName() + " l: " + level + " stack:" + callStack);
                 dispatchIfNeeded(callStack, level);
             }
 
@@ -214,7 +250,6 @@ public class FieldLevelTrackingApproach {
 
     void dispatch() {
         log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
-        System.out.println("Dispatching data loaders " + dataLoaderRegistry.getKeys());
         dataLoaderRegistry.dispatchAll();
     }
 }

@@ -107,7 +107,7 @@ public class ChainedInstrumentation implements Instrumentation {
         return new ExecutionStrategyInstrumentationContext() {
             @Override
             public void onDispatched(CompletableFuture<ExecutionResult> result) {
-               chainedInstrumentationContext.onDispatched(result);
+                chainedInstrumentationContext.onDispatched(result);
             }
 
             @Override
@@ -119,13 +119,25 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        return new ChainedInstrumentationContext<>(instrumentations.stream()
+    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
+        ChainedInstrumentationContext<ExecutionResult> chainedInstrumentationContext = new ChainedInstrumentationContext<>(instrumentations.stream()
                 .map(instrumentation -> {
                     InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
                     return instrumentation.beginField(parameters.withNewState(state));
                 })
                 .collect(toList()));
+
+        return new DeferredFieldInstrumentationContext() {
+            @Override
+            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+                chainedInstrumentationContext.onDispatched(result);
+            }
+
+            @Override
+            public void onCompleted(ExecutionResult result, Throwable t) {
+                chainedInstrumentationContext.onCompleted(result, t);
+            }
+        };
     }
 
     @Override
