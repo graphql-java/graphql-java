@@ -24,7 +24,7 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 def reactiveStreamsVersion = '1.0.2'
 def slf4jVersion = '1.7.25'
-def releaseVersion = System.properties.RELEASE_VERSION
+def releaseVersion = System.env.RELEASE_VERSION
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
