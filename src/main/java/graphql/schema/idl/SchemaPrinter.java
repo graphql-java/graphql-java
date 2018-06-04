@@ -57,11 +57,16 @@ public class SchemaPrinter {
 
         private final boolean includeScalars;
         private final boolean includeExtendedScalars;
+        private final boolean includeSchemaDefinition;
 
-        private Options(boolean includeIntrospectionTypes, boolean includeScalars, boolean includeExtendedScalars) {
+        private Options(boolean includeIntrospectionTypes,
+                        boolean includeScalars,
+                        boolean includeExtendedScalars,
+                        boolean includeSchemaDefinition) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeExtendedScalars = includeExtendedScalars;
+            this.includeSchemaDefinition = includeSchemaDefinition;
         }
 
         public boolean isIncludeIntrospectionTypes() {
@@ -76,8 +81,10 @@ public class SchemaPrinter {
             return includeExtendedScalars;
         }
 
+        public boolean isIncludeSchemaDefinition() { return includeSchemaDefinition; }
+
         public static Options defaultOptions() {
-            return new Options(false, false, false);
+            return new Options(false, false, false, false);
         }
 
         /**
@@ -88,7 +95,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeIntrospectionTypes(boolean flag) {
-            return new Options(flag, this.includeScalars, includeExtendedScalars);
+            return new Options(flag, this.includeScalars, includeExtendedScalars, this.includeSchemaDefinition);
         }
 
         /**
@@ -99,7 +106,7 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars);
+            return new Options(this.includeIntrospectionTypes, flag, includeExtendedScalars, this.includeSchemaDefinition);
         }
 
         /**
@@ -111,7 +118,21 @@ public class SchemaPrinter {
          * @return options
          */
         public Options includeExtendedScalarTypes(boolean flag) {
-            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag);
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, flag, this.includeSchemaDefinition);
+        }
+
+        /**
+         * This will force the printing of the graphql schema definition even if the query, mutation, and/or subscription
+         * types use the default names.  Some graphql parsers require this information even if the schema uses the
+         * default type names.  The schema definition will always be printed if any of the query, mutation, or subscription
+         * types do not use the default names.
+         *
+         * @param flag whether to force include the schema definition
+         *
+         * @return options
+         */
+        public Options includeSchemaDefintion(boolean flag) {
+            return new Options(this.includeIntrospectionTypes, this.includeScalars, this.includeExtendedScalars, flag);
         }
     }
 
@@ -348,16 +369,18 @@ public class SchemaPrinter {
 
             // when serializing a GraphQL schema using the type system language, a
             // schema definition should be omitted if only uses the default root type names.
-            boolean needsSchemaPrinted = false;
+            boolean needsSchemaPrinted = options.includeSchemaDefinition;
 
-            if (queryType != null && !queryType.getName().equals("Query")) {
-                needsSchemaPrinted = true;
-            }
-            if (mutationType != null && !mutationType.getName().equals("Mutation")) {
-                needsSchemaPrinted = true;
-            }
-            if (subscriptionType != null && !subscriptionType.getName().equals("Subscription")) {
-                needsSchemaPrinted = true;
+            if (!needsSchemaPrinted) {
+                if (queryType != null && !queryType.getName().equals("Query")) {
+                    needsSchemaPrinted = true;
+                }
+                if (mutationType != null && !mutationType.getName().equals("Mutation")) {
+                    needsSchemaPrinted = true;
+                }
+                if (subscriptionType != null && !subscriptionType.getName().equals("Subscription")) {
+                    needsSchemaPrinted = true;
+                }
             }
 
             if (needsSchemaPrinted) {
@@ -473,8 +496,12 @@ public class SchemaPrinter {
             for (int i = 0; i < args.size(); i++) {
                 GraphQLArgument arg = args.get(i);
                 sb.append(arg.getName());
-                if (arg.getDefaultValue() != null) {
+                if (arg.getValue() != null) {
                     sb.append(" : ");
+                    sb.append(printAst(arg.getValue(), arg.getType()));
+                }
+                if (arg.getDefaultValue() != null) {
+                    sb.append(" = ");
                     sb.append(printAst(arg.getDefaultValue(), arg.getType()));
                 }
                 if (i < args.size() - 1) {

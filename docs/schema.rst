@@ -337,12 +337,12 @@ SDL Example:
 
 .. code-block:: graphql
 
-    interface Cat {
+    type Cat {
         name: String;
         lives: Int;
     }
 
-    interface Dog {
+    type Dog {
         name: String;
         bonesOwned: int;
     }

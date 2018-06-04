@@ -48,7 +48,7 @@ implementsInterfaces :
     IMPLEMENTS '&'? typeName+ |
     implementsInterfaces '&' typeName ;
 
-fieldsDefinition : '{' fieldDefinition+ '}';
+fieldsDefinition : '{' fieldDefinition* '}';
 
 fieldDefinition : description? name argumentsDefinition? ':' type directives?;
 

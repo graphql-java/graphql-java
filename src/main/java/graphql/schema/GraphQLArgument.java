@@ -22,6 +22,18 @@ import static graphql.util.FpKit.valuesToList;
  * Fields can be thought of as "functions" that take arguments and return a value.
  *
  * See http://graphql.org/learn/queries/#arguments for more details on the concept.
+ *
+ * {@link graphql.schema.GraphQLArgument} is used in two contexts, one context is graphql queries where it represents the arguments that can be
+ * set on a field and the other is in Schema Definition Language (SDL) where it can be used to represent the argument value instances
+ * that have been supplied on a {@link graphql.schema.GraphQLDirective}.
+ *
+ * The difference is the 'value' and 'defaultValue' properties.  In a query argument, the 'value' is never in the GraphQLArgument
+ * object but rather in the AST direct or in the query variables map and the 'defaultValue' represents a value to use if both of these are
+ * not present. You can think of them like a descriptor of what shape an argument might have.
+ *
+ * However with directives on SDL elements, the value is specified in AST only and transferred into the GraphQLArgument object and the
+ * 'defaultValue' comes instead from the directive definition elsewhere in the SDL.  You can think of them as 'instances' of arguments, their shape and their
+ * specific value on that directive.
  */
 @PublicApi
 public class GraphQLArgument implements GraphQLDirectiveContainer {
@@ -29,6 +41,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     private final String name;
     private final String description;
     private GraphQLInputType type;
+    private final Object value;
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
@@ -42,16 +55,17 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
-        this(name, description, type, defaultValue, definition, Collections.emptyList());
+        this(name, description, type, defaultValue, null, definition, Collections.emptyList());
     }
 
-    private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition, List<GraphQLDirective> directives) {
+    private GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, Object value, InputValueDefinition definition, List<GraphQLDirective> directives) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
         this.name = name;
         this.description = description;
         this.type = type;
         this.defaultValue = defaultValue;
+        this.value = value;
         this.definition = definition;
         this.directives = directives;
     }
@@ -69,10 +83,26 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         return type;
     }
 
+    /**
+     * An argument has a default value when it represents the logical argument structure that a {@link graphql.schema.GraphQLFieldDefinition}
+     * can have and it can also have a default value when used in a schema definition language (SDL) where the
+     * default value comes via the directive definition.
+     *
+     * @return the default value of an argument
+     */
     public Object getDefaultValue() {
         return defaultValue;
     }
 
+    /**
+     * An argument ONLY has a value when its used in a schema definition language (SDL) context as the arguments to SDL directives.  The method
+     * should not be called in a query context, but rather the AST / variables map should be used to obtain an arguments value.
+     *
+     * @return the argument value
+     */
+    public Object getValue() {
+        return value;
+    }
 
     public String getDescription() {
         return description;
@@ -114,6 +144,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         private String name;
         private GraphQLInputType type;
         private Object defaultValue;
+        private Object value;
         private String description;
         private InputValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
@@ -124,6 +155,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         public Builder(GraphQLArgument existing) {
             this.name = existing.getName();
             this.type = existing.getType();
+            this.value = existing.getValue();
             this.defaultValue = existing.getDefaultValue();
             this.description = existing.getDescription();
             this.definition = existing.getDefinition();
@@ -153,6 +185,11 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
         public Builder defaultValue(Object defaultValue) {
             this.defaultValue = defaultValue;
+            return this;
+        }
+
+        public Builder value(Object value) {
+            this.value = value;
             return this;
         }
 
@@ -186,9 +223,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
 
         public GraphQLArgument build() {
-            return new GraphQLArgument(name, description, type, defaultValue, definition, valuesToList(directives));
+            return new GraphQLArgument(name, description, type, defaultValue, value, definition, valuesToList(directives));
         }
     }
-
-
 }

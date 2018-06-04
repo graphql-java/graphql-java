@@ -23,6 +23,7 @@ class GraphQLArgumentTest extends Specification {
                     .type(GraphQLString)
                     .withDirective(newDirective().name("directive1"))
                     .withDirective(newDirective().name("directive3"))
+                    .value("VALUE")
                     .defaultValue("DEFAULT")
         })
 
@@ -37,6 +38,7 @@ class GraphQLArgumentTest extends Specification {
         transformedArgument.name == "A2"
         transformedArgument.description == "A2_description"
         transformedArgument.type == GraphQLString
+        transformedArgument.value == "VALUE"
         transformedArgument.defaultValue == "DEFAULT"
         transformedArgument.getDirectives().size() == 2
         transformedArgument.getDirective("directive1") != null

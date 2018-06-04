@@ -548,6 +548,30 @@ input Gun {
         extTypeDef.getFieldDefinitions().size() == 1
     }
 
+    def "empty type definition with body"() {
+
+        def input = """
+        type EmptyType {
+        
+        }
+        
+        extend type EmptyType {
+            hero : String
+        }
+"""
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        ObjectTypeDefinition typeDef = document.definitions[0] as ObjectTypeDefinition
+        typeDef.getName() == 'EmptyType'
+        typeDef.getFieldDefinitions().isEmpty()
+
+        ObjectTypeExtensionDefinition extTypeDef = document.definitions[1] as ObjectTypeExtensionDefinition
+        extTypeDef.getName() == 'EmptyType'
+        extTypeDef.getFieldDefinitions().size() == 1
+    }
+
     def "type implements can have & character for extra names"() {
 
         def input = """
@@ -794,6 +818,24 @@ input Gun {
         fromDoc(doc, 2, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
         fromDoc(doc, 2, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
         fromDoc(doc, 2, InputObjectTypeExtensionDefinition).inputValueDefinitions[0].name == 'inputField'
+    }
+
+    def "source name is available when specified"() {
+
+        def input = 'type Query { hello: String }'
+        def sourceName = 'named.graphql'
+
+        when:
+        def defaultDoc = new Parser().parseDocument(input)
+        def namedDocNull = new Parser().parseDocument(input, null)
+        def namedDoc = new Parser().parseDocument(input, sourceName)
+
+        then:
+
+        defaultDoc.definitions[0].sourceLocation.sourceName == null
+        namedDocNull.definitions[0].sourceLocation.sourceName == null
+        namedDoc.definitions[0].sourceLocation.sourceName == sourceName
+
     }
 
     static <T> T fromDoc(Document document, int index, Class<T> asClass) {

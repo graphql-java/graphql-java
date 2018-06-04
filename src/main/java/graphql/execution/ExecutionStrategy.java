@@ -6,6 +6,7 @@ import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TypeMismatchError;
 import graphql.TypeResolutionEnvironment;
+import graphql.UnresolvedTypeError;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
@@ -366,13 +367,32 @@ public abstract class ExecutionStrategy {
         } else if (fieldType instanceof GraphQLEnumType) {
             return completeValueForEnum(executionContext, parameters, (GraphQLEnumType) fieldType, result);
         }
+
         //
         // when we are here, we have a complex type: Interface, Union or Object
         // and we must go deeper
         //
-        GraphQLObjectType resolvedObjectType = resolveType(executionContext, parameters, fieldType);
+        GraphQLObjectType resolvedObjectType;
+        try {
+            resolvedObjectType = resolveType(executionContext, parameters, fieldType);
+        } catch (UnresolvedTypeException ex) {
+            // consider the result to be null and add the error on the context
+            handleUnresolvedTypeProblem(executionContext, parameters, ex);
+            // and validate the field is nullable, if non-nullable throw exception
+            parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
+            // complete the field
+            return completedFuture(new ExecutionResultImpl(null, null));
+        }
 
         return completeValueForObject(executionContext, parameters, resolvedObjectType, result);
+    }
+
+    private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
+        UnresolvedTypeError error = new UnresolvedTypeError(parameters.getPath(), parameters.getTypeInfo(), e);
+        log.warn(error.getMessage(), e);
+        context.addError(error);
+
+        parameters.deferredErrorSupport().onError(error);
     }
 
     private CompletableFuture<ExecutionResult> completeValueForNull(ExecutionStrategyParameters parameters) {
@@ -647,6 +667,7 @@ public abstract class ExecutionStrategy {
         } else {
             resolvedType = (GraphQLObjectType) fieldType;
         }
+
         return resolvedType;
     }
 
@@ -659,10 +680,16 @@ public abstract class ExecutionStrategy {
      */
     protected GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema(), params.getContext());
-        GraphQLObjectType result = params.getGraphQLInterfaceType().getTypeResolver().getType(env);
+        GraphQLInterfaceType abstractType = params.getGraphQLInterfaceType();
+        GraphQLObjectType result = abstractType.getTypeResolver().getType(env);
         if (result == null) {
-            throw new UnresolvedTypeException(params.getGraphQLInterfaceType());
+            throw new UnresolvedTypeException(abstractType);
         }
+
+        if (!params.getSchema().isPossibleType(abstractType, result)) {
+            throw new UnresolvedTypeException(abstractType, result);
+        }
+
         return result;
     }
 
@@ -675,10 +702,16 @@ public abstract class ExecutionStrategy {
      */
     protected GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema(), params.getContext());
-        GraphQLObjectType result = params.getGraphQLUnionType().getTypeResolver().getType(env);
+        GraphQLUnionType abstractType = params.getGraphQLUnionType();
+        GraphQLObjectType result = abstractType.getTypeResolver().getType(env);
         if (result == null) {
-            throw new UnresolvedTypeException(params.getGraphQLUnionType());
+            throw new UnresolvedTypeException(abstractType);
         }
+
+        if (!params.getSchema().isPossibleType(abstractType, result)) {
+            throw new UnresolvedTypeException(abstractType, result);
+        }
+
         return result;
     }
 

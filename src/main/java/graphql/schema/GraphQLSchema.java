@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static java.lang.String.format;
@@ -124,6 +125,30 @@ public class GraphQLSchema {
         return (implementations == null)
                 ? Collections.emptyList()
                 : Collections.unmodifiableList(implementations);
+    }
+
+    /**
+     * Returns true if a specified concrete type is a possible type of a provided abstract type.
+     * If the provided abstract type is:
+     *   - an interface, it checks whether the concrete type is one of its implementations.
+     *   - a union, it checks whether the concrete type is one of its possible types.
+     *
+     * @param abstractType abstract type either interface or union
+     * @param concreteType concrete type
+     * @return true if possible type, false otherwise.
+     */
+    public boolean isPossibleType(GraphQLType abstractType, GraphQLObjectType concreteType) {
+        if (abstractType instanceof GraphQLInterfaceType) {
+            return getImplementations((GraphQLInterfaceType) abstractType).stream()
+                    .map(GraphQLType::getName)
+                    .anyMatch(name -> concreteType.getName().equals(name));
+        } else if (abstractType instanceof GraphQLUnionType) {
+            return ((GraphQLUnionType) abstractType).getTypes().stream()
+                    .map(GraphQLType::getName)
+                    .anyMatch(name -> concreteType.getName().equals(name));
+        }
+
+        return assertShouldNeverHappen("Unsupported abstract type %s. Abstract types supported are Union and Interface.", abstractType.getName());
     }
 
     public GraphQLObjectType getQueryType() {

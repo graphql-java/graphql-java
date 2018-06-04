@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.AssertException
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
@@ -23,6 +24,18 @@ class GraphQLSchemaTest extends Specification {
                 humanType, droidType
         ]
 
+    }
+
+    def "isPossibleType works as expected"() {
+        expect:
+        starWarsSchema.isPossibleType(characterInterface, humanType)
+    }
+
+    def "isPossibleType when wrong abstract type is passed expect exception"() {
+        when:
+        starWarsSchema.isPossibleType(humanType, humanType)
+        then:
+        thrown(AssertException)
     }
 
     def "#698 interfaces copied as expected"() {
