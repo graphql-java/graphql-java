@@ -48,25 +48,25 @@ This is the famous "hello world" in ``graphql-java``:
     :language: java
 
 
-Using a development build
--------------------------
+Using the latest development build
+----------------------------------
 
-Every successful build is published on maven-central with the version "<time>-<short git hash>".
-For example "2018-06-04T11-42-58-352f0df".
+The latest development build is available on Bintray.
 
 Please look at `Latest Build <https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion>`_ for the
 latest version value.
 
 
-How to use a development build with Gradle
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use the latest build with Gradle
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Make sure ``mavenCentral`` is among your repos:
+Add the repositories:
 
 .. code-block:: groovy
 
     repositories {
         mavenCentral()
+        maven { url  "http://dl.bintray.com/andimarek/graphql-java" }
     }
 
 
@@ -75,14 +75,27 @@ Dependency:
 .. code-block:: groovy
 
     dependencies {
-      compile 'com.graphql-java:graphql-java:INSERT_VERSION_HERE'
+      compile 'com.graphql-java:graphql-java:INSERT_LATEST_VERSION_HERE'
     }
 
 
 
-How to use a development build with Maven
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use the latest build with Maven
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+Add the repository:
+
+.. code-block:: xml
+
+    <repository>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+        <id>bintray-andimarek-graphql-java</id>
+        <name>bintray</name>
+        <url>http://dl.bintray.com/andimarek/graphql-java</url>
+    </repository>
 
 Dependency:
 
@@ -91,7 +104,7 @@ Dependency:
     <dependency>
         <groupId>com.graphql-java</groupId>
         <artifactId>graphql-java</artifactId>
-        <version>INSERT_VERSION_HERE</version>
+        <version>INSERT_LATEST_VERSION_HERE</version>
     </dependency>
 
 
