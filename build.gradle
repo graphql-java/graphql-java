@@ -10,13 +10,22 @@ apply plugin: 'maven-publish'
 apply plugin: 'antlr'
 apply plugin: 'osgi'
 
+def getDevelopmentVersion() {
+    def output = new StringBuilder()
+    def error = new StringBuilder()
+    def gitShortHash = 'git rev-parse --short HEAD'.execute()
+    gitShortHash.consumeProcessOutput(output, error)
+    gitShortHash.waitForOrKill(500)
+    new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "#" + output.toString().trim()
+}
+
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 def reactiveStreamsVersion = '1.0.2'
 def slf4jVersion = '1.7.25'
 def releaseVersion = System.properties.RELEASE_VERSION
-version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
-def versionToPublish = version
+version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
 
