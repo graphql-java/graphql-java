@@ -123,7 +123,7 @@ public class ChainedInstrumentation implements Instrumentation {
         ChainedInstrumentationContext<ExecutionResult> chainedInstrumentationContext = new ChainedInstrumentationContext<>(instrumentations.stream()
                 .map(instrumentation -> {
                     InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-                    return instrumentation.beginField(parameters.withNewState(state));
+                    return instrumentation.beginDeferredField(parameters.withNewState(state));
                 })
                 .collect(toList()));
 
