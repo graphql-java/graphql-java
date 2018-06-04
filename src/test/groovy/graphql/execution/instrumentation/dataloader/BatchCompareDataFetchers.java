@@ -44,22 +44,12 @@ public class BatchCompareDataFetchers {
         expensiveShops.put("exshop-3", new Shop("exshop-3", "ExShop 3", Arrays.asList("department-7", "department-8", "department-9")));
     }
 
-    public static DataFetcher<CompletableFuture<List<Shop>>> shopsDataFetcher = environment -> CompletableFuture.supplyAsync(() -> {
-        try {
-            Thread.sleep(new Random().nextInt(100));
-            return new ArrayList<>(shops.values());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    });
-    public static DataFetcher<CompletableFuture<List<Shop>>> expensiveShopsDataFetcher = environment -> CompletableFuture.supplyAsync(() -> {
-        try {
-            Thread.sleep(new Random().nextInt(100));
-            return new ArrayList<>(expensiveShops.values());
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    });
+
+    public static DataFetcher<CompletableFuture<List<Shop>>> shopsDataFetcher =
+            environment -> supplyAsyncWithSleep(() -> new ArrayList<>(shops.values()));
+
+    public static DataFetcher<CompletableFuture<List<Shop>>> expensiveShopsDataFetcher = environment ->
+            supplyAsyncWithSleep(() -> new ArrayList<>(expensiveShops.values()));
 
     // Departments
     private static Map<String, Department> departments = new LinkedHashMap<>();
@@ -183,10 +173,25 @@ public class BatchCompareDataFetchers {
         return maybeAsync(supplier);
     };
 
+    private static <T> Supplier<T> sleepSome(Supplier<T> supplier) {
+        return () -> {
+            try {
+                Thread.sleep(new Random().nextInt(100));
+                return supplier.get();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        };
+    }
+
+    private static <T> CompletableFuture<T> supplyAsyncWithSleep(Supplier<T> supplier) {
+        Supplier<T> sleepSome = sleepSome(supplier);
+        return CompletableFuture.supplyAsync(sleepSome);
+    }
+
     private static <T> CompletableFuture<T> maybeAsync(Supplier<CompletableFuture<T>> supplier) {
         if (useAsyncDataLoading.get()) {
-            return CompletableFuture
-                    .supplyAsync(supplier)
+            return supplyAsyncWithSleep(supplier)
                     .thenCompose(cf -> cf);
         } else {
             return supplier.get();
