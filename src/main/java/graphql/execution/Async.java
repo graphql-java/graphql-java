@@ -121,4 +121,14 @@ public class Async {
         return result;
     }
 
+    public static <T> void copyResults(CompletableFuture<T> source, CompletableFuture<T> target) {
+        source.whenComplete((o, throwable) -> {
+            if (throwable != null) {
+                target.completeExceptionally(throwable);
+                return;
+            }
+            target.complete(o);
+        });
+    }
+
 }

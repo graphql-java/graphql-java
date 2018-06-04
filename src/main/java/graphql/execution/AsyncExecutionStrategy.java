@@ -121,17 +121,13 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
             fieldCtx.onDispatched(result);
             CompletableFuture<FieldValueInfo> fieldValueInfoFuture = resolveFieldWithInfo(executionContext, parameters);
+
             fieldValueInfoFuture.whenComplete((fieldValueInfo, throwable) -> {
                 fieldCtx.onFieldValueInfo(fieldValueInfo);
+
                 CompletableFuture<ExecutionResult> execResultFuture = fieldValueInfo.getFieldValue();
                 execResultFuture.whenComplete(fieldCtx::onCompleted);
-                execResultFuture.whenComplete((executionResult, throwable1) -> {
-                    if (throwable1 != null) {
-                        result.completeExceptionally(throwable1);
-                        return;
-                    }
-                    result.complete(executionResult);
-                });
+                Async.copyResults(execResultFuture, result);
             });
             return result;
         };
