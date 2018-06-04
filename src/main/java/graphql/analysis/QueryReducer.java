@@ -4,12 +4,10 @@ import graphql.PublicApi;
 
 /**
  * Used by {@link QueryTraversal} to reduce the fields of a Document (or part of it) to a single value.
- * <p/>
+ * <p>
  * How this happens in detail (pre vs post-order for example) is defined by {@link QueryTraversal}.
- * <p/>
+ * <p>
  * See {@link QueryTraversal#reducePostOrder(QueryReducer, Object)} and {@link QueryTraversal#reducePreOrder(QueryReducer, Object)}
- *
- * @param <T>
  */
 @PublicApi
 @FunctionalInterface
@@ -18,7 +16,7 @@ public interface QueryReducer<T> {
     /**
      * Called each time a field is visited.
      *
-     * @param fieldEnvironment
+     * @param fieldEnvironment the environment to this call
      * @param acc              the previous result
      *
      * @return the new result
