@@ -16,6 +16,7 @@ def reactiveStreamsVersion = '1.0.2'
 def slf4jVersion = '1.7.25'
 def releaseVersion = System.properties.RELEASE_VERSION
 version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
+def versionToPublish = version
 group = 'com.graphql-java'
 
 
@@ -160,6 +161,7 @@ bintray {
         vcsUrl = 'https://github.com/graphql-java/graphql-java'
 
         version {
+            version = versionToPublish
             mavenCentralSync {
                 sync = true
                 user = System.env.MAVEN_CENTRAL_USER
