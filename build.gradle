@@ -15,9 +15,12 @@ def getDevelopmentVersion() {
     def error = new StringBuilder()
     def gitShortHash = 'git rev-parse --short HEAD'.execute()
     gitShortHash.consumeProcessOutput(output, error)
-    gitShortHash.waitForOrKill(500)
+    gitShortHash.waitForOrKill(2000)
     def gitHash = output.toString().trim()
-    assert gitHash.length() > 0
+    if (gitHash.isEmpty()) {
+        println "git hash is empty: error: ${error.toString()}"
+        throw new IllegalStateException("git hash could not be determined")
+    }
     new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-" + gitHash
 }
 
@@ -174,8 +177,8 @@ bintray {
         version {
             name = project.version
             desc = project.description
-            released  = new Date()
-            vcsTag = 'v'+ project.version
+            released = new Date()
+            vcsTag = 'v' + project.version
             gpg {
                 sign = true
             }
