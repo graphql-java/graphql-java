@@ -17,11 +17,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class BatchCompareDataFetchers {
+
+    private static AtomicBoolean useAsyncDataLoading = new AtomicBoolean(false);
+
+    public static void useAsyncDataLoading(boolean flag) {
+        useAsyncDataLoading.set(flag);
+    }
+
     // Shops
     private static final Map<String, Shop> shops = new LinkedHashMap<>();
     private static final Map<String, Shop> expensiveShops = new LinkedHashMap<>();
@@ -93,25 +101,26 @@ public class BatchCompareDataFetchers {
         productsForDepartmentsBatchLoaderCounter.set(0);
         departmentsForShopDataLoader.clearAll();
         productsForDepartmentDataLoader.clearAll();
+        useAsyncDataLoading.set(false);
     }
 
     static AtomicLong departmentsForShopsBatchLoaderCounter = new AtomicLong();
 
-    private static BatchLoader<String, List<Department>> departmentsForShopsBatchLoader = ids -> {
+    private static BatchLoader<String, List<Department>> departmentsForShopsBatchLoader = ids -> maybeAsync(() -> {
         System.out.println("ids" + ids);
         departmentsForShopsBatchLoaderCounter.incrementAndGet();
         List<Shop> shopList = new ArrayList<>();
         for (String id : ids) {
             Optional<Shop> shop1 = Optional.ofNullable(shops.get(id));
             Optional<Shop> shop2 = Optional.ofNullable(expensiveShops.get(id));
-            if(shop1.isPresent()) {
+            if (shop1.isPresent()) {
                 shopList.add(shop1.get());
             } else {
                 shopList.add(shop2.get());
             }
         }
         return CompletableFuture.completedFuture(getDepartmentsForShops(shopList));
-    };
+    });
 
     public static DataLoader<String, List<Department>> departmentsForShopDataLoader = new DataLoader<>(departmentsForShopsBatchLoader);
 
@@ -120,9 +129,7 @@ public class BatchCompareDataFetchers {
             Shop shop = environment.getSource();
             return departmentsForShopDataLoader.load(shop.getId());
         };
-        //return async(supplier);
-        return supplier.get();
-
+        return maybeAsync(supplier);
     };
 
     // Products
@@ -160,11 +167,11 @@ public class BatchCompareDataFetchers {
 
     static AtomicLong productsForDepartmentsBatchLoaderCounter = new AtomicLong();
 
-    private static BatchLoader<String, List<Product>> productsForDepartmentsBatchLoader = ids -> {
+    private static BatchLoader<String, List<Product>> productsForDepartmentsBatchLoader = ids -> maybeAsync(() -> {
         productsForDepartmentsBatchLoaderCounter.incrementAndGet();
         List<Department> d = ids.stream().map(departments::get).collect(Collectors.toList());
         return CompletableFuture.completedFuture(getProductsForDepartments(d));
-    };
+    });
 
     public static DataLoader<String, List<Product>> productsForDepartmentDataLoader = new DataLoader<>(productsForDepartmentsBatchLoader);
 
@@ -173,11 +180,16 @@ public class BatchCompareDataFetchers {
             Department department = environment.getSource();
             return productsForDepartmentDataLoader.load(department.getId());
         };
-        //return async(supplier);
-        return supplier.get();
+        return maybeAsync(supplier);
     };
 
-    private static <T> CompletableFuture<T> async(Supplier<CompletableFuture<T>> supplier) {
-        return CompletableFuture.supplyAsync(supplier).thenCompose(cf -> cf);
+    private static <T> CompletableFuture<T> maybeAsync(Supplier<CompletableFuture<T>> supplier) {
+        if (useAsyncDataLoading.get()) {
+            return CompletableFuture
+                    .supplyAsync(supplier)
+                    .thenCompose(cf -> cf);
+        } else {
+            return supplier.get();
+        }
     }
 }

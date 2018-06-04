@@ -8,6 +8,7 @@ import graphql.execution.defer.CapturingSubscriber
 import graphql.schema.GraphQLSchema
 import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
+import org.junit.Ignore
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 
@@ -171,8 +172,27 @@ class DataLoaderPerformanceTest extends Specification {
         //  eg 1 for shops-->departments and one for departments --> products
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+    }
+
+    @Ignore("Not 100% sure of this yet")
+    def "ensure data loader is performant for lists using async batch loading"() {
+
+        when:
+
+        BatchCompareDataFetchers.useAsyncDataLoading(true)
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).build()
+        def result = graphQL.execute(executionInput)
+
+        then:
+        result.data == expectedData
+        //
+        //  eg 1 for shops-->departments and one for departments --> products
+        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
     }
+
 
     def "970 ensure data loader is performant for multiple field with lists"() {
 
