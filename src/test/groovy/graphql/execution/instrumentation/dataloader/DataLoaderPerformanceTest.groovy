@@ -4,15 +4,12 @@ import graphql.Directives
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
+import graphql.execution.defer.CapturingSubscriber
 import graphql.schema.GraphQLSchema
 import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
-import org.reactivestreams.Subscriber
-import org.reactivestreams.Subscription
 import spock.lang.Specification
-
-import java.util.concurrent.atomic.AtomicBoolean
 
 class DataLoaderPerformanceTest extends Specification {
 
@@ -143,23 +140,28 @@ class DataLoaderPerformanceTest extends Specification {
             }
             """
 
+    GraphQL graphQL
+
     void setup() {
         BatchCompareDataFetchers.resetState()
+        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema()
+        schema = schema.transform({ bldr -> bldr.additionalDirective(Directives.DeferDirective) })
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
+        dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
+        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
+
+        graphQL = GraphQL
+                .newGraphQL(schema)
+                .instrumentation(instrumentation)
+                .build()
     }
 
     def "760 ensure data loader is performant for lists"() {
 
         when:
 
-        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema()
-        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
-        dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
-        dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
-        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
-        GraphQL graphQL = GraphQL
-                .newGraphQL(schema)
-                .instrumentation(instrumentation)
-                .build()
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).build()
         def result = graphQL.execute(executionInput)
 
@@ -176,15 +178,6 @@ class DataLoaderPerformanceTest extends Specification {
 
         when:
 
-        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema()
-        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
-        dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
-        dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
-        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
-        GraphQL graphQL = GraphQL
-                .newGraphQL(schema)
-                .instrumentation(instrumentation)
-                .build()
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).build()
         def result = graphQL.execute(executionInput)
 
@@ -240,66 +233,110 @@ class DataLoaderPerformanceTest extends Specification {
 
         when:
 
-        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema().transform({
-            it.additionalDirective(Directives.DeferDirective)
-        })
-        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
-        dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
-        dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
-        def instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
-        GraphQL graphQL = GraphQL
-                .newGraphQL(schema)
-                .instrumentation(instrumentation)
-                .build()
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(deferredQuery).build()
         def result = graphQL.execute(executionInput)
 
-        then:
-
         Map<Object, Object> extensions = result.getExtensions()
-        Publisher<ExecutionResult> deferredResults = (Publisher<ExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
+        Publisher<ExecutionResult> deferredResultStream = (Publisher<ExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
 
-        def done = new AtomicBoolean()
-        def results = []
-        deferredResults.subscribe(new Subscriber<ExecutionResult>() {
+        def subscriber = new CapturingSubscriber()
+        subscriber.subscribeTo(deferredResultStream)
+        Awaitility.await().untilTrue(subscriber.finished)
 
-            Subscription subscription
 
-            @Override
-            void onSubscribe(Subscription s) {
-                subscription = s
-                subscription.request(10)
-            }
-
-            @Override
-            void onNext(ExecutionResult executionResult) {
-                assert executionResult.errors.isEmpty(), "We don't expect graphql errors"
-                results.add(executionResult.data)
-                subscription.request(10)
-            }
-
-            @Override
-            void onError(Throwable t) {
-                assert false, "This should not happen"
-                done.set(true)
-            }
-
-            @Override
-            void onComplete() {
-                done.set(true)
-            }
-        })
-
+        then:
 
         result.data == expectedDeferredData
 
-        Awaitility.await().untilTrue(done)
-        results == expectedListOfDeferredData
+        subscriber.executionResultData == expectedListOfDeferredData
 
         //
         //  with deferred results, we don't achieve the same efficiency
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+    }
 
+    def expensiveDeferredQuery = """
+            query { 
+                shops { 
+                    id name 
+                    departments @defer { 
+                        name 
+                        products @defer { 
+                            name 
+                        } 
+                        expensiveProducts @defer { 
+                            name 
+                        } 
+                    } 
+                    expensiveDepartments @defer { 
+                        name 
+                        products { 
+                            name 
+                        } 
+                        expensiveProducts { 
+                            name 
+                        } 
+                    } 
+                } 
+                expensiveShops @defer { 
+                    id name
+                } 
+            }
+            """
+
+    def expectedExpensiveDeferredData = [
+            [[id: "exshop-1", name: "ExShop 1"], [id: "exshop-2", name: "ExShop 2"], [id: "exshop-3", name: "ExShop 3"]],
+            [[name: "Department 1"], [name: "Department 2"], [name: "Department 3"]],
+            [[name: "Department 1", products: [[name: "Product 1"]], expensiveProducts: [[name: "Product 1"]]], [name: "Department 2", products: [[name: "Product 2"]], expensiveProducts: [[name: "Product 2"]]], [name: "Department 3", products: [[name: "Product 3"]], expensiveProducts: [[name: "Product 3"]]]],
+            [[name: "Department 4"], [name: "Department 5"], [name: "Department 6"]],
+            [[name: "Department 4", products: [[name: "Product 4"]], expensiveProducts: [[name: "Product 4"]]], [name: "Department 5", products: [[name: "Product 5"]], expensiveProducts: [[name: "Product 5"]]], [name: "Department 6", products: [[name: "Product 6"]], expensiveProducts: [[name: "Product 6"]]]],
+            [[name: "Department 7"], [name: "Department 8"], [name: "Department 9"]],
+            [[name: "Department 7", products: [[name: "Product 7"]], expensiveProducts: [[name: "Product 7"]]], [name: "Department 8", products: [[name: "Product 8"]], expensiveProducts: [[name: "Product 8"]]], [name: "Department 9", products: [[name: "Product 9"]], expensiveProducts: [[name: "Product 9"]]]],
+            [[name: "Product 1"]],
+            [[name: "Product 1"]],
+            [[name: "Product 2"]],
+            [[name: "Product 2"]],
+            [[name: "Product 3"]],
+            [[name: "Product 3"]],
+            [[name: "Product 4"]],
+            [[name: "Product 4"]],
+            [[name: "Product 5"]],
+            [[name: "Product 5"]],
+            [[name: "Product 6"]],
+            [[name: "Product 6"]],
+            [[name: "Product 7"]],
+            [[name: "Product 7"]],
+            [[name: "Product 8"]],
+            [[name: "Product 8"]],
+            [[name: "Product 9"]],
+            [[name: "Product 9"]],
+    ]
+
+    def "data loader will work with deferred queries on multiple levels deep"() {
+
+        when:
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveDeferredQuery).build()
+        def result = graphQL.execute(executionInput)
+
+        Map<Object, Object> extensions = result.getExtensions()
+        Publisher<ExecutionResult> deferredResultStream = (Publisher<ExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
+
+        def subscriber = new CapturingSubscriber()
+        subscriber.subscribeTo(deferredResultStream)
+        Awaitility.await().untilTrue(subscriber.finished)
+
+
+        then:
+
+        result.data == expectedDeferredData
+
+        subscriber.executionResultData == expectedExpensiveDeferredData
+
+        //
+        //  with deferred results, we don't achieve the same efficiency
+        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
+        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
 }
