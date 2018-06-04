@@ -48,17 +48,18 @@ This is the famous "hello world" in ``graphql-java``:
     :language: java
 
 
-Using the latest development build
-----------------------------------
+Using a development build
+-------------------------
 
-The latest development build is also available on maven-central.
+Every successful build is published on maven-central with the version "<time>-<short git hash>".
+For example "2018-06-04T11-42-58-352f0df".
 
 Please look at `Latest Build <https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion>`_ for the
 latest version value.
 
 
-How to use the latest build with Gradle
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use a development build with Gradle
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Make sure ``mavenCentral`` is among your repos:
 
@@ -74,13 +75,13 @@ Dependency:
 .. code-block:: groovy
 
     dependencies {
-      compile 'com.graphql-java:graphql-java:INSERT_LATEST_VERSION_HERE'
+      compile 'com.graphql-java:graphql-java:INSERT_VERSION_HERE'
     }
 
 
 
-How to use the latest build with Maven
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+How to use a development build with Maven
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 Dependency:
@@ -90,7 +91,7 @@ Dependency:
     <dependency>
         <groupId>com.graphql-java</groupId>
         <artifactId>graphql-java</artifactId>
-        <version>INSERT_LATEST_VERSION_HERE</version>
+        <version>INSERT_VERSION_HERE</version>
     </dependency>
 
 
