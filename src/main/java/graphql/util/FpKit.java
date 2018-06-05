@@ -45,6 +45,7 @@ public class FpKit {
      * it alone if it is already is one.  Useful when you want to get the size of something
      *
      * @param iterableResult the result object
+     * @param <T>            the type of thing
      *
      * @return an Iterable from that object
      *

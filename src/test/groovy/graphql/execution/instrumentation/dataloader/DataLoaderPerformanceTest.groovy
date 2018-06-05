@@ -9,7 +9,6 @@ import graphql.schema.GraphQLSchema
 import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
-import spock.lang.Ignore
 import spock.lang.Specification
 
 class DataLoaderPerformanceTest extends Specification {
@@ -188,12 +187,11 @@ class DataLoaderPerformanceTest extends Specification {
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
-    @Ignore("we still have problems with async data loading locking up")
     def "ensure data loader is performant for lists using async batch loading"() {
 
         when:
 
-        BatchCompareDataFetchers.useAsyncDataLoading(true)
+        BatchCompareDataFetchers.useAsyncBatchLoading(true)
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).build()
         def result = graphQL.execute(executionInput)
@@ -207,12 +205,11 @@ class DataLoaderPerformanceTest extends Specification {
 
     }
 
-    @Ignore
-    def "970 ensure data loader is performant for multiple field with lists using async data loading"() {
+    def "970 ensure data loader is performant for multiple field with lists using async batch loading"() {
 
         when:
 
-        BatchCompareDataFetchers.useAsyncDataLoading(true)
+        BatchCompareDataFetchers.useAsyncBatchLoading(true)
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).build()
         def result = graphQL.execute(executionInput)
