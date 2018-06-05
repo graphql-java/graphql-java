@@ -4,13 +4,16 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
+import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.SimpleInstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
@@ -19,14 +22,10 @@ import org.dataloader.stats.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-
-import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenDispatched;
 
 /**
  * This graphql {@link graphql.execution.instrumentation.Instrumentation} will dispatch
@@ -45,6 +44,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     private final DataLoaderRegistry dataLoaderRegistry;
     private final DataLoaderDispatcherInstrumentationOptions options;
+    private final FieldLevelTrackingApproach fieldLevelTrackingApproach;
 
     /**
      * You pass in a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
@@ -66,75 +66,20 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     public DataLoaderDispatcherInstrumentation(DataLoaderRegistry dataLoaderRegistry, DataLoaderDispatcherInstrumentationOptions options) {
         this.dataLoaderRegistry = dataLoaderRegistry;
         this.options = options;
-    }
-
-
-    /**
-     * We need to become stateful about whether we are in a list or not
-     */
-    private static class CallStack implements InstrumentationState {
-        private boolean aggressivelyBatching = true;
-        private final Deque<Boolean> stack = new ArrayDeque<>();
-
-        private boolean isAggressivelyBatching() {
-            return aggressivelyBatching;
-        }
-
-        private void setAggressivelyBatching(boolean aggressivelyBatching) {
-            this.aggressivelyBatching = aggressivelyBatching;
-        }
-
-        private void enterList() {
-            synchronized (this) {
-                stack.push(true);
-            }
-        }
-
-        private void exitList() {
-            synchronized (this) {
-                if (!stack.isEmpty()) {
-                    stack.pop();
-                }
-            }
-        }
-
-        private boolean isInList() {
-            synchronized (this) {
-                if (stack.isEmpty()) {
-                    return false;
-                } else {
-                    return stack.peek();
-                }
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "isInList=" + isInList();
-        }
+        this.fieldLevelTrackingApproach = new FieldLevelTrackingApproach(log, dataLoaderRegistry);
     }
 
 
     @Override
     public InstrumentationState createState() {
-        return new CallStack();
+        return fieldLevelTrackingApproach.createState();
     }
 
-    private void dispatch() {
-        log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
-        dataLoaderRegistry.dispatchAll();
-    }
-
-    private void dispatchIfNeeded(CallStack callStack) {
-        if (!callStack.isInList()) {
-            dispatch();
-        }
-    }
 
     @Override
     public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
-        if (callStack.isAggressivelyBatching()) {
+        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        if (state.isAggressivelyBatching()) {
             return dataFetcher;
         }
         //
@@ -143,42 +88,38 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         // which allows them to work if used.
         return (DataFetcher<Object>) environment -> {
             Object obj = dataFetcher.get(environment);
-            dispatch();
+            immediatelyDispatch();
             return obj;
         };
+    }
+
+    private void immediatelyDispatch() {
+        fieldLevelTrackingApproach.dispatch();
     }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         ExecutionStrategy queryStrategy = parameters.getExecutionContext().getQueryStrategy();
         if (!(queryStrategy instanceof AsyncExecutionStrategy)) {
-            CallStack callStack = parameters.getInstrumentationState();
-            callStack.setAggressivelyBatching(false);
+            DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+            state.setAggressivelyBatching(false);
         }
-        return whenDispatched((result) -> dispatch());
+        return new SimpleInstrumentationContext<>();
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
-        return whenDispatched((result) -> dispatchIfNeeded(callStack));
+    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        return fieldLevelTrackingApproach.beginExecutionStrategy(parameters);
     }
 
-    /*
-       When graphql-java enters a field list it re-cursively called the execution strategy again, which will cause an early flush
-       to the data loader - which is not efficient from a batch point of view.  We want to allow the list of field values
-       to bank up as promises and call dispatch when we are clear of a list value.
-
-       https://github.com/graphql-java/graphql-java/issues/760
-     */
     @Override
-    public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
-        callStack.enterList();
-        return whenDispatched((result) -> {
-            callStack.exitList();
-            dispatchIfNeeded(callStack);
-        });
+    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
+        return fieldLevelTrackingApproach.beginDeferredField(parameters);
+    }
+
+    @Override
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
+        return fieldLevelTrackingApproach.beginFieldFetch(parameters);
     }
 
     @Override

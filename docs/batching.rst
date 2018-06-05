@@ -186,3 +186,79 @@ build out a new ``GraphQL`` set of objects on each request.
 
         // you can now throw away the GraphQL and hence DataLoaderDispatcherInstrumentation
         // and DataLoaderRegistry objects since they are really cheap to build per request
+
+
+Async Calls On Your Batch Loader Function Only
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The data loader code pattern works by combining all the outstanding data loader calls into more efficient batch loading calls.
+
+graphql-java tracks what outstanding data loader calls have been made and it is its responsibility to call ``dispatch``
+in the background at the most optimal time, which is when all graphql fields have been examined and dispatched.
+
+However there is a code pattern that will cause your data loader calls to never complete and these *MUST* be avoided.  This bad
+pattern consists of making a an asynchronous off thread call to a ``DataLoader`` in your data fetcher.
+
+The following will not work (it will never complete).
+
+.. code-block:: java
+
+      BatchLoader<String, Object> batchLoader = new BatchLoader<String, Object>() {
+            @Override
+            public CompletionStage<List<Object>> load(List<String> keys) {
+                return CompletableFuture.completedFuture(getTheseCharacters(keys));
+            }
+        };
+
+        DataLoader<String, Object> characterDataLoader = new DataLoader<>(batchLoader);
+
+        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                //
+                // Don't DO THIS!
+                //
+                return CompletableFuture.supplyAsync(() -> {
+                    String argId = environment.getArgument("id");
+                    return characterDataLoader.load(argId);
+                });
+            }
+        };
+
+In the example above, the call to ``characterDataLoader.load(argId)`` can happen some time in the future on another thread.  The graphql-java
+engine has no way of knowing when it's good time to dispatch outstanding ``DataLoader`` calls and hence the data loader call might never complete
+as expected and no results will be returned.
+
+Remember a data loader call is just a promise to actually get a value later when its an optimal time for all outstanding calls to be batched
+together.  The most optimal time is when the graphql field tree has been examined and all field values are currently dispatched.
+
+The following is how you can still have asynchronous code, by placing it into the ``BatchLoader`` itself.
+
+.. code-block:: java
+
+        BatchLoader<String, Object> batchLoader = new BatchLoader<String, Object>() {
+            @Override
+            public CompletionStage<List<Object>> load(List<String> keys) {
+                return CompletableFuture.supplyAsync(() -> getTheseCharacters(keys));
+            }
+        };
+
+        DataLoader<String, Object> characterDataLoader = new DataLoader<>(batchLoader);
+
+        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                //
+                // This is OK
+                //
+                String argId = environment.getArgument("id");
+                return characterDataLoader.load(argId);
+            }
+        };
+
+Notice above the ``characterDataLoader.load(argId)`` returns immediately.  This will enqueue the call for data until a later time when all
+the graphql fields are dispatched.
+
+Then later when the ``DataLoader`` is dispatched, it's ``BatchLoader`` function is called.  This code can be asynchronous so that if you have multiple batch loader
+functions they all can run at once.  In the code above ``CompletableFuture.supplyAsync(() -> getTheseCharacters(keys));`` will run the ``getTheseCharacters``
+method in another thread.

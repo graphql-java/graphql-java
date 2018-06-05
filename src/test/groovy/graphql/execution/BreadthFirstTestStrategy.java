@@ -66,7 +66,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
 
             Object fetchedValue = fetchedValues.get(fieldName);
             try {
-                ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).join();
+                ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).getFieldValue().join();
                 results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
             } catch (NonNullableFieldWasNullException e) {
                 assertNonNullFieldPrecondition(e);

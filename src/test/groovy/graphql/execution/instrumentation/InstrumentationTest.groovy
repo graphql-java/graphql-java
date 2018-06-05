@@ -210,19 +210,19 @@ class InstrumentationTest extends Specification {
         final AtomicBoolean goSignal = new AtomicBoolean()
 
         @Override
-        InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
             System.out.println(String.format("t%s setting go signal off", Thread.currentThread().getId()))
             goSignal.set(false)
-            return new InstrumentationContext<CompletableFuture<ExecutionResult>>() {
+            return new ExecutionStrategyInstrumentationContext() {
 
                 @Override
-                void onDispatched(CompletableFuture<CompletableFuture<ExecutionResult>> result) {
+                void onDispatched(CompletableFuture<ExecutionResult> result) {
                     System.out.println(String.format("t%s setting go signal on", Thread.currentThread().getId()))
                     goSignal.set(true)
                 }
 
                 @Override
-                void onCompleted(CompletableFuture<ExecutionResult> result, Throwable t) {
+                void onCompleted(ExecutionResult result, Throwable t) {
                 }
             }
         }

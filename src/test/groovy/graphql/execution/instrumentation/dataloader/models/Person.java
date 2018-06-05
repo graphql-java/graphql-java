@@ -1,4 +1,4 @@
-package graphql.execution.instrumentation.dataloader;
+package graphql.execution.instrumentation.dataloader.models;
 
 public class Person {
 

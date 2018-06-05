@@ -5,6 +5,7 @@ import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
+import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -96,13 +97,47 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return new ChainedInstrumentationContext<>(instrumentations.stream()
+    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        ChainedInstrumentationContext<ExecutionResult> chainedInstrumentationContext = new ChainedInstrumentationContext<>(instrumentations.stream()
                 .map(instrumentation -> {
                     InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
                     return instrumentation.beginExecutionStrategy(parameters.withNewState(state));
                 })
                 .collect(toList()));
+        return new ExecutionStrategyInstrumentationContext() {
+            @Override
+            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+                chainedInstrumentationContext.onDispatched(result);
+            }
+
+            @Override
+            public void onCompleted(ExecutionResult result, Throwable t) {
+                chainedInstrumentationContext.onCompleted(result, t);
+
+            }
+        };
+    }
+
+    @Override
+    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
+        ChainedInstrumentationContext<ExecutionResult> chainedInstrumentationContext = new ChainedInstrumentationContext<>(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+                    return instrumentation.beginDeferredField(parameters.withNewState(state));
+                })
+                .collect(toList()));
+
+        return new DeferredFieldInstrumentationContext() {
+            @Override
+            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+                chainedInstrumentationContext.onDispatched(result);
+            }
+
+            @Override
+            public void onCompleted(ExecutionResult result, Throwable t) {
+                chainedInstrumentationContext.onCompleted(result, t);
+            }
+        };
     }
 
     @Override

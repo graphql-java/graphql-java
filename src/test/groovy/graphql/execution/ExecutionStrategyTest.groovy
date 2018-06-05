@@ -125,7 +125,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == result
@@ -146,7 +146,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == expected
@@ -172,10 +172,11 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters).join()
+        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
-        thrown(NonNullableFieldWasNullException)
+        def e = thrown(CompletionException)
+        e.getCause() instanceof NonNullableFieldWasNullException
     }
 
     def "completes value for java.util.OptionalInt"() {
@@ -193,7 +194,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == expected
@@ -219,10 +220,11 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters).join()
+        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
-        thrown(NonNullableFieldWasNullException)
+        def e = thrown(CompletionException)
+        e.getCause() instanceof NonNullableFieldWasNullException
     }
 
     def "completes value for java.util.OptionalDouble"() {
@@ -240,7 +242,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == expected
@@ -266,10 +268,11 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters).join()
+        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
-        thrown(NonNullableFieldWasNullException)
+        def e = thrown(CompletionException)
+        e.getCause() instanceof NonNullableFieldWasNullException
     }
 
     def "completes value for java.util.OptionalLong"() {
@@ -287,7 +290,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == expected
@@ -313,10 +316,11 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters).join()
+        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
-        thrown(NonNullableFieldWasNullException)
+        def e = thrown(CompletionException)
+        e.getCause() instanceof NonNullableFieldWasNullException
     }
 
     def "completes value for an array"() {
@@ -335,7 +339,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == result
@@ -357,7 +361,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == null
@@ -382,7 +386,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == null
@@ -662,7 +666,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
 
         then:
         executionResult.get().data == [1L, 2L, 3L]
@@ -742,7 +746,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
 
         then:
         executionResult.get().data == [1L, 2L, 3L]
@@ -766,7 +770,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == null
