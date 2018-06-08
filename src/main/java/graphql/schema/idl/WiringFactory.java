@@ -1,13 +1,12 @@
 package graphql.schema.idl;
 
+import static graphql.Assert.assertShouldNeverHappen;
+
 import graphql.PublicSpi;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLScalarType;
-import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
-
-import static graphql.Assert.assertShouldNeverHappen;
 
 /**
  * A WiringFactory allows you to more dynamically wire in {@link TypeResolver}s and {@link DataFetcher}s

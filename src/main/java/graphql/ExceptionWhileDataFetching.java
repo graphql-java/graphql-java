@@ -1,16 +1,16 @@
 package graphql;
 
 
-import graphql.execution.ExecutionPath;
-import graphql.language.SourceLocation;
+import static graphql.Assert.assertNotNull;
+import static java.lang.String.format;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Assert.assertNotNull;
-import static java.lang.String.format;
+import graphql.execution.ExecutionPath;
+import graphql.language.SourceLocation;
 
 /**
  * This graphql error will be used if a runtime exception is encountered while a data fetcher is invoked
@@ -46,8 +46,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
         if (exception instanceof GraphQLError) {
             Map<String, Object> map = ((GraphQLError) exception).getExtensions();
             if (map != null) {
-                extensions = new LinkedHashMap<>();
-                extensions.putAll(map);
+                extensions = new LinkedHashMap<>(map);
             }
         }
         return extensions;

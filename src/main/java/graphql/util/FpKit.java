@@ -1,12 +1,12 @@
 package graphql.util;
 
 
-import graphql.Internal;
+import static java.util.Collections.singletonList;
+import static java.util.function.Function.identity;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
@@ -14,8 +14,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.Collections.singletonList;
-import static java.util.function.Function.identity;
+import graphql.Internal;
 
 @Internal
 public class FpKit {
@@ -63,11 +62,8 @@ public class FpKit {
             return (Collection<T>) iterableResult;
         }
         Iterable<T> iterable = (Iterable<T>) iterableResult;
-        Iterator<T> iterator = iterable.iterator();
         List<T> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            list.add(iterator.next());
-        }
+        iterable.forEach(list::add);
         return list;
     }
 

@@ -1,5 +1,14 @@
 package graphql.execution.instrumentation.fieldvalidation;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -12,14 +21,6 @@ import graphql.language.Field;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.stream.Collectors;
 
 @Internal
 class FieldValidationSupport {
@@ -45,9 +46,7 @@ class FieldValidationSupport {
                     // since only they have variable input
                     FieldAndArguments fieldArguments = new FieldAndArgumentsImpl(env);
                     ExecutionPath path = fieldArguments.getPath();
-                    List<FieldAndArguments> list = fieldArgumentsMap.getOrDefault(path, new ArrayList<>());
-                    list.add(fieldArguments);
-                    fieldArgumentsMap.put(path, list);
+                    fieldArgumentsMap.computeIfAbsent(path, k -> new ArrayList<>()).add(fieldArguments);
                 }
             }
         });
@@ -78,15 +77,15 @@ class FieldValidationSupport {
             if (parentEnvironment == null) {
                 return ExecutionPath.rootPath().segment(traversalEnv.getField().getName());
             } else {
-                Stack<QueryVisitorFieldEnvironment> stack = new Stack<>();
-                stack.push(traversalEnv);
+                Deque<QueryVisitorFieldEnvironment> deque = new ArrayDeque<>();
+                deque.push(traversalEnv);
                 while (parentEnvironment != null) {
-                    stack.push(parentEnvironment);
+                    deque.push(parentEnvironment);
                     parentEnvironment = parentEnvironment.getParentEnvironment();
                 }
                 ExecutionPath path = ExecutionPath.rootPath();
-                while (!stack.isEmpty()) {
-                    QueryVisitorFieldEnvironment environment = stack.pop();
+                while (!deque.isEmpty()) {
+                    QueryVisitorFieldEnvironment environment = deque.pop();
                     path = path.segment(environment.getField().getName());
                 }
                 return path;

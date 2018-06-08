@@ -1,11 +1,11 @@
 package graphql.language;
 
 
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 public class ObjectValue extends AbstractNode<ObjectValue> implements Value<ObjectValue> {
 
@@ -24,9 +24,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(objectFields);
-        return result;
+        return new ArrayList<>(objectFields);
     }
 
     @Override

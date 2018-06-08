@@ -1,14 +1,15 @@
 package graphql.language;
 
-import graphql.Internal;
-import graphql.execution.UnknownOperationException;
-import graphql.util.FpKit;
+import static graphql.util.FpKit.mergeFirst;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-import static graphql.util.FpKit.mergeFirst;
+import graphql.Internal;
+import graphql.execution.UnknownOperationException;
+import graphql.util.FpKit;
 
 /**
  * Helper class for working with {@link Node}s
@@ -17,14 +18,7 @@ import static graphql.util.FpKit.mergeFirst;
 public class NodeUtil {
 
     public static boolean isEqualTo(String thisStr, String thatStr) {
-        if (null == thisStr) {
-            if (null != thatStr) {
-                return false;
-            }
-        } else if (!thisStr.equals(thatStr)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(thisStr, thatStr);
     }
 
 
@@ -38,8 +32,13 @@ public class NodeUtil {
 
 
     public static class GetOperationResult {
-        public OperationDefinition operationDefinition;
-        public Map<String, FragmentDefinition> fragmentsByName;
+        public final OperationDefinition operationDefinition;
+        public final Map<String, FragmentDefinition> fragmentsByName;
+
+        public GetOperationResult(OperationDefinition operationDefinition, Map<String, FragmentDefinition> fragmentsByName) {
+            this.operationDefinition = operationDefinition;
+            this.fragmentsByName = fragmentsByName;
+        }
     }
 
     public static Map<String, FragmentDefinition> getFragmentsByName(Document document) {
@@ -55,7 +54,6 @@ public class NodeUtil {
     }
 
     public static GetOperationResult getOperation(Document document, String operationName) {
-
 
         Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
         Map<String, OperationDefinition> operationsByName = new LinkedHashMap<>();
@@ -83,9 +81,6 @@ public class NodeUtil {
         if (operation == null) {
             throw new UnknownOperationException(String.format("Unknown operation named '%s'.", operationName));
         }
-        GetOperationResult result = new GetOperationResult();
-        result.fragmentsByName = fragmentsByName;
-        result.operationDefinition = operation;
-        return result;
+        return new GetOperationResult(operation, fragmentsByName);
     }
 }

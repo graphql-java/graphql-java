@@ -1,11 +1,11 @@
 package graphql.language;
 
 
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> implements DirectivesContainer<EnumValueDefinition> {
     private final String name;
@@ -39,9 +39,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(directives);
-        return result;
+        return new ArrayList<>(directives);
     }
 
     @Override

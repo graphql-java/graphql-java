@@ -1,15 +1,15 @@
 package graphql.analysis;
 
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
+
+import java.util.List;
+
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
-
-import java.util.List;
-
-import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
 
 /**
  * Prevents execution if the query depth is greater than the specified maxDepth
@@ -26,7 +26,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         return whenCompleted((errors, throwable) -> {
-            if ((errors != null && errors.size() > 0) || throwable != null) {
+            if ((errors != null && !errors.isEmpty()) || throwable != null) {
                 return;
             }
             QueryTraversal queryTraversal = newQueryTraversal(parameters);

@@ -31,7 +31,7 @@ public class NonNullableFieldValidator {
      *
      * @throws NonNullableFieldWasNullException if the value is null but the type requires it to be non null
      */
-    public <T> T validate(ExecutionPath path, T result) throws NonNullableFieldWasNullException {
+    public <T> T validate(ExecutionPath path, T result) {
         if (result == null) {
             if (typeInfo.isNonNullType()) {
                 // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability

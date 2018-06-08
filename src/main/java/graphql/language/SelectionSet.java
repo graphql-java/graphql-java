@@ -1,11 +1,11 @@
 package graphql.language;
 
 
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 public class SelectionSet extends AbstractNode<SelectionSet> {
 
@@ -24,9 +24,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(selections);
-        return result;
+        return new ArrayList<>(selections);
     }
 
     @Override

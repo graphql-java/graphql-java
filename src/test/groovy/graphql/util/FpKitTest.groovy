@@ -41,4 +41,26 @@ class FpKitTest extends Specification {
         then:
         actual == expected
     }
+
+    def "concat with an element"() {
+        def expected = ["a", "b", "c", "d"]
+
+        when:
+        def firstList = ["a", "b", "c"]
+        def element = "d"
+        def actual = FpKit.concat(firstList, element)
+        then:
+        assert actual == expected
+    }
+
+    def "concat works as expected"() {
+        def expected = ["a", "b", "c", "d"]
+
+        when:
+        def firstList = ["a", "b"]
+        def secondList = ["c", "d"]
+        def actual = FpKit.concat(firstList, secondList)
+        then:
+        assert actual == expected
+    }
 }

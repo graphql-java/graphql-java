@@ -1,11 +1,11 @@
 package graphql.language;
 
 
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread> {
 
@@ -53,9 +53,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(directives);
-        return result;
+        return new ArrayList<>(directives);
     }
 
     @Override

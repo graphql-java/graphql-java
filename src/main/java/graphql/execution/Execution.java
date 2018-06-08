@@ -1,6 +1,24 @@
 package graphql.execution;
 
 
+import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
+import static graphql.execution.ExecutionStrategyParameters.newParameters;
+import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
+import static graphql.language.OperationDefinition.Operation.MUTATION;
+import static graphql.language.OperationDefinition.Operation.QUERY;
+import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
@@ -21,23 +39,6 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
-import static graphql.execution.ExecutionStrategyParameters.newParameters;
-import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
-import static graphql.language.OperationDefinition.Operation.MUTATION;
-import static graphql.language.OperationDefinition.Operation.QUERY;
-import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
 public class Execution {
@@ -97,11 +98,11 @@ public class Execution {
                 executionInput, graphQLSchema, instrumentationState
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
-        return executeOperation(executionContext, parameters, executionInput.getRoot(), executionContext.getOperationDefinition());
+        return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
 
-    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, InstrumentationExecutionParameters instrumentationExecutionParameters, Object root, OperationDefinition operationDefinition) {
+    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         InstrumentationExecuteOperationParameters instrumentationParams = new InstrumentationExecuteOperationParameters(executionContext);
         InstrumentationContext<ExecutionResult> executeOperationCtx = instrumentation.beginExecuteOperation(instrumentationParams);

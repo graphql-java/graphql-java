@@ -1,5 +1,16 @@
 package graphql.execution.instrumentation;
 
+import static graphql.Assert.assertNotNull;
+import static java.util.stream.Collectors.toList;
+
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
@@ -17,15 +28,6 @@ import graphql.language.Document;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
-
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import static graphql.Assert.assertNotNull;
-import static java.util.stream.Collectors.toList;
 
 /**
  * This allows you to chain together a number of {@link graphql.execution.instrumentation.Instrumentation} implementations
@@ -220,7 +222,7 @@ public class ChainedInstrumentation implements Instrumentation {
     public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(instrumentations, (instrumentation, index, prevResults) -> {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-            ExecutionResult lastResult = prevResults.size() > 0 ? prevResults.get(prevResults.size() - 1) : executionResult;
+            ExecutionResult lastResult = !prevResults.isEmpty() ? prevResults.get(prevResults.size() - 1) : executionResult;
             return instrumentation.instrumentExecutionResult(lastResult, parameters.withNewState(state));
         });
         return resultsFuture.thenApply((results) -> results.isEmpty() ? executionResult : results.get(results.size() - 1));
@@ -231,8 +233,8 @@ public class ChainedInstrumentation implements Instrumentation {
 
 
         private ChainedInstrumentationState(List<Instrumentation> instrumentations) {
-            instrumentationStates = new LinkedHashMap<>(instrumentations.size());
-            instrumentations.forEach(i -> instrumentationStates.put(i, i.createState()));
+            instrumentationStates = instrumentations.stream()
+                    .collect(Collectors.toMap(Function.identity(), Instrumentation::createState, (o1, o2) -> o1, LinkedHashMap::new));
         }
 
         private InstrumentationState getState(Instrumentation instrumentation) {

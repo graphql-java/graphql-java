@@ -1,6 +1,16 @@
 package graphql.execution;
 
 
+import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -22,16 +32,6 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 @Internal
 public class ValuesResolver {
@@ -308,10 +308,8 @@ public class ValuesResolver {
                     fieldObject = coerceValueAst(fieldVisibility, inputTypeField.getType(), fieldInputValue, variables);
                 }
 
-                if (fieldObject == null) {
-                    if (!field.getValue().isEqualTo(NullValue.Null)) {
-                        fieldObject = inputTypeField.getDefaultValue();
-                    }
+                if (fieldObject == null && !NullValue.Null.isEqualTo(field.getValue())) {
+                    fieldObject = inputTypeField.getDefaultValue();
                 }
                 if (putObjectInMap) {
                     result.put(field.getName(), fieldObject);

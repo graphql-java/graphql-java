@@ -1,7 +1,7 @@
 package graphql.language;
 
-import graphql.Internal;
-import graphql.PublicApi;
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertTrue;
+import graphql.Internal;
+import graphql.PublicApi;
 
 /**
  * This represents a hierarchy from a graphql language node upwards to its
@@ -34,7 +34,7 @@ public class NodeParentTree<T extends Node> {
         path = mkPath(copy);
         node = copy.pop();
         if (!copy.isEmpty()) {
-            parent = Optional.of(new NodeParentTree<T>(copy));
+            parent = Optional.of(new NodeParentTree<>(copy));
         } else {
             parent = Optional.empty();
         }

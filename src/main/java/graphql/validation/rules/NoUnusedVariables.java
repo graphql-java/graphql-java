@@ -1,19 +1,18 @@
 package graphql.validation.rules;
 
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
-
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
 
 public class NoUnusedVariables extends AbstractRule {
 

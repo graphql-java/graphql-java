@@ -1,5 +1,14 @@
 package graphql.execution;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import graphql.ExecutionResult;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.defer.DeferredCall;
@@ -11,15 +20,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationDeferredField
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
@@ -43,7 +43,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
@@ -51,11 +51,11 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         ExecutionStrategyInstrumentationContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
         Map<String, List<Field>> fields = parameters.getFields();
-        List<String> fieldNames = new ArrayList<>(fields.keySet());
         List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
         List<String> resolvedFields = new ArrayList<>();
-        for (String fieldName : fieldNames) {
-            List<Field> currentField = fields.get(fieldName);
+        for (Map.Entry<String, List<Field>> entry : fields.entrySet()) {
+            String fieldName = entry.getKey();
+            List<Field> currentField = entry.getValue();
 
             ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters

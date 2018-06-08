@@ -1,5 +1,17 @@
 package graphql.execution.instrumentation.dataloader;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
+import org.dataloader.DataLoaderRegistry;
+import org.slf4j.Logger;
+
 import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.Internal;
@@ -13,17 +25,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationDeferredField
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.language.Field;
-import org.dataloader.DataLoaderRegistry;
-import org.slf4j.Logger;
-
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * This approach uses field level tracking to achieve its aims of making the data loader more efficient
@@ -241,11 +242,11 @@ public class FieldLevelTrackingApproach {
             // level 1 is special: there is only one strategy call and that's it
             return callStack.allFetchsHappened(1);
         }
-        if (levelReady(callStack, level - 1) && callStack.allOnFieldCallsHappened(level - 1)
-                && callStack.allStrategyCallsHappened(level) && callStack.allFetchsHappened(level)) {
-            return true;
-        }
-        return false;
+
+        return levelReady(callStack, level - 1)
+                && callStack.allOnFieldCallsHappened(level - 1)
+                && callStack.allStrategyCallsHappened(level)
+                && callStack.allFetchsHappened(level);
     }
 
     void dispatch() {
