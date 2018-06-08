@@ -1,5 +1,35 @@
 package graphql.schema.idl;
 
+import static graphql.Assert.assertNotNull;
+import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
+import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
+import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
+import static graphql.introspection.Introspection.DirectiveLocation.OBJECT;
+import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
+import static graphql.introspection.Introspection.DirectiveLocation.UNION;
+import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
+import static graphql.schema.GraphQLTypeReference.typeRef;
+import static java.util.Collections.emptyList;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.introspection.Introspection.DirectiveLocation;
@@ -53,36 +83,6 @@ import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
 import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.schema.idl.errors.SchemaProblem;
-
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static graphql.Assert.assertNotNull;
-import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
-import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
-import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
-import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
-import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
-import static graphql.introspection.Introspection.DirectiveLocation.OBJECT;
-import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
-import static graphql.introspection.Introspection.DirectiveLocation.UNION;
-import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
-import static graphql.schema.GraphQLTypeReference.typeRef;
-import static java.util.Collections.emptyList;
 
 /**
  * This can generate a working runtime schema from a type registry and runtime wiring
@@ -180,11 +180,11 @@ public class SchemaGenerator {
         }
 
         SchemaGeneratorDirectiveHelper.Parameters mkBehaviourParams() {
-            List<NamedNode> list = nodeStack.stream()
+            Deque<NamedNode> deque = nodeStack.stream()
                     .filter(NamedNode.class::isInstance)
                     .map(NamedNode.class::cast)
-                    .collect(Collectors.toList());
-            Deque<NamedNode> deque = new ArrayDeque<>(list);
+                    .collect(Collectors.toCollection(ArrayDeque::new));
+
             return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, wiring, new NodeParentTree<>(deque), directiveBehaviourContext);
         }
 
@@ -242,7 +242,7 @@ public class SchemaGenerator {
      *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
-    public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
+    public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
         return makeExecutableSchema(Options.defaultOptions(), typeRegistry, wiring);
     }
 
@@ -258,7 +258,7 @@ public class SchemaGenerator {
      *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
-    public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
+    public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
 
         TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
         typeRegistryCopy.merge(typeRegistry);
@@ -424,7 +424,7 @@ public class SchemaGenerator {
 
         buildCtx.put(outputType);
         buildCtx.pop();
-        return (T) typeInfo.decorate(outputType);
+        return typeInfo.decorate(outputType);
     }
 
     private GraphQLInputType buildInputType(BuildContext buildCtx, Type rawType) {

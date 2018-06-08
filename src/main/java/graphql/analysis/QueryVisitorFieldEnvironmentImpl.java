@@ -1,12 +1,13 @@
 package graphql.analysis;
 
+import java.util.Map;
+import java.util.Objects;
+
 import graphql.Internal;
 import graphql.language.Field;
 import graphql.language.SelectionSetContainer;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
-
-import java.util.Map;
 
 @Internal
 public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnvironment {
@@ -16,6 +17,15 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
     private final Map<String, Object> arguments;
     private final QueryVisitorFieldEnvironment parentEnvironment;
     private final SelectionSetContainer selectionSetContainer;
+
+    QueryVisitorFieldEnvironmentImpl(QueryVisitorFieldEnvironment environment) {
+        this(environment.getField(),
+                environment.getFieldDefinition(),
+                environment.getParentType(),
+                environment.getParentEnvironment(),
+                environment.getArguments(),
+                environment.getSelectionSetContainer());
+    }
 
     public QueryVisitorFieldEnvironmentImpl(Field field,
                                             GraphQLFieldDefinition fieldDefinition,
@@ -68,13 +78,11 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
 
         QueryVisitorFieldEnvironmentImpl that = (QueryVisitorFieldEnvironmentImpl) o;
 
-        if (field != null ? !field.equals(that.field) : that.field != null) return false;
-        if (fieldDefinition != null ? !fieldDefinition.equals(that.fieldDefinition) : that.fieldDefinition != null)
-            return false;
-        if (parentType != null ? !parentType.equals(that.parentType) : that.parentType != null) return false;
-        if (parentEnvironment != null ? !parentEnvironment.equals(that.parentEnvironment) : that.parentEnvironment != null)
-            return false;
-        return arguments != null ? arguments.equals(that.arguments) : that.arguments == null;
+        return Objects.equals(field, that.field)
+                && Objects.equals(fieldDefinition, that.fieldDefinition)
+                && Objects.equals(parentType, that.parentType)
+                && Objects.equals(parentEnvironment, that.parentEnvironment)
+                && Objects.equals(arguments, that.arguments);
     }
 
     @Override

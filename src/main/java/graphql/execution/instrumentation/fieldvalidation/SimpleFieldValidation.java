@@ -1,15 +1,16 @@
 package graphql.execution.instrumentation.fieldvalidation;
 
-import graphql.GraphQLError;
-import graphql.PublicApi;
-import graphql.execution.ExecutionPath;
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+
+import graphql.GraphQLError;
+import graphql.PublicApi;
+import graphql.execution.ExecutionPath;
 
 /**
  * This very simple field validation will run the supplied function for a given field path and if it returns an error
@@ -39,15 +40,10 @@ public class SimpleFieldValidation implements FieldValidation {
     @Override
     public List<GraphQLError> validateFields(FieldValidationEnvironment validationEnvironment) {
         List<GraphQLError> errors = new ArrayList<>();
-        for (ExecutionPath fieldPath : rules.keySet()) {
-            List<FieldAndArguments> fieldAndArguments = validationEnvironment.getFieldsByPath().get(fieldPath);
-            if (fieldAndArguments != null) {
-                BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>> ruleFunction = rules.get(fieldPath);
-
-                for (FieldAndArguments fieldAndArgument : fieldAndArguments) {
-                    Optional<GraphQLError> graphQLError = ruleFunction.apply(fieldAndArgument, validationEnvironment);
-                    graphQLError.ifPresent(errors::add);
-                }
+        for (Map.Entry<ExecutionPath, BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>>> entry: rules.entrySet()) {
+            List<FieldAndArguments> fieldAndArguments = validationEnvironment.getFieldsByPath().getOrDefault(entry.getKey(), Collections.emptyList());
+            for (FieldAndArguments fa: fieldAndArguments) {
+                entry.getValue().apply(fa, validationEnvironment).ifPresent(errors::add);
             }
         }
         return errors;

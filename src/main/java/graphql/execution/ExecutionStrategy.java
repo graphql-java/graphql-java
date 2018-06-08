@@ -1,5 +1,31 @@
 package graphql.execution;
 
+import static graphql.execution.Async.exceptionallyCompletedFuture;
+import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
+import static graphql.execution.FieldCollectorParameters.newParameters;
+import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
+import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
+import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
+import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
+import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
+import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import static java.util.concurrent.CompletableFuture.completedFuture;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicSpi;
@@ -31,30 +57,6 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.FpKit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-
-import static graphql.execution.Async.exceptionallyCompletedFuture;
-import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
-import static graphql.execution.FieldCollectorParameters.newParameters;
-import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
-import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
-import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
-import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
-import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * An execution strategy is give a list of fields from the graphql query to execute and find values for using a recursive strategy.
@@ -382,7 +384,7 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
-    protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ExecutionTypeInfo typeInfo = parameters.getTypeInfo();
         Object result = unboxPossibleOptional(parameters.getSource());
         GraphQLType fieldType = typeInfo.getType();
@@ -519,10 +521,7 @@ public abstract class ExecutionStrategy {
                 completeListCtx.onCompleted(executionResult, exception);
                 return;
             }
-            List<Object> completedResults = new ArrayList<>();
-            for (ExecutionResult completedValue : results) {
-                completedResults.add(completedValue.getData());
-            }
+            List<Object> completedResults = results.stream().map(ExecutionResult::getData).collect(Collectors.toList());
             ExecutionResultImpl executionResult = new ExecutionResultImpl(completedResults, null);
             overallResult.complete(executionResult);
         });
@@ -650,11 +649,7 @@ public abstract class ExecutionStrategy {
     protected Object unboxPossibleOptional(Object result) {
         if (result instanceof Optional) {
             Optional optional = (Optional) result;
-            if (optional.isPresent()) {
-                return optional.get();
-            } else {
-                return null;
-            }
+            return optional.orElse(null);
         } else if (result instanceof OptionalInt) {
             OptionalInt optional = (OptionalInt) result;
             if (optional.isPresent()) {
@@ -827,14 +822,14 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
-    protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
+    protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) {
         ExecutionTypeInfo typeInfo = e.getTypeInfo();
         if (typeInfo.hasParentType() && typeInfo.getParentTypeInfo().isNonNullType()) {
             throw new NonNullableFieldWasNullException(e);
         }
     }
 
-    protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e, CompletableFuture<?> completableFuture) throws NonNullableFieldWasNullException {
+    protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e, CompletableFuture<?> completableFuture) {
         ExecutionTypeInfo typeInfo = e.getTypeInfo();
         if (typeInfo.hasParentType() && typeInfo.getParentTypeInfo().isNonNullType()) {
             completableFuture.completeExceptionally(new NonNullableFieldWasNullException(e));

@@ -1,11 +1,10 @@
 package graphql.schema.idl;
 
+import static graphql.Assert.assertShouldNeverHappen;
+
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLScalarType;
-import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
-
-import static graphql.Assert.assertShouldNeverHappen;
 
 public class NoopWiringFactory implements WiringFactory {
 

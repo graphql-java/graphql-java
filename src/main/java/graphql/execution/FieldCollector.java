@@ -1,6 +1,13 @@
 package graphql.execution;
 
 
+import static graphql.execution.TypeFromAST.getTypeFromAST;
+
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import graphql.Internal;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -12,14 +19,6 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
-import graphql.schema.SchemaUtil;
-
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-import static graphql.execution.TypeFromAST.getTypeFromAST;
 
 /**
  * A field collector can iterate over field selection sets and build out the sub fields that have been selected,
@@ -29,8 +28,6 @@ import static graphql.execution.TypeFromAST.getTypeFromAST;
 public class FieldCollector {
 
     private final ConditionalNodes conditionalNodes;
-
-    private final SchemaUtil schemaUtil = new SchemaUtil();
 
     public FieldCollector() {
         conditionalNodes = new ConditionalNodes();
@@ -118,8 +115,7 @@ public class FieldCollector {
             return;
         }
         String name = getFieldEntryKey(field);
-        fields.putIfAbsent(name, new ArrayList<>());
-        fields.get(name).add(field);
+        fields.computeIfAbsent(name, k -> new ArrayList<>()).add(field);
     }
 
     private String getFieldEntryKey(Field field) {

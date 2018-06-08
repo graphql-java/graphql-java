@@ -1,5 +1,13 @@
 package graphql.execution.instrumentation.tracing;
 
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
+import static graphql.util.CollectionUtil.ensureNeverNull;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
@@ -12,14 +20,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.validation.ValidationError;
-
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
 
 /**
  * This {@link Instrumentation} implementation uses {@link TracingSupport} to
@@ -38,8 +38,7 @@ public class TracingInstrumentation extends SimpleInstrumentation {
         Map<Object, Object> currentExt = executionResult.getExtensions();
 
         TracingSupport tracingSupport = parameters.getInstrumentationState();
-        Map<Object, Object> tracingMap = new LinkedHashMap<>();
-        tracingMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
+        Map<Object, Object> tracingMap = new LinkedHashMap<>(ensureNeverNull(currentExt));
         tracingMap.put("tracing", tracingSupport.snapshotTracingData());
 
         return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), tracingMap));

@@ -1,14 +1,5 @@
 package graphql.execution;
 
-import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
-import graphql.GraphQLException;
-import graphql.PublicApi;
-import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.language.Field;
-
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +9,15 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
+import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
+import graphql.GraphQLException;
+import graphql.PublicApi;
+import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.language.Field;
 
 /**
  * <p>ExecutorServiceExecutionStrategy uses an {@link ExecutorService} to parallelize the resolve.</p>
@@ -36,7 +36,7 @@ import java.util.concurrent.Future;
 @PublicApi
 public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
-    final ExecutorService executorService;
+    private final ExecutorService executorService;
 
     public ExecutorServiceExecutionStrategy(ExecutorService executorService) {
         this(executorService, new SimpleDataFetcherExceptionHandler());
@@ -60,8 +60,9 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
         Map<String, List<Field>> fields = parameters.getFields();
         Map<String, Future<CompletableFuture<ExecutionResult>>> futures = new LinkedHashMap<>();
-        for (String fieldName : fields.keySet()) {
-            final List<Field> currentField = fields.get(fieldName);
+        for (Map.Entry<String, List<Field>> entry: fields.entrySet()) {
+            String fieldName = entry.getKey();
+            final List<Field> currentField = entry.getValue();
 
             ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
@@ -76,10 +77,11 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
         try {
             Map<String, Object> results = new LinkedHashMap<>();
-            for (String fieldName : futures.keySet()) {
+            for (Map.Entry<String, Future<CompletableFuture<ExecutionResult>>> entry: futures.entrySet()) {
+                String fieldName = entry.getKey();
                 ExecutionResult executionResult;
                 try {
-                    executionResult = futures.get(fieldName).get().join();
+                    executionResult = entry.getValue().get().join();
                 } catch (CompletionException e) {
                     if (e.getCause() instanceof NonNullableFieldWasNullException) {
                         assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause());

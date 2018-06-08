@@ -1,17 +1,18 @@
 package graphql.execution.instrumentation.tracing;
 
-import graphql.PublicApi;
-import graphql.execution.ExecutionTypeInfo;
-import graphql.execution.instrumentation.InstrumentationState;
-import graphql.schema.DataFetchingEnvironment;
-
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import graphql.PublicApi;
+import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.instrumentation.InstrumentationState;
+import graphql.schema.DataFetchingEnvironment;
 
 /**
  * This creates a map of tracing information as outlined in https://github.com/apollographql/apollo-tracing
@@ -128,17 +129,13 @@ public class TracingSupport implements InstrumentationState {
     }
 
     private Object copyMap(Map<String, Object> map) {
-        Map<String, Object> mapCopy = new LinkedHashMap<>();
-        mapCopy.putAll(map);
-        return mapCopy;
+        return new LinkedHashMap<>(map);
 
     }
 
     private Map<String, Object> executionData() {
-        Map<String, Object> map = new LinkedHashMap<>();
         List<Map<String, Object>> list = new ArrayList<>(fieldData);
-        map.put("resolvers", list);
-        return map;
+        return Collections.singletonMap("resolvers", list);
     }
 
     private String rfc3339(Instant time) {

@@ -1,15 +1,15 @@
 package graphql.execution.batched;
 
 
-import graphql.execution.Async;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
+import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import graphql.execution.Async;
+import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 
 /**
  * Given a normal data fetcher as a delegate,
@@ -28,7 +28,7 @@ public class UnbatchedDataFetcher implements BatchedDataFetcher {
     @Override
     public CompletableFuture<List<Object>> get(DataFetchingEnvironment environment) {
         List<Object> sources = environment.getSource();
-        List<CompletableFuture<Object>> results = new ArrayList<>();
+        List<CompletableFuture<Object>> results = new ArrayList<>(sources.size());
         for (Object source : sources) {
 
             DataFetchingEnvironment singleEnv = newDataFetchingEnvironment(environment)

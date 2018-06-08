@@ -1,5 +1,17 @@
 package graphql.execution.instrumentation.dataloader;
 
+import static graphql.util.CollectionUtil.ensureNeverNull;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderRegistry;
+import org.dataloader.stats.Statistics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.execution.AsyncExecutionStrategy;
@@ -16,16 +28,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
-import org.dataloader.DataLoader;
-import org.dataloader.DataLoaderRegistry;
-import org.dataloader.stats.Statistics;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * This graphql {@link graphql.execution.instrumentation.Instrumentation} will dispatch
@@ -128,8 +130,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             return CompletableFuture.completedFuture(executionResult);
         }
         Map<Object, Object> currentExt = executionResult.getExtensions();
-        Map<Object, Object> statsMap = new LinkedHashMap<>();
-        statsMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
+        Map<Object, Object> statsMap = new LinkedHashMap<>(ensureNeverNull(currentExt));
         Map<Object, Object> dataLoaderStats = buildStatsMap();
         statsMap.put("dataloader", dataLoaderStats);
 
