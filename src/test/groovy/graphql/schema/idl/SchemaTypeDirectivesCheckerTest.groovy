@@ -49,7 +49,7 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         def errors = []
 
         when:
-        new SchemaTypeDirectivesChecker().checkTypeDirectives(errors, registry)
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
 
         then:
         errors.size() == 0
@@ -86,7 +86,7 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         def errors = []
 
         when:
-        new SchemaTypeDirectivesChecker().checkTypeDirectives(errors, registry)
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
 
         then:
         errors.each { assert it instanceof DirectiveUndeclaredError }
@@ -130,7 +130,7 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         def errors = []
 
         when:
-        new SchemaTypeDirectivesChecker().checkTypeDirectives(errors, registry)
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
 
         then:
         errors.each { assert it instanceof DirectiveUnknownArgumentError }
@@ -169,7 +169,7 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         def errors = []
 
         when:
-        new SchemaTypeDirectivesChecker().checkTypeDirectives(errors, registry)
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
 
         then:
         errors.each { assert it instanceof DirectiveIllegalLocationError }
@@ -197,7 +197,7 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         def errors = []
 
         when:
-        new SchemaTypeDirectivesChecker().checkTypeDirectives(errors, registry)
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
 
         then:
         errors.size() == 1
