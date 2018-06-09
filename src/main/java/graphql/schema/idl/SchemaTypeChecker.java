@@ -82,12 +82,13 @@ public class SchemaTypeChecker {
 
         checkFieldsAreSensible(errors, typeRegistry);
 
-        if (enforceSchemaDirectives) {
-            SchemaTypeDirectivesChecker directivesChecker = new SchemaTypeDirectivesChecker();
-            directivesChecker.checkTypeDirectives(errors, typeRegistry);
-        }
-
+        //check directive definitions before checking directive usages
         checkDirectiveDefinitions(typeRegistry, errors);
+
+        if (enforceSchemaDirectives) {
+            SchemaTypeDirectivesChecker directivesChecker = new SchemaTypeDirectivesChecker(typeRegistry, wiring);
+            directivesChecker.checkTypeDirectives(errors);
+        }
 
         return errors;
     }
