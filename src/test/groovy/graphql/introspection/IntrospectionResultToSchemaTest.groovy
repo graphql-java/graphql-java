@@ -13,9 +13,6 @@ import graphql.language.ObjectTypeDefinition
 import graphql.language.UnionTypeDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import graphql.schema.idl.RuntimeWiring
-import graphql.schema.idl.SchemaGenerator
-import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
 import groovy.json.JsonSlurper
 import spock.lang.Specification
@@ -556,9 +553,8 @@ input CharacterInput {
 
         when:
         def printedSchema = new SchemaPrinter().print(graphQLSchema)
-        def typeRegistry = new SchemaParser().parse(printedSchema)
-        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring().build()
-        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, runtimeWiring)
+
+        GraphQLSchema schema = TestUtil.schema(printedSchema)
 
         def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
         Document schemaDefinitionDocument = introspectionResultToSchema.createSchemaDefinition(introspectionResult.data as Map)

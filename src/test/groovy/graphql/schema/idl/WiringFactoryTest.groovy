@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
@@ -9,7 +10,6 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
-import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLUnionType
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.TypeResolver
@@ -125,13 +125,6 @@ class WiringFactoryTest extends Specification {
     }
 
 
-    GraphQLSchema generateSchema(String schemaSpec, RuntimeWiring wiring) {
-        def typeRegistry = new SchemaParser().parse(schemaSpec)
-        def result = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
-        result
-    }
-
-
     def "ensure that wiring factory is called to resolve and create data fetchers"() {
 
         def spec = """             
@@ -183,7 +176,7 @@ class WiringFactoryTest extends Specification {
                 .wiringFactory(combinedWiringFactory)
                 .build()
 
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec, wiring)
 
         expect:
 
@@ -246,7 +239,7 @@ class WiringFactoryTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        generateSchema(spec, wiring)
+        TestUtil.schema(spec, wiring)
 
         expect:
 
@@ -292,7 +285,7 @@ class WiringFactoryTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        generateSchema(spec, wiring)
+        TestUtil.schema(spec, wiring)
 
         expect:
 
@@ -316,7 +309,7 @@ class WiringFactoryTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        def schema = generateSchema(spec, wiring)
+        def schema = TestUtil.schema(spec, wiring)
 
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
 

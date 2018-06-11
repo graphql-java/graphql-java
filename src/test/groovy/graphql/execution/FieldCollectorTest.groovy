@@ -1,16 +1,12 @@
 package graphql.execution
 
+import graphql.TestUtil
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.InlineFragment
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
 import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLSchema
-import graphql.schema.idl.MockedWiringFactory
-import graphql.schema.idl.RuntimeWiring
-import graphql.schema.idl.SchemaGenerator
-import graphql.schema.idl.SchemaParser
 import spock.lang.Specification
 
 import static graphql.execution.FieldCollectorParameters.newParameters
@@ -18,15 +14,9 @@ import static graphql.execution.FieldCollectorParameters.newParameters
 class FieldCollectorTest extends Specification {
 
 
-    GraphQLSchema createSchema(String schema) {
-        def registry = new SchemaParser().parse(schema)
-        return new SchemaGenerator().makeExecutableSchema(registry,
-                RuntimeWiring.newRuntimeWiring().wiringFactory(new MockedWiringFactory()).build())
-    }
-
     def "collect fields"() {
         given:
-        def schema = createSchema("""
+        def schema = TestUtil.schema("""
             type Query {
                 bar1: String
                 bar2: String 
@@ -53,7 +43,7 @@ class FieldCollectorTest extends Specification {
     }
 
     def "collect fields on inline fragments"() {
-        def schema = createSchema("""
+        def schema = TestUtil.schema("""
             type Query{
                 bar1: String
                 bar2: Test 

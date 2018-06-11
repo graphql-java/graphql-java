@@ -13,15 +13,12 @@ import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
-import graphql.schema.PropertyDataFetcher
 import graphql.schema.TypeResolver
-import graphql.schema.idl.FieldWiringEnvironment
-import graphql.schema.idl.InterfaceWiringEnvironment
+import graphql.schema.idl.MockedWiringFactory
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.TypeRuntimeWiring
-import graphql.schema.idl.UnionWiringEnvironment
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
 
@@ -61,12 +58,23 @@ class TestUtil {
     }
 
     static GraphQLSchema schema(String spec) {
-        schema(spec, RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build())
+        schema(spec, mockRuntimeWiring)
+    }
+
+    static GraphQLSchema schema(Reader specReader) {
+        schema(specReader, mockRuntimeWiring)
     }
 
     static GraphQLSchema schemaFile(String fileName) {
-        return schemaFile(fileName, RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build())
+        return schemaFile(fileName, mockRuntimeWiring)
     }
+
+
+    static GraphQLSchema schemaFromResource(String resourceFileName, RuntimeWiring wiring) {
+        def stream = TestUtil.class.getClassLoader().getResourceAsStream(resourceFileName)
+        return schema(stream, wiring)
+    }
+
 
     static GraphQLSchema schemaFile(String fileName, RuntimeWiring wiring) {
         def stream = TestUtil.class.getClassLoader().getResourceAsStream(fileName)
@@ -78,14 +86,22 @@ class TestUtil {
     }
 
 
-    @SuppressWarnings("GroovyMissingReturnStatement")
     static GraphQLSchema schema(String spec, RuntimeWiring runtimeWiring) {
+        schema(new StringReader(spec), runtimeWiring)
+    }
+
+    static GraphQLSchema schema(InputStream specStream, RuntimeWiring runtimeWiring) {
+        schema(new InputStreamReader(specStream), runtimeWiring)
+    }
+
+    static GraphQLSchema schema(Reader specReader, RuntimeWiring runtimeWiring) {
         try {
-            def registry = new SchemaParser().parse(spec)
+            def registry = new SchemaParser().parse(specReader)
             def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
             return new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
         } catch (SchemaProblem e) {
             assert false: "The schema could not be compiled : ${e}"
+            return null
         }
     }
 
@@ -95,56 +111,16 @@ class TestUtil {
             return new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
         } catch (SchemaProblem e) {
             assert false: "The schema could not be compiled : ${e}"
+            return null
         }
     }
 
-    static WiringFactory mockWiringFactory = new WiringFactory() {
-
-        @Override
-        boolean providesTypeResolver(InterfaceWiringEnvironment environment) {
-            return true
-        }
-
-        @Override
-        TypeResolver getTypeResolver(InterfaceWiringEnvironment environment) {
-            new TypeResolver() {
-                @Override
-                GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    throw new UnsupportedOperationException("Not implemented")
-                }
-            }
-        }
-
-        @Override
-        boolean providesTypeResolver(UnionWiringEnvironment environment) {
-            return true
-        }
-
-        @Override
-        TypeResolver getTypeResolver(UnionWiringEnvironment environment) {
-            new TypeResolver() {
-                @Override
-                GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    throw new UnsupportedOperationException("Not implemented")
-                }
-            }
-        }
-
-        @Override
-        boolean providesDataFetcher(FieldWiringEnvironment environment) {
-            return true
-        }
-
-        @Override
-        DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
-            return new PropertyDataFetcher(environment.getFieldDefinition().getName())
-        }
-    }
+    static WiringFactory mockWiringFactory = new MockedWiringFactory()
 
     static RuntimeWiring mockRuntimeWiring = RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build()
 
     static GraphQLScalarType mockScalar(String name) {
-        new GraphQLScalarType(name, name, mockCoercing());
+        new GraphQLScalarType(name, name, mockCoercing())
     }
 
     private static Coercing mockCoercing() {
@@ -169,10 +145,10 @@ class TestUtil {
     static GraphQLScalarType mockScalar(ScalarTypeDefinition definition) {
         new GraphQLScalarType(
                 definition.getName(),
-                definition.getDescription(),
+                definition.getDescription() == null ? null : definition.getDescription().getContent(),
                 mockCoercing(),
                 definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()),
-                definition);
+                definition)
     }
 
     static GraphQLDirective mockDirective(String name) {
@@ -189,7 +165,7 @@ class TestUtil {
                 }
             })
         }
-        return builder.build();
+        return builder.build()
     }
 
 
