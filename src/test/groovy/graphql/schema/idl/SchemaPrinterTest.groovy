@@ -47,7 +47,7 @@ class SchemaPrinterTest extends Specification {
                 .type("Node", { type -> type.typeResolver(resolver) } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .scalar(ASTEROID)
                 .build()
-        GraphQLSchema schema = load("starWarsSchemaExtended.graphqls", wiring)
+        GraphQLSchema schema = TestUtil.schemaFromResource("starWarsSchemaExtended.graphqls", wiring)
         schema
     }
 
@@ -75,20 +75,6 @@ class SchemaPrinterTest extends Specification {
         GraphQLObjectType getType(TypeResolutionEnvironment env) {
             throw new UnsupportedOperationException("Not implemented")
         }
-    }
-
-    GraphQLSchema load(String fileName, RuntimeWiring wiring) {
-        def stream = getClass().getClassLoader().getResourceAsStream(fileName)
-
-        def typeRegistry = new SchemaParser().parse(new InputStreamReader(stream))
-        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring)
-        schema
-    }
-
-    GraphQLSchema generate(String spec) {
-        def typeRegistry = new SchemaParser().parse(spec)
-        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, newRuntimeWiring().build())
-        schema
     }
 
     static class MyGraphQLObjectType extends GraphQLObjectType {
@@ -178,7 +164,7 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "default root names are handled"() {
-        def schema = generate("""
+        def schema = TestUtil.schema("""
             type Query {
                 field: String
             }
@@ -211,7 +197,7 @@ type Subscription {
     }
 
     def "schema prints if forced with default root names"() {
-        def schema = generate("""
+        def schema = TestUtil.schema("""
             type Query {
                 field: String
             }
@@ -253,7 +239,7 @@ type Subscription {
 
 
     def "schema is printed if default root names are not ALL present"() {
-        def schema = generate("""
+        def schema = TestUtil.schema("""
             type Query {
                 field: String
             }
@@ -623,7 +609,7 @@ type Query {
 
 
     def "schema will be sorted"() {
-        def schema = generate("""
+        def schema = TestUtil.schema("""
             type Query {
                 fieldB(argZ : String, argY : Int, argX : String) : String
                 fieldA(argZ : String, argY : Int, argX : String) : String
@@ -738,7 +724,7 @@ enum Episode {
 
 
     def "AST doc string entries are printed if present"() {
-        def schema = generate('''
+        def schema = TestUtil.schema('''
             # comments up here
             """docstring"""
             # and comments as well down here
