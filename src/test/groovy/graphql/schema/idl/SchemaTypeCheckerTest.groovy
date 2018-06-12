@@ -1397,9 +1397,7 @@ class SchemaTypeCheckerTest extends Specification {
     }
 
     @Unroll
-    @SuppressWarnings("GroovyPointlessBoolean")
-    def "directive definition allowed argument type '#allowedArgType' does not match argument value '#argValue'"(
-            String allowedArgType, String argValue, String detailedMessage) {
+    def "directive definition allowed argument type '#allowedArgType' does not match argument value '#argValue'"() {
         def spec = """
             directive @testDirective(knownArg : $allowedArgType) on FIELD_DEFINITION
 
@@ -1463,9 +1461,7 @@ class SchemaTypeCheckerTest extends Specification {
     }
 
     @Unroll
-    @SuppressWarnings("GroovyPointlessBoolean")
-    def "directive definition allowed argument type '#allowedArgType' matches argument value '#argValue'"(
-            String allowedArgType, String argValue) {
+    def "directive definition allowed argument type '#allowedArgType' matches argument value '#argValue'"() {
         def spec = """
             directive @testDirective(knownArg : $allowedArgType) on FIELD_DEFINITION
 
