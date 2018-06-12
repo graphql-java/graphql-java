@@ -41,7 +41,7 @@ public class ExecutionResultImpl implements ExecutionResult {
         if (errors != null && !errors.isEmpty()) {
             this.errors = Collections.unmodifiableList(new ArrayList<>(errors));
         } else {
-            this.errors = Collections.emptyList();
+            this.errors = null;
         }
 
         this.extensions = extensions;
