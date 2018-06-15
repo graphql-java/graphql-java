@@ -2,7 +2,7 @@ package graphql.execution;
 
 import graphql.ErrorType;
 import graphql.GraphQLError;
-import graphql.GraphQLInstanceException;
+import graphql.GraphQLExecutionException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
 import graphql.language.VariableDefinition;
@@ -19,7 +19,7 @@ import static java.lang.String.format;
  * This is thrown if a non nullable value is coerced to a null value
  */
 @PublicApi
-public class NonNullableValueCoercedAsNullException extends GraphQLInstanceException implements GraphQLError {
+public class NonNullableValueCoercedAsNullException extends GraphQLExecutionException implements GraphQLError {
     private List<SourceLocation> sourceLocations;
 
     public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, GraphQLType graphQLType) {

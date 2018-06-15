@@ -1,10 +1,10 @@
 package graphql.schema;
 
-import graphql.GraphQLInstanceException;
+import graphql.GraphQLExecutionException;
 import graphql.PublicApi;
 
 @PublicApi
-public class CoercingSerializeException extends GraphQLInstanceException {
+public class CoercingSerializeException extends GraphQLExecutionException {
 
     public CoercingSerializeException() {
     }

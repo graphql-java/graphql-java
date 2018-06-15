@@ -1,10 +1,10 @@
 package graphql.schema.validation;
 
-import graphql.GraphQLInstanceException;
+import graphql.GraphQLSchemaException;
 
 import java.util.Collection;
 
-public class InvalidSchemaException extends GraphQLInstanceException {
+public class InvalidSchemaException extends GraphQLSchemaException {
 
     public InvalidSchemaException(Collection<SchemaValidationError> errors) {
         super(buildErrorMsg(errors));

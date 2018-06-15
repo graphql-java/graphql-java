@@ -1,6 +1,6 @@
 package graphql.execution;
 
-import graphql.GraphQLInstanceException;
+import graphql.GraphQLExecutionException;
 import graphql.PublicApi;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -10,7 +10,7 @@ import graphql.schema.GraphQLType;
  * or provides a type that doesn't implement the given interface or union.
  */
 @PublicApi
-public class UnresolvedTypeException extends GraphQLInstanceException {
+public class UnresolvedTypeException extends GraphQLExecutionException {
 
     private final GraphQLOutputType interfaceOrUnionType;
 

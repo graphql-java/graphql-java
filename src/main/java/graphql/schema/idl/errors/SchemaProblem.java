@@ -1,7 +1,7 @@
 package graphql.schema.idl.errors;
 
 import graphql.GraphQLError;
-import graphql.GraphQLInstanceException;
+import graphql.GraphQLSchemaException;
 import graphql.schema.idl.SchemaParser;
 
 import java.util.ArrayList;
@@ -12,7 +12,7 @@ import java.util.List;
  * or {@link graphql.schema.idl.SchemaGenerator} classes and they are reported via this
  * exception as a list of {@link GraphQLError}s
  */
-public class SchemaProblem extends GraphQLInstanceException {
+public class SchemaProblem extends GraphQLSchemaException {
 
     private final List<GraphQLError> errors;
 

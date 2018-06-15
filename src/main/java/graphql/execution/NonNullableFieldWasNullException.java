@@ -1,6 +1,6 @@
 package graphql.execution;
 
-import graphql.GraphQLInstanceException;
+import graphql.GraphQLExecutionException;
 
 import static graphql.Assert.assertNotNull;
 
@@ -9,7 +9,7 @@ import static graphql.Assert.assertNotNull;
  * actually resolves to a null value and the parent type is nullable then the parent must in fact become null
  * so we use exceptions to indicate this special case
  */
-public class NonNullableFieldWasNullException extends GraphQLInstanceException {
+public class NonNullableFieldWasNullException extends GraphQLExecutionException {
 
     private final ExecutionTypeInfo typeInfo;
     private final ExecutionPath path;
