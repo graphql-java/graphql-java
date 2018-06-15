@@ -4,6 +4,8 @@ import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -108,6 +110,16 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         Builder builder = newInputObject(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor) {
+        return visitor.visitGraphQLInputObjectType(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(fieldMap.values());
     }
 
     public static Builder newInputObject(GraphQLInputObjectType existing) {

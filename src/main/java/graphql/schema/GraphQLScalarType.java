@@ -4,6 +4,8 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ScalarTypeDefinition;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -103,6 +105,11 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
         Builder builder = newScalar(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor) {
+        return visitor.visitGraphQLScalarType(this, context);
     }
 
     public static Builder newScalar() {

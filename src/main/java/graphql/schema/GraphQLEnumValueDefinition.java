@@ -4,6 +4,8 @@ package graphql.schema;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -104,6 +106,12 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         builderConsumer.accept(builder);
         return builder.build();
     }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor) {
+        return visitor.visitGraphQLEnumValueDefinition(this, context);
+    }
+
 
     public static Builder newEnumValueDefinition() {
         return new Builder();

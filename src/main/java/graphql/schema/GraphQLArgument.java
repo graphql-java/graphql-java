@@ -4,6 +4,8 @@ package graphql.schema;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 import graphql.util.FpKit;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,11 +73,16 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
 
+    @Deprecated
     void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
         type = (GraphQLInputType) new SchemaUtil().resolveTypeReference(type, typeMap);
     }
 
     @Override
+    void replaceType(GraphQLInputType type) {
+        this.type = type;
+    }
+
     public String getName() {
         return name;
     }
@@ -138,6 +145,16 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
     public static Builder newArgument(GraphQLArgument existing) {
         return new Builder(existing);
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor) {
+        return visitor.visitGraphQLArgument(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        return Collections.singletonList(type);
     }
 
     public static class Builder {
