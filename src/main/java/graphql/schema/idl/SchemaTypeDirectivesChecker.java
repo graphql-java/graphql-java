@@ -15,11 +15,8 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.Node;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
-import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
-import graphql.language.Value;
-import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError;
 import graphql.schema.idl.errors.DirectiveIllegalLocationError;
 import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError;
 import graphql.schema.idl.errors.DirectiveUndeclaredError;
@@ -51,39 +48,47 @@ import static graphql.util.FpKit.mergeFirst;
 @Internal
 class SchemaTypeDirectivesChecker {
 
-    void checkTypeDirectives(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
+    private final TypeDefinitionRegistry typeRegistry;
+    private final RuntimeWiring runtimeWiring;
 
+    public SchemaTypeDirectivesChecker(final TypeDefinitionRegistry typeRegistry,
+                                       final RuntimeWiring runtimeWiring) {
+        this.typeRegistry = typeRegistry;
+        this.runtimeWiring = runtimeWiring;
+    }
+
+    void checkTypeDirectives(List<GraphQLError> errors) {
         typeRegistry.objectTypeExtensions().values()
-                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(OBJECT, errors, typeRegistry, ext)));
+                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(OBJECT, errors, ext)));
         typeRegistry.interfaceTypeExtensions().values()
-                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(INTERFACE, errors, typeRegistry, ext)));
+                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(INTERFACE, errors, ext)));
         typeRegistry.unionTypeExtensions().values()
-                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(UNION, errors, typeRegistry, ext)));
+                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(UNION, errors, ext)));
         typeRegistry.enumTypeExtensions().values()
-                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(ENUM, errors, typeRegistry, ext)));
+                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(ENUM, errors, ext)));
         typeRegistry.scalarTypeExtensions().values()
-                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(SCALAR, errors, typeRegistry, ext)));
+                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(SCALAR, errors, ext)));
         typeRegistry.inputObjectTypeExtensions().values()
-                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(INPUT_OBJECT, errors, typeRegistry, ext)));
+                .forEach(extDefinitions -> extDefinitions.forEach(ext -> checkDirectives(INPUT_OBJECT, errors, ext)));
 
         typeRegistry.getTypes(ObjectTypeDefinition.class)
-                .forEach(typeDef -> checkDirectives(OBJECT, errors, typeRegistry, typeDef));
+                .forEach(typeDef -> checkDirectives(OBJECT, errors, typeDef));
         typeRegistry.getTypes(InterfaceTypeDefinition.class)
-                .forEach(typeDef -> checkDirectives(INTERFACE, errors, typeRegistry, typeDef));
+                .forEach(typeDef -> checkDirectives(INTERFACE, errors, typeDef));
         typeRegistry.getTypes(UnionTypeDefinition.class)
-                .forEach(typeDef -> checkDirectives(UNION, errors, typeRegistry, typeDef));
+                .forEach(typeDef -> checkDirectives(UNION, errors, typeDef));
         typeRegistry.getTypes(EnumTypeDefinition.class)
-                .forEach(typeDef -> checkDirectives(ENUM, errors, typeRegistry, typeDef));
+                .forEach(typeDef -> checkDirectives(ENUM, errors, typeDef));
         typeRegistry.getTypes(InputObjectTypeDefinition.class)
-                .forEach(typeDef -> checkDirectives(INPUT_OBJECT, errors, typeRegistry, typeDef));
+                .forEach(typeDef -> checkDirectives(INPUT_OBJECT, errors, typeDef));
 
         typeRegistry.scalars().values()
-                .forEach(typeDef -> checkDirectives(SCALAR, errors, typeRegistry, typeDef));
+                .forEach(typeDef -> checkDirectives(SCALAR, errors, typeDef));
 
     }
 
 
-    private void checkDirectives(DirectiveLocation expectedLocation, List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, TypeDefinition<?> typeDef) {
+    private void checkDirectives(DirectiveLocation expectedLocation, List<GraphQLError> errors, TypeDefinition<?> typeDef) {
         checkDirectives(expectedLocation, errors, typeRegistry, typeDef, typeDef.getName(), typeDef.getDirectives());
 
         if (typeDef instanceof ObjectTypeDefinition) {
@@ -143,8 +148,9 @@ class SchemaTypeDirectivesChecker {
             InputValueDefinition allowedArg = allowedArgs.get(argument.getName());
             if (allowedArg == null) {
                 errors.add(new DirectiveUnknownArgumentError(element, elementName, directive.getName(), argument.getName()));
-            } else if (!argValueMatchesAllowedType(typeRegistry, argument.getValue(), allowedArg.getType())) {
-                errors.add(new DirectiveIllegalArgumentTypeError(element, elementName, directive.getName(), argument.getName()));
+            } else {
+                ArgValueOfAllowedTypeChecker argValueOfAllowedTypeChecker = new ArgValueOfAllowedTypeChecker(directive, element, elementName, argument, typeRegistry, runtimeWiring);
+                argValueOfAllowedTypeChecker.checkArgValueMatchesAllowedType(errors, argument.getValue(), allowedArg.getType());
             }
         });
         allowedArgs.forEach((argName, definitionArgument) -> {
@@ -158,10 +164,5 @@ class SchemaTypeDirectivesChecker {
 
     private boolean isNoNullArgWithoutDefaultValue(InputValueDefinition definitionArgument) {
         return definitionArgument.getType() instanceof NonNullType && definitionArgument.getDefaultValue() == null;
-    }
-
-    private boolean argValueMatchesAllowedType(TypeDefinitionRegistry typeRegistry, Value instanceValue, Type allowedArgType) {
-        // this code is not written yet and is tricky.
-        return true;
     }
 }
