@@ -42,6 +42,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Assert.assertTrue;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -165,7 +166,46 @@ public class SchemaGeneratorHelper {
         if (value instanceof BooleanValue) {
             return Scalars.GraphQLBoolean;
         }
-        return assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getName());
+        if (value instanceof ArrayValue) {
+            ArrayValue arrayValue = (ArrayValue) value;
+            return new GraphQLList(buildDirectiveInputType(getArrayValueWrappedType(arrayValue)));
+        }
+        return assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getSimpleName());
+    }
+
+    private Value getArrayValueWrappedType(ArrayValue value) {
+        // empty array [] is equivalent to [null]
+        if (value.getValues().isEmpty()) {
+            return NullValue.Null;
+        }
+
+        // get rid of null values
+        List<Value> nonNullValueList = value.getValues().stream()
+                .filter(v -> !(v instanceof NullValue))
+                .collect(Collectors.toList());
+
+        // [null, null, ...] unwrapped is null
+        if (nonNullValueList.isEmpty()) {
+            return NullValue.Null;
+        }
+
+        // make sure the array isn't polymorphic
+        Set<Class<? extends Value>> distinctTypes = nonNullValueList.stream()
+                .map(Value::getClass)
+                .distinct()
+                .collect(Collectors.toSet());
+
+        assertTrue(distinctTypes.size() == 1,
+                "Arrays containing multiple types of values are not supported yet. Detected the following types [%s]",
+                nonNullValueList.stream()
+                        .map(Value::getClass)
+                        .map(Class::getSimpleName)
+                        .distinct()
+                        .sorted()
+                        .collect(Collectors.joining(",")));
+
+        // peek at first value, value exists and is assured to be non-null
+        return nonNullValueList.get(0);
     }
 
     // builds directives from a type and its extensions
