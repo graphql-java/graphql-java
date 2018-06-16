@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.AssertException
 import graphql.TestUtil
 import graphql.introspection.Introspection
 import graphql.schema.GraphQLDirective
@@ -20,6 +21,7 @@ import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.function.UnaryOperator
 
@@ -898,6 +900,62 @@ class SchemaGeneratorTest extends Specification {
         enumType.getValue("B").value == "B"
         enumType.getValue("C").value == "C"
 
+    }
+
+    @Unroll
+    def "when using implicit directive (w/o definition), #argumentName is supported"() {
+        setup:
+        def spec = """
+            type Query @myDirective($argumentName: $argumentValue) {
+                foo: String 
+            }
+        """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+
+        def schema = schema(spec, wiring)
+        def queryType = schema.queryType
+
+        then:
+        def directive = queryType.getDirective("myDirective")
+        directive.getArgument(argumentName).type == expectedArgumentType
+
+        where:
+        argumentName        | argumentValue     || expectedArgumentType
+        "stringArg"         | '"a string"'      || GraphQLString
+        "boolArg"           | "true"            || GraphQLBoolean
+        "floatArg"          | "4.5"             || GraphQLFloat
+        "intArg"            | "5"               || GraphQLInt
+        "nullArg"           | "null"            || GraphQLString
+        "emptyArrayArg"     | "[]"              || new GraphQLList(GraphQLString)
+        "arrayNullsArg"     | "[null, null]"    || new GraphQLList(GraphQLString)
+        "arrayArg"          | "[3,4,6]"         || new GraphQLList(GraphQLInt)
+        "arrayWithNullsArg" | "[null,3,null,6]" || new GraphQLList(GraphQLInt)
+    }
+
+    @Unroll
+    def "when using implicit directive (w/o definition), #argumentName is NOT supported"() {
+        setup:
+        def spec = """
+            type Query @myDirective($argumentName: $argumentValue) {
+                foo: String 
+            }
+        """
+        when:
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .build()
+        schema(spec, wiring)
+
+        then:
+        def ex = thrown(AssertException) 
+        ex.message == expectedErrorMessage
+
+        where:
+        argumentName          | argumentValue               || expectedErrorMessage
+        "objArg"              | '{ hi: "John"}'             || "Internal error: should never happen: Directive values of type 'ObjectValue' are not supported yet"
+        "enumArg"             | "MONDAY"                    || "Internal error: should never happen: Directive values of type 'EnumValue' are not supported yet"
+        "polymorphicArrayArg" | '["one", { hi: "John"}, 5]' || "Arrays containing multiple types of values are not supported yet. Detected the following types [IntValue,ObjectValue,StringValue]"
     }
 
     def "deprecated directive is supported"() {
