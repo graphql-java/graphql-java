@@ -23,5 +23,18 @@ public interface GraphQLType {
      */
     default List<GraphQLType> getChildren() { return Collections.emptyList(); }
 
+    /**
+     * Double-dispatch entry point.
+     *
+     * It allows to travers a given non-trivial graphQL type and move from root to nested or enclosed types.
+     *
+     * This implements similar pattern as {@link graphql.language.Node}, see accept(...) for more details about the pattern.
+     *
+     * @param context TraverserContext bound to this graphQL type object
+     * @param visitor Visitor instance that performs actual processing on the types(s)
+     *
+     * @return Result of Visitor's operation.
+     * Note! Visitor's operation might return special results to control traversal process.
+     */
     TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor);
 }
