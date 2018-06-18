@@ -1,10 +1,16 @@
 package graphql.schema;
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import static graphql.util.TraversalControl.CONTINUE;
 
-public class TypeVisitorStub implements TypeVisitor {
+/**
+ * Base implementation of {@link GraphqlTypeVisitor} for convenience.
+ * Overwrite only required methods and/or {@link #visitGraphQLType(GraphQLType, TraverserContext)} as default fallback.
+ */
+@PublicApi
+public class GraphqlTypeVisitorStub implements GraphqlTypeVisitor {
     @Override
     public TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLType> context) {
         return visitGraphQLType(node,context);

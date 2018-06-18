@@ -1,9 +1,11 @@
 package graphql.schema;
 
+import graphql.Internal;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-public interface TypeVisitor {
+@Internal
+public interface GraphqlTypeVisitor {
     TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLType> context);
     TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLType> context);
     TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLType> context);

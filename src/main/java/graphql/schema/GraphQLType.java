@@ -36,5 +36,5 @@ public interface GraphQLType {
      * @return Result of Visitor's operation.
      * Note! Visitor's operation might return special results to control traversal process.
      */
-    TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor);
+    TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor);
 }

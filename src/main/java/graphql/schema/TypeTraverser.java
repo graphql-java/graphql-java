@@ -27,24 +27,24 @@ public class TypeTraverser {
         this(GraphQLType::getChildren);
     }
 
-    public TraverserResult depthFirst(TypeVisitor typeVisitor, GraphQLType root) {
-        return depthFirst(typeVisitor, Collections.singletonList(root));
+    public TraverserResult depthFirst(GraphqlTypeVisitor graphqlTypeVisitor, GraphQLType root) {
+        return depthFirst(graphqlTypeVisitor, Collections.singletonList(root));
     }
 
-    public TraverserResult depthFirst(final TypeVisitor typeVisitor, Collection<? extends GraphQLType> roots) {
-        return Traverser.depthFirst(getChildren).traverse(roots, new TraverserDelegateVisitor(typeVisitor));
+    public TraverserResult depthFirst(final GraphqlTypeVisitor graphqlTypeVisitor, Collection<? extends GraphQLType> roots) {
+        return Traverser.depthFirst(getChildren).traverse(roots, new TraverserDelegateVisitor(graphqlTypeVisitor));
     }
 
-    public TraverserResult depthFirst(final TypeVisitor typeVisitor,
+    public TraverserResult depthFirst(final GraphqlTypeVisitor graphqlTypeVisitor,
                                       Collection<? extends GraphQLType> roots,
                                       Map<String, GraphQLType> types) {
-        return Traverser.depthFirst(getChildren).rootVar(TypeTraverser.class, types).traverse(roots, new TraverserDelegateVisitor(typeVisitor));
+        return Traverser.depthFirst(getChildren).rootVar(TypeTraverser.class, types).traverse(roots, new TraverserDelegateVisitor(graphqlTypeVisitor));
     }
 
     class TraverserDelegateVisitor implements TraverserVisitor<GraphQLType> {
-        private final TypeVisitor delegate;
+        private final GraphqlTypeVisitor delegate;
 
-        public TraverserDelegateVisitor(TypeVisitor delegate) {
+        public TraverserDelegateVisitor(GraphqlTypeVisitor delegate) {
             this.delegate = delegate;
         }
 

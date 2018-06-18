@@ -113,7 +113,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor) {
         return visitor.visitGraphQLInputObjectType(this, context);
     }
 

@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -147,7 +146,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor) {
         return visitor.visitGraphQLObjectType(this, context);
     }
 

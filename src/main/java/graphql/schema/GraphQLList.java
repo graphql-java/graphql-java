@@ -76,7 +76,7 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor) {
         return visitor.visitGraphQLList(this, context);
     }
 

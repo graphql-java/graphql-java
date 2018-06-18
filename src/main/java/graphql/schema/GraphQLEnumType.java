@@ -178,7 +178,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, TypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor) {
         return visitor.visitGraphQLEnumType(this, context);
     }
 
