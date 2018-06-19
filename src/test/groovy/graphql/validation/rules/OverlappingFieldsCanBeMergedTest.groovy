@@ -4,7 +4,6 @@ import graphql.TypeResolutionEnvironment
 import graphql.language.Document
 import graphql.language.SourceLocation
 import graphql.parser.Parser
-import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.TypeResolver
@@ -17,6 +16,8 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLUnionType.newUnionType
 
@@ -84,16 +85,20 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                 .build()
 
         def NonNullStringBox1 = newObject().name("NonNullStringBox1")
-                .field(newFieldDefinition().name("scalar").type(new GraphQLNonNull(GraphQLString)))
+                .field(newFieldDefinition().name("scalar").type(nonNull(GraphQLString)))
                 .build()
 
         def NonNullStringBox2 = newObject().name("NonNullStringBox2")
-                .field(newFieldDefinition().name("scalar").type(new GraphQLNonNull(GraphQLString)))
+                .field(newFieldDefinition().name("scalar").type(nonNull(GraphQLString)))
+                .build()
+
+        def ListStringBox1 = newObject().name("ListStringBox1")
+                .field(newFieldDefinition().name("scalar").type(list(GraphQLString)))
                 .build()
 
         def BoxUnion = newUnionType()
                 .name("BoxUnion")
-                .possibleTypes(StringBox, IntBox, NonNullStringBox1, NonNullStringBox2)
+                .possibleTypes(StringBox, IntBox, NonNullStringBox1, NonNullStringBox2, ListStringBox1)
                 .typeResolver(new TypeResolver() {
             @Override
             GraphQLObjectType getType(TypeResolutionEnvironment env) {
@@ -153,6 +158,54 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.errors.isEmpty()
+    }
+
+    def 'not the same non null return types'() {
+        given:
+        def schema = unionSchema()
+        def query = """
+                {
+                    boxUnion {
+                        ...on StringBox {
+                            scalar
+                        }
+                        ...on NonNullStringBox1 {
+                            scalar
+                        }
+                    }
+                }
+                """
+
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: scalar: fields have different nullability shapes @ 'boxUnion'"
+    }
+
+    def 'not the same list return types'() {
+        given:
+        def schema = unionSchema()
+        def query = """
+                {
+                    boxUnion {
+                        ...on StringBox {
+                            scalar
+                        }
+                        ...on ListStringBox1 {
+                            scalar
+                        }
+                    }
+                }
+                """
+
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: scalar: fields have different list shapes @ 'boxUnion'"
     }
 
 
