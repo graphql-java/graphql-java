@@ -152,6 +152,7 @@ public class SpecValidationSchema {
     public static final GraphQLObjectType queryRoot = GraphQLObjectType.newObject()
             .name("QueryRoot")
             .field(newFieldDefinition().name("dog").type(dog))
+            .field(newFieldDefinition().name("pet").type(pet))
             .build();
 
     @SuppressWarnings("serial")
