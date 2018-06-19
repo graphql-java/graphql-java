@@ -14,8 +14,7 @@ def getDevelopmentVersion() {
     def output = new StringBuilder()
     def error = new StringBuilder()
     def gitShortHash = 'git rev-parse --short HEAD'.execute()
-    gitShortHash.consumeProcessOutput(output, error)
-    gitShortHash.waitForOrKill(10000)
+    gitShortHash.waitForProcessOutput(output, error)
     def gitHash = output.toString().trim()
     if (gitHash.isEmpty()) {
         println "git hash is empty: error: ${error.toString()}"
