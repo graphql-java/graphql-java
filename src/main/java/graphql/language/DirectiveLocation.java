@@ -1,6 +1,9 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +15,7 @@ import java.util.List;
 //    FRAGMENT_DEFINITION
 //    FRAGMENT_SPREAD
 //    INLINE_FRAGMENT
-public class DirectiveLocation extends AbstractNode<DirectiveLocation> {
+public class DirectiveLocation extends AbstractNode<DirectiveLocation> implements NamedNode<DirectiveLocation> {
     private final String name;
 
     public DirectiveLocation(String name) {
@@ -48,5 +51,10 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> {
         return "DirectiveLocation{" +
                 "name='" + name + "'" +
                 "}";
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitDirectiveLocation(this, context);
     }
 }

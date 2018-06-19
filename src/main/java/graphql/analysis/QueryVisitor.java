@@ -1,10 +1,19 @@
 package graphql.analysis;
 
-import graphql.Internal;
+import graphql.PublicApi;
 
-@Internal
+/**
+ * Used by {@link QueryTraversal} to visit the nodes of a Query.
+ * <p>
+ * How this happens in detail (pre vs post-order for example) is defined by {@link QueryTraversal}.
+ */
+@PublicApi
 public interface QueryVisitor {
 
-    void visitField(QueryVisitorEnvironment queryVisitorEnvironment);
+    void visitField(QueryVisitorFieldEnvironment QueryVisitorFieldEnvironment);
+
+    void visitInlineFragment(QueryVisitorInlineFragmentEnvironment queryVisitorInlineFragmentEnvironment);
+
+    void visitFragmentSpread(QueryVisitorFragmentSpreadEnvironment queryVisitorFragmentSpreadEnvironment);
 
 }

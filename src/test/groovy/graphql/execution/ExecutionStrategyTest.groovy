@@ -7,7 +7,7 @@ import graphql.ExecutionResult
 import graphql.Scalars
 import graphql.SerializationError
 import graphql.TypeMismatchError
-import graphql.execution.instrumentation.NoOpInstrumentation
+import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.OperationDefinition
@@ -55,7 +55,7 @@ class ExecutionStrategyTest extends Specification {
     def buildContext(GraphQLSchema schema = null) {
         ExecutionId executionId = ExecutionId.from("executionId123")
         def variables = [arg1: "value1"]
-        new ExecutionContext(NoOpInstrumentation.INSTANCE, executionId, schema, null,
+        new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema, null,
                 executionStrategy, executionStrategy, executionStrategy,
                 null, null, null,
                 variables, "context", "root")
@@ -125,7 +125,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == result
@@ -146,7 +146,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == expected
@@ -172,10 +172,155 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters).join()
+        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
-        thrown(NonNullableFieldWasNullException)
+        def e = thrown(CompletionException)
+        e.getCause() instanceof NonNullableFieldWasNullException
+    }
+
+    def "completes value for java.util.OptionalInt"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = GraphQLString
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(result)
+                .fields(["fld": []])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+
+        then:
+        executionResult.data == expected
+
+        where:
+        result                    || expected
+        OptionalInt.of(10)      || "10"
+        OptionalInt.empty() || null
+    }
+
+    def "completes value for an empty java.util.OptionalInt that triggers non null exception"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = nonNull(GraphQLString)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(OptionalInt.empty())
+                .fields(["fld": []])
+                .build()
+
+        when:
+        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+
+        then:
+        def e = thrown(CompletionException)
+        e.getCause() instanceof NonNullableFieldWasNullException
+    }
+
+    def "completes value for java.util.OptionalDouble"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = GraphQLString
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(result)
+                .fields(["fld": []])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+
+        then:
+        executionResult.data == expected
+
+        where:
+        result                    || expected
+        OptionalDouble.of(10)      || "10.0"
+        OptionalDouble.empty() || null
+    }
+
+    def "completes value for an empty java.util.OptionalDouble that triggers non null exception"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = nonNull(GraphQLString)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(OptionalDouble.empty())
+                .fields(["fld": []])
+                .build()
+
+        when:
+        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+
+        then:
+        def e = thrown(CompletionException)
+        e.getCause() instanceof NonNullableFieldWasNullException
+    }
+
+    def "completes value for java.util.OptionalLong"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = GraphQLString
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(result)
+                .fields(["fld": []])
+                .build()
+
+        when:
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+
+        then:
+        executionResult.data == expected
+
+        where:
+        result                    || expected
+        OptionalLong.of(10)      || "10"
+        OptionalLong.empty() || null
+    }
+
+    def "completes value for an empty java.util.OptionalLong that triggers non null exception"() {
+        given:
+        ExecutionContext executionContext = buildContext()
+        def fieldType = nonNull(GraphQLString)
+        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        def parameters = newParameters()
+                .typeInfo(typeInfo)
+                .nonNullFieldValidator(nullableFieldValidator)
+                .source(OptionalLong.empty())
+                .fields(["fld": []])
+                .build()
+
+        when:
+        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+
+        then:
+        def e = thrown(CompletionException)
+        e.getCause() instanceof NonNullableFieldWasNullException
     }
 
     def "completes value for an array"() {
@@ -194,7 +339,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == result
@@ -216,7 +361,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == null
@@ -241,7 +386,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == null
@@ -521,7 +666,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
 
         then:
         executionResult.get().data == [1L, 2L, 3L]
@@ -601,7 +746,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters)
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
 
         then:
         executionResult.get().data == [1L, 2L, 3L]
@@ -625,7 +770,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
 
         then:
         executionResult.data == null

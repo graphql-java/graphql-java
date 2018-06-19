@@ -46,11 +46,43 @@ public class ExecutionPath {
         pathList = toListImpl();
     }
 
+    public int getLevel() {
+        int counter = 0;
+        ExecutionPath currentPath = this;
+        while (currentPath != null) {
+            if (currentPath.segment instanceof StringPathSegment) {
+                counter++;
+            }
+            currentPath = currentPath.parent;
+        }
+        return counter;
+    }
+
+    public ExecutionPath getPathWithoutListEnd() {
+        if(this == ROOT_PATH) {
+            return ROOT_PATH;
+        }
+        if (segment instanceof StringPathSegment) {
+            return this;
+        }
+        return parent;
+    }
+
+    public String getSegmentName() {
+        if (segment instanceof StringPathSegment) {
+            return ((StringPathSegment) segment).getValue();
+        } else {
+            if (parent == null) {
+                return null;
+            }
+            return ((StringPathSegment) parent.segment).getValue();
+        }
+    }
+
     /**
      * Parses an execution path from the provided path string in the format /segment1/segment2[index]/segmentN
      *
      * @param pathString the path string
-     *
      * @return a parsed execution path
      */
     public static ExecutionPath parse(String pathString) {
@@ -79,7 +111,6 @@ public class ExecutionPath {
      * This will create an execution path from the list of objects
      *
      * @param objects the path objects
-     *
      * @return a new execution path
      */
     public static ExecutionPath fromList(List<?> objects) {
@@ -103,7 +134,6 @@ public class ExecutionPath {
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the string path segment to add
-     *
      * @return a new path containing that segment
      */
     public ExecutionPath segment(String segment) {
@@ -114,7 +144,6 @@ public class ExecutionPath {
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the int path segment to add
-     *
      * @return a new path containing that segment
      */
     public ExecutionPath segment(int segment) {
@@ -125,7 +154,7 @@ public class ExecutionPath {
      * @return converts the path into a list of segments
      */
     public List<Object> toList() {
-        return pathList;
+        return new ArrayList<>(pathList);
     }
 
     private List<Object> toListImpl() {

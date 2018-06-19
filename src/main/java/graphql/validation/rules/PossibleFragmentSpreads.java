@@ -14,7 +14,6 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
@@ -35,8 +34,8 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (fragType == null || parentType == null) return;
         if (!doTypesOverlap(fragType, parentType)) {
             String message = String.format("Fragment cannot be spread here as objects of " +
-                    "type %s can never be of type %s", parentType, fragType);
-            addError(new ValidationError(ValidationErrorType.InvalidFragmentType, inlineFragment.getSourceLocation(), message));
+                    "type %s can never be of type %s", parentType.getName(), fragType.getName());
+            addError(ValidationErrorType.InvalidFragmentType, inlineFragment.getSourceLocation(), message);
 
         }
     }
@@ -51,8 +50,8 @@ public class PossibleFragmentSpreads extends AbstractRule {
 
         if (!doTypesOverlap(typeCondition, parentType)) {
             String message = String.format("Fragment %s cannot be spread here as objects of " +
-                    "type %s can never be of type %s", fragmentSpread.getName(), parentType, typeCondition);
-            addError(new ValidationError(ValidationErrorType.InvalidFragmentType, fragmentSpread.getSourceLocation(), message));
+                    "type %s can never be of type %s", fragmentSpread.getName(), parentType.getName(), typeCondition.getName());
+            addError(ValidationErrorType.InvalidFragmentType, fragmentSpread.getSourceLocation(), message);
         }
     }
 
@@ -73,7 +72,7 @@ public class PossibleFragmentSpreads extends AbstractRule {
         if (type instanceof GraphQLObjectType) {
             possibleConditionTypes = Collections.singletonList(type);
         } else if (type instanceof GraphQLInterfaceType) {
-            possibleConditionTypes = getValidationContext().getSchema().getImplementations((GraphQLInterfaceType)type);
+            possibleConditionTypes = getValidationContext().getSchema().getImplementations((GraphQLInterfaceType) type);
         } else if (type instanceof GraphQLUnionType) {
             possibleConditionTypes = ((GraphQLUnionType) type).getTypes();
         } else {

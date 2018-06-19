@@ -3,9 +3,10 @@ package graphql.execution.preparsed;
 import graphql.GraphQLError;
 import graphql.language.Document;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+
+import static graphql.Assert.assertNotNull;
+import static java.util.Collections.singletonList;
 
 /**
  * An instance of a preparsed document entry represents the result of a query parse and validation, like
@@ -16,19 +17,19 @@ public class PreparsedDocumentEntry {
     private final List<? extends GraphQLError> errors;
 
     public PreparsedDocumentEntry(Document document) {
-        Objects.requireNonNull(document);
+        assertNotNull(document);
         this.document = document;
         this.errors = null;
     }
 
     public PreparsedDocumentEntry(List<? extends GraphQLError> errors) {
-        Objects.requireNonNull(errors);
+        assertNotNull(errors);
         this.document = null;
         this.errors = errors;
     }
 
     public PreparsedDocumentEntry(GraphQLError error) {
-        this(Collections.singletonList(Objects.requireNonNull(error)));
+        this(singletonList(assertNotNull(error)));
     }
 
     public Document getDocument() {

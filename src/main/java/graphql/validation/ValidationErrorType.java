@@ -27,6 +27,8 @@ public enum ValidationErrorType {
     FragmentCycle,
     FieldsConflict,
     InvalidFragmentType,
-    LoneAnonymousOperationViolation
+    LoneAnonymousOperationViolation,
+    NonExecutableDefinition,
+    DuplicateOperationName
 
 }

@@ -158,6 +158,23 @@ class TraversalContextTest extends Specification {
         traversalContext.getInputType() == null
     }
 
+    def "variableDefinition that is not a GraphQLInputType should result as null"() {
+        given: "a GraphQLObjectType instead of a GraphQLInputType"
+        VariableDefinition variableDefinition = new VariableDefinition("var", new TypeName("Human"))
+
+        when:
+        traversalContext.enter(variableDefinition, [])
+
+        then:
+        traversalContext.getInputType() == null
+
+        when:
+        traversalContext.leave(variableDefinition, [])
+
+        then:
+        traversalContext.getInputType() == null
+    }
+
     def "field argument saves argument and input type"() {
         given:
         Argument argument = new Argument("id", new StringValue("string"))

@@ -58,6 +58,20 @@ import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 /**
+ * <blockquote>
+ *   BatchedExecutionStrategy has been deprecated in favour of {@link graphql.execution.AsyncExecutionStrategy}
+ *   and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}.
+ *
+ *   BatchedExecutionStrategy does not properly implement the graphql runtime specification.  Specifically it
+ *   does not correctly handle non null fields and how they are to cascade up their parent fields.  It has proven
+ *   an intractable problem to make this code handle these cases.
+ *
+ *   See http://facebook.github.io/graphql/October2016/#sec-Errors-and-Non-Nullability
+ *
+ *   We will remove it once we are sure the alternative is as least good as the BatchedExecutionStrategy.
+ *
+ * </blockquote>
+ *
  * Execution Strategy that minimizes calls to the data fetcher when used in conjunction with {@link DataFetcher}s that have
  * {@link DataFetcher#get(DataFetchingEnvironment)} methods annotated with {@link Batched}. See the javadoc comment on
  * {@link Batched} for a more detailed description of batched data fetchers.
@@ -66,8 +80,11 @@ import static java.util.stream.Collectors.toList;
  * </p>
  * Normal DataFetchers can be used, however they will not see benefits of batching as they expect a single source object
  * at a time.
+ *
+ * @deprecated This has been deprecated in favour of using {@link graphql.execution.AsyncExecutionStrategy} and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
 @PublicApi
+@Deprecated
 public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     private final BatchedDataFetcherFactory batchingFactory = new BatchedDataFetcherFactory();
@@ -82,15 +99,16 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        InstrumentationContext<CompletableFuture<ExecutionResult>> executionStrategyCtx = executionContext.getInstrumentation().beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext));
+        InstrumentationContext<ExecutionResult> executionStrategyCtx = executionContext.getInstrumentation()
+                .beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext, parameters));
 
-        GraphQLObjectType type = parameters.typeInfo().castType(GraphQLObjectType.class);
+        GraphQLObjectType type = parameters.getTypeInfo().castType(GraphQLObjectType.class);
 
         ExecutionNode root = new ExecutionNode(type,
-                parameters.typeInfo(),
-                parameters.fields(),
+                parameters.getTypeInfo(),
+                parameters.getFields(),
                 singletonList(MapOrList.createMap(new LinkedHashMap<>())),
-                Collections.singletonList(parameters.source())
+                Collections.singletonList(parameters.getSource())
         );
 
         Queue<ExecutionNode> nodes = new ArrayDeque<>();
@@ -103,7 +121,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 root.getFields().keySet().iterator(),
                 result);
 
-        executionStrategyCtx.onEnd(result, null);
+        executionStrategyCtx.onDispatched(result);
+        result.whenComplete(executionStrategyCtx::onCompleted);
         return result;
     }
 
@@ -133,7 +152,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         // once an object is resolved from a interface / union to a node with an object type, the
         // parent type info has effectively changed (it has got more specific), even though the path etc...
         // has not changed
-        ExecutionTypeInfo currentParentTypeInfo = parameters.typeInfo();
+        ExecutionTypeInfo currentParentTypeInfo = parameters.getTypeInfo();
         ExecutionTypeInfo newParentTypeInfo = newTypeInfo()
                 .type(curNode.getType())
                 .fieldDefinition(currentParentTypeInfo.getFieldDefinition())
@@ -183,7 +202,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, fields.get(0));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        ExecutionTypeInfo typeInfo = parameters.typeInfo();
+        ExecutionTypeInfo typeInfo = parameters.getTypeInfo();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
                 new InstrumentationFieldParameters(executionContext, fieldDef, typeInfo)
         );
@@ -199,7 +218,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
             return completeValues(executionContext, fetchedValues, typeInfo, fieldName, fields, argumentValues);
         });
-        result.whenComplete((nodes, throwable) -> fieldCtx.onEnd(null, throwable));
+        fieldCtx.onDispatched(null);
+        result.whenComplete((nodes, throwable) -> fieldCtx.onCompleted(null, throwable));
         return result;
 
     }
@@ -227,14 +247,14 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .fieldDefinition(fieldDef)
                 .fields(fields)
                 .fieldType(fieldDef.getType())
-                .fieldTypeInfo(parameters.typeInfo())
+                .fieldTypeInfo(parameters.getTypeInfo())
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
                 .build();
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationFieldFetchParameters instrumentationFieldFetchParameters =
-                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment);
+                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParameters);
 
         CompletableFuture<Object> fetchedValue;
@@ -249,7 +269,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
         return fetchedValue
                 .thenApply((result) -> assertResult(parentResults, result))
-                .whenComplete(fetchCtx::onEnd)
+                .whenComplete(fetchCtx::onCompleted)
                 .handle(handleResult(executionContext, parameters, parentResults, fields, fieldDef, argumentValues, environment));
     }
 
@@ -265,7 +285,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                         .argumentValues(argumentValues)
                         .field(fields.get(0))
                         .fieldDefinition(fieldDef)
-                        .path(parameters.path())
+                        .path(parameters.getPath())
                         .exception(exception)
                         .build();
                 dataFetcherExceptionHandler.accept(handlerParameters);
@@ -277,7 +297,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 Object value = unboxPossibleOptional(values.get(i));
                 retVal.add(new FetchedValue(parentResults.get(i), value));
             }
-            return new FetchedValues(retVal, parameters.typeInfo(), parameters.path());
+            return new FetchedValues(retVal, parameters.getTypeInfo(), parameters.getPath());
         };
     }
 

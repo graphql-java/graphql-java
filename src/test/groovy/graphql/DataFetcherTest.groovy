@@ -1,6 +1,6 @@
 package graphql
 
-import graphql.schema.FieldDataFetcher
+import graphql.execution.ExecutionContext
 import graphql.schema.GraphQLOutputType
 import graphql.schema.PropertyDataFetcher
 import spock.lang.Specification
@@ -52,19 +52,11 @@ class DataFetcherTest extends Specification {
         dataHolder.setProperty("propertyValue")
         dataHolder.setBooleanField(true)
         dataHolder.setBooleanFieldWithGet(false)
+
     }
 
     def env(GraphQLOutputType type) {
-        newDataFetchingEnvironment().source(dataHolder).fieldType(type).build()
-    }
-
-    def "get field value"() {
-        given:
-        def environment = env(GraphQLString)
-        when:
-        def result = new FieldDataFetcher("publicField").get(environment)
-        then:
-        result == "publicValue"
+        newDataFetchingEnvironment().source(dataHolder).executionContext(Mock(ExecutionContext)).fieldType(type).build()
     }
 
     def "get property value"() {
@@ -94,7 +86,7 @@ class DataFetcherTest extends Specification {
         result == false
     }
 
-    def "get field value as property"() {
+    def "get public field value as property"() {
         given:
         def environment = env(GraphQLString)
         when:

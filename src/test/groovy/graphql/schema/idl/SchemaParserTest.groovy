@@ -99,7 +99,7 @@ class SchemaParserTest extends Specification {
         def parsedTypes = typeRegistry.types()
         def scalarTypes = typeRegistry.scalars()
         def schemaDef = typeRegistry.schemaDefinition()
-        def typeExtensions = typeRegistry.typeExtensions()
+        def typeExtensions = typeRegistry.objectTypeExtensions()
 
         expect:
 

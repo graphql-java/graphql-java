@@ -1,6 +1,6 @@
 package graphql.execution
 
-import graphql.execution.instrumentation.NoOpInstrumentation
+import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
@@ -81,7 +81,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .instrumentation(NoOpInstrumentation.INSTANCE)
+                .instrumentation(SimpleInstrumentation.INSTANCE)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -124,7 +124,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .instrumentation(NoOpInstrumentation.INSTANCE)
+                .instrumentation(SimpleInstrumentation.INSTANCE)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()

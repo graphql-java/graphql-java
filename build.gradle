@@ -10,12 +10,27 @@ apply plugin: 'maven-publish'
 apply plugin: 'antlr'
 apply plugin: 'osgi'
 
+def getDevelopmentVersion() {
+    def output = new StringBuilder()
+    def error = new StringBuilder()
+    def gitShortHash = 'git rev-parse --short HEAD'.execute()
+    gitShortHash.consumeProcessOutput(output, error)
+    gitShortHash.waitForOrKill(10000)
+    def gitHash = output.toString().trim()
+    if (gitHash.isEmpty()) {
+        println "git hash is empty: error: ${error.toString()}"
+        throw new IllegalStateException("git hash could not be determined")
+    }
+    new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-" + gitHash
+}
+
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 def reactiveStreamsVersion = '1.0.2'
 def slf4jVersion = '1.7.25'
-def releaseVersion = System.properties.RELEASE_VERSION
-version = releaseVersion ? releaseVersion : new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
+def releaseVersion = System.env.RELEASE_VERSION
+version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
 
@@ -28,17 +43,21 @@ apply plugin: 'groovy'
 
 jar {
     from "LICENSE.md"
+    from "src/main/antlr/Graphql.g4"
+    from "src/main/antlr/GraphqlOperation.g4"
+    from "src/main/antlr/GraphqlSDL.g4"
+    from "src/main/antlr/GraphqlCommon.g4"
 }
 
 dependencies {
-    compile 'org.antlr:antlr4-runtime:4.5.1'
+    compile 'org.antlr:antlr4-runtime:4.7.1'
     compile 'org.slf4j:slf4j-api:' + slf4jVersion
     compile 'com.graphql-java:java-dataloader:2.0.2'
     compile 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
-    antlr "org.antlr:antlr4:4.5.1"
+    antlr "org.antlr:antlr4:4.7.1"
     testCompile group: 'junit', name: 'junit', version: '4.11'
-    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
-    testCompile 'org.codehaus.groovy:groovy-all:2.4.10'
+    testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.13'
     testCompile 'cglib:cglib-nodep:3.1'
     testCompile 'org.objenesis:objenesis:2.1'
     testCompile 'com.google.code.gson:gson:2.8.0'
@@ -55,6 +74,7 @@ dependencies {
 compileJava.source file("build/generated-src"), sourceSets.main.java
 
 generateGrammarSource {
+    includes = ['Graphql.g4']
     maxHeapSize = "64m"
     arguments += ["-visitor"]
     outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
@@ -153,6 +173,22 @@ bintray {
         desc = 'GraphQL in Java'
         licenses = ['MIT']
         vcsUrl = 'https://github.com/graphql-java/graphql-java'
+
+        version {
+            name = project.version
+            desc = project.description
+            released = new Date()
+            vcsTag = 'v' + project.version
+            gpg {
+                sign = true
+            }
+            mavenCentralSync {
+                sync = true
+                user = System.env.MAVEN_CENTRAL_USER
+                password = System.env.MAVEN_CENTRAL_PASSWORD
+                close = '1'
+            }
+        }
     }
 }
 
@@ -163,6 +199,6 @@ tasks.withType(PublishToMavenRepository) {
 
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.4'
+    gradleVersion = '4.5.1'
     distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
 }

@@ -8,13 +8,17 @@ import graphql.language.Comment
 import graphql.language.Directive
 import graphql.language.DirectiveDefinition
 import graphql.language.DirectiveLocation
+import graphql.language.Document
 import graphql.language.EnumTypeDefinition
+import graphql.language.EnumTypeExtensionDefinition
 import graphql.language.EnumValueDefinition
 import graphql.language.FieldDefinition
 import graphql.language.InputObjectTypeDefinition
+import graphql.language.InputObjectTypeExtensionDefinition
 import graphql.language.InputValueDefinition
 import graphql.language.IntValue
 import graphql.language.InterfaceTypeDefinition
+import graphql.language.InterfaceTypeExtensionDefinition
 import graphql.language.ListType
 import graphql.language.Node
 import graphql.language.NonNullType
@@ -23,10 +27,12 @@ import graphql.language.ObjectTypeDefinition
 import graphql.language.ObjectValue
 import graphql.language.OperationTypeDefinition
 import graphql.language.ScalarTypeDefinition
+import graphql.language.ScalarTypeExtensionDefinition
 import graphql.language.SchemaDefinition
-import graphql.language.TypeExtensionDefinition
+import graphql.language.ObjectTypeExtensionDefinition
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
+import graphql.language.UnionTypeExtensionDefinition
 import graphql.language.VariableReference
 import spock.lang.Specification
 
@@ -343,7 +349,7 @@ withArgs(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
 """
 
         and: "expected schema"
-        def schema = new TypeExtensionDefinition("ExtendType")
+        def schema = new ObjectTypeExtensionDefinition("ExtendType")
         schema.getImplements().add(new TypeName("Impl3"))
         schema.getDirectives()
                 .add(new Directive("extendDirective", [new Argument("a1", new VariableReference("v1"))]))
@@ -520,5 +526,322 @@ input Gun {
         commentContent(inputValueDefinitions[1].comments) == [" second"]
     }
 
+    def "empty type definition"() {
+
+        def input = """
+        type EmptyType
+        
+        extend type EmptyType {
+            hero : String
+        }
+"""
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        ObjectTypeDefinition typeDef = document.definitions[0] as ObjectTypeDefinition
+        typeDef.getName() == 'EmptyType'
+        typeDef.getFieldDefinitions().isEmpty()
+
+        ObjectTypeExtensionDefinition extTypeDef = document.definitions[1] as ObjectTypeExtensionDefinition
+        extTypeDef.getName() == 'EmptyType'
+        extTypeDef.getFieldDefinitions().size() == 1
+    }
+
+    def "empty type definition with body"() {
+
+        def input = """
+        type EmptyType {
+        
+        }
+        
+        extend type EmptyType {
+            hero : String
+        }
+"""
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        ObjectTypeDefinition typeDef = document.definitions[0] as ObjectTypeDefinition
+        typeDef.getName() == 'EmptyType'
+        typeDef.getFieldDefinitions().isEmpty()
+
+        ObjectTypeExtensionDefinition extTypeDef = document.definitions[1] as ObjectTypeExtensionDefinition
+        extTypeDef.getName() == 'EmptyType'
+        extTypeDef.getFieldDefinitions().size() == 1
+    }
+
+    def "type implements can have & character for extra names"() {
+
+        def input = """
+        interface Bar {
+            bar : String
+        }
+
+        interface Baz {
+            baz : String
+        }
+        
+        type Foo implements Bar & Baz {
+            bar : String
+            baz : String
+        }
+    
+        type Foo2 implements Bar Baz {
+            bar : String
+            baz : String
+        }
+        
+"""
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        ObjectTypeDefinition typeDef = document.definitions[2] as ObjectTypeDefinition
+        typeDef.getName() == 'Foo'
+        typeDef.getImplements().size() == 2
+        (typeDef.getImplements()[0] as TypeName).getName() == 'Bar'
+        (typeDef.getImplements()[1] as TypeName).getName() == 'Baz'
+
+        then:
+        ObjectTypeDefinition typeDef2 = document.definitions[3] as ObjectTypeDefinition
+        typeDef2.getName() == 'Foo2'
+        typeDef2.getImplements().size() == 2
+        (typeDef2.getImplements()[0] as TypeName).getName() == 'Bar'
+        (typeDef2.getImplements()[1] as TypeName).getName() == 'Baz'
+    }
+
+    def "object type extensions"() {
+
+        def input = '''
+
+        type Query {
+            bar : String
+        }
+        
+        extend type Query @directiveOnly
+
+        extend type Query @directive {
+            field : String
+        }
+
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+        // object type extension
+        fromDoc(doc, 0, ObjectTypeDefinition).name == "Query"
+
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).name == "Query"
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 1, ObjectTypeExtensionDefinition).getFieldDefinitions().size() == 0
+
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).name == "Query"
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getFieldDefinitions().size() == 1
+        fromDoc(doc, 2, ObjectTypeExtensionDefinition).getFieldDefinitions()[0].name == 'field'
+
+    }
+
+    def "interface type extensions"() {
+
+        def input = '''
+        
+        interface Bar {
+            bar : String
+        }
+
+        extend interface Bar @directiveOnly
+        
+        extend interface Bar @directive {
+          iField : String
+        }
+        
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+        fromDoc(doc, 0, InterfaceTypeDefinition).name == 'Bar'
+
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).name == 'Bar'
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).getFieldDefinitions().size() == 0
+
+
+        fromDoc(doc, 2, InterfaceTypeExtensionDefinition).name == 'Bar'
+        fromDoc(doc, 1, InterfaceTypeExtensionDefinition).getDirectivesByName().size() == 1
+        fromDoc(doc, 2, InterfaceTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, InterfaceTypeExtensionDefinition).getFieldDefinitions().size() == 1
+        fromDoc(doc, 2, InterfaceTypeExtensionDefinition).getFieldDefinitions()[0].name == 'iField'
+    }
+
+    def "union type extensions"() {
+
+        def input = '''
+
+        union FooBar = Foo | Bar
+
+        extend union FooBar @directiveOnly
+
+        extend union FooBar @directive =
+            | Baz 
+            | Buzz
+        
+        
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+        // union type extension
+        fromDoc(doc, 0, UnionTypeDefinition).name == 'FooBar'
+
+        fromDoc(doc, 1, UnionTypeExtensionDefinition).name == 'FooBar'
+        fromDoc(doc, 1, UnionTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 1, UnionTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+
+        fromDoc(doc, 2, UnionTypeExtensionDefinition).name == 'FooBar'
+        fromDoc(doc, 2, UnionTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 2, UnionTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        (fromDoc(doc, 2, UnionTypeExtensionDefinition).memberTypes[0] as TypeName).name == 'Baz'
+        (fromDoc(doc, 2, UnionTypeExtensionDefinition).memberTypes[1] as TypeName).name == 'Buzz'
+    }
+
+    def "enum type extensions"() {
+
+        def input = '''
+
+        enum Numb {
+            A, B, C
+        }
+        
+        extend enum Numb @directiveOnly
+        
+        extend enum Numb @directive {
+            E,F
+        }
+        
+        
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+
+        // enum type extension
+        fromDoc(doc, 0, EnumTypeDefinition).name == 'Numb'
+
+        fromDoc(doc, 1, EnumTypeExtensionDefinition).name == 'Numb'
+        fromDoc(doc, 1, EnumTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 1, EnumTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).name == 'Numb'
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).getEnumValueDefinitions()[0].name == 'E'
+        fromDoc(doc, 2, EnumTypeExtensionDefinition).getEnumValueDefinitions()[1].name == 'F'
+    }
+
+    def "scalar type extensions"() {
+
+        def input = '''
+
+        scalar Scales
+        
+        extend scalar Scales @directiveOnly 
+        
+        extend scalar Scales @directive
+        
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+
+        // scalar type extension
+        fromDoc(doc, 0, ScalarTypeDefinition).name == 'Scales'
+
+        fromDoc(doc, 1, ScalarTypeExtensionDefinition).name == 'Scales'
+        fromDoc(doc, 1, ScalarTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 1, ScalarTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+
+        fromDoc(doc, 2, ScalarTypeExtensionDefinition).name == 'Scales'
+        fromDoc(doc, 2, ScalarTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 2, ScalarTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+    }
+
+    def "input object type extensions"() {
+
+        def input = '''
+
+        input Puter {
+            field : String
+        }
+        
+        extend input Puter @directiveOnly
+        
+        extend input Puter @directive {
+            inputField : String
+        }
+            
+        '''
+
+        when:
+        def doc = new Parser().parseDocument(input)
+
+        then:
+
+        fromDoc(doc, 0, InputObjectTypeDefinition).name == 'Puter'
+
+        fromDoc(doc, 1, InputObjectTypeExtensionDefinition).name == 'Puter'
+        fromDoc(doc, 1, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 1, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directiveOnly")
+        fromDoc(doc, 1, InputObjectTypeExtensionDefinition).inputValueDefinitions.isEmpty()
+
+        fromDoc(doc, 2, InputObjectTypeExtensionDefinition).name == 'Puter'
+        fromDoc(doc, 2, InputObjectTypeExtensionDefinition).getDirectives().size() == 1
+        fromDoc(doc, 2, InputObjectTypeExtensionDefinition).getDirectivesByName().containsKey("directive")
+        fromDoc(doc, 2, InputObjectTypeExtensionDefinition).inputValueDefinitions[0].name == 'inputField'
+    }
+
+    def "source name is available when specified"() {
+
+        def input = 'type Query { hello: String }'
+        def sourceName = 'named.graphql'
+
+        when:
+        def defaultDoc = new Parser().parseDocument(input)
+        def namedDocNull = new Parser().parseDocument(input, null)
+        def namedDoc = new Parser().parseDocument(input, sourceName)
+
+        then:
+
+        defaultDoc.definitions[0].sourceLocation.sourceName == null
+        namedDocNull.definitions[0].sourceLocation.sourceName == null
+        namedDoc.definitions[0].sourceLocation.sourceName == sourceName
+
+    }
+
+    static <T> T fromDoc(Document document, int index, Class<T> asClass) {
+        def definition = document.definitions[index]
+        assert asClass == definition.getClass(), "Could not find expected definition of type " + asClass.getName() + " but was " + definition.getClass().getName()
+        return asClass.cast(definition)
+    }
 }
 

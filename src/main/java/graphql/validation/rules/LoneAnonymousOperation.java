@@ -4,7 +4,6 @@ import graphql.language.Document;
 import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
@@ -35,7 +34,7 @@ public class LoneAnonymousOperation extends AbstractRule {
         }
         count++;
         if (message != null) {
-            addError(new ValidationError(ValidationErrorType.LoneAnonymousOperationViolation, operationDefinition.getSourceLocation(), message));
+            addError(ValidationErrorType.LoneAnonymousOperationViolation, operationDefinition.getSourceLocation(), message);
         }
     }
 

@@ -20,11 +20,11 @@ class ExecutionStrategyParametersTest extends Specification {
         def newParameters = parameters.transform { it -> it.source(123) }
 
         then:
-        newParameters.typeInfo() == parameters.typeInfo()
-        newParameters.fields() == parameters.fields()
+        newParameters.getTypeInfo() == parameters.getTypeInfo()
+        newParameters.getFields() == parameters.getFields()
 
-        newParameters.source() != parameters.source()
-        newParameters.source() == 123
+        newParameters.getSource() != parameters.getSource()
+        newParameters.getSource() == 123
     }
 
 }

@@ -17,7 +17,6 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.validation.AbstractRule;
-import graphql.validation.ErrorFactory;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 
@@ -31,8 +30,6 @@ import java.util.Set;
 import static graphql.validation.ValidationErrorType.FieldsConflict;
 
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
-
-    final ErrorFactory errorFactory = new ErrorFactory();
 
 
     private final List<FieldPair> alreadyChecked = new ArrayList<>();
@@ -48,7 +45,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         collectFields(fieldMap, selectionSet, getValidationContext().getOutputType(), visitedFragmentSpreads);
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
-            addError(errorFactory.newError(FieldsConflict, conflict.fields, conflict.reason));
+            addError(FieldsConflict, conflict.fields, conflict.reason);
         }
 
     }

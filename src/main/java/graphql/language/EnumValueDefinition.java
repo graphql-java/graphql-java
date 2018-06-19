@@ -1,11 +1,13 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> {
+public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> implements DirectivesContainer<EnumValueDefinition> {
     private final String name;
     private Description description;
     private final List<Directive> directives;
@@ -33,14 +35,6 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> {
 
     public List<Directive> getDirectives() {
         return directives;
-    }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return NodeUtil.directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
     }
 
     @Override
@@ -72,5 +66,10 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> {
                 "name='" + name + '\'' +
                 ", directives=" + directives +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitEnumValueDefinition(this, context);
     }
 }

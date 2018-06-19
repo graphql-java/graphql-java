@@ -34,7 +34,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     }
 
     private Map<String, Object> fetchFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        Map<String, List<Field>> fields = parameters.fields();
+        Map<String, List<Field>> fields = parameters.getFields();
 
         Map<String, CompletableFuture<Object>> fetchFutures = new LinkedHashMap<>();
 
@@ -55,7 +55,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     }
 
     private CompletableFuture<ExecutionResult> completeFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, Object> fetchedValues) {
-        Map<String, List<Field>> fields = parameters.fields();
+        Map<String, List<Field>> fields = parameters.getFields();
 
         // then for every fetched value, complete it, breath first
         Map<String, Object> results = new LinkedHashMap<>();
@@ -66,7 +66,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
 
             Object fetchedValue = fetchedValues.get(fieldName);
             try {
-                ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).join();
+                ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).getFieldValue().join();
                 results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
             } catch (NonNullableFieldWasNullException e) {
                 assertNonNullFieldPrecondition(e);
@@ -79,7 +79,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
 
     private ExecutionStrategyParameters newParameters(ExecutionStrategyParameters parameters, Map<String, List<Field>> fields, String fieldName) {
         List<Field> currentField = fields.get(fieldName);
-        ExecutionPath fieldPath = parameters.path().segment(fieldName);
+        ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
         return parameters
                 .transform(builder -> builder.field(currentField).path(fieldPath));
     }

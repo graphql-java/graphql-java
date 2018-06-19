@@ -1,13 +1,13 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static graphql.language.NodeUtil.directivesByName;
-
-public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread> {
+public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread> {
 
     private String name;
     private List<Directive> directives = new ArrayList<>();
@@ -35,15 +35,6 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     public List<Directive> getDirectives() {
         return directives;
     }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
-    }
-
 
     public void setDirectives(List<Directive> directives) {
         this.directives = directives;
@@ -78,5 +69,10 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
                 "name='" + name + '\'' +
                 ", directives=" + directives +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitFragmentSpread(this, context);
     }
 }

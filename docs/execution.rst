@@ -4,7 +4,7 @@ Execution
 Queries
 -------
 
-To execute a query against a schema build a new ``GraphQL`` object with the appropriate arguments and then
+To execute a query against a schema, build a new ``GraphQL`` object with the appropriate arguments and then
 call ``execute()``.
 
 The result of a query is an ``ExecutionResult`` which is the query data and/or a list of errors.
@@ -479,16 +479,6 @@ See http://www.reactive-streams.org/ for more information on the reactive ``Publ
 
 Also see the page on subscriptions for more details on how to write a subscription based graphql service.
 
-
-BatchedExecutionStrategy
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-Alternatively, schemas with nested lists may benefit from using a ``graphql.execution.batched.BatchedExecutionStrategy`` and
-creating batched DataFetchers with get() methods annotated @Batched.
-
-
-.. This text will not be shown and if it does I have not done restructured comments right.  We should add more details
-on how BatchedExecutionStrategy works here.  Its a pretty special case that I don't know how to explain properly
 
 Limiting Field Visibility
 -------------------------

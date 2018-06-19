@@ -11,8 +11,6 @@ import spock.lang.Specification
  */
 class SpecValidationBase extends Specification {
 
-    public static final boolean enableStrictValidation = false
-
     List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
         return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document)

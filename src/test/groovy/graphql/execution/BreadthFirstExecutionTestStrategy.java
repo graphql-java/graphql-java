@@ -22,7 +22,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        Map<String, List<Field>> fields = parameters.fields();
+        Map<String, List<Field>> fields = parameters.getFields();
 
         Map<String, Object> fetchedValues = new LinkedHashMap<>();
 
@@ -38,7 +38,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
             List<Field> currentField = fields.get(fieldName);
             Object fetchedValue = fetchedValues.get(fieldName);
 
-            ExecutionPath fieldPath = parameters.path().segment(fieldName);
+            ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
@@ -56,7 +56,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
     private Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, List<Field>> fields, String fieldName) {
         List<Field> currentField = fields.get(fieldName);
 
-        ExecutionPath fieldPath = parameters.path().segment(fieldName);
+        ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
         ExecutionStrategyParameters newParameters = parameters
                 .transform(builder -> builder.field(currentField).path(fieldPath));
 
@@ -64,7 +64,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
     }
 
     private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, Object fetchedValue, ExecutionStrategyParameters newParameters) {
-        ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).join();
+        ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).getFieldValue().join();
         results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
     }
 

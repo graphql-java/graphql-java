@@ -55,24 +55,24 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         }
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext);
-        InstrumentationContext<CompletableFuture<ExecutionResult>> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
+        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+        InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
-        InstrumentationContext<Map<String, List<Field>>> beginFieldsCtx = instrumentation.beginFields(instrumentationParameters);
-
-        Map<String, List<Field>> fields = parameters.fields();
+        Map<String, List<Field>> fields = parameters.getFields();
         Map<String, Future<CompletableFuture<ExecutionResult>>> futures = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
             final List<Field> currentField = fields.get(fieldName);
 
-            ExecutionPath fieldPath = parameters.path().segment(fieldName);
+            ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
             Callable<CompletableFuture<ExecutionResult>> resolveField = () -> resolveField(executionContext, newParameters);
             futures.put(fieldName, executorService.submit(resolveField));
         }
-        beginFieldsCtx.onEnd(fields, null);
+
+        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        executionStrategyCtx.onDispatched(overallResult);
 
         try {
             Map<String, Object> results = new LinkedHashMap<>();
@@ -92,11 +92,13 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
                 results.put(fieldName, executionResult != null ? executionResult.getData() : null);
             }
 
-            CompletableFuture<ExecutionResult> result = CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
-            executionStrategyCtx.onEnd(result, null);
-            return result;
+            ExecutionResultImpl executionResult = new ExecutionResultImpl(results, executionContext.getErrors());
+            overallResult.complete(executionResult);
+
+            overallResult.whenComplete(executionStrategyCtx::onCompleted);
+            return overallResult;
         } catch (InterruptedException | ExecutionException e) {
-            executionStrategyCtx.onEnd(null, e);
+            executionStrategyCtx.onCompleted(null, e);
             throw new GraphQLException(e);
         }
     }

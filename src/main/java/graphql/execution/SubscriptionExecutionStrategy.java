@@ -98,7 +98,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
-        return completeField(newExecutionContext, newParameters, eventPayload)
+        return completeField(newExecutionContext, newParameters, eventPayload).getFieldValue()
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
     }
 
@@ -111,17 +111,17 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     }
 
     private String getRootFieldName(ExecutionStrategyParameters parameters) {
-        Field rootField = parameters.field().get(0);
+        Field rootField = parameters.getField().get(0);
         return rootField.getAlias() != null ? rootField.getAlias() : rootField.getName();
     }
 
     private ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionStrategyParameters parameters) {
-        Map<String, List<Field>> fields = parameters.fields();
+        Map<String, List<Field>> fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
 
         List<Field> firstField = fields.get(fieldNames.get(0));
 
-        ExecutionPath fieldPath = parameters.path().segment(firstField.get(0).getName());
+        ExecutionPath fieldPath = parameters.getPath().segment(firstField.get(0).getName());
         return parameters.transform(builder -> builder.field(firstField).path(fieldPath));
     }
 

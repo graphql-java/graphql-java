@@ -26,6 +26,7 @@ import static graphql.schema.GraphQLEnumType.newEnum;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
 import static graphql.schema.GraphQLObjectType.newObject;
+import static graphql.schema.GraphQLTypeReference.typeRef;
 
 public class FunWithStringsSchemaFactory {
 
@@ -389,6 +390,7 @@ public class FunWithStringsSchemaFactory {
 
         GraphQLObjectType simpleObjectType = newObject()
                 .name("SimpleObject")
+                .withInterface(typeRef("InterfaceType"))
                 .field(newFieldDefinition()
                         .name("value")
                         .type(GraphQLString))
@@ -434,6 +436,7 @@ public class FunWithStringsSchemaFactory {
 
         return GraphQLSchema.newSchema()
                 .query(queryType)
+                .additionalType(simpleObjectType)
                 .build();
 
     }

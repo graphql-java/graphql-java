@@ -4,12 +4,7 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
-import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
-import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
+import graphql.execution.instrumentation.parameters.*
 import graphql.language.Document
 import graphql.schema.DataFetcher
 import graphql.validation.ValidationError
@@ -62,15 +57,15 @@ class ChainedInstrumentationStateTest extends Specification {
         }
 
         @Override
-        InstrumentationContext<CompletableFuture<ExecutionResult>> beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
             assertState(parameters.getInstrumentationState())
             return super.beginExecutionStrategy(parameters)
         }
 
         @Override
-        InstrumentationContext<ExecutionResult> beginDataFetch(InstrumentationDataFetchParameters parameters) {
+        InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
             assertState(parameters.getInstrumentationState())
-            return super.beginDataFetch(parameters)
+            return super.beginExecuteOperation(parameters)
         }
 
         @Override
@@ -126,13 +121,10 @@ class ChainedInstrumentationStateTest extends Specification {
                 "start:validation",
                 "end:validation",
 
-                "start:data-fetch-dispatch",
-
-                "start:data-fetch",
+                "start:execute-operation",
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
@@ -140,25 +132,21 @@ class ChainedInstrumentationStateTest extends Specification {
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
                 "end:complete-id",
                 "end:field-id",
-                "end:fields",
 
                 "end:execution-strategy",
 
                 "end:complete-hero",
                 "end:field-hero",
-                "end:fields",
 
                 "end:execution-strategy",
 
-                "end:data-fetch",
-                "end:data-fetch-dispatch",
+                "end:execute-operation",
 
                 "end:execution",
         ]

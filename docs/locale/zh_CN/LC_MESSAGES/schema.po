@@ -101,8 +101,8 @@ msgstr "用 SDL 创建 Schema"
 
 #: ../../schema.rst:77
 msgid ""
-"When defining a schema via SDL, you provide the needed ``DataFetcher`` "
-"and ``TypeResolver`` when the executable schema is created."
+"When defining a schema via SDL, you provide the needed ``DataFetcher`` s "
+"and ``TypeResolver`` s when the executable schema is created."
 msgstr "当使用SDL方法来开发时，你需要同时编写对应的 ``DataFetcher`` 和 ``TypeResolver``。"
 
 #: ../../schema.rst:80
@@ -125,7 +125,7 @@ msgid ""
 msgstr "这里的绑定，包括 ``DataFetcher`` ,  ``TypeResolvers`` 与自定义 ``Scalar``."
 
 #: ../../schema.rst:131
-msgid "You wire this together using this builder pattern"
+msgid "You wire this together using this builder pattern:"
 msgstr "用下页的Builder方法，就可以绑定Schema和Java程序"
 
 #: ../../schema.rst:161
@@ -397,8 +397,8 @@ msgstr "订阅功能还未在规范中： ``graphql-java`` 现在只支持简单
 
 #~ msgid ""
 #~ "When defining a schema via IDL, "
-#~ "you provide the needed ``DataFetcher`` "
-#~ "and ``TypeResolver`` when the schema is"
+#~ "you provide the needed ``DataFetcher`` s "
+#~ "and ``TypeResolver`` s when the schema is"
 #~ " created:"
 #~ msgstr ""
 

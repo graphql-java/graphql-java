@@ -4,6 +4,9 @@ import com.github.javafaker.Faker
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.instrumentation.dataloader.models.Company
+import graphql.execution.instrumentation.dataloader.models.Person
+import graphql.execution.instrumentation.dataloader.models.Product
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
@@ -176,7 +179,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         return registry
     }
 
-    def "ensure performant loading"() {
+    def "ensure performant loading with field tracking"() {
 
         DataLoaderRegistry registry = buildRegistry()
 
@@ -197,14 +200,14 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         then:
 
-        executionResult.data != null
+        (executionResult.data["products"] as Map).size() == 5
 
         personBatchLoadKeyCount == 26
         personBatchLoadInvocationCount == 1
 
         companyBatchLoadKeyCount == 26
 
-        companyBatchLoadInvocationCount == 10
+        companyBatchLoadInvocationCount == 1
 
     }
 }

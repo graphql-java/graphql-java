@@ -11,7 +11,7 @@ import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.NoOpInstrumentation;
+import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -75,6 +76,12 @@ import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
  */
 @PublicApi
 public class GraphQL {
+
+    /**
+     * When @defer directives are used, this is the extension key name used to contain the {@link org.reactivestreams.Publisher}
+     * of deferred results
+     */
+    public static final String DEFERRED_RESULTS = "deferredResults";
 
     private static final Logger log = LoggerFactory.getLogger(GraphQL.class);
 
@@ -127,7 +134,7 @@ public class GraphQL {
      */
     @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
     }
 
     /**
@@ -142,7 +149,7 @@ public class GraphQL {
      */
     @Internal
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy) {
-        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, NoOpInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
+        this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
     }
 
     private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider) {
@@ -200,7 +207,7 @@ public class GraphQL {
         private ExecutionStrategy mutationExecutionStrategy = new AsyncSerialExecutionStrategy();
         private ExecutionStrategy subscriptionExecutionStrategy = new SubscriptionExecutionStrategy();
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
-        private Instrumentation instrumentation = NoOpInstrumentation.INSTANCE;
+        private Instrumentation instrumentation = SimpleInstrumentation.INSTANCE;
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
 
 
@@ -463,7 +470,7 @@ public class GraphQL {
             CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, graphQLSchema, instrumentationState);
             //
             // finish up instrumentation
-            executionResult = executionResult.whenComplete(executionInstrumentation::onEnd);
+            executionResult = executionResult.whenComplete(executionInstrumentation::onCompleted);
             //
             // allow instrumentation to tweak the result
             executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
@@ -479,13 +486,18 @@ public class GraphQL {
 
 
     private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
-        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(), query -> parseAndValidate(executionInput, graphQLSchema, instrumentationState));
-
+        AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
+        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(),
+                transformedQuery -> {
+                    // if they change the original query in the pre-parser, then we want to see it downstream from then on
+                    executionInputRef.set(executionInput.transform(bldr -> bldr.query(transformedQuery)));
+                    return parseAndValidate(executionInputRef.get(), graphQLSchema, instrumentationState);
+                });
         if (preparsedDoc.hasErrors()) {
             return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
         }
 
-        return execute(executionInput, preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
+        return execute(executionInputRef.get(), preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
     }
 
     private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
@@ -516,11 +528,11 @@ public class GraphQL {
         try {
             document = parser.parseDocument(executionInput.getQuery());
         } catch (ParseCancellationException e) {
-            parseInstrumentation.onEnd(null, e);
+            parseInstrumentation.onCompleted(null, e);
             return ParseResult.ofError(e);
         }
 
-        parseInstrumentation.onEnd(document, null);
+        parseInstrumentation.onCompleted(document, null);
         return ParseResult.of(document);
     }
 
@@ -530,7 +542,7 @@ public class GraphQL {
         Validator validator = new Validator();
         List<ValidationError> validationErrors = validator.validateDocument(graphQLSchema, document);
 
-        validationCtx.onEnd(validationErrors, null);
+        validationCtx.onCompleted(validationErrors, null);
         return validationErrors;
     }
 

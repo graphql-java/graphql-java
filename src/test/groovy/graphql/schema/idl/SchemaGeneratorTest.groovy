@@ -1,5 +1,9 @@
 package graphql.schema.idl
 
+import graphql.TestUtil
+import graphql.introspection.Introspection
+import graphql.schema.GraphQLDirective
+import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLFieldsContainer
@@ -11,6 +15,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
+import graphql.schema.PropertyDataFetcher
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.visibility.GraphqlFieldVisibility
@@ -19,6 +24,7 @@ import spock.lang.Specification
 import java.util.function.UnaryOperator
 
 import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.schema
@@ -630,7 +636,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnInputTypeError.class)
-        err.message == "expected InputType, but found CharacterInput type [@11:13]"
+        err.message == "The type 'CharacterInput' [@11:13] is not an input type, but was used as an input type [@7:42]"
     }
 
     def "InputType used as type should throw appropriate error #425"() {
@@ -655,7 +661,7 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         def err = thrown(NotAnOutputTypeError.class)
-        err.message == "expected OutputType, but found CharacterInput type [@11:13]"
+        err.message == "The type 'CharacterInput' [@11:13] is not an output type, but was used to declare the output type of a field [@7:32]"
     }
 
     def "schema with subscription"() {
@@ -1053,6 +1059,133 @@ class SchemaGeneratorTest extends Specification {
         (arg2 as List).get(0) instanceof Integer
     }
 
+    def "null default arguments are ok"() {
+        def spec = """
+            type Query {
+              field(argNoDefault : Int) : String
+            }
+        """
+
+        def schema = schema(spec)
+        schema.getType("Query") instanceof GraphQLObjectType
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+        Object argNoDefault = query.getFieldDefinition("field").getArgument("argNoDefault").defaultValue
+
+        expect:
+        argNoDefault == null
+    }
+
+    def "object type directives are gathered and turned into runtime objects with arguments"() {
+        def spec = """
+            type Query @directive1 {
+              field1 : String @fieldDirective1
+            }
+            
+            extend type Query @directive2 {
+                field2 : String @fieldDirective2
+            }
+
+            extend type Query @directive2
+            
+            extend type Query @directive3
+            
+            extend type Query @directiveWithArgs(strArg : "String", intArg : 1, boolArg : true, floatArg : 1.1, nullArg : null)
+            
+                
+        """
+
+        def schema = schema(spec)
+        GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        type.getDirectives().size() == 4
+        type.getDirectives()[0].name == "directive1"
+        type.getDirectives()[1].name == "directive2"
+        type.getDirectives()[2].name == "directive3"
+
+        // test that fields can have directives as well
+
+        def field1 = type.getFieldDefinition("field1")
+        field1.getDirectives().size() == 1
+        def fieldDirective1 = field1.getDirectives()[0]
+        fieldDirective1.getName() == "fieldDirective1"
+
+        def field2 = type.getFieldDefinition("field2")
+        field2.getDirectives().size() == 1
+        def fieldDirective2 = field2.getDirectives()[0]
+        fieldDirective2.getName() == "fieldDirective2"
+
+
+        def directive = type.getDirectives()[3] as GraphQLDirective
+        directive.name == "directiveWithArgs"
+        directive.arguments.size() == 5
+
+        directive.arguments[argIndex].name == argName
+        directive.arguments[argIndex].type == argType
+        directive.arguments[argIndex].value == argValue
+
+        where:
+        argIndex | argName    | argType        | argValue
+        0        | "strArg"   | GraphQLString  | "String"
+        1        | "intArg"   | GraphQLInt     | 1
+        2        | "boolArg"  | GraphQLBoolean | true
+        3        | "floatArg" | GraphQLFloat   | 1.1
+        4        | "nullArg"  | GraphQLString  | null
+
+    }
+
+    def "other type directives are captured"() {
+        def spec = """
+            type Query {
+              field1 : String
+            }
+            type A  {
+                fieldA : String
+            }
+            type B  {
+                fieldB : String
+            }
+            
+            interface IFace @IFaceDirective {
+                field1 : String
+            }
+            
+            union Onion @OnionDirective = A | B
+            
+            enum Numb @NumbDirective {
+                X @EnumValueDirective,
+                Y
+            }
+            
+            input Puter @PuterDirective {
+                inputField : String @InputFieldDirective
+            }
+        """
+
+        def schema = schema(spec)
+        GraphQLDirectiveContainer container = schema.getType(typeName) as GraphQLDirectiveContainer
+
+        expect:
+
+        container.getDirective(directiveName) != null
+
+        if (container instanceof GraphQLEnumType) {
+            def evd = ((GraphQLEnumType) container).getValue("X").getDirective("EnumValueDirective")
+            assert evd != null
+        }
+        if (container instanceof GraphQLInputObjectType) {
+            def ifd = ((GraphQLInputObjectType) container).getField("inputField").getDirective("InputFieldDirective")
+            assert ifd != null
+        }
+
+        where:
+        typeName | directiveName
+        "IFace"  | "IFaceDirective"
+        "Onion"  | "OnionDirective"
+        "Numb"   | "NumbDirective"
+        "Puter"  | "PuterDirective"
+    }
+
     def "input object default value is parsed"() {
         def spec = """
             input InputObject {
@@ -1100,4 +1233,396 @@ class SchemaGeneratorTest extends Specification {
         schema.getFieldVisibility() == fieldVisibility
 
     }
+
+    def "empty types are allowed and expanded"() {
+        def spec = """
+            type Query
+            
+            interface IAge {
+                age : Int
+            }
+            
+            extend type Query {
+                name : String
+            }
+
+            extend type Query implements IAge {
+                age : Int
+            }
+            
+        """
+
+        def schema = schema(spec)
+        schema.getType("Query") instanceof GraphQLObjectType
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        query.getFieldDefinitions().size() == 2
+        query.getInterfaces().size() == 1
+        query.getInterfaces().get(0).getName() == 'IAge'
+    }
+
+    def "object extension types are combined"() {
+
+    }
+
+    def "interface extension types are combined"() {
+        def spec = """
+            type Query implements IAgeAndHeight {
+                age : Int
+                height : Int
+            }
+            
+            
+            interface IAgeAndHeight @directive {
+                age : Int
+            }
+
+            extend interface IAgeAndHeight {
+                height : Int @directiveField
+            }
+            
+        """
+
+        def schema = schema(spec)
+        GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        query.getFieldDefinitions().size() == 2
+        query.getInterfaces().size() == 1
+        query.getInterfaces().get(0).getName() == 'IAgeAndHeight'
+        (query.getInterfaces().get(0) as GraphQLInterfaceType).getDirectivesByName().containsKey("directive")
+        (query.getInterfaces().get(0) as GraphQLInterfaceType).getFieldDefinition("height").getDirectivesByName().containsKey("directiveField")
+    }
+
+    def "union extension types are combined"() {
+        def spec = """
+            type Query {
+                field :String
+            }
+            
+            
+            type Foo {
+                field :String
+            }
+
+            type Bar {
+                field :String
+            }
+
+            type Baz {
+                field :String
+            }
+                
+
+            union FooBar = Foo
+            
+            extend union FooBar = Bar | Baz
+            
+            extend union FooBar @directive
+            
+        """
+
+        def schema = schema(spec)
+        GraphQLUnionType unionType = schema.getType("FooBar") as GraphQLUnionType
+
+        expect:
+        unionType.types.size() == 3
+        unionType.types.stream().anyMatch({ t -> (t.getName() == "Foo") })
+        unionType.types.stream().anyMatch({ t -> (t.getName() == "Bar") })
+        unionType.types.stream().anyMatch({ t -> (t.getName() == "Baz") })
+        unionType.directivesByName.containsKey("directive")
+    }
+
+    def "enum extension types are combined"() {
+        def spec = """
+            type Query {
+                field :String
+            }
+            
+            
+            enum Numb {
+                A,B
+            }
+            
+            extend enum Numb {
+                C
+            }
+
+            extend enum Numb @directive{
+                D
+            }
+        """
+
+        def schema = schema(spec)
+        GraphQLEnumType enumType = schema.getType("Numb") as GraphQLEnumType
+
+        expect:
+        enumType.values.size() == 4
+        enumType.values.stream().anyMatch({ t -> (t.getName() == "A") })
+        enumType.values.stream().anyMatch({ t -> (t.getName() == "B") })
+        enumType.values.stream().anyMatch({ t -> (t.getName() == "C") })
+        enumType.values.stream().anyMatch({ t -> (t.getName() == "D") })
+        enumType.directivesByName.containsKey("directive")
+    }
+
+    def "input extension types are combined"() {
+        def spec = """
+            type Query {
+                field :String
+            }
+            
+            
+            input Puter {
+                fieldA : String
+            }
+
+            extend input Puter {
+                fieldB : String
+            }
+
+            extend input Puter {
+                fieldC : String
+            }
+
+            extend input Puter @directive {
+                fieldD : String
+            }
+            
+        """
+
+        def schema = schema(spec)
+        GraphQLInputObjectType inputObjectType = schema.getType("Puter") as GraphQLInputObjectType
+
+        expect:
+        inputObjectType.fields.size() == 4
+        inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldA") })
+        inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldB") })
+        inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldC") })
+        inputObjectType.fields.stream().anyMatch({ t -> (t.getName() == "fieldD") })
+        inputObjectType.directivesByName.containsKey("directive")
+    }
+
+    def "arguments can have directives (which themselves can have arguments)"() {
+        def spec = """
+            type Query {
+                obj : Object
+            }
+            
+            type Object {
+                field(argStr : String @strDirective @secondDirective, argInt : Int @intDirective(inception : true) @thirdDirective ) : String
+            }
+        """
+
+        def schema = schema(spec)
+        GraphQLObjectType type = schema.getType("Object") as GraphQLObjectType
+        def fieldDefinition = type.getFieldDefinition("field")
+        def argStr = fieldDefinition.getArgument("argStr")
+        def argInt = fieldDefinition.getArgument("argInt")
+
+        expect:
+        argStr.getDirectives().size() == 2
+        argStr.getDirective("strDirective") != null
+        argStr.getDirective("secondDirective") != null
+
+        argInt.getDirectives().size() == 2
+
+        argInt.getDirective("thirdDirective") != null
+
+        def intDirective = argInt.getDirective("intDirective")
+        intDirective.name == "intDirective"
+        intDirective.arguments.size() == 1
+        def directiveArg = intDirective.getArgument("inception")
+        directiveArg.name == "inception"
+        directiveArg.type == GraphQLBoolean
+        directiveArg.value == true
+        directiveArg.defaultValue == null
+    }
+
+    def "directives definitions can be made"() {
+        def spec = """
+            directive @testDirective(knownArg : String = "defaultValue") on SCHEMA | SCALAR | 
+                            OBJECT | FIELD_DEFINITION |
+                            ARGUMENT_DEFINITION | INTERFACE | UNION | 
+                            ENUM | ENUM_VALUE | 
+                            INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+            type Query {
+                f : String @testDirective
+            }
+        """
+
+        when:
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        then:
+        options.isEnforceSchemaDirectives()
+
+        when:
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def directive = schema.getDirective("testDirective")
+        directive.name == "testDirective"
+        directive.validLocations() == EnumSet.of(
+                Introspection.DirectiveLocation.SCHEMA,
+                Introspection.DirectiveLocation.SCALAR,
+                Introspection.DirectiveLocation.OBJECT,
+                Introspection.DirectiveLocation.FIELD_DEFINITION,
+                Introspection.DirectiveLocation.ARGUMENT_DEFINITION,
+                Introspection.DirectiveLocation.INTERFACE,
+                Introspection.DirectiveLocation.UNION,
+                Introspection.DirectiveLocation.ENUM,
+                Introspection.DirectiveLocation.ENUM_VALUE,
+                Introspection.DirectiveLocation.INPUT_OBJECT,
+                Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION,
+        )
+        directive.getArgument("knownArg").type == GraphQLString
+        directive.getArgument("knownArg").defaultValue == "defaultValue"
+    }
+
+    def "directive definitions don't have to provide default values"() {
+        def spec = """
+            directive @test1(include: Boolean!) on FIELD_DEFINITION
+            
+            directive @test2(include: Boolean!  = true) on FIELD_DEFINITION
+            
+            type Query {
+                f1 : String @test1(include : false)
+                f2 : String @test2
+            }
+        """
+
+        when:
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def directiveTest1 = schema.getDirective("test1")
+        directiveTest1.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
+        directiveTest1.getArgument("include").value == null
+
+        def directiveTest2 = schema.getDirective("test2")
+        directiveTest2.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
+        directiveTest2.getArgument("include").value == true
+        directiveTest2.getArgument("include").defaultValue == true
+
+    }
+
+    def "missing directive arguments are transferred as are default values"() {
+        def spec = """
+            directive @testDirective(
+                knownArg1 : String = "defaultValue1", 
+                knownArg2 : Int = 666, 
+                knownArg3 : String, 
+                ) 
+                on FIELD_DEFINITION
+
+            type Query {
+                f : String @testDirective(knownArg1 : "overrideVal1")
+            }
+        """
+
+        when:
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        then:
+        options.isEnforceSchemaDirectives()
+
+        when:
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def directive = schema.getObjectType("Query").getFieldDefinition("f").getDirective("testDirective")
+        directive.getArgument("knownArg1").type == GraphQLString
+        directive.getArgument("knownArg1").value == "overrideVal1"
+        directive.getArgument("knownArg1").defaultValue == "defaultValue1"
+
+        directive.getArgument("knownArg2").type == GraphQLInt
+        directive.getArgument("knownArg2").value == 666
+        directive.getArgument("knownArg2").defaultValue == 666
+
+        directive.getArgument("knownArg3").type == GraphQLString
+        directive.getArgument("knownArg3").value == null
+        directive.getArgument("knownArg3").defaultValue == null
+    }
+
+    def "deprecated directive is implicit"() {
+        def spec = """
+
+            type Query {
+                f1 : String @deprecated
+                f2 : String @deprecated(reason : "Just because")
+            }
+        """
+
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(true)
+
+        when:
+        def registry = new SchemaParser().parse(spec)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def f1 = schema.getObjectType("Query").getFieldDefinition("f1")
+        f1.getDeprecationReason() == "No longer supported" // spec default text
+
+        def directive = f1.getDirective("deprecated")
+        directive.name == "deprecated"
+        directive.getArgument("reason").type == GraphQLString
+        directive.getArgument("reason").value == "No longer supported"
+        directive.getArgument("reason").defaultValue == "No longer supported"
+        directive.validLocations().collect {it.name()} == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+
+        when:
+        def f2 = schema.getObjectType("Query").getFieldDefinition("f2")
+
+        then:
+        f2.getDeprecationReason() == "Just because"
+
+        def directive2 = f2.getDirective("deprecated")
+        directive2.name == "deprecated"
+        directive2.getArgument("reason").type == GraphQLString
+        directive2.getArgument("reason").value == "Just because"
+        directive2.getArgument("reason").defaultValue == "No longer supported"
+        directive2.validLocations().collect {it.name()} == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+
+    }
+
+    def "@fetch directive is respected"() {
+        def spec = """             
+
+            directive @fetch(from : String!) on FIELD_DEFINITION
+
+            type Query {
+                name : String,
+                homePlanet: String @fetch(from : "planetOfBirth")
+            }
+        """
+
+        def wiring = RuntimeWiring.newRuntimeWiring().build()
+        def schema = schema(spec,wiring)
+
+        GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
+
+        expect:
+        def fetcher = type.getFieldDefinition("homePlanet").getDataFetcher()
+        fetcher instanceof PropertyDataFetcher
+
+        PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
+        propertyDataFetcher.getPropertyName() == "planetOfBirth"
+        //
+        // no directive - plain name
+        //
+        def fetcher2 = type.getFieldDefinition("name").getDataFetcher()
+        fetcher2 instanceof PropertyDataFetcher
+
+        PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
+        propertyDataFetcher2.getPropertyName() == "name"
+
+    }
+
 }

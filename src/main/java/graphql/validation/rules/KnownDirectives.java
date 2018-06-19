@@ -13,7 +13,6 @@ import graphql.language.OperationDefinition.Operation;
 import graphql.schema.GraphQLDirective;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
@@ -31,14 +30,14 @@ public class KnownDirectives extends AbstractRule {
         GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(directive.getName());
         if (graphQLDirective == null) {
             String message = String.format("Unknown directive %s", directive.getName());
-            addError(new ValidationError(ValidationErrorType.UnknownDirective, directive.getSourceLocation(), message));
+            addError(ValidationErrorType.UnknownDirective, directive.getSourceLocation(), message);
             return;
         }
 
         Node ancestor = ancestors.get(ancestors.size() - 1);
         if (hasInvalidLocation(graphQLDirective, ancestor)) {
             String message = String.format("Directive %s not allowed here", directive.getName());
-            addError(new ValidationError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), message));
+            addError(ValidationErrorType.MisplacedDirective, directive.getSourceLocation(), message);
         }
     }
 

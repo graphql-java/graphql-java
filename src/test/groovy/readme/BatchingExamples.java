@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-@SuppressWarnings({"unused", "Convert2Lambda"})
+@SuppressWarnings({"unused", "Convert2Lambda", "ConstantConditions"})
 public class BatchingExamples {
 
 
@@ -106,11 +106,63 @@ public class BatchingExamples {
 
     }
 
+    private void doNotUseAsyncInYouDataFetcher() {
+
+        BatchLoader<String, Object> batchLoader = new BatchLoader<String, Object>() {
+            @Override
+            public CompletionStage<List<Object>> load(List<String> keys) {
+                return CompletableFuture.completedFuture(getTheseCharacters(keys));
+            }
+        };
+
+        DataLoader<String, Object> characterDataLoader = new DataLoader<>(batchLoader);
+
+        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                //
+                // Don't DO THIS!
+                //
+                return CompletableFuture.supplyAsync(() -> {
+                    String argId = environment.getArgument("id");
+                    return characterDataLoader.load(argId);
+                });
+            }
+        };
+    }
+
+    private void doAsyncInYourBatchLoader() {
+
+        BatchLoader<String, Object> batchLoader = new BatchLoader<String, Object>() {
+            @Override
+            public CompletionStage<List<Object>> load(List<String> keys) {
+                return CompletableFuture.supplyAsync(() -> getTheseCharacters(keys));
+            }
+        };
+
+        DataLoader<String, Object> characterDataLoader = new DataLoader<>(batchLoader);
+
+        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                //
+                // This is OK
+                //
+                String argId = environment.getArgument("id");
+                return characterDataLoader.load(argId);
+            }
+        };
+    }
+
+    private List<Object> getTheseCharacters(List<String> keys) {
+        return null;
+    }
+
     private GraphQLSchema staticSchema_Or_MayBeFrom_IoC_Injection() {
         return null;
     }
 
-    private DataLoader<?, ?> getCharacterDataLoader() {
+    private <K, V> DataLoader<K, V> getCharacterDataLoader() {
         return null;
     }
 

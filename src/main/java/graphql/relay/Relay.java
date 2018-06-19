@@ -237,8 +237,8 @@ public class Relay {
         }
     }
 
-    private static final java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
-    private static final java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
+    private static final java.util.Base64.Encoder encoder = java.util.Base64.getUrlEncoder().withoutPadding();
+    private static final java.util.Base64.Decoder decoder = java.util.Base64.getUrlDecoder();
 
     public String toGlobalId(String type, String id) {
         return encoder.encodeToString((type + ":" + id).getBytes(StandardCharsets.UTF_8));

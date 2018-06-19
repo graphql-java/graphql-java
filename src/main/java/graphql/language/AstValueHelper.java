@@ -157,13 +157,13 @@ public class AstValueHelper {
     }
 
     private static String jsonStringify(String stringValue) {
-        stringValue = stringValue.replace("\"", "\\\"");
         stringValue = stringValue.replace("\\", "\\\\");
-        stringValue = stringValue.replace("/", "\\/");
+        stringValue = stringValue.replace("\"", "\\\"");
         stringValue = stringValue.replace("\f", "\\f");
         stringValue = stringValue.replace("\n", "\\n");
         stringValue = stringValue.replace("\r", "\\r");
         stringValue = stringValue.replace("\t", "\\t");
+        stringValue = stringValue.replace("\b", "\\b");
         return stringValue;
     }
 

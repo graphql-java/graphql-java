@@ -1,21 +1,25 @@
+# used in graphql.execution.instrumentation.dataloader.BatchCompareDataFetchers
 schema {
     query: Query
 }
 
 type Query {
     shops: [Shop]!
+    expensiveShops: [Shop]!
 }
 
 type Shop {
     id: ID!
     name: String!
     departments: [Department]!
+    expensiveDepartments: [Department]!
 }
 
 type Department {
     id: ID!
     name: String!
     products: [Product]!
+    expensiveProducts: [Product]!
 }
 
 type Product {

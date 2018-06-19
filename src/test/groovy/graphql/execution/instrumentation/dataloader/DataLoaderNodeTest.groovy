@@ -125,12 +125,6 @@ class DataLoaderNodeTest extends Specification {
 
         expect:
         result != null
-        //
-        // we want this
-        //nodeLoads.size() == 3
-        //
-        // but currently is this
-        nodeLoads.size() == 4
 
         result.data == [root: [id: 1, childNodes: [
                 [id: 2, childNodes: [
@@ -143,5 +137,13 @@ class DataLoaderNodeTest extends Specification {
                 ]]
         ]]
         ]
+
+        //
+        // we want this
+        //nodeLoads.size() == 3
+        //
+        // but currently is this
+        nodeLoads.size() == 3 // WOOT!
+
     }
 }

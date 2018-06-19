@@ -256,10 +256,14 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
 
         expect:
 
-        result.errors.size() == 1
+        result.errors.size() == 2
         result.errors[0].path == ["parent", "child"]
         result.errors[0].message == "error 1"
         result.errors[0].locations == [new SourceLocation(6, 27)]
+
+        result.errors[1].path == ["parent", "child"]
+        result.errors[1].message == "error 2"
+        result.errors[1].locations == [new SourceLocation(6, 27)]
 
         result.data["parent"]["child"] == null
 

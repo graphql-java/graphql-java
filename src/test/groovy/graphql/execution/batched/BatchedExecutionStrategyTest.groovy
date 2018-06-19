@@ -4,12 +4,12 @@
 
 package graphql.execution.batched
 
-import graphql.ErrorType
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.Scalars
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.NonNullableFieldWasNullError
 import graphql.execution.instrumentation.TestingInstrumentation
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
@@ -474,7 +474,7 @@ class BatchedExecutionStrategyTest extends Specification {
 
         expect:
         result.getErrors().size() == 1
-        result.getErrors()[0].getErrorType() == ErrorType.DataFetchingException
+        result.getErrors()[0] instanceof ExceptionWhileDataFetching
     }
 
 }

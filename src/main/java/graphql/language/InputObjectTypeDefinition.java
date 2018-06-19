@@ -1,13 +1,13 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static graphql.language.NodeUtil.directivesByName;
-
-public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition> {
+public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition>, DirectivesContainer<InputObjectTypeDefinition> {
     private final String name;
     private Description description;
     private final List<Directive> directives;
@@ -25,14 +25,6 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
 
     public List<Directive> getDirectives() {
         return directives;
-    }
-
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
@@ -67,8 +59,8 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
 
         InputObjectTypeDefinition that = (InputObjectTypeDefinition) o;
 
-         return NodeUtil.isEqualTo(this.name,that.name) ;
-            }
+        return NodeUtil.isEqualTo(this.name, that.name);
+    }
 
     @Override
     public InputObjectTypeDefinition deepCopy() {
@@ -85,5 +77,10 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
                 ", directives=" + directives +
                 ", inputValueDefinitions=" + inputValueDefinitions +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitInputObjectTypeDefinition(this, context);
     }
 }

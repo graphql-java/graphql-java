@@ -7,7 +7,6 @@ import graphql.language.FragmentSpread;
 import graphql.language.Node;
 import graphql.validation.AbstractRule;
 import graphql.validation.DocumentVisitor;
-import graphql.validation.ErrorFactory;
 import graphql.validation.LanguageTraversal;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
@@ -78,7 +77,7 @@ public class NoFragmentCycles extends AbstractRule {
 
             if (fragmentSpread.getName().equals(initialName)) {
                 String message = "Fragment cycles not allowed";
-                addError(new ErrorFactory().newError(ValidationErrorType.FragmentCycle, spreadPath, message));
+                addError(ValidationErrorType.FragmentCycle, spreadPath, message);
                 continue;
             }
             for (FragmentSpread spread : spreadPath) {

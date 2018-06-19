@@ -1,13 +1,13 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static graphql.language.NodeUtil.directivesByName;
-
-public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition> {
+public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition> {
 
     public enum Operation {
         QUERY, MUTATION, SUBSCRIPTION
@@ -82,14 +82,6 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         return directives;
     }
 
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
-    }
-
     public void setDirectives(List<Directive> directives) {
         this.directives = directives;
     }
@@ -133,5 +125,10 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 ", directives=" + directives +
                 ", selectionSet=" + selectionSet +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitOperationDefinition(this, context);
     }
 }

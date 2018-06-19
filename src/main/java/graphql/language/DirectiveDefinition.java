@@ -1,10 +1,13 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition> {
+public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
     private Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
@@ -72,5 +75,10 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
                 ", inputValueDefinitions=" + inputValueDefinitions +
                 ", directiveLocations=" + directiveLocations +
                 "}";
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitDirectiveDefinition(this, context);
     }
 }

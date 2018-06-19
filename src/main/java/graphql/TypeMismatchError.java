@@ -80,7 +80,7 @@ public class TypeMismatchError implements GraphQLError {
 
     @Override
     public String toString() {
-        return "ExceptionWhileDataFetching{" +
+        return "TypeMismatchError{" +
                 "path=" + path +
                 "expectedType=" + expectedType +
                 '}';

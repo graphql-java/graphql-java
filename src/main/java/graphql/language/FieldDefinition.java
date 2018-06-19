@@ -1,13 +1,13 @@
 package graphql.language;
 
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static graphql.language.NodeUtil.directivesByName;
-
-public class FieldDefinition extends AbstractNode<FieldDefinition> {
+public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
     private final String name;
     private Type type;
     private Description description;
@@ -57,15 +57,6 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> {
         return directives;
     }
 
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
-    }
-
-
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
@@ -82,7 +73,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> {
 
         FieldDefinition that = (FieldDefinition) o;
 
-         return NodeUtil.isEqualTo(this.name,that.name) ;
+        return NodeUtil.isEqualTo(this.name, that.name);
     }
 
     @Override
@@ -102,5 +93,10 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> {
                 ", inputValueDefinitions=" + inputValueDefinitions +
                 ", directives=" + directives +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitFieldDefinition(this, context);
     }
 }

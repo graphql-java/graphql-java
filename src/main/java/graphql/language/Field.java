@@ -2,19 +2,18 @@ package graphql.language;
 
 
 import graphql.PublicApi;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import static graphql.language.NodeUtil.directivesByName;
 
 /*
-* This is provided to a DataFetcher, therefore it is a public API.
-* This might change in the future.
+ * This is provided to a DataFetcher, therefore it is a public API.
+ * This might change in the future.
  */
 @PublicApi
-public class Field extends AbstractNode<Field> implements Selection<Field> {
+public class Field extends AbstractNode<Field> implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field> {
 
     private String name;
     private String alias;
@@ -93,15 +92,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field> {
         return directives;
     }
 
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
-    }
-
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
-    }
-
-
     public void setDirectives(List<Directive> directives) {
         this.directives = directives;
     }
@@ -143,5 +133,10 @@ public class Field extends AbstractNode<Field> implements Selection<Field> {
                 ", directives=" + directives +
                 ", selectionSet=" + selectionSet +
                 '}';
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
+        return visitor.visitField(this, context);
     }
 }

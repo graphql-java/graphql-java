@@ -5,8 +5,14 @@ import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.instrumentation.InstrumentationContext
+import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.TestingInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.language.Document
 import spock.lang.Specification
+
+import java.util.function.Function
 
 class PreparsedDocumentProviderTest extends Specification {
 
@@ -19,13 +25,10 @@ class PreparsedDocumentProviderTest extends Specification {
 
                 "start:validation",
                 "end:validation",
-                "start:data-fetch-dispatch",
-
-                "start:data-fetch",
+                "start:execute-operation",
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
@@ -33,25 +36,21 @@ class PreparsedDocumentProviderTest extends Specification {
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
                 "end:complete-id",
                 "end:field-id",
-                "end:fields",
 
                 "end:execution-strategy",
 
                 "end:complete-hero",
                 "end:field-hero",
-                "end:fields",
 
                 "end:execution-strategy",
 
-                "end:data-fetch",
-                "end:data-fetch-dispatch",
+                "end:execute-operation",
                 "end:execution",
         ]
         given:
@@ -68,11 +67,9 @@ class PreparsedDocumentProviderTest extends Specification {
         def expectedPreparsed = [
                 "start:execution",
 
-                "start:data-fetch-dispatch",
-                "start:data-fetch",
+                "start:execute-operation",
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-hero",
                 "start:fetch-hero",
                 "end:fetch-hero",
@@ -80,24 +77,21 @@ class PreparsedDocumentProviderTest extends Specification {
 
                 "start:execution-strategy",
 
-                "start:fields",
                 "start:field-id",
                 "start:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
                 "end:complete-id",
                 "end:field-id",
-                "end:fields",
+
                 "end:execution-strategy",
 
                 "end:complete-hero",
                 "end:field-hero",
-                "end:fields",
+
                 "end:execution-strategy",
 
-                "end:data-fetch",
-
-                "end:data-fetch-dispatch",
+                "end:execute-operation",
                 "end:execution",
         ]
 
@@ -162,5 +156,66 @@ class PreparsedDocumentProviderTest extends Specification {
 
         result1.errors[0].errorType == ErrorType.ValidationError
         result1.errors[0].errorType == result2.errors[0].errorType
+    }
+
+    class InputCapturingInstrumentation extends SimpleInstrumentation {
+        ExecutionInput capturedInput
+
+        @Override
+        InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
+            capturedInput = parameters.getExecutionInput()
+            return super.beginParse(parameters)
+        }
+    }
+
+    def "swapping pre-parser will pass on swapped query"() {
+
+        def queryA = """
+              query A {
+                  hero {
+                      id
+                  }
+              }
+              """
+        def queryB = """
+              query B {
+                  hero {
+                      name
+                  }
+              }
+              """
+
+        def documentProvider = new PreparsedDocumentProvider() {
+            @Override
+            PreparsedDocumentEntry get(String query, Function<String, PreparsedDocumentEntry> computeFunction) {
+                if (query == "#A") {
+                    return computeFunction.apply(queryA)
+                } else {
+                    return computeFunction.apply(queryB)
+                }
+            }
+        }
+
+        def instrumentationA = new InputCapturingInstrumentation()
+        def resultA = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .preparsedDocumentProvider(documentProvider)
+                .instrumentation(instrumentationA)
+                .build()
+                .execute(ExecutionInput.newExecutionInput().query("#A").build())
+
+        def instrumentationB = new InputCapturingInstrumentation()
+        def resultB = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .preparsedDocumentProvider(documentProvider)
+                .instrumentation(instrumentationB)
+                .build()
+                .execute(ExecutionInput.newExecutionInput().query("#B").build())
+
+        expect:
+
+        resultA.data == [hero: [id: "2001"]]
+        instrumentationA.capturedInput.getQuery() == queryA
+
+        resultB.data == [hero: [name: "R2-D2"]]
+        instrumentationB.capturedInput.getQuery() == queryB
     }
 }

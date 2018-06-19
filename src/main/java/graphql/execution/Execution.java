@@ -1,22 +1,17 @@
 package graphql.execution;
 
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.parameters.InstrumentationDataFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -26,6 +21,14 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import org.reactivestreams.Publisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
@@ -100,9 +103,8 @@ public class Execution {
 
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, InstrumentationExecutionParameters instrumentationExecutionParameters, Object root, OperationDefinition operationDefinition) {
 
-        InstrumentationDataFetchParameters dataFetchParameters = new InstrumentationDataFetchParameters(executionContext);
-        InstrumentationContext<CompletableFuture<ExecutionResult>> executionDispatchCtx = instrumentation.beginDataFetchDispatch(dataFetchParameters);
-        InstrumentationContext<ExecutionResult> dataFetchCtx = instrumentation.beginDataFetch(dataFetchParameters);
+        InstrumentationExecuteOperationParameters instrumentationParams = new InstrumentationExecuteOperationParameters(executionContext);
+        InstrumentationContext<ExecutionResult> executeOperationCtx = instrumentation.beginExecuteOperation(instrumentationParams);
 
         OperationDefinition.Operation operation = operationDefinition.getOperation();
         GraphQLObjectType operationRootType;
@@ -111,8 +113,11 @@ public class Execution {
             operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
-                CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte)));
-                executionDispatchCtx.onEnd(resultCompletableFuture, null);
+                ExecutionResult executionResult = new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte));
+                CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(executionResult);
+
+                executeOperationCtx.onDispatched(resultCompletableFuture);
+                executeOperationCtx.onCompleted(executionResult, rte);
                 return resultCompletableFuture;
             }
             throw rte;
@@ -162,12 +167,31 @@ public class Execution {
             result = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
         }
 
-        result = result.whenComplete(dataFetchCtx::onEnd);
-
         // note this happens NOW - not when the result completes
-        executionDispatchCtx.onEnd(result, null);
+        executeOperationCtx.onDispatched(result);
 
-        return result;
+        result = result.whenComplete(executeOperationCtx::onCompleted);
+
+        return deferSupport(executionContext, result);
+    }
+
+    /*
+     * Adds the deferred publisher if its needed at the end of the query.  This is also a good time for the deferred code to start running
+     */
+    private CompletableFuture<ExecutionResult> deferSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
+        return result.thenApply(er -> {
+            DeferSupport deferSupport = executionContext.getDeferSupport();
+            if (deferSupport.isDeferDetected()) {
+                // we start the rest of the query now to maximize throughput.  We have the initial important results
+                // and now we can start the rest of the calls as early as possible (even before some one subscribes)
+                Publisher<ExecutionResult> publisher = deferSupport.startDeferredCalls();
+                return ExecutionResultImpl.newExecutionResult().from((ExecutionResultImpl) er)
+                        .addExtension(GraphQL.DEFERRED_RESULTS, publisher)
+                        .build();
+            }
+            return er;
+        });
+
     }
 
     private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {

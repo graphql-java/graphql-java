@@ -1,6 +1,9 @@
 package graphql.validation;
 
 
+import java.util.ArrayList;
+import java.util.List;
+
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -12,11 +15,10 @@ import graphql.language.InlineFragment;
 import graphql.language.Node;
 import graphql.language.OperationDefinition;
 import graphql.language.SelectionSet;
+import graphql.language.SourceLocation;
 import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
-
-import java.util.List;
 
 @Internal
 public class AbstractRule {
@@ -51,8 +53,16 @@ public class AbstractRule {
         this.validationUtil = validationUtil;
     }
 
-    public void addError(ValidationError error) {
-        validationErrorCollector.addError(error);
+    public void addError(ValidationErrorType validationErrorType, List<? extends Node> locations, String description) {
+        List<SourceLocation> locationList = new ArrayList<>();
+        for (Node node : locations) {
+            locationList.add(node.getSourceLocation());
+        }
+        validationErrorCollector.addError(new ValidationError(validationErrorType, locationList, description, getQueryPath()));
+    }
+
+    public void addError(ValidationErrorType validationErrorType, SourceLocation location, String description) {
+        validationErrorCollector.addError(new ValidationError(validationErrorType, location, description, getQueryPath()));
     }
 
     public List<ValidationError> getErrors() {
@@ -62,6 +72,14 @@ public class AbstractRule {
 
     public ValidationContext getValidationContext() {
         return validationContext;
+    }
+
+    protected List<String> getQueryPath() {
+        return validationContext.getQueryPath();
+    }
+
+    public void checkDocument(Document document) {
+
     }
 
     public void checkArgument(Argument argument) {
@@ -120,5 +138,8 @@ public class AbstractRule {
 
     }
 
-
+    @Override
+    public String toString() {
+        return "Rule{" + validationContext + "}";
+    }
 }

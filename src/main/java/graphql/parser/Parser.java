@@ -4,8 +4,9 @@ import graphql.Internal;
 import graphql.language.Document;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
-import org.antlr.v4.runtime.ANTLRInputStream;
 import org.antlr.v4.runtime.BailErrorStrategy;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
@@ -17,8 +18,19 @@ import java.util.List;
 public class Parser {
 
     public Document parseDocument(String input) {
+        return parseDocument(input, null);
+    }
 
-        GraphqlLexer lexer = new GraphqlLexer(new ANTLRInputStream(input));
+    public Document parseDocument(String input, String sourceName) {
+
+        CharStream charStream;
+        if(sourceName == null) {
+            charStream = CharStreams.fromString(input);
+        } else{
+            charStream = CharStreams.fromString(input, sourceName);
+        }
+
+        GraphqlLexer lexer = new GraphqlLexer(charStream);
 
         CommonTokenStream tokens = new CommonTokenStream(lexer);
 
@@ -46,6 +58,6 @@ public class Parser {
                 throw new ParseCancellationException("There are more tokens in the query that have not been consumed");
             }
         }
-        return antlrToLanguage.result;
+        return antlrToLanguage.getResult();
     }
 }

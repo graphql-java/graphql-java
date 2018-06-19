@@ -28,7 +28,7 @@ msgstr ""
 
 #: ../../execution.rst:7
 msgid ""
-"To execute a query against a schema build a new ``GraphQL`` object with "
+"To execute a query against a schema, build a new ``GraphQL`` object with "
 "the appropriate arguments and then call ``execute()``."
 msgstr ""
 
