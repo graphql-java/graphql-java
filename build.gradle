@@ -2,6 +2,7 @@ import java.text.SimpleDateFormat
 
 plugins {
     id "com.jfrog.bintray" version "1.2"
+    id "net.ltgt.errorprone" version "0.0.14"
 }
 
 apply plugin: 'java'
