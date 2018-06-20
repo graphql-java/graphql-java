@@ -4,27 +4,30 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.execution.defer.CapturingSubscriber
+import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 
-
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.*
 
-class DataLoaderPerformanceTest extends Specification {
+
+class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification {
 
     GraphQL graphQL
-
+    
     void setup() {
         DataLoaderRegistry dataLoaderRegistry = setupDataLoaderRegistry()
-        Instrumentation instrumentation = new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)
+        Instrumentation instrumentation = new ChainedInstrumentation(
+                Collections.singletonList(new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)))
         graphQL = setupGraphQL(instrumentation)
     }
 
-    def "760 ensure data loader is performant for lists"() {
+    def "chainedInstrumentation: 760 ensure data loader is performant for lists"() {
         when:
+
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).build()
         def result = graphQL.execute(executionInput)
 
@@ -36,7 +39,7 @@ class DataLoaderPerformanceTest extends Specification {
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
-    def "970 ensure data loader is performant for multiple field with lists"() {
+    def "chainedInstrumentation: 970 ensure data loader is performant for multiple field with lists"() {
 
         when:
 
@@ -50,7 +53,7 @@ class DataLoaderPerformanceTest extends Specification {
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
-    def "ensure data loader is performant for lists using async batch loading"() {
+    def "chainedInstrumentation: ensure data loader is performant for lists using async batch loading"() {
 
         when:
 
@@ -68,7 +71,7 @@ class DataLoaderPerformanceTest extends Specification {
 
     }
 
-    def "970 ensure data loader is performant for multiple field with lists using async batch loading"() {
+    def "chainedInstrumentation: 970 ensure data loader is performant for multiple field with lists using async batch loading"() {
 
         when:
 
@@ -84,7 +87,7 @@ class DataLoaderPerformanceTest extends Specification {
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
-    def "data loader will work with deferred queries"() {
+    def "chainedInstrumentation: data loader will work with deferred queries"() {
 
         when:
 
@@ -111,7 +114,7 @@ class DataLoaderPerformanceTest extends Specification {
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
 
-    def "data loader will work with deferred queries on multiple levels deep"() {
+    def "chainedInstrumentation: data loader will work with deferred queries on multiple levels deep"() {
 
         when:
 
