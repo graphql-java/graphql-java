@@ -182,6 +182,11 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         return visitor.visitGraphQLEnumType(this, context);
     }
 
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(valueDefinitionMap.values());
+    }
+
     public static Builder newEnum() {
         return new Builder();
     }

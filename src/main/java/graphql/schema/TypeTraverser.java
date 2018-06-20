@@ -18,6 +18,7 @@ public class TypeTraverser {
 
 
     private final Function<? super GraphQLType, ? extends List<GraphQLType>> getChildren;
+    private static final GraphqlTypeVisitor NO_OP = new GraphqlTypeVisitorStub();
 
     public TypeTraverser(Function<? super GraphQLType, ? extends List<GraphQLType>> getChildren) {
         this.getChildren = getChildren;
@@ -32,30 +33,52 @@ public class TypeTraverser {
     }
 
     public TraverserResult depthFirst(final GraphqlTypeVisitor graphqlTypeVisitor, Collection<? extends GraphQLType> roots) {
-        return Traverser.depthFirst(getChildren).traverse(roots, new TraverserDelegateVisitor(graphqlTypeVisitor));
+        return depthFirst(initTraverser(), new TraverserDelegateVisitor(graphqlTypeVisitor), roots);
     }
 
     public TraverserResult depthFirst(final GraphqlTypeVisitor graphqlTypeVisitor,
                                       Collection<? extends GraphQLType> roots,
                                       Map<String, GraphQLType> types) {
-        return Traverser.depthFirst(getChildren).rootVar(TypeTraverser.class, types).traverse(roots, new TraverserDelegateVisitor(graphqlTypeVisitor));
+        return depthFirst(initTraverser().rootVar(TypeTraverser.class, types), new TraverserDelegateVisitor(graphqlTypeVisitor), roots);
+    }
+
+    public TraverserResult depthFirst(final Traverser<GraphQLType> traverser,
+                                      final TraverserDelegateVisitor traverserDelegateVisitor,
+                                      Collection<? extends GraphQLType> roots) {
+        return doTraverse(traverser, roots, traverserDelegateVisitor);
+    }
+
+    protected Traverser<GraphQLType> initTraverser() {
+        return Traverser.depthFirst(getChildren);
+    }
+
+    protected  TraverserResult doTraverse(Traverser<GraphQLType> traverser,  Collection<? extends GraphQLType> roots, TraverserDelegateVisitor traverserDelegateVisitor) {
+        return traverser.traverse(roots,traverserDelegateVisitor);
     }
 
     class TraverserDelegateVisitor implements TraverserVisitor<GraphQLType> {
-        private final GraphqlTypeVisitor delegate;
+        private final GraphqlTypeVisitor before;
+        private final GraphqlTypeVisitor after;
 
-        public TraverserDelegateVisitor(GraphqlTypeVisitor delegate) {
-            this.delegate = delegate;
+
+        TraverserDelegateVisitor(GraphqlTypeVisitor delegate) {
+            this(delegate,NO_OP);
         }
+
+        TraverserDelegateVisitor(GraphqlTypeVisitor delegateBefore, GraphqlTypeVisitor delegateAfter) {
+            this.before = delegateBefore;
+            this.after = delegateAfter;
+        }
+
 
         @Override
         public TraversalControl enter(TraverserContext<GraphQLType> context) {
-            return context.thisNode().accept(context, delegate);
+            return context.thisNode().accept(context, before);
         }
 
         @Override
         public TraversalControl leave(TraverserContext<GraphQLType> context) {
-            return context.thisNode().accept(context, delegate);
+            return context.thisNode().accept(context, after);
         }
     }
 
