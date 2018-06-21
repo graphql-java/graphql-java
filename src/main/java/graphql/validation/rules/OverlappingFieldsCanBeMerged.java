@@ -33,7 +33,8 @@ import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.isNotWrapped;
 import static graphql.schema.GraphQLTypeUtil.isNullable;
 import static graphql.schema.GraphQLTypeUtil.isScalar;
-import static graphql.schema.GraphQLTypeUtil.unwrap;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static graphql.validation.ValidationErrorType.FieldsConflict;
 import static java.lang.String.format;
 
@@ -105,35 +106,16 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
         GraphQLType typeA = fieldAndTypeA.graphQLType;
         GraphQLType typeB = fieldAndTypeB.graphQLType;
 
-        while (true) {
-            if (isNonNull(typeA) || isNonNull(typeB)) {
-                if (isNullable(typeA) || isNullable(typeB)) {
-                    String reason = format("%s: fields have different nullability shapes", responseName);
-                    return new Conflict(responseName, reason, fieldA, fieldB);
-                }
-            }
-            if (isList(typeA) || isList(typeB)) {
-                if (!isList(typeA) || !isList(typeB)) {
-                    String reason = format("%s: fields have different list shapes", responseName);
-                    return new Conflict(responseName, reason, fieldA, fieldB);
-                }
-            }
-            if (isNotWrapped(typeA) && isNotWrapped(typeB)) {
-                break;
-            }
-            typeA = unwrap(typeA);
-            typeB = unwrap(typeB);
+        Conflict conflict = checkListAndNonNullConflict(responseName,fieldAndTypeA,fieldAndTypeB);
+        if (conflict != null) {
+            return conflict;
         }
 
-        if (isScalar(typeA) || isScalar(typeB)) {
-            if (!sameType(typeA, typeB)) {
-                return mkNotSameTypeError(responseName, fieldA, fieldB, typeA, typeB);
-            }
-        }
-        if (isEnum(typeA) || isEnum(typeB)) {
-            if (!sameType(typeA, typeB)) {
-                return mkNotSameTypeError(responseName, fieldA, fieldB, typeA, typeB);
-            }
+        typeA = unwrapAll(typeA);
+        typeB = unwrapAll(typeB);
+
+        if (checkScalarAndEnumConflict(typeA, typeB)) {
+            return mkNotSameTypeError(responseName, fieldA, fieldB, typeA, typeB);
         }
 
         // If the statically known parent types could not possibly apply at the same
@@ -181,6 +163,47 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             }
         }
         return null;
+    }
+
+    private Conflict checkListAndNonNullConflict(String responseName, FieldAndType fieldAndTypeA, FieldAndType fieldAndTypeB) {
+
+        GraphQLType typeA = fieldAndTypeA.graphQLType;
+        GraphQLType typeB = fieldAndTypeB.graphQLType;
+
+        while (true) {
+            if (isNonNull(typeA) || isNonNull(typeB)) {
+                if (isNullable(typeA) || isNullable(typeB)) {
+                    String reason = format("%s: fields have different nullability shapes", responseName);
+                    return new Conflict(responseName, reason, fieldAndTypeA.field, fieldAndTypeB.field);
+                }
+            }
+            if (isList(typeA) || isList(typeB)) {
+                if (!isList(typeA) || !isList(typeB)) {
+                    String reason = format("%s: fields have different list shapes", responseName);
+                    return new Conflict(responseName, reason, fieldAndTypeA.field, fieldAndTypeB.field);
+                }
+            }
+            if (isNotWrapped(typeA) && isNotWrapped(typeB)) {
+                break;
+            }
+            typeA = unwrapOne(typeA);
+            typeB = unwrapOne(typeB);
+        }
+        return null;
+    }
+
+    private boolean checkScalarAndEnumConflict(GraphQLType typeA, GraphQLType typeB) {
+        if (isScalar(typeA) || isScalar(typeB)) {
+            if (!sameType(typeA, typeB)) {
+                return true;
+            }
+        }
+        if (isEnum(typeA) || isEnum(typeB)) {
+            if (!sameType(typeA, typeB)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private Conflict mkNotSameTypeError(String responseName, Field fieldA, Field fieldB, GraphQLType typeA, GraphQLType typeB) {

@@ -85,16 +85,37 @@ class GraphQLTypeUtilTest extends Specification {
 
 
         when:
-        type = GraphQLTypeUtil.unwrap(type)
+        type = GraphQLTypeUtil.unwrapOne(type)
 
         then:
         GraphQLTypeUtil.isNonNull(type)
 
         when:
-        type = GraphQLTypeUtil.unwrap(type)
+        type = GraphQLTypeUtil.unwrapOne(type)
 
         then:
         !GraphQLTypeUtil.isWrapped(type)
+        type == GraphQLString
+    }
+
+    def "unwrapAll tests"() {
+        when:
+        def type = list(nonNull(list(nonNull(GraphQLString))))
+
+        then:
+        GraphQLTypeUtil.getUnwrappedTypeName(type) == "[[String!]!]"
+
+
+        when:
+        type = GraphQLTypeUtil.unwrapAll(type)
+
+        then:
+        type == GraphQLString
+
+        when:
+        type = GraphQLTypeUtil.unwrapAll(type)
+
+        then:
         type == GraphQLString
 
     }

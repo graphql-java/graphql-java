@@ -80,7 +80,7 @@ public class GraphQLTypeUtil {
      * @return true if the given type is NOT a non null or list type
      */
     public static boolean isNotWrapped(GraphQLType type) {
-        return ! isWrapped(type);
+        return !isWrapped(type);
     }
 
     /**
@@ -108,11 +108,11 @@ public class GraphQLTypeUtil {
     /**
      * Unwraps one layer of the type or just returns the type again if its not a wrapped type
      *
-     * @param type the type to unwrap
+     * @param type the type to unwrapOne
      *
      * @return the unwrapped type or the same type again if its not wrapped
      */
-    public static GraphQLType unwrap(GraphQLType type) {
+    public static GraphQLType unwrapOne(GraphQLType type) {
         if (isNonNull(type)) {
             return ((GraphQLNonNull) type).getWrappedType();
         } else if (isList(type)) {
@@ -120,4 +120,21 @@ public class GraphQLTypeUtil {
         }
         return type;
     }
+
+    /**
+     * Unwraps all layers of the type or just returns the type again if its not a wrapped type
+     *
+     * @param type the type to unwrapOne
+     *
+     * @return the underlying type
+     */
+    public static GraphQLType unwrapAll(GraphQLType type) {
+        while (true) {
+            if (isNotWrapped(type)) {
+                return type;
+            }
+            type = unwrapOne(type);
+        }
+    }
+
 }
