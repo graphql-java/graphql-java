@@ -18,10 +18,12 @@ import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
@@ -200,7 +202,7 @@ public class Introspection {
     public static final DataFetcher possibleTypesFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLInterfaceType) {
-            return environment.getGraphQLSchema().getImplementations((GraphQLInterfaceType)type);
+            return environment.getGraphQLSchema().getImplementations((GraphQLInterfaceType) type);
         }
         if (type instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) type).getTypes();
@@ -236,11 +238,8 @@ public class Introspection {
 
     public static final DataFetcher OfTypeFetcher = environment -> {
         Object type = environment.getSource();
-        if (type instanceof GraphQLList) {
-            return ((GraphQLList) type).getWrappedType();
-        }
-        if (type instanceof GraphQLNonNull) {
-            return ((GraphQLNonNull) type).getWrappedType();
+        if (type instanceof GraphQLModifiedType) {
+            return GraphQLTypeUtil.unwrapOne((GraphQLModifiedType) type);
         }
         return null;
     };

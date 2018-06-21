@@ -16,11 +16,11 @@ public class GraphQLTypeUtil {
     public static String getUnwrappedTypeName(GraphQLType type) {
         StringBuilder sb = new StringBuilder();
         if (isNonNull(type)) {
-            sb.append(getUnwrappedTypeName(((GraphQLNonNull) type).getWrappedType()));
+            sb.append(getUnwrappedTypeName(unwrapOne(type)));
             sb.append("!");
         } else if (isList(type)) {
             sb.append("[");
-            sb.append(getUnwrappedTypeName(((GraphQLList) type).getWrappedType()));
+            sb.append(getUnwrappedTypeName(unwrapOne(type)));
             sb.append("]");
         } else {
             sb.append(type.getName());

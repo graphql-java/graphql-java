@@ -17,6 +17,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import static graphql.Scalars.GraphQLBoolean;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 /**
  * This is the default data fetcher used in graphql-java.  It will examine
@@ -180,8 +182,8 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         if (outputType == GraphQLBoolean) {
             return true;
         }
-        if (outputType instanceof GraphQLNonNull) {
-            return ((GraphQLNonNull) outputType).getWrappedType() == GraphQLBoolean;
+        if (isNonNull(outputType)) {
+            return unwrapOne(outputType) == GraphQLBoolean;
         }
         return false;
     }
