@@ -57,7 +57,7 @@ public class RelaySchema {
                     .argument(newArgument()
                             .name("id")
                             .description("id of the thing")
-                            .type(new GraphQLNonNull(GraphQLString)))
+                            .type(GraphQLNonNull.nonNull(GraphQLString)))
                     .dataFetcher(environment -> {
                         //TODO: implement
                         return null;

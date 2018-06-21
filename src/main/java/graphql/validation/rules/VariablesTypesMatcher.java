@@ -7,6 +7,8 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
+import static graphql.schema.GraphQLNonNull.*;
+
 @Internal
 public class VariablesTypesMatcher {
 
@@ -17,7 +19,7 @@ public class VariablesTypesMatcher {
     public GraphQLType effectiveType(GraphQLType variableType, Value defaultValue) {
         if (defaultValue == null) return variableType;
         if (variableType instanceof GraphQLNonNull) return variableType;
-        return new GraphQLNonNull(variableType);
+        return nonNull(variableType);
     }
 
     private boolean checkType(GraphQLType actualType, GraphQLType expectedType) {

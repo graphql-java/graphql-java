@@ -26,6 +26,8 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 import static graphql.schema.GraphQLInputObjectType.newInputObject;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
+import static graphql.schema.GraphQLList.*;
+import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 /**
@@ -44,11 +46,11 @@ public class Relay {
             .description("Information about pagination in a connection.")
             .field(newFieldDefinition()
                     .name("hasNextPage")
-                    .type(new GraphQLNonNull(GraphQLBoolean))
+                    .type(nonNull(GraphQLBoolean))
                     .description("When paginating forwards, are there more items?"))
             .field(newFieldDefinition()
                     .name("hasPreviousPage")
-                    .type(new GraphQLNonNull(GraphQLBoolean))
+                    .type(nonNull(GraphQLBoolean))
                     .description("When paginating backwards, are there more items?"))
             .field(newFieldDefinition()
                     .name("startCursor")
@@ -68,7 +70,7 @@ public class Relay {
                 .field(newFieldDefinition()
                         .name("id")
                         .description("The ID of an object")
-                        .type(new GraphQLNonNull(GraphQLID)))
+                        .type(nonNull(GraphQLID)))
                 .build();
     }
 
@@ -81,7 +83,7 @@ public class Relay {
                 .argument(newArgument()
                         .name("id")
                         .description("The ID of an object")
-                        .type(new GraphQLNonNull(GraphQLID)))
+                        .type(nonNull(GraphQLID)))
                 .build();
     }
 
@@ -150,7 +152,7 @@ public class Relay {
                         .description("The item at the end of the edge"))
                 .field(newFieldDefinition()
                         .name("cursor")
-                        .type(new GraphQLNonNull(GraphQLString))
+                        .type(nonNull(GraphQLString))
                         .description("cursor marks a unique position or index into the connection"))
                 .fields(edgeFields)
                 .build();
@@ -163,11 +165,11 @@ public class Relay {
                 .field(newFieldDefinition()
                         .name("edges")
                         .description("a list of edges")
-                        .type(new GraphQLList(edgeType)))
+                        .type(list(edgeType)))
                 .field(newFieldDefinition()
                         .name("pageInfo")
                         .description("details about this specific page")
-                        .type(new GraphQLNonNull(pageInfoType)))
+                        .type(nonNull(pageInfoType)))
                 .fields(connectionFields)
                 .build();
     }
@@ -213,7 +215,7 @@ public class Relay {
                 .type(outputType)
                 .argument(newArgument()
                         .name("input")
-                        .type(new GraphQLNonNull(inputObjectType)))
+                        .type(nonNull(inputObjectType)))
                 .dataFetcher(dataFetcher)
                 .build();
     }

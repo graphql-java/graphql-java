@@ -32,6 +32,7 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 
@@ -110,7 +111,7 @@ class ExecutionStrategyTest extends Specification {
     def "completes value for a java.util.List"() {
         given:
         ExecutionContext executionContext = buildContext()
-        def fieldType = new GraphQLList(GraphQLString)
+        def fieldType = list(GraphQLString)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
@@ -326,7 +327,7 @@ class ExecutionStrategyTest extends Specification {
     def "completes value for an array"() {
         given:
         ExecutionContext executionContext = buildContext()
-        def fieldType = new GraphQLList(GraphQLString)
+        def fieldType = list(GraphQLString)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
@@ -652,7 +653,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         long[] result = [1L, 2L, 3L]
-        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLLong)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
@@ -676,7 +677,7 @@ class ExecutionStrategyTest extends Specification {
         given:
 
         ExecutionContext executionContext = buildContext()
-        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLLong)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
         def field = new Field("parent")
@@ -704,7 +705,7 @@ class ExecutionStrategyTest extends Specification {
         given:
 
         ExecutionContext executionContext = buildContext()
-        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLLong)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
         def field = new Field("parent")
@@ -732,7 +733,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         List<Long> result = [1L, 2L, 3L]
-        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLLong)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
@@ -756,7 +757,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         Map<String, Object> result = new HashMap<>()
-        def fieldType = new GraphQLList(Scalars.GraphQLLong)
+        def fieldType = list(Scalars.GraphQLLong)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)

@@ -19,7 +19,9 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLTypeReference.typeRef
 
 class SchemaUtilTest extends Specification {
 
@@ -67,16 +69,16 @@ class SchemaUtilTest extends Specification {
         then:
         types.keySet() == expected.keySet()
     }
-    
+
     def "group all types by implemented interface"() {
         when:
         Map<String, List<GraphQLObjectType>> byInterface = new SchemaUtil().groupImplementations(starWarsSchema)
-        
+
         then:
         byInterface.size() == 1
         byInterface[characterInterface.getName()].size() == 2
         byInterface == [
-            (characterInterface.getName()): [humanType, droidType]
+                (characterInterface.getName()): [humanType, droidType]
         ]
     }
 
@@ -91,7 +93,7 @@ class SchemaUtilTest extends Specification {
 
         GraphQLFieldDefinition field = newFieldDefinition()
                 .name("find")
-                .type(new GraphQLTypeReference("Person"))
+                .type(typeRef("Person"))
                 .argument(newArgument()
                 .name("ssn")
                 .type(GraphQLString))
@@ -134,24 +136,24 @@ class SchemaUtilTest extends Specification {
                 .build()
 
         final GraphQLObjectType systemForMutation = newObject().name("systems").description("systems")
-                .field(newFieldDefinition().name("attributes").type(new GraphQLList(attributeListInputObjectType)).build())
+                .field(newFieldDefinition().name("attributes").type(list(attributeListInputObjectType)).build())
                 .field(newFieldDefinition().name("attributes1").type(attributeListObjectType).build())
-                .field(newFieldDefinition().type(new GraphQLTypeReference("systems")).name("parentSystem").build())
+                .field(newFieldDefinition().type(typeRef("systems")).name("parentSystem").build())
                 .build()
 
         final GraphQLObjectType systemForQuery = newObject().name("systems").description("systems")
-                .field(newFieldDefinition().name("attributes").type(new GraphQLList(attributeListObjectType)).build())
+                .field(newFieldDefinition().name("attributes").type(list(attributeListObjectType)).build())
                 .field(newFieldDefinition().name("attributes1").type(attributeListObjectType).build())
-                .field(newFieldDefinition().type(new GraphQLTypeReference("systems")).name("parentSystem").build())
+                .field(newFieldDefinition().type(typeRef("systems")).name("parentSystem").build())
                 .build()
 
         final GraphQLFieldDefinition systemWithArgsForMutation = newFieldDefinition().name("systems").type(systemForMutation)
-                .argument(newArgument().name("attributes").type(new GraphQLList(attributeListInputObjectType)).build())
+                .argument(newArgument().name("attributes").type(list(attributeListInputObjectType)).build())
                 .argument(newArgument().name("attributes1").type(attributeListInputObjectType).build())
                 .build()
 
         final GraphQLFieldDefinition systemWithArgsForQuery = newFieldDefinition().name("systems").type(systemForQuery)
-                .argument(newArgument().name("attributes").type(new GraphQLList(attributeListObjectType)).build())
+                .argument(newArgument().name("attributes").type(list(attributeListObjectType)).build())
                 .argument(newArgument().name("attributes1").type(attributeListInputObjectType).build())
                 .build()
         final GraphQLObjectType queryType = newObject().name("query").field(systemWithArgsForQuery)
