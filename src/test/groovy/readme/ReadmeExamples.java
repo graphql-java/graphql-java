@@ -169,7 +169,7 @@ public class ReadmeExamples {
                 .name("Person")
                 .field(newFieldDefinition()
                         .name("friends")
-                        .type(new GraphQLList(new GraphQLTypeReference("Person"))))
+                        .type(GraphQLList.list(GraphQLTypeReference.typeRef("Person"))))
                 .build();
     }
 
