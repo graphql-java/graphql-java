@@ -29,6 +29,7 @@ public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType, Gra
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
     }

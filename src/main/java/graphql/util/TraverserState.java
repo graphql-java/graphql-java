@@ -32,6 +32,7 @@ public abstract class TraverserState<T> {
             super(initialData);
         }
 
+        @Override
         public void pushAll(TraverserContext<U> o, Function<? super U, ? extends List<U>> getChildren) {
             super.state.push(o);
             super.state.push(Marker.END_LIST);
@@ -45,6 +46,7 @@ public abstract class TraverserState<T> {
             super(initialData);
         }
 
+        @Override
         public void pushAll(TraverserContext<U> o, Function<? super U, ? extends List<U>> getChildren) {
             getChildren.apply(o.thisNode()).iterator().forEachRemaining((e) -> super.state.add(newContext(e, o)));
             super.state.add(Marker.END_LIST);

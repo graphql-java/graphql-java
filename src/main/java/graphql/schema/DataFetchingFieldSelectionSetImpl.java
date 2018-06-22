@@ -88,11 +88,13 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         return selectionSetFields;
     }
 
+    @Override
     public Map<String, Map<String, Object>> getArguments() {
         computeValuesLazily();
         return selectionSetFieldArgs;
     }
 
+    @Override
     public Map<String, GraphQLFieldDefinition> getDefinitions() {
         computeValuesLazily();
         return selectionSetFieldDefinitions;

@@ -68,15 +68,18 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         }
     }
 
+    @Override
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }
 
 
+    @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
         return new ArrayList<>(fieldDefinitionsByName.values());
     }
 
+    @Override
     public String getName() {
         return name;
     }

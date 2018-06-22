@@ -6,5 +6,6 @@ public interface Value<T extends Value> extends Node<T> {
     /**
      * @return a deep copy of this value
      */
+    @Override
     T deepCopy();
 }
