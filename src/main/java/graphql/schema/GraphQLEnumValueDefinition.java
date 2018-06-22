@@ -55,7 +55,6 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         this.directives = directives;
     }
 
-    @Override
     public String getName() {
         return name;
     }
@@ -76,17 +75,14 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         return deprecationReason;
     }
 
-    @Override
     public List<GraphQLDirective> getDirectives() {
         return new ArrayList<>(directives);
     }
 
-    @Override
     public Map<String, GraphQLDirective> getDirectivesByName() {
         return DirectivesUtil.directivesByName(directives);
     }
 
-    @Override
     public GraphQLDirective getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
     }

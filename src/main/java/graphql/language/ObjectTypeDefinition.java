@@ -29,7 +29,6 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
         return implementz;
     }
 
-    @Override
     public List<Directive> getDirectives() {
         return directives;
     }

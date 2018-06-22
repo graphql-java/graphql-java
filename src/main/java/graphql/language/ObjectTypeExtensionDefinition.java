@@ -16,7 +16,6 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
         super(name, implementz, directives, fieldDefinitions);
     }
 
-    @Override
     public ObjectTypeExtensionDefinition deepCopy() {
         return new ObjectTypeExtensionDefinition(getName(),
                 deepCopy(getImplements()),

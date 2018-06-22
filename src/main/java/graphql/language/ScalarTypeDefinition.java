@@ -21,7 +21,6 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
         this.directives = directives;
     }
 
-    @Override
     public List<Directive> getDirectives() {
         return directives;
     }

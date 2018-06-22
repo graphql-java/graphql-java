@@ -34,7 +34,6 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         this.type = type;
     }
 
-    @Override
     public String getName() {
         return name;
     }

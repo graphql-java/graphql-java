@@ -38,7 +38,6 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         this.selectionSet = selectionSet;
     }
 
-    @Override
     public String getName() {
         return name;
     }
@@ -55,7 +54,6 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         this.typeCondition = typeCondition;
     }
 
-    @Override
     public List<Directive> getDirectives() {
         return directives;
     }
@@ -64,7 +62,6 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         this.directives = directives;
     }
 
-    @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
     }

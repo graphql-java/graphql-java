@@ -64,7 +64,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
 
-    @Override
     public String getName() {
         return name;
     }
@@ -89,7 +88,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         this.arguments = arguments;
     }
 
-    @Override
     public List<Directive> getDirectives() {
         return directives;
     }
@@ -98,7 +96,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         this.directives = directives;
     }
 
-    @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
     }

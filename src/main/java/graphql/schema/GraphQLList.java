@@ -36,7 +36,6 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
     }
 
 
-    @Override
     public GraphQLType getWrappedType() {
         return wrappedType;
     }

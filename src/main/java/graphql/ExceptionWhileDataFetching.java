@@ -68,7 +68,6 @@ public class ExceptionWhileDataFetching implements GraphQLError {
         return locations;
     }
 
-    @Override
     public List<Object> getPath() {
         return path;
     }

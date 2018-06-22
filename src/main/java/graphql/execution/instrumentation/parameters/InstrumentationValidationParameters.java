@@ -24,7 +24,6 @@ public class InstrumentationValidationParameters extends InstrumentationExecutio
      *
      * @return a new parameters object with the new state
      */
-    @Override
     public InstrumentationValidationParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationValidationParameters(
                 this.getExecutionInput(), document, getSchema(), instrumentationState);

@@ -15,7 +15,6 @@ public class VariableReference extends AbstractNode<VariableReference> implement
         this.name = name;
     }
 
-    @Override
     public String getName() {
         return name;
     }

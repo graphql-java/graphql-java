@@ -15,7 +15,6 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
         this.name = name;
     }
 
-    @Override
     public String getName() {
         return name;
     }

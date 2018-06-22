@@ -39,7 +39,6 @@ public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, List
     /**
      * @return a map of the fields that represent the selection set
      */
-    @Override
     Map<String, List<Field>> get();
 
     /**

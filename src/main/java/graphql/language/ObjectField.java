@@ -17,7 +17,6 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
         this.value = value;
     }
 
-    @Override
     public String getName() {
         return name;
     }

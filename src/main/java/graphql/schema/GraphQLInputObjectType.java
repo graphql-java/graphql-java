@@ -60,7 +60,6 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         }
     }
 
-    @Override
     public String getName() {
         return name;
     }
