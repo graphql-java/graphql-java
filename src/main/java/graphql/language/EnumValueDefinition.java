@@ -21,6 +21,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
         this.directives = (null == directives) ? new ArrayList<>() : directives;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -33,6 +34,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
         this.description = description;
     }
 
+    @Override
     public List<Directive> getDirectives() {
         return directives;
     }
