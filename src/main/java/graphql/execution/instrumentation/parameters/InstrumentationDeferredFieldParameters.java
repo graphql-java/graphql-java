@@ -29,6 +29,7 @@ public class InstrumentationDeferredFieldParameters extends InstrumentationField
      *
      * @return a new parameters object with the new state
      */
+    @Override
     public InstrumentationDeferredFieldParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationDeferredFieldParameters(
                 this.getExecutionContext(), this.executionStrategyParameters, this.getField(), this.getTypeInfo(), instrumentationState);

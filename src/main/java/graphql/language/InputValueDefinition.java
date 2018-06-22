@@ -41,6 +41,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         this.type = type;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -61,6 +62,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         this.defaultValue = defaultValue;
     }
 
+    @Override
     public List<Directive> getDirectives() {
         return directives;
     }

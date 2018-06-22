@@ -35,6 +35,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         this.defaultValue = defaultValue;
     }
 
+    @Override
     public String getName() {
         return name;
     }

@@ -37,6 +37,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         this.type = type;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -53,6 +54,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         return inputValueDefinitions;
     }
 
+    @Override
     public List<Directive> getDirectives() {
         return directives;
     }
