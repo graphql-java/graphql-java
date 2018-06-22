@@ -59,6 +59,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         this.directives = directives;
     }
 
+    @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
     }

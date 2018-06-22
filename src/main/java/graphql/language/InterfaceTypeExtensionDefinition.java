@@ -12,6 +12,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
         super(name, definitions, directives);
     }
 
+    @Override
     public InterfaceTypeExtensionDefinition deepCopy() {
         return new InterfaceTypeExtensionDefinition(getName(),
                 deepCopy(getFieldDefinitions()),

@@ -22,6 +22,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
     }

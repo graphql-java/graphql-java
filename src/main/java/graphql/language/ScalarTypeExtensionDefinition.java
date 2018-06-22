@@ -12,6 +12,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
         super(name, directives);
     }
 
+    @Override
     public ScalarTypeExtensionDefinition deepCopy() {
         return new ScalarTypeExtensionDefinition(getName(), deepCopy(getDirectives()));
     }

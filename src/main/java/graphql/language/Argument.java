@@ -17,6 +17,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         this.value = value;
     }
 
+    @Override
     public String getName() {
         return name;
     }

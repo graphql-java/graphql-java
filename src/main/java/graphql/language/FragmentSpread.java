@@ -24,6 +24,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         this.directives = directives;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -32,6 +33,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         this.name = name;
     }
 
+    @Override
     public List<Directive> getDirectives() {
         return directives;
     }
