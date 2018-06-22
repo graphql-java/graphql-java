@@ -23,7 +23,6 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
         this.inputValueDefinitions = inputValueDefinitions;
     }
 
-    @Override
     public List<Directive> getDirectives() {
         return directives;
     }

@@ -75,7 +75,6 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         type = (GraphQLInputType) new SchemaUtil().resolveTypeReference(type, typeMap);
     }
 
-    @Override
     public String getName() {
         return name;
     }

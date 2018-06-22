@@ -74,7 +74,6 @@ public class TypeMismatchError implements GraphQLError {
         return ErrorType.DataFetchingException;
     }
 
-    @Override
     public List<Object> getPath() {
         return path;
     }

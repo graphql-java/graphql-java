@@ -58,7 +58,6 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
         this.directives = directives;
     }
 
-    @Override
     public String getName() {
         return name;
     }

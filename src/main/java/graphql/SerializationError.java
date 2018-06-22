@@ -47,7 +47,6 @@ public class SerializationError implements GraphQLError {
         return ErrorType.DataFetchingException;
     }
 
-    @Override
     public List<Object> getPath() {
         return path;
     }

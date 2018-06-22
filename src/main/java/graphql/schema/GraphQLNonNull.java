@@ -35,7 +35,6 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         this.wrappedType = wrappedType;
     }
 
-    @Override
     public GraphQLType getWrappedType() {
         return wrappedType;
     }

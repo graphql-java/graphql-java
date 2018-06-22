@@ -27,7 +27,6 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         return definitions;
     }
 
-    @Override
     public List<Directive> getDirectives() {
         return directives;
     }

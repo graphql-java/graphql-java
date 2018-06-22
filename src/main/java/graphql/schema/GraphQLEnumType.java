@@ -139,7 +139,6 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         throw new CoercingSerializeException("Invalid input for Enum '" + name + "'. Unknown value '" + value + "'");
     }
 
-    @Override
     public String getName() {
         return name;
     }
