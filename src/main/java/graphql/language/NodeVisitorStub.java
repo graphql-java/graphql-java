@@ -1,12 +1,14 @@
 package graphql.language;
 
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-@Internal
-public class NodeVisitorStub
-        implements NodeVisitor {
+/**
+ * Convenient implementation of {@link NodeVisitor} for easy subclassing methods handling different types of Nodes in one method.
+ */
+@PublicApi
+public class NodeVisitorStub implements NodeVisitor {
     @Override
     public TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {
         return visitNode(node, context);
