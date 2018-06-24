@@ -21,29 +21,6 @@ import static java.lang.String.format;
 @Internal
 public class SchemaUtil {
 
-    public boolean isLeafType(GraphQLType type) {
-        GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(type);
-        return
-                unmodifiedType instanceof GraphQLScalarType
-                        || unmodifiedType instanceof GraphQLEnumType;
-    }
-
-    public boolean isInputType(GraphQLType graphQLType) {
-        GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(graphQLType);
-        return
-                unmodifiedType instanceof GraphQLScalarType
-                        || unmodifiedType instanceof GraphQLEnumType
-                        || unmodifiedType instanceof GraphQLInputObjectType;
-    }
-
-    public GraphQLUnmodifiedType getUnmodifiedType(GraphQLType graphQLType) {
-        if (graphQLType instanceof GraphQLModifiedType) {
-            return getUnmodifiedType(((GraphQLModifiedType) graphQLType).getWrappedType());
-        }
-        return (GraphQLUnmodifiedType) graphQLType;
-    }
-
-
     @SuppressWarnings("StatementWithEmptyBody")
     private void collectTypes(GraphQLType root, Map<String, GraphQLType> result) {
         if (isNonNull(root)) {

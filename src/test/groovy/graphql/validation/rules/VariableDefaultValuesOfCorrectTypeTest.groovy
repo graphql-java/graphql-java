@@ -11,7 +11,7 @@ import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
-import static graphql.schema.GraphQLNonNull.*
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class VariableDefaultValuesOfCorrectTypeTest extends Specification {
 

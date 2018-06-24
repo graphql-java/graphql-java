@@ -3,14 +3,12 @@ package graphql.validation.rules;
 
 import graphql.Internal;
 import graphql.language.Value;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
+import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
-
-import static graphql.schema.GraphQLNonNull.*;
 
 @Internal
 public class VariablesTypesMatcher {

@@ -42,6 +42,7 @@ import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 @Internal
@@ -89,7 +90,7 @@ public class TraversalContext implements DocumentVisitor {
 
 
     private void enterImpl(SelectionSet selectionSet) {
-        GraphQLUnmodifiedType rawType = new SchemaUtil().getUnmodifiedType(getOutputType());
+        GraphQLUnmodifiedType rawType = unwrapAll(getOutputType());
         GraphQLCompositeType parentType = null;
         if (rawType instanceof GraphQLCompositeType) {
             parentType = (GraphQLCompositeType) rawType;
@@ -168,7 +169,7 @@ public class TraversalContext implements DocumentVisitor {
     }
 
     private void enterImpl(ObjectField objectField) {
-        GraphQLUnmodifiedType objectType = schemaUtil.getUnmodifiedType(getInputType());
+        GraphQLUnmodifiedType objectType = unwrapAll(getInputType());
         GraphQLInputType inputType = null;
         if (objectType instanceof GraphQLInputObjectType) {
             GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) objectType;

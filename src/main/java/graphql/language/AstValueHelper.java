@@ -13,7 +13,6 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeUtil;
 
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
@@ -28,7 +27,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.schema.GraphQLTypeUtil.*;
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
 
 public class AstValueHelper {
 
