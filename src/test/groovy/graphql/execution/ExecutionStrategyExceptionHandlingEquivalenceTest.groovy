@@ -51,7 +51,7 @@ class ExecutionStrategyExceptionHandlingEquivalenceTest extends Specification {
 
         where:
 
-        strategyType  | strategyUnderTest
+        strategyName  | strategyUnderTest
         "async"       | new AsyncExecutionStrategy()
         "asyncSerial" | new AsyncSerialExecutionStrategy()
     }
