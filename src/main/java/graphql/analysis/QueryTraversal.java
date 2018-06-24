@@ -22,7 +22,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
-import graphql.schema.SchemaUtil;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -35,6 +34,7 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.language.NodeTraverser.LeaveOrEnter.LEAVE;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 /**
  * Helps to traverse (or reduce) a Document (or parts of it) and tracks at the same time the corresponding Schema types.
@@ -55,7 +55,6 @@ public class QueryTraversal {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
     private final ValuesResolver valuesResolver = new ValuesResolver();
-    private final SchemaUtil schemaUtil = new SchemaUtil();
     private final ChildrenOfSelectionProvider childrenOfSelectionProvider;
     private final GraphQLObjectType rootParentType;
 
@@ -268,7 +267,7 @@ public class QueryTraversal {
 
             preOrderCallback.visitField(environment);
 
-            GraphQLUnmodifiedType unmodifiedType = schemaUtil.getUnmodifiedType(fieldDefinition.getType());
+            GraphQLUnmodifiedType unmodifiedType = unwrapAll(fieldDefinition.getType());
             QueryTraversalContext fieldEnv = (unmodifiedType instanceof GraphQLCompositeType)
                     ? new QueryTraversalContext((GraphQLCompositeType) unmodifiedType, environment, field)
                     : new QueryTraversalContext(null, environment, field);// Terminal (scalar) node, EMPTY FRAME

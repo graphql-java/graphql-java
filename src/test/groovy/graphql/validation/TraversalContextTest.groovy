@@ -27,7 +27,7 @@ import static graphql.StarWarsSchema.queryType
 import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.language.OperationDefinition.Operation.QUERY
 import static graphql.schema.GraphQLList.list
-import static graphql.schema.GraphQLNonNull.*
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class TraversalContextTest extends Specification {
 

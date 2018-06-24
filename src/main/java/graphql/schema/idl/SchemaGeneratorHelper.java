@@ -26,10 +26,9 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
@@ -43,7 +42,9 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
-import static graphql.schema.GraphQLList.*;
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -65,8 +66,8 @@ public class SchemaGeneratorHelper {
 
     public Object buildValue(Value value, GraphQLType requiredType) {
         Object result = null;
-        if (requiredType instanceof GraphQLNonNull) {
-            requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
+        if (GraphQLTypeUtil.isNonNull(requiredType)) {
+            requiredType = unwrapOne(requiredType);
         }
         if (value == null) {
             return null;
@@ -75,14 +76,14 @@ public class SchemaGeneratorHelper {
             result = parseLiteral(value, (GraphQLScalarType) requiredType);
         } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
             result = ((EnumValue) value).getName();
-        } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
+        } else if (value instanceof ArrayValue && isList(requiredType)) {
             ArrayValue arrayValue = (ArrayValue) value;
-            GraphQLType wrappedType = ((GraphQLList) requiredType).getWrappedType();
+            GraphQLType wrappedType = unwrapOne(requiredType);
             result = arrayValue.getValues().stream()
                     .map(item -> this.buildValue(item, wrappedType)).collect(Collectors.toList());
         } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
             result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
-        } else if (value != null && !(value instanceof NullValue)) {
+        } else if (!(value instanceof NullValue)) {
             assertShouldNeverHappen(
                     "cannot build value of %s from %s", requiredType.getName(), String.valueOf(value));
         }

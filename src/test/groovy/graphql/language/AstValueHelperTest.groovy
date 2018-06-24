@@ -2,7 +2,6 @@ package graphql.language
 
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
 import static AstValueHelper.astFromValue
@@ -12,7 +11,7 @@ import static graphql.Scalars.GraphQLID
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLList.list
-import static graphql.schema.GraphQLNonNull.*
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class AstValueHelperTest extends Specification {
 
