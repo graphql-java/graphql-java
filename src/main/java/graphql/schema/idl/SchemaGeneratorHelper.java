@@ -26,10 +26,9 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
@@ -42,6 +41,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Assert.assertTrue;
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -63,8 +66,8 @@ public class SchemaGeneratorHelper {
 
     public Object buildValue(Value value, GraphQLType requiredType) {
         Object result = null;
-        if (requiredType instanceof GraphQLNonNull) {
-            requiredType = ((GraphQLNonNull) requiredType).getWrappedType();
+        if (GraphQLTypeUtil.isNonNull(requiredType)) {
+            requiredType = unwrapOne(requiredType);
         }
         if (value == null) {
             return null;
@@ -73,14 +76,14 @@ public class SchemaGeneratorHelper {
             result = parseLiteral(value, (GraphQLScalarType) requiredType);
         } else if (value instanceof EnumValue && requiredType instanceof GraphQLEnumType) {
             result = ((EnumValue) value).getName();
-        } else if (value instanceof ArrayValue && requiredType instanceof GraphQLList) {
+        } else if (value instanceof ArrayValue && isList(requiredType)) {
             ArrayValue arrayValue = (ArrayValue) value;
-            GraphQLType wrappedType = ((GraphQLList) requiredType).getWrappedType();
+            GraphQLType wrappedType = unwrapOne(requiredType);
             result = arrayValue.getValues().stream()
                     .map(item -> this.buildValue(item, wrappedType)).collect(Collectors.toList());
         } else if (value instanceof ObjectValue && requiredType instanceof GraphQLInputObjectType) {
             result = buildObjectValue((ObjectValue) value, (GraphQLInputObjectType) requiredType);
-        } else if (value != null && !(value instanceof NullValue)) {
+        } else if (!(value instanceof NullValue)) {
             assertShouldNeverHappen(
                     "cannot build value of %s from %s", requiredType.getName(), String.valueOf(value));
         }
@@ -165,7 +168,46 @@ public class SchemaGeneratorHelper {
         if (value instanceof BooleanValue) {
             return Scalars.GraphQLBoolean;
         }
-        return assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getName());
+        if (value instanceof ArrayValue) {
+            ArrayValue arrayValue = (ArrayValue) value;
+            return list(buildDirectiveInputType(getArrayValueWrappedType(arrayValue)));
+        }
+        return assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getSimpleName());
+    }
+
+    private Value getArrayValueWrappedType(ArrayValue value) {
+        // empty array [] is equivalent to [null]
+        if (value.getValues().isEmpty()) {
+            return NullValue.Null;
+        }
+
+        // get rid of null values
+        List<Value> nonNullValueList = value.getValues().stream()
+                .filter(v -> !(v instanceof NullValue))
+                .collect(Collectors.toList());
+
+        // [null, null, ...] unwrapped is null
+        if (nonNullValueList.isEmpty()) {
+            return NullValue.Null;
+        }
+
+        // make sure the array isn't polymorphic
+        Set<Class<? extends Value>> distinctTypes = nonNullValueList.stream()
+                .map(Value::getClass)
+                .distinct()
+                .collect(Collectors.toSet());
+
+        assertTrue(distinctTypes.size() == 1,
+                "Arrays containing multiple types of values are not supported yet. Detected the following types [%s]",
+                nonNullValueList.stream()
+                        .map(Value::getClass)
+                        .map(Class::getSimpleName)
+                        .distinct()
+                        .sorted()
+                        .collect(Collectors.joining(",")));
+
+        // peek at first value, value exists and is assured to be non-null
+        return nonNullValueList.get(0);
     }
 
     // builds directives from a type and its extensions

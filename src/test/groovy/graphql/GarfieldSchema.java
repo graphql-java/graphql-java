@@ -2,7 +2,6 @@ package graphql;
 
 
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
@@ -17,6 +16,7 @@ import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
+import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLUnionType.newUnionType;
 
@@ -172,10 +172,10 @@ public class GarfieldSchema {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("pets")
-                    .type(new GraphQLList(PetType)))
+                    .type(list(PetType)))
             .field(newFieldDefinition()
                     .name("friends")
-                    .type(new GraphQLList(NamedType)))
+                    .type(list(NamedType)))
             .withInterface(NamedType)
             .build();
 

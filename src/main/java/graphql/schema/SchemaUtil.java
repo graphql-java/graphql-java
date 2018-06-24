@@ -13,40 +13,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.lang.String.format;
 
 @Internal
 public class SchemaUtil {
 
-    public boolean isLeafType(GraphQLType type) {
-        GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(type);
-        return
-                unmodifiedType instanceof GraphQLScalarType
-                        || unmodifiedType instanceof GraphQLEnumType;
-    }
-
-    public boolean isInputType(GraphQLType graphQLType) {
-        GraphQLUnmodifiedType unmodifiedType = getUnmodifiedType(graphQLType);
-        return
-                unmodifiedType instanceof GraphQLScalarType
-                        || unmodifiedType instanceof GraphQLEnumType
-                        || unmodifiedType instanceof GraphQLInputObjectType;
-    }
-
-    public GraphQLUnmodifiedType getUnmodifiedType(GraphQLType graphQLType) {
-        if (graphQLType instanceof GraphQLModifiedType) {
-            return getUnmodifiedType(((GraphQLModifiedType) graphQLType).getWrappedType());
-        }
-        return (GraphQLUnmodifiedType) graphQLType;
-    }
-
-
     @SuppressWarnings("StatementWithEmptyBody")
     private void collectTypes(GraphQLType root, Map<String, GraphQLType> result) {
-        if (root instanceof GraphQLNonNull) {
-            collectTypes(((GraphQLNonNull) root).getWrappedType(), result);
-        } else if (root instanceof GraphQLList) {
-            collectTypes(((GraphQLList) root).getWrappedType(), result);
+        if (isNonNull(root)) {
+            collectTypes(unwrapOne(root), result);
+        } else if (isList(root)) {
+            collectTypes(unwrapOne(root), result);
         } else if (root instanceof GraphQLEnumType) {
             assertTypeUniqueness(root, result);
             result.put(root.getName(), root);
@@ -264,10 +244,10 @@ public class SchemaUtil {
             Assert.assertTrue(resolvedType != null, "type %s not found in schema", type.getName());
             return resolvedType;
         }
-        if (type instanceof GraphQLList) {
+        if (isList(type)) {
             ((GraphQLList) type).replaceTypeReferences(typeMap);
         }
-        if (type instanceof GraphQLNonNull) {
+        if (isNonNull(type)) {
             ((GraphQLNonNull) type).replaceTypeReferences(typeMap);
         }
         return type;

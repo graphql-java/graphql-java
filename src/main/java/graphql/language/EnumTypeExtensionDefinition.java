@@ -15,6 +15,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
         super(name, enumValueDefinitions, directives);
     }
 
+    @Override
     public EnumTypeExtensionDefinition deepCopy() {
         return new EnumTypeExtensionDefinition(getName(),
                 deepCopy(getEnumValueDefinitions()),

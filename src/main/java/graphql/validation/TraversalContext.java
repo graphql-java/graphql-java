@@ -25,8 +25,6 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLNullableType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
@@ -42,6 +40,10 @@ import java.util.List;
 import static graphql.introspection.Introspection.SchemaMetaFieldDef;
 import static graphql.introspection.Introspection.TypeMetaFieldDef;
 import static graphql.introspection.Introspection.TypeNameMetaFieldDef;
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 @Internal
 public class TraversalContext implements DocumentVisitor {
@@ -88,7 +90,7 @@ public class TraversalContext implements DocumentVisitor {
 
 
     private void enterImpl(SelectionSet selectionSet) {
-        GraphQLUnmodifiedType rawType = new SchemaUtil().getUnmodifiedType(getOutputType());
+        GraphQLUnmodifiedType rawType = unwrapAll(getOutputType());
         GraphQLCompositeType parentType = null;
         if (rawType instanceof GraphQLCompositeType) {
             parentType = (GraphQLCompositeType) rawType;
@@ -160,14 +162,14 @@ public class TraversalContext implements DocumentVisitor {
     private void enterImpl(ArrayValue arrayValue) {
         GraphQLNullableType nullableType = getNullableType(getInputType());
         GraphQLInputType inputType = null;
-        if (nullableType instanceof GraphQLList) {
-            inputType = (GraphQLInputType) ((GraphQLList) nullableType).getWrappedType();
+        if (isList(nullableType)) {
+            inputType = (GraphQLInputType) unwrapOne(nullableType);
         }
         addInputType(inputType);
     }
 
     private void enterImpl(ObjectField objectField) {
-        GraphQLUnmodifiedType objectType = schemaUtil.getUnmodifiedType(getInputType());
+        GraphQLUnmodifiedType objectType = unwrapAll(getInputType());
         GraphQLInputType inputType = null;
         if (objectType instanceof GraphQLInputObjectType) {
             GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) objectType;
@@ -232,7 +234,7 @@ public class TraversalContext implements DocumentVisitor {
     }
 
     private GraphQLNullableType getNullableType(GraphQLType type) {
-        return (GraphQLNullableType) (type instanceof GraphQLNonNull ? ((GraphQLNonNull) type).getWrappedType() : type);
+        return (GraphQLNullableType) (isNonNull(type) ? unwrapOne(type) : type);
     }
 
     /**

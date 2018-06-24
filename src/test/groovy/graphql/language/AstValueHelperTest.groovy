@@ -2,8 +2,6 @@ package graphql.language
 
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLList
-import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
 import static AstValueHelper.astFromValue
@@ -12,6 +10,8 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLID
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class AstValueHelperTest extends Specification {
 
@@ -27,7 +27,7 @@ class AstValueHelperTest extends Specification {
 
         astFromValue(1, GraphQLBoolean).isEqualTo(new BooleanValue(true))
 
-        def NonNullBoolean = new GraphQLNonNull(GraphQLBoolean)
+        def NonNullBoolean = nonNull(GraphQLBoolean)
         astFromValue(0, NonNullBoolean).isEqualTo(new BooleanValue(false))
     }
 
@@ -91,7 +91,7 @@ class AstValueHelperTest extends Specification {
 
     def 'does not converts NonNull values to NullValue'() {
         expect:
-        def NonNullBoolean = new GraphQLNonNull(GraphQLBoolean)
+        def NonNullBoolean = nonNull(GraphQLBoolean)
         astFromValue(null, NonNullBoolean) == null
     }
 
@@ -119,19 +119,19 @@ class AstValueHelperTest extends Specification {
 
     def 'converts array values to List ASTs'() {
         expect:
-        astFromValue(['FOO', 'BAR'], new GraphQLList(GraphQLString)).isEqualTo(
+        astFromValue(['FOO', 'BAR'], list(GraphQLString)).isEqualTo(
                 new ArrayValue([new StringValue('FOO'), new StringValue('BAR')])
         )
 
 
-        astFromValue(['HELLO', 'GOODBYE'], new GraphQLList(myEnum)).isEqualTo(
+        astFromValue(['HELLO', 'GOODBYE'], list(myEnum)).isEqualTo(
                 new ArrayValue([new EnumValue('HELLO'), new EnumValue('GOODBYE')])
         )
     }
 
     def 'converts list singletons'() {
         expect:
-        astFromValue('FOO', new GraphQLList(GraphQLString)).isEqualTo(
+        astFromValue('FOO', list(GraphQLString)).isEqualTo(
                 new StringValue('FOO')
         )
     }

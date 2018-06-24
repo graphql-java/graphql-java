@@ -23,7 +23,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
 
     def "not provided field argument"() {
         given:
-        def fieldArg = GraphQLArgument.newArgument().name("arg").type(new GraphQLNonNull(GraphQLString))
+        def fieldArg = GraphQLArgument.newArgument().name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
         def fieldDef = GraphQLFieldDefinition.newFieldDefinition()
                 .name("field")
                 .type(GraphQLString)
@@ -43,7 +43,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
 
     def "all field arguments are provided"() {
         given:
-        def fieldArg = GraphQLArgument.newArgument().name("arg").type(new GraphQLNonNull(GraphQLString))
+        def fieldArg = GraphQLArgument.newArgument().name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
         def fieldDef = GraphQLFieldDefinition.newFieldDefinition()
                 .name("field")
                 .type(GraphQLString)
@@ -62,7 +62,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
 
     def "not provided directive argument"() {
         given:
-        def directiveArg = GraphQLArgument.newArgument().name("arg").type(new GraphQLNonNull(GraphQLString))
+        def directiveArg = GraphQLArgument.newArgument().name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
         def graphQLDirective = GraphQLDirective.newDirective()
                 .name("directive")
                 .argument(directiveArg)
@@ -81,7 +81,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
 
     def "all directive arguments are provided"() {
         given:
-        def directiveArg = GraphQLArgument.newArgument().name("arg").type(new GraphQLNonNull(GraphQLString))
+        def directiveArg = GraphQLArgument.newArgument().name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
         def graphQLDirective = GraphQLDirective.newDirective()
                 .name("directive")
                 .argument(directiveArg)

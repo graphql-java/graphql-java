@@ -86,6 +86,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         this.directives = directives;
     }
 
+    @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
     }
