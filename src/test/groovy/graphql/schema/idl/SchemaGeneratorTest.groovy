@@ -30,6 +30,7 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.schema
+import static graphql.schema.GraphQLList.list
 
 class SchemaGeneratorTest extends Specification {
 
@@ -928,10 +929,10 @@ class SchemaGeneratorTest extends Specification {
         "floatArg"          | "4.5"             || GraphQLFloat
         "intArg"            | "5"               || GraphQLInt
         "nullArg"           | "null"            || GraphQLString
-        "emptyArrayArg"     | "[]"              || new GraphQLList(GraphQLString)
-        "arrayNullsArg"     | "[null, null]"    || new GraphQLList(GraphQLString)
-        "arrayArg"          | "[3,4,6]"         || new GraphQLList(GraphQLInt)
-        "arrayWithNullsArg" | "[null,3,null,6]" || new GraphQLList(GraphQLInt)
+        "emptyArrayArg"     | "[]"              || list(GraphQLString)
+        "arrayNullsArg"     | "[null, null]"    || list(GraphQLString)
+        "arrayArg"          | "[3,4,6]"         || list(GraphQLInt)
+        "arrayWithNullsArg" | "[null,3,null,6]" || list(GraphQLInt)
     }
 
     @Unroll
@@ -948,7 +949,7 @@ class SchemaGeneratorTest extends Specification {
         schema(spec, wiring)
 
         then:
-        def ex = thrown(AssertException) 
+        def ex = thrown(AssertException)
         ex.message == expectedErrorMessage
 
         where:
@@ -1633,7 +1634,7 @@ class SchemaGeneratorTest extends Specification {
         directive.getArgument("reason").type == GraphQLString
         directive.getArgument("reason").value == "No longer supported"
         directive.getArgument("reason").defaultValue == "No longer supported"
-        directive.validLocations().collect {it.name()} == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+        directive.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
 
         when:
         def f2 = schema.getObjectType("Query").getFieldDefinition("f2")
@@ -1646,7 +1647,7 @@ class SchemaGeneratorTest extends Specification {
         directive2.getArgument("reason").type == GraphQLString
         directive2.getArgument("reason").value == "Just because"
         directive2.getArgument("reason").defaultValue == "No longer supported"
-        directive2.validLocations().collect {it.name()} == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+        directive2.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
 
     }
 
@@ -1662,7 +1663,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         def wiring = RuntimeWiring.newRuntimeWiring().build()
-        def schema = schema(spec,wiring)
+        def schema = schema(spec, wiring)
 
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
 

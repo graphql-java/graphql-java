@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture
 import static graphql.Scalars.GraphQLInt
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLTypeReference.typeRef
 
 /**
  * A test for the reported problem in https://github.com/graphql-java/graphql-java/issues/831
@@ -85,7 +86,7 @@ class DataLoaderNodeTest extends Specification {
                 .build())
                 .field(newFieldDefinition()
                 .name("childNodes")
-                .type(list(new GraphQLTypeReference("Node")))
+                .type(list(typeRef("Node")))
                 .dataFetcher({ environment -> loader.load(environment.getSource()) })
                 .build())
                 .build()

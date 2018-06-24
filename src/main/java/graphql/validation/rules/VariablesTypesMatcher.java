@@ -10,6 +10,8 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
+import static graphql.schema.GraphQLNonNull.*;
+
 @Internal
 public class VariablesTypesMatcher {
 
@@ -24,7 +26,7 @@ public class VariablesTypesMatcher {
         if (isNonNull(variableType)) {
             return variableType;
         }
-        return new GraphQLNonNull(variableType);
+        return nonNull(variableType);
     }
 
     @SuppressWarnings("SimplifiableIfStatement")

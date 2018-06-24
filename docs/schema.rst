@@ -438,11 +438,11 @@ For example:
 .. code-block:: java
 
     GraphQLObjectType person = newObject()
-        .name("Person")
-        .field(newFieldDefinition()
-                .name("friends")
-                .type(new GraphQLList(new GraphQLTypeReference("Person"))))
-        .build();
+            .name("Person")
+            .field(newFieldDefinition()
+                    .name("friends")
+                    .type(GraphQLList.list(GraphQLTypeReference.typeRef("Person"))))
+            .build();
 
 When the schema is declared via SDL, no special handling of recursive types is needed.
 

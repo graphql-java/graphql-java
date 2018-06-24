@@ -45,6 +45,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+import static graphql.schema.GraphQLList.*;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -170,7 +171,7 @@ public class SchemaGeneratorHelper {
         }
         if (value instanceof ArrayValue) {
             ArrayValue arrayValue = (ArrayValue) value;
-            return new GraphQLList(buildDirectiveInputType(getArrayValueWrappedType(arrayValue)));
+            return list(buildDirectiveInputType(getArrayValueWrappedType(arrayValue)));
         }
         return assertShouldNeverHappen("Directive values of type '%s' are not supported yet", value.getClass().getSimpleName());
     }

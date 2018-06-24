@@ -6,12 +6,13 @@ import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.Type;
 import graphql.language.TypeName;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 
 import java.util.Objects;
 import java.util.Stack;
+
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
 
 /**
  * This helper gives you access to the type info given a type definition
@@ -83,10 +84,10 @@ public class TypeInfo {
         while (!wrappingStack.isEmpty()) {
             Class<?> clazz = wrappingStack.pop();
             if (clazz.equals(NonNullType.class)) {
-                out = new GraphQLNonNull(out);
+                out = nonNull(out);
             }
             if (clazz.equals(ListType.class)) {
-                out = new GraphQLList(out);
+                out = list(out);
             }
         }
         // we handle both input and output graphql types
