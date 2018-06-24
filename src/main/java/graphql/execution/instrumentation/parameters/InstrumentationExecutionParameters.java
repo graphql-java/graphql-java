@@ -55,7 +55,7 @@ public class InstrumentationExecutionParameters {
         return operation;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
     public <T> T getContext() {
         return (T) context;
     }
@@ -64,6 +64,7 @@ public class InstrumentationExecutionParameters {
         return variables;
     }
 
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked
         return (T) instrumentationState;
@@ -72,6 +73,4 @@ public class InstrumentationExecutionParameters {
     public GraphQLSchema getSchema() {
         return this.schema;
     }
-
-
 }

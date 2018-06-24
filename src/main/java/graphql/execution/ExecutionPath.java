@@ -59,7 +59,7 @@ public class ExecutionPath {
     }
 
     public ExecutionPath getPathWithoutListEnd() {
-        if(this == ROOT_PATH) {
+        if(ROOT_PATH.equals(this)) {
             return ROOT_PATH;
         }
         if (segment instanceof StringPathSegment) {
@@ -180,7 +180,7 @@ public class ExecutionPath {
             return "";
         }
 
-        if (parent == ROOT_PATH) {
+        if (ROOT_PATH.equals(parent)) {
             return segment.toString();
         }
 

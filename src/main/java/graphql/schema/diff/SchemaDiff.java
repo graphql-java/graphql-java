@@ -66,7 +66,7 @@ public class SchemaDiff {
 
     }
 
-    private class CountingReporter implements DifferenceReporter {
+    private static class CountingReporter implements DifferenceReporter {
         final DifferenceReporter delegate;
         int breakingCount = 1;
 

@@ -103,9 +103,9 @@ public class EchoingWiringFactory implements WiringFactory {
         } else if (scalarType.equals(Scalars.GraphQLBigInteger)) {
             return new BigInteger("1");
         } else if (scalarType.equals(Scalars.GraphQLByte)) {
-            return new Byte("1");
+            return Byte.valueOf("1");
         } else if (scalarType.equals(Scalars.GraphQLShort)) {
-            return new Short("1");
+            return Short.valueOf("1");
         } else {
             return null;
         }

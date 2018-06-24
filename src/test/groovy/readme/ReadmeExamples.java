@@ -68,7 +68,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
  * You should place these examples into the README.next.md and NOT the main README.md.  This allows
  * 'master' to progress yet shows consumers the released information about the project.
  */
-@SuppressWarnings({"unused", "Convert2Lambda", "UnnecessaryLocalVariable", "ConstantConditions", "SameParameterValue"})
+@SuppressWarnings({"unused", "Convert2Lambda", "UnnecessaryLocalVariable", "ConstantConditions", "SameParameterValue", "ClassCanBeStatic"})
 public class ReadmeExamples {
 
 
@@ -435,7 +435,7 @@ public class ReadmeExamples {
     }
 
     private void typeResolverExample() {
-        new TypeResolver() {
+        TypeResolver typeResolver = new TypeResolver() {
             @Override
             public GraphQLObjectType getType(TypeResolutionEnvironment env) {
                 Object javaObject = env.getObject();

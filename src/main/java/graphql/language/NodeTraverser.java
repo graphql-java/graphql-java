@@ -58,6 +58,7 @@ public class NodeTraverser {
         nodeTraverser.traverse(roots, traverserVisitor);
     }
 
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public static <T> T oneVisitWithResult(Node node, NodeVisitor nodeVisitor) {
         SimpleTraverserContext<Node> context = new SimpleTraverserContext<>(node);
         node.accept(context, nodeVisitor);

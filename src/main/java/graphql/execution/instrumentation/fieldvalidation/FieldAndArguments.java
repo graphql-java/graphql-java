@@ -55,5 +55,6 @@ public interface FieldAndArguments {
      *
      * @return a cast object of type T
      */
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     <T> T getArgumentValue(String argumentName);
 }

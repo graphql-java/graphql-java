@@ -51,6 +51,7 @@ public class InstrumentationFieldParameters {
         return typeInfo;
     }
 
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked
         return (T) instrumentationState;

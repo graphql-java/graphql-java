@@ -31,7 +31,7 @@ import java.util.function.BiFunction;
 
 import static graphql.StarWarsSchema.queryType;
 
-@SuppressWarnings({"unused", "MismatchedQueryAndUpdateOfCollection", "Convert2Lambda"})
+@SuppressWarnings({"unused", "MismatchedQueryAndUpdateOfCollection", "Convert2Lambda", "ClassCanBeStatic"})
 public class InstrumentationExamples {
 
     private void specifyInstrumentation() {

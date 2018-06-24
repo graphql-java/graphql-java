@@ -13,7 +13,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked","TypeParameterUnusedInFormals"})
 @Internal
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;

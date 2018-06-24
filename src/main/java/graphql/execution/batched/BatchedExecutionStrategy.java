@@ -98,6 +98,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         InstrumentationContext<ExecutionResult> executionStrategyCtx = executionContext.getInstrumentation()
                 .beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext, parameters));
@@ -126,6 +127,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return result;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     private void executeImpl(ExecutionContext executionContext,
                              ExecutionStrategyParameters parameters,
                              ExecutionNode root,
@@ -219,7 +221,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             return completeValues(executionContext, fetchedValues, typeInfo, fieldName, fields, argumentValues);
         });
         fieldCtx.onDispatched(null);
-        result.whenComplete((nodes, throwable) -> fieldCtx.onCompleted(null, throwable));
+        result = result.whenComplete((nodes, throwable) -> fieldCtx.onCompleted(null, throwable));
         return result;
 
     }

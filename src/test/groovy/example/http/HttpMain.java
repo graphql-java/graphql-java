@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -267,12 +268,13 @@ public class HttpMain extends AbstractHandler {
     @SuppressWarnings("SameParameterValue")
     private Reader loadSchemaFile(String name) {
         InputStream stream = getClass().getClassLoader().getResourceAsStream(name);
-        return new InputStreamReader(stream);
+        return new InputStreamReader(stream, Charset.defaultCharset());
     }
 
     // Lots of the data happens to be maps of objects and this allows us to get back into type safety land
     // with less boiler plat and casts
     //
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     private <T> T asMapGet(Object mapObj, Object mapKey) {
         Map<Object, ?> map = (Map<Object, ?>) mapObj;
         return (T) map.get(mapKey);

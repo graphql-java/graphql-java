@@ -22,7 +22,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
-@SuppressWarnings({"Convert2Lambda", "unused"})
+@SuppressWarnings({"Convert2Lambda", "unused", "ClassCanBeStatic"})
 public class DirectivesExamples {
 
     static class AuthorisationCtx {

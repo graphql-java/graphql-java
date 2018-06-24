@@ -33,6 +33,7 @@ public class DeferSupport {
         return false;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     private void drainDeferredCalls() {
         if (deferredCalls.isEmpty()) {
             publisher.noMoreData();

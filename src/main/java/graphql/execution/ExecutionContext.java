@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
+@SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
 public class ExecutionContext {
 

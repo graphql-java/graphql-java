@@ -196,7 +196,7 @@ public class SchemaGenerator {
             return inputGTypes.get(typeDefinition.getName());
         }
 
-        void put(GraphQLOutputType outputType) {
+        void putOutputType(GraphQLOutputType outputType) {
             outputGTypes.put(outputType.getName(), outputType);
             // certain types can be both input and output types, for example enums
             if (outputType instanceof GraphQLInputType) {
@@ -204,7 +204,7 @@ public class SchemaGenerator {
             }
         }
 
-        void put(GraphQLInputType inputType) {
+        void putInputType(GraphQLInputType inputType) {
             inputGTypes.put(inputType.getName(), inputType);
             // certain types can be both input and output types, for example enums
             if (inputType instanceof GraphQLOutputType) {
@@ -388,7 +388,7 @@ public class SchemaGenerator {
      *
      * @return an output type
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
     private <T extends GraphQLOutputType> T buildOutputType(BuildContext buildCtx, Type rawType) {
 
         TypeDefinition typeDefinition = buildCtx.getTypeDefinition(rawType);
@@ -422,7 +422,7 @@ public class SchemaGenerator {
             throw new NotAnOutputTypeError(rawType, typeDefinition);
         }
 
-        buildCtx.put(outputType);
+        buildCtx.putOutputType(outputType);
         buildCtx.pop();
         return (T) typeInfo.decorate(outputType);
     }
@@ -455,7 +455,7 @@ public class SchemaGenerator {
             throw new NotAnInputTypeError(rawType, typeDefinition);
         }
 
-        buildCtx.put(inputType);
+        buildCtx.putInputType(inputType);
         buildCtx.pop();
         return typeInfo.decorate(inputType);
     }
