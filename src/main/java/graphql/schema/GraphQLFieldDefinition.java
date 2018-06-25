@@ -66,12 +66,6 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         this.definition = definition;
     }
 
-
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        this.type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(this.type, typeMap);
-    }
-
-
     void replaceType(GraphQLOutputType type) {
         this.type = type;
     }

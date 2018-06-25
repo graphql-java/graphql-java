@@ -62,13 +62,6 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         buildDefinitionMap(fieldDefinitions);
     }
 
-    @Deprecated
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        this.interfaces = this.interfaces.stream()
-                .map(type -> (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap))
-                .collect(Collectors.toList());
-    }
-
     void replaceInterfaces(List<GraphQLOutputType> interfaces) {
         this.interfaces = interfaces;
     }

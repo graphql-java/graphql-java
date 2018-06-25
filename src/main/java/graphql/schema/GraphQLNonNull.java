@@ -45,10 +45,6 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         return wrappedType;
     }
 
-    @Deprecated
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        wrappedType = new SchemaUtil().resolveTypeReference(wrappedType, typeMap);
-    }
 
     void replaceType(GraphQLType type) {
         wrappedType = type;

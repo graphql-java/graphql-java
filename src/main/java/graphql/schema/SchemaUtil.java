@@ -1,64 +1,21 @@
 package graphql.schema;
 
 
-import graphql.Assert;
 import graphql.Internal;
 import graphql.introspection.Introspection;
-import graphql.util.TraversalControl;
-import static graphql.util.TraversalControl.QUIT;
-import static graphql.schema.GraphqlTypeVisitors.LeafVisitor;
 import static graphql.schema.GraphqlTypeVisitors.CollectingVisitor;
 import static graphql.schema.GraphqlTypeVisitors.TypeResolvingVisitor;
-import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static graphql.schema.GraphQLTypeUtil.isList;
-import static graphql.schema.GraphQLTypeUtil.isNonNull;
-import static graphql.schema.GraphQLTypeUtil.unwrapOne;
-import static java.lang.String.format;
-
 @Internal
 public class SchemaUtil {
 
-    private static final TypeTraverser SHALLOW_TRAVERSER = new TypeTraverser((node) -> Collections.emptyList());
-
     private static final TypeTraverser TRAVERSER = new TypeTraverser();
-
-
-    public Boolean isLeafType(GraphQLType graphQLType) {
-        return (Boolean) SHALLOW_TRAVERSER.depthFirst(new LeafVisitor(), graphQLType).getResult();
-    }
-
-    public boolean isInputType(GraphQLType graphQLType) {
-
-        return (Boolean) SHALLOW_TRAVERSER.depthFirst(new LeafVisitor() {
-            @Override
-            public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLType> context) {
-                context.setResult(true);
-                return QUIT;
-            }
-        }, graphQLType).getResult();
-    }
-
-
-    /**
-     * Use custom visitor
-     */
-    @Deprecated
-    public GraphQLUnmodifiedType getUnmodifiedType(GraphQLType graphQLType) {
-        if (graphQLType instanceof GraphQLModifiedType) {
-            return getUnmodifiedType(((GraphQLModifiedType) graphQLType).getWrappedType());
-        }
-        return (GraphQLUnmodifiedType) graphQLType;
-
-    }
-
 
 
     Map<String, GraphQLType> allTypes(final GraphQLSchema schema,final Set<GraphQLType> additionalTypes) {
@@ -146,19 +103,4 @@ public class SchemaUtil {
         final Map<String, GraphQLType> typeMap = schema.getTypeMap();
         TRAVERSER.depthFirst(new TypeResolvingVisitor(typeMap),typeMap.values());
     }
-
-    @Deprecated
-    GraphQLType resolveTypeReference(GraphQLType type, Map<String, GraphQLType> typeMap) {
-        if (type instanceof GraphQLTypeReference || typeMap.containsKey(type.getName())) {
-            GraphQLType resolvedType = typeMap.get(type.getName());
-            Assert.assertTrue(resolvedType != null, "type %s not found in schema", type.getName());
-            return resolvedType;
-        }
-        return type;
-    }
-
-
-
-
-
 }

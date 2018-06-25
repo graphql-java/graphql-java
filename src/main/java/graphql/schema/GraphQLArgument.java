@@ -73,12 +73,6 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
 
-    @Deprecated
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        type = (GraphQLInputType) new SchemaUtil().resolveTypeReference(type, typeMap);
-    }
-
-
     void replaceType(GraphQLInputType type) {
         this.type = type;
     }

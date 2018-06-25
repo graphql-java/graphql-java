@@ -63,13 +63,6 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         this.directives = directives;
     }
 
-    @Deprecated
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        this.types = this.types.stream()
-                .map(type -> (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap))
-                .collect(Collectors.toList());
-    }
-
     void replaceTypes(List<GraphQLOutputType> types) {
         this.types = types;
     }

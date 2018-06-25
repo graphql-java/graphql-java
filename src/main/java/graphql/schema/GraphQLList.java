@@ -45,11 +45,6 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
         return wrappedType;
     }
 
-    @Deprecated
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        wrappedType = new SchemaUtil().resolveTypeReference(wrappedType, typeMap);
-    }
-
     void replaceType(GraphQLType type) {
         wrappedType = type;
     }
