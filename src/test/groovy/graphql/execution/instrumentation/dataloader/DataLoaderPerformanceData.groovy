@@ -2,6 +2,8 @@ package graphql.execution.instrumentation.dataloader
 
 import graphql.Directives
 import graphql.GraphQL
+import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.ExecutionStrategy
 import graphql.execution.instrumentation.Instrumentation
 import graphql.schema.GraphQLSchema
 import org.dataloader.DataLoaderRegistry
@@ -9,19 +11,19 @@ import org.dataloader.DataLoaderRegistry
 
 class DataLoaderPerformanceData {
 
-    static DataLoaderRegistry setupDataLoaderRegistry() {
+    DataLoaderRegistry setupDataLoaderRegistry(BatchCompareDataFetchers batchCompareDataFetchers) {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
-        dataLoaderRegistry.register("departments", BatchCompareDataFetchers.departmentsForShopDataLoader)
-        dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader)
+        dataLoaderRegistry.register("departments", batchCompareDataFetchers.departmentsForShopDataLoader)
+        dataLoaderRegistry.register("products", batchCompareDataFetchers.productsForDepartmentDataLoader)
     }
 
-    static GraphQL setupGraphQL(Instrumentation instrumentation) {
-        BatchCompareDataFetchers.resetState()
-        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema()
+    static GraphQL setupGraphQL(Instrumentation instrumentation, BatchCompareDataFetchers batchCompareDataFetchers, ExecutionStrategy queryStrategy = new AsyncExecutionStrategy()) {
+        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema(batchCompareDataFetchers)
         schema = schema.transform({ bldr -> bldr.additionalDirective(Directives.DeferDirective) })
 
         GraphQL.newGraphQL(schema)
                 .instrumentation(instrumentation)
+                .queryExecutionStrategy(queryStrategy)
                 .build()
     }
 

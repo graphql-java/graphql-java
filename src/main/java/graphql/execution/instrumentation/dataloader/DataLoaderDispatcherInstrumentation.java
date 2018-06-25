@@ -2,7 +2,7 @@ package graphql.execution.instrumentation.dataloader;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.execution.AsyncExecutionStrategy;
+import graphql.execution.AbstractAsyncExecutionStrategy;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
@@ -100,7 +100,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         ExecutionStrategy queryStrategy = parameters.getExecutionContext().getQueryStrategy();
-        if (!(queryStrategy instanceof AsyncExecutionStrategy)) {
+        if (!(queryStrategy instanceof AbstractAsyncExecutionStrategy)) {
             DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
             state.setAggressivelyBatching(false);
         }
