@@ -7,17 +7,29 @@ import graphql.util.TraverserContext;
 @Internal
 public interface GraphQLTypeVisitor {
     TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLEnumValueDefinition(GraphQLEnumValueDefinition node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context);
 
     // Marker interfaces

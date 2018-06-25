@@ -11,24 +11,24 @@ import java.util.Map;
 import static java.lang.String.format;
 
 @Internal
-public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub  {
+public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
-    private final Map<String,GraphQLType> result = new HashMap<>();
+    private final Map<String, GraphQLType> result = new HashMap<>();
 
     public GraphQLTypeCollectingVisitor() {
     }
 
     @Override
     public TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLType> context) {
-        assertTypeUniqueness(node,result);
-        save(node.getName(),node);
+        assertTypeUniqueness(node, result);
+        save(node.getName(), node);
         return super.visitGraphQLEnumType(node, context);
     }
 
     @Override
     public TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLType> context) {
-        assertTypeUniqueness(node,result);
-        save(node.getName(),node);
+        assertTypeUniqueness(node, result);
+        save(node.getName(), node);
         return super.visitGraphQLScalarType(node, context);
     }
 
@@ -39,7 +39,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub  {
         } else {
             save(node.getName(), node);
         }
-        return super.visitGraphQLObjectType(node,context);
+        return super.visitGraphQLObjectType(node, context);
     }
 
     @Override
@@ -65,8 +65,8 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub  {
 
     @Override
     public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLType> context) {
-        assertTypeUniqueness(node,result);
-        save(node.getName(),node);
+        assertTypeUniqueness(node, result);
+        save(node.getName(), node);
         return super.visitGraphQLUnionType(node, context);
     }
 
@@ -82,7 +82,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub  {
     }
 
     private void save(String name, GraphQLType type) {
-        result.put(name,type);
+        result.put(name, type);
     }
 
 
@@ -113,7 +113,6 @@ Enforcing this helps avoid problems later down the track fo example https://gith
     public Map<String, GraphQLType> getResult() {
         return result;
     }
-
 
 
 }

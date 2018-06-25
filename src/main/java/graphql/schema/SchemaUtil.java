@@ -16,19 +16,19 @@ public class SchemaUtil {
     private static final TypeTraverser TRAVERSER = new TypeTraverser();
 
 
-    Map<String, GraphQLType> allTypes(final GraphQLSchema schema,final Set<GraphQLType> additionalTypes) {
+    Map<String, GraphQLType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes) {
         List<GraphQLType> roots = new ArrayList<GraphQLType>() {{
             add(schema.getQueryType());
 
-            if(schema.isSupportingMutations()) {
+            if (schema.isSupportingMutations()) {
                 add(schema.getMutationType());
             }
 
-            if(schema.isSupportingSubscriptions()) {
+            if (schema.isSupportingSubscriptions()) {
                 add(schema.getSubscriptionType());
             }
 
-            if(additionalTypes != null) {
+            if (additionalTypes != null) {
                 addAll(additionalTypes);
             }
 
@@ -41,14 +41,13 @@ public class SchemaUtil {
     }
 
 
-
     /*
      * Indexes GraphQLObject types registered with the provided schema by implemented GraphQLInterface name
      *
      * This helps in accelerates/simplifies collecting types that implement a certain interface
      *
      * Provided to replace {@link #findImplementations(graphql.schema.GraphQLSchema, graphql.schema.GraphQLInterfaceType)}
-     * 
+     *
      */
     Map<String, List<GraphQLObjectType>> groupImplementations(GraphQLSchema schema) {
         Map<String, List<GraphQLObjectType>> result = new HashMap<>();
@@ -99,6 +98,6 @@ public class SchemaUtil {
 
     void replaceTypeReferences(GraphQLSchema schema) {
         final Map<String, GraphQLType> typeMap = schema.getTypeMap();
-        TRAVERSER.depthFirst(new GraphQLTypeResolvingVisitor(typeMap),typeMap.values());
+        TRAVERSER.depthFirst(new GraphQLTypeResolvingVisitor(typeMap), typeMap.values());
     }
 }

@@ -32,13 +32,13 @@ public class GraphQLTypeRefResolvingVisitor extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLType> context) {
-        node.replaceType( resolvedType);
+        node.replaceType(resolvedType);
         return super.visitGraphQLList(node, context);
     }
 
     @Override
     public TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLType> context) {
-        node.replaceType( resolvedType);
+        node.replaceType(resolvedType);
         return super.visitGraphQLNonNull(node, context);
     }
 }
