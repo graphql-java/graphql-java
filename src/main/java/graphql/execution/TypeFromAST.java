@@ -6,10 +6,11 @@ import graphql.language.ListType;
 import graphql.language.NonNullType;
 import graphql.language.Type;
 import graphql.language.TypeName;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+
+import static graphql.schema.GraphQLList.list;
+import static graphql.schema.GraphQLNonNull.nonNull;
 
 @Internal
 public class TypeFromAST {
@@ -19,10 +20,10 @@ public class TypeFromAST {
         GraphQLType innerType;
         if (type instanceof ListType) {
             innerType = getTypeFromAST(schema, ((ListType) type).getType());
-            return innerType != null ? new GraphQLList(innerType) : null;
+            return innerType != null ? list(innerType) : null;
         } else if (type instanceof NonNullType) {
             innerType = getTypeFromAST(schema, ((NonNullType) type).getType());
-            return innerType != null ? new GraphQLNonNull(innerType) : null;
+            return innerType != null ? nonNull(innerType) : null;
         }
 
         return schema.getType(((TypeName) type).getName());

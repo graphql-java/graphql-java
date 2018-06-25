@@ -2,10 +2,8 @@ package graphql.validation.rules;
 
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.TypeResolver;
 
@@ -16,8 +14,10 @@ import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLEnumType.newEnum;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInterfaceType.newInterface;
+import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLSchema.newSchema;
+import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.GraphQLUnionType.newUnionType;
 
 
@@ -139,10 +139,10 @@ public class Harness {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("pets")
-                    .type(new GraphQLList(Pet)))
+                    .type(list(Pet)))
             .field(newFieldDefinition()
                     .name("relatives")
-                    .type(new GraphQLList(new GraphQLTypeReference("Human"))))
+                    .type(list(typeRef("Human"))))
             .field(newFieldDefinition()
                     .name("iq")
                     .type(GraphQLInt))

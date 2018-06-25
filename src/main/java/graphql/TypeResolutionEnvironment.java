@@ -11,6 +11,7 @@ import java.util.Map;
  *
  * See {@link graphql.schema.TypeResolver#getType(TypeResolutionEnvironment)} for how this is used
  */
+@SuppressWarnings("TypeParameterUnusedInFormals")
 public class TypeResolutionEnvironment {
 
     private final Object object;

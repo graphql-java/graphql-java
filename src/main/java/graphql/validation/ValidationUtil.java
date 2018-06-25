@@ -14,12 +14,10 @@ import graphql.language.Value;
 import graphql.language.VariableReference;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
-import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -31,6 +29,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 public class ValidationUtil {
 
@@ -71,7 +73,7 @@ public class ValidationUtil {
 
     public boolean isValidLiteralValue(Value value, GraphQLType type, GraphQLSchema schema) {
         if (value == null || value instanceof NullValue) {
-            boolean valid = !(type instanceof GraphQLNonNull);
+            boolean valid = !(isNonNull(type));
             if (!valid) {
                 handleNullError(value, type);
             }
@@ -80,8 +82,8 @@ public class ValidationUtil {
         if (value instanceof VariableReference) {
             return true;
         }
-        if (type instanceof GraphQLNonNull) {
-            return isValidLiteralValue(value, ((GraphQLNonNull) type).getWrappedType(), schema);
+        if (isNonNull(type)) {
+            return isValidLiteralValue(value, unwrapOne(type), schema);
         }
 
         if (type instanceof GraphQLScalarType) {
@@ -99,7 +101,7 @@ public class ValidationUtil {
             return valid;
         }
 
-        if (type instanceof GraphQLList) {
+        if (isList(type)) {
             return isValidLiteralValue(value, (GraphQLList) type, schema);
         }
         return type instanceof GraphQLInputObjectType && isValidLiteralValue(value, (GraphQLInputObjectType) type, schema);
@@ -147,7 +149,7 @@ public class ValidationUtil {
 
     private Set<String> getMissingFields(GraphQLInputObjectType type, Map<String, ObjectField> objectFieldMap, GraphqlFieldVisibility fieldVisibility) {
         return fieldVisibility.getFieldDefinitions(type).stream()
-                .filter(field -> field.getType() instanceof GraphQLNonNull)
+                .filter(field -> isNonNull(field.getType()))
                 .map(GraphQLInputObjectField::getName)
                 .filter(((Predicate<String>) objectFieldMap::containsKey).negate())
                 .collect(Collectors.toSet());

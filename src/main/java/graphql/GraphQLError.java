@@ -3,14 +3,22 @@ package graphql;
 
 import graphql.language.SourceLocation;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 /**
+ * The interface describing graphql errors
+ *
+ * NOTE: This class implements {@link java.io.Serializable} and hence it can be serialised and placed into a distributed cache.  However we
+ * are not aiming to provide long term compatibility and do not intend for you to place this serialised data into permanent storage,
+ * with times frames that cross graphql-java versions.  While we don't change things unnecessarily,  we may inadvertently break
+ * the serialised compatibility across versions.
+ *
  * @see <a href="https://facebook.github.io/graphql/#sec-Errors">GraphQL Spec - 7.2.2 Errors</a>
  */
 @PublicApi
-public interface GraphQLError {
+public interface GraphQLError extends Serializable {
 
     /**
      * @return a description of the error intended for the developer as a guide to understand and correct the error

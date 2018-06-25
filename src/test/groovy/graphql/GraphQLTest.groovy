@@ -38,6 +38,7 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLTypeReference.typeRef
@@ -168,7 +169,7 @@ class GraphQLTest extends Specification {
                         .type(GraphQLString)
                         .argument(newArgument()
                         .name("arg")
-                        .type(new GraphQLNonNull(GraphQLString))))
+                        .type(GraphQLNonNull.nonNull(GraphQLString))))
                         .build()
         ).build()
 
@@ -193,7 +194,7 @@ class GraphQLTest extends Specification {
                 .name("QueryType")
                 .field(newFieldDefinition()
                 .name("set")
-                .type(new GraphQLList(GraphQLString))
+                .type(list(GraphQLString))
                 .dataFetcher({ set })))
                 .build()
 
@@ -435,7 +436,7 @@ class GraphQLTest extends Specification {
         given:
         def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
-                .field(newInputObjectField().name("list").type(new GraphQLList(GraphQLString)).build())
+                .field(newInputObjectField().name("list").type(list(GraphQLString)).build())
                 .build()
         GraphQLSchema schema = newSchema().query(
                 newObject()
@@ -466,7 +467,7 @@ class GraphQLTest extends Specification {
         given:
         def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
-                .field(newInputObjectField().name("list").type(new GraphQLList(GraphQLString)).build())
+                .field(newInputObjectField().name("list").type(list(GraphQLString)).build())
                 .build()
         GraphQLSchema schema = newSchema().query(
                 newObject()
@@ -498,7 +499,7 @@ class GraphQLTest extends Specification {
         given:
         def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
-                .field(newInputObjectField().name("list").type(new GraphQLList(GraphQLString)).build())
+                .field(newInputObjectField().name("list").type(list(GraphQLString)).build())
                 .build()
         GraphQLSchema schema = newSchema().query(
                 newObject()

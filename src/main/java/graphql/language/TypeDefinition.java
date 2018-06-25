@@ -17,5 +17,6 @@ public interface TypeDefinition<T extends TypeDefinition> extends Definition<T>{
     /**
      * @return a deep copy of this type definition
      */
+    @Override
     T deepCopy();
 }

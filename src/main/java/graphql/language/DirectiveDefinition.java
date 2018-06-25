@@ -23,6 +23,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
         this.directiveLocations = directiveLocations;
     }
 
+    @Override
     public String getName() {
         return name;
     }

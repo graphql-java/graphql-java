@@ -8,7 +8,6 @@ import graphql.language.Node;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLNonNull;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
@@ -17,6 +16,8 @@ import graphql.validation.ValidationErrorType;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
 
 public class ProvidedNonNullArguments extends AbstractRule {
 
@@ -33,7 +34,7 @@ public class ProvidedNonNullArguments extends AbstractRule {
         for (GraphQLArgument graphQLArgument : fieldDef.getArguments()) {
             Argument argument = argumentMap.get(graphQLArgument.getName());
             if (argument == null
-                    && (graphQLArgument.getType() instanceof GraphQLNonNull)
+                    && (isNonNull(graphQLArgument.getType()))
                     && (graphQLArgument.getDefaultValue() == null)) {
                 String message = String.format("Missing field argument %s", graphQLArgument.getName());
                 addError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message);
@@ -59,7 +60,7 @@ public class ProvidedNonNullArguments extends AbstractRule {
         for (GraphQLArgument graphQLArgument : graphQLDirective.getArguments()) {
             Argument argument = argumentMap.get(graphQLArgument.getName());
             if (argument == null
-                    && (graphQLArgument.getType() instanceof GraphQLNonNull)) {
+                    && (isNonNull(graphQLArgument.getType()))) {
                 String message = String.format("Missing directive argument %s", graphQLArgument.getName());
                 addError(ValidationErrorType.MissingDirectiveArgument, directive.getSourceLocation(), message);
             }

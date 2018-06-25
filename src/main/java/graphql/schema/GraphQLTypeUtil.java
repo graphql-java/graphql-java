@@ -16,11 +16,11 @@ public class GraphQLTypeUtil {
     public static String getUnwrappedTypeName(GraphQLType type) {
         StringBuilder sb = new StringBuilder();
         if (isNonNull(type)) {
-            sb.append(getUnwrappedTypeName(((GraphQLNonNull) type).getWrappedType()));
+            sb.append(getUnwrappedTypeName(unwrapOne(type)));
             sb.append("!");
         } else if (isList(type)) {
             sb.append("[");
-            sb.append(getUnwrappedTypeName(((GraphQLList) type).getWrappedType()));
+            sb.append(getUnwrappedTypeName(unwrapOne(type)));
             sb.append("]");
         } else {
             sb.append(type.getName());
@@ -106,6 +106,35 @@ public class GraphQLTypeUtil {
     }
 
     /**
+     * Returns true if the given type is a leaf type, that it cant contain any more fields
+     *
+     * @param type the type to check
+     *
+     * @return true if the given type is a leaf type
+     */
+    public static boolean isLeaf(GraphQLType type) {
+        GraphQLUnmodifiedType unmodifiedType = unwrapAll(type);
+        return
+                unmodifiedType instanceof GraphQLScalarType
+                        || unmodifiedType instanceof GraphQLEnumType;
+    }
+
+    /**
+     * Returns true if the given type is an input type
+     *
+     * @param type the type to check
+     *
+     * @return true if the given type is an input type
+     */
+    public static boolean isInput(GraphQLType type) {
+        GraphQLUnmodifiedType unmodifiedType = unwrapAll(type);
+        return
+                unmodifiedType instanceof GraphQLScalarType
+                        || unmodifiedType instanceof GraphQLEnumType
+                        || unmodifiedType instanceof GraphQLInputObjectType;
+    }
+
+    /**
      * Unwraps one layer of the type or just returns the type again if its not a wrapped type
      *
      * @param type the type to unwrapOne
@@ -128,10 +157,10 @@ public class GraphQLTypeUtil {
      *
      * @return the underlying type
      */
-    public static GraphQLType unwrapAll(GraphQLType type) {
+    public static GraphQLUnmodifiedType unwrapAll(GraphQLType type) {
         while (true) {
             if (isNotWrapped(type)) {
-                return type;
+                return (GraphQLUnmodifiedType) type;
             }
             type = unwrapOne(type);
         }

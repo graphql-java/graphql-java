@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+
 public class AstValueHelper {
 
     /**
@@ -56,13 +59,13 @@ public class AstValueHelper {
             return null;
         }
 
-        if (type instanceof GraphQLNonNull) {
+        if (isNonNull(type)) {
             return handleNonNull(value, (GraphQLNonNull) type);
         }
 
         // Convert JavaScript array to GraphQL list. If the GraphQLType is a list, but
         // the value is not an array, convert the value using the list's item type.
-        if (type instanceof GraphQLList) {
+        if (isList(type)) {
             return handleList(value, (GraphQLList) type);
         }
 

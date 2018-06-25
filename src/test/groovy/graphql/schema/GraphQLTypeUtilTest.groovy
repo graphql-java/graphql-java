@@ -11,6 +11,8 @@ class GraphQLTypeUtilTest extends Specification {
 
     def heroType = newObject().name("Hero").build()
 
+    def inputType = GraphQLInputObjectType.newInputObject().name("Input").build()
+
     def enumType = GraphQLEnumType.newEnum().name("enumType").value("X").build()
 
     def "test it builds its wrapped types"() {
@@ -118,5 +120,51 @@ class GraphQLTypeUtilTest extends Specification {
         then:
         type == GraphQLString
 
+    }
+
+    def "isLeaf tests"() {
+        when:
+        def type = GraphQLString
+
+        then:
+        GraphQLTypeUtil.isLeaf(type)
+
+        when:
+        type = enumType
+
+        then:
+        GraphQLTypeUtil.isLeaf(type)
+
+        when:
+        type = heroType
+
+        then:
+        !GraphQLTypeUtil.isLeaf(type)
+    }
+
+    def "isInput tests"() {
+        when:
+        def type = GraphQLString
+
+        then:
+        GraphQLTypeUtil.isInput(type)
+
+        when:
+        type = inputType
+
+        then:
+        GraphQLTypeUtil.isInput(type)
+
+        when:
+        type = enumType
+
+        then:
+        GraphQLTypeUtil.isInput(type)
+
+        when:
+        type = heroType
+
+        then:
+        !GraphQLTypeUtil.isInput(type)
     }
 }

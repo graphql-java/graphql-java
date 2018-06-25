@@ -95,7 +95,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
             ExecutionResultImpl executionResult = new ExecutionResultImpl(results, executionContext.getErrors());
             overallResult.complete(executionResult);
 
-            overallResult.whenComplete(executionStrategyCtx::onCompleted);
+            overallResult = overallResult.whenComplete(executionStrategyCtx::onCompleted);
             return overallResult;
         } catch (InterruptedException | ExecutionException e) {
             executionStrategyCtx.onCompleted(null, e);

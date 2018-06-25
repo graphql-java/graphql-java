@@ -1,20 +1,5 @@
 package graphql.schema.idl;
 
-import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.language.AstPrinter;
@@ -32,15 +17,28 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 
 /**
@@ -81,7 +79,9 @@ public class SchemaPrinter {
             return includeExtendedScalars;
         }
 
-        public boolean isIncludeSchemaDefinition() { return includeSchemaDefinition; }
+        public boolean isIncludeSchemaDefinition() {
+            return includeSchemaDefinition;
+        }
 
         public static Options defaultOptions() {
             return new Options(false, false, false, false);
@@ -400,28 +400,7 @@ public class SchemaPrinter {
     }
 
     String typeString(GraphQLType rawType) {
-        StringBuilder sb = new StringBuilder();
-        Stack<String> stack = new Stack<>();
-
-        GraphQLType type = rawType;
-        while (true) {
-            if (type instanceof GraphQLNonNull) {
-                type = ((GraphQLNonNull) type).getWrappedType();
-                stack.push("!");
-            } else if (type instanceof GraphQLList) {
-                type = ((GraphQLList) type).getWrappedType();
-                sb.append("[");
-                stack.push("]");
-            } else {
-                sb.append(type.getName());
-                break;
-            }
-        }
-        while (!stack.isEmpty()) {
-            sb.append(stack.pop());
-        }
-        return sb.toString();
-
+        return GraphQLTypeUtil.getUnwrappedTypeName(rawType);
     }
 
     String argsString(List<GraphQLArgument> arguments) {

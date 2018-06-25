@@ -10,8 +10,17 @@ import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 
-
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.*
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getDeferredQuery
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedData
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedDeferredData
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedExpensiveData
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedExpensiveDeferredData
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedListOfDeferredData
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveDeferredQuery
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveQuery
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getQuery
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.setupDataLoaderRegistry
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.setupGraphQL
 
 class DataLoaderPerformanceTest extends Specification {
 

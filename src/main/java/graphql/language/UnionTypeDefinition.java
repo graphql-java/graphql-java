@@ -23,6 +23,7 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
         this.memberTypes = memberTypes;
     }
 
+    @Override
     public List<Directive> getDirectives() {
         return directives;
     }

@@ -11,6 +11,7 @@ import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class VariableDefaultValuesOfCorrectTypeTest extends Specification {
 
@@ -20,7 +21,7 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
 
     def "NonNull type, but with default value"() {
         given:
-        GraphQLNonNull nonNullType = new GraphQLNonNull(GraphQLString)
+        GraphQLNonNull nonNullType = nonNull(GraphQLString)
         StringValue defaultValue = new StringValue("string")
         VariableDefinition variableDefinition = new VariableDefinition("var", new TypeName("String"), defaultValue)
         validationContext.getInputType() >> nonNullType
