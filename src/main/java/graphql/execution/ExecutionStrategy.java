@@ -111,6 +111,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * {@link #execute(ExecutionContext, ExecutionStrategyParameters)} is the entry point of the execution strategy.
  */
 @PublicSpi
+@SuppressWarnings("FutureReturnValueIgnored")
 public abstract class ExecutionStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);

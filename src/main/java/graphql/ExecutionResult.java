@@ -8,6 +8,7 @@ import java.util.Map;
  * This simple value class represents the result of performing a graphql query.
  */
 @PublicApi
+@SuppressWarnings("TypeParameterUnusedInFormals")
 public interface ExecutionResult {
 
     /**

@@ -13,12 +13,13 @@ import graphql.language.SourceLocation;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import java.util.stream.Collectors;
 
 @Internal
@@ -78,7 +79,7 @@ class FieldValidationSupport {
             if (parentEnvironment == null) {
                 return ExecutionPath.rootPath().segment(traversalEnv.getField().getName());
             } else {
-                Stack<QueryVisitorFieldEnvironment> stack = new Stack<>();
+                Deque<QueryVisitorFieldEnvironment> stack = new ArrayDeque<>();
                 stack.push(traversalEnv);
                 while (parentEnvironment != null) {
                     stack.push(parentEnvironment);
@@ -119,6 +120,7 @@ class FieldValidationSupport {
         }
 
         @Override
+        @SuppressWarnings("TypeParameterUnusedInFormals")
         public <T> T getArgumentValue(String argumentName) {
             //noinspection unchecked
             return (T) traversalEnv.getArguments().get(argumentName);

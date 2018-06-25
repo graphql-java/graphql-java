@@ -13,6 +13,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 @Internal
+@SuppressWarnings("FutureReturnValueIgnored")
 public class Async {
 
     @FunctionalInterface

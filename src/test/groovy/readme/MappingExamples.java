@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@SuppressWarnings({"Convert2Lambda", "unused"})
+@SuppressWarnings({"Convert2Lambda", "unused", "ClassCanBeStatic"})
 public class MappingExamples {
 
     interface ProductInfo {

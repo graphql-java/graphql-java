@@ -4,6 +4,7 @@ import java.util.Collection;
 
 import static java.lang.String.format;
 
+@SuppressWarnings("TypeParameterUnusedInFormals")
 @Internal
 public class Assert {
 

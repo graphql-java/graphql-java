@@ -12,8 +12,11 @@ import graphql.schema.idl.TypeDefinitionRegistry;
 import graphql.schema.idl.TypeRuntimeWiring;
 import org.dataloader.DataLoaderRegistry;
 
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+
+import static java.nio.charset.Charset.defaultCharset;
 
 public class BatchCompare {
     public static void main(String[] args) throws Exception {
@@ -55,7 +58,8 @@ public class BatchCompare {
     }
 
     GraphQLSchema buildBatchedSchema() {
-        Reader streamReader = new InputStreamReader(getClass().getClassLoader().getResourceAsStream("storesanddepartments.graphqls"));
+        InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("storesanddepartments.graphqls");
+        Reader streamReader = new InputStreamReader(resourceAsStream, defaultCharset());
         TypeDefinitionRegistry typeDefinitionRegistry = new SchemaParser().parse(streamReader);
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(TypeRuntimeWiring.newTypeWiring("Query")
@@ -73,7 +77,8 @@ public class BatchCompare {
     }
 
     GraphQLSchema buildDataLoaderSchema() {
-        Reader streamReader = new InputStreamReader(getClass().getClassLoader().getResourceAsStream("storesanddepartments.graphqls"));
+        InputStream resourceAsStream = getClass().getClassLoader().getResourceAsStream("storesanddepartments.graphqls");
+        Reader streamReader = new InputStreamReader(resourceAsStream, defaultCharset());
         TypeDefinitionRegistry typeDefinitionRegistry = new SchemaParser().parse(streamReader);
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(TypeRuntimeWiring.newTypeWiring("Query")

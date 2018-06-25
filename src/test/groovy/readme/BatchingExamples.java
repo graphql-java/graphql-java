@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
-@SuppressWarnings({"unused", "Convert2Lambda", "ConstantConditions"})
+@SuppressWarnings({"unused", "Convert2Lambda", "ConstantConditions", "ClassCanBeStatic"})
 public class BatchingExamples {
 
 

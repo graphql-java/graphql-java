@@ -76,6 +76,7 @@ public class TypeInfo {
      *
      * @return the decorated type
      */
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends GraphQLType> T decorate(GraphQLType objectType) {
 
         GraphQLType out = objectType;
