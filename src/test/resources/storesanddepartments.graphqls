@@ -1,6 +1,7 @@
 # used in graphql.execution.instrumentation.dataloader.BatchCompareDataFetchers
 schema {
     query: Query
+    mutation: Query
 }
 
 type Query {

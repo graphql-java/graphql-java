@@ -44,8 +44,6 @@ public class FieldLevelTrackingApproach {
 
         private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
 
-        private int deferredRootLevel;
-
         CallStack() {
             expectedStrategyCallsPerLevel.put(1, 1);
         }
@@ -106,18 +104,25 @@ public class FieldLevelTrackingApproach {
         }
 
         public void clearAndMarkCurrentLevelAsReady(int level) {
+            clear();
+            markLevelAsReady(level);
+        }
+
+        private void clear() {
             expectedFetchCountPerLevel.clear();
             fetchCountPerLevel.clear();
             expectedStrategyCallsPerLevel.clear();
             happenedStrategyCallsPerLevel.clear();
             happenedOnFieldValueCallsPerLevel.clear();
             dispatchedLevels.clear();
+        }
 
-            // make sure the level is ready
+        private void markLevelAsReady(int level) {
             expectedFetchCountPerLevel.put(level, 1);
             expectedStrategyCallsPerLevel.put(level, 1);
             happenedStrategyCallsPerLevel.put(level, 1);
         }
+
     }
 
     public FieldLevelTrackingApproach(Logger log, DataLoaderRegistry dataLoaderRegistry) {
