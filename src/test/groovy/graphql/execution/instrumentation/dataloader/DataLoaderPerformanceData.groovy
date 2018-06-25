@@ -58,6 +58,20 @@ class DataLoaderPerformanceData {
             }
             """
 
+    static def mutation = """
+            mutation { 
+                shops { 
+                    id name 
+                    departments { 
+                        id name 
+                        products { 
+                            id name 
+                        } 
+                    } 
+                } 
+            }
+            """
+
     static def expectedExpensiveData = [
             shops         : [[name                : "Shop 1",
                               departments         : [[name: "Department 1", products: [[name: "Product 1"]], expensiveProducts: [[name: "Product 1"]]],

@@ -19,6 +19,7 @@ import static graphql.execution.instrumentation.dataloader.DataLoaderPerformance
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveDeferredQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getQuery
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.mutation
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.setupDataLoaderRegistry
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.setupGraphQL
 
@@ -145,5 +146,23 @@ class DataLoaderPerformanceTest extends Specification {
         //  with deferred results, we don't achieve the same efficiency
         BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
         BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+    }
+
+
+    def "data loader will work with mutations"() {
+        when:
+
+        BatchCompareDataFetchers.useAsyncBatchLoading(true)
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(mutation).build()
+        def result = graphQL.execute(executionInput)
+
+        then:
+        result.data == expectedData
+        //
+        //  eg 1 for shops-->departments and one for departments --> products
+        BatchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        BatchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+
     }
 }
