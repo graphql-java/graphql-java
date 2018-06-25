@@ -120,7 +120,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLUnionType(this, context);
     }
 

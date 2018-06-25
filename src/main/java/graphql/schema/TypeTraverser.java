@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.Internal;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
@@ -14,11 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import static graphql.util.TraversalControl.CONTINUE;
+
+@Internal
 public class TypeTraverser {
 
 
     private final Function<? super GraphQLType, ? extends List<GraphQLType>> getChildren;
-    private static final GraphqlTypeVisitor NO_OP = new GraphqlTypeVisitorStub();
+    private static final GraphQLTypeVisitor NO_OP = new GraphQLTypeVisitorStub();
 
     public TypeTraverser(Function<? super GraphQLType, ? extends List<GraphQLType>> getChildren) {
         this.getChildren = getChildren;
@@ -28,18 +32,18 @@ public class TypeTraverser {
         this(GraphQLType::getChildren);
     }
 
-    public TraverserResult depthFirst(GraphqlTypeVisitor graphqlTypeVisitor, GraphQLType root) {
-        return depthFirst(graphqlTypeVisitor, Collections.singletonList(root));
+    public TraverserResult depthFirst(GraphQLTypeVisitor graphQLTypeVisitor, GraphQLType root) {
+        return depthFirst(graphQLTypeVisitor, Collections.singletonList(root));
     }
 
-    public TraverserResult depthFirst(final GraphqlTypeVisitor graphqlTypeVisitor, Collection<? extends GraphQLType> roots) {
-        return depthFirst(initTraverser(), new TraverserDelegateVisitor(graphqlTypeVisitor), roots);
+    public TraverserResult depthFirst(final GraphQLTypeVisitor graphQLTypeVisitor, Collection<? extends GraphQLType> roots) {
+        return depthFirst(initTraverser(), new TraverserDelegateVisitor(graphQLTypeVisitor), roots);
     }
 
-    public TraverserResult depthFirst(final GraphqlTypeVisitor graphqlTypeVisitor,
+    public TraverserResult depthFirst(final GraphQLTypeVisitor graphQLTypeVisitor,
                                       Collection<? extends GraphQLType> roots,
                                       Map<String, GraphQLType> types) {
-        return depthFirst(initTraverser().rootVar(TypeTraverser.class, types), new TraverserDelegateVisitor(graphqlTypeVisitor), roots);
+        return depthFirst(initTraverser().rootVar(TypeTraverser.class, types), new TraverserDelegateVisitor(graphQLTypeVisitor), roots);
     }
 
     public TraverserResult depthFirst(final Traverser<GraphQLType> traverser,
@@ -48,28 +52,21 @@ public class TypeTraverser {
         return doTraverse(traverser, roots, traverserDelegateVisitor);
     }
 
-    protected Traverser<GraphQLType> initTraverser() {
+    private Traverser<GraphQLType> initTraverser() {
         return Traverser.depthFirst(getChildren);
     }
 
-    protected  TraverserResult doTraverse(Traverser<GraphQLType> traverser,  Collection<? extends GraphQLType> roots, TraverserDelegateVisitor traverserDelegateVisitor) {
+    private  TraverserResult doTraverse(Traverser<GraphQLType> traverser,  Collection<? extends GraphQLType> roots, TraverserDelegateVisitor traverserDelegateVisitor) {
         return traverser.traverse(roots,traverserDelegateVisitor);
     }
 
-    class TraverserDelegateVisitor implements TraverserVisitor<GraphQLType> {
-        private final GraphqlTypeVisitor before;
-        private final GraphqlTypeVisitor after;
+    private static class TraverserDelegateVisitor implements TraverserVisitor<GraphQLType> {
+        private final GraphQLTypeVisitor before;
 
+        TraverserDelegateVisitor(GraphQLTypeVisitor delegate) {
+            this.before = delegate;
 
-        TraverserDelegateVisitor(GraphqlTypeVisitor delegate) {
-            this(delegate,NO_OP);
         }
-
-        TraverserDelegateVisitor(GraphqlTypeVisitor delegateBefore, GraphqlTypeVisitor delegateAfter) {
-            this.before = delegateBefore;
-            this.after = delegateAfter;
-        }
-
 
         @Override
         public TraversalControl enter(TraverserContext<GraphQLType> context) {
@@ -78,7 +75,7 @@ public class TypeTraverser {
 
         @Override
         public TraversalControl leave(TraverserContext<GraphQLType> context) {
-            return context.thisNode().accept(context, after);
+            return CONTINUE;
         }
     }
 

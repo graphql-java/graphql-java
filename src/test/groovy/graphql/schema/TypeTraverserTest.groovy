@@ -13,7 +13,7 @@ class TypeTraverserTest  extends Specification {
 
         when:
 
-              def visitor = new GraphqlTestingVisitor()
+              def visitor = new GraphQLTestingVisitor()
               new TypeTraverser().depthFirst(visitor, Scalars.GraphQLString)
 
         then:
@@ -24,7 +24,7 @@ class TypeTraverserTest  extends Specification {
     }
 
     def "reachable string argument type"() {
-        when:  def visitor = new GraphqlTestingVisitor()
+        when:  def visitor = new GraphQLTestingVisitor()
 
                new TypeTraverser().depthFirst(visitor, GraphQLArgument.newArgument()
                                                                       .name("Test")
@@ -35,7 +35,7 @@ class TypeTraverserTest  extends Specification {
     }
 
     def "reachable number argument type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
               new TypeTraverser().depthFirst(visitor, GraphQLArgument.newArgument()
                         .name("Test")
                         .type(Scalars.GraphQLInt)
@@ -46,7 +46,7 @@ class TypeTraverserTest  extends Specification {
     }
 
     def "reachable enum type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor, GraphQLEnumType
                 .newEnum()
                 .name("foo")
@@ -61,7 +61,7 @@ class TypeTraverserTest  extends Specification {
     }
 
     def "reachable field definition type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor,GraphQLFieldDefinition.newFieldDefinition()
                 .name("foo")
                 .type(Scalars.GraphQLString)
@@ -72,7 +72,7 @@ class TypeTraverserTest  extends Specification {
     }
 
     def "reachable input object field type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor,GraphQLInputObjectField.newInputObjectField()
                 .name("bar")
                 .type(Scalars.GraphQLString)
@@ -82,7 +82,7 @@ class TypeTraverserTest  extends Specification {
     }
 
     def "reachable input object type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor,GraphQLInputObjectType.newInputObject()
                 .name("foo")
                 .field(GraphQLInputObjectField.newInputObjectField()
@@ -98,7 +98,7 @@ class TypeTraverserTest  extends Specification {
 
 
     def "reachable interface type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor,GraphQLInterfaceType.newInterface()
                 .name("foo")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
@@ -114,7 +114,7 @@ class TypeTraverserTest  extends Specification {
     }
 
     def "reachable list type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor,GraphQLList.list(Scalars.GraphQLString))
         then:
         visitor.getStack() == ["list: String","fallback: null",
@@ -123,7 +123,7 @@ class TypeTraverserTest  extends Specification {
 
 
     def "reachable nonNull type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor,GraphQLNonNull.nonNull(Scalars.GraphQLString))
         then:
         visitor.getStack() == ["nonNull: String","fallback: null",
@@ -131,7 +131,7 @@ class TypeTraverserTest  extends Specification {
     }
 
     def "reachable object type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor,GraphQLObjectType.newObject()
                 .name("myObject")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
@@ -153,14 +153,14 @@ class TypeTraverserTest  extends Specification {
 
 
     def "reachable reference type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor,GraphQLTypeReference.typeRef("something"))
         then:
         visitor.getStack() == ["reference: something","fallback: something"]
     }
 
     def "reachable union type"() {
-        when: def visitor = new GraphqlTestingVisitor()
+        when: def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor,GraphQLUnionType.newUnionType()
                 .name("foo")
                 .possibleType(GraphQLObjectType.newObject().name("dummy").build())
@@ -184,7 +184,7 @@ class TypeTraverserTest  extends Specification {
     }
 
 
-    class GraphqlTestingVisitor extends GraphqlTypeVisitorStub {
+    class GraphQLTestingVisitor extends GraphQLTypeVisitorStub {
 
        def stack = []
 

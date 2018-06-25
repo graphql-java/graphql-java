@@ -78,11 +78,12 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         type = (GraphQLInputType) new SchemaUtil().resolveTypeReference(type, typeMap);
     }
 
-    @Override
+
     void replaceType(GraphQLInputType type) {
         this.type = type;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -148,7 +149,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLArgument(this, context);
     }
 

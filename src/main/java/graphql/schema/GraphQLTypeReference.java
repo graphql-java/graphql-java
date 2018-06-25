@@ -41,7 +41,7 @@ public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType, Gra
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLTypeReference(this, context);
     }
 }

@@ -83,7 +83,7 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLNonNull(this, context);
     }
 

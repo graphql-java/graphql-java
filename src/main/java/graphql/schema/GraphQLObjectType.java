@@ -146,7 +146,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     }
 
     @Override
-    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphqlTypeVisitor visitor) {
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
         return visitor.visitGraphQLObjectType(this, context);
     }
 

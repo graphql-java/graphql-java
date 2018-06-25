@@ -6,11 +6,11 @@ import graphql.util.TraverserContext;
 import static graphql.util.TraversalControl.CONTINUE;
 
 /**
- * Base implementation of {@link GraphqlTypeVisitor} for convenience.
+ * Base implementation of {@link GraphQLTypeVisitor} for convenience.
  * Overwrite only required methods and/or {@link #visitGraphQLType(GraphQLType, TraverserContext)} as default fallback.
  */
 @PublicApi
-public class GraphqlTypeVisitorStub implements GraphqlTypeVisitor {
+public class GraphQLTypeVisitorStub implements GraphQLTypeVisitor {
     @Override
     public TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLType> context) {
         return visitGraphQLType(node,context);

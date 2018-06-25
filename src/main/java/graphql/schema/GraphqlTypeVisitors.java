@@ -20,7 +20,7 @@ class GraphqlTypeVisitors {
     private GraphqlTypeVisitors() {}
 
 
-     static class LeafVisitor extends GraphqlTypeVisitorStub {
+     static class LeafVisitor extends GraphQLTypeVisitorStub {
 
         @Override
         public TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLType> context) {
@@ -52,7 +52,7 @@ class GraphqlTypeVisitors {
 
     }
 
-    static class CollectingVisitor extends GraphqlTypeVisitorStub {
+    static class CollectingVisitor extends GraphQLTypeVisitorStub {
 
         private final Map<String,GraphQLType> result = new HashMap<>();
 
@@ -158,7 +158,7 @@ class GraphqlTypeVisitors {
 
     }
 
-    static class RefResolvingVisitor extends GraphqlTypeVisitorStub {
+    static class RefResolvingVisitor extends GraphQLTypeVisitorStub {
 
         final private GraphQLType resolvedType;
         public RefResolvingVisitor(GraphQLType resolvedType) {
@@ -199,7 +199,7 @@ class GraphqlTypeVisitors {
 
     }
 
-    static class TypeResolvingVisitor extends GraphqlTypeVisitorStub {
+    static class TypeResolvingVisitor extends GraphQLTypeVisitorStub {
 
         private final Map<String, GraphQLType> typeMap;
 
