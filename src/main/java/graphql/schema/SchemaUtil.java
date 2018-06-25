@@ -3,8 +3,6 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.introspection.Introspection;
-import static graphql.schema.GraphqlTypeVisitors.CollectingVisitor;
-import static graphql.schema.GraphqlTypeVisitors.TypeResolvingVisitor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,7 +35,7 @@ public class SchemaUtil {
             add(Introspection.__Schema);
         }};
 
-        CollectingVisitor visitor = new CollectingVisitor();
+        GraphQLTypeCollectingVisitor visitor = new GraphQLTypeCollectingVisitor();
         TRAVERSER.depthFirst(visitor, roots);
         return visitor.getResult();
     }
@@ -101,6 +99,6 @@ public class SchemaUtil {
 
     void replaceTypeReferences(GraphQLSchema schema) {
         final Map<String, GraphQLType> typeMap = schema.getTypeMap();
-        TRAVERSER.depthFirst(new TypeResolvingVisitor(typeMap),typeMap.values());
+        TRAVERSER.depthFirst(new GraphQLTypeResolvingVisitor(typeMap),typeMap.values());
     }
 }
