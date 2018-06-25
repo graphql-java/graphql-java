@@ -22,7 +22,6 @@ public class TypeTraverser {
 
 
     private final Function<? super GraphQLType, ? extends List<GraphQLType>> getChildren;
-    private static final GraphQLTypeVisitor NO_OP = new GraphQLTypeVisitorStub();
 
     public TypeTraverser(Function<? super GraphQLType, ? extends List<GraphQLType>> getChildren) {
         this.getChildren = getChildren;
