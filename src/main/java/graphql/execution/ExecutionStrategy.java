@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLError;
 import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TypeMismatchError;
@@ -845,18 +846,21 @@ public abstract class ExecutionStrategy {
 
     protected ExecutionResult handleNonNullException(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result, Throwable e) {
         ExecutionResult executionResult = null;
-        if (e instanceof NonNullableFieldWasNullException) {
-            assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e, result);
+        List<GraphQLError> errors = new ArrayList<>(executionContext.getErrors());
+        Throwable underlyingException = e;
+        if (e instanceof CompletionException) {
+            underlyingException = e.getCause();
+        }
+        if (underlyingException instanceof NonNullableFieldWasNullException) {
+            assertNonNullFieldPrecondition((NonNullableFieldWasNullException) underlyingException, result);
             if (!result.isDone()) {
-                executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
+                executionResult = new ExecutionResultImpl(null, errors);
                 result.complete(executionResult);
             }
-        } else if (e instanceof CompletionException && e.getCause() instanceof NonNullableFieldWasNullException) {
-            assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause(), result);
-            if (!result.isDone()) {
-                executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
-                result.complete(executionResult);
-            }
+        } else if (underlyingException instanceof AbortExecutionException) {
+            AbortExecutionException abortException = (AbortExecutionException) underlyingException;
+            executionResult = abortException.toExecutionResult();
+            result.complete(executionResult);
         } else {
             result.completeExceptionally(e);
         }

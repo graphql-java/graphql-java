@@ -476,11 +476,7 @@ public class GraphQL {
             executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
             return executionResult;
         } catch (AbortExecutionException abortException) {
-            ExecutionResultImpl executionResult = new ExecutionResultImpl(abortException);
-            if (!abortException.getUnderlyingErrors().isEmpty()) {
-                executionResult = new ExecutionResultImpl(abortException.getUnderlyingErrors());
-            }
-            return CompletableFuture.completedFuture(executionResult);
+            return CompletableFuture.completedFuture(abortException.toExecutionResult());
         }
     }
 
