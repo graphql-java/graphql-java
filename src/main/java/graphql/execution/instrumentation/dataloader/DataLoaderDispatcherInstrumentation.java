@@ -3,6 +3,7 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.execution.AsyncExecutionStrategy;
+import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
@@ -15,6 +16,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperat
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
@@ -99,12 +101,25 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-        ExecutionStrategy queryStrategy = parameters.getExecutionContext().getQueryStrategy();
-        if (!(queryStrategy instanceof AsyncExecutionStrategy)) {
+        if (!isDataLoaderCompatibleExecution(parameters.getExecutionContext())) {
             DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
             state.setAggressivelyBatching(false);
         }
         return new SimpleInstrumentationContext<>();
+    }
+
+    private boolean isDataLoaderCompatibleExecution(ExecutionContext executionContext) {
+        //
+        // currently we only support Query operations and ONLY with AsyncExecutionStrategy as the query ES
+        // This may change in the future but this is the fix for now
+        //
+        if (executionContext.getOperationDefinition().getOperation() == OperationDefinition.Operation.QUERY) {
+            ExecutionStrategy queryStrategy = executionContext.getQueryStrategy();
+            if (queryStrategy instanceof AsyncExecutionStrategy) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
