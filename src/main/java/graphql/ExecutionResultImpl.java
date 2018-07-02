@@ -52,6 +52,7 @@ public class ExecutionResultImpl implements ExecutionResult {
     }
 
     @Override
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T> T getData() {
         //noinspection unchecked
         return (T) data;

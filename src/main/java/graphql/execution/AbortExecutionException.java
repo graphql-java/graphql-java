@@ -1,6 +1,8 @@
 package graphql.execution;
 
 import graphql.ErrorType;
+import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.PublicApi;
@@ -59,5 +61,19 @@ public class AbortExecutionException extends GraphQLException implements GraphQL
      */
     public List<GraphQLError> getUnderlyingErrors() {
         return underlyingErrors;
+    }
+
+    /**
+     * This is useful for turning this abort signal into an execution result which
+     * is an error state with the underlying errors in it.
+     *
+     * @return an excution result with the errors from this exception
+     */
+    public ExecutionResult toExecutionResult() {
+        ExecutionResult executionResult = new ExecutionResultImpl(this);
+        if (!this.getUnderlyingErrors().isEmpty()) {
+            executionResult = new ExecutionResultImpl(this.getUnderlyingErrors());
+        }
+        return executionResult;
     }
 }

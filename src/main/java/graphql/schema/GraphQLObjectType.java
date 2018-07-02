@@ -80,10 +80,12 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         return new ArrayList<>(directives);
     }
 
+    @Override
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }
 
+    @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
         return new ArrayList<>(fieldDefinitionsByName.values());
     }
@@ -103,6 +105,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     }
 
 
+    @Override
     public String getName() {
         return name;
     }

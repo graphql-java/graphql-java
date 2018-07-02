@@ -1,7 +1,9 @@
 package graphql.language;
 
 
-public class SourceLocation {
+import java.io.Serializable;
+
+public class SourceLocation implements Serializable {
 
     private final int line;
     private final int column;

@@ -45,11 +45,13 @@ public class NodeTraverser {
         nodeTraverser.rootVars(rootVars);
         TraverserVisitor<Node> traverserVisitor = new TraverserVisitor<Node>() {
 
+            @Override
             public TraversalControl enter(TraverserContext<Node> context) {
                 context.setVar(LeaveOrEnter.class, LeaveOrEnter.ENTER);
                 return context.thisNode().accept(context, nodeVisitor);
             }
 
+            @Override
             public TraversalControl leave(TraverserContext<Node> context) {
                 context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
                 return context.thisNode().accept(context, nodeVisitor);
@@ -58,6 +60,7 @@ public class NodeTraverser {
         nodeTraverser.traverse(roots, traverserVisitor);
     }
 
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public static <T> T oneVisitWithResult(Node node, NodeVisitor nodeVisitor) {
         SimpleTraverserContext<Node> context = new SimpleTraverserContext<>(node);
         node.accept(context, nodeVisitor);

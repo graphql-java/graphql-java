@@ -42,6 +42,7 @@ public class InstrumentationExecutionStrategyParameters {
         return executionStrategyParameters;
     }
 
+    @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked
         return (T) instrumentationState;

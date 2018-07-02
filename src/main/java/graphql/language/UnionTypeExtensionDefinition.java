@@ -11,6 +11,7 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
         super(name, directives, memberTypes);
     }
 
+    @Override
     public UnionTypeExtensionDefinition deepCopy() {
         return new UnionTypeExtensionDefinition(getName(),
                 deepCopy(getDirectives()),

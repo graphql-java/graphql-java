@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static graphql.StarWarsSchema.queryType;
 
-@SuppressWarnings({"unused", "UnnecessaryLocalVariable", "Convert2Lambda"})
+@SuppressWarnings({"unused", "UnnecessaryLocalVariable", "Convert2Lambda", "unused", "ClassCanBeStatic", "TypeParameterUnusedInFormals"})
 public class ExecutionExamples {
 
     public static void main(String[] args) throws Exception {
@@ -58,7 +58,7 @@ public class ExecutionExamples {
         List<GraphQLError> errors = executionResult.getErrors();
     }
 
-    @SuppressWarnings("Convert2MethodRef")
+    @SuppressWarnings({"Convert2MethodRef","unused","FutureReturnValueIgnored"})
     private void simpleAsyncQueryExecution() throws Exception {
         GraphQL graphQL = buildSchema();
 

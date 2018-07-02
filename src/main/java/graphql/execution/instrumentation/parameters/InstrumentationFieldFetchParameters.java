@@ -33,6 +33,7 @@ public class InstrumentationFieldFetchParameters extends InstrumentationFieldPar
      *
      * @return a new parameters object with the new state
      */
+    @Override
     public InstrumentationFieldFetchParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationFieldFetchParameters(
                 this.getExecutionContext(), this.getField(), this.getEnvironment(),

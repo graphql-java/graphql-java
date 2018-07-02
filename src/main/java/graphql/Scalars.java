@@ -191,7 +191,7 @@ public class Scalars {
         public String parseLiteral(Object input) {
             if (!(input instanceof StringValue)) {
                 throw new CoercingParseLiteralException(
-                        "Expected AST type 'IntValue' but was '" + typeName(input) + "'."
+                        "Expected AST type 'StringValue' but was '" + typeName(input) + "'."
                 );
             }
             return ((StringValue) input).getValue();

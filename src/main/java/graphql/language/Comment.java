@@ -1,6 +1,8 @@
 package graphql.language;
 
-public class Comment {
+import java.io.Serializable;
+
+public class Comment implements Serializable {
     public final String content;
     public final SourceLocation sourceLocation;
 

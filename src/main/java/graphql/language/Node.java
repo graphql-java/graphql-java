@@ -4,9 +4,18 @@ package graphql.language;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.io.Serializable;
 import java.util.List;
 
-public interface Node<T extends Node> {
+/**
+ * The base interface for virtually all graphql language elements
+ *
+ * NOTE: This class implements {@link java.io.Serializable} and hence it can be serialised and placed into a distributed cache.  However we
+ * are not aiming to provide long term compatibility and do not intend for you to place this serialised data into permanent storage,
+ * with times frames that cross graphql-java versions.  While we don't change things unnecessarily,  we may inadvertently break
+ * the serialised compatibility across versions.
+ */
+public interface Node<T extends Node> extends Serializable {
 
     /**
      * @return a list of the children of this node

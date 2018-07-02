@@ -26,42 +26,50 @@ public class ArgumentValidationUtil extends ValidationUtil {
         argumentValue = argument.getValue();
     }
 
+    @Override
     protected void handleNullError(Value value, GraphQLType type) {
         errorMessage = "must not be null";
         argumentValue = value;
     }
 
+    @Override
     protected void handleScalarError(Value value, GraphQLScalarType type) {
         errorMessage = "is not a valid '%s'";
         arguments.add(type.getName());
         argumentValue = value;
     }
 
+    @Override
     protected void handleEnumError(Value value, GraphQLEnumType type) {
         errorMessage = "is not a valid '%s'";
         arguments.add(type.getName());
         argumentValue = value;
     }
 
+    @Override
     protected void handleNotObjectError(Value value, GraphQLInputObjectType type) {
         errorMessage = "must be an object type";
     }
 
+    @Override
     protected void handleMissingFieldsError(Value value, GraphQLInputObjectType type, Set<String> missingFields) {
         errorMessage = "is missing required fields '%s'";
         arguments.add(missingFields);
     }
 
+    @Override
     protected void handleExtraFieldError(Value value, GraphQLInputObjectType type, ObjectField objectField) {
         errorMessage = "contains a field not in '%s': '%s'";
         arguments.add(type.getName());
         arguments.add(objectField.getName());
     }
 
+    @Override
     protected void handleFieldNotValidError(ObjectField objectField, GraphQLInputObjectType type) {
         argumentNames.add(0, objectField.getName());
     }
 
+    @Override
     protected void handleFieldNotValidError(Value value, GraphQLType type, int index) {
         argumentNames.add(0, String.format("[%s]", index));
     }

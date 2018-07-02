@@ -17,7 +17,6 @@ import graphql.language.VariableDefinition
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 
@@ -27,6 +26,8 @@ import static graphql.StarWarsSchema.droidType
 import static graphql.StarWarsSchema.queryType
 import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.language.OperationDefinition.Operation.QUERY
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class TraversalContextTest extends Specification {
 
@@ -53,7 +54,7 @@ class TraversalContextTest extends Specification {
     def "SelectionSet saves current output type as parent"() {
         given:
         SelectionSet selectionSet = new SelectionSet()
-        traversalContext.outputTypeStack.add(new GraphQLNonNull(droidType))
+        traversalContext.outputTypeStack.add(nonNull(droidType))
 
         when:
         traversalContext.enter(selectionSet, [])
@@ -218,7 +219,7 @@ class TraversalContextTest extends Specification {
 
     def "array value saves input type"() {
         given:
-        GraphQLNonNull graphQLList = new GraphQLNonNull(new GraphQLList(GraphQLString))
+        GraphQLNonNull graphQLList = nonNull(list(GraphQLString))
         traversalContext.inputTypeStack.add(graphQLList)
         ArrayValue arrayValue = new ArrayValue([new StringValue("string")])
 

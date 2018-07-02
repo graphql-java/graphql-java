@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLError;
 import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TypeMismatchError;
@@ -54,6 +55,7 @@ import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import static graphql.schema.GraphQLTypeUtil.isList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
@@ -110,6 +112,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * {@link #execute(ExecutionContext, ExecutionStrategyParameters)} is the entry point of the execution strategy.
  */
 @PublicSpi
+@SuppressWarnings("FutureReturnValueIgnored")
 public abstract class ExecutionStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
@@ -166,7 +169,7 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     protected CompletableFuture<ExecutionResult> resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        return resolveFieldWithInfo(executionContext,parameters).thenCompose(FieldValueInfo::getFieldValue);
+        return resolveFieldWithInfo(executionContext, parameters).thenCompose(FieldValueInfo::getFieldValue);
     }
 
     /**
@@ -391,7 +394,7 @@ public abstract class ExecutionStrategy {
         if (result == null) {
             fieldValue = completeValueForNull(parameters);
             return FieldValueInfo.newFieldValueInfo(NULL).fieldValue(fieldValue).build();
-        } else if (fieldType instanceof GraphQLList) {
+        } else if (isList(fieldType)) {
             return completeValueForList(executionContext, parameters, result);
         } else if (fieldType instanceof GraphQLScalarType) {
             fieldValue = completeValueForScalar(executionContext, parameters, (GraphQLScalarType) fieldType, result);
@@ -843,18 +846,21 @@ public abstract class ExecutionStrategy {
 
     protected ExecutionResult handleNonNullException(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result, Throwable e) {
         ExecutionResult executionResult = null;
-        if (e instanceof NonNullableFieldWasNullException) {
-            assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e, result);
+        List<GraphQLError> errors = new ArrayList<>(executionContext.getErrors());
+        Throwable underlyingException = e;
+        if (e instanceof CompletionException) {
+            underlyingException = e.getCause();
+        }
+        if (underlyingException instanceof NonNullableFieldWasNullException) {
+            assertNonNullFieldPrecondition((NonNullableFieldWasNullException) underlyingException, result);
             if (!result.isDone()) {
-                executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
+                executionResult = new ExecutionResultImpl(null, errors);
                 result.complete(executionResult);
             }
-        } else if (e instanceof CompletionException && e.getCause() instanceof NonNullableFieldWasNullException) {
-            assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause(), result);
-            if (!result.isDone()) {
-                executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
-                result.complete(executionResult);
-            }
+        } else if (underlyingException instanceof AbortExecutionException) {
+            AbortExecutionException abortException = (AbortExecutionException) underlyingException;
+            executionResult = abortException.toExecutionResult();
+            result.complete(executionResult);
         } else {
             result.completeExceptionally(e);
         }

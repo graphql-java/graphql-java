@@ -10,10 +10,12 @@ import graphql.language.FragmentDefinition;
 import java.util.List;
 import java.util.Map;
 
+
 /**
  * A DataFetchingEnvironment instance of passed to a {@link DataFetcher} as a execution context and its
  * the place where you can find out information to help you resolve a data value given a graphql field input
  */
+@SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
 public interface DataFetchingEnvironment {
 

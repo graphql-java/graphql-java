@@ -7,6 +7,7 @@ import graphql.execution.instrumentation.InstrumentationState;
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
+@SuppressWarnings("TypeParameterUnusedInFormals")
 public class InstrumentationExecuteOperationParameters {
     private final ExecutionContext executionContext;
     private final InstrumentationState instrumentationState;

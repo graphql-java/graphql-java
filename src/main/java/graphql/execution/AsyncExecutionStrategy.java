@@ -43,6 +43,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     }
 
     @Override
+    @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -112,6 +113,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         return false;
     }
 
+    @SuppressWarnings("FutureReturnValueIgnored")
     private Supplier<CompletableFuture<ExecutionResult>> deferredExecutionResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         return () -> {
             GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().get(0));
@@ -128,7 +130,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 fieldCtx.onFieldValueInfo(fieldValueInfo);
 
                 CompletableFuture<ExecutionResult> execResultFuture = fieldValueInfo.getFieldValue();
-                execResultFuture.whenComplete(fieldCtx::onCompleted);
+                execResultFuture = execResultFuture.whenComplete(fieldCtx::onCompleted);
                 Async.copyResults(execResultFuture, result);
             });
             return result;

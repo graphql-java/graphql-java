@@ -27,8 +27,8 @@ public class TypeReferenceSchema {
 
     public static GraphQLUnionType PetType = newUnionType()
             .name("Pet")
-            .possibleType(new GraphQLTypeReference(CatType.getName()))
-            .possibleType(new GraphQLTypeReference(DogType.getName()))
+            .possibleType(GraphQLTypeReference.typeRef(CatType.getName()))
+            .possibleType(GraphQLTypeReference.typeRef(DogType.getName()))
             .typeResolver(new TypeResolverProxy())
             .build();
 
@@ -46,8 +46,8 @@ public class TypeReferenceSchema {
                     .type(GraphQLString))
             .field(newFieldDefinition()
                     .name("pet")
-                    .type(new GraphQLTypeReference(PetType.getName())))
-            .withInterface(new GraphQLTypeReference(NamedType.getName()))
+                    .type(GraphQLTypeReference.typeRef(PetType.getName())))
+            .withInterface(GraphQLTypeReference.typeRef(NamedType.getName()))
             .build();
 
     public static GraphQLFieldDefinition exists = newFieldDefinition()
@@ -55,12 +55,12 @@ public class TypeReferenceSchema {
             .type(GraphQLBoolean)
             .argument(GraphQLArgument.newArgument()
                     .name("person")
-                    .type(new GraphQLTypeReference("Person_Input")))
+                    .type(GraphQLTypeReference.typeRef("Person_Input")))
             .build();
 
     public static GraphQLFieldDefinition find = newFieldDefinition()
             .name("find")
-            .type(new GraphQLTypeReference("Person"))
+            .type(GraphQLTypeReference.typeRef("Person"))
             .argument(GraphQLArgument.newArgument()
                     .name("name")
                     .type(GraphQLString))

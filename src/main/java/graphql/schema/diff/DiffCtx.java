@@ -6,7 +6,9 @@ import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.schema.diff.reporting.DifferenceReporter;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
@@ -17,7 +19,7 @@ import java.util.Stack;
 @Internal
 class DiffCtx {
     final List<String> examinedTypes = new ArrayList<>();
-    final Stack<String> currentTypes = new Stack<>();
+    final Deque<String> currentTypes = new ArrayDeque<>();
     private final DifferenceReporter reporter;
     final Document oldDoc;
     final Document newDoc;

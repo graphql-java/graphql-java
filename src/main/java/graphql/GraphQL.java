@@ -476,11 +476,7 @@ public class GraphQL {
             executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
             return executionResult;
         } catch (AbortExecutionException abortException) {
-            ExecutionResultImpl executionResult = new ExecutionResultImpl(abortException);
-            if (!abortException.getUnderlyingErrors().isEmpty()) {
-                executionResult = new ExecutionResultImpl(abortException.getUnderlyingErrors());
-            }
-            return CompletableFuture.completedFuture(executionResult);
+            return CompletableFuture.completedFuture(abortException.toExecutionResult());
         }
     }
 
@@ -556,7 +552,7 @@ public class GraphQL {
 
         log.debug("Executing '{}'. operation name: '{}'. query: '{}'. variables '{}'", executionId, executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
         CompletableFuture<ExecutionResult> future = execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
-        future.whenComplete((result, throwable) -> {
+        future = future.whenComplete((result, throwable) -> {
             if (throwable != null) {
                 log.error(String.format("Execution '%s' threw exception when executing : query : '%s'. variables '%s'", executionId, executionInput.getQuery(), executionInput.getVariables()), throwable);
             } else {
