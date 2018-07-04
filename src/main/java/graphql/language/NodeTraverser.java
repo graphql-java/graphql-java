@@ -1,5 +1,6 @@
 package graphql.language;
 
+import graphql.PublicApi;
 import graphql.util.SimpleTraverserContext;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
@@ -12,8 +13,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * Lets you traverse a {@link Node} tree.
+ */
+@PublicApi
 public class NodeTraverser {
 
+
+    /**
+     * Used by depthFirst to indicate via {@link TraverserContext#getVar(Class)} if the visit happens inside the ENTER or LEAVE phase.
+     */
     public enum LeaveOrEnter {
         LEAVE,
         ENTER
@@ -32,18 +41,24 @@ public class NodeTraverser {
     }
 
 
+    /**
+     * depthFirst traversal with a enter/leave phase.
+     *
+     * @param nodeVisitor
+     * @param root
+     */
     public void depthFirst(NodeVisitor nodeVisitor, Node root) {
-        doTraverse(nodeVisitor, Collections.singleton(root));
+        depthFirst(nodeVisitor, Collections.singleton(root));
     }
 
+    /**
+     * depthFirst traversal with a enter/leave phase.
+     *
+     * @param nodeVisitor
+     * @param roots
+     */
     public void depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
-        doTraverse(nodeVisitor, roots);
-    }
-
-    private void doTraverse(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
-        Traverser<Node> nodeTraverser = Traverser.depthFirst(this.getChildren);
-        nodeTraverser.rootVars(rootVars);
-        TraverserVisitor<Node> traverserVisitor = new TraverserVisitor<Node>() {
+        TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
@@ -56,7 +71,83 @@ public class NodeTraverser {
                 context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
                 return context.thisNode().accept(context, nodeVisitor);
             }
+
         };
+        doTraverse(roots, nodeTraverserVisitor);
+    }
+
+    /**
+     * Version of {@link #preOrder(NodeVisitor, Collection)} with one root.
+     *
+     * @param nodeVisitor
+     * @param root
+     */
+    public void preOrder(NodeVisitor nodeVisitor, Node root) {
+        preOrder(nodeVisitor, Collections.singleton(root));
+    }
+
+    /**
+     * Pre-Order traversal: This is a specialized version of depthFirst with only the enter phase.
+     *
+     * @param nodeVisitor
+     * @param roots
+     */
+    public void preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+        TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
+
+            @Override
+            public TraversalControl enter(TraverserContext<Node> context) {
+                context.setVar(LeaveOrEnter.class, LeaveOrEnter.ENTER);
+                return context.thisNode().accept(context, nodeVisitor);
+            }
+
+            @Override
+            public TraversalControl leave(TraverserContext<Node> context) {
+                return TraversalControl.CONTINUE;
+            }
+
+        };
+        doTraverse(roots, nodeTraverserVisitor);
+
+    }
+
+    /**
+     * Version of {@link #postOrder(NodeVisitor, Collection)} with one root.
+     *
+     * @param nodeVisitor
+     * @param root
+     */
+    public void postOrder(NodeVisitor nodeVisitor, Node root) {
+        postOrder(nodeVisitor, Collections.singleton(root));
+    }
+
+    /**
+     * Post-Order traversal: This is a specialized version of depthFirst with only the leave phase.
+     *
+     * @param nodeVisitor
+     * @param roots
+     */
+    public void postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+        TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
+
+            @Override
+            public TraversalControl enter(TraverserContext<Node> context) {
+                return TraversalControl.CONTINUE;
+            }
+
+            @Override
+            public TraversalControl leave(TraverserContext<Node> context) {
+                context.setVar(LeaveOrEnter.class, LeaveOrEnter.LEAVE);
+                return context.thisNode().accept(context, nodeVisitor);
+            }
+
+        };
+        doTraverse(roots, nodeTraverserVisitor);
+    }
+
+    private void doTraverse(Collection<? extends Node> roots, TraverserVisitor traverserVisitor) {
+        Traverser<Node> nodeTraverser = Traverser.depthFirst(this.getChildren);
+        nodeTraverser.rootVars(rootVars);
         nodeTraverser.traverse(roots, traverserVisitor);
     }
 

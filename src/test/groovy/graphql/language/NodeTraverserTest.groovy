@@ -37,6 +37,50 @@ class NodeTraverserTest extends Specification {
         0 * nodeVisitor._
     }
 
+    def "traverse nodes in pre-order"() {
+        given:
+        Field leaf = new Field("leaf")
+        SelectionSet rootSelectionSet = new SelectionSet(Arrays.asList(leaf))
+        Field root = new Field("root")
+        root.setSelectionSet(rootSelectionSet)
+
+        NodeTraverser nodeTraverser = new NodeTraverser()
+        NodeVisitor nodeVisitor = Mock(NodeVisitor)
+        when:
+        nodeTraverser.preOrder(nodeVisitor, root)
+
+        then:
+        1 * nodeVisitor.visitField(root, { isEnter(it) }) >> TraversalControl.CONTINUE
+        then:
+        1 * nodeVisitor.visitSelectionSet(rootSelectionSet, { isEnter(it) }) >> TraversalControl.CONTINUE
+        then:
+        1 * nodeVisitor.visitField(leaf, { isEnter(it) }) >> TraversalControl.CONTINUE
+        then:
+        0 * nodeVisitor._
+    }
+
+    def "traverse nodes in post-order"() {
+        given:
+        Field leaf = new Field("leaf")
+        SelectionSet rootSelectionSet = new SelectionSet(Arrays.asList(leaf))
+        Field root = new Field("root")
+        root.setSelectionSet(rootSelectionSet)
+
+        NodeTraverser nodeTraverser = new NodeTraverser()
+        NodeVisitor nodeVisitor = Mock(NodeVisitor)
+        when:
+        nodeTraverser.postOrder(nodeVisitor, root)
+
+        then:
+        1 * nodeVisitor.visitField(leaf, { isLeave(it) }) >> TraversalControl.CONTINUE
+        then:
+        1 * nodeVisitor.visitSelectionSet(rootSelectionSet, { isLeave(it) }) >> TraversalControl.CONTINUE
+        then:
+        1 * nodeVisitor.visitField(root, { isLeave(it) }) >> TraversalControl.CONTINUE
+        then:
+        0 * nodeVisitor._
+    }
+
     def "uses root vars"() {
         given:
         Field root = new Field("root")
