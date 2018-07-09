@@ -3,8 +3,11 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
+import static graphql.Assert.assertNotNull;
 
 @PublicApi
 public class FieldValueInfo {
@@ -23,6 +26,7 @@ public class FieldValueInfo {
     private final List<FieldValueInfo> fieldValueInfos;
 
     private FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<ExecutionResult> fieldValue, List<FieldValueInfo> fieldValueInfos) {
+        assertNotNull(fieldValueInfos, "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
         this.fieldValue = fieldValue;
         this.fieldValueInfos = fieldValueInfos;
@@ -57,7 +61,7 @@ public class FieldValueInfo {
     public static class Builder {
         private CompleteValueType completeValueType;
         private CompletableFuture<ExecutionResult> executionResultFuture;
-        private List<FieldValueInfo> listInfos;
+        private List<FieldValueInfo> listInfos = new ArrayList<>();
 
         public Builder(CompleteValueType completeValueType) {
             this.completeValueType = completeValueType;
@@ -74,6 +78,7 @@ public class FieldValueInfo {
         }
 
         public Builder fieldValueInfos(List<FieldValueInfo> listInfos) {
+            assertNotNull(listInfos, "fieldValueInfos can't be null");
             this.listInfos = listInfos;
             return this;
         }
