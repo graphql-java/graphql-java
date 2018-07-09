@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition> {
@@ -73,5 +74,54 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitScalarTypeDefinition(this, context);
+    }
+
+    public static Builder newScalarTypeDefinition() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+        private String name;
+        private Description description;
+        private List<Directive> directives;
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder description(Description description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public ScalarTypeDefinition build() {
+            ScalarTypeDefinition scalarTypeDefinition = new ScalarTypeDefinition(name, directives);
+            scalarTypeDefinition.setSourceLocation(sourceLocation);
+            scalarTypeDefinition.setComments(comments);
+            scalarTypeDefinition.setDescription(description);
+            return scalarTypeDefinition;
+        }
     }
 }

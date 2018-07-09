@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<ObjectField> {
@@ -60,5 +61,47 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitObjectField(this, context);
+    }
+
+    public static Builder newObjectField() {
+        return new Builder();
+    }
+
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private String name;
+        private List<Comment> comments = Collections.emptyList();
+        private Value value;
+
+        private Builder() {
+        }
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder value(Value value) {
+            this.value = value;
+            return this;
+        }
+
+        public ObjectField build() {
+            ObjectField objectField = new ObjectField(name, value);
+            objectField.setSourceLocation(sourceLocation);
+            objectField.setComments(comments);
+            return objectField;
+        }
     }
 }

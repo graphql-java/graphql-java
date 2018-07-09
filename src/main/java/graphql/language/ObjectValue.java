@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ObjectValue extends AbstractNode<ObjectValue> implements Value<ObjectValue> {
@@ -56,5 +57,41 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitObjectValue(this, context);
+    }
+
+    public static Builder newObjectValue() {
+        return new Builder();
+    }
+
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<ObjectField> objectFields = new ArrayList<>();
+        private List<Comment> comments = Collections.emptyList();
+
+        private Builder() {
+        }
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder objectFields(List<ObjectField> objectFields) {
+            this.objectFields = objectFields;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public ObjectValue build() {
+            ObjectValue objectValue = new ObjectValue(objectFields);
+            objectValue.setSourceLocation(sourceLocation);
+            objectValue.setComments(comments);
+            return objectValue;
+        }
     }
 }

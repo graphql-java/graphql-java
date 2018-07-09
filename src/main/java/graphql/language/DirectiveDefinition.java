@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
@@ -81,5 +82,60 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitDirectiveDefinition(this, context);
+    }
+
+    public static Builder newDirectiveDefinition() {
+        return new Builder();
+    }
+
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+        private String name;
+        private Description description;
+        private List<InputValueDefinition> inputValueDefinitions;
+        private List<DirectiveLocation> directiveLocations;
+
+        private Builder() {
+        }
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder description(Description description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder inputValueDefinitions(List<InputValueDefinition> inputValueDefinitions) {
+            this.inputValueDefinitions = inputValueDefinitions;
+            return this;
+        }
+
+        public Builder directiveLocations(List<DirectiveLocation> directiveLocations) {
+            this.directiveLocations = directiveLocations;
+            return this;
+        }
+
+        public DirectiveDefinition build() {
+            DirectiveDefinition directiveDefinition = new DirectiveDefinition(name, inputValueDefinitions, directiveLocations);
+            directiveDefinition.setSourceLocation(sourceLocation);
+            directiveDefinition.setComments(comments);
+            directiveDefinition.setDescription(description);
+            return directiveDefinition;
+        }
     }
 }

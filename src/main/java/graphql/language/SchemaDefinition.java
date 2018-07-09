@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -74,5 +75,47 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitSchemaDefinition(this, context);
+    }
+
+    public static Builder newSchemaDefintion() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+        private List<Directive> directives;
+        private List<OperationTypeDefinition> operationTypeDefinitions;
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public Builder operationTypeDefinitions(List<OperationTypeDefinition> operationTypeDefinitions) {
+            this.operationTypeDefinitions = operationTypeDefinitions;
+            return this;
+        }
+
+        public SchemaDefinition build() {
+            SchemaDefinition schemaDefinition = new SchemaDefinition(directives, operationTypeDefinitions);
+            schemaDefinition.setSourceLocation(sourceLocation);
+            schemaDefinition.setComments(comments);
+            return schemaDefinition;
+        }
     }
 }

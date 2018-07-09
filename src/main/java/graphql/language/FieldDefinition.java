@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
@@ -100,5 +101,66 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitFieldDefinition(this, context);
+    }
+
+    public static Builder newFieldDefintion() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private String name;
+        private List<Comment> comments = Collections.emptyList();
+        private Type type;
+        private Description description;
+        private List<InputValueDefinition> inputValueDefinitions;
+        private List<Directive> directives;
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder type(Type type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder description(Description description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder inputValueDefinitions(List<InputValueDefinition> inputValueDefinitions) {
+            this.inputValueDefinitions = inputValueDefinitions;
+            return this;
+        }
+
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public FieldDefinition build() {
+            FieldDefinition fieldDefinition = new FieldDefinition(name, type, inputValueDefinitions, directives);
+            fieldDefinition.setSourceLocation(sourceLocation);
+            fieldDefinition.setComments(comments);
+            fieldDefinition.setDescription(description);
+            return fieldDefinition;
+        }
     }
 }

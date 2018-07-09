@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class StringValue extends AbstractNode<StringValue> implements Value<StringValue> {
@@ -55,5 +56,41 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitStringValue(this, context);
+    }
+
+    public static Builder newStringValue() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private String value;
+        private List<Comment> comments = Collections.emptyList();
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder value(String value) {
+            this.value = value;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public StringValue build() {
+            StringValue stringValue = new StringValue(value);
+            stringValue.setSourceLocation(sourceLocation);
+            stringValue.setComments(comments);
+            return stringValue;
+        }
     }
 }

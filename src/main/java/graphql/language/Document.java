@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Document extends AbstractNode<Document> {
@@ -57,5 +58,42 @@ public class Document extends AbstractNode<Document> {
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitDocument(this, context);
+    }
+
+    public static Builder newDocument() {
+        return new Builder();
+    }
+
+
+    public static final class Builder implements NodeBuilder {
+        private List<Definition> definitions;
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+
+        private Builder() {
+        }
+
+        public Builder definitions(List<Definition> definitions) {
+            this.definitions = definitions;
+            return this;
+        }
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Document build() {
+            Document document = new Document();
+            document.setDefinitions(definitions);
+            document.setSourceLocation(sourceLocation);
+            document.setComments(comments);
+            return document;
+        }
     }
 }

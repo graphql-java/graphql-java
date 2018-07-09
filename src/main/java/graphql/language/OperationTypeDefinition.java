@@ -6,6 +6,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Internal
@@ -72,5 +73,48 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitOperationTypeDefinition(this, context);
+    }
+
+    public static Builder newOperationTypeDefinition() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+        private String name;
+        private Type type;
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder type(Type type) {
+            this.type = type;
+            return this;
+        }
+
+        public OperationTypeDefinition build() {
+            OperationTypeDefinition operationTypeDefinition = new OperationTypeDefinition(name);
+            operationTypeDefinition.setSourceLocation(sourceLocation);
+            operationTypeDefinition.setComments(comments);
+            operationTypeDefinition.setType(type);
+            return operationTypeDefinition;
+        }
     }
 }

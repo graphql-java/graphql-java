@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class BooleanValue extends AbstractNode<BooleanValue> implements Value<BooleanValue> {
@@ -55,5 +56,41 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements Value<Bo
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitBooleanValue(this, context);
+    }
+
+    public static Builder newBooleanValue() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private boolean value;
+        private List<Comment> comments = Collections.emptyList();
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder value(boolean value) {
+            this.value = value;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public BooleanValue build() {
+            BooleanValue booleanValue = new BooleanValue(value);
+            booleanValue.setSourceLocation(sourceLocation);
+            booleanValue.setComments(comments);
+            return booleanValue;
+        }
     }
 }

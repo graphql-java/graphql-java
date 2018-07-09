@@ -194,13 +194,15 @@ public class IntrospectionResultToSchema {
     InputObjectTypeDefinition createInputObject(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("INPUT_OBJECT"), "wrong input");
 
-        InputObjectTypeDefinition inputObjectTypeDefinition = new InputObjectTypeDefinition((String) input.get("name"));
-        inputObjectTypeDefinition.setComments(toComment((String) input.get("description")));
+        InputObjectTypeDefinition.Builder inputObjectTypeDefinition = InputObjectTypeDefinition.newInputObjectDefinition()
+                .name((String) input.get("name"))
+                .comments(toComment((String) input.get("description")));
+
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("inputFields");
         List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(fields);
-        inputObjectTypeDefinition.getInputValueDefinitions().addAll(inputValueDefinitions);
+        inputObjectTypeDefinition.inputValueDefinitions(inputValueDefinitions);
 
-        return inputObjectTypeDefinition;
+        return inputObjectTypeDefinition.build();
     }
 
     @SuppressWarnings("unchecked")

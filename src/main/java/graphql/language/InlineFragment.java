@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -108,5 +109,56 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitInlineFragment(this, context);
+    }
+
+    public static Builder newInlineFragment() {
+        return new Builder();
+    }
+
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+        private TypeName typeCondition;
+        private List<Directive> directives;
+        private SelectionSet selectionSet;
+
+        private Builder() {
+        }
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder typeCondition(TypeName typeCondition) {
+            this.typeCondition = typeCondition;
+            return this;
+        }
+
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public Builder selectionSet(SelectionSet selectionSet) {
+            this.selectionSet = selectionSet;
+            return this;
+        }
+
+        public InlineFragment build() {
+            InlineFragment inlineFragment = new InlineFragment();
+            inlineFragment.setSourceLocation(sourceLocation);
+            inlineFragment.setComments(comments);
+            inlineFragment.setTypeCondition(typeCondition);
+            inlineFragment.setDirectives(directives);
+            inlineFragment.setSelectionSet(selectionSet);
+            return inlineFragment;
+        }
     }
 }

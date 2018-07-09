@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNullType> {
@@ -61,5 +62,51 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitNonNullType(this, context);
+    }
+
+    public static Builder newNonNullType() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private Type type;
+        private List<Comment> comments = Collections.emptyList();
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder type(ListType type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder type(TypeName type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public NonNullType build() {
+            NonNullType nonNullType = new NonNullType();
+            nonNullType.setSourceLocation(sourceLocation);
+            if (type instanceof ListType) {
+                nonNullType.setType((ListType) type);
+            } else {
+                nonNullType.setType((TypeName) type);
+            }
+            nonNullType.setComments(comments);
+            return nonNullType;
+        }
     }
 }

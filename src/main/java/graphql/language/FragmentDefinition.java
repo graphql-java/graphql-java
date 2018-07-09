@@ -6,6 +6,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,19 +20,11 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     private List<Directive> directives;
     private SelectionSet selectionSet;
 
-    public FragmentDefinition() {
-        this(null, null, new ArrayList<>(), null);
+    private FragmentDefinition() {
     }
 
-    public FragmentDefinition(String name, TypeName typeCondition) {
-        this(name, typeCondition, new ArrayList<>(), null);
-    }
 
-    public FragmentDefinition(String name, TypeName typeCondition, SelectionSet selectionSet) {
-        this(name, typeCondition, new ArrayList<>(), selectionSet);
-    }
-
-    public FragmentDefinition(String name, TypeName typeCondition, List<Directive> directives, SelectionSet selectionSet) {
+    private FragmentDefinition(String name, TypeName typeCondition, List<Directive> directives, SelectionSet selectionSet) {
         this.name = name;
         this.typeCondition = typeCondition;
         this.directives = directives;
@@ -114,5 +107,63 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor nodeVisitor) {
         return nodeVisitor.visitFragmentDefinition(this, context);
+    }
+
+    public static Builder newBuilder() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+        private String name;
+        private TypeName typeCondition;
+        private List<Directive> directives = new ArrayList<>();
+        private SelectionSet selectionSet;
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder typeCondition(TypeName typeCondition) {
+            this.typeCondition = typeCondition;
+            return this;
+        }
+
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public Builder selectionSet(SelectionSet selectionSet) {
+            this.selectionSet = selectionSet;
+            return this;
+        }
+
+        public FragmentDefinition build() {
+            FragmentDefinition fragmentDefinition = new FragmentDefinition();
+            fragmentDefinition.setSourceLocation(sourceLocation);
+            fragmentDefinition.setComments(comments);
+            fragmentDefinition.setName(name);
+            fragmentDefinition.setTypeCondition(typeCondition);
+            fragmentDefinition.setDirectives(directives);
+            fragmentDefinition.setSelectionSet(selectionSet);
+            return fragmentDefinition;
+        }
     }
 }

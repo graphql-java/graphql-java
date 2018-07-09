@@ -76,4 +76,46 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitDirective(this, context);
     }
+
+    public static Builder newDirective() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+        private String name;
+        private List<Argument> arguments = new ArrayList<>();
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder arguments(List<Argument> arguments) {
+            this.arguments = arguments;
+            return this;
+        }
+
+        public Directive build() {
+            Directive directive = new Directive(name, arguments);
+            directive.setSourceLocation(sourceLocation);
+            directive.setComments(comments);
+            return directive;
+        }
+    }
 }

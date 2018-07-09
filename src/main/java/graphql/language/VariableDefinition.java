@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
@@ -13,15 +14,12 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     private Type type;
     private Value defaultValue;
 
-    public VariableDefinition() {
+    private VariableDefinition() {
         this(null, null, null);
     }
 
-    public VariableDefinition(String name, Type type) {
-        this(name, type, null);
-    }
 
-    public VariableDefinition(String name, Type type, Value defaultValue) {
+    private VariableDefinition(String name, Type type, Value defaultValue) {
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
@@ -91,5 +89,57 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitVariableDefinition(this, context);
+    }
+
+
+    public static Builder newVariableDefinition() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private String name;
+        private List<Comment> comments = Collections.emptyList();
+        private Type type;
+        private Value defaultValue;
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder type(Type type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder defaultValue(Value defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
+        public VariableDefinition build() {
+            VariableDefinition variableDefinition = new VariableDefinition();
+            variableDefinition.setSourceLocation(sourceLocation);
+            variableDefinition.setName(name);
+            variableDefinition.setComments(comments);
+            variableDefinition.setType(type);
+            variableDefinition.setDefaultValue(defaultValue);
+            return variableDefinition;
+        }
     }
 }

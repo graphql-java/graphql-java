@@ -6,6 +6,7 @@ import graphql.util.TraverserContext;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> {
@@ -55,5 +56,41 @@ public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> 
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitIntValue(this, context);
+    }
+
+    public static Builder newIntValue() {
+        return new Builder();
+    }
+
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private BigInteger value;
+        private List<Comment> comments = Collections.emptyList();
+
+        private Builder() {
+        }
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder value(BigInteger value) {
+            this.value = value;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public IntValue build() {
+            IntValue intValue = new IntValue(value);
+            intValue.setSourceLocation(sourceLocation);
+            intValue.setComments(comments);
+            return intValue;
+        }
     }
 }

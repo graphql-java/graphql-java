@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
@@ -53,5 +54,41 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitTypeName(this, context);
+    }
+
+    public static Builder newTypeName() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private String name;
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+
+        private Builder() {
+        }
+
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public TypeName build() {
+            TypeName typeName = new TypeName(name);
+            typeName.setSourceLocation(sourceLocation);
+            typeName.setComments(comments);
+            return typeName;
+        }
     }
 }

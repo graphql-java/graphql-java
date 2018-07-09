@@ -38,13 +38,13 @@ public class Parser {
         parser.removeErrorListeners();
         parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
         parser.setErrorHandler(new BailErrorStrategy());
-        GraphqlParser.DocumentContext document = parser.document();
+        GraphqlParser.DocumentContext documentContext = parser.document();
 
 
-        GraphqlAntlrToLanguage antlrToLanguage = new GraphqlAntlrToLanguage(tokens);
-        antlrToLanguage.visitDocument(document);
+        GraphqlAntlrToLanguage2 antlrToLanguage = new GraphqlAntlrToLanguage2(tokens);
+        Document doc = antlrToLanguage.createDocument(documentContext);
 
-        Token stop = document.getStop();
+        Token stop = documentContext.getStop();
         List<Token> allTokens = tokens.getTokens();
         if (stop != null && allTokens != null && !allTokens.isEmpty()) {
             Token last = allTokens.get(allTokens.size() - 1);
@@ -58,6 +58,6 @@ public class Parser {
                 throw new ParseCancellationException("There are more tokens in the query that have not been consumed");
             }
         }
-        return antlrToLanguage.getResult();
+        return doc;
     }
 }

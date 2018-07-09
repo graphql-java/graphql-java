@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class InputValueDefinition extends AbstractNode<InputValueDefinition> implements DirectivesContainer<InputValueDefinition> {
@@ -108,5 +109,66 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitInputValueDefinition(this, context);
+    }
+
+    public static Builder newInputValueDefinition() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+        private String name;
+        private Type type;
+        private Value defaultValue;
+        private Description description;
+        private List<Directive> directives;
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder type(Type type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder defaultValue(Value defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
+        public Builder description(Description description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public InputValueDefinition build() {
+            InputValueDefinition inputValueDefinition = new InputValueDefinition(name, type, defaultValue, directives);
+            inputValueDefinition.setSourceLocation(sourceLocation);
+            inputValueDefinition.setComments(comments);
+            inputValueDefinition.setDescription(description);
+            return inputValueDefinition;
+        }
     }
 }

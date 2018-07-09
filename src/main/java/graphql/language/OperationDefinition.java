@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition> {
@@ -131,5 +132,70 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitOperationDefinition(this, context);
+    }
+
+    public static Builder newOperationDefinition() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+        private String name;
+        private Operation operation;
+        private List<VariableDefinition> variableDefinitions = new ArrayList<>();
+        private List<Directive> directives = new ArrayList<>();
+        private SelectionSet selectionSet;
+
+        private Builder() {
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder operation(Operation operation) {
+            this.operation = operation;
+            return this;
+        }
+
+        public Builder variableDefinitions(List<VariableDefinition> variableDefinitions) {
+            this.variableDefinitions = variableDefinitions;
+            return this;
+        }
+
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public Builder selectionSet(SelectionSet selectionSet) {
+            this.selectionSet = selectionSet;
+            return this;
+        }
+
+        public OperationDefinition build() {
+            OperationDefinition operationDefinition = new OperationDefinition();
+            operationDefinition.setSourceLocation(sourceLocation);
+            operationDefinition.setComments(comments);
+            operationDefinition.setName(name);
+            operationDefinition.setOperation(operation);
+            operationDefinition.setVariableDefinitions(variableDefinitions);
+            operationDefinition.setDirectives(directives);
+            operationDefinition.setSelectionSet(selectionSet);
+            return operationDefinition;
+        }
     }
 }

@@ -5,22 +5,21 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class SelectionSet extends AbstractNode<SelectionSet> {
 
     private final List<Selection> selections = new ArrayList<>();
 
-    public List<Selection> getSelections() {
-        return selections;
-    }
-
-    public SelectionSet() {
-    }
-
-    public SelectionSet(List<Selection> selections) {
+    private SelectionSet(List<Selection> selections) {
         this.selections.addAll(selections);
     }
+
+    public List<Selection> getSelections() {
+        return new ArrayList<>(selections);
+    }
+
 
     @Override
     public List<Node> getChildren() {
@@ -55,5 +54,41 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitSelectionSet(this, context);
+    }
+
+    public static Builder newSelectionSet() {
+        return new Builder();
+    }
+
+    public static final class Builder implements NodeBuilder {
+
+        private List<Selection> selections = new ArrayList<>();
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = Collections.emptyList();
+
+        private Builder() {
+        }
+
+        public Builder selections(List<Selection> selections) {
+            this.selections = selections;
+            return this;
+        }
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public SelectionSet build() {
+            SelectionSet selectionSet = new SelectionSet(selections);
+            selectionSet.setSourceLocation(sourceLocation);
+            selectionSet.setComments(comments);
+            return selectionSet;
+        }
     }
 }
