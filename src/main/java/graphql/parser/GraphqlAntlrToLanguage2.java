@@ -475,6 +475,10 @@ public class GraphqlAntlrToLanguage2 {
         def.name(ctx.name().getText());
         newNode(def, ctx);
         def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
         return def.build();
     }
 

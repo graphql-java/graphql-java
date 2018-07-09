@@ -122,7 +122,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         private Type type;
         private Value defaultValue;
         private Description description;
-        private List<Directive> directives;
+        private List<Directive> directives = new ArrayList<>();
 
         private Builder() {
         }
