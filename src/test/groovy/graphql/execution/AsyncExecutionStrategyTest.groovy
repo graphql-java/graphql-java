@@ -1,7 +1,10 @@
 package graphql.execution
 
 import graphql.ErrorType
+import graphql.ExecutionResult
+import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
@@ -11,6 +14,7 @@ import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 
@@ -211,4 +215,67 @@ class AsyncExecutionStrategyTest extends Specification {
         result.get().getErrors().get(0).errorType == ErrorType.DataFetchingException
 
     }
+
+    def "exception in instrumentation while combining data"() {
+        GraphQLSchema schema = schema(
+                { env -> CompletableFuture.completedFuture("world") },
+                { env -> CompletableFuture.completedFuture("world2") }
+        )
+        String query = "{hello, hello2}"
+        def document = new Parser().parseDocument(query)
+        def operation = document.definitions[0] as OperationDefinition
+
+        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+                .type(schema.getQueryType())
+                .build()
+
+        ExecutionContext executionContext = new ExecutionContextBuilder()
+                .graphQLSchema(schema)
+                .executionId(ExecutionId.generate())
+                .operationDefinition(operation)
+                .instrumentation(new SimpleInstrumentation() {
+                    @Override
+                    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+                        return new ExecutionStrategyInstrumentationContext() {
+
+                            @Override
+                            void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+                                throw new RuntimeException("Exception raised from instrumentation")
+                            }
+
+                            @Override
+                            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+
+                            }
+
+                            @Override
+                            public void onCompleted(ExecutionResult result, Throwable t) {
+
+                            }
+                        }
+                    }
+                })
+                .build()
+        ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
+                .newParameters()
+                .typeInfo(typeInfo)
+                .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .build()
+
+        AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
+        when:
+        def result = asyncExecutionStrategy.execute(executionContext, executionStrategyParameters)
+
+        then: "result should be completed"
+        result.isCompletedExceptionally()
+
+        when:
+        result.join()
+
+        then: "exceptions thrown from the instrumentation should be bubbled up"
+        def ex = thrown(CompletionException)
+        ex.cause.message == "Exception raised from instrumentation"
+    }
+
+
 }
