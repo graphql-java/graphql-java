@@ -53,7 +53,7 @@ class TraversalContextTest extends Specification {
 
     def "SelectionSet saves current output type as parent"() {
         given:
-        SelectionSet selectionSet = new SelectionSet()
+        SelectionSet selectionSet = SelectionSet.newSelectionSet().build()
         traversalContext.outputTypeStack.add(nonNull(droidType))
 
         when:

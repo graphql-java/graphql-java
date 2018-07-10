@@ -84,7 +84,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = Collections.emptyList();
-        private List<Directive> directives;
+        private List<Directive> directives = new ArrayList<>();
         private List<OperationTypeDefinition> operationTypeDefinitions;
 
         private Builder() {

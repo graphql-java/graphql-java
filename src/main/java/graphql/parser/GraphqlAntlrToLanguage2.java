@@ -15,6 +15,7 @@ import graphql.language.DirectiveDefinition;
 import graphql.language.DirectiveLocation;
 import graphql.language.Document;
 import graphql.language.EnumTypeDefinition;
+import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.EnumValue;
 import graphql.language.EnumValueDefinition;
 import graphql.language.Field;
@@ -24,18 +25,22 @@ import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.InputObjectTypeDefinition;
+import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.IntValue;
 import graphql.language.InterfaceTypeDefinition;
+import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.ListType;
 import graphql.language.NodeBuilder;
 import graphql.language.NonNullType;
 import graphql.language.ObjectField;
 import graphql.language.ObjectTypeDefinition;
+import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.ObjectValue;
 import graphql.language.OperationDefinition;
 import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
+import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
@@ -45,6 +50,7 @@ import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.language.UnionTypeExtensionDefinition;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
@@ -115,7 +121,26 @@ public class GraphqlAntlrToLanguage2 {
     }
 
     private TypeDefinition createTypeExtension(GraphqlParser.TypeExtensionContext ctx) {
-        return null;
+        if (ctx.enumTypeExtensionDefinition() != null) {
+            return createEnumTypeExtensionDefinition(ctx.enumTypeExtensionDefinition());
+
+        } else if (ctx.objectTypeExtensionDefinition() != null) {
+            return createObjectTypeExtensionDefinition(ctx.objectTypeExtensionDefinition());
+
+        } else if (ctx.inputObjectTypeExtensionDefinition() != null) {
+            return createInputObjectTypeExtensionDefinition(ctx.inputObjectTypeExtensionDefinition());
+
+        } else if (ctx.interfaceTypeExtensionDefinition() != null) {
+            return createInterfaceTypeExtensionDefinition(ctx.interfaceTypeExtensionDefinition());
+
+        } else if (ctx.scalarTypeExtensionDefinition() != null) {
+            return createScalarTypeExtensionDefinition(ctx.scalarTypeExtensionDefinition());
+
+        } else if (ctx.unionTypeExtensionDefinition() != null) {
+            return createUnionTypeExtensionDefinition(ctx.unionTypeExtensionDefinition());
+        } else {
+            return assertShouldNeverHappen();
+        }
     }
 
     private TypeDefinition createTypeDefinition(GraphqlParser.TypeDefinitionContext ctx) {
@@ -365,6 +390,19 @@ public class GraphqlAntlrToLanguage2 {
         def.name(ctx.name().getText());
         newNode(def, ctx);
         def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        return def.build();
+    }
+
+    public ScalarTypeExtensionDefinition createScalarTypeExtensionDefinition(GraphqlParser.ScalarTypeExtensionDefinitionContext ctx) {
+        ScalarTypeExtensionDefinition.Builder def = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
         return def.build();
     }
 
@@ -373,6 +411,26 @@ public class GraphqlAntlrToLanguage2 {
         def.name(ctx.name().getText());
         newNode(def, ctx);
         def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
+        List<Type> implementz = new ArrayList<>();
+        while (implementsInterfacesContext != null) {
+            implementsInterfacesContext.typeName().stream().map(this::createTypeName).forEach(implementz::add);
+            implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
+        }
+        def.implementz(implementz);
+        if (ctx.fieldsDefinition() != null) {
+            def.fieldDefinitions(createFieldDefinitions(ctx.fieldsDefinition()));
+        }
+        return def.build();
+    }
+
+    public ObjectTypeExtensionDefinition createObjectTypeExtensionDefinition(GraphqlParser.ObjectTypeExtensionDefinitionContext ctx) {
+        ObjectTypeExtensionDefinition.Builder def = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
         if (ctx.directives() != null) {
             def.directives(createDirectives(ctx.directives()));
         }
@@ -442,6 +500,19 @@ public class GraphqlAntlrToLanguage2 {
         return def.build();
     }
 
+    public InterfaceTypeExtensionDefinition createInterfaceTypeExtensionDefinition(GraphqlParser.InterfaceTypeExtensionDefinitionContext ctx) {
+        InterfaceTypeExtensionDefinition.Builder def = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        if (ctx.fieldsDefinition() != null) {
+            def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
+        }
+        return def.build();
+    }
+
     public UnionTypeDefinition createUnionTypeDefinition(GraphqlParser.UnionTypeDefinitionContext ctx) {
         UnionTypeDefinition.Builder def = UnionTypeDefinition.newUnionTypeDefinition();
         def.name(ctx.name().getText());
@@ -460,11 +531,42 @@ public class GraphqlAntlrToLanguage2 {
         return def.build();
     }
 
+    public UnionTypeExtensionDefinition createUnionTypeExtensionDefinition(GraphqlParser.UnionTypeExtensionDefinitionContext ctx) {
+        UnionTypeExtensionDefinition.Builder def = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        List<Type> members = new ArrayList<>();
+        if (ctx.unionMembership() != null) {
+            GraphqlParser.UnionMembersContext unionMembersContext = ctx.unionMembership().unionMembers();
+            while (unionMembersContext != null) {
+                members.add(createTypeName(unionMembersContext.typeName()));
+                unionMembersContext = unionMembersContext.unionMembers();
+            }
+            def.memberTypes(members);
+        }
+        return def.build();
+    }
+
     public EnumTypeDefinition createEnumTypeDefinition(GraphqlParser.EnumTypeDefinitionContext ctx) {
         EnumTypeDefinition.Builder def = EnumTypeDefinition.newEnumTypeDefinition();
         def.name(ctx.name().getText());
         newNode(def, ctx);
         def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        def.enumValueDefinitions(
+                ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(Collectors.toList()));
+        return def.build();
+    }
+
+    public EnumTypeExtensionDefinition createEnumTypeExtensionDefinition(GraphqlParser.EnumTypeExtensionDefinitionContext ctx) {
+        EnumTypeExtensionDefinition.Builder def = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
         if (ctx.directives() != null) {
             def.directives(createDirectives(ctx.directives()));
         }
@@ -496,44 +598,16 @@ public class GraphqlAntlrToLanguage2 {
         return def.build();
     }
 
-//    private Void extensionTypeImpl(ParserRuleContext ctx, Definition def, ContextProperty ctxProperty) {
-//        newNode((AbstractNode) def, ctx);
-//        result.getDefinitions().add(def);
-//        addContextProperty(ctxProperty, def);
-//        super.visitChildren(ctx);
-//        popContext();
-//        return null;
-//    }
-//
-//    @Override
-//    public Void visitObjectTypeExtensionDefinition(GraphqlParser.ObjectTypeExtensionDefinitionContext ctx) {
-//        return extensionTypeImpl(ctx, new ObjectTypeExtensionDefinition(ctx.name().getText()), ContextProperty.ObjectTypeDefinition);
-//    }
-//
-//    @Override
-//    public Void visitInterfaceTypeExtensionDefinition(GraphqlParser.InterfaceTypeExtensionDefinitionContext ctx) {
-//        return extensionTypeImpl(ctx, new InterfaceTypeExtensionDefinition(ctx.name().getText()), ContextProperty.InterfaceTypeDefinition);
-//    }
-//
-//    @Override
-//    public Void visitUnionTypeExtensionDefinition(GraphqlParser.UnionTypeExtensionDefinitionContext ctx) {
-//        return extensionTypeImpl(ctx, new UnionTypeExtensionDefinition(ctx.name().getText()), ContextProperty.UnionTypeDefinition);
-//    }
-//
-//    @Override
-//    public Void visitEnumTypeExtensionDefinition(GraphqlParser.EnumTypeExtensionDefinitionContext ctx) {
-//        return extensionTypeImpl(ctx, new EnumTypeExtensionDefinition(ctx.name().getText()), ContextProperty.EnumTypeDefinition);
-//    }
-//
-//    @Override
-//    public Void visitScalarTypeExtensionDefinition(GraphqlParser.ScalarTypeExtensionDefinitionContext ctx) {
-//        return extensionTypeImpl(ctx, new ScalarTypeExtensionDefinition(ctx.name().getText()), ContextProperty.ScalarTypeDefinition);
-//    }
-//
-//    @Override
-//    public Void visitInputObjectTypeExtensionDefinition(GraphqlParser.InputObjectTypeExtensionDefinitionContext ctx) {
-//        return extensionTypeImpl(ctx, new InputObjectTypeExtensionDefinition(ctx.name().getText()), ContextProperty.InputObjectTypeDefinition);
-//    }
+    public InputObjectTypeExtensionDefinition createInputObjectTypeExtensionDefinition(GraphqlParser.InputObjectTypeExtensionDefinitionContext ctx) {
+        InputObjectTypeExtensionDefinition.Builder def = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
+        return def.build();
+    }
 
     public DirectiveDefinition createDirectiveDefinition(GraphqlParser.DirectiveDefinitionContext ctx) {
         DirectiveDefinition.Builder def = DirectiveDefinition.newDirectiveDefinition();

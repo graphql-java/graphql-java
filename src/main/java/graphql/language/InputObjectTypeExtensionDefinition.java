@@ -73,7 +73,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
             return this;
         }
 
-        public InputObjectTypeDefinition build() {
+        public InputObjectTypeExtensionDefinition build() {
             InputObjectTypeExtensionDefinition inputObjectTypeDefinition = new InputObjectTypeExtensionDefinition(name, directives, inputValueDefinitions);
             inputObjectTypeDefinition.setSourceLocation(sourceLocation);
             inputObjectTypeDefinition.setComments(comments);

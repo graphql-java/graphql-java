@@ -1,5 +1,6 @@
 package graphql.language;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,8 +40,8 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
         private List<Comment> comments = Collections.emptyList();
         private String name;
         private Description description;
-        private List<Directive> directives;
-        private List<Type> memberTypes;
+        private List<Directive> directives = new ArrayList<>();
+        private List<Type> memberTypes = new ArrayList<>();
 
         private Builder() {
         }
@@ -75,7 +76,7 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
             return this;
         }
 
-        public UnionTypeDefinition build() {
+        public UnionTypeExtensionDefinition build() {
             UnionTypeExtensionDefinition unionTypeDefinition = new UnionTypeExtensionDefinition(name, directives, memberTypes);
             unionTypeDefinition.setSourceLocation(sourceLocation);
             unionTypeDefinition.setComments(comments);

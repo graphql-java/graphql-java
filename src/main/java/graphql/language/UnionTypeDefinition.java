@@ -96,8 +96,8 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
         private List<Comment> comments = Collections.emptyList();
         private String name;
         private Description description;
-        private List<Directive> directives;
-        private List<Type> memberTypes;
+        private List<Directive> directives = new ArrayList<>();
+        private List<Type> memberTypes = new ArrayList<>();
 
         private Builder() {
         }

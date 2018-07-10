@@ -97,8 +97,8 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         private List<Comment> comments = Collections.emptyList();
         private String name;
         private Description description;
-        private List<FieldDefinition> definitions;
-        private List<Directive> directives;
+        private List<FieldDefinition> definitions = new ArrayList<>();
+        private List<Directive> directives = new ArrayList<>();
 
         private Builder() {
         }
