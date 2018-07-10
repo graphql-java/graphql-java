@@ -204,9 +204,12 @@ public class GraphqlAntlrToLanguage2 {
     }
 
     public FragmentSpread createFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) {
-        FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
+        FragmentSpread.Builder fragmentSpread = FragmentSpread.newFragmentSpread().name(ctx.fragmentName().getText());
         newNode(fragmentSpread, ctx);
-        return fragmentSpread;
+        if (ctx.directives() != null) {
+            fragmentSpread.directives(createDirectives(ctx.directives()));
+        }
+        return fragmentSpread.build();
     }
 
     public List<VariableDefinition> createVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) {
