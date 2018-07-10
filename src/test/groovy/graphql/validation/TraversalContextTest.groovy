@@ -127,7 +127,7 @@ class TraversalContextTest extends Specification {
 
     def "fragmentDefinition type condition saved as output type"() {
         given:
-        FragmentDefinition fragmentDefinition = new FragmentDefinition("fragment", new TypeName(droidType.getName()))
+        FragmentDefinition fragmentDefinition = FragmentDefinition.newFragmentDefinition().name("fragment").typeCondition(new TypeName(droidType.getName())).build()
 
         when:
         traversalContext.enter(fragmentDefinition, [])

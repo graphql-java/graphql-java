@@ -24,12 +24,12 @@ import graphql.language.Node
 import graphql.language.NonNullType
 import graphql.language.ObjectField
 import graphql.language.ObjectTypeDefinition
+import graphql.language.ObjectTypeExtensionDefinition
 import graphql.language.ObjectValue
 import graphql.language.OperationTypeDefinition
 import graphql.language.ScalarTypeDefinition
 import graphql.language.ScalarTypeExtensionDefinition
 import graphql.language.SchemaDefinition
-import graphql.language.ObjectTypeExtensionDefinition
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.UnionTypeExtensionDefinition
@@ -287,7 +287,7 @@ three: [Number] @three
 """
 
         and: "expected schema"
-        def schema = new InputObjectTypeDefinition("InputName")
+        def schema = InputObjectTypeDefinition.newInputObjectDefinition().name("InputName").build()
         schema.getDirectives().add(new Directive("d1"))
         schema.getDirectives().add(new Directive("d2"))
         schema.getInputValueDefinitions()

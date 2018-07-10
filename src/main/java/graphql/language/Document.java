@@ -66,7 +66,7 @@ public class Document extends AbstractNode<Document> {
 
 
     public static final class Builder implements NodeBuilder {
-        private List<Definition> definitions;
+        private List<Definition> definitions = new ArrayList<>();
         private SourceLocation sourceLocation;
         private List<Comment> comments = Collections.emptyList();
 
