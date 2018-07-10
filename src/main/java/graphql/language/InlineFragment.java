@@ -120,7 +120,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         private SourceLocation sourceLocation;
         private List<Comment> comments = Collections.emptyList();
         private TypeName typeCondition;
-        private List<Directive> directives;
+        private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
 
         private Builder() {

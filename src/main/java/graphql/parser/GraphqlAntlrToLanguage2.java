@@ -266,6 +266,9 @@ public class GraphqlAntlrToLanguage2 {
         if (ctx.directives() != null) {
             inlineFragment.directives(createDirectives(ctx.directives()));
         }
+        if (ctx.selectionSet() != null) {
+            inlineFragment.selectionSet(createSelectionSet(ctx.selectionSet()));
+        }
         return inlineFragment.build();
     }
 
@@ -352,6 +355,7 @@ public class GraphqlAntlrToLanguage2 {
     public OperationTypeDefinition createOperationTypeDefinition(GraphqlParser.OperationTypeDefinitionContext ctx) {
         OperationTypeDefinition.Builder def = OperationTypeDefinition.newOperationTypeDefinition();
         def.name(ctx.operationType().getText());
+        def.type(createTypeName(ctx.typeName()));
         newNode(def, ctx);
         return def.build();
     }
