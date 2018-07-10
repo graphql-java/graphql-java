@@ -417,7 +417,7 @@ public class GraphqlAntlrToLanguage2 {
         GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            implementsInterfacesContext.typeName().stream().map(this::createTypeName).forEach(implementz::add);
+            implementsInterfacesContext.typeName().stream().map(this::createTypeName).forEach(typeName -> implementz.add(0, typeName));
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
         }
         def.implementz(implementz);
@@ -437,7 +437,7 @@ public class GraphqlAntlrToLanguage2 {
         GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            implementsInterfacesContext.typeName().stream().map(this::createTypeName).forEach(implementz::add);
+            implementsInterfacesContext.typeName().stream().map(this::createTypeName).forEach(typeName -> implementz.add(typeName));
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
         }
         def.implementz(implementz);
@@ -524,7 +524,7 @@ public class GraphqlAntlrToLanguage2 {
         List<Type> members = new ArrayList<>();
         GraphqlParser.UnionMembersContext unionMembersContext = ctx.unionMembership().unionMembers();
         while (unionMembersContext != null) {
-            members.add(createTypeName(unionMembersContext.typeName()));
+            members.add(0, createTypeName(unionMembersContext.typeName()));
             unionMembersContext = unionMembersContext.unionMembers();
         }
         def.memberTypes(members);
@@ -542,7 +542,7 @@ public class GraphqlAntlrToLanguage2 {
         if (ctx.unionMembership() != null) {
             GraphqlParser.UnionMembersContext unionMembersContext = ctx.unionMembership().unionMembers();
             while (unionMembersContext != null) {
-                members.add(createTypeName(unionMembersContext.typeName()));
+                members.add(0, createTypeName(unionMembersContext.typeName()));
                 unionMembersContext = unionMembersContext.unionMembers();
             }
             def.memberTypes(members);
@@ -558,8 +558,10 @@ public class GraphqlAntlrToLanguage2 {
         if (ctx.directives() != null) {
             def.directives(createDirectives(ctx.directives()));
         }
-        def.enumValueDefinitions(
-                ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(Collectors.toList()));
+        if (ctx.enumValueDefinitions() != null) {
+            def.enumValueDefinitions(
+                    ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(Collectors.toList()));
+        }
         return def.build();
     }
 
@@ -570,8 +572,10 @@ public class GraphqlAntlrToLanguage2 {
         if (ctx.directives() != null) {
             def.directives(createDirectives(ctx.directives()));
         }
-        def.enumValueDefinitions(
-                ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(Collectors.toList()));
+        if (ctx.enumValueDefinitions() != null) {
+            def.enumValueDefinitions(
+                    ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(Collectors.toList()));
+        }
         return def.build();
     }
 
@@ -594,7 +598,9 @@ public class GraphqlAntlrToLanguage2 {
         if (ctx.directives() != null) {
             def.directives(createDirectives(ctx.directives()));
         }
-        def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
+        if (ctx.inputObjectValueDefinitions() != null) {
+            def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
+        }
         return def.build();
     }
 
@@ -605,7 +611,9 @@ public class GraphqlAntlrToLanguage2 {
         if (ctx.directives() != null) {
             def.directives(createDirectives(ctx.directives()));
         }
-        def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
+        if (ctx.inputObjectValueDefinitions() != null) {
+            def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
+        }
         return def.build();
     }
 
@@ -617,7 +625,7 @@ public class GraphqlAntlrToLanguage2 {
         GraphqlParser.DirectiveLocationsContext directiveLocationsContext = ctx.directiveLocations();
         List<DirectiveLocation> directiveLocations = new ArrayList<>();
         while (directiveLocationsContext != null) {
-            directiveLocations.add(createDirectiveLocation(directiveLocationsContext.directiveLocation()));
+            directiveLocations.add(0, createDirectiveLocation(directiveLocationsContext.directiveLocation()));
             directiveLocationsContext = directiveLocationsContext.directiveLocations();
         }
         def.directiveLocations(directiveLocations);
