@@ -85,7 +85,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
         private List<Comment> comments = Collections.emptyList();
         private String name;
         private Description description;
-        private List<Directive> directives;
+        private List<Directive> directives = new ArrayList<>();
 
         private Builder() {
         }

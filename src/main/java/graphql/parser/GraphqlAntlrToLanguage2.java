@@ -540,6 +540,16 @@ public class GraphqlAntlrToLanguage2 {
         def.name(ctx.name().getText());
         newNode(def, ctx);
         def.description(newDescription(ctx.description()));
+        GraphqlParser.DirectiveLocationsContext directiveLocationsContext = ctx.directiveLocations();
+        List<DirectiveLocation> directiveLocations = new ArrayList<>();
+        while (directiveLocationsContext != null) {
+            directiveLocations.add(createDirectiveLocation(directiveLocationsContext.directiveLocation()));
+            directiveLocationsContext = directiveLocationsContext.directiveLocations();
+        }
+        def.directiveLocations(directiveLocations);
+        if (ctx.argumentsDefinition() != null) {
+            def.inputValueDefinitions(createInputValueDefinitions(ctx.argumentsDefinition().inputValueDefinition()));
+        }
         return def.build();
     }
 

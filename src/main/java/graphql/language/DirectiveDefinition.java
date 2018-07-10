@@ -94,8 +94,8 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
         private List<Comment> comments = Collections.emptyList();
         private String name;
         private Description description;
-        private List<InputValueDefinition> inputValueDefinitions;
-        private List<DirectiveLocation> directiveLocations;
+        private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+        private List<DirectiveLocation> directiveLocations = new ArrayList<>();
 
         private Builder() {
         }
