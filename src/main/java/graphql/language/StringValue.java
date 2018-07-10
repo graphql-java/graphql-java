@@ -61,6 +61,10 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
         return new Builder();
     }
 
+    public static Builder newStringValue(String value) {
+        return new Builder().value(value);
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private String value;

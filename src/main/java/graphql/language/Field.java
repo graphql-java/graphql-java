@@ -113,6 +113,14 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return new Builder();
     }
 
+    public static Builder newField(String name) {
+        return new Builder().name(name);
+    }
+
+    public static Builder newField(String name, SelectionSet selectionSet) {
+        return new Builder().name(name).selectionSet(selectionSet);
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = Collections.emptyList();

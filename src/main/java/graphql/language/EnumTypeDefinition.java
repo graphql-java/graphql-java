@@ -97,8 +97,8 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
         private List<Comment> comments = Collections.emptyList();
         private String name;
         private Description description;
-        private List<EnumValueDefinition> enumValueDefinitions;
-        private List<Directive> directives;
+        private List<EnumValueDefinition> enumValueDefinitions = new ArrayList<>();
+        private List<Directive> directives = new ArrayList<>();
 
         private Builder() {
         }

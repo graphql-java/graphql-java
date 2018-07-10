@@ -63,6 +63,10 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         return new Builder();
     }
 
+    public static Builder newSelectionSet(List<Selection> selections) {
+        return new Builder().selections(selections);
+    }
+
     public static final class Builder implements NodeBuilder {
 
         private List<Selection> selections = new ArrayList<>();

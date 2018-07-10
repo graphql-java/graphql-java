@@ -71,6 +71,9 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         return new Builder();
     }
 
+    public static Builder newArgument(String name, Value value) {
+        return new Builder().name(name).value(value);
+    }
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
