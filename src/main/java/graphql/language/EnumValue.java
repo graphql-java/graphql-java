@@ -12,7 +12,7 @@ import java.util.List;
 @PublicApi
 public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValue>, NamedNode<EnumValue> {
 
-    private String name;
+    private final String name;
 
     private EnumValue(String name, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
@@ -22,10 +22,6 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
     @Override
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
 
@@ -63,6 +59,10 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
 
     public static Builder newEnumValue() {
         return new Builder();
+    }
+
+    public static Builder newEnumValue(String name) {
+        return new Builder().name(name);
     }
 
     public static final class Builder implements NodeBuilder {

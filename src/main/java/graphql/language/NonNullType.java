@@ -61,6 +61,10 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
         return new Builder();
     }
 
+    public static Builder newNonNullType(Type type) {
+        return new Builder().type(type);
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private Type type;

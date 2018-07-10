@@ -61,6 +61,9 @@ public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> 
         return new Builder();
     }
 
+    public static Builder newIntValue(BigInteger value) {
+        return new Builder().value(value);
+    }
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;

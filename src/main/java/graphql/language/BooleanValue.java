@@ -12,7 +12,7 @@ import java.util.List;
 @PublicApi
 public class BooleanValue extends AbstractNode<BooleanValue> implements Value<BooleanValue> {
 
-    private boolean value;
+    private final boolean value;
 
     private BooleanValue(boolean value, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
@@ -58,6 +58,11 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements Value<Bo
 
     public static Builder newBooleanValue() {
         return new Builder();
+    }
+
+
+    public static Builder newBooleanValue(boolean value) {
+        return new Builder().value(value);
     }
 
     public static final class Builder implements NodeBuilder {

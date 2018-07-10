@@ -59,6 +59,10 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
         return new Builder();
     }
 
+    public static Builder newTypeName(String name) {
+        return new Builder().name(name);
+    }
+
     public static final class Builder implements NodeBuilder {
         private String name;
         private SourceLocation sourceLocation;

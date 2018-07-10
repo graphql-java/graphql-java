@@ -28,7 +28,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     @Override
@@ -69,6 +69,10 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     public static Builder newFragmentSpread() {
         return new Builder();
+    }
+
+    public static Builder newFragmentSpread(String name) {
+        return new Builder().name(name);
     }
 
     public static final class Builder implements NodeBuilder {

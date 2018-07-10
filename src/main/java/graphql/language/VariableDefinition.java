@@ -87,6 +87,18 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return new Builder();
     }
 
+    public static Builder newVariableDefinition(String name) {
+        return new Builder().name(name);
+    }
+
+    public static Builder newVariableDefinition(String name, Type type) {
+        return new Builder().name(name).type(type);
+    }
+
+    public static Builder newVariableDefinition(String name, Type type, Value defaultValue) {
+        return new Builder().name(name).type(type).defaultValue(defaultValue);
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private String name;

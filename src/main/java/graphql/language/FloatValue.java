@@ -61,6 +61,10 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
         return new Builder();
     }
 
+    public static Builder newFloatValue(BigDecimal value) {
+        return new Builder().value(value);
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private BigDecimal value;

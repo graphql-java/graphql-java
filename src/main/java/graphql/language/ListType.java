@@ -59,6 +59,11 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
         return new Builder();
     }
 
+    public static Builder newListType(Type type) {
+        return new Builder().type(type
+        );
+    }
+
     public static final class Builder implements NodeBuilder {
         private Type type;
         private SourceLocation sourceLocation;
