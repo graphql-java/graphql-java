@@ -180,8 +180,8 @@ class ParserTest extends Specification {
         def idField = new Field("id")
         def nameField = new Field("name")
         def profilePicField = new Field("profilePic", [new Argument("size", new IntValue(50))])
-        def selectionSet = new SelectionSet([idField, nameField, profilePicField])
-        def fragmentDefinition = new FragmentDefinition("friendFields", new TypeName("User"), selectionSet)
+        def selectionSet = SelectionSet.newSelectionSet().selections([idField, nameField, profilePicField]).build()
+        def fragmentDefinition = FragmentDefinition.newFragmentDefinition().name("friendFields").typeCondition(new TypeName("User")).selectionSet(selectionSet).build()
 
 
         when:
@@ -271,6 +271,7 @@ class ParserTest extends Specification {
             """
 
         and: "expected query"
+
 
         def helloField = new Field("hello")
         def variableDefinition = new VariableDefinition("someTest", getOutputType)

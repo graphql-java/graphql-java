@@ -202,7 +202,7 @@ public class GraphqlAntlrToLanguage2 {
     }
 
     public FragmentDefinition createFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx) {
-        FragmentDefinition.Builder fragmentDefinition = FragmentDefinition.newBuilder();
+        FragmentDefinition.Builder fragmentDefinition = FragmentDefinition.newFragmentDefinition();
         newNode(fragmentDefinition, ctx);
         fragmentDefinition.name(ctx.fragmentName().getText());
         fragmentDefinition.typeCondition(new TypeName(ctx.typeCondition().typeName().getText()));

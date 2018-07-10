@@ -14,12 +14,15 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     private Type type;
     private Value defaultValue;
 
-    private VariableDefinition() {
+    public VariableDefinition() {
         this(null, null, null);
     }
 
+    public VariableDefinition(String name, Type type) {
+        this(name, type, null);
+    }
 
-    private VariableDefinition(String name, Type type, Value defaultValue) {
+    public VariableDefinition(String name, Type type, Value defaultValue) {
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;

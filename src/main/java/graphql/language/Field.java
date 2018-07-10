@@ -22,7 +22,32 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
-    private Field(String name, String alias, List<Argument> arguments, List<Directive> directives, SelectionSet selectionSet) {
+    public Field() {
+        this(null, null, new ArrayList<>(), new ArrayList<>(), null);
+    }
+
+    public Field(String name) {
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null);
+    }
+
+    public Field(String name, SelectionSet selectionSet) {
+        this(name, null, new ArrayList<>(), new ArrayList<>(), selectionSet);
+    }
+
+
+    public Field(String name, List<Argument> arguments) {
+        this(name, null, arguments, new ArrayList<>(), null);
+    }
+
+    public Field(String name, List<Argument> arguments, List<Directive> directives) {
+        this(name, null, arguments, directives, null);
+    }
+
+    public Field(String name, List<Argument> arguments, SelectionSet selectionSet) {
+        this(name, null, arguments, new ArrayList<>(), selectionSet);
+    }
+
+    public Field(String name, String alias, List<Argument> arguments, List<Directive> directives, SelectionSet selectionSet) {
         this.name = name;
         this.alias = alias;
         this.arguments = arguments;

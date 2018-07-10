@@ -109,7 +109,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         return nodeVisitor.visitFragmentDefinition(this, context);
     }
 
-    public static Builder newBuilder() {
+    public static Builder newFragmentDefinition() {
         return new Builder();
     }
 
