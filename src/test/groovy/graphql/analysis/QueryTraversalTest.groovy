@@ -1150,18 +1150,18 @@ class QueryTraversalTest extends Specification {
         thrown(IllegalStateException)
 
         where:
-        document             | operationName | root        | rootParentType          | fragmentsByName
-        createQuery("{foo}") | null          | new Field() | null                    | null
-        createQuery("{foo}") | "foo"         | new Field() | null                    | null
-        createQuery("{foo}") | "foo"         | new Field() | Mock(GraphQLObjectType) | null
-        createQuery("{foo}") | "foo"         | new Field() | null                    | emptyMap()
-        null                 | "foo"         | new Field() | Mock(GraphQLObjectType) | null
-        null                 | "foo"         | new Field() | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | new Field() | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | new Field() | null                    | emptyMap()
-        null                 | "foo"         | null        | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | null        | Mock(GraphQLObjectType) | null
-        null                 | "foo"         | null        | null                    | emptyMap()
+        document             | operationName | root                     | rootParentType          | fragmentsByName
+        createQuery("{foo}") | null          | Field.newField().build() | null                    | null
+        createQuery("{foo}") | "foo"         | Field.newField().build() | null                    | null
+        createQuery("{foo}") | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | null
+        createQuery("{foo}") | "foo"         | Field.newField().build() | null                    | emptyMap()
+        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | null
+        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | Field.newField().build() | null                    | emptyMap()
+        null                 | "foo"         | null                     | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | null                     | Mock(GraphQLObjectType) | null
+        null                 | "foo"         | null                     | null                    | emptyMap()
 
 
     }
