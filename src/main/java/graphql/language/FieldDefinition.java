@@ -113,8 +113,8 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         private List<Comment> comments = Collections.emptyList();
         private Type type;
         private Description description;
-        private List<InputValueDefinition> inputValueDefinitions;
-        private List<Directive> directives;
+        private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+        private List<Directive> directives = new ArrayList<>();
 
         private Builder() {
         }

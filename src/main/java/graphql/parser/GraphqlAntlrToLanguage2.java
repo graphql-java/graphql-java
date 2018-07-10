@@ -372,6 +372,16 @@ public class GraphqlAntlrToLanguage2 {
         if (ctx.directives() != null) {
             def.directives(createDirectives(ctx.directives()));
         }
+        GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
+        List<Type> implementz = new ArrayList<>();
+        while (implementsInterfacesContext != null) {
+            implementsInterfacesContext.typeName().stream().map(this::createTypeName).forEach(implementz::add);
+            implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
+        }
+        def.implementz(implementz);
+        if (ctx.fieldsDefinition() != null) {
+            def.fieldDefinitions(createFieldDefinitions(ctx.fieldsDefinition()));
+        }
         return def.build();
     }
 

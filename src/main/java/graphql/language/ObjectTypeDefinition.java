@@ -107,9 +107,9 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
         private List<Comment> comments = Collections.emptyList();
         private String name;
         private Description description;
-        private List<Type> implementz;
-        private List<Directive> directives;
-        private List<FieldDefinition> fieldDefinitions;
+        private List<Type> implementz = new ArrayList<>();
+        private List<Directive> directives = new ArrayList<>();
+        private List<FieldDefinition> fieldDefinitions = new ArrayList<>();
 
         private Builder() {
         }
