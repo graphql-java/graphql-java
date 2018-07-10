@@ -1,17 +1,20 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class NullValue extends AbstractNode<NullValue> implements Value<NullValue> {
 
-    public static final NullValue Null = new NullValue();
+    public static final NullValue Null = new NullValue(null, Collections.emptyList());
 
-    private NullValue() {
+    private NullValue(SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
     }
 
     @Override
@@ -50,7 +53,6 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
 
 
     public static final class Builder implements NodeBuilder {
-        public static NullValue Null = new NullValue();
         private SourceLocation sourceLocation;
         private List<Comment> comments = Collections.emptyList();
 
@@ -62,20 +64,13 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
             return this;
         }
 
-        public Builder Null(NullValue Null) {
-            this.Null = Null;
-            return this;
-        }
-
         public Builder comments(List<Comment> comments) {
             this.comments = comments;
             return this;
         }
 
         public NullValue build() {
-            NullValue nullValue = new NullValue();
-            nullValue.setSourceLocation(sourceLocation);
-            nullValue.setComments(comments);
+            NullValue nullValue = new NullValue(sourceLocation, comments);
             return nullValue;
         }
     }

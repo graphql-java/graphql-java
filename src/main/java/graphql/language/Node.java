@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -15,6 +16,7 @@ import java.util.List;
  * with times frames that cross graphql-java versions.  While we don't change things unnecessarily,  we may inadvertently break
  * the serialised compatibility across versions.
  */
+@PublicApi
 public interface Node<T extends Node> extends Serializable {
 
     /**

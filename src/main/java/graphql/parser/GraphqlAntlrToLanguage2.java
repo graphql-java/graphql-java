@@ -3,7 +3,6 @@ package graphql.parser;
 
 import graphql.Assert;
 import graphql.Internal;
-import graphql.language.AbstractNode;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
@@ -233,7 +232,7 @@ public class GraphqlAntlrToLanguage2 {
         FragmentDefinition.Builder fragmentDefinition = FragmentDefinition.newFragmentDefinition();
         newNode(fragmentDefinition, ctx);
         fragmentDefinition.name(ctx.fragmentName().getText());
-        fragmentDefinition.typeCondition(new TypeName(ctx.typeCondition().typeName().getText()));
+        fragmentDefinition.typeCondition(TypeName.newTypeName().name(ctx.typeCondition().typeName().getText()).build());
         if (ctx.directives() != null) {
             fragmentDefinition.directives(createDirectives(ctx.directives()));
         }
@@ -649,92 +648,101 @@ public class GraphqlAntlrToLanguage2 {
 
     private Value createValue(GraphqlParser.ValueWithVariableContext ctx) {
         if (ctx.IntValue() != null) {
-            IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
+            IntValue.Builder intValue = IntValue.newIntValue().value(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
-            return intValue;
+            return intValue.build();
         } else if (ctx.FloatValue() != null) {
-            FloatValue floatValue = new FloatValue(new BigDecimal(ctx.FloatValue().getText()));
+            FloatValue.Builder floatValue = FloatValue.newFloatValue().value(new BigDecimal(ctx.FloatValue().getText()));
             newNode(floatValue, ctx);
-            return floatValue;
+            return floatValue.build();
         } else if (ctx.BooleanValue() != null) {
-            BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
+            BooleanValue.Builder booleanValue = BooleanValue.newBooleanValue().value(Boolean.parseBoolean(ctx.BooleanValue().getText()));
             newNode(booleanValue, ctx);
-            return booleanValue;
+            return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            newNode(Null, ctx);
             return Null;
         } else if (ctx.stringValue() != null) {
-            StringValue stringValue = new StringValue(quotedString(ctx.stringValue()));
+            StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             newNode(stringValue, ctx);
-            return stringValue;
+            return stringValue.build();
         } else if (ctx.enumValue() != null) {
-            EnumValue enumValue = new EnumValue(ctx.enumValue().getText());
+            EnumValue.Builder enumValue = EnumValue.newEnumValue().name(ctx.enumValue().getText());
             newNode(enumValue, ctx);
-            return enumValue;
+            return enumValue.build();
         } else if (ctx.arrayValueWithVariable() != null) {
-            ArrayValue arrayValue = new ArrayValue();
+            ArrayValue.Builder arrayValue = ArrayValue.newArrayValue();
             newNode(arrayValue, ctx);
+            List<Value> values = new ArrayList<>();
             for (GraphqlParser.ValueWithVariableContext valueWithVariableContext : ctx.arrayValueWithVariable().valueWithVariable()) {
-                arrayValue.getValues().add(createValue(valueWithVariableContext));
+                values.add(createValue(valueWithVariableContext));
             }
-            return arrayValue;
+            return arrayValue.values(values).build();
         } else if (ctx.objectValueWithVariable() != null) {
-            ObjectValue objectValue = new ObjectValue();
+            ObjectValue.Builder objectValue = ObjectValue.newObjectValue();
             newNode(objectValue, ctx);
+            List<ObjectField> objectFields = new ArrayList<>();
             for (GraphqlParser.ObjectFieldWithVariableContext objectFieldWithVariableContext :
                     ctx.objectValueWithVariable().objectFieldWithVariable()) {
-                ObjectField objectField = new ObjectField(objectFieldWithVariableContext.name().getText(), createValue(objectFieldWithVariableContext.valueWithVariable()));
-                objectValue.getObjectFields().add(objectField);
+
+                ObjectField objectField = ObjectField.newObjectField()
+                        .name(objectFieldWithVariableContext.name().getText())
+                        .value(createValue(objectFieldWithVariableContext.valueWithVariable()))
+                        .build();
+                objectFields.add(objectField);
             }
-            return objectValue;
+            return objectValue.objectFields(objectFields).build();
         } else if (ctx.variable() != null) {
-            VariableReference variableReference = new VariableReference(ctx.variable().name().getText());
+            VariableReference.Builder variableReference = VariableReference.newVariableReference().name(ctx.variable().name().getText());
             newNode(variableReference, ctx);
-            return variableReference;
+            return variableReference.build();
         }
         return assertShouldNeverHappen();
     }
 
     private Value createValue(GraphqlParser.ValueContext ctx) {
         if (ctx.IntValue() != null) {
-            IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
+            IntValue.Builder intValue = IntValue.newIntValue().value(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
-            return intValue;
+            return intValue.build();
         } else if (ctx.FloatValue() != null) {
-            FloatValue floatValue = new FloatValue(new BigDecimal(ctx.FloatValue().getText()));
+            FloatValue.Builder floatValue = FloatValue.newFloatValue().value(new BigDecimal(ctx.FloatValue().getText()));
             newNode(floatValue, ctx);
-            return floatValue;
+            return floatValue.build();
         } else if (ctx.BooleanValue() != null) {
-            BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
+            BooleanValue.Builder booleanValue = BooleanValue.newBooleanValue().value(Boolean.parseBoolean(ctx.BooleanValue().getText()));
             newNode(booleanValue, ctx);
-            return booleanValue;
+            return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            newNode(Null, ctx);
             return Null;
         } else if (ctx.stringValue() != null) {
-            StringValue stringValue = new StringValue(quotedString(ctx.stringValue()));
+            StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             newNode(stringValue, ctx);
-            return stringValue;
+            return stringValue.build();
         } else if (ctx.enumValue() != null) {
-            EnumValue enumValue = new EnumValue(ctx.enumValue().getText());
+            EnumValue.Builder enumValue = EnumValue.newEnumValue().name(ctx.enumValue().getText());
             newNode(enumValue, ctx);
-            return enumValue;
+            return enumValue.build();
         } else if (ctx.arrayValue() != null) {
-            ArrayValue arrayValue = new ArrayValue();
+            ArrayValue.Builder arrayValue = ArrayValue.newArrayValue();
             newNode(arrayValue, ctx);
-            for (GraphqlParser.ValueContext valueWithVariableContext : ctx.arrayValue().value()) {
-                arrayValue.getValues().add(createValue(valueWithVariableContext));
+            List<Value> values = new ArrayList<>();
+            for (GraphqlParser.ValueContext valueContext : ctx.arrayValue().value()) {
+                values.add(createValue(valueContext));
             }
-            return arrayValue;
+            return arrayValue.values(values).build();
         } else if (ctx.objectValue() != null) {
-            ObjectValue objectValue = new ObjectValue();
+            ObjectValue.Builder objectValue = ObjectValue.newObjectValue();
             newNode(objectValue, ctx);
+            List<ObjectField> objectFields = new ArrayList<>();
             for (GraphqlParser.ObjectFieldContext objectFieldContext :
                     ctx.objectValue().objectField()) {
-                ObjectField objectField = new ObjectField(objectFieldContext.name().getText(), createValue(objectFieldContext.value()));
-                objectValue.getObjectFields().add(objectField);
+                ObjectField objectField = ObjectField.newObjectField()
+                        .name(objectFieldContext.name().getText())
+                        .value(createValue(objectFieldContext.value()))
+                        .build();
+                objectFields.add(objectField);
             }
-            return objectValue;
+            return objectValue.objectFields(objectFields).build();
         }
         return assertShouldNeverHappen();
     }
@@ -755,15 +763,6 @@ public class GraphqlAntlrToLanguage2 {
             nodeBuilder.comments(comments);
         }
         nodeBuilder.sourceLocation(getSourceLocation(parserRuleContext));
-    }
-
-    private void newNode(AbstractNode abstractNode, ParserRuleContext parserRuleContext) {
-        List<Comment> comments = getComments(parserRuleContext);
-        if (!comments.isEmpty()) {
-            abstractNode.setComments(comments);
-        }
-
-        abstractNode.setSourceLocation(getSourceLocation(parserRuleContext));
     }
 
     private Description newDescription(GraphqlParser.DescriptionContext descriptionCtx) {

@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,29 +9,34 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> implements TypeDefinition<UnionTypeDefinition>, DirectivesContainer<UnionTypeDefinition> {
+
     private final String name;
-    private Description description;
+    private final Description description;
     private final List<Directive> directives;
     private final List<Type> memberTypes;
 
-    public UnionTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>());
-    }
-
-    public UnionTypeDefinition(String name, List<Directive> directives, List<Type> memberTypes) {
+    UnionTypeDefinition(String name,
+                        List<Directive> directives,
+                        List<Type> memberTypes,
+                        Description description,
+                        SourceLocation sourceLocation,
+                        List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.directives = directives;
         this.memberTypes = memberTypes;
+        this.description = description;
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     public List<Type> getMemberTypes() {
-        return memberTypes;
+        return new ArrayList<>(memberTypes);
     }
 
     @Override
@@ -40,10 +46,6 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
 
     public Description getDescription() {
         return description;
-    }
-
-    public void setDescription(Description description) {
-        this.description = description;
     }
 
     @Override
@@ -68,7 +70,10 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
     public UnionTypeDefinition deepCopy() {
         return new UnionTypeDefinition(name,
                 deepCopy(directives),
-                deepCopy(memberTypes)
+                deepCopy(memberTypes),
+                description,
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -132,11 +137,18 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
             return this;
         }
 
+        public Builder memberType(Type memberType) {
+            this.memberTypes.add(memberType);
+            return this;
+        }
+
         public UnionTypeDefinition build() {
-            UnionTypeDefinition unionTypeDefinition = new UnionTypeDefinition(name, directives, memberTypes);
-            unionTypeDefinition.setSourceLocation(sourceLocation);
-            unionTypeDefinition.setComments(comments);
-            unionTypeDefinition.setDescription(description);
+            UnionTypeDefinition unionTypeDefinition = new UnionTypeDefinition(name,
+                    directives,
+                    memberTypes,
+                    description,
+                    sourceLocation,
+                    comments);
             return unionTypeDefinition;
         }
     }

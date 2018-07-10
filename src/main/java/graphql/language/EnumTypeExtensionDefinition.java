@@ -1,27 +1,31 @@
 package graphql.language;
 
+import graphql.PublicApi;
+
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
-    public EnumTypeExtensionDefinition(String name) {
-        super(name);
-    }
 
-    public EnumTypeExtensionDefinition(String name, List<Directive> directives) {
-        super(name, directives);
-    }
-
-    public EnumTypeExtensionDefinition(String name, List<EnumValueDefinition> enumValueDefinitions, List<Directive> directives) {
-        super(name, enumValueDefinitions, directives);
+    private EnumTypeExtensionDefinition(String name,
+                                        List<EnumValueDefinition> enumValueDefinitions,
+                                        List<Directive> directives,
+                                        Description description,
+                                        SourceLocation sourceLocation,
+                                        List<Comment> comments) {
+        super(name, enumValueDefinitions, directives, description,
+                sourceLocation, comments);
     }
 
     @Override
     public EnumTypeExtensionDefinition deepCopy() {
         return new EnumTypeExtensionDefinition(getName(),
                 deepCopy(getEnumValueDefinitions()),
-                deepCopy(getDirectives())
-        );
+                deepCopy(getDirectives()),
+                getDescription(),
+                getSourceLocation(),
+                getComments());
     }
 
     @Override
@@ -80,10 +84,12 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
         }
 
         public EnumTypeExtensionDefinition build() {
-            EnumTypeExtensionDefinition enumTypeDefinition = new EnumTypeExtensionDefinition(name, enumValueDefinitions, directives);
-            enumTypeDefinition.setSourceLocation(sourceLocation);
-            enumTypeDefinition.setComments(comments);
-            enumTypeDefinition.setDescription(description);
+            EnumTypeExtensionDefinition enumTypeDefinition = new EnumTypeExtensionDefinition(name,
+                    enumValueDefinitions,
+                    directives,
+                    description,
+                    sourceLocation,
+                    comments);
             return enumTypeDefinition;
         }
     }

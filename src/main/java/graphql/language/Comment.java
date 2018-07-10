@@ -1,7 +1,10 @@
 package graphql.language;
 
+import graphql.PublicApi;
+
 import java.io.Serializable;
 
+@PublicApi
 public class Comment implements Serializable {
     public final String content;
     public final SourceLocation sourceLocation;

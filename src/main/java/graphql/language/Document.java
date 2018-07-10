@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,24 +9,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class Document extends AbstractNode<Document> {
 
-    private List<Definition> definitions;
+    private final List<Definition> definitions;
 
-    public Document() {
-        this(new ArrayList<>());
-    }
-
-    public Document(List<Definition> definitions) {
+    public Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.definitions = definitions;
     }
 
     public List<Definition> getDefinitions() {
-        return definitions;
-    }
-
-    public void setDefinitions(List<Definition> definitions) {
-        this.definitions = definitions;
+        return new ArrayList<>(definitions);
     }
 
 
@@ -45,7 +40,7 @@ public class Document extends AbstractNode<Document> {
 
     @Override
     public Document deepCopy() {
-        return new Document(deepCopy(definitions));
+        return new Document(deepCopy(definitions), getSourceLocation(), getComments());
     }
 
     @Override
@@ -78,6 +73,11 @@ public class Document extends AbstractNode<Document> {
             return this;
         }
 
+        public Builder definition(Definition definition) {
+            this.definitions.add(definition);
+            return this;
+        }
+
         public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
@@ -89,10 +89,7 @@ public class Document extends AbstractNode<Document> {
         }
 
         public Document build() {
-            Document document = new Document();
-            document.setDefinitions(definitions);
-            document.setSourceLocation(sourceLocation);
-            document.setComments(comments);
+            Document document = new Document(definitions, sourceLocation, comments);
             return document;
         }
     }

@@ -45,8 +45,7 @@ objectTypeDefinition : description? TYPE name implementsInterfaces? directives? 
 objectTypeExtensionDefinition : EXTEND TYPE name implementsInterfaces? directives? fieldsDefinition?;
 
 implementsInterfaces :
-    IMPLEMENTS '&'? ty
-    peName+ |
+    IMPLEMENTS '&'? typeName+ |
     implementsInterfaces '&' typeName ;
 
 fieldsDefinition : '{' fieldDefinition* '}';

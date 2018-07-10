@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,21 +9,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread> {
 
-    private String name;
-    private List<Directive> directives = new ArrayList<>();
+    private final String name;
+    private final List<Directive> directives;
 
-    public FragmentSpread() {
-    }
-
-    public FragmentSpread(String name) {
+    private FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
-    }
-
-    public FragmentSpread(String name, List<Directive> directives) {
-        this.name = name;
-        this.directives = directives;
+        this.directives = new ArrayList<>(directives);
     }
 
     @Override
@@ -30,17 +26,9 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     @Override
     public List<Directive> getDirectives() {
         return directives;
-    }
-
-    public void setDirectives(List<Directive> directives) {
-        this.directives = directives;
     }
 
     @Override
@@ -63,7 +51,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public FragmentSpread deepCopy() {
-        return new FragmentSpread(name, deepCopy(directives));
+        return new FragmentSpread(name, deepCopy(directives), getSourceLocation(), getComments());
     }
 
     @Override
@@ -113,11 +101,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         }
 
         public FragmentSpread build() {
-            FragmentSpread fragmentSpread = new FragmentSpread();
-            fragmentSpread.setSourceLocation(sourceLocation);
-            fragmentSpread.setComments(comments);
-            fragmentSpread.setName(name);
-            fragmentSpread.setDirectives(directives);
+            FragmentSpread fragmentSpread = new FragmentSpread(name, directives, sourceLocation, comments);
             return fragmentSpread;
         }
     }

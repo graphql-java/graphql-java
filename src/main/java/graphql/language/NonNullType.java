@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,27 +9,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNullType> {
 
-    private Type type;
+    private final Type type;
 
-    public NonNullType() {
-    }
+    private NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
 
-    public NonNullType(Type type) {
         this.type = type;
     }
 
     public Type getType() {
         return type;
-    }
-
-    public void setType(ListType type) {
-        this.type = type;
-    }
-
-    public void setType(TypeName type) {
-        this.type = type;
     }
 
     @Override
@@ -49,7 +42,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
 
     @Override
     public NonNullType deepCopy() {
-        return new NonNullType(deepCopy(type));
+        return new NonNullType(deepCopy(type), getSourceLocation(), getComments());
     }
 
     @Override
@@ -92,20 +85,21 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
             return this;
         }
 
+        public Builder type(Type type) {
+            if (!(type instanceof ListType) && !(type instanceof TypeName)) {
+                throw new IllegalArgumentException("unexpected type");
+            }
+            this.type = type;
+            return this;
+        }
+
         public Builder comments(List<Comment> comments) {
             this.comments = comments;
             return this;
         }
 
         public NonNullType build() {
-            NonNullType nonNullType = new NonNullType();
-            nonNullType.setSourceLocation(sourceLocation);
-            if (type instanceof ListType) {
-                nonNullType.setType((ListType) type);
-            } else {
-                nonNullType.setType((TypeName) type);
-            }
-            nonNullType.setComments(comments);
+            NonNullType nonNullType = new NonNullType(type, sourceLocation, comments);
             return nonNullType;
         }
     }

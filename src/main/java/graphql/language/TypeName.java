@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,20 +9,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
 
-    private String name;
+    private final String name;
 
-    public TypeName(String name) {
+    private TypeName(String name, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
     }
 
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override
@@ -41,7 +40,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
 
     @Override
     public TypeName deepCopy() {
-        return new TypeName(name);
+        return new TypeName(name, getSourceLocation(), getComments());
     }
 
     @Override
@@ -85,9 +84,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
         }
 
         public TypeName build() {
-            TypeName typeName = new TypeName(name);
-            typeName.setSourceLocation(sourceLocation);
-            typeName.setComments(comments);
+            TypeName typeName = new TypeName(name, sourceLocation, comments);
             return typeName;
         }
     }

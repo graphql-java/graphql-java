@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,38 +9,33 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class InputValueDefinition extends AbstractNode<InputValueDefinition> implements DirectivesContainer<InputValueDefinition> {
     private final String name;
-    private Type type;
-    private Value defaultValue;
-    private Description description;
+    private final Type type;
+    private final Value defaultValue;
+    private final Description description;
     private final List<Directive> directives;
 
-    public InputValueDefinition(String name) {
-        this(name, null, null, new ArrayList<>());
-    }
 
-    public InputValueDefinition(String name, Type type) {
-        this(name, type, null, new ArrayList<>());
-    }
-
-    public InputValueDefinition(String name, Type type, Value defaultValue) {
-        this(name, type, defaultValue, new ArrayList<>());
-    }
-
-    public InputValueDefinition(String name, Type type, Value defaultValue, List<Directive> directives) {
+    private InputValueDefinition(String name,
+                                 Type type,
+                                 Value defaultValue,
+                                 List<Directive> directives,
+                                 Description description,
+                                 SourceLocation sourceLocation,
+                                 List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
         this.directives = directives;
+        this.description = description;
+
     }
 
     public Type getType() {
         return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     @Override
@@ -51,19 +47,10 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         return description;
     }
 
-    public void setDescription(Description description) {
-        this.description = description;
-    }
-
     public Value getDefaultValue() {
         return defaultValue;
     }
 
-    public void setDefaultValue(Value defaultValue) {
-        this.defaultValue = defaultValue;
-    }
-
-    @Override
     public List<Directive> getDirectives() {
         return directives;
     }
@@ -92,8 +79,10 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         return new InputValueDefinition(name,
                 deepCopy(type),
                 deepCopy(defaultValue),
-                deepCopy(directives)
-        );
+                deepCopy(directives),
+                description,
+                getSourceLocation(),
+                getComments());
     }
 
     @Override
@@ -164,10 +153,13 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         }
 
         public InputValueDefinition build() {
-            InputValueDefinition inputValueDefinition = new InputValueDefinition(name, type, defaultValue, directives);
-            inputValueDefinition.setSourceLocation(sourceLocation);
-            inputValueDefinition.setComments(comments);
-            inputValueDefinition.setDescription(description);
+            InputValueDefinition inputValueDefinition = new InputValueDefinition(name,
+                    type,
+                    defaultValue,
+                    directives,
+                    description,
+                    sourceLocation,
+                    comments);
             return inputValueDefinition;
         }
     }

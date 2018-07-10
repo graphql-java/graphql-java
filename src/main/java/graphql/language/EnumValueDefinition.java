@@ -10,15 +10,18 @@ import java.util.List;
 
 public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> implements DirectivesContainer<EnumValueDefinition> {
     private final String name;
-    private Description description;
+    private final Description description;
     private final List<Directive> directives;
 
-    public EnumValueDefinition(String name) {
-        this(name, null);
-    }
 
-    public EnumValueDefinition(String name, List<Directive> directives) {
+    private EnumValueDefinition(String name,
+                                List<Directive> directives,
+                                Description description,
+                                SourceLocation sourceLocation,
+                                List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
+        this.description = description;
         this.directives = (null == directives) ? new ArrayList<>() : directives;
     }
 
@@ -29,10 +32,6 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     public Description getDescription() {
         return description;
-    }
-
-    public void setDescription(Description description) {
-        this.description = description;
     }
 
     @Override
@@ -60,7 +59,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     @Override
     public EnumValueDefinition deepCopy() {
-        return new EnumValueDefinition(name, deepCopy(directives));
+        return new EnumValueDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments());
     }
 
     @Override
@@ -80,7 +79,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
         return new Builder();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = Collections.emptyList();
         private String name;
@@ -116,10 +115,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
         }
 
         public EnumValueDefinition build() {
-            EnumValueDefinition enumValueDefinition = new EnumValueDefinition(name, directives);
-            enumValueDefinition.setSourceLocation(sourceLocation);
-            enumValueDefinition.setComments(comments);
-            enumValueDefinition.setDescription(description);
+            EnumValueDefinition enumValueDefinition = new EnumValueDefinition(name, directives, description, sourceLocation, comments);
             return enumValueDefinition;
         }
     }

@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -16,10 +17,12 @@ import java.util.List;
 //    FRAGMENT_DEFINITION
 //    FRAGMENT_SPREAD
 //    INLINE_FRAGMENT
+@PublicApi
 public class DirectiveLocation extends AbstractNode<DirectiveLocation> implements NamedNode<DirectiveLocation> {
     private final String name;
 
-    public DirectiveLocation(String name) {
+    private DirectiveLocation(String name, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
     }
 
@@ -45,7 +48,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
     @Override
     public DirectiveLocation deepCopy() {
-        return new DirectiveLocation(name);
+        return new DirectiveLocation(name, getSourceLocation(), getComments());
     }
 
     @Override
@@ -88,9 +91,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         }
 
         public DirectiveLocation build() {
-            DirectiveLocation directiveLocation = new DirectiveLocation(name);
-            directiveLocation.setSourceLocation(sourceLocation);
-            directiveLocation.setComments(comments);
+            DirectiveLocation directiveLocation = new DirectiveLocation(name, sourceLocation, comments);
             return directiveLocation;
         }
     }

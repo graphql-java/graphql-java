@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,12 +9,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<ObjectField> {
 
     private final String name;
     private final Value value;
 
-    public ObjectField(String name, Value value) {
+    private ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.value = value;
     }
@@ -47,7 +50,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
 
     @Override
     public ObjectField deepCopy() {
-        return new ObjectField(name, deepCopy(this.value));
+        return new ObjectField(name, deepCopy(this.value), getSourceLocation(), getComments());
     }
 
     @Override
@@ -98,9 +101,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
         }
 
         public ObjectField build() {
-            ObjectField objectField = new ObjectField(name, value);
-            objectField.setSourceLocation(sourceLocation);
-            objectField.setComments(comments);
+            ObjectField objectField = new ObjectField(name, value, sourceLocation, comments);
             return objectField;
         }
     }

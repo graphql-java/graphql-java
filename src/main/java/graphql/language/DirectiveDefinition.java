@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,17 +9,21 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
     private Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<DirectiveLocation> directiveLocations;
 
-    public DirectiveDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>());
-    }
 
-    public DirectiveDefinition(String name, List<InputValueDefinition> inputValueDefinitions, List<DirectiveLocation> directiveLocations) {
+    private DirectiveDefinition(String name,
+                                List<InputValueDefinition> inputValueDefinitions,
+                                List<DirectiveLocation> directiveLocations,
+                                SourceLocation sourceLocation,
+                                List<Comment> comments
+    ) {
+        super(sourceLocation, comments);
         this.name = name;
         this.inputValueDefinitions = inputValueDefinitions;
         this.directiveLocations = directiveLocations;
@@ -38,11 +43,11 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return inputValueDefinitions;
+        return new ArrayList<>(inputValueDefinitions);
     }
 
     public List<DirectiveLocation> getDirectiveLocations() {
-        return directiveLocations;
+        return new ArrayList<>(directiveLocations);
     }
 
     @Override
@@ -67,7 +72,9 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
     public DirectiveDefinition deepCopy() {
         return new DirectiveDefinition(name,
                 deepCopy(inputValueDefinitions),
-                deepCopy(directiveLocations));
+                deepCopy(directiveLocations),
+                getSourceLocation(),
+                getComments());
     }
 
     @Override
@@ -125,15 +132,23 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
             return this;
         }
 
+        public Builder inputValueDefinition(InputValueDefinition inputValueDefinition) {
+            this.inputValueDefinitions.add(inputValueDefinition);
+            return this;
+        }
+
         public Builder directiveLocations(List<DirectiveLocation> directiveLocations) {
             this.directiveLocations = directiveLocations;
             return this;
         }
 
+        public Builder directiveLocation(DirectiveLocation directiveLocation) {
+            this.directiveLocations.add(directiveLocation);
+            return this;
+        }
+
         public DirectiveDefinition build() {
-            DirectiveDefinition directiveDefinition = new DirectiveDefinition(name, inputValueDefinitions, directiveLocations);
-            directiveDefinition.setSourceLocation(sourceLocation);
-            directiveDefinition.setComments(comments);
+            DirectiveDefinition directiveDefinition = new DirectiveDefinition(name, inputValueDefinitions, directiveLocations, sourceLocation, comments);
             directiveDefinition.setDescription(description);
             return directiveDefinition;
         }

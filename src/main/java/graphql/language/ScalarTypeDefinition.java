@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,18 +9,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition> {
+
     private final String name;
-    private Description description;
+    private final Description description;
     private final List<Directive> directives;
 
-    public ScalarTypeDefinition(String name) {
-        this(name, new ArrayList<>());
-    }
-
-    public ScalarTypeDefinition(String name, List<Directive> directives) {
+    ScalarTypeDefinition(String name, List<Directive> directives, Description description, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.directives = directives;
+        this.description = description;
     }
 
     @Override
@@ -35,10 +36,6 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
     public Description getDescription() {
         return description;
-    }
-
-    public void setDescription(Description description) {
-        this.description = description;
     }
 
     @Override
@@ -60,7 +57,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
     @Override
     public ScalarTypeDefinition deepCopy() {
-        return new ScalarTypeDefinition(name, deepCopy(directives));
+        return new ScalarTypeDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments());
     }
 
     @Override
@@ -117,10 +114,11 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
         }
 
         public ScalarTypeDefinition build() {
-            ScalarTypeDefinition scalarTypeDefinition = new ScalarTypeDefinition(name, directives);
-            scalarTypeDefinition.setSourceLocation(sourceLocation);
-            scalarTypeDefinition.setComments(comments);
-            scalarTypeDefinition.setDescription(description);
+            ScalarTypeDefinition scalarTypeDefinition = new ScalarTypeDefinition(name,
+                    directives,
+                    description,
+                    sourceLocation,
+                    comments);
             return scalarTypeDefinition;
         }
     }

@@ -1,5 +1,6 @@
 package graphql.language;
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -7,22 +8,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition> {
     private final String name;
-    private Description description;
+    private final Description description;
     private final List<EnumValueDefinition> enumValueDefinitions;
     private final List<Directive> directives;
 
-    public EnumTypeDefinition(String name) {
-        this(name, null);
-    }
-
-    public EnumTypeDefinition(String name, List<Directive> directives) {
-        this(name, new ArrayList<>(), directives);
-    }
-
-    public EnumTypeDefinition(String name, List<EnumValueDefinition> enumValueDefinitions, List<Directive> directives) {
+    EnumTypeDefinition(String name,
+                       List<EnumValueDefinition> enumValueDefinitions,
+                       List<Directive> directives,
+                       Description description,
+                       SourceLocation sourceLocation,
+                       List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
+        this.description = description;
         this.directives = (null == directives) ? new ArrayList<>() : directives;
         this.enumValueDefinitions = enumValueDefinitions;
     }
@@ -43,10 +44,6 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
 
     public Description getDescription() {
         return description;
-    }
-
-    public void setDescription(Description description) {
-        this.description = description;
     }
 
     @Override
@@ -71,8 +68,9 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
     public EnumTypeDefinition deepCopy() {
         return new EnumTypeDefinition(name,
                 deepCopy(enumValueDefinitions),
-                deepCopy(directives)
-        );
+                deepCopy(directives),
+                description,
+                getSourceLocation(), getComments());
     }
 
     @Override
@@ -130,16 +128,18 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
             return this;
         }
 
+        public Builder enumValueDefinition(EnumValueDefinition enumValueDefinition) {
+            this.enumValueDefinitions.add(enumValueDefinition);
+            return this;
+        }
+
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;
         }
 
         public EnumTypeDefinition build() {
-            EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition(name, enumValueDefinitions, directives);
-            enumTypeDefinition.setSourceLocation(sourceLocation);
-            enumTypeDefinition.setComments(comments);
-            enumTypeDefinition.setDescription(description);
+            EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition(name, enumValueDefinitions, directives, description, sourceLocation, comments);
             return enumTypeDefinition;
         }
     }

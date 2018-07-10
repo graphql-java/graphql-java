@@ -1,21 +1,31 @@
 package graphql.language;
 
+import graphql.PublicApi;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinition {
 
-    private InputObjectTypeExtensionDefinition(String name, List<Directive> directives, List<InputValueDefinition> inputValueDefinitions) {
-        super(name, directives, inputValueDefinitions);
+    private InputObjectTypeExtensionDefinition(String name,
+                                               List<Directive> directives,
+                                               List<InputValueDefinition> inputValueDefinitions,
+                                               Description description,
+                                               SourceLocation sourceLocation,
+                                               List<Comment> comments) {
+        super(name, directives, inputValueDefinitions, description, sourceLocation, comments);
     }
 
     @Override
     public InputObjectTypeExtensionDefinition deepCopy() {
         return new InputObjectTypeExtensionDefinition(getName(),
                 deepCopy(getDirectives()),
-                deepCopy(getInputValueDefinitions())
-        );
+                deepCopy(getInputValueDefinitions()),
+                getDescription(),
+                getSourceLocation(),
+                getComments());
     }
 
     @Override
@@ -74,10 +84,12 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
         }
 
         public InputObjectTypeExtensionDefinition build() {
-            InputObjectTypeExtensionDefinition inputObjectTypeDefinition = new InputObjectTypeExtensionDefinition(name, directives, inputValueDefinitions);
-            inputObjectTypeDefinition.setSourceLocation(sourceLocation);
-            inputObjectTypeDefinition.setComments(comments);
-            inputObjectTypeDefinition.setDescription(description);
+            InputObjectTypeExtensionDefinition inputObjectTypeDefinition = new InputObjectTypeExtensionDefinition(name,
+                    directives,
+                    inputValueDefinitions,
+                    description,
+                    sourceLocation,
+                    comments);
             return inputObjectTypeDefinition;
         }
     }

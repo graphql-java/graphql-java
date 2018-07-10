@@ -1,25 +1,36 @@
 package graphql.language;
 
+import graphql.PublicApi;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
 
-    public UnionTypeExtensionDefinition(String name) {
-        super(name);
-    }
-
-    public UnionTypeExtensionDefinition(String name, List<Directive> directives, List<Type> memberTypes) {
-        super(name, directives, memberTypes);
+    private UnionTypeExtensionDefinition(String name,
+                                         List<Directive> directives,
+                                         List<Type> memberTypes,
+                                         Description description,
+                                         SourceLocation sourceLocation,
+                                         List<Comment> comments) {
+        super(name,
+                directives,
+                memberTypes,
+                description,
+                sourceLocation,
+                comments);
     }
 
     @Override
     public UnionTypeExtensionDefinition deepCopy() {
         return new UnionTypeExtensionDefinition(getName(),
                 deepCopy(getDirectives()),
-                deepCopy(getMemberTypes())
-        );
+                deepCopy(getMemberTypes()),
+                getDescription(),
+                getSourceLocation(),
+                getComments());
     }
 
     @Override
@@ -77,10 +88,13 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
         }
 
         public UnionTypeExtensionDefinition build() {
-            UnionTypeExtensionDefinition unionTypeDefinition = new UnionTypeExtensionDefinition(name, directives, memberTypes);
-            unionTypeDefinition.setSourceLocation(sourceLocation);
-            unionTypeDefinition.setComments(comments);
-            unionTypeDefinition.setDescription(description);
+            UnionTypeExtensionDefinition unionTypeDefinition = new UnionTypeExtensionDefinition(name,
+                    directives,
+                    memberTypes,
+                    description,
+                    sourceLocation,
+                    comments
+            );
             return unionTypeDefinition;
         }
     }

@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -9,22 +10,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatValue> {
 
-    private BigDecimal value;
+    private final BigDecimal value;
 
-    public FloatValue(BigDecimal value) {
+    private FloatValue(BigDecimal value, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.value = value;
     }
 
     public BigDecimal getValue() {
         return value;
     }
-
-    public void setValue(BigDecimal value) {
-        this.value = value;
-    }
-
 
     @Override
     public List<Node> getChildren() {
@@ -51,7 +49,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
 
     @Override
     public FloatValue deepCopy() {
-        return new FloatValue(value);
+        return new FloatValue(value, getSourceLocation(), getComments());
     }
 
     @Override
@@ -88,9 +86,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
         }
 
         public FloatValue build() {
-            FloatValue floatValue = new FloatValue(value);
-            floatValue.setSourceLocation(sourceLocation);
-            floatValue.setComments(comments);
+            FloatValue floatValue = new FloatValue(value, sourceLocation, comments);
             return floatValue;
         }
     }

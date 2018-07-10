@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,23 +9,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
-    private Type type;
+    private final Type type;
 
-    public ListType() {
-    }
-
-    public ListType(Type type) {
+    public ListType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.type = type;
     }
 
     public Type getType() {
         return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     @Override
@@ -44,7 +40,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     @Override
     public ListType deepCopy() {
-        return new ListType(deepCopy(type));
+        return new ListType(deepCopy(type), getSourceLocation(), getComments());
     }
 
     @Override
@@ -88,10 +84,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
         }
 
         public ListType build() {
-            ListType listType = new ListType();
-            listType.setType(type);
-            listType.setSourceLocation(sourceLocation);
-            listType.setComments(comments);
+            ListType listType = new ListType(type, sourceLocation, comments);
             return listType;
         }
     }

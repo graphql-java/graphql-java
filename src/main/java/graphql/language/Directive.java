@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -11,21 +12,19 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.argumentsByName;
 
+@PublicApi
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {
     private final String name;
     private final List<Argument> arguments = new ArrayList<>();
 
-    public Directive(String name) {
-        this(name, Collections.emptyList());
-    }
-
-    public Directive(String name, List<Argument> arguments) {
+    private Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.arguments.addAll(arguments);
     }
 
     public List<Argument> getArguments() {
-        return arguments;
+        return new ArrayList<>(arguments);
     }
 
     public Map<String, Argument> getArgumentsByName() {
@@ -61,7 +60,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
     @Override
     public Directive deepCopy() {
-        return new Directive(name, deepCopy(arguments));
+        return new Directive(name, deepCopy(arguments), getSourceLocation(), getComments());
     }
 
     @Override
@@ -112,9 +111,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
         }
 
         public Directive build() {
-            Directive directive = new Directive(name, arguments);
-            directive.setSourceLocation(sourceLocation);
-            directive.setComments(comments);
+            Directive directive = new Directive(name, arguments, sourceLocation, comments);
             return directive;
         }
     }

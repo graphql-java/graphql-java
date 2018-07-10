@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,12 +9,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class Argument extends AbstractNode<Argument> implements NamedNode<Argument> {
 
     private final String name;
     private final Value value;
 
-    public Argument(String name, Value value) {
+    private Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.value = value;
     }
@@ -48,7 +51,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     @Override
     public Argument deepCopy() {
-        return new Argument(name, deepCopy(value));
+        return new Argument(name, deepCopy(value), getSourceLocation(), getComments());
     }
 
     @Override
@@ -99,9 +102,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         }
 
         public Argument build() {
-            Argument argument = new Argument(name, value);
-            argument.setSourceLocation(sourceLocation);
-            argument.setComments(comments);
+            Argument argument = new Argument(name, value, sourceLocation, comments);
             return argument;
         }
     }

@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,11 +9,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class SelectionSet extends AbstractNode<SelectionSet> {
 
     private final List<Selection> selections = new ArrayList<>();
 
-    private SelectionSet(List<Selection> selections) {
+    private SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.selections.addAll(selections);
     }
 
@@ -41,7 +44,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     @Override
     public SelectionSet deepCopy() {
-        return new SelectionSet(deepCopy(selections));
+        return new SelectionSet(deepCopy(selections), getSourceLocation(), getComments());
     }
 
     @Override
@@ -85,9 +88,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         }
 
         public SelectionSet build() {
-            SelectionSet selectionSet = new SelectionSet(selections);
-            selectionSet.setSourceLocation(sourceLocation);
-            selectionSet.setComments(comments);
+            SelectionSet selectionSet = new SelectionSet(selections, sourceLocation, comments);
             return selectionSet;
         }
     }

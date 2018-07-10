@@ -1,22 +1,25 @@
 package graphql.language;
 
+import graphql.PublicApi;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
 
-    public ScalarTypeExtensionDefinition(String name) {
-        super(name);
-    }
-
-    public ScalarTypeExtensionDefinition(String name, List<Directive> directives) {
-        super(name, directives);
+    private ScalarTypeExtensionDefinition(String name,
+                                          List<Directive> directives,
+                                          Description description,
+                                          SourceLocation sourceLocation,
+                                          List<Comment> comments) {
+        super(name, directives, description, sourceLocation, comments);
     }
 
     @Override
     public ScalarTypeExtensionDefinition deepCopy() {
-        return new ScalarTypeExtensionDefinition(getName(), deepCopy(getDirectives()));
+        return new ScalarTypeExtensionDefinition(getName(), deepCopy(getDirectives()), getDescription(), getSourceLocation(), getComments());
     }
 
     @Override
@@ -69,10 +72,11 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
         }
 
         public ScalarTypeExtensionDefinition build() {
-            ScalarTypeExtensionDefinition scalarTypeDefinition = new ScalarTypeExtensionDefinition(name, directives);
-            scalarTypeDefinition.setSourceLocation(sourceLocation);
-            scalarTypeDefinition.setComments(comments);
-            scalarTypeDefinition.setDescription(description);
+            ScalarTypeExtensionDefinition scalarTypeDefinition = new ScalarTypeExtensionDefinition(name,
+                    directives,
+                    description,
+                    sourceLocation,
+                    comments);
             return scalarTypeDefinition;
         }
     }

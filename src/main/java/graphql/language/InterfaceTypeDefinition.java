@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,20 +9,25 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition> {
+
     private final String name;
-    private Description description;
+    private final Description description;
     private final List<FieldDefinition> definitions;
     private final List<Directive> directives;
 
-    public InterfaceTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>());
-    }
-
-    public InterfaceTypeDefinition(String name, List<FieldDefinition> definitions, List<Directive> directives) {
+    InterfaceTypeDefinition(String name,
+                            List<FieldDefinition> definitions,
+                            List<Directive> directives,
+                            Description description,
+                            SourceLocation sourceLocation,
+                            List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.definitions = definitions;
         this.directives = directives;
+        this.description = description;
     }
 
     public List<FieldDefinition> getFieldDefinitions() {
@@ -42,9 +48,6 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         return description;
     }
 
-    public void setDescription(Description description) {
-        this.description = description;
-    }
 
     @Override
     public List<Node> getChildren() {
@@ -68,7 +71,10 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
     public InterfaceTypeDefinition deepCopy() {
         return new InterfaceTypeDefinition(name,
                 deepCopy(definitions),
-                deepCopy(directives)
+                deepCopy(directives),
+                description,
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -134,10 +140,12 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         }
 
         public InterfaceTypeDefinition build() {
-            InterfaceTypeDefinition interfaceTypeDefinition = new InterfaceTypeDefinition(name, definitions, directives);
-            interfaceTypeDefinition.setSourceLocation(sourceLocation);
-            interfaceTypeDefinition.setComments(comments);
-            interfaceTypeDefinition.setDescription(description);
+            InterfaceTypeDefinition interfaceTypeDefinition = new InterfaceTypeDefinition(name,
+                    definitions,
+                    directives,
+                    description,
+                    sourceLocation,
+                    comments);
             return interfaceTypeDefinition;
         }
     }

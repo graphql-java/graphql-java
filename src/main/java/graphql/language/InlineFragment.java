@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -11,24 +12,18 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
+@PublicApi
 public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment> {
-    private TypeName typeCondition;
-    private List<Directive> directives;
-    private SelectionSet selectionSet;
+    private final TypeName typeCondition;
+    private final List<Directive> directives;
+    private final SelectionSet selectionSet;
 
-    public InlineFragment() {
-        this(null, new ArrayList<>(), null);
-    }
-
-    public InlineFragment(TypeName typeCondition) {
-        this(typeCondition, new ArrayList<>(), null);
-    }
-
-    public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
-        this(typeCondition, new ArrayList<>(), selectionSet);
-    }
-
-    public InlineFragment(TypeName typeCondition, List<Directive> directives, SelectionSet selectionSet) {
+    private InlineFragment(TypeName typeCondition,
+                           List<Directive> directives,
+                           SelectionSet selectionSet,
+                           SourceLocation sourceLocation,
+                           List<Comment> comments) {
+        super(sourceLocation, comments);
         this.typeCondition = typeCondition;
         this.directives = directives;
         this.selectionSet = selectionSet;
@@ -39,9 +34,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return typeCondition;
     }
 
-    public void setTypeCondition(TypeName typeCondition) {
-        this.typeCondition = typeCondition;
-    }
 
     public List<Directive> getDirectives() {
         return directives;
@@ -56,17 +48,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     }
 
 
-    public void setDirectives(List<Directive> directives) {
-        this.directives = directives;
-    }
-
     @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
-    }
-
-    public void setSelectionSet(SelectionSet selectionSet) {
-        this.selectionSet = selectionSet;
     }
 
     @Override
@@ -93,7 +77,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return new InlineFragment(
                 deepCopy(typeCondition),
                 deepCopy(directives),
-                deepCopy(selectionSet)
+                deepCopy(selectionSet),
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -152,12 +138,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         }
 
         public InlineFragment build() {
-            InlineFragment inlineFragment = new InlineFragment();
-            inlineFragment.setSourceLocation(sourceLocation);
-            inlineFragment.setComments(comments);
-            inlineFragment.setTypeCondition(typeCondition);
-            inlineFragment.setDirectives(directives);
-            inlineFragment.setSelectionSet(selectionSet);
+            InlineFragment inlineFragment = new InlineFragment(typeCondition, directives, selectionSet, sourceLocation, comments);
             return inlineFragment;
         }
     }

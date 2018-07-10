@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,22 +9,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
     private final String name;
-    private Type type;
-    private Description description;
+    private final Type type;
+    private final Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
 
-    public FieldDefinition(String name) {
-        this(name, null, new ArrayList<>(), new ArrayList<>());
-    }
-
-    public FieldDefinition(String name, Type type) {
-        this(name, type, new ArrayList<>(), new ArrayList<>());
-    }
-
-    public FieldDefinition(String name, Type type, List<InputValueDefinition> inputValueDefinitions, List<Directive> directives) {
+    private FieldDefinition(String name,
+                            Type type,
+                            List<InputValueDefinition> inputValueDefinitions,
+                            List<Directive> directives,
+                            Description description,
+                            SourceLocation sourceLocation,
+                            List<Comment> comments) {
+        super(sourceLocation, comments);
+        this.description = description;
         this.name = name;
         this.type = type;
         this.inputValueDefinitions = inputValueDefinitions;
@@ -34,10 +36,6 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         return type;
     }
 
-    public void setType(Type type) {
-        this.type = type;
-    }
-
     @Override
     public String getName() {
         return name;
@@ -45,10 +43,6 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
 
     public Description getDescription() {
         return description;
-    }
-
-    public void setDescription(Description description) {
-        this.description = description;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
@@ -84,7 +78,10 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         return new FieldDefinition(name,
                 deepCopy(type),
                 deepCopy(inputValueDefinitions),
-                deepCopy(directives)
+                deepCopy(directives),
+                description,
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -107,7 +104,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         return new Builder();
     }
 
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private String name;
         private List<Comment> comments = Collections.emptyList();
@@ -156,10 +153,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         }
 
         public FieldDefinition build() {
-            FieldDefinition fieldDefinition = new FieldDefinition(name, type, inputValueDefinitions, directives);
-            fieldDefinition.setSourceLocation(sourceLocation);
-            fieldDefinition.setComments(comments);
-            fieldDefinition.setDescription(description);
+            FieldDefinition fieldDefinition = new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments);
             return fieldDefinition;
         }
     }

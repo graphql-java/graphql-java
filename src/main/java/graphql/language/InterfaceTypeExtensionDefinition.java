@@ -1,24 +1,31 @@
 package graphql.language;
 
+import graphql.PublicApi;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
 
-    public InterfaceTypeExtensionDefinition(String name) {
-        super(name);
-    }
-
-    private InterfaceTypeExtensionDefinition(String name, List<FieldDefinition> definitions, List<Directive> directives) {
-        super(name, definitions, directives);
+    InterfaceTypeExtensionDefinition(String name,
+                                     List<FieldDefinition> definitions,
+                                     List<Directive> directives,
+                                     Description description,
+                                     SourceLocation sourceLocation,
+                                     List<Comment> comments) {
+        super(name, definitions, directives, description, sourceLocation, comments);
     }
 
     @Override
     public InterfaceTypeExtensionDefinition deepCopy() {
         return new InterfaceTypeExtensionDefinition(getName(),
                 deepCopy(getFieldDefinitions()),
-                deepCopy(getDirectives())
+                deepCopy(getDirectives()),
+                getDescription(),
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -79,10 +86,12 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
         }
 
         public InterfaceTypeExtensionDefinition build() {
-            InterfaceTypeExtensionDefinition interfaceTypeDefinition = new InterfaceTypeExtensionDefinition(name, definitions, directives);
-            interfaceTypeDefinition.setSourceLocation(sourceLocation);
-            interfaceTypeDefinition.setComments(comments);
-            interfaceTypeDefinition.setDescription(description);
+            InterfaceTypeExtensionDefinition interfaceTypeDefinition = new InterfaceTypeExtensionDefinition(name,
+                    definitions,
+                    directives,
+                    description,
+                    sourceLocation,
+                    comments);
             return interfaceTypeDefinition;
         }
     }

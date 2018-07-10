@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,15 +9,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition>, DirectivesContainer<InputObjectTypeDefinition> {
 
     private final String name;
-    private Description description;
+    private final Description description;
     private final List<Directive> directives;
     private final List<InputValueDefinition> inputValueDefinitions;
 
-    InputObjectTypeDefinition(String name, List<Directive> directives, List<InputValueDefinition> inputValueDefinitions) {
+    InputObjectTypeDefinition(String name,
+                              List<Directive> directives,
+                              List<InputValueDefinition> inputValueDefinitions,
+                              Description description,
+                              SourceLocation sourceLocation,
+                              List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
+        this.description = description;
         this.directives = directives;
         this.inputValueDefinitions = inputValueDefinitions;
     }
@@ -37,10 +46,6 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
 
     public Description getDescription() {
         return description;
-    }
-
-    public void setDescription(Description description) {
-        this.description = description;
     }
 
     @Override
@@ -65,8 +70,10 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     public InputObjectTypeDefinition deepCopy() {
         return new InputObjectTypeDefinition(name,
                 deepCopy(directives),
-                deepCopy(inputValueDefinitions)
-        );
+                deepCopy(inputValueDefinitions),
+                description,
+                getSourceLocation(),
+                getComments());
     }
 
     @Override
@@ -131,10 +138,12 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
         }
 
         public InputObjectTypeDefinition build() {
-            InputObjectTypeDefinition inputObjectTypeDefinition = new InputObjectTypeDefinition(name, directives, inputValueDefinitions);
-            inputObjectTypeDefinition.setSourceLocation(sourceLocation);
-            inputObjectTypeDefinition.setComments(comments);
-            inputObjectTypeDefinition.setDescription(description);
+            InputObjectTypeDefinition inputObjectTypeDefinition = new InputObjectTypeDefinition(name,
+                    directives,
+                    inputValueDefinitions,
+                    description,
+                    sourceLocation,
+                    comments);
             return inputObjectTypeDefinition;
         }
     }

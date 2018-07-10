@@ -51,18 +51,18 @@ public class ScalarInfo {
 
     static {
         // graphql standard scalars
-        STANDARD_SCALAR_DEFINITIONS.put("Int", new ScalarTypeDefinition("Int"));
-        STANDARD_SCALAR_DEFINITIONS.put("Float", new ScalarTypeDefinition("Float"));
-        STANDARD_SCALAR_DEFINITIONS.put("String", new ScalarTypeDefinition("String"));
-        STANDARD_SCALAR_DEFINITIONS.put("Boolean", new ScalarTypeDefinition("Boolean"));
-        STANDARD_SCALAR_DEFINITIONS.put("ID", new ScalarTypeDefinition("ID"));
+        STANDARD_SCALAR_DEFINITIONS.put("Int", ScalarTypeDefinition.newScalarTypeDefinition().name("Int").build());
+        STANDARD_SCALAR_DEFINITIONS.put("Float", ScalarTypeDefinition.newScalarTypeDefinition().name("Float").build());
+        STANDARD_SCALAR_DEFINITIONS.put("String", ScalarTypeDefinition.newScalarTypeDefinition().name("String").build());
+        STANDARD_SCALAR_DEFINITIONS.put("Boolean", ScalarTypeDefinition.newScalarTypeDefinition().name("Boolean").build());
+        STANDARD_SCALAR_DEFINITIONS.put("ID", ScalarTypeDefinition.newScalarTypeDefinition().name("ID").build());
 
         // graphql-java library extensions
-        STANDARD_SCALAR_DEFINITIONS.put("Long", new ScalarTypeDefinition("Long"));
-        STANDARD_SCALAR_DEFINITIONS.put("BigInteger", new ScalarTypeDefinition("BigInteger"));
-        STANDARD_SCALAR_DEFINITIONS.put("BigDecimal", new ScalarTypeDefinition("BigDecimal"));
-        STANDARD_SCALAR_DEFINITIONS.put("Short", new ScalarTypeDefinition("Short"));
-        STANDARD_SCALAR_DEFINITIONS.put("Char", new ScalarTypeDefinition("Char"));
+        STANDARD_SCALAR_DEFINITIONS.put("Long", ScalarTypeDefinition.newScalarTypeDefinition().name("Long").build());
+        STANDARD_SCALAR_DEFINITIONS.put("BigInteger", ScalarTypeDefinition.newScalarTypeDefinition().name("BigInteger").build());
+        STANDARD_SCALAR_DEFINITIONS.put("BigDecimal", ScalarTypeDefinition.newScalarTypeDefinition().name("BigDecimal").build());
+        STANDARD_SCALAR_DEFINITIONS.put("Short", ScalarTypeDefinition.newScalarTypeDefinition().name("Short").build());
+        STANDARD_SCALAR_DEFINITIONS.put("Char", ScalarTypeDefinition.newScalarTypeDefinition().name("Char").build());
 
     }
 

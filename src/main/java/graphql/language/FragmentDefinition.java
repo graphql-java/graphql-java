@@ -15,16 +15,18 @@ import java.util.List;
 @PublicApi
 public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition> {
 
-    private String name;
-    private TypeName typeCondition;
-    private List<Directive> directives;
-    private SelectionSet selectionSet;
+    private final String name;
+    private final TypeName typeCondition;
+    private final List<Directive> directives;
+    private final SelectionSet selectionSet;
 
-    private FragmentDefinition() {
-    }
-
-
-    private FragmentDefinition(String name, TypeName typeCondition, List<Directive> directives, SelectionSet selectionSet) {
+    private FragmentDefinition(String name,
+                               TypeName typeCondition,
+                               List<Directive> directives,
+                               SelectionSet selectionSet,
+                               SourceLocation sourceLocation,
+                               List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.typeCondition = typeCondition;
         this.directives = directives;
@@ -36,16 +38,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
 
     public TypeName getTypeCondition() {
         return typeCondition;
-    }
-
-    public void setTypeCondition(TypeName typeCondition) {
-        this.typeCondition = typeCondition;
     }
 
     @Override
@@ -53,17 +48,10 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         return directives;
     }
 
-    public void setDirectives(List<Directive> directives) {
-        this.directives = directives;
-    }
 
     @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
-    }
-
-    public void setSelectionSet(SelectionSet selectionSet) {
-        this.selectionSet = selectionSet;
     }
 
     @Override
@@ -90,7 +78,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         return new FragmentDefinition(name,
                 deepCopy(typeCondition),
                 deepCopy(directives),
-                deepCopy(selectionSet)
+                deepCopy(selectionSet),
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -156,13 +146,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         }
 
         public FragmentDefinition build() {
-            FragmentDefinition fragmentDefinition = new FragmentDefinition();
-            fragmentDefinition.setSourceLocation(sourceLocation);
-            fragmentDefinition.setComments(comments);
-            fragmentDefinition.setName(name);
-            fragmentDefinition.setTypeCondition(typeCondition);
-            fragmentDefinition.setDirectives(directives);
-            fragmentDefinition.setSelectionSet(selectionSet);
+            FragmentDefinition fragmentDefinition = new FragmentDefinition(name, typeCondition, directives, selectionSet, sourceLocation, comments);
             return fragmentDefinition;
         }
     }

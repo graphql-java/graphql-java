@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,19 +9,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class ObjectValue extends AbstractNode<ObjectValue> implements Value<ObjectValue> {
 
     private final List<ObjectField> objectFields = new ArrayList<>();
 
-    public ObjectValue() {
-    }
-
-    public ObjectValue(List<ObjectField> objectFields) {
+    private ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.objectFields.addAll(objectFields);
     }
 
     public List<ObjectField> getObjectFields() {
-        return objectFields;
+        return new ArrayList<>(objectFields);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     @Override
     public ObjectValue deepCopy() {
-        return new ObjectValue(deepCopy(objectFields));
+        return new ObjectValue(deepCopy(objectFields), getSourceLocation(), getComments());
     }
 
 
@@ -88,9 +88,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
         }
 
         public ObjectValue build() {
-            ObjectValue objectValue = new ObjectValue(objectFields);
-            objectValue.setSourceLocation(sourceLocation);
-            objectValue.setComments(comments);
+            ObjectValue objectValue = new ObjectValue(objectFields, sourceLocation, comments);
             return objectValue;
         }
     }

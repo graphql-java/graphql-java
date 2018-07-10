@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,22 +9,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class BooleanValue extends AbstractNode<BooleanValue> implements Value<BooleanValue> {
 
     private boolean value;
 
-    public BooleanValue(boolean value) {
+    private BooleanValue(boolean value, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.value = value;
     }
 
     public boolean isValue() {
         return value;
     }
-
-    public void setValue(boolean value) {
-        this.value = value;
-    }
-
 
     @Override
     public List<Node> getChildren() {
@@ -43,7 +41,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements Value<Bo
 
     @Override
     public BooleanValue deepCopy() {
-        return new BooleanValue(value);
+        return new BooleanValue(value, getSourceLocation(), getComments());
     }
 
     @Override
@@ -87,9 +85,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements Value<Bo
         }
 
         public BooleanValue build() {
-            BooleanValue booleanValue = new BooleanValue(value);
-            booleanValue.setSourceLocation(sourceLocation);
-            booleanValue.setComments(comments);
+            BooleanValue booleanValue = new BooleanValue(value, sourceLocation, comments);
             return booleanValue;
         }
     }

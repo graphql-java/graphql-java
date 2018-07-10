@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,21 +9,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class VariableReference extends AbstractNode<VariableReference> implements Value<VariableReference>, NamedNode<VariableReference> {
 
-    private String name;
+    private final String name;
 
-    public VariableReference(String name) {
+    private VariableReference(String name, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
     }
 
     @Override
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     @Override
@@ -42,7 +41,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
 
     @Override
     public VariableReference deepCopy() {
-        return new VariableReference(name);
+        return new VariableReference(name, getSourceLocation(), getComments());
     }
 
     @Override
@@ -86,9 +85,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
         }
 
         public VariableReference build() {
-            VariableReference variableReference = new VariableReference(name);
-            variableReference.setSourceLocation(sourceLocation);
-            variableReference.setComments(comments);
+            VariableReference variableReference = new VariableReference(name, sourceLocation, comments);
             return variableReference;
         }
     }

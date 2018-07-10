@@ -1,8 +1,11 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
+
 import java.io.Serializable;
 
+@PublicApi
 public class SourceLocation implements Serializable {
 
     private final int line;

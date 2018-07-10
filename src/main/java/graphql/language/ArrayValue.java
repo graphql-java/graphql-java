@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,26 +9,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayValue> {
 
-    private List<Value> values = new ArrayList<>();
+    private final List<Value> values = new ArrayList<>();
 
-    public ArrayValue() {
-        this(new ArrayList<>());
-    }
-
-    public ArrayValue(List<Value> values) {
-        this.values = values;
+    private ArrayValue(List<Value> values, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
+        this.values.addAll(values);
     }
 
     public List<Value> getValues() {
-        return values;
+        return new ArrayList<>(values);
     }
-
-    public void setValues(List<Value> values) {
-        this.values = values;
-    }
-
 
     @Override
     public List<Node> getChildren() {
@@ -51,7 +45,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
     @Override
     public ArrayValue deepCopy() {
-        return new ArrayValue(deepCopy(values));
+        return new ArrayValue(deepCopy(values), getSourceLocation(), getComments());
     }
 
     @Override
@@ -88,10 +82,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
         }
 
         public ArrayValue build() {
-            ArrayValue arrayValue = new ArrayValue();
-            arrayValue.setSourceLocation(sourceLocation);
-            arrayValue.setValues(values);
-            arrayValue.setComments(comments);
+            ArrayValue arrayValue = new ArrayValue(values, sourceLocation, comments);
             return arrayValue;
         }
     }

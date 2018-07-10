@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,41 +9,32 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition> {
 
     public enum Operation {
         QUERY, MUTATION, SUBSCRIPTION
     }
 
-    private String name;
+    private final String name;
 
-    private Operation operation;
-    private List<VariableDefinition> variableDefinitions = new ArrayList<>();
-    private List<Directive> directives = new ArrayList<>();
-    private SelectionSet selectionSet;
+    private final Operation operation;
+    private final List<VariableDefinition> variableDefinitions;
+    private final List<Directive> directives;
+    private final SelectionSet selectionSet;
 
-    public OperationDefinition() {
-
-    }
-
-    public OperationDefinition(String name, Operation operation, List<VariableDefinition> variableDefinitions, List<Directive> directives, SelectionSet selectionSet) {
+    private OperationDefinition(String name,
+                                Operation operation,
+                                List<VariableDefinition> variableDefinitions,
+                                List<Directive> directives,
+                                SelectionSet selectionSet,
+                                SourceLocation sourceLocation,
+                                List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.operation = operation;
         this.variableDefinitions = variableDefinitions;
         this.directives = directives;
-        this.selectionSet = selectionSet;
-    }
-
-    public OperationDefinition(String name, Operation operation, List<VariableDefinition> variableDefinitions, SelectionSet selectionSet) {
-        this.name = name;
-        this.operation = operation;
-        this.variableDefinitions = variableDefinitions;
-        this.selectionSet = selectionSet;
-    }
-
-    public OperationDefinition(String name, Operation operation, SelectionSet selectionSet) {
-        this.name = name;
-        this.operation = operation;
         this.selectionSet = selectionSet;
     }
 
@@ -59,43 +51,22 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public Operation getOperation() {
         return operation;
-    }
-
-    public void setOperation(Operation operation) {
-        this.operation = operation;
     }
 
     public List<VariableDefinition> getVariableDefinitions() {
         return variableDefinitions;
     }
 
-    public void setVariableDefinitions(List<VariableDefinition> variableDefinitions) {
-        this.variableDefinitions = variableDefinitions;
-    }
-
     public List<Directive> getDirectives() {
         return directives;
-    }
-
-    public void setDirectives(List<Directive> directives) {
-        this.directives = directives;
     }
 
     @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
     }
-
-    public void setSelectionSet(SelectionSet selectionSet) {
-        this.selectionSet = selectionSet;
-    }
-
 
     @Override
     public boolean isEqualTo(Node o) {
@@ -114,7 +85,9 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 operation,
                 deepCopy(variableDefinitions),
                 deepCopy(directives),
-                deepCopy(selectionSet)
+                deepCopy(selectionSet),
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -187,14 +160,15 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         }
 
         public OperationDefinition build() {
-            OperationDefinition operationDefinition = new OperationDefinition();
-            operationDefinition.setSourceLocation(sourceLocation);
-            operationDefinition.setComments(comments);
-            operationDefinition.setName(name);
-            operationDefinition.setOperation(operation);
-            operationDefinition.setVariableDefinitions(variableDefinitions);
-            operationDefinition.setDirectives(directives);
-            operationDefinition.setSelectionSet(selectionSet);
+            OperationDefinition operationDefinition = new OperationDefinition(
+                    name,
+                    operation,
+                    variableDefinitions,
+                    directives,
+                    selectionSet,
+                    sourceLocation,
+                    comments
+            );
             return operationDefinition;
         }
     }

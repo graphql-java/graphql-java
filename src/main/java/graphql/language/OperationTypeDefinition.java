@@ -1,7 +1,7 @@
 package graphql.language;
 
 
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -9,30 +9,20 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-@Internal
+@PublicApi
 public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinition> implements NamedNode<OperationTypeDefinition> {
+
     private final String name;
-    private Type type;
+    private final Type type;
 
-    public OperationTypeDefinition() {
-        this(null);
-    }
-
-    public OperationTypeDefinition(String name) {
-        this(name, null);
-    }
-
-    public OperationTypeDefinition(String name, Type type) {
+    public OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.type = type;
     }
 
     public Type getType() {
         return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     @Override
@@ -59,7 +49,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
     @Override
     public OperationTypeDefinition deepCopy() {
-        return new OperationTypeDefinition(name, deepCopy(type));
+        return new OperationTypeDefinition(name, deepCopy(type), getSourceLocation(), getComments());
     }
 
     @Override
@@ -110,10 +100,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         }
 
         public OperationTypeDefinition build() {
-            OperationTypeDefinition operationTypeDefinition = new OperationTypeDefinition(name);
-            operationTypeDefinition.setSourceLocation(sourceLocation);
-            operationTypeDefinition.setComments(comments);
-            operationTypeDefinition.setType(type);
+            OperationTypeDefinition operationTypeDefinition = new OperationTypeDefinition(name, type, sourceLocation, comments);
             return operationTypeDefinition;
         }
     }

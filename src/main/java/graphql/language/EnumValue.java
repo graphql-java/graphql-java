@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,11 +9,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValue>, NamedNode<EnumValue> {
 
     private String name;
 
-    public EnumValue(String name) {
+    private EnumValue(String name, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
     }
 
@@ -43,7 +46,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
 
     @Override
     public EnumValue deepCopy() {
-        return new EnumValue(name);
+        return new EnumValue(name, getSourceLocation(), getComments());
     }
 
     @Override
@@ -87,9 +90,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
         }
 
         public EnumValue build() {
-            EnumValue enumValue = new EnumValue(name);
-            enumValue.setSourceLocation(sourceLocation);
-            enumValue.setComments(comments);
+            EnumValue enumValue = new EnumValue(name, sourceLocation, comments);
             return enumValue;
         }
     }

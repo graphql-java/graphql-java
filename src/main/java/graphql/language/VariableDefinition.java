@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,21 +9,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
 
-    private String name;
-    private Type type;
-    private Value defaultValue;
+    private final String name;
+    private final Type type;
+    private final Value defaultValue;
 
-    public VariableDefinition() {
-        this(null, null, null);
-    }
-
-    public VariableDefinition(String name, Type type) {
-        this(name, type, null);
-    }
-
-    public VariableDefinition(String name, Type type, Value defaultValue) {
+    private VariableDefinition(String name,
+                               Type type,
+                               Value defaultValue,
+                               SourceLocation sourceLocation,
+                               List<Comment> comments) {
+        super(sourceLocation, comments);
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
@@ -32,25 +31,12 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return defaultValue;
     }
 
-    public void setDefaultValue(Value defaultValue) {
-        this.defaultValue = defaultValue;
-    }
-
-    @Override
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public Type getType() {
         return type;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     @Override
@@ -76,7 +62,9 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     public VariableDefinition deepCopy() {
         return new VariableDefinition(name,
                 deepCopy(type),
-                deepCopy(defaultValue)
+                deepCopy(defaultValue),
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -136,12 +124,13 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         }
 
         public VariableDefinition build() {
-            VariableDefinition variableDefinition = new VariableDefinition();
-            variableDefinition.setSourceLocation(sourceLocation);
-            variableDefinition.setName(name);
-            variableDefinition.setComments(comments);
-            variableDefinition.setType(type);
-            variableDefinition.setDefaultValue(defaultValue);
+            VariableDefinition variableDefinition = new VariableDefinition(
+                    name,
+                    type,
+                    defaultValue,
+                    sourceLocation,
+                    comments
+            );
             return variableDefinition;
         }
     }

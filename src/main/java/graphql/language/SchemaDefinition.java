@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -11,15 +12,17 @@ import java.util.Map;
 
 import static graphql.language.NodeUtil.directivesByName;
 
+@PublicApi
 public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements Definition<SchemaDefinition> {
+
     private final List<Directive> directives;
     private final List<OperationTypeDefinition> operationTypeDefinitions;
 
-    public SchemaDefinition() {
-        this(new ArrayList<>(), new ArrayList<>());
-    }
-
-    public SchemaDefinition(List<Directive> directives, List<OperationTypeDefinition> operationTypeDefinitions) {
+    private SchemaDefinition(List<Directive> directives,
+                             List<OperationTypeDefinition> operationTypeDefinitions,
+                             SourceLocation sourceLocation,
+                             List<Comment> comments) {
+        super(sourceLocation, comments);
         this.directives = directives;
         this.operationTypeDefinitions = operationTypeDefinitions;
     }
@@ -38,7 +41,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
-        return operationTypeDefinitions;
+        return new ArrayList<>(operationTypeDefinitions);
     }
 
     @Override
@@ -61,7 +64,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
     @Override
     public SchemaDefinition deepCopy() {
-        return new SchemaDefinition(deepCopy(directives), deepCopy(operationTypeDefinitions));
+        return new SchemaDefinition(deepCopy(directives), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments());
     }
 
     @Override
@@ -85,7 +88,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         private SourceLocation sourceLocation;
         private List<Comment> comments = Collections.emptyList();
         private List<Directive> directives = new ArrayList<>();
-        private List<OperationTypeDefinition> operationTypeDefinitions;
+        private List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
 
         private Builder() {
         }
@@ -111,10 +114,16 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
             return this;
         }
 
+        public Builder operationTypeDefinition(OperationTypeDefinition operationTypeDefinitions) {
+            this.operationTypeDefinitions.add(operationTypeDefinitions);
+            return this;
+        }
+
         public SchemaDefinition build() {
-            SchemaDefinition schemaDefinition = new SchemaDefinition(directives, operationTypeDefinitions);
-            schemaDefinition.setSourceLocation(sourceLocation);
-            schemaDefinition.setComments(comments);
+            SchemaDefinition schemaDefinition = new SchemaDefinition(directives,
+                    operationTypeDefinitions,
+                    sourceLocation,
+                    comments);
             return schemaDefinition;
         }
     }

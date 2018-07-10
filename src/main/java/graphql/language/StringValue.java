@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -8,20 +9,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class StringValue extends AbstractNode<StringValue> implements Value<StringValue> {
 
-    private String value;
+    private final String value;
 
-    public StringValue(String value) {
+    private StringValue(String value, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.value = value;
     }
 
     public String getValue() {
         return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
     }
 
     @Override
@@ -50,7 +49,7 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
 
     @Override
     public StringValue deepCopy() {
-        return new StringValue(value);
+        return new StringValue(value, getSourceLocation(), getComments());
     }
 
     @Override
@@ -87,9 +86,7 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
         }
 
         public StringValue build() {
-            StringValue stringValue = new StringValue(value);
-            stringValue.setSourceLocation(sourceLocation);
-            stringValue.setComments(comments);
+            StringValue stringValue = new StringValue(value, sourceLocation, comments);
             return stringValue;
         }
     }

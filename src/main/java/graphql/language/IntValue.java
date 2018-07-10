@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -9,20 +10,18 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> {
 
-    private BigInteger value;
+    private final BigInteger value;
 
-    public IntValue(BigInteger value) {
+    private IntValue(BigInteger value, SourceLocation sourceLocation, List<Comment> comments) {
+        super(sourceLocation, comments);
         this.value = value;
     }
 
     public BigInteger getValue() {
         return value;
-    }
-
-    public void setValue(BigInteger value) {
-        this.value = value;
     }
 
     @Override
@@ -43,7 +42,7 @@ public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> 
 
     @Override
     public IntValue deepCopy() {
-        return new IntValue(value);
+        return new IntValue(value, getSourceLocation(), getComments());
     }
 
     @Override
@@ -87,9 +86,7 @@ public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> 
         }
 
         public IntValue build() {
-            IntValue intValue = new IntValue(value);
-            intValue.setSourceLocation(sourceLocation);
-            intValue.setComments(comments);
+            IntValue intValue = new IntValue(value, sourceLocation, comments);
             return intValue;
         }
     }

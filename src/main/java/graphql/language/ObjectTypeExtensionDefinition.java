@@ -1,21 +1,24 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+@PublicApi
 public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
-    public ObjectTypeExtensionDefinition() {
-        super(null);
-    }
 
-    public ObjectTypeExtensionDefinition(String name) {
-        super(name);
-    }
-
-    public ObjectTypeExtensionDefinition(String name, List<Type> implementz, List<Directive> directives, List<FieldDefinition> fieldDefinitions) {
-        super(name, implementz, directives, fieldDefinitions);
+    private ObjectTypeExtensionDefinition(String name,
+                                          List<Type> implementz,
+                                          List<Directive> directives,
+                                          List<FieldDefinition> fieldDefinitions,
+                                          Description description,
+                                          SourceLocation sourceLocation,
+                                          List<Comment> comments) {
+        super(name, implementz, directives, fieldDefinitions,
+                description, sourceLocation, comments);
     }
 
     @Override
@@ -23,7 +26,10 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
         return new ObjectTypeExtensionDefinition(getName(),
                 deepCopy(getImplements()),
                 deepCopy(getDirectives()),
-                deepCopy(getFieldDefinitions())
+                deepCopy(getFieldDefinitions()),
+                getDescription(),
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -90,10 +96,13 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
         }
 
         public ObjectTypeExtensionDefinition build() {
-            ObjectTypeExtensionDefinition objectTypeDefinition = new ObjectTypeExtensionDefinition(name, implementz, directives, fieldDefinitions);
-            objectTypeDefinition.setSourceLocation(sourceLocation);
-            objectTypeDefinition.setComments(comments);
-            objectTypeDefinition.setDescription(description);
+            ObjectTypeExtensionDefinition objectTypeDefinition = new ObjectTypeExtensionDefinition(name,
+                    implementz,
+                    directives,
+                    fieldDefinitions,
+                    description,
+                    sourceLocation,
+                    comments);
             return objectTypeDefinition;
         }
     }
