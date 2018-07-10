@@ -12,9 +12,8 @@ class NodeTraverserTest extends Specification {
     def "traverse nodes in depth first"() {
         given:
         Field leaf = new Field("leaf")
-        SelectionSet rootSelectionSet = new SelectionSet(Arrays.asList(leaf))
-        Field root = new Field("root")
-        root.setSelectionSet(rootSelectionSet)
+        SelectionSet rootSelectionSet = SelectionSet.newSelectionSet().selections(Arrays.asList(leaf)).build()
+        Field root = Field.newField().name("root").selectionSet(rootSelectionSet).build()
 
         NodeTraverser nodeTraverser = new NodeTraverser()
         NodeVisitor nodeVisitor = Mock(NodeVisitor)
@@ -39,10 +38,9 @@ class NodeTraverserTest extends Specification {
 
     def "traverse nodes in pre-order"() {
         given:
-        Field leaf = new Field("leaf")
-        SelectionSet rootSelectionSet = new SelectionSet(Arrays.asList(leaf))
-        Field root = new Field("root")
-        root.setSelectionSet(rootSelectionSet)
+        Field leaf = Field.newField().name("leaf").build()
+        SelectionSet rootSelectionSet = SelectionSet.newSelectionSet().selections(Arrays.asList(leaf)).build()
+        Field root = Field.newField().name("root").selectionSet(rootSelectionSet).build()
 
         NodeTraverser nodeTraverser = new NodeTraverser()
         NodeVisitor nodeVisitor = Mock(NodeVisitor)
@@ -61,10 +59,9 @@ class NodeTraverserTest extends Specification {
 
     def "traverse nodes in post-order"() {
         given:
-        Field leaf = new Field("leaf")
-        SelectionSet rootSelectionSet = new SelectionSet(Arrays.asList(leaf))
-        Field root = new Field("root")
-        root.setSelectionSet(rootSelectionSet)
+        Field leaf = Field.newField().name("leaf").build()
+        SelectionSet rootSelectionSet = SelectionSet.newSelectionSet().selections(Arrays.asList(leaf)).build()
+        Field root = Field.newField().name("root").selectionSet(rootSelectionSet).build()
 
         NodeTraverser nodeTraverser = new NodeTraverser()
         NodeVisitor nodeVisitor = Mock(NodeVisitor)
