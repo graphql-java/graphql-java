@@ -24,13 +24,13 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "constructor works as expected"() {
         given:
 
-        def field = new Field("test")
+        def field = Field.newField().name("test").build()
         field.setSourceLocation(new SourceLocation(4, 5))
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [new Field()]])
+                .fields(["fld": [Field.newField().build()]])
                 .field([field])
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -60,13 +60,13 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "constructor handles missing path as null"() {
         given:
 
-        def field = new Field("test")
+        def field = Field.newField().name("test").build()
         field.setSourceLocation(new SourceLocation(4, 5))
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [new Field()]])
+                .fields(["fld": [Field.newField().build()]])
                 .field([field])
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -85,13 +85,13 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "when constructor receives empty path it should return the base field path"() {
         given:
 
-        def field = new Field("test")
+        def field = Field.newField().name("test").build()
         field.setSourceLocation(new SourceLocation(4, 5))
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [new Field()]])
+                .fields(["fld": [Field.newField().build()]])
                 .field([field])
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -111,12 +111,12 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "constructor handles missing locations as null"() {
         given:
 
-        def field = new Field("test")
+        def field = Field.newField().name("test").build()
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [new Field()]])
+                .fields(["fld": [Field.newField().build()]])
                 .field([field])
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -135,14 +135,14 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "when constructor receives empty locations it should return the base field locations"() {
         given:
 
-        def field = new Field("test")
+        def field = Field.newField().name("test").build()
         def expectedSourceLocation = new SourceLocation(1, 2)
         field.setSourceLocation(expectedSourceLocation)
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [new Field()]])
+                .fields(["fld": [Field.newField().build()]])
                 .field([field])
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -161,13 +161,13 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "constructor transforms multiple source locations"() {
         given:
 
-        def field = new Field("test")
+        def field = Field.newField().name("test").build()
         field.setSourceLocation(new SourceLocation(4, 5))
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": [new Field()]])
+                .fields(["fld": [Field.newField().build()]])
                 .field([field])
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
