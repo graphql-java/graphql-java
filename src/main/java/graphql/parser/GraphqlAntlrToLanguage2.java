@@ -417,7 +417,8 @@ public class GraphqlAntlrToLanguage2 {
         GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            implementsInterfacesContext.typeName().stream().map(this::createTypeName).forEach(typeName -> implementz.add(0, typeName));
+            List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(Collectors.toList());
+            implementz.addAll(0, typeNames);
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
         }
         def.implementz(implementz);
@@ -437,7 +438,8 @@ public class GraphqlAntlrToLanguage2 {
         GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
-            implementsInterfacesContext.typeName().stream().map(this::createTypeName).forEach(typeName -> implementz.add(typeName));
+            List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(Collectors.toList());
+            implementz.addAll(0, typeNames);
             implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
         }
         def.implementz(implementz);
