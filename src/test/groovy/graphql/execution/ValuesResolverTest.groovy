@@ -250,7 +250,7 @@ class ValuesResolverTest extends Specification {
         def fieldArgument = new GraphQLArgument("arg", inputObjectType)
 
         when:
-        def argument = new Argument("arg", new ObjectValue())
+        def argument = new Argument("arg", ObjectValue.newObjectValue().build())
         resolver.getArgumentValues([fieldArgument], [argument], [:])
 
         then:

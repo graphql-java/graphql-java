@@ -49,7 +49,7 @@ class NodeVisitorStubTest extends Specification {
         IntValue.newIntValue().build()                   | 'visitIntValue'
         new BooleanValue(true)                           | 'visitBooleanValue'
         NullValue.Null                                   | 'visitNullValue'
-        new ObjectValue()                                | 'visitObjectValue'
+        ObjectValue.newObjectValue().build()             | 'visitObjectValue'
         VariableReference.newVariableReference().build() | 'visitVariableReference'
         EnumValue.newEnumValue().build()                 | 'visitEnumValue'
         StringValue.newStringValue().build()             | 'visitStringValue'
@@ -69,11 +69,11 @@ class NodeVisitorStubTest extends Specification {
 
 
         where:
-        node                                               | visitMethod
-        new OperationDefinition()                          | 'visitOperationDefinition'
-        FragmentDefinition.newFragmentDefinition().build() | 'visitFragmentDefinition'
-        new DirectiveDefinition("")                        | 'visitDirectiveDefinition'
-        SchemaDefinition.newSchemaDefintion().build()      | 'visitSchemaDefinition'
+        node                                                 | visitMethod
+        OperationDefinition.newOperationDefinition().build() | 'visitOperationDefinition'
+        FragmentDefinition.newFragmentDefinition().build()   | 'visitFragmentDefinition'
+        new DirectiveDefinition("")                          | 'visitDirectiveDefinition'
+        SchemaDefinition.newSchemaDefintion().build()        | 'visitSchemaDefinition'
     }
 
     @Unroll
@@ -146,7 +146,7 @@ class NodeVisitorStubTest extends Specification {
         SelectionSet.newSelectionSet().build()                       | 'visitSelectionSet'
         VariableDefinition.newVariableDefinition().build()           | 'visitVariableDefinition'
         new StringValue("")                                          | 'visitValue'
-        new OperationDefinition()                                    | 'visitDefinition'
+        OperationDefinition.newOperationDefinition().build()         | 'visitDefinition'
         new UnionTypeDefinition("")                                  | 'visitTypeDefinition'
         Field.newField().build()                                     | 'visitSelection'
         NonNullType.newNonNullType().build()                         | 'visitType'

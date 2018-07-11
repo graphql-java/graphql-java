@@ -147,11 +147,11 @@ class ValidationUtilTest extends Specification {
                 .name("hello")
                 .type(GraphQLString))
                 .build()
-        def objectValue = new ObjectValue()
-        objectValue.getObjectFields().add(new ObjectField("hello", new StringValue("world")))
+        def objectValue = ObjectValue.newObjectValue()
+        objectValue.objectField(new ObjectField("hello", new StringValue("world")))
 
         expect:
-        validationUtil.isValidLiteralValue(objectValue, inputObjectType,schema)
+        validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema)
     }
 
     def "a invalid ObjectValue with a invalid field"() {
@@ -177,7 +177,7 @@ class ValidationUtilTest extends Specification {
                 .name("hello")
                 .type(nonNull(GraphQLString)))
                 .build()
-        def objectValue = new ObjectValue()
+        def objectValue = ObjectValue.newObjectValue().build()
 
         expect:
         !validationUtil.isValidLiteralValue(objectValue, inputObjectType,schema)

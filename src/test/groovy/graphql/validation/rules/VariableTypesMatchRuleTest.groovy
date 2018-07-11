@@ -41,7 +41,7 @@ class VariableTypesMatchRuleTest extends Specification {
                 .doesVariableTypesMatch(Scalars.GraphQLString, defaultValue, expectedType) >> false
 
         when:
-        variableTypesMatchRule.checkOperationDefinition(new OperationDefinition())
+        variableTypesMatchRule.checkOperationDefinition(OperationDefinition.newOperationDefinition().build())
         variableTypesMatchRule.checkVariableDefinition(new VariableDefinition("var", astType, defaultValue))
         variableTypesMatchRule.checkVariable(new VariableReference("var"))
 
@@ -65,7 +65,7 @@ class VariableTypesMatchRuleTest extends Specification {
 
 
         when:
-        variableTypesMatchRule.checkOperationDefinition(new OperationDefinition())
+        variableTypesMatchRule.checkOperationDefinition(OperationDefinition.newOperationDefinition().build())
         variableTypesMatchRule.checkVariableDefinition(new VariableDefinition("var", astType, defaultValue))
         variableTypesMatchRule.checkVariable(new VariableReference("var"))
 
