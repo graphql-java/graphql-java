@@ -41,7 +41,7 @@ public class Parser {
         GraphqlParser.DocumentContext documentContext = parser.document();
 
 
-        GraphqlAntlrToLanguage2 antlrToLanguage = new GraphqlAntlrToLanguage2(tokens);
+        GraphqlAntlrToLanguage antlrToLanguage = new GraphqlAntlrToLanguage(tokens);
         Document doc = antlrToLanguage.createDocument(documentContext);
 
         Token stop = documentContext.getStop();
