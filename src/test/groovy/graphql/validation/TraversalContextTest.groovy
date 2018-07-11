@@ -36,7 +36,7 @@ class TraversalContextTest extends Specification {
     def "operation definition"() {
         given:
         SelectionSet selectionSet = new SelectionSet([])
-        OperationDefinition operationDefinition = new OperationDefinition(queryType.getName(), QUERY, selectionSet)
+        OperationDefinition operationDefinition = OperationDefinition.newOperationDefinition().name(queryType.getName()).operation(QUERY).selectionSet(selectionSet).build()
 
         when:
         traversalContext.enter(operationDefinition, [])
@@ -259,7 +259,7 @@ class TraversalContextTest extends Specification {
     def "visit array with schema input type is enum: input type is null after"() {
         given:
         GraphQLEnumType enumType = GraphQLEnumType.newEnum().name("EnumType").value("Val1").value("Val2").build()
-        ArrayValue arrayValue = new ArrayValue()
+        ArrayValue arrayValue = ArrayValue.newArrayValue().build()
 
         traversalContext.inputTypeStack.add(enumType)
 
