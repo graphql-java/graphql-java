@@ -69,11 +69,11 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     }
 
     public List<VariableDefinition> getVariableDefinitions() {
-        return variableDefinitions;
+        return new ArrayList<>(variableDefinitions);
     }
 
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     @Override

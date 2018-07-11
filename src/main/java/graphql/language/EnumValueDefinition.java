@@ -50,7 +50,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     @Override

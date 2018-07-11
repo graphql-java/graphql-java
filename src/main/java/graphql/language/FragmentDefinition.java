@@ -45,7 +45,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
 

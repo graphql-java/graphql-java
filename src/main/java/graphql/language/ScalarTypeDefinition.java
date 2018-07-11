@@ -32,7 +32,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     @Override
@@ -117,6 +117,11 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
+            return this;
+        }
+
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
             return this;
         }
 

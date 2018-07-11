@@ -220,9 +220,8 @@ scalar other
 """
 
         and: "expected schema"
-        def schema = new ScalarTypeDefinition("ScalarName")
-        schema.getDirectives()
-                .add(new Directive("scalarDirective", [new Argument("a1", new VariableReference("v1"))]))
+        def schema = ScalarTypeDefinition.newScalarTypeDefinition().name("ScalarName")
+        schema.directive(new Directive("scalarDirective", [new Argument("a1", new VariableReference("v1"))]))
         def other = new ScalarTypeDefinition("other")
 
         when:
@@ -230,7 +229,7 @@ scalar other
 
         then:
         document.definitions.size() == 2
-        isEqual(document.definitions[0], schema)
+        isEqual(document.definitions[0], schema.build())
         isEqual(document.definitions[1], other)
     }
 
@@ -266,26 +265,25 @@ three: [Number] @three
 """
 
         and: "expected schema"
-        def schema = InputObjectTypeDefinition.newInputObjectDefinition().name("InputName").build()
-        schema.getDirectives().add(new Directive("d1"))
-        schema.getDirectives().add(new Directive("d2"))
-        schema.getInputValueDefinitions()
-                .add(new InputValueDefinition("one", new TypeName("Number")))
+        def schema = InputObjectTypeDefinition.newInputObjectDefinition().name("InputName")
+        schema.directive(new Directive("d1"))
+        schema.directive(new Directive("d2"))
+        schema.inputValueDefinition(new InputValueDefinition("one", new TypeName("Number")))
 
-        def two = new InputValueDefinition("two", new TypeName("Number"), new IntValue(1))
-        two.getDirectives().add(new Directive("two"))
-        schema.getInputValueDefinitions().add(two)
+        def two = InputValueDefinition.newInputValueDefinition().name("two").type(new TypeName("Number")).defaultValue(new IntValue(1))
+        two.directive(new Directive("two"))
+        schema.inputValueDefinition(two.build())
 
-        def three = new InputValueDefinition("three", new ListType(new TypeName("Number")))
-        three.getDirectives().add(new Directive("three"))
-        schema.getInputValueDefinitions().add(three)
+        def three = InputValueDefinition.newInputValueDefinition().name("three").type(new ListType(new TypeName("Number")))
+        three.directive(new Directive("three"))
+        schema.inputValueDefinition(three.build())
 
         when:
         def document = new Parser().parseDocument(input)
 
         then:
         document.definitions.size() == 1
-        isEqual(document.definitions[0], schema)
+        isEqual(document.definitions[0], schema.build())
     }
 
     def "toplevel schema"() {

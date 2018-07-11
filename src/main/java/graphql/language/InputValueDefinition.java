@@ -46,6 +46,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     /**
      * alternative to using a Builder for convenience
      */
+
     public InputValueDefinition(String name,
                                 Type type,
                                 Value defaultValue) {
@@ -71,7 +72,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     }
 
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     @Override

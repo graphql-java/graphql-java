@@ -88,12 +88,12 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
     public List<Argument> getArguments() {
-        return arguments;
+        return new ArrayList<>(arguments);
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     @Override

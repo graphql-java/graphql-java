@@ -19,6 +19,9 @@ public class Document extends AbstractNode<Document> {
         this.definitions = definitions;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
     public Document(List<Definition> definitions) {
         this(definitions, null, new ArrayList<>());
     }

@@ -3,6 +3,7 @@ package graphql.language;
 import graphql.Assert;
 import graphql.AssertException;
 import graphql.GraphQLException;
+import graphql.Internal;
 import graphql.Scalars;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLEnumType;
@@ -30,6 +31,7 @@ import java.util.Map;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 
+@Internal
 public class AstValueHelper {
 
     /**

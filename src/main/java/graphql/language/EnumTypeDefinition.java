@@ -41,7 +41,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     @Override

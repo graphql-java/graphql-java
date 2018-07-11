@@ -32,11 +32,11 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return inputValueDefinitions;
+        return new ArrayList<>(inputValueDefinitions);
     }
 
     @Override
@@ -132,8 +132,18 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
             return this;
         }
 
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
+            return this;
+        }
+
         public Builder inputValueDefinitions(List<InputValueDefinition> inputValueDefinitions) {
             this.inputValueDefinitions = inputValueDefinitions;
+            return this;
+        }
+
+        public Builder inputValueDefinition(InputValueDefinition inputValueDefinition) {
+            this.inputValueDefinitions.add(inputValueDefinition);
             return this;
         }
 
