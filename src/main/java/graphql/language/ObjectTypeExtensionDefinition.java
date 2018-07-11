@@ -92,13 +92,28 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
             return this;
         }
 
+        public Builder implementz(Type implementz) {
+            this.implementz.add(implementz);
+            return this;
+        }
+
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;
         }
 
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
+            return this;
+        }
+
         public Builder fieldDefinitions(List<FieldDefinition> fieldDefinitions) {
             this.fieldDefinitions = fieldDefinitions;
+            return this;
+        }
+
+        public Builder fieldDefinition(FieldDefinition fieldDefinition) {
+            this.fieldDefinitions.add(fieldDefinition);
             return this;
         }
 

@@ -147,6 +147,11 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
             return this;
         }
 
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
+            return this;
+        }
+
         public Builder memberTypes(List<Type> memberTypes) {
             this.memberTypes = memberTypes;
             return this;

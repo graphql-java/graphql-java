@@ -241,18 +241,18 @@ union UnionName @d1 @d2 = Type1 | Type2
 """
 
         and: "expected schema"
-        def schema = new UnionTypeDefinition("UnionName")
-        schema.getDirectives().add(new Directive("d1"))
-        schema.getDirectives().add(new Directive("d2"))
-        schema.getMemberTypes().add(new TypeName("Type1"))
-        schema.getMemberTypes().add(new TypeName("Type2"))
+        def schema = UnionTypeDefinition.newUnionTypeDefinition().name("UnionName")
+        schema.directive(new Directive("d1"))
+        schema.directive(new Directive("d2"))
+        schema.memberType(new TypeName("Type1"))
+        schema.memberType(new TypeName("Type2"))
 
         when:
         def document = new Parser().parseDocument(input)
 
         then:
         document.definitions.size() == 1
-        isEqual(document.definitions[0], schema)
+        isEqual(document.definitions[0], schema.build())
     }
 
     def "input object schema"() {
@@ -311,7 +311,7 @@ schema @d1 @d2 {
 
         then:
         document.definitions.size() == 1
-        isEqual(document.definitions[0], schema)
+        isEqual(document.definitions[0], schema.build())
     }
 
     def "extend schema"() {
@@ -325,33 +325,31 @@ withArgs(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
 """
 
         and: "expected schema"
-        def schema = new ObjectTypeExtensionDefinition("ExtendType")
-        schema.getImplements().add(new TypeName("Impl3"))
-        schema.getDirectives()
-                .add(new Directive("extendDirective", [new Argument("a1", new VariableReference("v1"))]))
-        schema.getFieldDefinitions()
-                .add(new FieldDefinition("one", new TypeName("Int")))
-        def two = new FieldDefinition("two", new TypeName("Int"))
-        two.getDirectives().add(new Directive("second"))
-        schema.getFieldDefinitions().add(two)
+        def schema = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("ExtendType")
+        schema.implementz(new TypeName("Impl3"))
+        schema.directive(new Directive("extendDirective", [new Argument("a1", new VariableReference("v1"))]))
+        schema.fieldDefinition(new FieldDefinition("one", new TypeName("Int")))
 
-        def withArgs = new FieldDefinition("withArgs", new TypeName("Function"))
-        withArgs.getInputValueDefinitions()
-                .add(new InputValueDefinition("arg1",
+        def two = FieldDefinition.newFieldDefintion().name("two").type(new TypeName("Int"))
+        two.directive(new Directive("second"))
+        schema.fieldDefinition(two.build())
+
+        def withArgs = FieldDefinition.newFieldDefintion().name("withArgs").type(new TypeName("Function"))
+        withArgs.inputValueDefinition(new InputValueDefinition("arg1",
                 new ListType(new TypeName("Number")),
                 new ArrayValue([new IntValue(1)])))
-        def arg2 = new InputValueDefinition("arg2", new TypeName("String"))
-        arg2.getDirectives()
-                .add(new Directive("secondArg", [new Argument("cool", new BooleanValue(true))]))
-        withArgs.getInputValueDefinitions().add(arg2)
-        schema.getFieldDefinitions().add(withArgs)
+
+        def arg2 = InputValueDefinition.newInputValueDefinition().name("arg2").type(new TypeName("String"))
+        arg2.directive(new Directive("secondArg", [new Argument("cool", new BooleanValue(true))]))
+        withArgs.inputValueDefinition(arg2.build())
+        schema.fieldDefinition(withArgs.build())
 
         when:
         def document = new Parser().parseDocument(input)
 
         then:
         document.definitions.size() == 1
-        isEqual(document.definitions[0], schema)
+        isEqual(document.definitions[0], schema.build())
     }
 
     def "directive schema"() {
@@ -361,22 +359,18 @@ directive @DirectiveName(arg1:String arg2:Int=23) on FIELD | QUERY
 """
 
         and: "expected schema"
-        def schema = new DirectiveDefinition("DirectiveName")
-        schema.getInputValueDefinitions()
-                .add(new InputValueDefinition("arg1", new TypeName("String")))
-        schema.getInputValueDefinitions()
-                .add(new InputValueDefinition("arg2", new TypeName("Int"), new IntValue(23)))
-        schema.getDirectiveLocations()
-                .add(new DirectiveLocation("FIELD"))
-        schema.getDirectiveLocations()
-                .add(new DirectiveLocation("QUERY"))
+        def schema = DirectiveDefinition.newDirectiveDefinition().name("DirectiveName")
+        schema.inputValueDefinition(new InputValueDefinition("arg1", new TypeName("String")))
+        schema.inputValueDefinition(new InputValueDefinition("arg2", new TypeName("Int"), new IntValue(23)))
+        schema.directiveLocation(new DirectiveLocation("FIELD"))
+        schema.directiveLocation(new DirectiveLocation("QUERY"))
 
         when:
         def document = new Parser().parseDocument(input)
 
         then:
         document.definitions.size() == 1
-        isEqual(document.definitions[0], schema)
+        isEqual(document.definitions[0], schema.build())
     }
 
 
