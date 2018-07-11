@@ -93,8 +93,8 @@ class ExecutionStrategyTest extends Specification {
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
                 .source(result)
-                .fields(["fld": [new Field()]])
-                .field([new Field()])
+                .fields(["fld": [Field.newField().build()]])
+                .field([Field.newField().build()])
                 .build()
 
         when:
@@ -660,8 +660,8 @@ class ExecutionStrategyTest extends Specification {
                 .typeInfo(typeInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(["fld": [new Field()]])
-                .field([new Field()])
+                .fields(["fld": [Field.newField().build()]])
+                .field([Field.newField().build()])
                 .build()
 
         when:
@@ -738,8 +738,8 @@ class ExecutionStrategyTest extends Specification {
                 .typeInfo(typeInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(["fld": [new Field()]])
-                .field([new Field()])
+                .fields(["fld": [Field.newField().build()]])
+                .field([Field.newField().build()])
                 .build()
 
         when:
@@ -762,8 +762,8 @@ class ExecutionStrategyTest extends Specification {
                 .typeInfo(typeInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(["fld": [new Field()]])
-                .field([new Field()])
+                .fields(["fld": [Field.newField().build()]])
+                .field([Field.newField().build()])
                 .build()
 
         when:

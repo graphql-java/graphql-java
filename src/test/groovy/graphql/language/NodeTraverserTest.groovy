@@ -118,7 +118,7 @@ class NodeTraverserTest extends Specification {
                 context.setResult(node)
             }
         }
-        def field = new Field()
+        def field = Field.newField().build()
         when:
         def result = NodeTraverser.oneVisitWithResult(field, visitor);
         then:

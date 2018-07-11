@@ -24,7 +24,7 @@ class NodeVisitorStubTest extends Specification {
 
         where:
         node                                       | visitMethod
-        new Field()                                | 'visitField'
+        Field.newField().build()                   | 'visitField'
         FragmentSpread.newFragmentSpread().build() | 'visitFragmentSpread'
         InlineFragment.newInlineFragment().build() | 'visitInlineFragment'
 
@@ -148,7 +148,7 @@ class NodeVisitorStubTest extends Specification {
         new StringValue("")                                          | 'visitValue'
         new OperationDefinition()                                    | 'visitDefinition'
         new UnionTypeDefinition("")                                  | 'visitTypeDefinition'
-        new Field()                                                  | 'visitSelection'
+        Field.newField().build()                                     | 'visitSelection'
         NonNullType.newNonNullType().build()                         | 'visitType'
 
     }
