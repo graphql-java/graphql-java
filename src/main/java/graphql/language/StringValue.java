@@ -19,6 +19,16 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
         this.value = value;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     *
+     * @param value
+     */
+    public StringValue(String value) {
+        super(null, new ArrayList<>());
+        this.value = value;
+    }
+
     public String getValue() {
         return value;
     }

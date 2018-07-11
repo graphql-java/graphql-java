@@ -19,6 +19,17 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
         this.name = name;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     *
+     * @param name
+     */
+    public TypeName(String name) {
+        super(null, new ArrayList<>());
+        this.name = name;
+    }
+
+
     public String getName() {
         return name;
     }

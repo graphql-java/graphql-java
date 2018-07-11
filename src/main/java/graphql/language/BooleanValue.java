@@ -19,6 +19,16 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements Value<Bo
         this.value = value;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     *
+     * @param value
+     */
+    public BooleanValue(boolean value) {
+        super(null, new ArrayList<>());
+        this.value = value;
+    }
+
     public boolean isValue() {
         return value;
     }

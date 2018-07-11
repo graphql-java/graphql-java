@@ -20,6 +20,16 @@ public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> 
         this.value = value;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     *
+     * @param value
+     */
+    public IntValue(BigInteger value) {
+        super(null, new ArrayList<>());
+        this.value = value;
+    }
+
     public BigInteger getValue() {
         return value;
     }

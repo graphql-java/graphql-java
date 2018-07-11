@@ -20,6 +20,17 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
         this.type = type;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     *
+     * @param type
+     */
+    public NonNullType(Type type) {
+        super(null, new ArrayList<>());
+
+        this.type = type;
+    }
+
     public Type getType() {
         return type;
     }

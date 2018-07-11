@@ -27,6 +27,30 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         this.defaultValue = defaultValue;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public VariableDefinition(String name,
+                              Type type,
+                              Value defaultValue) {
+        super(null, new ArrayList<>());
+        this.name = name;
+        this.type = type;
+        this.defaultValue = defaultValue;
+    }
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public VariableDefinition(String name,
+                              Type type) {
+        super(null, new ArrayList<>());
+        this.name = name;
+        this.type = type;
+        this.defaultValue = null;
+    }
+
+
     public Value getDefaultValue() {
         return defaultValue;
     }
