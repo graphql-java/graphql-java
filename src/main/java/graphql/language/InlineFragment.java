@@ -29,8 +29,18 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         this.selectionSet = selectionSet;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
     public InlineFragment(TypeName typeCondition) {
         this(typeCondition, new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
+        this(typeCondition, new ArrayList<>(), selectionSet, null, new ArrayList<>());
     }
 
     public TypeName getTypeCondition() {

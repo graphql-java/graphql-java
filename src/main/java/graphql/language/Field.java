@@ -63,6 +63,13 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     /**
      * alternative to using a Builder for convenience
      */
+    public Field(String name, List<Argument> arguments, SelectionSet selectionSet) {
+        this(name, null, arguments, new ArrayList<>(), selectionSet, null, new ArrayList<>());
+    }
+
+    /**
+     * alternative to using a Builder for convenience
+     */
     public Field(String name, SelectionSet selectionSet) {
         this(name, null, new ArrayList<>(), new ArrayList<>(), selectionSet, null, new ArrayList<>());
     }
