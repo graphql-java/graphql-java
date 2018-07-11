@@ -30,6 +30,13 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         this.description = description;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public InterfaceTypeDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
     public List<FieldDefinition> getFieldDefinitions() {
         return definitions;
     }

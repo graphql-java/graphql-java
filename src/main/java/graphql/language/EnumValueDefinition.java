@@ -25,6 +25,20 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
         this.directives = (null == directives) ? new ArrayList<>() : directives;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public EnumValueDefinition(String name) {
+        this(name, new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public EnumValueDefinition(String name, List<Directive> directives) {
+        this(name, directives, null, null, new ArrayList<>());
+    }
+
     @Override
     public String getName() {
         return name;

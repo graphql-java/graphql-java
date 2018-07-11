@@ -14,8 +14,16 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     private final Type type;
 
-    public ListType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
+    private ListType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
+        this.type = type;
+    }
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public ListType(Type type) {
+        super(null, new ArrayList<>());
         this.type = type;
     }
 

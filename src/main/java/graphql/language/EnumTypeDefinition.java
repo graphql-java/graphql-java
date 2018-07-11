@@ -28,6 +28,13 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
         this.enumValueDefinitions = enumValueDefinitions;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public EnumTypeDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
     public List<EnumValueDefinition> getEnumValueDefinitions() {
         return enumValueDefinitions;
     }

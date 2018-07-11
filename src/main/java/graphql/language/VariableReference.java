@@ -19,6 +19,14 @@ public class VariableReference extends AbstractNode<VariableReference> implement
         this.name = name;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public VariableReference(String name) {
+        super(null, new ArrayList<>());
+        this.name = name;
+    }
+
     @Override
     public String getName() {
         return name;

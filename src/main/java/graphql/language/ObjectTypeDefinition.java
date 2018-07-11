@@ -33,6 +33,13 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
         this.description = description;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public ObjectTypeDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
     public List<Type> getImplements() {
         return new ArrayList<>(implementz);
     }

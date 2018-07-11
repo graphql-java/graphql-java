@@ -34,6 +34,25 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
 
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public InputValueDefinition(String name,
+                                Type type) {
+        this(name, type, null, new ArrayList<>(), null, null, new ArrayList<>());
+
+    }
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public InputValueDefinition(String name,
+                                Type type,
+                                Value defaultValue) {
+        this(name, type, defaultValue, new ArrayList<>(), null, null, new ArrayList<>());
+
+    }
+
     public Type getType() {
         return type;
     }

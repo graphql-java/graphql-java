@@ -32,6 +32,11 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         this.directives = directives;
     }
 
+    public FieldDefinition(String name,
+                           Type type) {
+        this(name, type, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
     public Type getType() {
         return type;
     }

@@ -23,6 +23,21 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
         this.arguments.addAll(arguments);
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public Directive(String name, List<Argument> arguments) {
+        this(name, arguments, null, new ArrayList<>());
+    }
+
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public Directive(String name) {
+        this(name, new ArrayList<>(), null, new ArrayList<>());
+    }
+
     public List<Argument> getArguments() {
         return new ArrayList<>(arguments);
     }
