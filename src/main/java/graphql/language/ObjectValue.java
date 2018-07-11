@@ -19,6 +19,14 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
         this.objectFields.addAll(objectFields);
     }
 
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public ObjectValue(List<ObjectField> objectFields) {
+        this(objectFields, null, new ArrayList<>());
+    }
+
     public List<ObjectField> getObjectFields() {
         return new ArrayList<>(objectFields);
     }

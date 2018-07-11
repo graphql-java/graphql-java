@@ -38,6 +38,10 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         this.selectionSet = selectionSet;
     }
 
+    public Field(String name) {
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();

@@ -21,6 +21,13 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
         this.value = value;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public ObjectField(String name, Value value) {
+        this(name, value, null, new ArrayList<>());
+    }
+
     @Override
     public String getName() {
         return name;

@@ -33,10 +33,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     public VariableDefinition(String name,
                               Type type,
                               Value defaultValue) {
-        super(null, new ArrayList<>());
-        this.name = name;
-        this.type = type;
-        this.defaultValue = defaultValue;
+        this(name, type, defaultValue, null, new ArrayList<>());
     }
 
     /**
@@ -44,10 +41,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
      */
     public VariableDefinition(String name,
                               Type type) {
-        super(null, new ArrayList<>());
-        this.name = name;
-        this.type = type;
-        this.defaultValue = null;
+        this(name, type, null, null, new ArrayList<>());
     }
 
 
