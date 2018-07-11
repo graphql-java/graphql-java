@@ -76,6 +76,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         return new Builder();
     }
 
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private List<Comment> comments = Collections.emptyList();

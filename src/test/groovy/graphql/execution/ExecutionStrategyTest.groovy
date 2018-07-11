@@ -19,7 +19,6 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLList
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -526,8 +525,7 @@ class ExecutionStrategyTest extends Specification {
         ExecutionPath expectedPath = ExecutionPath.rootPath().segment("someField")
 
         SourceLocation sourceLocation = new SourceLocation(666, 999)
-        Field field = new Field("someField")
-        field.setSourceLocation(sourceLocation)
+        Field field = Field.newField("someField").sourceLocation(sourceLocation).build()
         def parameters = newParameters()
                 .typeInfo(typeInfo)
                 .source("source")
@@ -680,8 +678,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = list(Scalars.GraphQLLong)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
-        def field = new Field("parent")
-        field.setSourceLocation(new SourceLocation(5, 10))
+        def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
         def parameters = newParameters()
             .path(ExecutionPath.fromList(["parent"]))
             .field([field])
@@ -708,8 +705,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = list(Scalars.GraphQLLong)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionTypeInfo.newTypeInfo().type(fieldType).fieldDefinition(fldDef).build()
-        def field = new Field("parent")
-        field.setSourceLocation(new SourceLocation(5, 10))
+        def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
         def parameters = newParameters()
                 .path(ExecutionPath.fromList(["parent"]))
                 .field([field])

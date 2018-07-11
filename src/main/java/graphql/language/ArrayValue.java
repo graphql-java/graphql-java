@@ -86,6 +86,10 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
             return this;
         }
 
+        public Builder value(Value value) {
+            this.values.add(value);
+            return this;
+        }
         public Builder comments(List<Comment> comments) {
             this.comments = comments;
             return this;

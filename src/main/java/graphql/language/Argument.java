@@ -28,9 +28,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
      * @param value
      */
     public Argument(String name, Value value) {
-        super(null, new ArrayList<>());
-        this.name = name;
-        this.value = value;
+        this(name, value, null, new ArrayList<>());
     }
 
     @Override

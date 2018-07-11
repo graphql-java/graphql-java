@@ -162,11 +162,11 @@ class ValidationUtilTest extends Specification {
                 .name("hello")
                 .type(GraphQLString))
                 .build()
-        def objectValue = new ObjectValue()
-        objectValue.getObjectFields().add(new ObjectField("hello", new BooleanValue(false)))
+        def objectValue = ObjectValue.newObjectValue()
+        objectValue.objectField(new ObjectField("hello", new BooleanValue(false)))
 
         expect:
-        !validationUtil.isValidLiteralValue(objectValue, inputObjectType,schema)
+        !validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema)
     }
 
     def "a invalid ObjectValue with a missing field"() {

@@ -258,12 +258,12 @@ class ValuesResolverTest extends Specification {
     }
 
     ObjectValue buildObjectLiteral(Map<String, Object> contents) {
-        def object = new ObjectValue()
+        def object = ObjectValue.newObjectValue()
         contents.each { key, value ->
             def transformedValue = value instanceof Map ? buildObjectLiteral(value) : (Value) value
-            object.getObjectFields().add(new ObjectField(key, transformedValue))
+            object.objectField(new ObjectField(key, transformedValue))
         }
-        return object
+        return object.build()
     }
 
     def "getArgumentValues: resolves enum literals"() {
@@ -291,10 +291,10 @@ class ValuesResolverTest extends Specification {
 
     def "getArgumentValues: resolves array literals"() {
         given:
-        ArrayValue arrayValue = ArrayValue.newArrayValue().build()
-        arrayValue.getValues().add(new BooleanValue(true))
-        arrayValue.getValues().add(new BooleanValue(false))
-        def argument = new Argument("arg", arrayValue)
+        ArrayValue.Builder arrayValue = ArrayValue.newArrayValue()
+        arrayValue.value(new BooleanValue(true))
+        arrayValue.value(new BooleanValue(false))
+        def argument = new Argument("arg", arrayValue.build())
 
         def fieldArgument = new GraphQLArgument("arg", list(GraphQLBoolean))
 
