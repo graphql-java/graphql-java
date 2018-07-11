@@ -20,6 +20,13 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
         this.value = value;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public FloatValue(BigDecimal value) {
+        this(value, null, new ArrayList<>());
+    }
+
     public BigDecimal getValue() {
         return value;
     }

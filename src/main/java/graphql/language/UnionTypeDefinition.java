@@ -30,6 +30,21 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
         this.description = description;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public UnionTypeDefinition(String name,
+                               List<Directive> directives) {
+        this(name, directives, new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public UnionTypeDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
     @Override
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);

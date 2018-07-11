@@ -15,10 +15,17 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     private final String name;
     private final Type type;
 
-    public OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments) {
+    private OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.type = type;
+    }
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public OperationTypeDefinition(String name, Type type) {
+        this(name, type, null, new ArrayList<>());
     }
 
     public Type getType() {

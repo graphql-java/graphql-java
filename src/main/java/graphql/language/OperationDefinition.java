@@ -38,6 +38,19 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         this.selectionSet = selectionSet;
     }
 
+    public OperationDefinition(String name,
+                               Operation operation) {
+        this(name, operation, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
+    public OperationDefinition(String name) {
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
+    public OperationDefinition() {
+        this(null, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();

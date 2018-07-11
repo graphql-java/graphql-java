@@ -60,8 +60,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "constructor handles missing path as null"() {
         given:
 
-        def field = Field.newField().name("test").build()
-        field.setSourceLocation(new SourceLocation(4, 5))
+        def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
@@ -85,8 +84,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "when constructor receives empty path it should return the base field path"() {
         given:
 
-        def field = Field.newField().name("test").build()
-        field.setSourceLocation(new SourceLocation(4, 5))
+        def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
@@ -135,9 +133,8 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "when constructor receives empty locations it should return the base field locations"() {
         given:
 
-        def field = Field.newField().name("test").build()
         def expectedSourceLocation = new SourceLocation(1, 2)
-        field.setSourceLocation(expectedSourceLocation)
+        def field = Field.newField().name("test").sourceLocation(expectedSourceLocation).build()
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
@@ -161,8 +158,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "constructor transforms multiple source locations"() {
         given:
 
-        def field = Field.newField().name("test").build()
-        field.setSourceLocation(new SourceLocation(4, 5))
+        def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))

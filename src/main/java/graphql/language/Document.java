@@ -14,9 +14,13 @@ public class Document extends AbstractNode<Document> {
 
     private final List<Definition> definitions;
 
-    public Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments) {
+    private Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.definitions = definitions;
+    }
+
+    public Document(List<Definition> definitions) {
+        this(definitions, null, new ArrayList<>());
     }
 
     public List<Definition> getDefinitions() {

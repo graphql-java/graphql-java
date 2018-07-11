@@ -19,6 +19,13 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         this.selections.addAll(selections);
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public SelectionSet(List<Selection> selections) {
+        this(selections, null, new ArrayList<>());
+    }
+
     public List<Selection> getSelections() {
         return new ArrayList<>(selections);
     }

@@ -21,6 +21,13 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
                 description, sourceLocation, comments);
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public ObjectTypeExtensionDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
     @Override
     public ObjectTypeExtensionDefinition deepCopy() {
         return new ObjectTypeExtensionDefinition(getName(),
