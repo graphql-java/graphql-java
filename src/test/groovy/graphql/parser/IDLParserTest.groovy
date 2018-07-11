@@ -160,20 +160,17 @@ TWO @second,
 """
 
         and: "expected schema"
-        def enumSchema = new EnumTypeDefinition("EnumName")
-        enumSchema.getDirectives()
-                .add(new Directive("enumDirective", [new Argument("a1", new VariableReference("v1"))]))
-        enumSchema.getEnumValueDefinitions()
-                .add(new EnumValueDefinition("ONE", [new Directive("first")]))
-        enumSchema.getEnumValueDefinitions()
-                .add(new EnumValueDefinition("TWO", [new Directive("second")]))
+        def enumSchema = EnumTypeDefinition.newEnumTypeDefinition().name("EnumName")
+        enumSchema.directive(new Directive("enumDirective", [new Argument("a1", new VariableReference("v1"))]))
+        enumSchema.enumValueDefinition(new EnumValueDefinition("ONE", [new Directive("first")]))
+        enumSchema.enumValueDefinition(new EnumValueDefinition("TWO", [new Directive("second")]))
 
         when:
         def document = new Parser().parseDocument(input)
 
         then:
         document.definitions.size() == 1
-        isEqual(document.definitions[0], enumSchema)
+        isEqual(document.definitions[0], enumSchema.build())
     }
 
     def "object schema"() {
@@ -187,34 +184,32 @@ cmd(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
 """
 
         and: "expected schema"
-        def objSchema = new ObjectTypeDefinition("TypeName")
-        objSchema.getImplements().add(new TypeName("Impl1"))
-        objSchema.getImplements().add(new TypeName("Impl2"))
-        objSchema.getDirectives()
-                .add(new Directive("typeDirective", [new Argument("a1", new VariableReference("v1"))]))
-        objSchema.getFieldDefinitions()
-                .add(new FieldDefinition("one", new TypeName("Number")))
-        def two = new FieldDefinition("two", new TypeName("Number"))
-        two.getDirectives().add(new Directive("second"))
-        objSchema.getFieldDefinitions().add(two)
+        def objSchema = ObjectTypeDefinition.newObjectTypeDefinition().name("TypeName")
+        objSchema.implementz(new TypeName("Impl1"))
+        objSchema.implementz(new TypeName("Impl2"))
+        objSchema.directive(new Directive("typeDirective", [new Argument("a1", new VariableReference("v1"))]))
+        objSchema.fieldDefinition(new FieldDefinition("one", new TypeName("Number")))
 
-        def cmdField = new FieldDefinition("cmd", new TypeName("Function"))
-        cmdField.getInputValueDefinitions()
-                .add(new InputValueDefinition("arg1",
+        def two = FieldDefinition.newFieldDefintion().name("two").type(new TypeName("Number"))
+        two.directive(new Directive("second"))
+        objSchema.fieldDefinition(two.build())
+
+        def cmdField = FieldDefinition.newFieldDefintion().name("cmd").type(new TypeName("Function"))
+        cmdField.inputValueDefinition(new InputValueDefinition("arg1",
                 new ListType(new TypeName("Number")),
                 new ArrayValue([new IntValue(1)])))
-        def arg2 = new InputValueDefinition("arg2", new TypeName("String"))
-        arg2.getDirectives()
-                .add(new Directive("secondArg", [new Argument("cool", new BooleanValue(true))]))
-        cmdField.getInputValueDefinitions().add(arg2)
-        objSchema.getFieldDefinitions().add(cmdField)
+        def arg2 = InputValueDefinition.newInputValueDefinition().name("arg2").type(new TypeName("String"))
+        arg2.directive(new Directive("secondArg", [new Argument("cool", new BooleanValue(true))]))
+        cmdField.inputValueDefinition(arg2.build())
+
+        objSchema.fieldDefinition(cmdField.build())
 
         when:
         def document = new Parser().parseDocument(input)
 
         then:
         document.definitions.size() == 1
-        isEqual(document.definitions[0], objSchema)
+        isEqual(document.definitions[0], objSchema.build())
     }
 
     def "scalar schema"() {

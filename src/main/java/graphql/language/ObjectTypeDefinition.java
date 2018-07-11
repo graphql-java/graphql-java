@@ -158,6 +158,11 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
             return this;
         }
 
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
+            return this;
+        }
+
         public Builder fieldDefinitions(List<FieldDefinition> fieldDefinitions) {
             this.fieldDefinitions = fieldDefinitions;
             return this;

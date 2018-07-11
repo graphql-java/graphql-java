@@ -145,6 +145,11 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
             return this;
         }
 
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
+            return this;
+        }
+
         public EnumTypeDefinition build() {
             EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition(name, enumValueDefinitions, directives, description, sourceLocation, comments);
             return enumTypeDefinition;
