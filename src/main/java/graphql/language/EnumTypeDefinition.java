@@ -5,8 +5,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PublicApi
 public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition> {
@@ -98,16 +98,30 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
         return new Builder();
     }
 
+    public EnumTypeDefinition transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
         private String name;
         private Description description;
         private List<EnumValueDefinition> enumValueDefinitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
 
         private Builder() {
+        }
+
+        private Builder(EnumTypeDefinition existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.directives = existing.getDirectives();
+            this.enumValueDefinitions = existing.getEnumValueDefinitions();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

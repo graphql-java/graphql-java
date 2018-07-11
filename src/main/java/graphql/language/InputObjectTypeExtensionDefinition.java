@@ -3,8 +3,8 @@ package graphql.language;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PublicApi
 public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinition {
@@ -41,15 +41,31 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
         return new Builder();
     }
 
+
+    public InputObjectTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
         private String name;
         private Description description;
         private List<Directive> directives = new ArrayList<>();
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
 
         private Builder() {
+        }
+
+        private Builder(InputObjectTypeDefinition existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.directives = existing.getDirectives();
+            this.inputValueDefinitions = existing.getInputValueDefinitions();
         }
 
 

@@ -6,8 +6,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PublicApi
 public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
@@ -117,16 +117,29 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return new Builder().name(name).type(type).defaultValue(defaultValue);
     }
 
+    public VariableDefinition transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private String name;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
         private Type type;
         private Value defaultValue;
 
         private Builder() {
         }
 
+        private Builder(VariableDefinition existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.name = existing.getName();
+            this.type = existing.getType();
+            this.defaultValue = existing.getDefaultValue();
+        }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;

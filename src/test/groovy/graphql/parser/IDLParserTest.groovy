@@ -130,7 +130,7 @@ fieldName(arg1:SomeType={one:1} @argDirective(a1:\$v1)):[Elm] @fieldDirective(co
         iface.directive(new Directive("interfaceDirective",
                 [new Argument("argName1", new VariableReference("varName")),
                  new Argument("argName2", new BooleanValue(true))]))
-        def field = FieldDefinition.newFieldDefintion().name("fieldName").type(new ListType(new TypeName("Elm")))
+        def field = FieldDefinition.newFieldDefinition().name("fieldName").type(new ListType(new TypeName("Elm")))
         field.directive(new Directive("fieldDirective", [new Argument("cool", new BooleanValue(true))]))
 
         def defaultValue = ObjectValue.newObjectValue()
@@ -190,11 +190,11 @@ cmd(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
         objSchema.directive(new Directive("typeDirective", [new Argument("a1", new VariableReference("v1"))]))
         objSchema.fieldDefinition(new FieldDefinition("one", new TypeName("Number")))
 
-        def two = FieldDefinition.newFieldDefintion().name("two").type(new TypeName("Number"))
+        def two = FieldDefinition.newFieldDefinition().name("two").type(new TypeName("Number"))
         two.directive(new Directive("second"))
         objSchema.fieldDefinition(two.build())
 
-        def cmdField = FieldDefinition.newFieldDefintion().name("cmd").type(new TypeName("Function"))
+        def cmdField = FieldDefinition.newFieldDefinition().name("cmd").type(new TypeName("Function"))
         cmdField.inputValueDefinition(new InputValueDefinition("arg1",
                 new ListType(new TypeName("Number")),
                 new ArrayValue([new IntValue(1)])))
@@ -328,11 +328,11 @@ withArgs(arg1:[Number]=[1] arg2:String @secondArg(cool:true)): Function
         schema.directive(new Directive("extendDirective", [new Argument("a1", new VariableReference("v1"))]))
         schema.fieldDefinition(new FieldDefinition("one", new TypeName("Int")))
 
-        def two = FieldDefinition.newFieldDefintion().name("two").type(new TypeName("Int"))
+        def two = FieldDefinition.newFieldDefinition().name("two").type(new TypeName("Int"))
         two.directive(new Directive("second"))
         schema.fieldDefinition(two.build())
 
-        def withArgs = FieldDefinition.newFieldDefintion().name("withArgs").type(new TypeName("Function"))
+        def withArgs = FieldDefinition.newFieldDefinition().name("withArgs").type(new TypeName("Function"))
         withArgs.inputValueDefinition(new InputValueDefinition("arg1",
                 new ListType(new TypeName("Number")),
                 new ArrayValue([new IntValue(1)])))

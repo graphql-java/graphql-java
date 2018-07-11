@@ -137,7 +137,7 @@ class NodeVisitorStubTest extends Specification {
         new DirectiveLocation("")                                    | 'visitDirectiveLocation'
         Document.newDocument().build()                               | 'visitDocument'
         new EnumValueDefinition("")                                  | 'visitEnumValueDefinition'
-        FieldDefinition.newFieldDefintion().build()                  | 'visitFieldDefinition'
+        FieldDefinition.newFieldDefinition().build()                 | 'visitFieldDefinition'
         InputValueDefinition.newInputValueDefinition().build()       | 'visitInputValueDefinition'
         InputValueDefinition.newInputValueDefinition().build()       | 'visitInputValueDefinition'
         new ObjectField("", null)                                    | 'visitObjectField'

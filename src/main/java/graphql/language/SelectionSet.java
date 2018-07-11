@@ -6,8 +6,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PublicApi
 public class SelectionSet extends AbstractNode<SelectionSet> {
@@ -74,13 +74,25 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         return new Builder().selections(selections);
     }
 
+    public SelectionSet transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static final class Builder implements NodeBuilder {
 
         private List<Selection> selections = new ArrayList<>();
         private SourceLocation sourceLocation;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
 
         private Builder() {
+        }
+
+        private Builder(SelectionSet existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.selections = existing.getSelections();
         }
 
         public Builder selections(List<Selection> selections) {

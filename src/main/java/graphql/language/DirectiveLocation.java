@@ -6,8 +6,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 // This should probably be an enum... but the grammar
 // doesn't enforce the names. These are the current names:
@@ -30,8 +30,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
      * alternative to using a Builder for convenience
      */
     public DirectiveLocation(String name) {
-        this(name, null, new ArrayList<>())
-        ;
+        this(name, null, new ArrayList<>());
     }
 
     @Override
@@ -75,12 +74,24 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         return new Builder();
     }
 
+    public DirectiveLocation transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
         private String name;
 
         private Builder() {
+        }
+
+        private Builder(DirectiveLocation existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.name = existing.getName();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

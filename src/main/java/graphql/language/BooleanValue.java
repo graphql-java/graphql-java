@@ -6,8 +6,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PublicApi
 public class BooleanValue extends AbstractNode<BooleanValue> implements Value<BooleanValue> {
@@ -75,12 +75,24 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements Value<Bo
         return new Builder().value(value);
     }
 
+    public BooleanValue transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private boolean value;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
 
         private Builder() {
+        }
+
+        private Builder(BooleanValue existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.value = existing.isValue();
         }
 
 

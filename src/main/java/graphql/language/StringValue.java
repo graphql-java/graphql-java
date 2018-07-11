@@ -6,8 +6,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PublicApi
 public class StringValue extends AbstractNode<StringValue> implements Value<StringValue> {
@@ -75,12 +75,24 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
         return new Builder().value(value);
     }
 
+    public StringValue transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private String value;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
 
         private Builder() {
+        }
+
+        private Builder(StringValue existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.value = existing.getValue();
         }
 
 

@@ -6,8 +6,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PublicApi
 public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
@@ -102,16 +102,30 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
         return new Builder();
     }
 
+    public DirectiveDefinition transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
         private String name;
         private Description description;
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
         private List<DirectiveLocation> directiveLocations = new ArrayList<>();
 
         private Builder() {
+        }
+
+        private Builder(DirectiveDefinition existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.inputValueDefinitions = existing.getInputValueDefinitions();
+            this.directiveLocations = existing.getDirectiveLocations();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {

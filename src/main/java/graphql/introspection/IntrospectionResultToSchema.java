@@ -230,7 +230,7 @@ public class IntrospectionResultToSchema {
     private List<FieldDefinition> createFields(List<Map<String, Object>> fields) {
         List<FieldDefinition> result = new ArrayList<>();
         for (Map<String, Object> field : fields) {
-            FieldDefinition.Builder fieldDefinition = FieldDefinition.newFieldDefintion().name((String) field.get("name"));
+            FieldDefinition.Builder fieldDefinition = FieldDefinition.newFieldDefinition().name((String) field.get("name"));
             fieldDefinition.comments(toComment((String) field.get("description")));
             fieldDefinition.type(createTypeIndirection((Map<String, Object>) field.get("type")));
 

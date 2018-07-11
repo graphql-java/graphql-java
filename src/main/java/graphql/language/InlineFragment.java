@@ -6,9 +6,9 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graphql.language.NodeUtil.directivesByName;
 
@@ -114,16 +114,31 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return new Builder();
     }
 
+    public InlineFragment transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
         private TypeName typeCondition;
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
 
         private Builder() {
         }
+
+
+        private Builder(InlineFragment existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.typeCondition = existing.getTypeCondition();
+            this.directives = existing.getDirectives();
+            this.selectionSet = existing.getSelectionSet();
+        }
+
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;

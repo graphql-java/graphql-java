@@ -7,8 +7,8 @@ import graphql.util.TraverserContext;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PublicApi
 public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatValue> {
@@ -59,6 +59,12 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
         return new FloatValue(value, getSourceLocation(), getComments());
     }
 
+    public FloatValue transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitFloatValue(this, context);
@@ -75,9 +81,15 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private BigDecimal value;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
 
         private Builder() {
+        }
+
+        private Builder(FloatValue existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.value = existing.getValue();
         }
 
 

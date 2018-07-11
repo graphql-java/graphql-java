@@ -6,8 +6,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 @PublicApi
 public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition> {
@@ -104,10 +104,15 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         return new Builder();
     }
 
+    public InterfaceTypeDefinition transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
         private String name;
         private Description description;
         private List<FieldDefinition> definitions = new ArrayList<>();
@@ -115,6 +120,18 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
 
         private Builder() {
         }
+
+
+        private Builder(InterfaceTypeDefinition existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.name = existing.getName();
+            this.description = existing.getDescription();
+            this.directives = existing.getDirectives();
+            this.definitions = existing.getFieldDefinitions();
+        }
+
+
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;

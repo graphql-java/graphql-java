@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -54,7 +55,7 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
 
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
 
         private Builder() {
         }

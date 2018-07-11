@@ -456,7 +456,7 @@ public class GraphqlAntlrToLanguage2 {
     }
 
     public FieldDefinition createFieldDefinition(GraphqlParser.FieldDefinitionContext ctx) {
-        FieldDefinition.Builder def = FieldDefinition.newFieldDefintion();
+        FieldDefinition.Builder def = FieldDefinition.newFieldDefinition();
         def.name(ctx.name().getText());
         def.type(createType(ctx.type()));
         newNode(def, ctx);

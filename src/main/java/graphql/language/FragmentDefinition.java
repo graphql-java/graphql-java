@@ -6,8 +6,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Provided to the DataFetcher, therefore public API
@@ -103,15 +103,30 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         return new Builder();
     }
 
+    public FragmentDefinition transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = Collections.emptyList();
+        private List<Comment> comments = new ArrayList<>();
         private String name;
         private TypeName typeCondition;
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
 
         private Builder() {
+        }
+
+        private Builder(FragmentDefinition existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.name = existing.getName();
+            this.typeCondition = existing.getTypeCondition();
+            this.directives = existing.getDirectives();
+            this.selectionSet = existing.getSelectionSet();
         }
 
 
