@@ -79,54 +79,42 @@ type Droid implements Character {
 """
 
         and: "expected schema"
-        def episode = new EnumTypeDefinition("Episode")
-        episode.getEnumValueDefinitions().add(new EnumValueDefinition("NEWHOPE"))
-        episode.getEnumValueDefinitions().add(new EnumValueDefinition("EMPIRE"))
-        episode.getEnumValueDefinitions().add(new EnumValueDefinition("JEDI"))
-        def character = new InterfaceTypeDefinition("Character")
-        character.getFieldDefinitions()
-                .add(new FieldDefinition("id", new NonNullType(new TypeName("String"))))
-        character.getFieldDefinitions()
-                .add(new FieldDefinition("name", new TypeName("String")))
-        character.getFieldDefinitions()
-                .add(new FieldDefinition("friends", new ListType(new TypeName("Character"))))
-        character.getFieldDefinitions()
-                .add(new FieldDefinition("appearsIn", new ListType(new TypeName("Episode"))))
-        def human = new ObjectTypeDefinition("Human")
-        human.getImplements().add(new TypeName("Character"))
-        human.getFieldDefinitions()
-                .add(new FieldDefinition("id", new NonNullType(new TypeName("String"))))
-        human.getFieldDefinitions()
-                .add(new FieldDefinition("name", new TypeName("String")))
-        human.getFieldDefinitions()
-                .add(new FieldDefinition("friends", new ListType(new TypeName("Character"))))
-        human.getFieldDefinitions()
-                .add(new FieldDefinition("appearsIn", new ListType(new TypeName("Episode"))))
-        human.getFieldDefinitions()
-                .add(new FieldDefinition("homePlanet", new TypeName("String")))
+        def episode = EnumTypeDefinition.newEnumTypeDefinition().name("Episode")
+        episode.enumValueDefinition(new EnumValueDefinition("NEWHOPE"))
+        episode.enumValueDefinition(new EnumValueDefinition("EMPIRE"))
+        episode.enumValueDefinition(new EnumValueDefinition("JEDI"))
 
-        def droid = new ObjectTypeDefinition("Droid")
-        droid.getImplements().add(new TypeName("Character"))
-        droid.getFieldDefinitions()
-                .add(new FieldDefinition("id", new NonNullType(new TypeName("String"))))
-        droid.getFieldDefinitions()
-                .add(new FieldDefinition("name", new TypeName("String")))
-        droid.getFieldDefinitions()
-                .add(new FieldDefinition("friends", new ListType(new TypeName("Character"))))
-        droid.getFieldDefinitions()
-                .add(new FieldDefinition("appearsIn", new ListType(new TypeName("Episode"))))
-        droid.getFieldDefinitions()
-                .add(new FieldDefinition("primaryFunction", new TypeName("String")))
+        def character = InterfaceTypeDefinition.newInterfaceTypeDefinition().name("Character")
+        character.definition(new FieldDefinition("id", new NonNullType(new TypeName("String"))))
+        character.definition(new FieldDefinition("name", new TypeName("String")))
+        character.definition(new FieldDefinition("friends", new ListType(new TypeName("Character"))))
+        character.definition(new FieldDefinition("appearsIn", new ListType(new TypeName("Episode"))))
+
+        def human = ObjectTypeDefinition.newObjectTypeDefinition().name("Human")
+        human.implementz(new TypeName("Character"))
+        human.fieldDefinition(new FieldDefinition("id", new NonNullType(new TypeName("String"))))
+        human.fieldDefinition(new FieldDefinition("name", new TypeName("String")))
+        human.fieldDefinition(new FieldDefinition("friends", new ListType(new TypeName("Character"))))
+        human.fieldDefinition(new FieldDefinition("appearsIn", new ListType(new TypeName("Episode"))))
+        human.fieldDefinition(new FieldDefinition("homePlanet", new TypeName("String")))
+
+        def droid = ObjectTypeDefinition.newObjectTypeDefinition().name("Droid")
+        droid.implementz(new TypeName("Character"))
+        droid.fieldDefinition(new FieldDefinition("id", new NonNullType(new TypeName("String"))))
+        droid.fieldDefinition(new FieldDefinition("name", new TypeName("String")))
+        droid.fieldDefinition(new FieldDefinition("friends", new ListType(new TypeName("Character"))))
+        droid.fieldDefinition(new FieldDefinition("appearsIn", new ListType(new TypeName("Episode"))))
+        droid.fieldDefinition(new FieldDefinition("primaryFunction", new TypeName("String")))
 
         when:
         def document = new Parser().parseDocument(input)
 
         then:
         document.definitions.size() == 4
-        isEqual(document.definitions[0], episode)
-        isEqual(document.definitions[1], character)
-        isEqual(document.definitions[2], human)
-        isEqual(document.definitions[3], droid)
+        isEqual(document.definitions[0], episode.build())
+        isEqual(document.definitions[1], character.build())
+        isEqual(document.definitions[2], human.build())
+        isEqual(document.definitions[3], droid.build())
     }
 
     def "interface schema"() {
@@ -138,32 +126,28 @@ fieldName(arg1:SomeType={one:1} @argDirective(a1:\$v1)):[Elm] @fieldDirective(co
 """
 
         and: "expected schema"
-        def iface = new InterfaceTypeDefinition("InterfaceName")
-        iface.getDirectives()
-                .add(new Directive("interfaceDirective",
+        def iface = InterfaceTypeDefinition.newInterfaceTypeDefinition().name("InterfaceName")
+        iface.directive(new Directive("interfaceDirective",
                 [new Argument("argName1", new VariableReference("varName")),
                  new Argument("argName2", new BooleanValue(true))]))
-        def field = new FieldDefinition("fieldName", new ListType(new TypeName("Elm")))
-        field.getDirectives()
-                .add(new Directive("fieldDirective", [new Argument("cool", new BooleanValue(true))]))
+        def field = FieldDefinition.newFieldDefintion().name("fieldName").type(new ListType(new TypeName("Elm")))
+        field.directive(new Directive("fieldDirective", [new Argument("cool", new BooleanValue(true))]))
 
-        def defaultValue = new ObjectValue()
-        defaultValue.getObjectFields().add(new ObjectField("one", new IntValue(1)))
-        def arg1 = new InputValueDefinition("arg1",
-                new TypeName("SomeType"),
-                defaultValue)
-        arg1.getDirectives()
-                .add(new Directive("argDirective", [new Argument("a1", new VariableReference("v1"))]))
-        field.getInputValueDefinitions().add(arg1)
+        def defaultValue = ObjectValue.newObjectValue()
+        defaultValue.objectField(new ObjectField("one", new IntValue(1)))
 
-        iface.getFieldDefinitions().add(field)
+        def arg1 = InputValueDefinition.newInputValueDefinition().name("arg1").type(new TypeName("SomeType")).defaultValue(defaultValue.build())
+        arg1.directive(new Directive("argDirective", [new Argument("a1", new VariableReference("v1"))]))
+        field.inputValueDefinition(arg1.build())
+
+        iface.definition(field.build())
 
         when:
         def document = new Parser().parseDocument(input)
 
         then:
         document.definitions.size() == 1
-        isEqual(document.definitions[0], iface)
+        isEqual(document.definitions[0], iface.build())
     }
 
     def "enum schema"() {
@@ -320,15 +304,12 @@ schema @d1 @d2 {
 """
 
         and: "expected schema"
-        def schema = new SchemaDefinition()
-        schema.getDirectives().add(new Directive("d1"))
-        schema.getDirectives().add(new Directive("d2"))
-        schema.getOperationTypeDefinitions()
-                .add(new OperationTypeDefinition("query", new TypeName("OpType1")))
-        schema.getOperationTypeDefinitions()
-                .add(new OperationTypeDefinition("mutation", new TypeName("OpType2")))
-        schema.getOperationTypeDefinitions()
-                .add(new OperationTypeDefinition("subscription", new TypeName("OpType3")))
+        def schema = SchemaDefinition.newSchemaDefintion()
+        schema.directive(new Directive("d1"))
+        schema.directive(new Directive("d2"))
+        schema.operationTypeDefinition(new OperationTypeDefinition("query", new TypeName("OpType1")))
+        schema.operationTypeDefinition(new OperationTypeDefinition("mutation", new TypeName("OpType2")))
+        schema.operationTypeDefinition(new OperationTypeDefinition("subscription", new TypeName("OpType3")))
 
         when:
         def document = new Parser().parseDocument(input)

@@ -21,6 +21,13 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         this.directives = new ArrayList<>(directives);
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public FragmentSpread(String name) {
+        this(name, new ArrayList<>(), null, new ArrayList<>());
+    }
+
     @Override
     public String getName() {
         return name;

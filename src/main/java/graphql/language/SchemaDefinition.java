@@ -28,7 +28,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     }
 
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     public Map<String, Directive> getDirectivesByName() {
@@ -106,6 +106,11 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
+            return this;
+        }
+
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
             return this;
         }
 

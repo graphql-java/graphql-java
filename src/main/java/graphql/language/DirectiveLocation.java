@@ -26,6 +26,14 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         this.name = name;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public DirectiveLocation(String name) {
+        this(name, null, new ArrayList<>())
+        ;
+    }
+
     @Override
     public String getName() {
         return name;

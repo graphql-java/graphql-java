@@ -148,6 +148,11 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
             return this;
         }
 
+        public Builder implementz(Type implement) {
+            this.implementz.add(implement);
+            return this;
+        }
+
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
             return this;
@@ -155,6 +160,11 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
 
         public Builder fieldDefinitions(List<FieldDefinition> fieldDefinitions) {
             this.fieldDefinitions = fieldDefinitions;
+            return this;
+        }
+
+        public Builder fieldDefinition(FieldDefinition fieldDefinition) {
+            this.fieldDefinitions.add(fieldDefinition);
             return this;
         }
 

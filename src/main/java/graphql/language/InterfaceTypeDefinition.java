@@ -38,12 +38,12 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
     }
 
     public List<FieldDefinition> getFieldDefinitions() {
-        return definitions;
+        return new ArrayList<>(definitions);
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     @Override
@@ -141,8 +141,18 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
             return this;
         }
 
+        public Builder definition(FieldDefinition definition) {
+            this.definitions.add(definition);
+            return this;
+        }
+
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
+            return this;
+        }
+
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
             return this;
         }
 

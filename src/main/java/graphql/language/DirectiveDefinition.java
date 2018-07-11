@@ -29,6 +29,13 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
         this.directiveLocations = directiveLocations;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public DirectiveDefinition(String name) {
+        this(name, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>());
+    }
+
     @Override
     public String getName() {
         return name;

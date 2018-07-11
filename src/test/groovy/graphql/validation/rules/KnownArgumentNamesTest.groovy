@@ -46,7 +46,7 @@ class KnownArgumentNamesTest extends Specification {
 
     def "unknown directive argument"() {
         given:
-        Argument argument = Argument.newArgument("unknownArg", BooleanValue.newBooleanValue(true).build())
+        Argument argument = Argument.newArgument("unknownArg", BooleanValue.newBooleanValue(true).build()).build()
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build()
         def directiveDefinition = GraphQLDirective.newDirective().name("directive")
                 .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLBoolean).build()).build()
@@ -60,7 +60,7 @@ class KnownArgumentNamesTest extends Specification {
 
     def "known directive argument"() {
         given:
-        Argument argument = Argument.newArgument("knownArg", BooleanValue.newBooleanValue(true).build())
+        Argument argument = Argument.newArgument("knownArg", BooleanValue.newBooleanValue(true).build()).build()
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build()
         def directiveDefinition = GraphQLDirective.newDirective().name("directive")
                 .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLBoolean).build()).build()

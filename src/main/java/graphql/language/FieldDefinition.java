@@ -152,8 +152,18 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
             return this;
         }
 
+        public Builder inputValueDefinition(InputValueDefinition inputValueDefinitions) {
+            this.inputValueDefinitions.add(inputValueDefinitions);
+            return this;
+        }
+
         public Builder directives(List<Directive> directives) {
             this.directives = directives;
+            return this;
+        }
+
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
             return this;
         }
 

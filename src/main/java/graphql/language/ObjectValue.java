@@ -96,6 +96,11 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
             return this;
         }
 
+        public Builder objectField(ObjectField objectField) {
+            this.objectFields.add(objectField);
+            return this;
+        }
+
         public Builder comments(List<Comment> comments) {
             this.comments = comments;
             return this;

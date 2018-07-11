@@ -291,7 +291,7 @@ class ValuesResolverTest extends Specification {
 
     def "getArgumentValues: resolves array literals"() {
         given:
-        ArrayValue arrayValue = new ArrayValue()
+        ArrayValue arrayValue = ArrayValue.newArrayValue().build()
         arrayValue.getValues().add(new BooleanValue(true))
         arrayValue.getValues().add(new BooleanValue(false))
         def argument = new Argument("arg", arrayValue)

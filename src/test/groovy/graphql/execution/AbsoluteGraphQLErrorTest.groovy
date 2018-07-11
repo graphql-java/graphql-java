@@ -24,8 +24,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
     def "constructor works as expected"() {
         given:
 
-        def field = Field.newField().name("test").build()
-        field.setSourceLocation(new SourceLocation(4, 5))
+        def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
                 .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))

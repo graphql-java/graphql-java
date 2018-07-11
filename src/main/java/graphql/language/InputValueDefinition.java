@@ -171,6 +171,11 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
             return this;
         }
 
+        public Builder directive(Directive directive) {
+            this.directives.add(directive);
+            return this;
+        }
+
         public InputValueDefinition build() {
             InputValueDefinition inputValueDefinition = new InputValueDefinition(name,
                     type,

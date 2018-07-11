@@ -23,6 +23,13 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
         this.description = description;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public ScalarTypeDefinition(String name) {
+        this(name, new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
     @Override
     public List<Directive> getDirectives() {
         return directives;

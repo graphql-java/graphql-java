@@ -77,7 +77,7 @@ class ParserTest extends Specification {
 
         def innerSelectionSet = new SelectionSet([new Field("name")])
         def selectionSet = new SelectionSet([new Field("me", innerSelectionSet)])
-        def definition = new OperationDefinition(null, OperationDefinition.Operation.QUERY, [], selectionSet)
+        def definition = OperationDefinition.newOperationDefinition().operation(OperationDefinition.Operation.QUERY).selectionSet(selectionSet).build()
         def expectedResult = new Document([definition])
 
         when:
@@ -95,7 +95,7 @@ class ParserTest extends Specification {
         def expectedResult = new Document()
         def variableDefinition = new VariableDefinition("devicePicSize", new TypeName("Int"))
         def selectionSet = new SelectionSet([new Field("me")])
-        def definition = new OperationDefinition("getProfile", OperationDefinition.Operation.QUERY, [variableDefinition], selectionSet)
+        def definition = OperationDefinition.newOperationDefinition().name("getProfile").operation(OperationDefinition.Operation.QUERY).variableDefinitions([variableDefinition]).selectionSet(selectionSet).build()
         expectedResult.definitions.add(definition)
 
         when:

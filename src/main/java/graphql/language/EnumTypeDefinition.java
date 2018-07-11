@@ -36,7 +36,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
     }
 
     public List<EnumValueDefinition> getEnumValueDefinitions() {
-        return enumValueDefinitions;
+        return new ArrayList<>(enumValueDefinitions);
     }
 
     @Override
