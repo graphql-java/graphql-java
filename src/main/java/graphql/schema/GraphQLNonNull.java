@@ -13,6 +13,7 @@ import static graphql.Assert.assertNotNull;
  * See http://graphql.org/learn/schema/#lists-and-non-null for more details on the concept
  */
 @PublicApi
+
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
     /**

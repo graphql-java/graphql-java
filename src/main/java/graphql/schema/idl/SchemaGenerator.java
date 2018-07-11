@@ -293,17 +293,17 @@ public class SchemaGenerator {
             @SuppressWarnings({"OptionalGetWithoutIsPresent", "ConstantConditions"})
             TypeDefinition queryTypeDef = typeRegistry.getType("Query").get();
 
-            query = buildOutputType(buildCtx, new TypeName(queryTypeDef.getName()));
+            query = buildOutputType(buildCtx, TypeName.newTypeName().name(queryTypeDef.getName()).build());
             schemaBuilder.query(query);
 
             Optional<TypeDefinition> mutationTypeDef = typeRegistry.getType("Mutation");
             if (mutationTypeDef.isPresent()) {
-                mutation = buildOutputType(buildCtx, new TypeName(mutationTypeDef.get().getName()));
+                mutation = buildOutputType(buildCtx, TypeName.newTypeName().name((mutationTypeDef.get().getName())).build());
                 schemaBuilder.mutation(mutation);
             }
             Optional<TypeDefinition> subscriptionTypeDef = typeRegistry.getType("Subscription");
             if (subscriptionTypeDef.isPresent()) {
-                subscription = buildOutputType(buildCtx, new TypeName(subscriptionTypeDef.get().getName()));
+                subscription = buildOutputType(buildCtx, TypeName.newTypeName().name(subscriptionTypeDef.get().getName()).build());
                 schemaBuilder.subscription(subscription);
             }
         } else {
@@ -355,7 +355,7 @@ public class SchemaGenerator {
         Set<GraphQLType> additionalTypes = new HashSet<>();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         typeRegistry.types().values().forEach(typeDefinition -> {
-            TypeName typeName = new TypeName(typeDefinition.getName());
+            TypeName typeName = TypeName.newTypeName().name(typeDefinition.getName()).build();
             if (typeDefinition instanceof InputObjectTypeDefinition) {
                 if (buildCtx.hasInputType(typeDefinition) == null) {
                     additionalTypes.add(buildInputType(buildCtx, typeName));

@@ -833,9 +833,9 @@ public class SchemaDiff {
     // looks for a type called `Query|Mutation|Subscription` and if it exist then assumes it as an operation def
 
     private Optional<OperationTypeDefinition> synthOperationTypeDefinition(Function<Type, Optional<ObjectTypeDefinition>> typeReteriver, String opName) {
-        TypeName type = new TypeName(capitalize(opName));
+        TypeName type = TypeName.newTypeName().name(capitalize(opName)).build();
         Optional<ObjectTypeDefinition> typeDef = typeReteriver.apply(type);
-        return typeDef.map(objectTypeDefinition -> new OperationTypeDefinition(opName, type));
+        return typeDef.map(objectTypeDefinition -> OperationTypeDefinition.newOperationTypeDefinition().name(opName).type(type).build());
     }
 
     private <T> Map<String, T> sortedMap(List<T> listOfNamedThings, Function<T, String> nameFunc) {

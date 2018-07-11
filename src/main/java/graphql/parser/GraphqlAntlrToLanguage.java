@@ -3,7 +3,6 @@ package graphql.parser;
 
 import graphql.Assert;
 import graphql.Internal;
-import graphql.language.AbstractNode;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
@@ -31,6 +30,7 @@ import graphql.language.IntValue;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.ListType;
+import graphql.language.NodeBuilder;
 import graphql.language.NonNullType;
 import graphql.language.ObjectField;
 import graphql.language.ObjectTypeDefinition;
@@ -41,16 +41,18 @@ import graphql.language.OperationTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaDefinition;
+import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.SourceLocation;
 import graphql.language.StringValue;
+import graphql.language.Type;
+import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
-import graphql.parser.antlr.GraphqlBaseVisitor;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.IntStream;
@@ -59,119 +61,133 @@ import org.antlr.v4.runtime.Token;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.language.NullValue.Null;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 
 @Internal
-public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
+public class GraphqlAntlrToLanguage {
 
     private final CommonTokenStream tokens;
-    private Document result;
+
 
     public GraphqlAntlrToLanguage(CommonTokenStream tokens) {
         this.tokens = tokens;
     }
 
-    protected enum ContextProperty {
-        OperationDefinition,
-        FragmentDefinition,
-        Field,
-        InlineFragment,
-        FragmentSpread,
-        SelectionSet,
-        VariableDefinition,
-        ListType,
-        NonNullType,
-        Directive,
-        EnumTypeDefinition,
-        ObjectTypeDefinition,
-        InputObjectTypeDefinition,
-        ScalarTypeDefinition,
-        UnionTypeDefinition,
-        InterfaceTypeDefinition,
-        EnumValueDefinition,
-        FieldDefinition,
-        InputValueDefinition,
-        SchemaDefinition,
-        OperationTypeDefinition,
-        DirectiveDefinition,
-    }
-
-    protected static class ContextEntry {
-        public final ContextProperty contextProperty;
-        public final Object value;
-
-        public ContextEntry(ContextProperty contextProperty, Object value) {
-            this.contextProperty = contextProperty;
-            this.value = value;
-        }
-    }
-
-    private final Deque<ContextEntry> contextStack = new ArrayDeque<>();
-
-
-    protected void addContextProperty(ContextProperty contextProperty, Object value) {
-        contextStack.addFirst(new ContextEntry(contextProperty, value));
-    }
-
-    protected void popContext() {
-        contextStack.removeFirst();
-    }
-
-    protected Object getFromContextStack(ContextProperty contextProperty) {
-        return getFromContextStack(contextProperty, false);
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    protected Object getFromContextStack(ContextProperty contextProperty, boolean required) {
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == contextProperty) {
-                return contextEntry.value;
-            }
-        }
-        if (required) {
-            Assert.assertShouldNeverHappen("not found %s", contextProperty);
-        }
-        return null;
-    }
-
     //MARKER START: Here GraphqlOperation.g4 specific methods begin
 
 
-
-    @Override
-    public Void visitDocument(GraphqlParser.DocumentContext ctx) {
-        result = new Document();
-        newNode(result, ctx);
-        return super.visitDocument(ctx);
+    public Document createDocument(GraphqlParser.DocumentContext ctx) {
+        Document.Builder document = Document.newDocument();
+        newNode(document, ctx);
+        document.definitions(ctx.definition().stream().map(definition -> createDefinition(definition))
+                .collect(Collectors.toList()));
+        return document.build();
     }
 
-    @Override
-    public Void visitOperationDefinition(GraphqlParser.OperationDefinitionContext ctx) {
-        OperationDefinition operationDefinition;
-        operationDefinition = new OperationDefinition();
+    public Definition createDefinition(GraphqlParser.DefinitionContext definitionContext) {
+        if (definitionContext.operationDefinition() != null) {
+            return createOperationDefinition(definitionContext.operationDefinition());
+        } else if (definitionContext.fragmentDefinition() != null) {
+            return createFragmentDefinition(definitionContext.fragmentDefinition());
+        } else if (definitionContext.typeSystemDefinition() != null) {
+            return createTypeSystemDefinition(definitionContext.typeSystemDefinition());
+        } else {
+            return assertShouldNeverHappen();
+        }
+
+    }
+
+    private Definition createTypeSystemDefinition(GraphqlParser.TypeSystemDefinitionContext ctx) {
+        if (ctx.schemaDefinition() != null) {
+            return createSchemaDefinition(ctx.schemaDefinition());
+        } else if (ctx.directiveDefinition() != null) {
+            return createDirectiveDefinition(ctx.directiveDefinition());
+        } else if (ctx.typeDefinition() != null) {
+            return createTypeDefinition(ctx.typeDefinition());
+        } else if (ctx.typeExtension() != null) {
+            return createTypeExtension(ctx.typeExtension());
+        } else {
+            return assertShouldNeverHappen();
+        }
+    }
+
+    private TypeDefinition createTypeExtension(GraphqlParser.TypeExtensionContext ctx) {
+        if (ctx.enumTypeExtensionDefinition() != null) {
+            return createEnumTypeExtensionDefinition(ctx.enumTypeExtensionDefinition());
+
+        } else if (ctx.objectTypeExtensionDefinition() != null) {
+            return createObjectTypeExtensionDefinition(ctx.objectTypeExtensionDefinition());
+
+        } else if (ctx.inputObjectTypeExtensionDefinition() != null) {
+            return createInputObjectTypeExtensionDefinition(ctx.inputObjectTypeExtensionDefinition());
+
+        } else if (ctx.interfaceTypeExtensionDefinition() != null) {
+            return createInterfaceTypeExtensionDefinition(ctx.interfaceTypeExtensionDefinition());
+
+        } else if (ctx.scalarTypeExtensionDefinition() != null) {
+            return createScalarTypeExtensionDefinition(ctx.scalarTypeExtensionDefinition());
+
+        } else if (ctx.unionTypeExtensionDefinition() != null) {
+            return createUnionTypeExtensionDefinition(ctx.unionTypeExtensionDefinition());
+        } else {
+            return assertShouldNeverHappen();
+        }
+    }
+
+    private TypeDefinition createTypeDefinition(GraphqlParser.TypeDefinitionContext ctx) {
+        if (ctx.enumTypeDefinition() != null) {
+            return createEnumTypeDefinition(ctx.enumTypeDefinition());
+
+        } else if (ctx.objectTypeDefinition() != null) {
+            return createObjectTypeDefinition(ctx.objectTypeDefinition());
+
+        } else if (ctx.inputObjectTypeDefinition() != null) {
+            return createInputObjectTypeDefinition(ctx.inputObjectTypeDefinition());
+
+        } else if (ctx.interfaceTypeDefinition() != null) {
+            return createInterfaceTypeDefinition(ctx.interfaceTypeDefinition());
+
+        } else if (ctx.scalarTypeDefinition() != null) {
+            return createScalarTypeDefinition(ctx.scalarTypeDefinition());
+
+        } else if (ctx.unionTypeDefinition() != null) {
+            return createUnionTypeDefinition(ctx.unionTypeDefinition());
+
+        } else {
+            return assertShouldNeverHappen();
+        }
+    }
+
+
+    public OperationDefinition createOperationDefinition(GraphqlParser.OperationDefinitionContext ctx) {
+        OperationDefinition.Builder operationDefinition = OperationDefinition.newOperationDefinition();
         newNode(operationDefinition, ctx);
         if (ctx.operationType() == null) {
-            operationDefinition.setOperation(OperationDefinition.Operation.QUERY);
+            operationDefinition.operation(OperationDefinition.Operation.QUERY);
         } else {
-            operationDefinition.setOperation(parseOperation(ctx.operationType()));
+            operationDefinition.operation(parseOperation(ctx.operationType()));
         }
         if (ctx.name() != null) {
-            operationDefinition.setName(ctx.name().getText());
+            operationDefinition.name(ctx.name().getText());
         }
-        result.getDefinitions().add(operationDefinition);
-        addContextProperty(ContextProperty.OperationDefinition, operationDefinition);
-        super.visitOperationDefinition(ctx);
-        popContext();
-
-        return null;
+        if (ctx.variableDefinitions() != null) {
+            operationDefinition.variableDefinitions(createVariableDefinitions(ctx.variableDefinitions()));
+        }
+        if (ctx.selectionSet() != null) {
+            operationDefinition.selectionSet(createSelectionSet(ctx.selectionSet()));
+        }
+        if (ctx.directives() != null) {
+            operationDefinition.directives(createDirectives(ctx.directives()));
+        }
+        return operationDefinition.build();
     }
 
     private OperationDefinition.Operation parseOperation(GraphqlParser.OperationTypeContext operationTypeContext) {
@@ -182,611 +198,553 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         } else if (operationTypeContext.getText().equals("subscription")) {
             return OperationDefinition.Operation.SUBSCRIPTION;
         } else {
-            return Assert.assertShouldNeverHappen("InternalError: unknown operationTypeContext=%s", operationTypeContext.getText());
+            return assertShouldNeverHappen("InternalError: unknown operationTypeContext=%s", operationTypeContext.getText());
         }
     }
 
-    @Override
-    public Void visitFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) {
-        FragmentSpread fragmentSpread = new FragmentSpread(ctx.fragmentName().getText());
+    public FragmentSpread createFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) {
+        FragmentSpread.Builder fragmentSpread = FragmentSpread.newFragmentSpread().name(ctx.fragmentName().getText());
         newNode(fragmentSpread, ctx);
-        ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(fragmentSpread);
-        addContextProperty(ContextProperty.FragmentSpread, fragmentSpread);
-        super.visitFragmentSpread(ctx);
-        popContext();
-        return null;
+        if (ctx.directives() != null) {
+            fragmentSpread.directives(createDirectives(ctx.directives()));
+        }
+        return fragmentSpread.build();
     }
 
-    @Override
-    public Void visitVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) {
-        VariableDefinition variableDefinition = new VariableDefinition();
+    public List<VariableDefinition> createVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) {
+        return ctx.variableDefinition().stream().map(this::createVariableDefinition).collect(Collectors.toList());
+    }
+
+    private VariableDefinition createVariableDefinition(GraphqlParser.VariableDefinitionContext ctx) {
+        VariableDefinition.Builder variableDefinition = VariableDefinition.newVariableDefinition();
         newNode(variableDefinition, ctx);
-        variableDefinition.setName(ctx.variable().name().getText());
+        variableDefinition.name(ctx.variable().name().getText());
         if (ctx.defaultValue() != null) {
-            Value value = getValue(ctx.defaultValue().value());
-            variableDefinition.setDefaultValue(value);
+            Value value = createValue(ctx.defaultValue().value());
+            variableDefinition.defaultValue(value);
         }
-        OperationDefinition operationDefinition = (OperationDefinition) getFromContextStack(ContextProperty.OperationDefinition);
-        operationDefinition.getVariableDefinitions().add(variableDefinition);
+        variableDefinition.type(createType(ctx.type()));
+        return variableDefinition.build();
 
-        addContextProperty(ContextProperty.VariableDefinition, variableDefinition);
-        super.visitVariableDefinition(ctx);
-        popContext();
-        return null;
     }
 
-    @Override
-    public Void visitFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx) {
-        FragmentDefinition fragmentDefinition = new FragmentDefinition();
+    public FragmentDefinition createFragmentDefinition(GraphqlParser.FragmentDefinitionContext ctx) {
+        FragmentDefinition.Builder fragmentDefinition = FragmentDefinition.newFragmentDefinition();
         newNode(fragmentDefinition, ctx);
-        fragmentDefinition.setName(ctx.fragmentName().getText());
-        fragmentDefinition.setTypeCondition(new TypeName(ctx.typeCondition().typeName().getText()));
-        addContextProperty(ContextProperty.FragmentDefinition, fragmentDefinition);
-        result.getDefinitions().add(fragmentDefinition);
-        super.visitFragmentDefinition(ctx);
-        popContext();
-        return null;
-    }
-
-
-    @Override
-    public Void visitSelectionSet(GraphqlParser.SelectionSetContext ctx) {
-        SelectionSet newSelectionSet = new SelectionSet();
-        newNode(newSelectionSet, ctx);
-        newSelectionSet(newSelectionSet);
-        addContextProperty(ContextProperty.SelectionSet, newSelectionSet);
-        super.visitSelectionSet(ctx);
-        popContext();
-        return null;
-    }
-
-
-    @Override
-    public Void visitField(GraphqlParser.FieldContext ctx) {
-        Field newField = new Field();
-        newNode(newField, ctx);
-        newField.setName(ctx.name().getText());
-        if (ctx.alias() != null) {
-            newField.setAlias(ctx.alias().name().getText());
+        fragmentDefinition.name(ctx.fragmentName().getText());
+        fragmentDefinition.typeCondition(TypeName.newTypeName().name(ctx.typeCondition().typeName().getText()).build());
+        if (ctx.directives() != null) {
+            fragmentDefinition.directives(createDirectives(ctx.directives()));
         }
-        newField(newField);
-        addContextProperty(ContextProperty.Field, newField);
-        super.visitField(ctx);
-        popContext();
-        return null;
+        if (ctx.selectionSet() != null) {
+            fragmentDefinition.selectionSet(createSelectionSet(ctx.selectionSet()));
+        }
+        return fragmentDefinition.build();
     }
 
-    private void newSelectionSet(SelectionSet selectionSet) {
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == ContextProperty.Field) {
-                ((Field) contextEntry.value).setSelectionSet(selectionSet);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.OperationDefinition) {
-                ((OperationDefinition) contextEntry.value).setSelectionSet(selectionSet);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.FragmentDefinition) {
-                ((FragmentDefinition) contextEntry.value).setSelectionSet(selectionSet);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.InlineFragment) {
-                ((InlineFragment) contextEntry.value).setSelectionSet(selectionSet);
-                break;
+
+    public SelectionSet createSelectionSet(GraphqlParser.SelectionSetContext ctx) {
+        SelectionSet.Builder builder = SelectionSet.newSelectionSet();
+        newNode(builder, ctx);
+        List<Selection> selections = ctx.selection().stream().map(selectionContext -> {
+            if (selectionContext.field() != null) {
+                return createField(selectionContext.field());
             }
+            if (selectionContext.fragmentSpread() != null) {
+                return createFragmentSpread(selectionContext.fragmentSpread());
+            }
+            if (selectionContext.inlineFragment() != null) {
+                return createInlineFragment(selectionContext.inlineFragment());
+            }
+            return (Selection) Assert.assertShouldNeverHappen();
+
+        }).collect(Collectors.toList());
+        builder.selections(selections);
+        return builder.build();
+    }
+
+
+    public Field createField(GraphqlParser.FieldContext ctx) {
+        Field.Builder builder = Field.newField();
+        newNode(builder, ctx);
+        builder.name(ctx.name().getText());
+        if (ctx.alias() != null) {
+            builder.alias(ctx.alias().name().getText());
         }
+        if (ctx.directives() != null) {
+            builder.directives(createDirectives(ctx.directives()));
+        }
+        if (ctx.arguments() != null) {
+            builder.arguments(createArguments(ctx.arguments()));
+        }
+        if (ctx.selectionSet() != null) {
+            builder.selectionSet(createSelectionSet(ctx.selectionSet()));
+        }
+        return builder.build();
     }
 
-    private void newField(Field field) {
-        ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(field);
-    }
 
-
-    @Override
-    public Void visitInlineFragment(GraphqlParser.InlineFragmentContext ctx) {
-        TypeName typeName = ctx.typeCondition() != null ? new TypeName(ctx.typeCondition().typeName().getText()) : null;
-        InlineFragment inlineFragment = new InlineFragment(typeName);
+    public InlineFragment createInlineFragment(GraphqlParser.InlineFragmentContext ctx) {
+        InlineFragment.Builder inlineFragment = InlineFragment.newInlineFragment();
         newNode(inlineFragment, ctx);
-        ((SelectionSet) getFromContextStack(ContextProperty.SelectionSet)).getSelections().add(inlineFragment);
-        addContextProperty(ContextProperty.InlineFragment, inlineFragment);
-        super.visitInlineFragment(ctx);
-        popContext();
-        return null;
+        if (ctx.typeCondition() != null) {
+            inlineFragment.typeCondition(createTypeName(ctx.typeCondition().typeName()));
+        }
+        if (ctx.directives() != null) {
+            inlineFragment.directives(createDirectives(ctx.directives()));
+        }
+        if (ctx.selectionSet() != null) {
+            inlineFragment.selectionSet(createSelectionSet(ctx.selectionSet()));
+        }
+        return inlineFragment.build();
     }
 
     //MARKER END: Here GraphqlOperation.g4 specific methods end
 
-    @Override
-    public Void visitTypeName(GraphqlParser.TypeNameContext ctx) {
-        TypeName typeName = new TypeName(ctx.name().getText());
-        newNode(typeName, ctx);
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.value instanceof ListType) {
-                ((ListType) contextEntry.value).setType(typeName);
-                break;
-            }
-            if (contextEntry.value instanceof NonNullType) {
-                ((NonNullType) contextEntry.value).setType(typeName);
-                break;
-            }
-            if (contextEntry.value instanceof VariableDefinition) {
-                ((VariableDefinition) contextEntry.value).setType(typeName);
-                break;
-            }
-            if (contextEntry.value instanceof FieldDefinition) {
-                ((FieldDefinition) contextEntry.value).setType(typeName);
-                break;
-            }
-            if (contextEntry.value instanceof InputValueDefinition) {
-                ((InputValueDefinition) contextEntry.value).setType(typeName);
-                break;
-            }
-            if (contextEntry.contextProperty == ContextProperty.ObjectTypeDefinition) {
-                ((ObjectTypeDefinition) contextEntry.value).getImplements().add(typeName);
-                break;
-            }
-            if (contextEntry.contextProperty == ContextProperty.UnionTypeDefinition) {
-                ((UnionTypeDefinition) contextEntry.value).getMemberTypes().add(typeName);
-                break;
-            }
-            if (contextEntry.contextProperty == ContextProperty.OperationTypeDefinition) {
-                ((OperationTypeDefinition) contextEntry.value).setType(typeName);
-                break;
-            }
-        }
-        return super.visitTypeName(ctx);
-    }
 
-    @Override
-    public Void visitNonNullType(GraphqlParser.NonNullTypeContext ctx) {
-        NonNullType nonNullType = new NonNullType();
-        newNode(nonNullType, ctx);
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.value instanceof ListType) {
-                ((ListType) contextEntry.value).setType(nonNullType);
-                break;
-            }
-            if (contextEntry.value instanceof VariableDefinition) {
-                ((VariableDefinition) contextEntry.value).setType(nonNullType);
-                break;
-            }
-            if (contextEntry.value instanceof FieldDefinition) {
-                ((FieldDefinition) contextEntry.value).setType(nonNullType);
-                break;
-            }
-            if (contextEntry.value instanceof InputValueDefinition) {
-                ((InputValueDefinition) contextEntry.value).setType(nonNullType);
-                break;
-            }
-        }
-        addContextProperty(ContextProperty.NonNullType, nonNullType);
-        super.visitNonNullType(ctx);
-        popContext();
-        return null;
-    }
-
-    @Override
-    public Void visitListType(GraphqlParser.ListTypeContext ctx) {
-        ListType listType = new ListType();
-        newNode(listType, ctx);
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.value instanceof ListType) {
-                ((ListType) contextEntry.value).setType(listType);
-                break;
-            }
-            if (contextEntry.value instanceof NonNullType) {
-                ((NonNullType) contextEntry.value).setType(listType);
-                break;
-            }
-            if (contextEntry.value instanceof VariableDefinition) {
-                ((VariableDefinition) contextEntry.value).setType(listType);
-                break;
-            }
-            if (contextEntry.value instanceof FieldDefinition) {
-                ((FieldDefinition) contextEntry.value).setType(listType);
-                break;
-            }
-            if (contextEntry.value instanceof InputValueDefinition) {
-                ((InputValueDefinition) contextEntry.value).setType(listType);
-                break;
-            }
-        }
-        addContextProperty(ContextProperty.ListType, listType);
-        super.visitListType(ctx);
-        popContext();
-        return null;
-    }
-
-    @Override
-    public Void visitArgument(GraphqlParser.ArgumentContext ctx) {
-        Argument argument = new Argument(ctx.name().getText(), getValue(ctx.valueWithVariable()));
-        newNode(argument, ctx);
-        if (getFromContextStack(ContextProperty.Directive, false) != null) {
-            ((Directive) getFromContextStack(ContextProperty.Directive)).getArguments().add(argument);
+    public Type createType(GraphqlParser.TypeContext ctx) {
+        if (ctx.typeName() != null) {
+            return createTypeName(ctx.typeName());
+        } else if (ctx.nonNullType() != null) {
+            return createNonNullType(ctx.nonNullType());
+        } else if (ctx.listType() != null) {
+            return createListType(ctx.listType());
         } else {
-            Field field = (Field) getFromContextStack(ContextProperty.Field);
-            field.getArguments().add(argument);
+            return assertShouldNeverHappen();
         }
-        return super.visitArgument(ctx);
     }
 
+    public TypeName createTypeName(GraphqlParser.TypeNameContext ctx) {
+        TypeName.Builder builder = TypeName.newTypeName();
+        builder.name(ctx.name().getText());
+        newNode(builder, ctx);
+        return builder.build();
+    }
 
-    @Override
-    public Void visitDirective(GraphqlParser.DirectiveContext ctx) {
-        Directive directive = new Directive(ctx.name().getText());
-        newNode(directive, ctx);
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == ContextProperty.Field) {
-                ((Field) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.FragmentDefinition) {
-                ((FragmentDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.FragmentSpread) {
-                ((FragmentSpread) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.InlineFragment) {
-                ((InlineFragment) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.OperationDefinition) {
-                ((OperationDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.EnumValueDefinition) {
-                ((EnumValueDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.FieldDefinition) {
-                ((FieldDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.InputValueDefinition) {
-                ((InputValueDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.InterfaceTypeDefinition) {
-                ((InterfaceTypeDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.EnumTypeDefinition) {
-                ((EnumTypeDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.ObjectTypeDefinition) {
-                ((ObjectTypeDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.ScalarTypeDefinition) {
-                ((ScalarTypeDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.UnionTypeDefinition) {
-                ((UnionTypeDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.InputObjectTypeDefinition) {
-                ((InputObjectTypeDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            } else if (contextEntry.contextProperty == ContextProperty.SchemaDefinition) {
-                ((SchemaDefinition) contextEntry.value).getDirectives().add(directive);
-                break;
-            }
+    public NonNullType createNonNullType(GraphqlParser.NonNullTypeContext ctx) {
+        NonNullType.Builder builder = NonNullType.newNonNullType();
+        newNode(builder, ctx);
+        if (ctx.listType() != null) {
+            builder.type(createListType(ctx.listType()));
+        } else if (ctx.typeName() != null) {
+            builder.type(createTypeName(ctx.typeName()));
+        } else {
+            return assertShouldNeverHappen();
         }
-        addContextProperty(ContextProperty.Directive, directive);
-        super.visitDirective(ctx);
-        popContext();
-        return null;
+        return builder.build();
     }
 
-    @Override
-    public Void visitSchemaDefinition(GraphqlParser.SchemaDefinitionContext ctx) {
-        SchemaDefinition def = new SchemaDefinition();
-        newNode(def, ctx);
-        result.getDefinitions().add(def);
-        addContextProperty(ContextProperty.SchemaDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
+    public ListType createListType(GraphqlParser.ListTypeContext ctx) {
+        ListType.Builder builder = ListType.newListType();
+        newNode(builder, ctx);
+        builder.type(createType(ctx.type()));
+        return builder.build();
     }
 
-    @Override
-    public Void visitOperationTypeDefinition(GraphqlParser.OperationTypeDefinitionContext ctx) {
-        OperationTypeDefinition def = new OperationTypeDefinition(ctx.operationType().getText());
-        newNode(def, ctx);
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == ContextProperty.SchemaDefinition) {
-                ((SchemaDefinition) contextEntry.value).getOperationTypeDefinitions().add(def);
-                break;
-            }
+    public Argument createArgument(GraphqlParser.ArgumentContext ctx) {
+        Argument.Builder builder = Argument.newArgument();
+        newNode(builder, ctx);
+        builder.name(ctx.name().getText());
+        builder.value(createValue(ctx.valueWithVariable()));
+        return builder.build();
+    }
+
+    public List<Argument> createArguments(GraphqlParser.ArgumentsContext ctx) {
+        return ctx.argument().stream().map(this::createArgument).collect(Collectors.toList());
+    }
+
+
+    public List<Directive> createDirectives(GraphqlParser.DirectivesContext ctx) {
+        return ctx.directive().stream().map(this::createDirective).collect(Collectors.toList());
+    }
+
+    public Directive createDirective(GraphqlParser.DirectiveContext ctx) {
+        Directive.Builder builder = Directive.newDirective();
+        builder.name(ctx.name().getText());
+        newNode(builder, ctx);
+        if (ctx.arguments() != null) {
+            builder.arguments(createArguments(ctx.arguments()));
         }
-        addContextProperty(ContextProperty.OperationTypeDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
+        return builder.build();
     }
 
-    @Override
-    public Void visitScalarTypeDefinition(GraphqlParser.ScalarTypeDefinitionContext ctx) {
-        ScalarTypeDefinition def = new ScalarTypeDefinition(ctx.name().getText());
+    public SchemaDefinition createSchemaDefinition(GraphqlParser.SchemaDefinitionContext ctx) {
+        SchemaDefinition.Builder def = SchemaDefinition.newSchemaDefintion();
         newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
-        result.getDefinitions().add(def);
-        addContextProperty(ContextProperty.ScalarTypeDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
-    }
-
-    @Override
-    public Void visitObjectTypeDefinition(GraphqlParser.ObjectTypeDefinitionContext ctx) {
-        ObjectTypeDefinition def = new ObjectTypeDefinition(ctx.name().getText());
-        newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
-        result.getDefinitions().add(def);
-        addContextProperty(ContextProperty.ObjectTypeDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
-    }
-
-
-    @Override
-    public Void visitFieldDefinition(GraphqlParser.FieldDefinitionContext ctx) {
-        FieldDefinition def = new FieldDefinition(ctx.name().getText());
-        newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == ContextProperty.InterfaceTypeDefinition) {
-                ((InterfaceTypeDefinition) contextEntry.value).getFieldDefinitions().add(def);
-                break;
-            }
-            if (contextEntry.contextProperty == ContextProperty.ObjectTypeDefinition) {
-                ((ObjectTypeDefinition) contextEntry.value).getFieldDefinitions().add(def);
-                break;
-            }
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
         }
-        addContextProperty(ContextProperty.FieldDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
+        def.operationTypeDefinitions(ctx.operationTypeDefinition().stream()
+                .map(this::createOperationTypeDefinition).collect(Collectors.toList()));
+        return def.build();
     }
 
-    @Override
-    public Void visitInputValueDefinition(GraphqlParser.InputValueDefinitionContext ctx) {
-        InputValueDefinition def = new InputValueDefinition(ctx.name().getText());
+    public OperationTypeDefinition createOperationTypeDefinition(GraphqlParser.OperationTypeDefinitionContext ctx) {
+        OperationTypeDefinition.Builder def = OperationTypeDefinition.newOperationTypeDefinition();
+        def.name(ctx.operationType().getText());
+        def.type(createTypeName(ctx.typeName()));
         newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
+        return def.build();
+    }
+
+    public ScalarTypeDefinition createScalarTypeDefinition(GraphqlParser.ScalarTypeDefinitionContext ctx) {
+        ScalarTypeDefinition.Builder def = ScalarTypeDefinition.newScalarTypeDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        return def.build();
+    }
+
+    public ScalarTypeExtensionDefinition createScalarTypeExtensionDefinition(GraphqlParser.ScalarTypeExtensionDefinitionContext ctx) {
+        ScalarTypeExtensionDefinition.Builder def = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        return def.build();
+    }
+
+    public ObjectTypeDefinition createObjectTypeDefinition(GraphqlParser.ObjectTypeDefinitionContext ctx) {
+        ObjectTypeDefinition.Builder def = ObjectTypeDefinition.newObjectTypeDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
+        List<Type> implementz = new ArrayList<>();
+        while (implementsInterfacesContext != null) {
+            List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(Collectors.toList());
+            implementz.addAll(0, typeNames);
+            implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
+        }
+        def.implementz(implementz);
+        if (ctx.fieldsDefinition() != null) {
+            def.fieldDefinitions(createFieldDefinitions(ctx.fieldsDefinition()));
+        }
+        return def.build();
+    }
+
+    public ObjectTypeExtensionDefinition createObjectTypeExtensionDefinition(GraphqlParser.ObjectTypeExtensionDefinitionContext ctx) {
+        ObjectTypeExtensionDefinition.Builder def = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
+        List<Type> implementz = new ArrayList<>();
+        while (implementsInterfacesContext != null) {
+            List<TypeName> typeNames = implementsInterfacesContext.typeName().stream().map(this::createTypeName).collect(Collectors.toList());
+            implementz.addAll(0, typeNames);
+            implementsInterfacesContext = implementsInterfacesContext.implementsInterfaces();
+        }
+        def.implementz(implementz);
+        if (ctx.fieldsDefinition() != null) {
+            def.fieldDefinitions(createFieldDefinitions(ctx.fieldsDefinition()));
+        }
+        return def.build();
+    }
+
+    public List<FieldDefinition> createFieldDefinitions(GraphqlParser.FieldsDefinitionContext ctx) {
+        return ctx.fieldDefinition().stream().map(this::createFieldDefinition).collect(Collectors.toList());
+    }
+
+    public FieldDefinition createFieldDefinition(GraphqlParser.FieldDefinitionContext ctx) {
+        FieldDefinition.Builder def = FieldDefinition.newFieldDefinition();
+        def.name(ctx.name().getText());
+        def.type(createType(ctx.type()));
+        newNode(def, ctx);
+        def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        if (ctx.argumentsDefinition() != null) {
+            def.inputValueDefinitions(createInputValueDefinitions(ctx.argumentsDefinition().inputValueDefinition()));
+        }
+        return def.build();
+    }
+
+    public List<InputValueDefinition> createInputValueDefinitions(List<GraphqlParser.InputValueDefinitionContext> defs) {
+        return defs.stream().map(this::createInputValueDefinition).collect(Collectors.toList());
+
+    }
+
+    public InputValueDefinition createInputValueDefinition(GraphqlParser.InputValueDefinitionContext ctx) {
+        InputValueDefinition.Builder def = InputValueDefinition.newInputValueDefinition();
+        def.name(ctx.name().getText());
+        def.type(createType(ctx.type()));
+        newNode(def, ctx);
+        def.description(newDescription(ctx.description()));
         if (ctx.defaultValue() != null) {
-            def.setDefaultValue(getValue(ctx.defaultValue().value()));
+            def.defaultValue(createValue(ctx.defaultValue().value()));
         }
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == ContextProperty.FieldDefinition) {
-                ((FieldDefinition) contextEntry.value).getInputValueDefinitions().add(def);
-                break;
-            }
-            if (contextEntry.contextProperty == ContextProperty.InputObjectTypeDefinition) {
-                ((InputObjectTypeDefinition) contextEntry.value).getInputValueDefinitions().add(def);
-                break;
-            }
-            if (contextEntry.contextProperty == ContextProperty.DirectiveDefinition) {
-                ((DirectiveDefinition) contextEntry.value).getInputValueDefinitions().add(def);
-                break;
-            }
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
         }
-        addContextProperty(ContextProperty.InputValueDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
+        return def.build();
     }
 
-    @Override
-    public Void visitInterfaceTypeDefinition(GraphqlParser.InterfaceTypeDefinitionContext ctx) {
-        InterfaceTypeDefinition def = new InterfaceTypeDefinition(ctx.name().getText());
+    public InterfaceTypeDefinition createInterfaceTypeDefinition(GraphqlParser.InterfaceTypeDefinitionContext ctx) {
+        InterfaceTypeDefinition.Builder def = InterfaceTypeDefinition.newInterfaceTypeDefinition();
+        def.name(ctx.name().getText());
         newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
-        result.getDefinitions().add(def);
-        addContextProperty(ContextProperty.InterfaceTypeDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
-    }
-
-    @Override
-    public Void visitUnionTypeDefinition(GraphqlParser.UnionTypeDefinitionContext ctx) {
-        UnionTypeDefinition def = new UnionTypeDefinition(ctx.name().getText());
-        newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
-        result.getDefinitions().add(def);
-        addContextProperty(ContextProperty.UnionTypeDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
-    }
-
-    @Override
-    public Void visitEnumTypeDefinition(GraphqlParser.EnumTypeDefinitionContext ctx) {
-        EnumTypeDefinition def = new EnumTypeDefinition(ctx.name().getText());
-        newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
-        result.getDefinitions().add(def);
-        addContextProperty(ContextProperty.EnumTypeDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
-    }
-
-    @Override
-    public Void visitEnumValueDefinition(GraphqlParser.EnumValueDefinitionContext ctx) {
-        EnumValueDefinition def = new EnumValueDefinition(ctx.enumValue().getText());
-        newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == ContextProperty.EnumTypeDefinition) {
-                ((EnumTypeDefinition) contextEntry.value).getEnumValueDefinitions().add(def);
-                break;
-            }
+        def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
         }
-        addContextProperty(ContextProperty.EnumValueDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
-    }
-
-    @Override
-    public Void visitInputObjectTypeDefinition(GraphqlParser.InputObjectTypeDefinitionContext ctx) {
-        InputObjectTypeDefinition def = new InputObjectTypeDefinition(ctx.name().getText());
-        newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
-        result.getDefinitions().add(def);
-        addContextProperty(ContextProperty.InputObjectTypeDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
-    }
-
-    private Void extensionTypeImpl(ParserRuleContext ctx, Definition def, ContextProperty ctxProperty) {
-        newNode((AbstractNode) def, ctx);
-        result.getDefinitions().add(def);
-        addContextProperty(ctxProperty, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
-    }
-
-    @Override
-    public Void visitObjectTypeExtensionDefinition(GraphqlParser.ObjectTypeExtensionDefinitionContext ctx) {
-        return extensionTypeImpl(ctx, new ObjectTypeExtensionDefinition(ctx.name().getText()), ContextProperty.ObjectTypeDefinition);
-    }
-
-    @Override
-    public Void visitInterfaceTypeExtensionDefinition(GraphqlParser.InterfaceTypeExtensionDefinitionContext ctx) {
-        return extensionTypeImpl(ctx, new InterfaceTypeExtensionDefinition(ctx.name().getText()), ContextProperty.InterfaceTypeDefinition);
-    }
-
-    @Override
-    public Void visitUnionTypeExtensionDefinition(GraphqlParser.UnionTypeExtensionDefinitionContext ctx) {
-        return extensionTypeImpl(ctx, new UnionTypeExtensionDefinition(ctx.name().getText()), ContextProperty.UnionTypeDefinition);
-    }
-
-    @Override
-    public Void visitEnumTypeExtensionDefinition(GraphqlParser.EnumTypeExtensionDefinitionContext ctx) {
-        return extensionTypeImpl(ctx, new EnumTypeExtensionDefinition(ctx.name().getText()), ContextProperty.EnumTypeDefinition);
-    }
-
-    @Override
-    public Void visitScalarTypeExtensionDefinition(GraphqlParser.ScalarTypeExtensionDefinitionContext ctx) {
-        return extensionTypeImpl(ctx, new ScalarTypeExtensionDefinition(ctx.name().getText()), ContextProperty.ScalarTypeDefinition);
-    }
-
-    @Override
-    public Void visitInputObjectTypeExtensionDefinition(GraphqlParser.InputObjectTypeExtensionDefinitionContext ctx) {
-        return extensionTypeImpl(ctx, new InputObjectTypeExtensionDefinition(ctx.name().getText()), ContextProperty.InputObjectTypeDefinition);
-    }
-
-    @Override
-    public Void visitDirectiveDefinition(GraphqlParser.DirectiveDefinitionContext ctx) {
-        DirectiveDefinition def = new DirectiveDefinition(ctx.name().getText());
-        newNode(def, ctx);
-        def.setDescription(newDescription(ctx.description()));
-        result.getDefinitions().add(def);
-        addContextProperty(ContextProperty.DirectiveDefinition, def);
-        super.visitChildren(ctx);
-        popContext();
-        return null;
-    }
-
-    @Override
-    public Void visitDirectiveLocation(GraphqlParser.DirectiveLocationContext ctx) {
-        DirectiveLocation def = new DirectiveLocation(ctx.name().getText());
-        newNode(def, ctx);
-        for (ContextEntry contextEntry : contextStack) {
-            if (contextEntry.contextProperty == ContextProperty.DirectiveDefinition) {
-                ((DirectiveDefinition) contextEntry.value).getDirectiveLocations().add(def);
-                break;
-            }
+        if (ctx.fieldsDefinition() != null) {
+            def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
         }
-        super.visitChildren(ctx);
-        return null;
+        return def.build();
     }
 
-    private Value getValue(GraphqlParser.ValueWithVariableContext ctx) {
+    public InterfaceTypeExtensionDefinition createInterfaceTypeExtensionDefinition(GraphqlParser.InterfaceTypeExtensionDefinitionContext ctx) {
+        InterfaceTypeExtensionDefinition.Builder def = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        if (ctx.fieldsDefinition() != null) {
+            def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
+        }
+        return def.build();
+    }
+
+    public UnionTypeDefinition createUnionTypeDefinition(GraphqlParser.UnionTypeDefinitionContext ctx) {
+        UnionTypeDefinition.Builder def = UnionTypeDefinition.newUnionTypeDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        List<Type> members = new ArrayList<>();
+        GraphqlParser.UnionMembersContext unionMembersContext = ctx.unionMembership().unionMembers();
+        while (unionMembersContext != null) {
+            members.add(0, createTypeName(unionMembersContext.typeName()));
+            unionMembersContext = unionMembersContext.unionMembers();
+        }
+        def.memberTypes(members);
+        return def.build();
+    }
+
+    public UnionTypeExtensionDefinition createUnionTypeExtensionDefinition(GraphqlParser.UnionTypeExtensionDefinitionContext ctx) {
+        UnionTypeExtensionDefinition.Builder def = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        List<Type> members = new ArrayList<>();
+        if (ctx.unionMembership() != null) {
+            GraphqlParser.UnionMembersContext unionMembersContext = ctx.unionMembership().unionMembers();
+            while (unionMembersContext != null) {
+                members.add(0, createTypeName(unionMembersContext.typeName()));
+                unionMembersContext = unionMembersContext.unionMembers();
+            }
+            def.memberTypes(members);
+        }
+        return def.build();
+    }
+
+    public EnumTypeDefinition createEnumTypeDefinition(GraphqlParser.EnumTypeDefinitionContext ctx) {
+        EnumTypeDefinition.Builder def = EnumTypeDefinition.newEnumTypeDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        if (ctx.enumValueDefinitions() != null) {
+            def.enumValueDefinitions(
+                    ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(Collectors.toList()));
+        }
+        return def.build();
+    }
+
+    public EnumTypeExtensionDefinition createEnumTypeExtensionDefinition(GraphqlParser.EnumTypeExtensionDefinitionContext ctx) {
+        EnumTypeExtensionDefinition.Builder def = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        if (ctx.enumValueDefinitions() != null) {
+            def.enumValueDefinitions(
+                    ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(Collectors.toList()));
+        }
+        return def.build();
+    }
+
+    public EnumValueDefinition createEnumValueDefinition(GraphqlParser.EnumValueDefinitionContext ctx) {
+        EnumValueDefinition.Builder def = EnumValueDefinition.newEnumValueDefinition();
+        def.name(ctx.enumValue().getText());
+        newNode(def, ctx);
+        def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        return def.build();
+    }
+
+    public InputObjectTypeDefinition createInputObjectTypeDefinition(GraphqlParser.InputObjectTypeDefinitionContext ctx) {
+        InputObjectTypeDefinition.Builder def = InputObjectTypeDefinition.newInputObjectDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        def.description(newDescription(ctx.description()));
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        if (ctx.inputObjectValueDefinitions() != null) {
+            def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
+        }
+        return def.build();
+    }
+
+    public InputObjectTypeExtensionDefinition createInputObjectTypeExtensionDefinition(GraphqlParser.InputObjectTypeExtensionDefinitionContext ctx) {
+        InputObjectTypeExtensionDefinition.Builder def = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        if (ctx.directives() != null) {
+            def.directives(createDirectives(ctx.directives()));
+        }
+        if (ctx.inputObjectValueDefinitions() != null) {
+            def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
+        }
+        return def.build();
+    }
+
+    public DirectiveDefinition createDirectiveDefinition(GraphqlParser.DirectiveDefinitionContext ctx) {
+        DirectiveDefinition.Builder def = DirectiveDefinition.newDirectiveDefinition();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        def.description(newDescription(ctx.description()));
+        GraphqlParser.DirectiveLocationsContext directiveLocationsContext = ctx.directiveLocations();
+        List<DirectiveLocation> directiveLocations = new ArrayList<>();
+        while (directiveLocationsContext != null) {
+            directiveLocations.add(0, createDirectiveLocation(directiveLocationsContext.directiveLocation()));
+            directiveLocationsContext = directiveLocationsContext.directiveLocations();
+        }
+        def.directiveLocations(directiveLocations);
+        if (ctx.argumentsDefinition() != null) {
+            def.inputValueDefinitions(createInputValueDefinitions(ctx.argumentsDefinition().inputValueDefinition()));
+        }
+        return def.build();
+    }
+
+    public DirectiveLocation createDirectiveLocation(GraphqlParser.DirectiveLocationContext ctx) {
+        DirectiveLocation.Builder def = DirectiveLocation.newDirectiveLocation();
+        def.name(ctx.name().getText());
+        newNode(def, ctx);
+        return def.build();
+    }
+
+    private Value createValue(GraphqlParser.ValueWithVariableContext ctx) {
         if (ctx.IntValue() != null) {
-            IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
+            IntValue.Builder intValue = IntValue.newIntValue().value(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
-            return intValue;
+            return intValue.build();
         } else if (ctx.FloatValue() != null) {
-            FloatValue floatValue = new FloatValue(new BigDecimal(ctx.FloatValue().getText()));
+            FloatValue.Builder floatValue = FloatValue.newFloatValue().value(new BigDecimal(ctx.FloatValue().getText()));
             newNode(floatValue, ctx);
-            return floatValue;
+            return floatValue.build();
         } else if (ctx.BooleanValue() != null) {
-            BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
+            BooleanValue.Builder booleanValue = BooleanValue.newBooleanValue().value(Boolean.parseBoolean(ctx.BooleanValue().getText()));
             newNode(booleanValue, ctx);
-            return booleanValue;
+            return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            newNode(Null, ctx);
             return Null;
         } else if (ctx.stringValue() != null) {
-            StringValue stringValue = new StringValue(quotedString(ctx.stringValue()));
+            StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             newNode(stringValue, ctx);
-            return stringValue;
+            return stringValue.build();
         } else if (ctx.enumValue() != null) {
-            EnumValue enumValue = new EnumValue(ctx.enumValue().getText());
+            EnumValue.Builder enumValue = EnumValue.newEnumValue().name(ctx.enumValue().getText());
             newNode(enumValue, ctx);
-            return enumValue;
+            return enumValue.build();
         } else if (ctx.arrayValueWithVariable() != null) {
-            ArrayValue arrayValue = new ArrayValue();
+            ArrayValue.Builder arrayValue = ArrayValue.newArrayValue();
             newNode(arrayValue, ctx);
+            List<Value> values = new ArrayList<>();
             for (GraphqlParser.ValueWithVariableContext valueWithVariableContext : ctx.arrayValueWithVariable().valueWithVariable()) {
-                arrayValue.getValues().add(getValue(valueWithVariableContext));
+                values.add(createValue(valueWithVariableContext));
             }
-            return arrayValue;
+            return arrayValue.values(values).build();
         } else if (ctx.objectValueWithVariable() != null) {
-            ObjectValue objectValue = new ObjectValue();
+            ObjectValue.Builder objectValue = ObjectValue.newObjectValue();
             newNode(objectValue, ctx);
+            List<ObjectField> objectFields = new ArrayList<>();
             for (GraphqlParser.ObjectFieldWithVariableContext objectFieldWithVariableContext :
                     ctx.objectValueWithVariable().objectFieldWithVariable()) {
-                ObjectField objectField = new ObjectField(objectFieldWithVariableContext.name().getText(), getValue(objectFieldWithVariableContext.valueWithVariable()));
-                objectValue.getObjectFields().add(objectField);
+
+                ObjectField objectField = ObjectField.newObjectField()
+                        .name(objectFieldWithVariableContext.name().getText())
+                        .value(createValue(objectFieldWithVariableContext.valueWithVariable()))
+                        .build();
+                objectFields.add(objectField);
             }
-            return objectValue;
+            return objectValue.objectFields(objectFields).build();
         } else if (ctx.variable() != null) {
-            VariableReference variableReference = new VariableReference(ctx.variable().name().getText());
+            VariableReference.Builder variableReference = VariableReference.newVariableReference().name(ctx.variable().name().getText());
             newNode(variableReference, ctx);
-            return variableReference;
+            return variableReference.build();
         }
-        return Assert.assertShouldNeverHappen();
+        return assertShouldNeverHappen();
     }
 
-    private Value getValue(GraphqlParser.ValueContext ctx) {
+    private Value createValue(GraphqlParser.ValueContext ctx) {
         if (ctx.IntValue() != null) {
-            IntValue intValue = new IntValue(new BigInteger(ctx.IntValue().getText()));
+            IntValue.Builder intValue = IntValue.newIntValue().value(new BigInteger(ctx.IntValue().getText()));
             newNode(intValue, ctx);
-            return intValue;
+            return intValue.build();
         } else if (ctx.FloatValue() != null) {
-            FloatValue floatValue = new FloatValue(new BigDecimal(ctx.FloatValue().getText()));
+            FloatValue.Builder floatValue = FloatValue.newFloatValue().value(new BigDecimal(ctx.FloatValue().getText()));
             newNode(floatValue, ctx);
-            return floatValue;
+            return floatValue.build();
         } else if (ctx.BooleanValue() != null) {
-            BooleanValue booleanValue = new BooleanValue(Boolean.parseBoolean(ctx.BooleanValue().getText()));
+            BooleanValue.Builder booleanValue = BooleanValue.newBooleanValue().value(Boolean.parseBoolean(ctx.BooleanValue().getText()));
             newNode(booleanValue, ctx);
-            return booleanValue;
+            return booleanValue.build();
         } else if (ctx.NullValue() != null) {
-            newNode(Null, ctx);
             return Null;
         } else if (ctx.stringValue() != null) {
-            StringValue stringValue = new StringValue(quotedString(ctx.stringValue()));
+            StringValue.Builder stringValue = StringValue.newStringValue().value(quotedString(ctx.stringValue()));
             newNode(stringValue, ctx);
-            return stringValue;
+            return stringValue.build();
         } else if (ctx.enumValue() != null) {
-            EnumValue enumValue = new EnumValue(ctx.enumValue().getText());
+            EnumValue.Builder enumValue = EnumValue.newEnumValue().name(ctx.enumValue().getText());
             newNode(enumValue, ctx);
-            return enumValue;
+            return enumValue.build();
         } else if (ctx.arrayValue() != null) {
-            ArrayValue arrayValue = new ArrayValue();
+            ArrayValue.Builder arrayValue = ArrayValue.newArrayValue();
             newNode(arrayValue, ctx);
-            for (GraphqlParser.ValueContext valueWithVariableContext : ctx.arrayValue().value()) {
-                arrayValue.getValues().add(getValue(valueWithVariableContext));
+            List<Value> values = new ArrayList<>();
+            for (GraphqlParser.ValueContext valueContext : ctx.arrayValue().value()) {
+                values.add(createValue(valueContext));
             }
-            return arrayValue;
+            return arrayValue.values(values).build();
         } else if (ctx.objectValue() != null) {
-            ObjectValue objectValue = new ObjectValue();
+            ObjectValue.Builder objectValue = ObjectValue.newObjectValue();
             newNode(objectValue, ctx);
+            List<ObjectField> objectFields = new ArrayList<>();
             for (GraphqlParser.ObjectFieldContext objectFieldContext :
                     ctx.objectValue().objectField()) {
-                ObjectField objectField = new ObjectField(objectFieldContext.name().getText(), getValue(objectFieldContext.value()));
-                objectValue.getObjectFields().add(objectField);
+                ObjectField objectField = ObjectField.newObjectField()
+                        .name(objectFieldContext.name().getText())
+                        .value(createValue(objectFieldContext.value()))
+                        .build();
+                objectFields.add(objectField);
             }
-            return objectValue;
+            return objectValue.objectFields(objectFields).build();
         }
-        return Assert.assertShouldNeverHappen();
+        return assertShouldNeverHappen();
     }
 
     static String quotedString(GraphqlParser.StringValueContext ctx) {
@@ -799,14 +757,12 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         }
     }
 
-
-    private void newNode(AbstractNode abstractNode, ParserRuleContext parserRuleContext) {
+    private void newNode(NodeBuilder nodeBuilder, ParserRuleContext parserRuleContext) {
         List<Comment> comments = getComments(parserRuleContext);
         if (!comments.isEmpty()) {
-            abstractNode.setComments(comments);
+            nodeBuilder.comments(comments);
         }
-
-        abstractNode.setSourceLocation(getSourceLocation(parserRuleContext));
+        nodeBuilder.sourceLocation(getSourceLocation(parserRuleContext));
     }
 
     private Description newDescription(GraphqlParser.DescriptionContext descriptionCtx) {
@@ -870,15 +826,4 @@ public class GraphqlAntlrToLanguage extends GraphqlBaseVisitor<Void> {
         return comments;
     }
 
-    public Document getResult() {
-        return result;
-    }
-
-    protected void setResult(Document result) {
-        this.result = result;
-    }
-
-    public Deque<ContextEntry> getContextStack() {
-        return contextStack;
-    }
 }

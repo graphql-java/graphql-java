@@ -1,20 +1,23 @@
 package graphql.language;
 
 
-import java.util.Collections;
+import graphql.Assert;
+import graphql.PublicApi;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static graphql.Assert.assertNotNull;
-
+@PublicApi
 public abstract class AbstractNode<T extends Node> implements Node<T> {
 
-    private SourceLocation sourceLocation;
-    private List<Comment> comments = Collections.emptyList();
+    private final SourceLocation sourceLocation;
+    private final List<Comment> comments;
 
-
-    public void setSourceLocation(SourceLocation sourceLocation) {
+    public AbstractNode(SourceLocation sourceLocation, List<Comment> comments) {
         this.sourceLocation = sourceLocation;
+        Assert.assertNotNull(comments, "comments can't be null");
+        this.comments = new ArrayList<>(comments);
     }
 
     @Override
@@ -24,13 +27,9 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
 
     @Override
     public List<Comment> getComments() {
-        return comments;
+        return new ArrayList<>(comments);
     }
 
-    public void setComments(List<Comment> comments) {
-        assertNotNull(comments, "You must provide non null comments");
-        this.comments = comments;
-    }
 
     @SuppressWarnings("unchecked")
     protected <V extends Node> V deepCopy(V nullableObj) {

@@ -24,8 +24,8 @@ class TypeInfoTest extends Specification {
 
     def "unwrapping gets to the inner type"() {
 
-        def typeNameFoo = new TypeName("foo")
-        def type = new ListType(new NonNullType(new ListType(typeNameFoo)))
+        def typeNameFoo = TypeName.newTypeName("foo").build()
+        def type = ListType.newListType(NonNullType.newNonNullType(ListType.newListType(typeNameFoo).build()).build()).build()
         def typeInfo = TypeInfo.typeInfo(type)
 
         expect:
