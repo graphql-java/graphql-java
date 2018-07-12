@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -17,7 +18,8 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
     private final List<Directive> directives;
     private final List<Type> memberTypes;
 
-    UnionTypeDefinition(String name,
+    @Internal
+    protected UnionTypeDefinition(String name,
                         List<Directive> directives,
                         List<Type> memberTypes,
                         Description description,

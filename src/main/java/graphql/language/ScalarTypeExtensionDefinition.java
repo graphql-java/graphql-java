@@ -1,5 +1,6 @@
 package graphql.language;
 
+import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -9,7 +10,8 @@ import java.util.function.Consumer;
 @PublicApi
 public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
 
-    private ScalarTypeExtensionDefinition(String name,
+    @Internal
+    protected ScalarTypeExtensionDefinition(String name,
                                           List<Directive> directives,
                                           Description description,
                                           SourceLocation sourceLocation,

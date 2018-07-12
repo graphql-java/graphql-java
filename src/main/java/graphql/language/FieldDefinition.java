@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -17,7 +18,8 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
 
-    private FieldDefinition(String name,
+    @Internal
+    protected FieldDefinition(String name,
                             Type type,
                             List<InputValueDefinition> inputValueDefinitions,
                             List<Directive> directives,

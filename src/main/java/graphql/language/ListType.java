@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,7 +15,8 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     private final Type type;
 
-    private ListType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected ListType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.type = type;
     }

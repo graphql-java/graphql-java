@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,7 +15,8 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
 
     public static final NullValue Null = new NullValue(null, Collections.emptyList());
 
-    private NullValue(SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected NullValue(SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
     }
 

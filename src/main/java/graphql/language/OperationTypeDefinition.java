@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -15,7 +16,8 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     private final String name;
     private final Type type;
 
-    private OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.type = type;

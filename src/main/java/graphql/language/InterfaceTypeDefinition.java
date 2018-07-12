@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -17,7 +18,8 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
     private final List<FieldDefinition> definitions;
     private final List<Directive> directives;
 
-    InterfaceTypeDefinition(String name,
+    @Internal
+    protected InterfaceTypeDefinition(String name,
                             List<FieldDefinition> definitions,
                             List<Directive> directives,
                             Description description,

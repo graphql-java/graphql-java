@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -17,7 +18,8 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     private final String name;
     private final List<Argument> arguments = new ArrayList<>();
 
-    private Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.arguments.addAll(arguments);

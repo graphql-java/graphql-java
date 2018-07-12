@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -13,12 +14,13 @@ import java.util.function.Consumer;
 import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
-public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements Definition<SchemaDefinition> {
+public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition> {
 
     private final List<Directive> directives;
     private final List<OperationTypeDefinition> operationTypeDefinitions;
 
-    private SchemaDefinition(List<Directive> directives,
+    @Internal
+    protected SchemaDefinition(List<Directive> directives,
                              List<OperationTypeDefinition> operationTypeDefinitions,
                              SourceLocation sourceLocation,
                              List<Comment> comments) {

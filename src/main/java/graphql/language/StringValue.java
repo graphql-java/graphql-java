@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,7 +15,8 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
 
     private final String value;
 
-    private StringValue(String value, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected StringValue(String value, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.value = value;
     }

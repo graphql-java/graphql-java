@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -14,7 +15,8 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
     private final List<Directive> directives;
 
 
-    private EnumValueDefinition(String name,
+    @Internal
+    protected EnumValueDefinition(String name,
                                 List<Directive> directives,
                                 Description description,
                                 SourceLocation sourceLocation,

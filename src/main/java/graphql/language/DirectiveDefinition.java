@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -10,14 +11,14 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @PublicApi
-public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements Definition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
+public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements SDLDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
     private Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<DirectiveLocation> directiveLocations;
 
-
-    private DirectiveDefinition(String name,
+    @Internal
+    protected DirectiveDefinition(String name,
                                 List<InputValueDefinition> inputValueDefinitions,
                                 List<DirectiveLocation> directiveLocations,
                                 SourceLocation sourceLocation,

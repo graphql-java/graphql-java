@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -17,7 +18,8 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     private final List<Directive> directives;
     private final List<InputValueDefinition> inputValueDefinitions;
 
-    InputObjectTypeDefinition(String name,
+    @Internal
+    protected InputObjectTypeDefinition(String name,
                               List<Directive> directives,
                               List<InputValueDefinition> inputValueDefinitions,
                               Description description,

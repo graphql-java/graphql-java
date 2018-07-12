@@ -1,5 +1,6 @@
 package graphql.language;
 
+import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -9,7 +10,8 @@ import java.util.function.Consumer;
 @PublicApi
 public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinition {
 
-    private InputObjectTypeExtensionDefinition(String name,
+    @Internal
+    protected InputObjectTypeExtensionDefinition(String name,
                                                List<Directive> directives,
                                                List<InputValueDefinition> inputValueDefinitions,
                                                Description description,

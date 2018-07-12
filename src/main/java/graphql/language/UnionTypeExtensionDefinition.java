@@ -1,5 +1,6 @@
 package graphql.language;
 
+import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -9,7 +10,8 @@ import java.util.function.Consumer;
 @PublicApi
 public class UnionTypeExtensionDefinition extends UnionTypeDefinition {
 
-    private UnionTypeExtensionDefinition(String name,
+    @Internal
+    protected UnionTypeExtensionDefinition(String name,
                                          List<Directive> directives,
                                          List<Type> memberTypes,
                                          Description description,

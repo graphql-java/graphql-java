@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -10,7 +11,8 @@ import java.util.function.Consumer;
 @PublicApi
 public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
 
-    private ObjectTypeExtensionDefinition(String name,
+    @Internal
+    protected ObjectTypeExtensionDefinition(String name,
                                           List<Type> implementz,
                                           List<Directive> directives,
                                           List<FieldDefinition> fieldDefinitions,

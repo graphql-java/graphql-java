@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,7 +15,8 @@ public class Document extends AbstractNode<Document> {
 
     private final List<Definition> definitions;
 
-    private Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.definitions = definitions;
     }

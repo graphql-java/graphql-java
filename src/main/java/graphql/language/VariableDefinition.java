@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -16,7 +17,8 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     private final Type type;
     private final Value defaultValue;
 
-    private VariableDefinition(String name,
+    @Internal
+    protected VariableDefinition(String name,
                                Type type,
                                Value defaultValue,
                                SourceLocation sourceLocation,

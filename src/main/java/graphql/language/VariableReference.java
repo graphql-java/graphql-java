@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,7 +15,8 @@ public class VariableReference extends AbstractNode<VariableReference> implement
 
     private final String name;
 
-    private VariableReference(String name, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected VariableReference(String name, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
     }

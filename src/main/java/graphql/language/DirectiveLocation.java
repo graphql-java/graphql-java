@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -21,7 +22,8 @@ import java.util.function.Consumer;
 public class DirectiveLocation extends AbstractNode<DirectiveLocation> implements NamedNode<DirectiveLocation> {
     private final String name;
 
-    private DirectiveLocation(String name, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected DirectiveLocation(String name, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
     }

@@ -38,6 +38,7 @@ import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.ObjectValue;
 import graphql.language.OperationDefinition;
 import graphql.language.OperationTypeDefinition;
+import graphql.language.SDLDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaDefinition;
@@ -116,15 +117,9 @@ public class GraphqlAntlrToLanguage {
         if (ctx.name() != null) {
             operationDefinition.name(ctx.name().getText());
         }
-        if (ctx.variableDefinitions() != null) {
-            operationDefinition.variableDefinitions(createVariableDefinitions(ctx.variableDefinitions()));
-        }
-        if (ctx.selectionSet() != null) {
-            operationDefinition.selectionSet(createSelectionSet(ctx.selectionSet()));
-        }
-        if (ctx.directives() != null) {
-            operationDefinition.directives(createDirectives(ctx.directives()));
-        }
+        operationDefinition.variableDefinitions(createVariableDefinitions(ctx.variableDefinitions()));
+        operationDefinition.selectionSet(createSelectionSet(ctx.selectionSet()));
+        operationDefinition.directives(createDirectives(ctx.directives()));
         return operationDefinition.build();
     }
 
@@ -143,13 +138,12 @@ public class GraphqlAntlrToLanguage {
     protected FragmentSpread createFragmentSpread(GraphqlParser.FragmentSpreadContext ctx) {
         FragmentSpread.Builder fragmentSpread = FragmentSpread.newFragmentSpread().name(ctx.fragmentName().getText());
         addCommonData(fragmentSpread, ctx);
-        if (ctx.directives() != null) {
-            fragmentSpread.directives(createDirectives(ctx.directives()));
-        }
+        fragmentSpread.directives(createDirectives(ctx.directives()));
         return fragmentSpread.build();
     }
 
     protected List<VariableDefinition> createVariableDefinitions(GraphqlParser.VariableDefinitionsContext ctx) {
+        if (ctx == null) return new ArrayList<>();
         return ctx.variableDefinition().stream().map(this::createVariableDefinition).collect(Collectors.toList());
     }
 
@@ -171,17 +165,14 @@ public class GraphqlAntlrToLanguage {
         addCommonData(fragmentDefinition, ctx);
         fragmentDefinition.name(ctx.fragmentName().getText());
         fragmentDefinition.typeCondition(TypeName.newTypeName().name(ctx.typeCondition().typeName().getText()).build());
-        if (ctx.directives() != null) {
-            fragmentDefinition.directives(createDirectives(ctx.directives()));
-        }
-        if (ctx.selectionSet() != null) {
-            fragmentDefinition.selectionSet(createSelectionSet(ctx.selectionSet()));
-        }
+        fragmentDefinition.directives(createDirectives(ctx.directives()));
+        fragmentDefinition.selectionSet(createSelectionSet(ctx.selectionSet()));
         return fragmentDefinition.build();
     }
 
 
     protected SelectionSet createSelectionSet(GraphqlParser.SelectionSetContext ctx) {
+        if (ctx == null) return null;
         SelectionSet.Builder builder = SelectionSet.newSelectionSet();
         addCommonData(builder, ctx);
         List<Selection> selections = ctx.selection().stream().map(selectionContext -> {
@@ -209,15 +200,10 @@ public class GraphqlAntlrToLanguage {
         if (ctx.alias() != null) {
             builder.alias(ctx.alias().name().getText());
         }
-        if (ctx.directives() != null) {
-            builder.directives(createDirectives(ctx.directives()));
-        }
-        if (ctx.arguments() != null) {
-            builder.arguments(createArguments(ctx.arguments()));
-        }
-        if (ctx.selectionSet() != null) {
-            builder.selectionSet(createSelectionSet(ctx.selectionSet()));
-        }
+
+        builder.directives(createDirectives(ctx.directives()));
+        builder.arguments(createArguments(ctx.arguments()));
+        builder.selectionSet(createSelectionSet(ctx.selectionSet()));
         return builder.build();
     }
 
@@ -228,18 +214,14 @@ public class GraphqlAntlrToLanguage {
         if (ctx.typeCondition() != null) {
             inlineFragment.typeCondition(createTypeName(ctx.typeCondition().typeName()));
         }
-        if (ctx.directives() != null) {
-            inlineFragment.directives(createDirectives(ctx.directives()));
-        }
-        if (ctx.selectionSet() != null) {
-            inlineFragment.selectionSet(createSelectionSet(ctx.selectionSet()));
-        }
+        inlineFragment.directives(createDirectives(ctx.directives()));
+        inlineFragment.selectionSet(createSelectionSet(ctx.selectionSet()));
         return inlineFragment.build();
     }
 
     //MARKER END: Here GraphqlOperation.g4 specific methods end
 
-    protected Definition createTypeSystemDefinition(GraphqlParser.TypeSystemDefinitionContext ctx) {
+    protected SDLDefinition createTypeSystemDefinition(GraphqlParser.TypeSystemDefinitionContext ctx) {
         if (ctx.schemaDefinition() != null) {
             return createSchemaDefinition(ctx.schemaDefinition());
         } else if (ctx.directiveDefinition() != null) {
@@ -349,11 +331,13 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected List<Argument> createArguments(GraphqlParser.ArgumentsContext ctx) {
+        if (ctx == null) return new ArrayList<>();
         return ctx.argument().stream().map(this::createArgument).collect(Collectors.toList());
     }
 
 
     protected List<Directive> createDirectives(GraphqlParser.DirectivesContext ctx) {
+        if (ctx == null) return new ArrayList<>();
         return ctx.directive().stream().map(this::createDirective).collect(Collectors.toList());
     }
 
@@ -361,18 +345,14 @@ public class GraphqlAntlrToLanguage {
         Directive.Builder builder = Directive.newDirective();
         builder.name(ctx.name().getText());
         addCommonData(builder, ctx);
-        if (ctx.arguments() != null) {
-            builder.arguments(createArguments(ctx.arguments()));
-        }
+        builder.arguments(createArguments(ctx.arguments()));
         return builder.build();
     }
 
     protected SchemaDefinition createSchemaDefinition(GraphqlParser.SchemaDefinitionContext ctx) {
         SchemaDefinition.Builder def = SchemaDefinition.newSchemaDefintion();
         addCommonData(def, ctx);
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         def.operationTypeDefinitions(ctx.operationTypeDefinition().stream()
                 .map(this::createOperationTypeDefinition).collect(Collectors.toList()));
         return def.build();
@@ -391,9 +371,7 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         return def.build();
     }
 
@@ -401,9 +379,7 @@ public class GraphqlAntlrToLanguage {
         ScalarTypeExtensionDefinition.Builder def = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition();
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         return def.build();
     }
 
@@ -412,9 +388,7 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
@@ -433,9 +407,7 @@ public class GraphqlAntlrToLanguage {
         ObjectTypeExtensionDefinition.Builder def = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition();
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         GraphqlParser.ImplementsInterfacesContext implementsInterfacesContext = ctx.implementsInterfaces();
         List<Type> implementz = new ArrayList<>();
         while (implementsInterfacesContext != null) {
@@ -451,6 +423,7 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected List<FieldDefinition> createFieldDefinitions(GraphqlParser.FieldsDefinitionContext ctx) {
+        if (ctx == null) return new ArrayList<>();
         return ctx.fieldDefinition().stream().map(this::createFieldDefinition).collect(Collectors.toList());
     }
 
@@ -460,9 +433,7 @@ public class GraphqlAntlrToLanguage {
         def.type(createType(ctx.type()));
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         if (ctx.argumentsDefinition() != null) {
             def.inputValueDefinitions(createInputValueDefinitions(ctx.argumentsDefinition().inputValueDefinition()));
         }
@@ -483,9 +454,7 @@ public class GraphqlAntlrToLanguage {
         if (ctx.defaultValue() != null) {
             def.defaultValue(createValue(ctx.defaultValue().value()));
         }
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         return def.build();
     }
 
@@ -494,12 +463,8 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
-        if (ctx.fieldsDefinition() != null) {
-            def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
-        }
+        def.directives(createDirectives(ctx.directives()));
+        def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
         return def.build();
     }
 
@@ -507,12 +472,8 @@ public class GraphqlAntlrToLanguage {
         InterfaceTypeExtensionDefinition.Builder def = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition();
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
-        if (ctx.fieldsDefinition() != null) {
-            def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
-        }
+        def.directives(createDirectives(ctx.directives()));
+        def.definitions(createFieldDefinitions(ctx.fieldsDefinition()));
         return def.build();
     }
 
@@ -521,9 +482,7 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         List<Type> members = new ArrayList<>();
         GraphqlParser.UnionMembersContext unionMembersContext = ctx.unionMembership().unionMembers();
         while (unionMembersContext != null) {
@@ -538,9 +497,7 @@ public class GraphqlAntlrToLanguage {
         UnionTypeExtensionDefinition.Builder def = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition();
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         List<Type> members = new ArrayList<>();
         if (ctx.unionMembership() != null) {
             GraphqlParser.UnionMembersContext unionMembersContext = ctx.unionMembership().unionMembers();
@@ -558,9 +515,7 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         if (ctx.enumValueDefinitions() != null) {
             def.enumValueDefinitions(
                     ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(Collectors.toList()));
@@ -572,9 +527,7 @@ public class GraphqlAntlrToLanguage {
         EnumTypeExtensionDefinition.Builder def = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition();
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         if (ctx.enumValueDefinitions() != null) {
             def.enumValueDefinitions(
                     ctx.enumValueDefinitions().enumValueDefinition().stream().map(this::createEnumValueDefinition).collect(Collectors.toList()));
@@ -587,9 +540,7 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.enumValue().getText());
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         return def.build();
     }
 
@@ -598,9 +549,7 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         if (ctx.inputObjectValueDefinitions() != null) {
             def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
         }
@@ -611,9 +560,7 @@ public class GraphqlAntlrToLanguage {
         InputObjectTypeExtensionDefinition.Builder def = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition();
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
-        if (ctx.directives() != null) {
-            def.directives(createDirectives(ctx.directives()));
-        }
+        def.directives(createDirectives(ctx.directives()));
         if (ctx.inputObjectValueDefinitions() != null) {
             def.inputValueDefinitions(createInputValueDefinitions(ctx.inputObjectValueDefinitions().inputValueDefinition()));
         }

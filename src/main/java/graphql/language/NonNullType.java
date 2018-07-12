@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,7 +15,8 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
 
     private final Type type;
 
-    private NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
 
         this.type = type;
