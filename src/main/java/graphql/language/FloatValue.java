@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -15,7 +16,8 @@ public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatV
 
     private final BigDecimal value;
 
-    private FloatValue(BigDecimal value, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected FloatValue(BigDecimal value, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.value = value;
     }

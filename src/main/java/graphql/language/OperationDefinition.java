@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -23,7 +24,8 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
-    private OperationDefinition(String name,
+    @Internal
+    protected OperationDefinition(String name,
                                 Operation operation,
                                 List<VariableDefinition> variableDefinitions,
                                 List<Directive> directives,

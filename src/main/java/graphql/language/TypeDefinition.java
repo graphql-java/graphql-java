@@ -6,7 +6,7 @@ import graphql.PublicApi;
 import java.util.List;
 
 @PublicApi
-public interface TypeDefinition<T extends TypeDefinition> extends Definition<T>{
+public interface TypeDefinition<T extends TypeDefinition> extends SDLDefinition<T> {
     /**
      * @return the name of the type being defined.
      */

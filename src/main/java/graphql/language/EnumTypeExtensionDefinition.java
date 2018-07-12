@@ -1,5 +1,6 @@
 package graphql.language;
 
+import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -9,7 +10,8 @@ import java.util.function.Consumer;
 @PublicApi
 public class EnumTypeExtensionDefinition extends EnumTypeDefinition {
 
-    private EnumTypeExtensionDefinition(String name,
+    @Internal
+    protected EnumTypeExtensionDefinition(String name,
                                         List<EnumValueDefinition> enumValueDefinitions,
                                         List<Directive> directives,
                                         Description description,

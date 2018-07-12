@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -15,7 +16,8 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     private final String name;
     private final List<Directive> directives;
 
-    private FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.directives = new ArrayList<>(directives);

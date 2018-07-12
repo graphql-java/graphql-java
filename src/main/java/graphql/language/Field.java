@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -22,8 +23,8 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
-
-    private Field(String name,
+    @Internal
+    protected Field(String name,
                   String alias,
                   List<Argument> arguments,
                   List<Directive> directives,

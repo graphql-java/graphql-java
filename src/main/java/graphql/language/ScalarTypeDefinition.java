@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -16,7 +17,8 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
     private final Description description;
     private final List<Directive> directives;
 
-    ScalarTypeDefinition(String name, List<Directive> directives, Description description, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected ScalarTypeDefinition(String name, List<Directive> directives, Description description, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.directives = directives;

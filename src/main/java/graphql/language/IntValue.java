@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -15,7 +16,8 @@ public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> 
 
     private final BigInteger value;
 
-    private IntValue(BigInteger value, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected IntValue(BigInteger value, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.value = value;
     }

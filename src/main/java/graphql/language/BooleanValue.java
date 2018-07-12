@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,7 +15,8 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements Value<Bo
 
     private final boolean value;
 
-    private BooleanValue(boolean value, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected BooleanValue(boolean value, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.value = value;
     }

@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,7 +15,8 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     private final List<ObjectField> objectFields = new ArrayList<>();
 
-    private ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.objectFields.addAll(objectFields);
     }

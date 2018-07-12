@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -14,7 +15,8 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     private final List<Selection> selections = new ArrayList<>();
 
-    private SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.selections.addAll(selections);
     }

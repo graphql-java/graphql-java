@@ -1,5 +1,6 @@
 package graphql.language;
 
+import graphql.Internal;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -9,7 +10,8 @@ import java.util.function.Consumer;
 @PublicApi
 public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
 
-    InterfaceTypeExtensionDefinition(String name,
+    @Internal
+    protected InterfaceTypeExtensionDefinition(String name,
                                      List<FieldDefinition> definitions,
                                      List<Directive> directives,
                                      Description description,

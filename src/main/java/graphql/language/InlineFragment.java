@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -18,7 +19,8 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
-    private InlineFragment(TypeName typeCondition,
+    @Internal
+    protected InlineFragment(TypeName typeCondition,
                            List<Directive> directives,
                            SelectionSet selectionSet,
                            SourceLocation sourceLocation,

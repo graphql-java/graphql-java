@@ -1,6 +1,7 @@
 package graphql.language;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -15,7 +16,8 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     private final String name;
     private final Value value;
 
-    private Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments) {
+    @Internal
+    protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.value = value;
