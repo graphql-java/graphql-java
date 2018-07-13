@@ -3,7 +3,7 @@ Deferred Execution
 
 Often when executing a query you have two classes of data.  The data you need immediately and the data that could arrive little bit later.
 
-For example imagine this query that gets data on a ``post` and its ``comments`` and ``reviews``.
+For example imagine this query that gets data on a ``post`` and its ``comments`` and ``reviews``.
 
 
 .. code-block:: graphql
