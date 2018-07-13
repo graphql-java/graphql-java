@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @PublicApi
-public class StringValue extends AbstractNode<StringValue> implements Value<StringValue> {
+public class StringValue extends AbstractNode<StringValue> implements ScalarValue<StringValue> {
 
     private final String value;
 
