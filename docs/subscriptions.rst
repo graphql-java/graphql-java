@@ -16,7 +16,7 @@ Imagine you have an stock market pricing service and you make a graphql subscrip
 .. code-block:: graphql
 
     subscription StockCodeSubscription {
-        stockQuotes(stockCode:"IBM') {
+        stockQuotes(stockCode:"IBM") {
             dateTime
             stockCode
             stockPrice
