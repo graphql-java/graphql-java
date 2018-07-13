@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @PublicApi
-public class IntValue extends AbstractNode<IntValue> implements Value<IntValue> {
+public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntValue> {
 
     private final BigInteger value;
 

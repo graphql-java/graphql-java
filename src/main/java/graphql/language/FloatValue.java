@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @PublicApi
-public class FloatValue extends AbstractNode<FloatValue> implements Value<FloatValue> {
+public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<FloatValue> {
 
     private final BigDecimal value;
 
