@@ -16,6 +16,7 @@ import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnmodifiedType;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
@@ -322,8 +323,9 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             fieldMap.put(responseName, new ArrayList<>());
         }
         GraphQLOutputType fieldType = null;
-        if (parentType instanceof GraphQLFieldsContainer) {
-            GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
+        GraphQLUnmodifiedType unwrappedParent = unwrapAll(parentType);
+        if (unwrappedParent instanceof GraphQLFieldsContainer) {
+            GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) unwrappedParent;
             GraphQLFieldDefinition fieldDefinition = getVisibleFieldDefinition(fieldsContainer, field);
             fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
         }
