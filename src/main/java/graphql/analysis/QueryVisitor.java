@@ -10,7 +10,7 @@ import graphql.PublicApi;
 @PublicApi
 public interface QueryVisitor {
 
-    void visitField(QueryVisitorFieldEnvironment QueryVisitorFieldEnvironment);
+    void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment);
 
     void visitInlineFragment(QueryVisitorInlineFragmentEnvironment queryVisitorInlineFragmentEnvironment);
 

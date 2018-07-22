@@ -106,7 +106,7 @@ class FieldValidationSupport {
 
         @Override
         public GraphQLCompositeType getParentType() {
-            return traversalEnv.getParentType();
+            return traversalEnv.getUnmodifiedParentType();
         }
 
         @Override

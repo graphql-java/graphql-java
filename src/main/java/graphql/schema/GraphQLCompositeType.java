@@ -1,5 +1,8 @@
 package graphql.schema;
 
 
-public interface GraphQLCompositeType extends GraphQLType {
+import graphql.PublicApi;
+
+@PublicApi
+public interface GraphQLCompositeType extends GraphQLOutputType {
 }

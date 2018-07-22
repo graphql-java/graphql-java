@@ -3,6 +3,7 @@ package graphql.analysis;
 import graphql.Internal;
 import graphql.language.SelectionSetContainer;
 import graphql.schema.GraphQLCompositeType;
+import graphql.schema.GraphQLOutputType;
 
 /**
  * QueryTraversal helper class that maintains traversal context as
@@ -10,19 +11,29 @@ import graphql.schema.GraphQLCompositeType;
  */
 @Internal
 class QueryTraversalContext {
-    
-    private final GraphQLCompositeType type;
+
+    private final GraphQLOutputType outputType;
+    private final GraphQLCompositeType rawType;
     private final QueryVisitorFieldEnvironment environment;
     private final SelectionSetContainer selectionSetContainer;
 
-    QueryTraversalContext(GraphQLCompositeType type, QueryVisitorFieldEnvironment environment, SelectionSetContainer selectionSetContainer) {
-        this.type = type;
+    QueryTraversalContext(GraphQLOutputType outputType,
+                          GraphQLCompositeType rawType
+            ,
+                          QueryVisitorFieldEnvironment environment,
+                          SelectionSetContainer selectionSetContainer) {
+        this.outputType = outputType;
+        this.rawType = rawType;
         this.environment = environment;
         this.selectionSetContainer = selectionSetContainer;
     }
 
-    public GraphQLCompositeType getType() {
-        return type;
+    public GraphQLOutputType getOutputType() {
+        return outputType;
+    }
+
+    public GraphQLCompositeType getRawType() {
+        return rawType;
     }
 
     public QueryVisitorFieldEnvironment getEnvironment() {
