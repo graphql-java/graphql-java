@@ -17,10 +17,16 @@ public interface QueryVisitorFieldEnvironment {
      */
     boolean isTypeNameIntrospectionField();
 
+    /**
+     * @return the current Field
+     */
     Field getField();
 
     GraphQLFieldDefinition getFieldDefinition();
 
+    /**
+     * @return the parent output type of the current field.
+     */
     GraphQLOutputType getParentType();
 
     /**
