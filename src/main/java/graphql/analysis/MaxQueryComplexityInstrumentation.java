@@ -108,7 +108,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
         return new FieldComplexityEnvironment(
                 queryVisitorFieldEnvironment.getField(),
                 queryVisitorFieldEnvironment.getFieldDefinition(),
-                queryVisitorFieldEnvironment.getUnmodifiedParentType(),
+                queryVisitorFieldEnvironment.getFieldsContainer(),
                 queryVisitorFieldEnvironment.getArguments(),
                 parentEnv
         );

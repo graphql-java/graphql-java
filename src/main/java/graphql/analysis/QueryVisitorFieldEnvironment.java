@@ -34,7 +34,7 @@ public interface QueryVisitorFieldEnvironment {
      *
      * @throws IllegalStateException if the current field is __typename see {@link #isTypeNameIntrospectionField()}
      */
-    GraphQLFieldsContainer getUnmodifiedParentType();
+    GraphQLFieldsContainer getFieldsContainer();
 
     QueryVisitorFieldEnvironment getParentEnvironment();
 

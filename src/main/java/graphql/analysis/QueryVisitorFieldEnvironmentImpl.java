@@ -71,7 +71,7 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
     }
 
     @Override
-    public GraphQLFieldsContainer getUnmodifiedParentType() {
+    public GraphQLFieldsContainer getFieldsContainer() {
         if (isTypeNameIntrospectionField()) {
             throw new IllegalStateException("introspection field __typename doesn't have a fields container");
         }

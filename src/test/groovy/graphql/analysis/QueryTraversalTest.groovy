@@ -467,7 +467,7 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
-                    it.unmodifiedParentType.name == "Foo" &&
+                    it.fieldsContainer.name == "Foo" &&
                     (it.parentType instanceof GraphQLNonNull) &&
                     it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.wrappedType.name == "Foo"
         })
@@ -999,8 +999,8 @@ class QueryTraversalTest extends Specification {
 
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "foo" && it.fieldDefinition.type.name == "CatOrDog" && it.parentType.name == "Query" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" && it.unmodifiedParentType.name == "Cat" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" && it.unmodifiedParentType.name == "Dog" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" && it.fieldsContainer.name == "Cat" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" && it.fieldsContainer.name == "Dog" })
 
         where:
         order       | visitFn
@@ -1045,9 +1045,9 @@ class QueryTraversalTest extends Specification {
 
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "foo" && it.fieldDefinition.type == list(nonNull(catOrDog)) && it.parentType.name == "Query" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" && it.unmodifiedParentType.name == "Cat" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" && it.unmodifiedParentType.name == "Dog" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && it.parentType == nonNull(list(nonNull(bar))) && it.unmodifiedParentType.name == "Bar" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" && it.fieldsContainer.name == "Cat" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" && it.fieldsContainer.name == "Dog" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && it.parentType == nonNull(list(nonNull(bar))) && it.fieldsContainer.name == "Bar" })
 
         where:
         order       | visitFn
@@ -1237,7 +1237,7 @@ class QueryTraversalTest extends Specification {
         when:
         queryTraversal.visitPreOrder(visitor)
         env.typeNameIntrospectionField
-        env.getUnmodifiedParentType()
+        env.getFieldsContainer()
 
         then:
         thrown(IllegalStateException)
