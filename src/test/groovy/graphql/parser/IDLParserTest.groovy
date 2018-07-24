@@ -297,7 +297,7 @@ schema @d1 @d2 {
 """
 
         and: "expected schema"
-        def schema = SchemaDefinition.newSchemaDefintion()
+        def schema = SchemaDefinition.newSchemaDefinition()
         schema.directive(new Directive("d1"))
         schema.directive(new Directive("d2"))
         schema.operationTypeDefinition(new OperationTypeDefinition("query", new TypeName("OpType1")))

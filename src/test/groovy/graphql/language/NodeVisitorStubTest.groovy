@@ -73,7 +73,7 @@ class NodeVisitorStubTest extends Specification {
         OperationDefinition.newOperationDefinition().build() | 'visitOperationDefinition'
         FragmentDefinition.newFragmentDefinition().build()   | 'visitFragmentDefinition'
         new DirectiveDefinition("")                          | 'visitDirectiveDefinition'
-        SchemaDefinition.newSchemaDefintion().build()        | 'visitSchemaDefinition'
+        SchemaDefinition.newSchemaDefinition().build()       | 'visitSchemaDefinition'
     }
 
     @Unroll

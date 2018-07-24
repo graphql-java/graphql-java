@@ -88,7 +88,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         return builder.build();
     }
 
-    public static Builder newSchemaDefintion() {
+    public static Builder newSchemaDefinition() {
         return new Builder();
     }
 
