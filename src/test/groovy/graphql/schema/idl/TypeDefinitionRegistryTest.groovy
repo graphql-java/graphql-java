@@ -1,12 +1,23 @@
 package graphql.schema.idl
 
+import graphql.language.DirectiveDefinition
+import graphql.language.EnumTypeDefinition
+import graphql.language.EnumTypeExtensionDefinition
+import graphql.language.InputObjectTypeDefinition
+import graphql.language.InputObjectTypeExtensionDefinition
 import graphql.language.InterfaceTypeDefinition
+import graphql.language.InterfaceTypeExtensionDefinition
 import graphql.language.ListType
 import graphql.language.NonNullType
 import graphql.language.ObjectTypeDefinition
+import graphql.language.ObjectTypeExtensionDefinition
+import graphql.language.ScalarTypeDefinition
+import graphql.language.ScalarTypeExtensionDefinition
 import graphql.language.SchemaDefinition
 import graphql.language.Type
 import graphql.language.TypeName
+import graphql.language.UnionTypeDefinition
+import graphql.language.UnionTypeExtensionDefinition
 import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.idl.errors.SchemaRedefinitionError
 import spock.lang.Specification
@@ -463,6 +474,57 @@ class TypeDefinitionRegistryTest extends Specification {
         // unwraps all the way down
         registry.isSubTypeOf(listType(nonNullType(listType(type("Dog")))), listType(nonNullType(listType(type("Mammal")))))
         !registry.isSubTypeOf(listType(nonNullType(listType(type("Turtle")))), listType(nonNullType(listType(type("Mammal")))))
+
+    }
+
+    def "remove a definition"() {
+        given:
+        def registry = new TypeDefinitionRegistry()
+        registry.add(definition)
+        when:
+        registry.remove(definition)
+        then:
+        !registry.getType(definition.getName()).isPresent()
+
+        where:
+        definition                                                               | _
+        ObjectTypeDefinition.newObjectTypeDefinition().name("foo").build()       | _
+        InterfaceTypeDefinition.newInterfaceTypeDefinition().name("foo").build() | _
+        UnionTypeDefinition.newUnionTypeDefinition().name("foo").build()         | _
+        EnumTypeDefinition.newEnumTypeDefinition().name("foo").build()           | _
+        ScalarTypeDefinition.newScalarTypeDefinition().name("foo").build()       | _
+        InputObjectTypeDefinition.newInputObjectDefinition().name("foo").build() | _
+        DirectiveDefinition.newDirectiveDefinition().name("foo").build()         | _
+    }
+
+    def "remove a definition extension"() {
+        given:
+        def registry = new TypeDefinitionRegistry()
+        registry.add(definition)
+        when:
+        registry.remove(definition)
+        then:
+        !registry.getType(definition.getName()).isPresent()
+
+        where:
+        definition                                                                                     | _
+        ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()           | _
+        InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()     | _
+        UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()             | _
+        EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()               | _
+        ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()           | _
+        InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build() | _
+    }
+
+    def "remove schema definition"() {
+        given:
+        def registry = new TypeDefinitionRegistry()
+        def definition = SchemaDefinition.newSchemaDefintion().build()
+        registry.add(definition)
+        when:
+        registry.remove(definition)
+        then:
+        !registry.schemaDefinition().isPresent()
 
     }
 }
