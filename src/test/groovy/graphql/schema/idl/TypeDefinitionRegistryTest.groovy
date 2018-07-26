@@ -21,6 +21,7 @@ import graphql.language.UnionTypeExtensionDefinition
 import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.idl.errors.SchemaRedefinitionError
 import spock.lang.Specification
+import spock.lang.Unroll
 
 class TypeDefinitionRegistryTest extends Specification {
 
@@ -477,6 +478,7 @@ class TypeDefinitionRegistryTest extends Specification {
 
     }
 
+    @Unroll
     def "remove a definition"() {
         given:
         def registry = new TypeDefinitionRegistry()
@@ -494,26 +496,84 @@ class TypeDefinitionRegistryTest extends Specification {
         EnumTypeDefinition.newEnumTypeDefinition().name("foo").build()           | _
         ScalarTypeDefinition.newScalarTypeDefinition().name("foo").build()       | _
         InputObjectTypeDefinition.newInputObjectDefinition().name("foo").build() | _
-        DirectiveDefinition.newDirectiveDefinition().name("foo").build()         | _
     }
 
-    def "remove a definition extension"() {
+    def "remove directive definition"() {
         given:
+        DirectiveDefinition definition = DirectiveDefinition.newDirectiveDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
         registry.add(definition)
         when:
         registry.remove(definition)
         then:
-        !registry.getType(definition.getName()).isPresent()
+        !registry.getDirectiveDefinition(definition.getName()).isPresent()
+    }
 
-        where:
-        definition                                                                                     | _
-        ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()           | _
-        InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()     | _
-        UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()             | _
-        EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()               | _
-        ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()           | _
-        InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build() | _
+
+    def "remove object type extension"() {
+        given:
+        def extension = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension)
+        then:
+        !registry.objectTypeExtensions().get(extension.getName()).contains(extension)
+    }
+
+    def "remove interface type extension"() {
+        given:
+        def extension = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension)
+        then:
+        !registry.interfaceTypeExtensions().get(extension.getName()).contains(extension)
+    }
+
+    def "remove union type extension"() {
+        given:
+        def extension = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension)
+        then:
+        !registry.unionTypeExtensions().get(extension.getName()).contains(extension)
+    }
+
+    def "remove enum type extension"() {
+        given:
+        def extension = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension)
+        then:
+        !registry.enumTypeExtensions().get(extension.getName()).contains(extension)
+    }
+
+    def "remove scalar type extension"() {
+        given:
+        def extension = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension)
+        then:
+        !registry.scalarTypeExtensions().get(extension.getName()).contains(extension)
+    }
+
+    def "remove input object type extension"() {
+        given:
+        def extension = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension)
+        then:
+        !registry.inputObjectTypeExtensions().get(extension.getName()).contains(extension)
     }
 
     def "remove schema definition"() {
