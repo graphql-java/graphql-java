@@ -71,7 +71,7 @@ public class GraphQLSchema {
         this.fieldVisibility = fieldVisibility;
         this.additionalTypes = additionalTypes;
         this.directives = new LinkedHashSet<>(
-                asList(Directives.IncludeDirective, Directives.SkipDirective)
+                asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective)
         );
         this.directives.addAll(directives);
         this.typeMap = schemaUtil.allTypes(this, additionalTypes);
