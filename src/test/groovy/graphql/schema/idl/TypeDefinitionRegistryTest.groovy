@@ -579,12 +579,11 @@ class TypeDefinitionRegistryTest extends Specification {
     def "remove schema definition"() {
         given:
         def registry = new TypeDefinitionRegistry()
-        def definition = SchemaDefinition.newSchemaDefintion().build()
+        def definition = SchemaDefinition.newSchemaDefinition().build()
         registry.add(definition)
         when:
         registry.remove(definition)
         then:
         !registry.schemaDefinition().isPresent()
-
     }
 }
