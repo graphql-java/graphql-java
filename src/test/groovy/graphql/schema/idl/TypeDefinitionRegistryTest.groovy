@@ -54,8 +54,8 @@ class TypeDefinitionRegistryTest extends Specification {
 
     def "adding 2 schemas is not allowed"() {
         def registry = new TypeDefinitionRegistry()
-        def result1 = registry.add(SchemaDefinition.newSchemaDefintion().build())
-        def result2 = registry.add(SchemaDefinition.newSchemaDefintion().build())
+        def result1 = registry.add(SchemaDefinition.newSchemaDefinition().build())
+        def result2 = registry.add(SchemaDefinition.newSchemaDefinition().build())
 
         expect:
         !result1.isPresent()
