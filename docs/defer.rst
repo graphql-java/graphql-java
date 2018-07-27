@@ -3,7 +3,7 @@ Deferred Execution
 
 Often when executing a query you have two classes of data.  The data you need immediately and the data that could arrive little bit later.
 
-For example imagine this query that gets data on a ``post` and its ``comments`` and ``reviews``.
+For example imagine this query that gets data on a ``post`` and its ``comments`` and ``reviews``.
 
 
 .. code-block:: graphql
@@ -22,7 +22,7 @@ For example imagine this query that gets data on a ``post` and its ``comments`` 
 In this form, you *must* wait for the ``comments`` and ``reviews`` data to be retrieved before you can send the ``post`` data back
 to the client.  All three data elements are bound to the one query
 
-A naive approach would be to make two queries to gett he most important data first but there is now a better way.
+A naive approach would be to make two queries to get the most important data first but there is now a better way.
 
 There is ``experimental`` support for deferred execution in graphql-java.
 
