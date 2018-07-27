@@ -3,7 +3,6 @@ package graphql.schema.idl;
 import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.PublicApi;
-import graphql.language.Definition;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
@@ -143,7 +142,7 @@ public class TypeDefinitionRegistry {
      *
      * @return an optional error
      */
-    public Optional<GraphQLError> add(Definition definition) {
+    public Optional<GraphQLError> add(SDLDefinition definition) {
         // extensions
         if (definition instanceof ObjectTypeExtensionDefinition) {
             ObjectTypeExtensionDefinition newEntry = (ObjectTypeExtensionDefinition) definition;
@@ -181,6 +180,8 @@ public class TypeDefinitionRegistry {
             } else {
                 schema = newSchema;
             }
+        } else {
+            return Assert.assertShouldNeverHappen();
         }
         return Optional.empty();
     }
