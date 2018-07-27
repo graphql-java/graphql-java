@@ -214,7 +214,9 @@ public class TypeDefinitionRegistry {
 
     private void removeFromList(Map source, TypeDefinition value) {
         List<TypeDefinition> list = (List<TypeDefinition>) source.get(value.getName());
-        if (list == null) return;
+        if (list == null) {
+            return;
+        }
         list.remove(value);
     }
 
