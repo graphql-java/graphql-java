@@ -1,6 +1,8 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
+
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +11,7 @@ import static graphql.language.NodeUtil.directivesByName;
 /**
  * Represents a language node that has a name
  */
+@PublicApi
 public interface DirectivesContainer<T extends DirectivesContainer> extends NamedNode<T> {
 
     /**

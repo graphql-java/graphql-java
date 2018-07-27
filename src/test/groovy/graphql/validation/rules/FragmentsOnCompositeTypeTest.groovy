@@ -17,7 +17,7 @@ class FragmentsOnCompositeTypeTest extends Specification {
 
     def "inline fragment type condition must refer to a composite type"() {
         given:
-        InlineFragment inlineFragment = new InlineFragment(new TypeName("String"))
+        InlineFragment inlineFragment = InlineFragment.newInlineFragment().typeCondition(TypeName.newTypeName("String").build()).build()
         validationContext.getSchema() >> StarWarsSchema.starWarsSchema
 
         when:
@@ -48,20 +48,20 @@ class FragmentsOnCompositeTypeTest extends Specification {
     }
 
     private InlineFragment getInlineFragmentWithTypeConditionNull() {
-        new InlineFragment()
+        InlineFragment.newInlineFragment().build()
     }
 
     private InlineFragment getInlineFragmentWithConditionWithStrangeType() {
-        new InlineFragment(new TypeName("StrangeType"))
+        InlineFragment.newInlineFragment().typeCondition(TypeName.newTypeName("StrangeType").build()).build()
     }
 
     private InlineFragment getInlineFragmentWithConditionWithRightType() {
-        new InlineFragment(new TypeName("Character"))
+        InlineFragment.newInlineFragment().typeCondition(TypeName.newTypeName("Character").build()).build()
     }
 
     def "fragment type condition must refer to a composite type"() {
         given:
-        FragmentDefinition fragmentDefinition = new FragmentDefinition("fragment", new TypeName("String"))
+        FragmentDefinition fragmentDefinition = FragmentDefinition.newFragmentDefinition().name("fragment").typeCondition(TypeName.newTypeName("String").build()).build()
         validationContext.getSchema() >> StarWarsSchema.starWarsSchema
 
         when:

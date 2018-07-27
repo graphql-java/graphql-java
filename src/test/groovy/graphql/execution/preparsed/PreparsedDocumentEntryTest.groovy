@@ -12,7 +12,7 @@ import spock.lang.Specification
 class PreparsedDocumentEntryTest extends Specification {
     def "Ensure a non-null document returns"() {
         given:
-        def document = new Document()
+        def document = Document.newDocument().build()
 
         when:
         def docEntry = new PreparsedDocumentEntry(document)

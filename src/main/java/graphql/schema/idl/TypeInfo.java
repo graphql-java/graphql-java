@@ -11,6 +11,7 @@ import graphql.schema.GraphQLType;
 import java.util.Objects;
 import java.util.Stack;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 
@@ -29,7 +30,7 @@ public class TypeInfo {
     private final Stack<Class<?>> decoration = new Stack<>();
 
     private TypeInfo(Type type) {
-        this.rawType = type;
+        this.rawType = assertNotNull(type, "type must not be null");
         while (!(type instanceof TypeName)) {
             if (type instanceof NonNullType) {
                 decoration.push(NonNullType.class);

@@ -185,7 +185,7 @@ class DeferSupportTest extends Specification {
 
         when:
         def directivePresent = deferSupport.checkForDeferDirective([
-                new Field("a", [], [new Directive("defer")]),
+                Field.newField("a").directives([new Directive("defer")]).build(),
                 new Field("b")
         ])
 

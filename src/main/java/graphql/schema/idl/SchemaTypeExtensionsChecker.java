@@ -297,7 +297,7 @@ class SchemaTypeExtensionsChecker {
 
     private void checkTypeExtensionHasCorrespondingType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, String name, List<? extends TypeDefinition> extTypeList, Class<? extends TypeDefinition> targetClass) {
         TypeDefinition extensionDefinition = extTypeList.get(0);
-        Optional<? extends TypeDefinition> typeDefinition = typeRegistry.getType(new TypeName(name), targetClass);
+        Optional<? extends TypeDefinition> typeDefinition = typeRegistry.getType(TypeName.newTypeName().name(name).build(), targetClass);
         if (!typeDefinition.isPresent()) {
             errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
         }
@@ -305,7 +305,7 @@ class SchemaTypeExtensionsChecker {
 
     @SuppressWarnings("unchecked")
     private void checkTypeExtensionDirectiveRedefinition(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, String name, List<? extends TypeDefinition> extensions, Class<? extends TypeDefinition> targetClass) {
-        Optional<? extends TypeDefinition> typeDefinition = typeRegistry.getType(new TypeName(name), targetClass);
+        Optional<? extends TypeDefinition> typeDefinition = typeRegistry.getType(TypeName.newTypeName().name(name).build(), targetClass);
         if (typeDefinition.isPresent() && typeDefinition.get().getClass().equals(targetClass)) {
             List<Directive> directives = typeDefinition.get().getDirectives();
             Map<String, Directive> directiveMap = FpKit.getByName(directives, Directive::getName, mergeFirst());

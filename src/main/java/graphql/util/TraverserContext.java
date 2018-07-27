@@ -1,6 +1,6 @@
 package graphql.util;
 
-import graphql.Internal;
+import graphql.PublicApi;
 
 import java.util.Set;
 
@@ -9,7 +9,7 @@ import java.util.Set;
  *
  * @param <T> type of tree node
  */
-@Internal
+@PublicApi
 public interface TraverserContext<T> {
     /**
      * Returns current node being visited
@@ -25,13 +25,15 @@ public interface TraverserContext<T> {
      * the current path as well as the variables {@link #getVar(java.lang.Class) }
      * stored in every parent context.
      *
-     * Useful when it is difficult to organize a local Visitor's stack, when performing
-     * breadth-first or parallel traversal
-     *
      * @return context associated with the node parent
      */
     TraverserContext<T> getParentContext();
 
+    /**
+     * The result of the {@link #getParentContext()}.
+     *
+     * @return
+     */
     Object getParentResult();
 
     /**
@@ -71,10 +73,25 @@ public interface TraverserContext<T> {
     <S> TraverserContext<T> setVar(Class<? super S> key, S value);
 
 
+    /**
+     * Set the result for this TraverserContext.
+     *
+     * @param result
+     */
     void setResult(Object result);
 
+    /**
+     * The result of this TraverserContext..
+     *
+     * @return
+     */
     Object getResult();
 
+    /**
+     * Used to share something across all TraverserContext.
+     *
+     * @return
+     */
     Object getInitialData();
 
 }

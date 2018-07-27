@@ -10,6 +10,7 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLID
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.language.BooleanValue.newBooleanValue
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 
@@ -17,18 +18,18 @@ class AstValueHelperTest extends Specification {
 
     def 'converts boolean values to ASTs'() {
         expect:
-        astFromValue(true, GraphQLBoolean).isEqualTo(new BooleanValue(true))
+        astFromValue(true, GraphQLBoolean).isEqualTo(newBooleanValue(true).build())
 
-        astFromValue(false, GraphQLBoolean).isEqualTo(new BooleanValue(false))
+        astFromValue(false, GraphQLBoolean).isEqualTo(newBooleanValue(false).build())
 
         astFromValue(null, GraphQLBoolean) == null
 
-        astFromValue(0, GraphQLBoolean).isEqualTo(new BooleanValue(false))
+        astFromValue(0, GraphQLBoolean).isEqualTo(newBooleanValue(false).build())
 
-        astFromValue(1, GraphQLBoolean).isEqualTo(new BooleanValue(true))
+        astFromValue(1, GraphQLBoolean).isEqualTo(newBooleanValue(true).build())
 
         def NonNullBoolean = nonNull(GraphQLBoolean)
-        astFromValue(0, NonNullBoolean).isEqualTo(new BooleanValue(false))
+        astFromValue(0, NonNullBoolean).isEqualTo(newBooleanValue(false).build())
     }
 
     BigInteger bigInt(int i) {
@@ -37,20 +38,20 @@ class AstValueHelperTest extends Specification {
 
     def 'converts Int values to Int ASTs'() {
         expect:
-        astFromValue(123.0, GraphQLInt).isEqualTo(new IntValue(bigInt(123)))
+        astFromValue(123.0, GraphQLInt).isEqualTo(IntValue.newIntValue(bigInt(123)).build())
 
-        astFromValue(1e4, GraphQLInt).isEqualTo(new IntValue(bigInt(10000)))
+        astFromValue(1e4, GraphQLInt).isEqualTo(IntValue.newIntValue(bigInt(10000)).build())
     }
 
     def 'converts Float values to Int/Float ASTs'() {
         expect:
-        astFromValue(123.0, GraphQLFloat).isEqualTo(new FloatValue(123.0))
+        astFromValue(123.0, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(123.0).build())
 
-        astFromValue(123.5, GraphQLFloat).isEqualTo(new FloatValue(123.5))
+        astFromValue(123.5, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(123.5).build())
 
-        astFromValue(1e4, GraphQLFloat).isEqualTo(new FloatValue(10000.0))
+        astFromValue(1e4, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(10000.0).build())
 
-        astFromValue(1e40, GraphQLFloat).isEqualTo(new FloatValue(1.0e40))
+        astFromValue(1e40, GraphQLFloat).isEqualTo(FloatValue.newFloatValue(1.0e40).build())
     }
 
 

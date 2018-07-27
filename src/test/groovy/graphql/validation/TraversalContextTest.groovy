@@ -36,7 +36,7 @@ class TraversalContextTest extends Specification {
     def "operation definition"() {
         given:
         SelectionSet selectionSet = new SelectionSet([])
-        OperationDefinition operationDefinition = new OperationDefinition(queryType.getName(), QUERY, selectionSet)
+        OperationDefinition operationDefinition = OperationDefinition.newOperationDefinition().name(queryType.getName()).operation(QUERY).selectionSet(selectionSet).build()
 
         when:
         traversalContext.enter(operationDefinition, [])
@@ -53,7 +53,7 @@ class TraversalContextTest extends Specification {
 
     def "SelectionSet saves current output type as parent"() {
         given:
-        SelectionSet selectionSet = new SelectionSet()
+        SelectionSet selectionSet = SelectionSet.newSelectionSet().build()
         traversalContext.outputTypeStack.add(nonNull(droidType))
 
         when:
@@ -127,7 +127,7 @@ class TraversalContextTest extends Specification {
 
     def "fragmentDefinition type condition saved as output type"() {
         given:
-        FragmentDefinition fragmentDefinition = new FragmentDefinition("fragment", new TypeName(droidType.getName()))
+        FragmentDefinition fragmentDefinition = FragmentDefinition.newFragmentDefinition().name("fragment").typeCondition(new TypeName(droidType.getName())).build()
 
         when:
         traversalContext.enter(fragmentDefinition, [])
@@ -259,7 +259,7 @@ class TraversalContextTest extends Specification {
     def "visit array with schema input type is enum: input type is null after"() {
         given:
         GraphQLEnumType enumType = GraphQLEnumType.newEnum().name("EnumType").value("Val1").value("Val2").build()
-        ArrayValue arrayValue = new ArrayValue()
+        ArrayValue arrayValue = ArrayValue.newArrayValue().build()
 
         traversalContext.inputTypeStack.add(enumType)
 
