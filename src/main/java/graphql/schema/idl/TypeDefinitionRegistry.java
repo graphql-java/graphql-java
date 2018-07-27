@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.language.Definition;
@@ -10,6 +11,7 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
+import graphql.language.SDLDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaDefinition;
@@ -32,6 +34,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -41,14 +44,15 @@ import static java.util.Optional.ofNullable;
 @PublicApi
 public class TypeDefinitionRegistry {
 
-    private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
-    private final Map<String, List<ObjectTypeExtensionDefinition>> typeExtensions = new LinkedHashMap<>();
+    private final Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions = new LinkedHashMap<>();
     private final Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions = new LinkedHashMap<>();
     private final Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions = new LinkedHashMap<>();
     private final Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions = new LinkedHashMap<>();
     private final Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions = new LinkedHashMap<>();
     private final Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions = new LinkedHashMap<>();
+
     private final Map<String, TypeDefinition> types = new LinkedHashMap<>();
+    private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
     private final Map<String, DirectiveDefinition> directiveDefinitions = new LinkedHashMap<>();
     private SchemaDefinition schema;
 
@@ -98,8 +102,8 @@ public class TypeDefinitionRegistry {
         this.directiveDefinitions.putAll(tempDirectiveDefs);
         //
         // merge type extensions since they can be redefined by design
-        typeRegistry.typeExtensions.forEach((key, value) -> {
-            List<ObjectTypeExtensionDefinition> currentList = this.typeExtensions
+        typeRegistry.objectTypeExtensions.forEach((key, value) -> {
+            List<ObjectTypeExtensionDefinition> currentList = this.objectTypeExtensions
                     .computeIfAbsent(key, k -> new ArrayList<>());
             currentList.addAll(value);
         });
@@ -143,7 +147,7 @@ public class TypeDefinitionRegistry {
         // extensions
         if (definition instanceof ObjectTypeExtensionDefinition) {
             ObjectTypeExtensionDefinition newEntry = (ObjectTypeExtensionDefinition) definition;
-            return defineExt(typeExtensions, newEntry, ObjectTypeExtensionDefinition::getName);
+            return defineExt(objectTypeExtensions, newEntry, ObjectTypeExtensionDefinition::getName);
         } else if (definition instanceof InterfaceTypeExtensionDefinition) {
             InterfaceTypeExtensionDefinition newEntry = (InterfaceTypeExtensionDefinition) definition;
             return defineExt(interfaceTypeExtensions, newEntry, InterfaceTypeExtensionDefinition::getName);
@@ -180,6 +184,42 @@ public class TypeDefinitionRegistry {
         }
         return Optional.empty();
     }
+
+    public void remove(SDLDefinition definition) {
+        assertNotNull("definition to remove can't be null");
+        if (definition instanceof ObjectTypeExtensionDefinition) {
+            removeFromList(objectTypeExtensions, (TypeDefinition) definition);
+        } else if (definition instanceof InterfaceTypeExtensionDefinition) {
+            removeFromList(interfaceTypeExtensions, (TypeDefinition) definition);
+        } else if (definition instanceof UnionTypeExtensionDefinition) {
+            removeFromList(unionTypeExtensions, (TypeDefinition) definition);
+        } else if (definition instanceof EnumTypeExtensionDefinition) {
+            removeFromList(enumTypeExtensions, (TypeDefinition) definition);
+        } else if (definition instanceof ScalarTypeExtensionDefinition) {
+            removeFromList(scalarTypeExtensions, (TypeDefinition) definition);
+        } else if (definition instanceof InputObjectTypeExtensionDefinition) {
+            removeFromList(inputObjectTypeExtensions, (TypeDefinition) definition);
+        } else if (definition instanceof ScalarTypeDefinition) {
+            scalarTypes.remove(((ScalarTypeDefinition) definition).getName());
+        } else if (definition instanceof TypeDefinition) {
+            types.remove(((TypeDefinition) definition).getName());
+        } else if (definition instanceof DirectiveDefinition) {
+            directiveDefinitions.remove(((DirectiveDefinition) definition).getName());
+        } else if (definition instanceof SchemaDefinition) {
+            schema = null;
+        } else {
+            Assert.assertShouldNeverHappen();
+        }
+    }
+
+    private void removeFromList(Map source, TypeDefinition value) {
+        List<TypeDefinition> list = (List<TypeDefinition>) source.get(value.getName());
+        if (list == null) {
+            return;
+        }
+        list.remove(value);
+    }
+
 
     private <T extends TypeDefinition> Optional<GraphQLError> define(Map<String, T> source, Map<String, T> target, T newEntry) {
         String name = newEntry.getName();
@@ -222,7 +262,7 @@ public class TypeDefinitionRegistry {
     }
 
     public Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions() {
-        return new LinkedHashMap<>(typeExtensions);
+        return new LinkedHashMap<>(objectTypeExtensions);
     }
 
     public Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions() {
@@ -267,7 +307,7 @@ public class TypeDefinitionRegistry {
 
     public boolean hasType(TypeName typeName) {
         String name = typeName.getName();
-        return types.containsKey(name) || ScalarInfo.STANDARD_SCALAR_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || typeExtensions.containsKey(name);
+        return types.containsKey(name) || ScalarInfo.STANDARD_SCALAR_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
     }
 
     public Optional<TypeDefinition> getType(Type type) {
