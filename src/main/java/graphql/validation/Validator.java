@@ -1,6 +1,7 @@
 package graphql.validation;
 
 
+import graphql.ExecutionInput;
 import graphql.Internal;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
@@ -28,12 +29,17 @@ import graphql.validation.rules.VariablesAreInputTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Internal
 public class Validator {
 
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
-        ValidationContext validationContext = new ValidationContext(schema, document);
+        return validateDocument(schema, null, document);
+    }
+
+    public List<ValidationError> validateDocument(GraphQLSchema schema, ExecutionInput executionInput, Document document) {
+        ValidationContext validationContext = new ValidationContext(schema, executionInput, document);
 
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();

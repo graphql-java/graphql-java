@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.language.Document
 import graphql.parser.Parser
@@ -19,6 +20,16 @@ class NoUndefinedVariablesTest extends Specification {
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, errorCollector)
+        LanguageTraversal languageTraversal = new LanguageTraversal()
+
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]))
+    }
+
+    def traverse(String query, Map<String, Object> variables) {
+        Document document = new Parser().parseDocument(query)
+        ExecutionInput executionInput = new ExecutionInput(query, null, null, null, variables)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, executionInput, document)
         NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
@@ -112,5 +123,33 @@ class NoUndefinedVariablesTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
 
+    }
+
+    def 'all variables present in execution input'() {
+        given:
+        def query = """
+        query Foo(\$a: String) {
+            field(a: \$a) 
+        }
+        """
+        when:
+        traverse(query, [a: "hi"])
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+    def 'input variables missing variable'() {
+        given:
+        def query = """
+        query Foo(\$a: String) {
+            field(a: \$a) 
+        }
+        """
+        when:
+        traverse(query, [:])
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
     }
 }

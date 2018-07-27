@@ -30,6 +30,6 @@ class Issue743 extends Specification {
         executionResult.data == null
         executionResult.errors.size() == 1
         executionResult.errors[0].errorType == ErrorType.ValidationError
-        executionResult.errors[0].message == "Variable 'isTrue' has coerced Null value for NonNull type 'Boolean!'"
+        executionResult.errors[0].message == "Validation error of type UndefinedVariable: Undefined variable in input isTrue"
     }
 }

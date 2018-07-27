@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.language.Document
 import graphql.parser.Parser
@@ -19,6 +20,16 @@ class NoUnusedVariablesTest extends Specification {
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, errorCollector)
+        LanguageTraversal languageTraversal = new LanguageTraversal()
+
+        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedVariables]))
+    }
+
+    def traverse(String query, Map<String, Object> variables) {
+        Document document = new Parser().parseDocument(query)
+        ExecutionInput executionInput = new ExecutionInput(query, null, null, null, variables)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, executionInput, document)
         NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
@@ -92,5 +103,32 @@ class NoUnusedVariablesTest extends Specification {
 
     }
 
+    def 'uses all variables in execution input'() {
+        given:
+        def query = """
+        query Foo(\$a: String) {
+            field(a: \$a) 
+        }
+        """
+        when:
+        traverse(query, [a: "hi"])
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+    def 'input variables not used'() {
+        given:
+        def query = """
+        query Foo {
+            field
+        }
+        """
+        when:
+        traverse(query, [a: "hi"])
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.UnusedVariable)
+    }
 
 }
