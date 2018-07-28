@@ -78,6 +78,7 @@ generateGrammarSource {
     arguments += ["-visitor"]
     outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
 }
+generateGrammarSource.inputs.dir('src/main/antlr')
 
 task sourcesJar(type: Jar) {
     dependsOn classes
