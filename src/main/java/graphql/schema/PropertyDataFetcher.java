@@ -133,9 +133,22 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         }
 
         if (source instanceof Map) {
-            return (T) ((Map<?, ?>) source).get(propertyName);
+            return (T) getPropertyFromMap(propertyName, environment);
         }
         return (T) getPropertyViaGetter(source, environment.getFieldType());
+    }
+
+    private Object getPropertyFromMap(String propertyName, DataFetchingEnvironment env) {
+        Map<?, ?> source = env.getSource();
+        // First check if an alias was defined for the lookup field, if so, use that instead of the propertyName
+        if (env.getFields() != null && env.getFields().size() > 0) {
+            graphql.language.Field field = env.getField();
+            String alias = field.getAlias();
+            if (alias != null && !alias.isEmpty()) {
+                return source.get(alias);
+            }
+        }
+        return source.get(propertyName);
     }
 
     private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType) {
