@@ -1,6 +1,7 @@
 package graphql.validation;
 
 
+import graphql.ExecutionInput;
 import graphql.Internal;
 import graphql.language.Definition;
 import graphql.language.Document;
@@ -16,19 +17,25 @@ import graphql.schema.GraphQLSchema;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Internal
 public class ValidationContext {
 
     private final GraphQLSchema schema;
+    private final ExecutionInput executionInput;
     private final Document document;
 
     private final TraversalContext traversalContext;
     private final Map<String, FragmentDefinition> fragmentDefinitionMap = new LinkedHashMap<>();
 
-
     public ValidationContext(GraphQLSchema schema, Document document) {
+        this(schema, null, document);
+    }
+
+    public ValidationContext(GraphQLSchema schema, ExecutionInput executionInput, Document document) {
         this.schema = schema;
+        this.executionInput = executionInput;
         this.document = document;
         this.traversalContext = new TraversalContext(schema);
         buildFragmentMap();
@@ -52,6 +59,10 @@ public class ValidationContext {
 
     public Document getDocument() {
         return document;
+    }
+
+    public Optional<ExecutionInput> getExecutionInput() {
+        return Optional.ofNullable(executionInput);
     }
 
     public FragmentDefinition getFragment(String name) {

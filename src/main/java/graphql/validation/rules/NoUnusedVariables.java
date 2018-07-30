@@ -1,19 +1,23 @@
 package graphql.validation.rules;
 
 
+import graphql.ExecutionInput;
 import graphql.language.OperationDefinition;
+import graphql.language.SourceLocation;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
-import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class NoUnusedVariables extends AbstractRule {
 
@@ -33,6 +37,20 @@ public class NoUnusedVariables extends AbstractRule {
                 addError(ValidationErrorType.UnusedVariable, variableDefinition.getSourceLocation(), message);
             }
         }
+
+        getExecutionInputVariables().ifPresent(vars -> {
+            Set<String> declaredVariables = variableDefinitions.stream().map(VariableDefinition::getName).collect(Collectors.toSet());
+            for (String inputVariable : vars.keySet()) {
+                if (!declaredVariables.contains(inputVariable)) {
+                    String message = String.format("Unused input variable %s", inputVariable);
+                    addError(ValidationErrorType.UnusedVariable, (SourceLocation) null, message);
+                }
+            }
+        });
+    }
+
+    private Optional<Map<String, Object>> getExecutionInputVariables() {
+        return getValidationContext().getExecutionInput().map(ExecutionInput::getVariables);
     }
 
     @Override
