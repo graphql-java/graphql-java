@@ -13,8 +13,8 @@ import java.util.function.Consumer;
 @PublicApi
 public class Argument extends AbstractNode<Argument> implements NamedNode<Argument> {
 
-    private final String name;
-    private final Value value;
+    private String name;
+    private Value value;
 
     @Internal
     protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments) {
@@ -40,6 +40,14 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     public Value getValue() {
         return value;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setValue(Value value) {
+        this.value = value;
     }
 
     @Override

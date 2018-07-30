@@ -38,7 +38,7 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return new ArrayList<>(inputValueDefinitions);
+        return inputValueDefinitions;
     }
 
     @Override

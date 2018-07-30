@@ -29,7 +29,7 @@ public class Document extends AbstractNode<Document> {
     }
 
     public List<Definition> getDefinitions() {
-        return new ArrayList<>(definitions);
+        return definitions;
     }
 
 

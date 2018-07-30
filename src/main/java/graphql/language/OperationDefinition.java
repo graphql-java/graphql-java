@@ -19,10 +19,10 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     private final String name;
 
-    private final Operation operation;
+    private Operation operation;
     private final List<VariableDefinition> variableDefinitions;
     private final List<Directive> directives;
-    private final SelectionSet selectionSet;
+    private SelectionSet selectionSet;
 
     @Internal
     protected OperationDefinition(String name,
@@ -67,11 +67,19 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     }
 
     public List<VariableDefinition> getVariableDefinitions() {
-        return new ArrayList<>(variableDefinitions);
+        return variableDefinitions;
     }
 
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
+    }
+
+    public void setOperation(Operation operation) {
+        this.operation = operation;
+    }
+
+    public void setSelectionSet(SelectionSet selectionSet) {
+        this.selectionSet = selectionSet;
     }
 
     @Override

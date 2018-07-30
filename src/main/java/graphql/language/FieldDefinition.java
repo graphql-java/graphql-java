@@ -12,8 +12,8 @@ import java.util.function.Consumer;
 
 @PublicApi
 public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
-    private final String name;
-    private final Type type;
+    private String name;
+    private Type type;
     private final Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
@@ -53,7 +53,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return new ArrayList<>(inputValueDefinitions);
+        return inputValueDefinitions;
     }
 
     @Override
@@ -90,6 +90,14 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
                 getSourceLocation(),
                 getComments()
         );
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override
