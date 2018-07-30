@@ -32,7 +32,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
     }
 
     public List<Value> getValues() {
-        return new ArrayList<>(values);
+        return values;
     }
 
     @Override

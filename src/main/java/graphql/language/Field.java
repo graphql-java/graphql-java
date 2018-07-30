@@ -17,20 +17,20 @@ import java.util.function.Consumer;
 @PublicApi
 public class Field extends AbstractNode<Field> implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field> {
 
-    private final String name;
-    private final String alias;
-    private final List<Argument> arguments;
-    private final List<Directive> directives;
-    private final SelectionSet selectionSet;
+    private String name;
+    private String alias;
+    private List<Argument> arguments;
+    private List<Directive> directives;
+    private SelectionSet selectionSet;
 
     @Internal
     protected Field(String name,
-                  String alias,
-                  List<Argument> arguments,
-                  List<Directive> directives,
-                  SelectionSet selectionSet,
-                  SourceLocation sourceLocation,
-                  List<Comment> comments) {
+                    String alias,
+                    List<Argument> arguments,
+                    List<Directive> directives,
+                    SelectionSet selectionSet,
+                    SourceLocation sourceLocation,
+                    List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.alias = alias;
@@ -49,7 +49,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
     /**
      * alternative to using a Builder for convenience
-     *
      */
     public Field(String name, List<Argument> arguments) {
         this(name, null, arguments, new ArrayList<>(), null, null, new ArrayList<>());
@@ -74,7 +73,9 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         List<Node> result = new ArrayList<>();
         result.addAll(arguments);
         result.addAll(directives);
-        if (selectionSet != null) result.add(selectionSet);
+        if (selectionSet != null) {
+            result.add(selectionSet);
+        }
         return result;
     }
 
@@ -89,7 +90,15 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
     public List<Argument> getArguments() {
-        return new ArrayList<>(arguments);
+        return arguments;
+    }
+
+    public void setArguments(List<Argument> arguments) {
+        this.arguments = arguments;
+    }
+
+    public void setDirectives(List<Directive> directives) {
+        this.directives = directives;
     }
 
     @Override
@@ -102,10 +111,26 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return selectionSet;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setAlias(String alias) {
+        this.alias = alias;
+    }
+
+    public void setSelectionSet(SelectionSet selectionSet) {
+        this.selectionSet = selectionSet;
+    }
+
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         Field that = (Field) o;
 
