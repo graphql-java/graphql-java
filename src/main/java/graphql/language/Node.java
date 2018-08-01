@@ -24,6 +24,10 @@ public interface Node<T extends Node> extends Serializable {
      */
     List<Node> getChildren();
 
+    ChildrenContainer getNamedChildren();
+
+    T withNewChildren(ChildrenContainer newChildren);
+
     /**
      * @return the source location where this node occurs
      */
@@ -69,4 +73,6 @@ public interface Node<T extends Node> extends Serializable {
      * Note! Visitor's operation might return special results to control traversal process.
      */
     TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor);
+
+
 }

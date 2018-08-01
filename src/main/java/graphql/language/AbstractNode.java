@@ -47,4 +47,15 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
         return list.stream().map(Node::deepCopy).map(node -> (V) node).collect(Collectors.toList());
     }
 
+    //TODO: Implement really in each Node
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return null;
+    }
+
+    //TODO: Implement really in each Node
+    @Override
+    public T withNewChildren(ChildrenContainer newChildren) {
+        return null;
+    }
 }

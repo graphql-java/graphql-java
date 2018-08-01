@@ -18,14 +18,18 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
     private final List<Directive> directives;
     private final List<FieldDefinition> fieldDefinitions;
 
+    public static final String CHILD_IMPLEMENTZ = "implementz";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
+
     @Internal
     protected ObjectTypeDefinition(String name,
-                         List<Type> implementz,
-                         List<Directive> directives,
-                         List<FieldDefinition> fieldDefinitions,
-                         Description description,
-                         SourceLocation sourceLocation,
-                         List<Comment> comments) {
+                                   List<Type> implementz,
+                                   List<Directive> directives,
+                                   List<FieldDefinition> fieldDefinitions,
+                                   Description description,
+                                   SourceLocation sourceLocation,
+                                   List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.implementz = implementz;
@@ -73,9 +77,31 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
     }
 
     @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_IMPLEMENTZ, implementz)
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_FIELD_DEFINITIONS, fieldDefinitions)
+                .build();
+    }
+
+    @Override
+    public ObjectTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> {
+            builder.implementz(newChildren.getList(CHILD_IMPLEMENTZ))
+                    .directives(newChildren.getList(CHILD_DIRECTIVES))
+                    .fieldDefinitions(newChildren.getList(CHILD_FIELD_DEFINITIONS));
+        });
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ObjectTypeDefinition that = (ObjectTypeDefinition) o;
         return NodeUtil.isEqualTo(this.name, that.name);
