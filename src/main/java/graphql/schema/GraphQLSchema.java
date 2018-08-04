@@ -70,9 +70,7 @@ public class GraphQLSchema {
         this.subscriptionType = subscriptionType;
         this.fieldVisibility = fieldVisibility;
         this.additionalTypes = additionalTypes;
-        this.directives = new LinkedHashSet<>(
-                asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective)
-        );
+        this.directives = directives;
         this.directives.addAll(directives);
         this.typeMap = schemaUtil.allTypes(this, additionalTypes);
         this.byInterface = schemaUtil.groupImplementations(this);
@@ -231,7 +229,9 @@ public class GraphQLSchema {
         private GraphQLObjectType subscriptionType;
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         private Set<GraphQLType> additionalTypes = new HashSet<>();
-        private Set<GraphQLDirective> additionalDirectives = new HashSet<>();
+        private Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
+                asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective)
+        );
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -285,12 +285,22 @@ public class GraphQLSchema {
             return this;
         }
 
+        /**
+         * This is used to clear all the directives in the builder so far.
+         *
+         * @return the builder
+         */
+        public Builder clearDirectives() {
+            this.additionalDirectives.clear();
+            return this;
+        }
+
         public GraphQLSchema build() {
             return build(additionalTypes, additionalDirectives);
         }
 
         public GraphQLSchema build(Set<GraphQLType> additionalTypes) {
-            return build(additionalTypes, Collections.emptySet());
+            return build(additionalTypes, additionalDirectives);
         }
 
         public GraphQLSchema build(Set<GraphQLType> additionalTypes, Set<GraphQLDirective> additionalDirectives) {
