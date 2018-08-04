@@ -2,6 +2,7 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
+import graphql.ExperimentalApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -137,6 +138,18 @@ public interface Instrumentation {
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
     default InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
+        return new SimpleInstrumentationContext<>();
+    }
+
+    /**
+     * This is called just before the elements of a lazy list are being retrieved.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     */
+    @ExperimentalApi
+    default InstrumentationContext<ExecutionResult> beginFieldLazyListComplete(InstrumentationFieldCompleteParameters parameters) {
         return new SimpleInstrumentationContext<>();
     }
 

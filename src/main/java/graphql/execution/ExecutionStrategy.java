@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.PublicSpi;
 import graphql.SerializationError;
@@ -13,6 +14,9 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution.lazy.LazyList;
+import graphql.execution.lazy.LazyListUtil;
+import graphql.execution.lazy.LazySupport;
 import graphql.introspection.Introspection;
 import graphql.language.Field;
 import graphql.schema.CoercingSerializeException;
@@ -50,6 +54,7 @@ import static graphql.execution.Async.exceptionallyCompletedFuture;
 import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
+import static graphql.execution.FieldValueInfo.CompleteValueType.LAZY_LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
@@ -438,8 +443,11 @@ public abstract class ExecutionStrategy {
     }
 
     /**
-     * Called to complete a list of value for a field based on a list type.  This iterates the values and calls
-     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
+     * Called to complete a list of value for a field based on a list type.
+     *
+     * If the value is a lazy list, it completes immediately with a wrapped lazy list. Otherwise it
+     * iterates the values and calls {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)}
+     * for each value.
      *
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
@@ -447,17 +455,22 @@ public abstract class ExecutionStrategy {
      *
      * @return a {@link FieldValueInfo}
      */
+    @SuppressWarnings("unchecked")
     protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
-        Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
+        Object typeCheckedResult = toValidListObject(executionContext, parameters, result);
         try {
-            resultIterable = parameters.getNonNullFieldValidator().validate(parameters.getPath(), resultIterable);
+            typeCheckedResult = parameters.getNonNullFieldValidator().validate(parameters.getPath(), typeCheckedResult);
         } catch (NonNullableFieldWasNullException e) {
             return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(exceptionallyCompletedFuture(e)).build();
         }
-        if (resultIterable == null) {
+        if (typeCheckedResult == null) {
             return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(new ExecutionResultImpl(null, null))).build();
         }
-        return completeValueForList(executionContext, parameters, resultIterable);
+        if (typeCheckedResult instanceof LazyList) {
+            return completeValueForList(executionContext, parameters, (LazyList<Object>) typeCheckedResult);
+        } else {
+            return completeValueForList(executionContext, parameters, (Iterable<Object>) typeCheckedResult);
+        }
     }
 
     /**
@@ -540,6 +553,126 @@ public abstract class ExecutionStrategy {
         return FieldValueInfo.newFieldValueInfo(LIST)
                 .fieldValue(overallResult)
                 .fieldValueInfos(fieldValueInfos)
+                .build();
+    }
+
+    /**
+     * Called to complete a lazy list. This wraps the lazy list in another lazy list that calls
+     * {@link #completeValue(ExecutionContext, ExecutionStrategyParameters)} for each value.
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param lazyList         the values to complete, can't be null
+     *
+     * @return a {@link FieldValueInfo}
+     */
+    @ExperimentalApi
+    protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, LazyList<Object> lazyList) {
+        /*
+        This function wraps the passed lazy list four times
+
+        1. (Inner wrapper) Complete the passed value and either store the result or dispatch it and all stored results
+        2. (Outer wrapper) Dispatch all stored results
+        3. (Outer wrapper) Call instrumentation methods
+        4. (Outer wrapper) Catch exceptions and pass them to the dataFetcherExceptionHandler
+         */
+
+        CompletionCancellationRegistry completionCancellationRegistry = new CompletionCancellationRegistry(
+                parameters.getCompletionCancellationRegistry()
+        );
+
+        LazySupport.Token token = executionContext.getLazySupport().addLazyCompletion();
+        parameters.getCompletionCancellationRegistry().addCancellationCallback(token::release);
+
+        ExecutionTypeInfo typeInfo = parameters.getTypeInfo();
+        GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
+        GraphQLFieldDefinition fieldDef = parameters.getTypeInfo().getFieldDefinition();
+
+        List<CompletableFuture<ExecutionResult>> cachedItems = new ArrayList<>();
+        int[] index = {0};
+
+        LazyList<Object> preparedList = LazyListUtil.of(lazyList)
+                .wrap(l -> action -> l.forEach((flush, item) -> {
+                    ExecutionPath indexedPath = parameters.getPath().segment(index[0]);
+
+                    ExecutionTypeInfo wrappedTypeInfo = ExecutionTypeInfo.newTypeInfo()
+                            .parentInfo(typeInfo)
+                            .type(fieldType.getWrappedType())
+                            .path(indexedPath)
+                            .fieldDefinition(fieldDef)
+                            .build();
+
+                    NonNullableFieldValidator nonNullableFieldValidator =
+                            new NonNullableFieldValidator(executionContext, wrappedTypeInfo);
+
+                    ExecutionStrategyParameters newParameters = parameters.transform(builder ->
+                            builder.typeInfo(wrappedTypeInfo)
+                                    .nonNullFieldValidator(nonNullableFieldValidator)
+                                    .currentListIndex(index[0]++)
+                                    .path(indexedPath)
+                                    .source(item)
+                                    .completionCancellationRegistry(completionCancellationRegistry)
+                    );
+                    CompletableFuture<ExecutionResult> executionResult = completeValue(executionContext, newParameters)
+                            .getFieldValue();
+                    if (!flush) {
+                        cachedItems.add(executionResult);
+                        return;
+                    }
+                    cachedItems.forEach(cachedItem -> action.accept(true, cachedItem.join().getData()));
+                    cachedItems.clear();
+                    action.accept(true, executionResult.join().getData());
+                }))
+                .wrap(l -> action -> {
+                    l.forEach(action);
+                    cachedItems.forEach(cachedItem -> action.accept(true, cachedItem.join().getData()));
+                })
+                .wrap(l -> action -> {
+                    InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(
+                            executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef), l);
+                    Instrumentation instrumentation = executionContext.getInstrumentation();
+
+                    InstrumentationContext<ExecutionResult> completeListCtx = instrumentation.beginFieldLazyListComplete(
+                            instrumentationParams
+                    );
+
+                    Throwable exception = null;
+
+                    try {
+                        l.forEach(action);
+                    } catch (Throwable t) {
+                        exception = t;
+                        throw t;
+                    } finally {
+                        completeListCtx.onCompleted(null, exception);
+                    }
+                })
+                .wrap(l -> action -> {
+                    try {
+                        l.forEach(action);
+                    } catch (Throwable exception) {
+                        completionCancellationRegistry.dispatch();
+
+                        DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters
+                                .newExceptionParameters()
+                                .executionContext(executionContext)
+                                .argumentValues(parameters.getArguments())
+                                .field(parameters.getField().get(0))
+                                .fieldDefinition(fieldDef)
+                                .path(parameters.getPath())
+                                .exception(exception)
+                                .build();
+
+                        dataFetcherExceptionHandler.accept(handlerParameters);
+                    } finally {
+                        cachedItems.clear();
+                        token.release();
+                    }
+                })
+                .unwrap();
+
+        return FieldValueInfo.newFieldValueInfo(LAZY_LIST)
+                .fieldValue(completedFuture(new ExecutionResultImpl(preparedList, null)))
                 .build();
     }
 
@@ -777,7 +910,10 @@ public abstract class ExecutionStrategy {
     }
 
 
-    protected Iterable<Object> toIterable(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
+    protected Object toValidListObject(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
+        if (result instanceof LazyList) {
+            return result;
+        }
         if (result.getClass().isArray() || result instanceof Iterable) {
             return toIterable(result);
         }

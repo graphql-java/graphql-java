@@ -14,7 +14,8 @@ public class FieldValueInfo {
         LIST,
         NULL,
         SCALAR,
-        ENUM
+        ENUM,
+        LAZY_LIST,
 
     }
 
