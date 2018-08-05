@@ -3,6 +3,7 @@ package graphql.execution.defer;
 import graphql.Directives;
 import graphql.ExecutionResult;
 import graphql.Internal;
+import graphql.execution.lazy.LazySupport;
 import graphql.execution.reactive.SingleSubscriberPublisher;
 import graphql.language.Field;
 import org.reactivestreams.Publisher;
@@ -23,6 +24,11 @@ public class DeferSupport {
     private final AtomicBoolean deferDetected = new AtomicBoolean(false);
     private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
     private final SingleSubscriberPublisher<ExecutionResult> publisher = new SingleSubscriberPublisher<>();
+    private final LazySupport lazySupport;
+
+    public DeferSupport(LazySupport lazySupport) {
+        this.lazySupport = lazySupport;
+    }
 
     public boolean checkForDeferDirective(List<Field> currentField) {
         for (Field field : currentField) {
@@ -36,8 +42,16 @@ public class DeferSupport {
     @SuppressWarnings("FutureReturnValueIgnored")
     private void drainDeferredCalls() {
         if (deferredCalls.isEmpty()) {
-            publisher.noMoreData();
-            return;
+            if (lazySupport.hasPendingCompletions()) {
+                lazySupport.addCompletionCallback(this::drainDeferredCalls);
+                return;
+            } else if (deferredCalls.isEmpty()) {
+                // All lazy completions were completed and afterwards deferredCalls was empty.
+                // Since only lazy completions can add deferred calls at this point, we know that
+                // deferredCalls will stay empty.
+                publisher.noMoreData();
+                return;
+            }
         }
         DeferredCall deferredCall = deferredCalls.pop();
         CompletableFuture<ExecutionResult> future = deferredCall.invoke();
@@ -67,6 +81,10 @@ public class DeferSupport {
      */
     public Publisher<ExecutionResult> startDeferredCalls() {
         drainDeferredCalls();
+        return publisher;
+    }
+
+    public Publisher<ExecutionResult> getPublisher() {
         return publisher;
     }
 }

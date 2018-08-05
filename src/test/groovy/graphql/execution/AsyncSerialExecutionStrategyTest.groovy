@@ -87,6 +87,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .newParameters()
                 .typeInfo(typeInfo)
                 .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')], 'hello3': [new Field('hello3')]])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()
@@ -130,6 +131,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .newParameters()
                 .typeInfo(typeInfo)
                 .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')], 'hello3': [new Field('hello3')]])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()

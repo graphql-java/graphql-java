@@ -58,6 +58,10 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
         InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
+        CompletionCancellationRegistry completionCancellationRegistry = new CompletionCancellationRegistry(
+                parameters.getCompletionCancellationRegistry()
+        );
+
         Map<String, List<Field>> fields = parameters.getFields();
         Map<String, Future<CompletableFuture<ExecutionResult>>> futures = new LinkedHashMap<>();
         for (String fieldName : fields.keySet()) {
@@ -65,7 +69,11 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
             ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath));
+                    .transform(builder -> builder
+                            .field(currentField)
+                            .path(fieldPath)
+                            .completionCancellationRegistry(completionCancellationRegistry)
+                    );
 
             Callable<CompletableFuture<ExecutionResult>> resolveField = () -> resolveField(executionContext, newParameters);
             futures.put(fieldName, executorService.submit(resolveField));
@@ -84,6 +92,7 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
                     if (e.getCause() instanceof NonNullableFieldWasNullException) {
                         assertNonNullFieldPrecondition((NonNullableFieldWasNullException) e.getCause());
                         results = null;
+                        completionCancellationRegistry.dispatch();
                         break;
                     } else {
                         throw e;
@@ -99,7 +108,11 @@ public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
             return overallResult;
         } catch (InterruptedException | ExecutionException e) {
             executionStrategyCtx.onCompleted(null, e);
+            completionCancellationRegistry.dispatch();
             throw new GraphQLException(e);
+        } catch (Throwable e) {
+            completionCancellationRegistry.dispatch();
+            throw e;
         }
     }
 }

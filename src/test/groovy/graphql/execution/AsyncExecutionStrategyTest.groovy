@@ -80,6 +80,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .typeInfo(typeInfo)
                 .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -118,6 +119,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .typeInfo(typeInfo)
                 .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -158,6 +160,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .typeInfo(typeInfo)
                 .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -197,6 +200,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .typeInfo(typeInfo)
                 .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()

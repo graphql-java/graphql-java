@@ -9,10 +9,12 @@ import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.lazy.LazyExecutionResult;
 import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +53,10 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         ExecutionStrategyInstrumentationContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
+        CompletionCancellationRegistry completionCancellationRegistry = new CompletionCancellationRegistry(
+                parameters.getCompletionCancellationRegistry()
+        );
+
         Map<String, List<Field>> fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
@@ -59,8 +65,12 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             List<Field> currentField = fields.get(fieldName);
 
             ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
+            ExecutionStrategyParameters newParameters = parameters.transform(builder ->
+                    builder.field(currentField)
+                            .path(fieldPath)
+                            .parent(parameters)
+                            .completionCancellationRegistry(completionCancellationRegistry)
+            );
 
             if (isDeferred(executionContext, newParameters, currentField)) {
                 executionStrategyCtx.onDeferredField(currentField);
@@ -74,7 +84,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         executionStrategyCtx.onDispatched(overallResult);
 
         Async.each(futures).whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, resolvedFields, overallResult);
+            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, completionCancellationRegistry, resolvedFields, overallResult);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
@@ -97,6 +107,15 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             Map<String, List<Field>> fields = new HashMap<>();
             fields.put(currentField.get(0).getName(), currentField);
 
+            // Even if the parent is cancelled, this execution is still enqueued in the defer support
+            // and can thus be completed independently. Therefore we create a new top-level registry
+            // here.
+            CompletionCancellationRegistry completionCancellationRegistry = new CompletionCancellationRegistry();
+
+            ExecutionContext newExecutionContext = executionContext.transform(builder ->
+                    builder.errors(Collections.emptyList())
+            );
+
             ExecutionStrategyParameters callParameters = parameters.transform(builder ->
                     builder.deferredErrorSupport(errorSupport)
                             .field(currentField)
@@ -104,9 +123,10 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                             .parent(null) // this is a break in the parent -> child chain - its a new start effectively
                             .listSize(0)
                             .currentListIndex(0)
+                            .completionCancellationRegistry(completionCancellationRegistry)
             );
 
-            DeferredCall call = new DeferredCall(deferredExecutionResult(executionContext, callParameters), errorSupport);
+            DeferredCall call = new DeferredCall(deferredExecutionResult(newExecutionContext, completionCancellationRegistry, callParameters), errorSupport);
             deferSupport.enqueue(call);
             return true;
         }
@@ -114,7 +134,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     }
 
     @SuppressWarnings("FutureReturnValueIgnored")
-    private Supplier<CompletableFuture<ExecutionResult>> deferredExecutionResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    private Supplier<CompletableFuture<ExecutionResult>> deferredExecutionResult(ExecutionContext executionContext, CompletionCancellationRegistry completionCancellationRegistry, ExecutionStrategyParameters parameters) {
         return () -> {
             GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().get(0));
 
@@ -127,10 +147,16 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             CompletableFuture<FieldValueInfo> fieldValueInfoFuture = resolveFieldWithInfo(executionContext, parameters);
 
             fieldValueInfoFuture.whenComplete((fieldValueInfo, throwable) -> {
+                if (throwable != null) {
+                    completionCancellationRegistry.dispatch();
+                }
                 fieldCtx.onFieldValueInfo(fieldValueInfo);
 
                 CompletableFuture<ExecutionResult> execResultFuture = fieldValueInfo.getFieldValue();
                 execResultFuture = execResultFuture.whenComplete(fieldCtx::onCompleted);
+                if (executionContext.getLazySupport().lazyFieldsDetected()) {
+                    execResultFuture = execResultFuture.thenApply(innerResult -> new LazyExecutionResult(innerResult, executionContext.getErrors(), null));
+                }
                 Async.copyResults(execResultFuture, result);
             });
             return result;

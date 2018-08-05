@@ -484,6 +484,10 @@ public abstract class ExecutionStrategy {
                 instrumentationParams
         );
 
+        CompletionCancellationRegistry completionCancellationRegistry = new CompletionCancellationRegistry(
+                parameters.getCompletionCancellationRegistry()
+        );
+
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>();
         int index = 0;
         for (Object item : values) {
@@ -506,6 +510,7 @@ public abstract class ExecutionStrategy {
                             .currentListIndex(finalIndex)
                             .path(indexedPath)
                             .source(item)
+                            .completionCancellationRegistry(completionCancellationRegistry)
             );
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
@@ -518,6 +523,7 @@ public abstract class ExecutionStrategy {
 
         resultsFuture.whenComplete((results, exception) -> {
             if (exception != null) {
+                completionCancellationRegistry.dispatch();
                 ExecutionResult executionResult = handleNonNullException(executionContext, overallResult, exception);
                 completeListCtx.onCompleted(executionResult, exception);
                 return;

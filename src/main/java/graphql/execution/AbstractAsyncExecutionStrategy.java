@@ -19,9 +19,10 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
         super(dataFetcherExceptionHandler);
     }
 
-    protected BiConsumer<List<ExecutionResult>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
+    protected BiConsumer<List<ExecutionResult>, Throwable> handleResults(ExecutionContext executionContext, CompletionCancellationRegistry completionCancellationRegistry, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
         return (List<ExecutionResult> results, Throwable exception) -> {
             if (exception != null) {
+                completionCancellationRegistry.dispatch();
                 handleNonNullException(executionContext, overallResult, exception);
                 return;
             }

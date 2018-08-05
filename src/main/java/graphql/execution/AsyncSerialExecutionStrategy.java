@@ -35,18 +35,25 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         Map<String, List<Field>> fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
 
+        CompletionCancellationRegistry completionCancellationRegistry = new CompletionCancellationRegistry(
+                parameters.getCompletionCancellationRegistry()
+        );
+
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, index, prevResults) -> {
             List<Field> currentField = fields.get(fieldName);
             ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath));
+            ExecutionStrategyParameters newParameters = parameters.transform(builder ->
+                    builder.field(currentField)
+                            .path(fieldPath)
+                            .completionCancellationRegistry(completionCancellationRegistry)
+            );
             return resolveField(executionContext, newParameters);
         });
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched(overallResult);
 
-        resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
+        resultsFuture.whenComplete(handleResults(executionContext, completionCancellationRegistry, fieldNames, overallResult));
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
     }

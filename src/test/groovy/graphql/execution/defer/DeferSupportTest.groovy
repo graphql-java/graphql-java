@@ -2,9 +2,11 @@ package graphql.execution.defer
 
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
+import graphql.execution.lazy.LazySupport
 import graphql.language.Directive
 import graphql.language.Field
 import org.awaitility.Awaitility
+import org.reactivestreams.Subscription
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -15,7 +17,7 @@ class DeferSupportTest extends Specification {
     def "emits N deferred calls with order preserved"() {
 
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferSupport(new LazySupport())
         deferSupport.enqueue(offThread("A", 100)) // <-- will finish last
         deferSupport.enqueue(offThread("B", 50)) // <-- will finish second
         deferSupport.enqueue(offThread("C", 10)) // <-- will finish first
@@ -41,7 +43,7 @@ class DeferSupportTest extends Specification {
 
     def "calls within calls are enqueued correctly"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferSupport(new LazySupport())
         deferSupport.enqueue(offThreadCallWithinCall(deferSupport, "A", "a", 100))
         deferSupport.enqueue(offThreadCallWithinCall(deferSupport, "B", "b", 50))
         deferSupport.enqueue(offThreadCallWithinCall(deferSupport, "C", "c", 10))
@@ -71,7 +73,7 @@ class DeferSupportTest extends Specification {
 
     def "stops at first exception encountered"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferSupport(new LazySupport())
         deferSupport.enqueue(offThread("A", 100))
         deferSupport.enqueue(offThread("Bang", 50)) // <-- will throw exception
         deferSupport.enqueue(offThread("C", 10))
@@ -107,7 +109,7 @@ class DeferSupportTest extends Specification {
 
     def "you can cancel the subscription"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferSupport(new LazySupport())
         deferSupport.enqueue(offThread("A", 100)) // <-- will finish last
         deferSupport.enqueue(offThread("B", 50)) // <-- will finish second
         deferSupport.enqueue(offThread("C", 10)) // <-- will finish first
@@ -134,7 +136,7 @@ class DeferSupportTest extends Specification {
 
     def "you cant subscribe twice"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferSupport(new LazySupport())
         deferSupport.enqueue(offThread("A", 100))
         deferSupport.enqueue(offThread("Bang", 50)) // <-- will finish second
         deferSupport.enqueue(offThread("C", 10)) // <-- will finish first
@@ -154,7 +156,7 @@ class DeferSupportTest extends Specification {
 
     def "indicates of there any defers present"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferSupport(new LazySupport())
 
         when:
         def deferPresent1 = deferSupport.isDeferDetected()
@@ -172,7 +174,7 @@ class DeferSupportTest extends Specification {
 
     def "detects @defer directive"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferSupport(new LazySupport())
 
         when:
         def noDirectivePresent = deferSupport.checkForDeferDirective([
@@ -193,6 +195,53 @@ class DeferSupportTest extends Specification {
         directivePresent
 
 
+    }
+
+    def "lazy support restarts defer dispatch"() {
+        given:
+        def lazySupport = new LazySupport()
+        def token = lazySupport.addLazyCompletion()
+        def deferSupport = new DeferSupport(lazySupport)
+        def future = enqueueFuture(deferSupport)
+        future.complete(new ExecutionResultImpl("A", null))
+
+        def results = []
+        def subscriber = new BasicSubscriber() {
+            @Override
+            void onSubscribe(Subscription s) {
+                s.request(Long.MAX_VALUE)
+            }
+
+            @Override
+            void onNext(ExecutionResult executionResult) {
+                results.add(executionResult.data)
+            }
+        }
+
+        when:
+        deferSupport.startDeferredCalls().subscribe(subscriber)
+
+        then:
+        results == [ "A" ]
+
+        when:
+        future = enqueueFuture(deferSupport)
+        future.complete(new ExecutionResultImpl("B", null))
+
+        then:
+        results == [ "A" ]
+
+        when:
+        token.release()
+
+        then:
+        results == [ "A", "B" ]
+    }
+
+    def enqueueFuture(def deferSupport) {
+        def future = new CompletableFuture()
+        deferSupport.enqueue(new DeferredCall({ future }, new DeferredErrorSupport()))
+        return future
     }
 
     private static DeferredCall offThread(String data, int sleepTime) {

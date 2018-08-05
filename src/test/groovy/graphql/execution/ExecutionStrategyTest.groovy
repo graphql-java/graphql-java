@@ -7,7 +7,9 @@ import graphql.ExecutionResult
 import graphql.Scalars
 import graphql.SerializationError
 import graphql.TypeMismatchError
+import graphql.execution.defer.DeferSupport
 import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.lazy.LazySupport
 import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.OperationDefinition
@@ -56,10 +58,12 @@ class ExecutionStrategyTest extends Specification {
     def buildContext(GraphQLSchema schema = null) {
         ExecutionId executionId = ExecutionId.from("executionId123")
         def variables = [arg1: "value1"]
+        def lazySupport = new LazySupport()
+        def deferSupport = new DeferSupport(lazySupport)
         new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema, null,
                 executionStrategy, executionStrategy, executionStrategy,
                 null, null, null,
-                variables, "context", "root")
+                variables, "context", "root", lazySupport, deferSupport)
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
@@ -123,6 +127,7 @@ class ExecutionStrategyTest extends Specification {
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": []])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         when:
@@ -337,6 +342,7 @@ class ExecutionStrategyTest extends Specification {
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": []])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         when:
@@ -664,6 +670,7 @@ class ExecutionStrategyTest extends Specification {
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": [new Field()]])
                 .field([new Field()])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         when:
@@ -744,6 +751,7 @@ class ExecutionStrategyTest extends Specification {
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": [new Field()]])
                 .field([new Field()])
+                .completionCancellationRegistry(new CompletionCancellationRegistry())
                 .build()
 
         when:

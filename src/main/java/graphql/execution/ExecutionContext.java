@@ -1,11 +1,13 @@
 package graphql.execution;
 
 
+import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.lazy.LazySupport;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
@@ -35,13 +37,14 @@ public class ExecutionContext {
     private final Object context;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
-    private final DeferSupport deferSupport = new DeferSupport();
+    private final LazySupport lazySupport;
+    private final DeferSupport deferSupport;
 
-    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
-        this(instrumentation, executionId, graphQLSchema, instrumentationState, queryStrategy, mutationStrategy, subscriptionStrategy, fragmentsByName, document, operationDefinition, variables, context, root, Collections.emptyList());
+    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, LazySupport lazySupport, DeferSupport deferSupport) {
+        this(instrumentation, executionId, graphQLSchema, instrumentationState, queryStrategy, mutationStrategy, subscriptionStrategy, fragmentsByName, document, operationDefinition, variables, context, root, Collections.emptyList(), lazySupport, deferSupport);
     }
 
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, List<GraphQLError> startingErrors, LazySupport lazySupport, DeferSupport deferSupport) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -56,6 +59,8 @@ public class ExecutionContext {
         this.root = root;
         this.instrumentation = instrumentation;
         this.errors.addAll(startingErrors);
+        this.lazySupport = lazySupport;
+        this.deferSupport = deferSupport;
     }
 
 
@@ -161,6 +166,11 @@ public class ExecutionContext {
 
     public DeferSupport getDeferSupport() {
         return deferSupport;
+    }
+
+    @ExperimentalApi
+    public LazySupport getLazySupport() {
+        return lazySupport;
     }
 
     /**

@@ -3,8 +3,10 @@ package graphql.execution;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.lazy.LazySupport;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
@@ -34,6 +36,8 @@ public class ExecutionContextBuilder {
     private Map<String, Object> variables = new HashMap<>();
     private Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
     private List<GraphQLError> errors = new ArrayList<>();
+    private LazySupport lazySupport;
+    private DeferSupport deferSupport;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -55,6 +59,8 @@ public class ExecutionContextBuilder {
 
     @Internal
     public ExecutionContextBuilder() {
+        lazySupport = new LazySupport();
+        deferSupport = new DeferSupport(lazySupport);
     }
 
     @Internal
@@ -73,6 +79,8 @@ public class ExecutionContextBuilder {
         variables = new HashMap<>(other.getVariables());
         fragmentsByName = new HashMap<>(other.getFragmentsByName());
         errors = new ArrayList<>(other.getErrors());
+        lazySupport = other.getLazySupport();
+        deferSupport = other.getDeferSupport();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -140,6 +148,11 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    public ExecutionContextBuilder errors(List<GraphQLError> errors) {
+        this.errors = errors;
+        return this;
+    }
+
 
     public ExecutionContext build() {
         // preconditions
@@ -159,6 +172,8 @@ public class ExecutionContextBuilder {
                 variables,
                 context,
                 root,
-                errors);
+                errors,
+                lazySupport,
+                deferSupport);
     }
 }

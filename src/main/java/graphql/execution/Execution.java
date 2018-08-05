@@ -13,6 +13,8 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.lazy.LazyExecutionResult;
+import graphql.execution.lazy.LazySupport;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -136,12 +138,15 @@ public class Execution {
         ExecutionTypeInfo typeInfo = newTypeInfo().type(operationRootType).path(path).build();
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo);
 
+        CompletionCancellationRegistry completionCancellationRegistry = new CompletionCancellationRegistry();
+
         ExecutionStrategyParameters parameters = newParameters()
                 .typeInfo(typeInfo)
                 .source(root)
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)
                 .path(path)
+                .completionCancellationRegistry(completionCancellationRegistry)
                 .build();
 
         CompletableFuture<ExecutionResult> result;
@@ -164,6 +169,7 @@ public class Execution {
             //
             // http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
             //
+            completionCancellationRegistry.dispatch();
             result = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
         }
 
@@ -172,26 +178,30 @@ public class Execution {
 
         result = result.whenComplete(executeOperationCtx::onCompleted);
 
-        return deferSupport(executionContext, result);
+        return extensionSupport(executionContext, result);
     }
 
     /*
+     * Wraps the execution result in a LazyExecutionResult if lazy lists were used during the execution.
      * Adds the deferred publisher if its needed at the end of the query.  This is also a good time for the deferred code to start running
      */
-    private CompletableFuture<ExecutionResult> deferSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
+    private CompletableFuture<ExecutionResult> extensionSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
         return result.thenApply(er -> {
+            LazySupport lazySupport = executionContext.getLazySupport();
             DeferSupport deferSupport = executionContext.getDeferSupport();
-            if (deferSupport.isDeferDetected()) {
+            if (lazySupport.hasPendingCompletions()) {
+                lazySupport.addCompletionCallback(deferSupport::startDeferredCalls);
+                er = new LazyExecutionResult(er, executionContext.getErrors(), deferSupport);
+            } else if (deferSupport.isDeferDetected()) {
                 // we start the rest of the query now to maximize throughput.  We have the initial important results
                 // and now we can start the rest of the calls as early as possible (even before some one subscribes)
                 Publisher<ExecutionResult> publisher = deferSupport.startDeferredCalls();
-                return ExecutionResultImpl.newExecutionResult().from((ExecutionResultImpl) er)
+                er = ExecutionResultImpl.newExecutionResult().from((ExecutionResultImpl) er)
                         .addExtension(GraphQL.DEFERRED_RESULTS, publisher)
                         .build();
             }
             return er;
         });
-
     }
 
     private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {

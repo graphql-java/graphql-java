@@ -27,6 +27,7 @@ public class ExecutionStrategyParameters {
     private final int currentListIndex;
     private final ExecutionStrategyParameters parent;
     private final DeferredErrorSupport deferredErrorSupport;
+    private final CompletionCancellationRegistry completionCancellationRegistry;
 
     private ExecutionStrategyParameters(ExecutionTypeInfo typeInfo,
                                         Object source,
@@ -38,7 +39,8 @@ public class ExecutionStrategyParameters {
                                         int listSize,
                                         int currentListIndex,
                                         ExecutionStrategyParameters parent,
-                                        DeferredErrorSupport deferredErrorSupport) {
+                                        DeferredErrorSupport deferredErrorSupport,
+                                        CompletionCancellationRegistry completionCancellationRegistry) {
 
         this.typeInfo = assertNotNull(typeInfo, "typeInfo is null");
         this.fields = assertNotNull(fields, "fields is null");
@@ -51,6 +53,7 @@ public class ExecutionStrategyParameters {
         this.currentListIndex = currentListIndex;
         this.parent = parent;
         this.deferredErrorSupport = deferredErrorSupport;
+        this.completionCancellationRegistry = completionCancellationRegistry;
     }
 
     public ExecutionTypeInfo getTypeInfo() {
@@ -103,6 +106,10 @@ public class ExecutionStrategyParameters {
         return currentField;
     }
 
+    public CompletionCancellationRegistry getCompletionCancellationRegistry() {
+        return completionCancellationRegistry;
+    }
+
     public ExecutionStrategyParameters transform(Consumer<Builder> builderConsumer) {
         Builder builder = newParameters(this);
         builderConsumer.accept(builder);
@@ -135,6 +142,7 @@ public class ExecutionStrategyParameters {
         int currentListIndex;
         ExecutionStrategyParameters parent;
         DeferredErrorSupport deferredErrorSupport = new DeferredErrorSupport();
+        CompletionCancellationRegistry completionCancellationRegistry;
 
         /**
          * @see ExecutionStrategyParameters#newParameters()
@@ -157,6 +165,7 @@ public class ExecutionStrategyParameters {
             this.parent = oldParameters.parent;
             this.listSize = oldParameters.listSize;
             this.currentListIndex = oldParameters.currentListIndex;
+            this.completionCancellationRegistry = oldParameters.completionCancellationRegistry;
         }
 
         public Builder typeInfo(ExecutionTypeInfo type) {
@@ -219,8 +228,13 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
+        public Builder completionCancellationRegistry(CompletionCancellationRegistry completionCancellationRegistry) {
+            this.completionCancellationRegistry = completionCancellationRegistry;
+            return this;
+        }
+
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent, deferredErrorSupport);
+            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent, deferredErrorSupport, completionCancellationRegistry);
         }
     }
 }
