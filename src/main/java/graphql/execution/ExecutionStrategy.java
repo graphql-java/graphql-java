@@ -35,14 +35,7 @@ import graphql.util.FpKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -455,7 +448,11 @@ public abstract class ExecutionStrategy {
             return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(exceptionallyCompletedFuture(e)).build();
         }
         if (resultIterable == null) {
-            return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(new ExecutionResultImpl(null, null))).build();
+            return FieldValueInfo.newFieldValueInfo(LIST)
+                    //Value info should present in any case, or later in FieldLevelTrackingApproach#getCountForList
+                    //npe will happen and force pool starvation if you use DataLoaders
+                    .fieldValueInfos(Collections.emptyList())
+                    .fieldValue(completedFuture(new ExecutionResultImpl(null, null))).build();
         }
         return completeValueForList(executionContext, parameters, resultIterable);
     }

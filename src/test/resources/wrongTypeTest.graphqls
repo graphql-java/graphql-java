@@ -1,0 +1,7 @@
+schema {
+    query: QueryType
+}
+
+type QueryType {
+    allQuotes(ids: [String]!) : [String]
+}
