@@ -59,7 +59,10 @@ public class SingleSubscriberPublisher<T> implements Publisher<T> {
      * @param data the data to offer
      */
     public void offer(T data) {
-        mutex.execute(() -> dataQ.offer(data));
+        mutex.execute(() -> {
+            dataQ.offer(data);
+            maybeReadInMutex();
+        });
     }
 
     /**
