@@ -170,7 +170,7 @@ A common way to do that is use a JSON serialisation library like Jackson or GSON
 data result is particular to them.  For example `nulls` are important in graphql results and hence you must set up the json mappers
 to include them.
 
-To ensure you get a JSON result that confirms 100% to the graphql spec, you should call `toSpecification` on the result and then
+To ensure you get a JSON result that conforms 100% to the graphql spec, you should call `toSpecification` on the result and then
 send that back as JSON.
 
 This will ensure that the result follows the specification outlined in http://facebook.github.io/graphql/#sec-Response
