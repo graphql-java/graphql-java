@@ -63,7 +63,7 @@ class AstValueHelperTest extends Specification {
 
         astFromValue('VA\n\t\f\r\b\\LUE', GraphQLString).isEqualTo(new StringValue('VA\\n\\t\\f\\r\\b\\\\LUE'))
 
-        astFromValue('VA/LUE', GraphQLString).isEqualTo(new StringValue('VA/LUE'))
+        astFromValue('VA/LUE', GraphQLString).isEqualTo(new StringValue('VA\\/LUE'))
 
         astFromValue('VA\\L\"UE', GraphQLString).isEqualTo(new StringValue('VA\\\\L\\"UE'))
 
