@@ -29,7 +29,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     }
 
     public List<Selection> getSelections() {
-        return new ArrayList<>(selections);
+        return selections;
     }
 
 

@@ -1,12 +1,15 @@
 package graphql.schema;
 
 
+import graphql.PublicApi;
+
 import static graphql.Assert.assertValidName;
 
 /**
  * A special type to allow a object/interface types to reference itself. It's replaced with the real type
  * object when the schema is built.
  */
+@PublicApi
 public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType, GraphQLInputType {
 
     /**

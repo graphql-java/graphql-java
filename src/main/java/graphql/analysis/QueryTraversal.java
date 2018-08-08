@@ -19,6 +19,7 @@ import graphql.language.Selection;
 import graphql.language.TypeName;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
@@ -167,7 +168,7 @@ public class QueryTraversal {
 
     private void visitImpl(QueryVisitor visitFieldCallback, boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
-        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
+        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, rootParentType, null, null));
 
         QueryVisitor noOp = new QueryVisitorStub();
         QueryVisitor preOrderCallback = preOrder ? visitFieldCallback : noOp;
@@ -211,10 +212,10 @@ public class QueryTraversal {
                 TypeName typeCondition = inlineFragment.getTypeCondition();
                 fragmentCondition = (GraphQLCompositeType) schema.getType(typeCondition.getName());
             } else {
-                fragmentCondition = parentEnv.getType();
+                fragmentCondition = parentEnv.getRawType();
             }
             // for unions we only have other fragments inside
-            context.setVar(QueryTraversalContext.class, new QueryTraversalContext(fragmentCondition, parentEnv.getEnvironment(), inlineFragment));
+            context.setVar(QueryTraversalContext.class, new QueryTraversalContext(fragmentCondition, fragmentCondition, parentEnv.getEnvironment(), inlineFragment));
             return TraversalControl.CONTINUE;
         }
 
@@ -242,7 +243,7 @@ public class QueryTraversal {
             GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
 
             context
-                    .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
+                    .setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, typeCondition, parentEnv.getEnvironment(), fragmentDefinition));
             return TraversalControl.CONTINUE;
         }
 
@@ -252,9 +253,18 @@ public class QueryTraversal {
                     .getParentContext()
                     .getVar(QueryTraversalContext.class);
 
-            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getType(), field.getName());
+            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getRawType(), field.getName());
+            boolean isTypeNameIntrospectionField = fieldDefinition == Introspection.TypeNameMetaFieldDef;
+            GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
-            QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(field, fieldDefinition, parentEnv.getType(), parentEnv.getEnvironment(), argumentValues, parentEnv.getSelectionSetContainer());
+            QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
+                    field,
+                    fieldDefinition,
+                    parentEnv.getOutputType(),
+                    fieldsContainer,
+                    parentEnv.getEnvironment(),
+                    argumentValues,
+                    parentEnv.getSelectionSetContainer());
 
             LeaveOrEnter leaveOrEnter = context.getVar(LeaveOrEnter.class);
             if (leaveOrEnter == LEAVE) {
@@ -269,8 +279,8 @@ public class QueryTraversal {
 
             GraphQLUnmodifiedType unmodifiedType = unwrapAll(fieldDefinition.getType());
             QueryTraversalContext fieldEnv = (unmodifiedType instanceof GraphQLCompositeType)
-                    ? new QueryTraversalContext((GraphQLCompositeType) unmodifiedType, environment, field)
-                    : new QueryTraversalContext(null, environment, field);// Terminal (scalar) node, EMPTY FRAME
+                    ? new QueryTraversalContext(fieldDefinition.getType(), (GraphQLCompositeType) unmodifiedType, environment, field)
+                    : new QueryTraversalContext(null, null, environment, field);// Terminal (scalar) node, EMPTY FRAME
 
 
             context.setVar(QueryTraversalContext.class, fieldEnv);

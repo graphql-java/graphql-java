@@ -82,6 +82,12 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(FieldValueInfo::getFieldValue).collect(Collectors.toList());
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             Async.each(executionResultFuture).whenComplete(handleResultsConsumer);
+        }).exceptionally((ex) -> {
+            // if there are any issues with combining/handling the field results,
+            // complete the future at all costs and bubble up any thrown exception so
+            // the execution does not hang.
+            overallResult.completeExceptionally(ex);
+            return null;
         });
 
         overallResult.whenComplete(executionStrategyCtx::onCompleted);

@@ -2,6 +2,7 @@ package graphql.language;
 
 
 import graphql.Internal;
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+@PublicApi
 public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> implements DirectivesContainer<EnumValueDefinition> {
     private final String name;
     private final Description description;
@@ -17,10 +19,10 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     @Internal
     protected EnumValueDefinition(String name,
-                                List<Directive> directives,
-                                Description description,
-                                SourceLocation sourceLocation,
-                                List<Comment> comments) {
+                                  List<Directive> directives,
+                                  Description description,
+                                  SourceLocation sourceLocation,
+                                  List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.description = description;

@@ -318,6 +318,19 @@ class TraverserTest extends Specification {
 
     }
 
+    def "test traversal with zero roots"() {
+
+        def visitor = [] as TraverserVisitor
+        def roots = []
+
+        when:
+        TraverserResult result = Traverser.depthFirst({ n -> n.children }).traverse(roots, visitor)
+
+        then:
+        result.getResult() == null
+
+    }
+
 }
 
 

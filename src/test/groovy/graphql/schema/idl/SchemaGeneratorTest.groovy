@@ -1681,7 +1681,36 @@ class SchemaGeneratorTest extends Specification {
 
         PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
         propertyDataFetcher2.getPropertyName() == "name"
+    }
 
+
+    def "does not break for circular references to interfaces"() {
+      def spec = """
+          interface MyInterface {
+              interfaceField: MyNonImplementingType
+          }
+
+          type MyNonImplementingType {
+              nonImplementingTypeField: MyImplementingType
+          }
+
+          type MyImplementingType implements MyInterface{
+              interfaceField: MyNonImplementingType
+          }
+
+          type Query {
+              hello: String
+          }
+      """
+      
+      def types = new SchemaParser().parse(spec)
+      def wiring = RuntimeWiring.newRuntimeWiring()
+        .type("Query", { typeWiring -> typeWiring.dataFetcher("hello", { env -> "Hello, world" }) })
+        .type("MyInterface", { typeWiring -> typeWiring.typeResolver({ env -> null}) })
+        .build();
+      GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
+      expect:
+       assert schema != null
     }
 
 }

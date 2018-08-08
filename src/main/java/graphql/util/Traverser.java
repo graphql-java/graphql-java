@@ -23,6 +23,8 @@ public class Traverser<T> {
     private final Function<? super T, ? extends List<T>> getChildren;
     private final Map<Class<?>, Object> rootVars = new ConcurrentHashMap<>();
 
+    private final TraverserContext<T> BARRIER = new SimpleTraverserContext<>(null);
+
     private static final List<TraversalControl> CONTINUE_OR_QUIT = Arrays.asList(CONTINUE, QUIT);
 
     private Traverser(TraverserState<T> traverserState, Function<? super T, ? extends List<T>> getChildren) {
@@ -62,14 +64,13 @@ public class Traverser<T> {
         return traverse(Collections.singleton(root), visitor);
     }
 
-
     public TraverserResult traverse(Collection<? extends T> roots, TraverserVisitor<? super T> visitor) {
         assertNotNull(roots);
         assertNotNull(visitor);
 
         traverserState.addNewContexts(roots, traverserState.newContext(null, null, rootVars));
 
-        TraverserContext currentContext = null;
+        TraverserContext currentContext = BARRIER;
         traverseLoop:
         while (!traverserState.isEmpty()) {
             Object top = traverserState.pop();

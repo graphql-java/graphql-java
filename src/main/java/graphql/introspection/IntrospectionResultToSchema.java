@@ -74,7 +74,7 @@ public class IntrospectionResultToSchema {
         TypeName query = TypeName.newTypeName().name((String) queryType.get("name")).build();
         boolean nonDefaultQueryName = !"Query".equals(query.getName());
 
-        SchemaDefinition.Builder schemaDefinition = SchemaDefinition.newSchemaDefintion();
+        SchemaDefinition.Builder schemaDefinition = SchemaDefinition.newSchemaDefinition();
         schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("query").type(query).build());
 
         Map<String, Object> mutationType = (Map<String, Object>) schema.get("mutationType");
