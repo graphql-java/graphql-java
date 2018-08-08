@@ -2,6 +2,7 @@ package graphql.introspection;
 
 
 import graphql.Assert;
+import graphql.PublicApi;
 import graphql.language.AstPrinter;
 import graphql.language.AstValueHelper;
 import graphql.schema.DataFetcher;
@@ -40,6 +41,7 @@ import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLObjectType.newObject;
 import static graphql.schema.GraphQLTypeReference.typeRef;
 
+@PublicApi
 public class Introspection {
 
     public enum TypeKind {

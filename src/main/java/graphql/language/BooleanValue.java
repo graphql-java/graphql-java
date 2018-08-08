@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @PublicApi
-public class BooleanValue extends AbstractNode<BooleanValue> implements Value<BooleanValue> {
+public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarValue<BooleanValue> {
 
     private final boolean value;
 

@@ -13,7 +13,7 @@ apply plugin: 'osgi'
 def getDevelopmentVersion() {
     def output = new StringBuilder()
     def error = new StringBuilder()
-    def gitShortHash = 'git rev-parse --short HEAD'.execute()
+    def gitShortHash = "git -C ${projectDir} rev-parse --short HEAD".execute()
     gitShortHash.waitForProcessOutput(output, error)
     def gitHash = output.toString().trim()
     if (gitHash.isEmpty()) {
@@ -78,6 +78,7 @@ generateGrammarSource {
     arguments += ["-visitor"]
     outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
 }
+generateGrammarSource.inputs.dir('src/main/antlr')
 
 task sourcesJar(type: Jar) {
     dependsOn classes

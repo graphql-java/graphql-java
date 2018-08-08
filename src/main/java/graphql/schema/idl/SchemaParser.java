@@ -5,6 +5,7 @@ import graphql.InvalidSyntaxError;
 import graphql.PublicApi;
 import graphql.language.Definition;
 import graphql.language.Document;
+import graphql.language.SDLDefinition;
 import graphql.parser.Parser;
 import graphql.schema.idl.errors.SchemaProblem;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
@@ -101,7 +102,9 @@ public class SchemaParser {
         TypeDefinitionRegistry typeRegistry = new TypeDefinitionRegistry();
         List<Definition> definitions = document.getDefinitions();
         for (Definition definition : definitions) {
-            typeRegistry.add(definition).ifPresent(errors::add);
+            if (definition instanceof SDLDefinition) {
+                typeRegistry.add((SDLDefinition) definition).ifPresent(errors::add);
+            }
         }
         if (errors.size() > 0) {
             throw new SchemaProblem(errors);

@@ -350,7 +350,7 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected SchemaDefinition createSchemaDefinition(GraphqlParser.SchemaDefinitionContext ctx) {
-        SchemaDefinition.Builder def = SchemaDefinition.newSchemaDefintion();
+        SchemaDefinition.Builder def = SchemaDefinition.newSchemaDefinition();
         addCommonData(def, ctx);
         def.directives(createDirectives(ctx.directives()));
         def.operationTypeDefinitions(ctx.operationTypeDefinition().stream()
