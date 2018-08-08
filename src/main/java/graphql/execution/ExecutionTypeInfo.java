@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.PublicApi;
+import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
@@ -29,13 +30,15 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 public class ExecutionTypeInfo {
 
     private final GraphQLType type;
+    private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final ExecutionPath path;
     private final boolean typeIsNonNull;
     private final ExecutionTypeInfo parentType;
 
-    private ExecutionTypeInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, ExecutionPath path, ExecutionTypeInfo parentType, boolean nonNull) {
+    private ExecutionTypeInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionTypeInfo parentType, boolean nonNull) {
         this.fieldDefinition = fieldDefinition;
+        this.field = field;
         this.path = path;
         this.parentType = parentType;
         this.type = type;
@@ -60,6 +63,15 @@ public class ExecutionTypeInfo {
      */
     public GraphQLFieldDefinition getFieldDefinition() {
         return fieldDefinition;
+    }
+
+    /**
+     * This returns the AST field that matches the {@link #getFieldDefinition()} during execution
+     *
+     * @return the field
+     */
+    public Field getField() {
+        return field;
     }
 
     /**
@@ -122,7 +134,7 @@ public class ExecutionTypeInfo {
      * @return a new type info with the same
      */
     public ExecutionTypeInfo treatAs(GraphQLType newType) {
-        return new ExecutionTypeInfo(unwrapNonNull(newType), fieldDefinition, path, this.parentType, this.typeIsNonNull);
+        return new ExecutionTypeInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parentType, this.typeIsNonNull);
     }
 
 
@@ -204,6 +216,7 @@ public class ExecutionTypeInfo {
         GraphQLType type;
         ExecutionTypeInfo parentType;
         GraphQLFieldDefinition fieldDefinition;
+        Field field;
         ExecutionPath executionPath;
 
         /**
@@ -227,6 +240,11 @@ public class ExecutionTypeInfo {
             return this;
         }
 
+        public Builder field(Field field) {
+            this.field = field;
+            return this;
+        }
+
         public Builder path(ExecutionPath executionPath) {
             this.executionPath = executionPath;
             return this;
@@ -235,9 +253,9 @@ public class ExecutionTypeInfo {
 
         public ExecutionTypeInfo build() {
             if (isNonNull(type)) {
-                return new ExecutionTypeInfo(unwrapNonNull(type), fieldDefinition, executionPath, parentType, true);
+                return new ExecutionTypeInfo(unwrapNonNull(type), fieldDefinition, field, executionPath, parentType, true);
             }
-            return new ExecutionTypeInfo(type, fieldDefinition, executionPath, parentType, false);
+            return new ExecutionTypeInfo(type, fieldDefinition, field, executionPath, parentType, false);
         }
     }
 }
