@@ -880,13 +880,18 @@ public abstract class ExecutionStrategy {
      */
     protected ExecutionTypeInfo fieldTypeInfo(ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
+        Field field = null;
+        if (parameters.getField() != null && ! parameters.getField().isEmpty()) {
+            field = parameters.getField().get(0);
+        }
         return newTypeInfo()
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
-                .field(parameters.getField().get(0))
+                .field(field)
                 .path(parameters.getPath())
                 .parentInfo(parameters.getTypeInfo())
                 .build();
 
     }
+
 }
