@@ -1,6 +1,7 @@
 package graphql.schema
 
 import graphql.execution.ExecutionContext
+import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
@@ -14,7 +15,9 @@ class PropertyDataFetcherTest extends Specification {
     def env(obj) {
         newDataFetchingEnvironment()
                 .executionContext(Mock(ExecutionContext))
-                .source(obj).build()
+                .source(obj)
+                .arguments([argument1: "value1", argument2: "value2"])
+                .build()
     }
 
     class SomeObject {
@@ -190,4 +193,70 @@ class PropertyDataFetcherTest extends Specification {
 
     }
 
+    def "support for DFE on methods"() {
+        def environment = env(new ClassWithDFEMethods())
+        def fetcher = new PropertyDataFetcher("methodWithDFE")
+        when:
+        def result = fetcher.get(environment)
+        then:
+        result == "methodWithDFE"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodWithoutDFE")
+        result = fetcher.get(environment)
+        then:
+        result == "methodWithoutDFE"
+
+        when:
+        fetcher = new PropertyDataFetcher("defaultMethodWithDFE")
+        result = fetcher.get(environment)
+        then:
+        result == "defaultMethodWithDFE"
+
+        when:
+        fetcher = new PropertyDataFetcher("defaultMethodWithoutDFE")
+        result = fetcher.get(environment)
+        then:
+        result == "defaultMethodWithoutDFE"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodWithTooManyArgs")
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        when:
+        fetcher = new PropertyDataFetcher("defaultMethodWithTooManyArgs")
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        when:
+        fetcher = new PropertyDataFetcher("methodWithOneArgButNotDataFetchingEnvironment")
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        when:
+        fetcher = new PropertyDataFetcher("defaultMethodWithOneArgButNotDataFetchingEnvironment")
+        result = fetcher.get(environment)
+        then:
+        result == null
+    }
+
+    def "ensure DFE is passed to method"() {
+
+        def environment = env(new ClassWithDFEMethods())
+        def fetcher = new PropertyDataFetcher("methodUsesDataFetchingEnvironment")
+        when:
+        def result = fetcher.get(environment)
+        then:
+        result == "value1"
+
+        when:
+        fetcher = new PropertyDataFetcher("defaultMethodUsesDataFetchingEnvironment")
+        result = fetcher.get(environment)
+        then:
+        result == "value2"
+    }
 }
