@@ -1,5 +1,8 @@
 package graphql.schema
 
+import graphql.ExecutionInput
+import graphql.GraphQL
+import graphql.TestUtil
 import graphql.execution.ExecutionContext
 import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.TestClass
@@ -10,6 +13,7 @@ import java.util.function.Function
 
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment
 
+@SuppressWarnings("GroovyUnusedDeclaration")
 class PropertyDataFetcherTest extends Specification {
 
     def env(obj) {
@@ -258,5 +262,53 @@ class PropertyDataFetcherTest extends Specification {
         result = fetcher.get(environment)
         then:
         result == "value2"
+    }
+
+    class ProductDTO {
+        String name
+        String model
+    }
+
+    class ProductData {
+        def data = [new ProductDTO(name: "Prado", model: "GLX"), new ProductDTO(name: "Camry", model: "Momento")]
+
+        List<ProductDTO> getProducts(DataFetchingEnvironment env) {
+            boolean reverse = env.getArgument("reverseNames")
+            if (reverse) {
+                return data.collect { product -> new ProductDTO(name: product.name.reverse(), model: product.model) }
+            } else {
+                return data
+            }
+        }
+    }
+
+    def "end to end test of property fetcher working"() {
+        def spec = '''
+            type Query {
+                products(reverseNames : Boolean = false) : [Product]
+            }
+            
+            type Product {
+                name : String
+                model : String
+            }
+        '''
+
+        def schema = TestUtil.schema(spec)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            {
+                products(reverseNames : true) {
+                    name
+                    model
+                }
+            }
+        ''').root(new ProductData()).build()
+
+        when:
+        def er = graphQL.execute(executionInput)
+        then:
+        er.errors.isEmpty()
+        er.data == [products: [[name: "odarP", model: "GLX"], [name: "yrmaC", model: "Momento"]]]
     }
 }
