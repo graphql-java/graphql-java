@@ -246,7 +246,7 @@ public class ValuesResolver {
             return null;
         }
         if (type instanceof GraphQLScalarType) {
-            return parseLiteral(inputValue, ((GraphQLScalarType) type).getCoercing());
+            return parseLiteral(inputValue, ((GraphQLScalarType) type).getCoercing(), variables);
         }
         if (isNonNull(type)) {
             return coerceValueAst(fieldVisibility, unwrapOne(type), inputValue, variables);
@@ -255,7 +255,7 @@ public class ValuesResolver {
             return coerceValueAstForInputObject(fieldVisibility, (GraphQLInputObjectType) type, (ObjectValue) inputValue, variables);
         }
         if (type instanceof GraphQLEnumType) {
-            return parseLiteral(inputValue, ((GraphQLEnumType) type).getCoercing());
+            return parseLiteral(inputValue, ((GraphQLEnumType) type).getCoercing(), variables);
         }
         if (isList(type)) {
             return coerceValueAstForList(fieldVisibility, (GraphQLList) type, inputValue, variables);
@@ -263,9 +263,9 @@ public class ValuesResolver {
         return null;
     }
 
-    private Object parseLiteral(Value inputValue, Coercing coercing) {
+    private Object parseLiteral(Value inputValue, Coercing coercing, Map<String, Object> variables) {
         // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
-        return coercing.parseLiteral(inputValue);
+        return coercing.parseLiteral(inputValue,variables);
     }
 
     private Object coerceValueAstForList(GraphqlFieldVisibility fieldVisibility, GraphQLList graphQLList, Value value, Map<String, Object> variables) {
