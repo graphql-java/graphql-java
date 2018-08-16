@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * This graphql {@link graphql.execution.instrumentation.Instrumentation} will dispatch
@@ -44,9 +45,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     private static final Logger log = LoggerFactory.getLogger(DataLoaderDispatcherInstrumentation.class);
 
-    private final DataLoaderRegistry dataLoaderRegistry;
     private final DataLoaderDispatcherInstrumentationOptions options;
-    private final FieldLevelTrackingApproach fieldLevelTrackingApproach;
+    private final Supplier<DataLoaderRegistry> supplier;
 
     /**
      * You pass in a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
@@ -66,15 +66,35 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
      * @param options            the options to control the behaviour
      */
     public DataLoaderDispatcherInstrumentation(DataLoaderRegistry dataLoaderRegistry, DataLoaderDispatcherInstrumentationOptions options) {
-        this.dataLoaderRegistry = dataLoaderRegistry;
+        this(() -> dataLoaderRegistry, options);
+    }
+    
+    /**
+     * You pass in supplier of a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
+     * each level of the query executes.
+     *
+     * @param supplier the supplier of registry of data loaders that will be dispatched
+     */
+    public DataLoaderDispatcherInstrumentation(Supplier<DataLoaderRegistry> supplier) {
+        this(supplier, DataLoaderDispatcherInstrumentationOptions.newOptions());
+    }
+    
+    /**
+     * You pass in a supplier of registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
+     * each level of the query executes.
+     *
+     * @param dataLoaderRegistry the registry of data loaders that will be dispatched
+     * @param options            the options to control the behaviour
+     */
+    public DataLoaderDispatcherInstrumentation(Supplier<DataLoaderRegistry> supplier, DataLoaderDispatcherInstrumentationOptions options) {
+        this.supplier = supplier;
         this.options = options;
-        this.fieldLevelTrackingApproach = new FieldLevelTrackingApproach(log, dataLoaderRegistry);
     }
 
 
     @Override
     public InstrumentationState createState() {
-        return fieldLevelTrackingApproach.createState();
+        return new DataLoaderDispatcherInstrumentationState(log, supplier.get());
     }
 
 
@@ -90,13 +110,13 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         // which allows them to work if used.
         return (DataFetcher<Object>) environment -> {
             Object obj = dataFetcher.get(environment);
-            immediatelyDispatch();
+            immediatelyDispatch(state);
             return obj;
         };
     }
 
-    private void immediatelyDispatch() {
-        fieldLevelTrackingApproach.dispatch();
+    private void immediatelyDispatch(DataLoaderDispatcherInstrumentationState state) {
+        state.getApproach().dispatch();
     }
 
     @Override
@@ -124,17 +144,20 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
     @Override
     public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return fieldLevelTrackingApproach.beginExecutionStrategy(parameters);
+        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        return state.getApproach().beginExecutionStrategy(parameters.withNewState(state.getState()));
     }
 
     @Override
     public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        return fieldLevelTrackingApproach.beginDeferredField(parameters);
+        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        return state.getApproach().beginDeferredField(parameters.withNewState(state.getState()));
     }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        return fieldLevelTrackingApproach.beginFieldFetch(parameters);
+        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        return state.getApproach().beginFieldFetch(parameters.withNewState(state.getState()));
     }
 
     @Override
@@ -142,10 +165,11 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         if (!options.isIncludeStatistics()) {
             return CompletableFuture.completedFuture(executionResult);
         }
+        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
         Map<Object, Object> currentExt = executionResult.getExtensions();
         Map<Object, Object> statsMap = new LinkedHashMap<>();
         statsMap.putAll(currentExt == null ? Collections.emptyMap() : currentExt);
-        Map<Object, Object> dataLoaderStats = buildStatsMap();
+        Map<Object, Object> dataLoaderStats = buildStatsMap(state);
         statsMap.put("dataloader", dataLoaderStats);
 
         log.debug("Data loader stats : {}", dataLoaderStats);
@@ -153,7 +177,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), statsMap));
     }
 
-    private Map<Object, Object> buildStatsMap() {
+    private Map<Object, Object> buildStatsMap(DataLoaderDispatcherInstrumentationState state ) {
+        DataLoaderRegistry dataLoaderRegistry = state.getDataLoaderRegistry();
         Statistics allStats = dataLoaderRegistry.getStatistics();
         Map<Object, Object> statsMap = new LinkedHashMap<>();
         statsMap.put("overall-statistics", allStats.toMap());

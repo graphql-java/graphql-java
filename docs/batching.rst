@@ -149,6 +149,17 @@ One thing to note is the above only works if you use `DataLoaderDispatcherInstru
 is called.  If this was not in place, then all the promises to data will never be dispatched ot the batch loader function
 and hence nothing would ever resolve.
 
+Data Loader only works with AsyncExecutionStrategy
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The only execution that works with DataLoader is ``graphql.execution.AsyncExecutionStrategy``.  This is because this execution strategy knows
+then the most optimal time to dispatch() your load calls is.  It does this by deeply tracking how many fields are outstanding and whether they
+are list values and so on.
+
+Other execution strategies such as ``ExecutorServiceExecutionStrategy`` cant do this and hence if the data loader code detects
+you are not using ``AsyncExecutionStrategy`` then it will simple dispatch the data loader as each field is encountered.  You
+may get `caching` of values but you will not get `batching` of them.
+
+
 Per Request Data Loaders
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

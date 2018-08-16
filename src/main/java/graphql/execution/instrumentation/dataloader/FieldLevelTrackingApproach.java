@@ -33,7 +33,7 @@ public class FieldLevelTrackingApproach {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final Logger log;
 
-    private static class CallStack extends DataLoaderDispatcherInstrumentationState {
+    private static class CallStack implements InstrumentationState {
 
         private final Map<Integer, Integer> expectedFetchCountPerLevel = new LinkedHashMap<>();
         private final Map<Integer, Integer> fetchCountPerLevel = new LinkedHashMap<>();
