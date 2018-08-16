@@ -178,4 +178,134 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         (selectionSet.definitions['friends'].getType() as GraphQLList).getWrappedType() == starWarsSchema.getType('Character')
         (selectionSet.definitions['friends/friends'].getType() as GraphQLList).getWrappedType() == starWarsSchema.getType('Character')
     }
+
+    def "test getting sub selected fields by name"() {
+
+        def schema = TestUtil.schemaFile("thingRelaySchema.graphqls")
+
+        def query = '''
+            {
+              things(first: 10) {
+                nodes {
+                  ... thingInfo @skip(if:false)
+                  ... dateInfo @skip(if:true)
+                  ...fix
+                }
+                edges {
+                  cursor
+                  node {
+                    description
+                    status {
+                      ...status @skip(if:false)
+                    }
+                  }
+                }
+                totalCount
+              }
+            }
+            
+            fragment thingInfo on Thing {
+              key
+              summary
+              status {
+                ...status
+              }
+            }
+            
+            fragment fix on Thing {
+              stuff  {
+                name
+              }
+            }
+            
+            fragment status on Status {
+              name
+            }
+            
+            fragment dateInfo on Thing {
+                createdDate
+                lastUpdatedDate
+            }
+        '''
+
+        def document = TestUtil.parseQuery(query)
+
+
+        def executionContext = ExecutionContextBuilder.newExecutionContextBuilder()
+                .executionId(ExecutionId.generate())
+                .fragmentsByName(getFragments(document))
+                .graphQLSchema(schema).build()
+
+        def startField = firstFields(document)
+        def startingType = schema.getType('ThingConnection')
+
+        when:
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, startingType, startField)
+
+        def selectedNodesField = selectionSet.getField("nodes")
+
+        then:
+        selectedNodesField.getName() == "nodes"
+        GraphQLTypeUtil.getUnwrappedTypeName(selectedNodesField.fieldDefinition.type) == "[Thing]"
+        selectedNodesField.getSelectionSet().contains("key")
+        selectedNodesField.getSelectionSet().contains("summary")
+        selectedNodesField.getSelectionSet().contains("status")
+        selectedNodesField.getSelectionSet().contains("status/name")
+        selectedNodesField.getSelectionSet().contains("status*")
+        selectedNodesField.getSelectionSet().contains("status/*")
+
+        // directives are respected
+        !selectedNodesField.getSelectionSet().contains("createdDate")
+        !selectedNodesField.getSelectionSet().contains("lastUpdatedDate")
+
+        when:
+        def selectedKeyField = selectedNodesField.getSelectionSet().getField("key")
+
+        then:
+        selectedKeyField.getName() == "key"
+        GraphQLTypeUtil.getUnwrappedTypeName(selectedKeyField.fieldDefinition.type) == "String"
+
+        when:
+        def selectedStatusField = selectedNodesField.getSelectionSet().getField("status")
+
+        then:
+        selectedStatusField.getName() == "status"
+        GraphQLTypeUtil.getUnwrappedTypeName(selectedStatusField.fieldDefinition.type) == "Status"
+        selectedStatusField.getSelectionSet().contains("name")
+
+        // jump straight to compound fq name (which is 2 down from 'nodes')
+        when:
+        def selectedStatusNameField = selectedNodesField.getSelectionSet().getField("status/name")
+
+        then:
+        selectedStatusNameField.getName() == "name"
+        GraphQLTypeUtil.getUnwrappedTypeName(selectedStatusNameField.fieldDefinition.type) == "String"
+
+        when:
+        // lets get multiple fields by glob matching
+
+        List<SelectedField> selectedUnderNodesAster = selectionSet.getFields("nodes/*")
+
+        then:
+
+        selectedUnderNodesAster.size() == 4
+        def sortedSelectedUnderNodesAster = selectedUnderNodesAster.sort({ sf -> sf.name })
+
+        def fieldNames = sortedSelectedUnderNodesAster.collect({ sf -> sf.name })
+        fieldNames == ["key", "status", "stuff", "summary"]
+
+        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[0].fieldDefinition.type) == "String"
+        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[1].fieldDefinition.type) == "Status"
+        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[2].fieldDefinition.type) == "Stuff"
+        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[3].fieldDefinition.type) == "String"
+
+        // descend one down from here Status.name which has not further sub selection
+        when:
+        def statusName = sortedSelectedUnderNodesAster[1].getSelectionSet().getField("name")
+
+        then:
+        statusName.name == "name"
+        GraphQLTypeUtil.getUnwrappedTypeName(statusName.fieldDefinition.type) == "String"
+        statusName.getSelectionSet().get().isEmpty()
+    }
 }

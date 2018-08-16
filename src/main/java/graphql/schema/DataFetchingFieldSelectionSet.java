@@ -60,10 +60,33 @@ public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, List
      * match an invoice field with child fields that start with 'customer'.
      *
      * @param fieldGlobPattern the glob pattern to match fields against
+     *
      * @return true if the selection set contains these fields
      *
      * @see java.nio.file.FileSystem#getPathMatcher(String)
      */
     boolean contains(String fieldGlobPattern);
+
+    /**
+     * This will return a selected field using the fully qualified field name.
+     *
+     * @param fqFieldName the fully qualified name that is contained in the map from {@link #get()}
+     *
+     * @return a selected field or null if there is no matching field
+     */
+    SelectedField getField(String fqFieldName);
+
+    /**
+     * This will return a list of selected fields that match a specified "glob" pattern matching ie
+     * the glob pattern matching supported by {@link java.nio.file.FileSystem#getPathMatcher}.
+     *
+     * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
+     * match an invoice field with child fields that start with 'customer'.
+     *
+     * @param fieldGlobPattern the glob pattern to match fields against
+     *
+     * @return a list of selected fields or empty list if none match
+     */
+    List<SelectedField> getFields(String fieldGlobPattern);
 
 }

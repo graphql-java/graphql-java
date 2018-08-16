@@ -14,12 +14,15 @@ import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 @Internal
@@ -44,6 +47,16 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         @Override
         public boolean contains(String fieldGlobPattern) {
             return false;
+        }
+
+        @Override
+        public SelectedField getField(String fieldName) {
+            return null;
+        }
+
+        @Override
+        public List<SelectedField> getFields(String fieldGlobPattern) {
+            return emptyList();
         }
     };
 
@@ -73,13 +86,16 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     private Set<String> flattenedFields;
 
     private DataFetchingFieldSelectionSetImpl(ExecutionContext executionContext, GraphQLFieldsContainer parentFieldType, List<Field> parentFields) {
-        this.parentFields = parentFields;
-        this.graphQLSchema = executionContext.getGraphQLSchema();
-        this.parentFieldType = parentFieldType;
-        this.variables = executionContext.getVariables();
-        this.fragmentsByName = executionContext.getFragmentsByName();
+        this(parentFields, parentFieldType, executionContext.getGraphQLSchema(), executionContext.getVariables(), executionContext.getFragmentsByName());
     }
 
+    public DataFetchingFieldSelectionSetImpl(List<Field> parentFields, GraphQLFieldsContainer parentFieldType, GraphQLSchema graphQLSchema, Map<String, Object> variables, Map<String, FragmentDefinition> fragmentsByName) {
+        this.parentFields = parentFields;
+        this.graphQLSchema = graphQLSchema;
+        this.parentFieldType = parentFieldType;
+        this.variables = variables;
+        this.fragmentsByName = fragmentsByName;
+    }
 
     @Override
     public Map<String, List<Field>> get() {
@@ -106,7 +122,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             return false;
         }
         computeValuesLazily();
-        PathMatcher globMatcher = FileSystems.getDefault().getPathMatcher("glob:" + fieldGlobPattern);
+        PathMatcher globMatcher = globMatcher(fieldGlobPattern);
         for (String flattenedField : flattenedFields) {
             Path path = Paths.get(flattenedField);
             if (globMatcher.matches(path)) {
@@ -114,6 +130,83 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             }
         }
         return false;
+    }
+
+    @Override
+    public SelectedField getField(String fqFieldName) {
+        computeValuesLazily();
+
+        List<Field> fields = selectionSetFields.get(fqFieldName);
+        if (fields == null) {
+            return null;
+        }
+        GraphQLFieldDefinition fieldDefinition = selectionSetFieldDefinitions.get(fqFieldName);
+        Map<String, Object> arguments = selectionSetFieldArgs.get(fqFieldName);
+        arguments = arguments == null ? emptyMap() : arguments;
+        return new SelectedFieldImpl(fields, fieldDefinition, arguments);
+    }
+
+    @Override
+    public List<SelectedField> getFields(String fieldGlobPattern) {
+        if (fieldGlobPattern == null || fieldGlobPattern.isEmpty()) {
+            return emptyList();
+        }
+        computeValuesLazily();
+
+        List<String> targetNames = new ArrayList<>();
+        PathMatcher globMatcher = globMatcher(fieldGlobPattern);
+        for (String flattenedField : flattenedFields) {
+            Path path = Paths.get(flattenedField);
+            if (globMatcher.matches(path)) {
+                targetNames.add(flattenedField);
+            }
+        }
+        return targetNames.stream()
+                .map(this::getField)
+                .collect(Collectors.toList());
+    }
+
+    private class SelectedFieldImpl implements SelectedField {
+        private final String name;
+        private final GraphQLFieldDefinition fieldDefinition;
+        private final DataFetchingFieldSelectionSet selectionSet;
+        private final Map<String, Object> arguments;
+
+        private SelectedFieldImpl(List<Field> parentFields, GraphQLFieldDefinition fieldDefinition, Map<String, Object> arguments) {
+            this.name = parentFields.get(0).getName();
+            this.fieldDefinition = fieldDefinition;
+            this.arguments = arguments;
+            GraphQLType unwrappedType = ExecutionTypeInfo.unwrapBaseType(fieldDefinition.getType());
+            if (unwrappedType instanceof GraphQLFieldsContainer) {
+                this.selectionSet = new DataFetchingFieldSelectionSetImpl(parentFields, (GraphQLFieldsContainer) unwrappedType, graphQLSchema, variables, fragmentsByName);
+            } else {
+                this.selectionSet = NOOP;
+            }
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public GraphQLFieldDefinition getFieldDefinition() {
+            return fieldDefinition;
+        }
+
+        @Override
+        public Map<String, Object> getArguments() {
+            return arguments;
+        }
+
+        @Override
+        public DataFetchingFieldSelectionSet getSelectionSet() {
+            return selectionSet;
+        }
+    }
+
+    private PathMatcher globMatcher(String fieldGlobPattern) {
+        return FileSystems.getDefault().getPathMatcher("glob:" + fieldGlobPattern);
     }
 
     private void computeValuesLazily() {
@@ -152,7 +245,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             selectionSetFields.put(fieldName, collectedFieldList);
 
             Field field = collectedFieldList.get(0);
-            GraphQLFieldDefinition fieldDef = Introspection.getFieldDef(graphQLSchema, (GraphQLCompositeType) parentFieldType, field.getName());
+            GraphQLFieldDefinition fieldDef = Introspection.getFieldDef(graphQLSchema, parentFieldType, field.getName());
             GraphQLType unwrappedType = ExecutionTypeInfo.unwrapBaseType(fieldDef.getType());
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), variables);
 
