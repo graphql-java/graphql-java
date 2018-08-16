@@ -20,6 +20,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 /**
+ *
+ * <p>Deprecation Notice : This execution strategy does not support all of the graphql-java capabilities
+ * such as data loader or @defer fields.  Since its so easy to create a data fetcher that uses
+ * {@link java.util.concurrent.CompletableFuture#supplyAsync(java.util.function.Supplier, java.util.concurrent.Executor)}
+ * to make field fetching happen off thread we recommend that you use that instead of this class.  This class
+ * will be removed in a future version.
+ * </p>
+ *
  * <p>ExecutorServiceExecutionStrategy uses an {@link ExecutorService} to parallelize the resolve.</p>
  *
  * Due to the nature of {@link #execute(ExecutionContext, ExecutionStrategyParameters)}  implementation, {@link ExecutorService}
@@ -32,8 +40,12 @@ import java.util.concurrent.Future;
  * <p>Failure to follow 1. and 2. can result in a very large number of threads created or hanging. (deadlock)</p>
  *
  * See {@code graphql.execution.ExecutorServiceExecutionStrategyTest} for example usage.
+ *
+ * @deprecated Use {@link graphql.execution.AsyncExecutionStrategy} and {@link java.util.concurrent.CompletableFuture#supplyAsync(java.util.function.Supplier, java.util.concurrent.Executor)}
+ * in your data fetchers instead.
  */
 @PublicApi
+@Deprecated
 public class ExecutorServiceExecutionStrategy extends ExecutionStrategy {
 
     final ExecutorService executorService;
