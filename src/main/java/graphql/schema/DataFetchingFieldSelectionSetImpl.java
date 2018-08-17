@@ -55,6 +55,11 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
 
         @Override
+        public List<SelectedField> getFields() {
+            return emptyList();
+        }
+
+        @Override
         public List<SelectedField> getFields(String fieldGlobPattern) {
             return emptyList();
         }
@@ -143,7 +148,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         GraphQLFieldDefinition fieldDefinition = selectionSetFieldDefinitions.get(fqFieldName);
         Map<String, Object> arguments = selectionSetFieldArgs.get(fqFieldName);
         arguments = arguments == null ? emptyMap() : arguments;
-        return new SelectedFieldImpl(fields, fieldDefinition, arguments);
+        return new SelectedFieldImpl(fqFieldName, fields, fieldDefinition, arguments);
     }
 
     @Override
@@ -166,13 +171,24 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<SelectedField> getFields() {
+        computeValuesLazily();
+
+        return flattenedFields.stream()
+                .map(this::getField)
+                .collect(Collectors.toList());
+    }
+
     private class SelectedFieldImpl implements SelectedField {
+        private final String qualifiedName;
         private final String name;
         private final GraphQLFieldDefinition fieldDefinition;
         private final DataFetchingFieldSelectionSet selectionSet;
         private final Map<String, Object> arguments;
 
-        private SelectedFieldImpl(List<Field> parentFields, GraphQLFieldDefinition fieldDefinition, Map<String, Object> arguments) {
+        private SelectedFieldImpl(String qualifiedName, List<Field> parentFields, GraphQLFieldDefinition fieldDefinition, Map<String, Object> arguments) {
+            this.qualifiedName = qualifiedName;
             this.name = parentFields.get(0).getName();
             this.fieldDefinition = fieldDefinition;
             this.arguments = arguments;
@@ -187,6 +203,11 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         @Override
         public String getName() {
             return name;
+        }
+
+        @Override
+        public String getQualifiedName() {
+            return qualifiedName;
         }
 
         @Override

@@ -50,6 +50,7 @@ graphql-java is licensed under the MIT License.
     schema
     execution
     mapping
+    fieldselection
     scalars
     subscriptions
     defer

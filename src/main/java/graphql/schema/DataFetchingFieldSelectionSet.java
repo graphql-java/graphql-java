@@ -68,13 +68,11 @@ public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, List
     boolean contains(String fieldGlobPattern);
 
     /**
-     * This will return a selected field using the fully qualified field name.
+     * This will return all selected fields.
      *
-     * @param fqFieldName the fully qualified name that is contained in the map from {@link #get()}
-     *
-     * @return a selected field or null if there is no matching field
+     * @return a list of all selected fields or empty list if none match
      */
-    SelectedField getField(String fqFieldName);
+    List<SelectedField> getFields();
 
     /**
      * This will return a list of selected fields that match a specified "glob" pattern matching ie
@@ -88,5 +86,15 @@ public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, List
      * @return a list of selected fields or empty list if none match
      */
     List<SelectedField> getFields(String fieldGlobPattern);
+
+    /**
+     * This will return a selected field using the fully qualified field name.
+     *
+     * @param fqFieldName the fully qualified name that is contained in the map from {@link #get()}
+     *
+     * @return a selected field or null if there is no matching field
+     */
+    SelectedField getField(String fqFieldName);
+
 
 }

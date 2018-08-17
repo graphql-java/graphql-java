@@ -17,6 +17,11 @@ public interface SelectedField {
     String getName();
 
     /**
+     * @return the fully name of the field
+     */
+    String getQualifiedName();
+
+    /**
      * @return the field runtime definition
      */
     GraphQLFieldDefinition getFieldDefinition();

@@ -179,11 +179,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         (selectionSet.definitions['friends/friends'].getType() as GraphQLList).getWrappedType() == starWarsSchema.getType('Character')
     }
 
-    def "test getting sub selected fields by name"() {
-
-        def schema = TestUtil.schemaFile("thingRelaySchema.graphqls")
-
-        def query = '''
+    def replayQuery = '''
             {
               things(first: 10) {
                 nodes {
@@ -228,19 +224,22 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
         '''
 
-        def document = TestUtil.parseQuery(query)
+    def replaySchema = TestUtil.schemaFile("thingRelaySchema.graphqls")
 
+    def relayDocument = TestUtil.parseQuery(replayQuery)
 
-        def executionContext = ExecutionContextBuilder.newExecutionContextBuilder()
-                .executionId(ExecutionId.generate())
-                .fragmentsByName(getFragments(document))
-                .graphQLSchema(schema).build()
+    def replayExecutionContext = ExecutionContextBuilder.newExecutionContextBuilder()
+            .executionId(ExecutionId.generate())
+            .fragmentsByName(getFragments(relayDocument))
+            .graphQLSchema(replaySchema).build()
 
-        def startField = firstFields(document)
-        def startingType = schema.getType('ThingConnection')
+    def "test getting sub selected fields by name"() {
+
+        def startField = firstFields(relayDocument)
+        def startingType = replaySchema.getType('ThingConnection')
 
         when:
-        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, startingType, startField)
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, startField)
 
         def selectedNodesField = selectionSet.getField("nodes")
 
@@ -281,9 +280,15 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedStatusNameField.getName() == "name"
         GraphQLTypeUtil.getUnwrappedTypeName(selectedStatusNameField.fieldDefinition.type) == "String"
 
-        when:
-        // lets get multiple fields by glob matching
+    }
 
+    def "test getting sub selected fields by glob"() {
+
+        def startField = firstFields(relayDocument)
+        def startingType = replaySchema.getType('ThingConnection')
+
+        when:
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, startField)
         List<SelectedField> selectedUnderNodesAster = selectionSet.getFields("nodes/*")
 
         then:
@@ -307,5 +312,41 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         statusName.name == "name"
         GraphQLTypeUtil.getUnwrappedTypeName(statusName.fieldDefinition.type) == "String"
         statusName.getSelectionSet().get().isEmpty()
+    }
+
+    def "test that aster aster is equal to get all"() {
+        def startField = firstFields(relayDocument)
+        def startingType = replaySchema.getType('ThingConnection')
+
+        when:
+        def selectionSet = DataFetchingFieldSelectionSetImpl.newCollector(replayExecutionContext, startingType, startField)
+        List<SelectedField> allFieldsViaAsterAster = selectionSet.getFields("**")
+        List<SelectedField> allFields = selectionSet.getFields()
+
+        then:
+
+        allFieldsViaAsterAster.size() == 14
+        allFields.size() == 14
+        def allFieldsViaAsterAsterSorted = allFieldsViaAsterAster.sort({ sf -> sf.qualifiedName })
+        def allFieldsSorted = allFields.sort({ sf -> sf.qualifiedName })
+
+        def expectedFieldName = [
+                "edges",
+                "edges/cursor",
+                "edges/node",
+                "edges/node/description",
+                "edges/node/status",
+                "edges/node/status/name",
+                "nodes",
+                "nodes/key",
+                "nodes/status",
+                "nodes/status/name",
+                "nodes/stuff",
+                "nodes/stuff/name",
+                "nodes/summary",
+                "totalCount"
+        ]
+        allFieldsViaAsterAsterSorted.collect({ sf -> sf.qualifiedName }) == expectedFieldName
+        allFieldsSorted.collect({ sf -> sf.qualifiedName }) == expectedFieldName
     }
 }
