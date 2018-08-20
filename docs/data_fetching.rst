@@ -30,7 +30,7 @@ So imagine a type declaration like the one below :
         launchDate(dateFormat : String = "dd, MMM, yyyy') : String
     }
 
-The ``Query.products`` field ihas a data fetcher, as does each field in the type ``Product``.
+The ``Query.products`` field has a data fetcher, as does each field in the type ``Product``.
 
 The data fetcher on the ``Query.products`` field is likely to be a more complex data fetcher, containing code that
 goes to a database say to get a list of ``Product`` objects.  It takes an optional ``match`` argument and hence can filter these
@@ -147,8 +147,8 @@ The interesting parts of the DataFetchingEnvironment
 Every data fetcher is passed a ``graphql.schema.DataFetchingEnvironment`` object which allows it to know more about what is being fetched
 and what arguments have been provided.  Here are some of the more interesting parts of ``DataFetchingEnvironment``.
 
-* ``<T> T getSource()`` - the ``source`` object is used to get information for a field.  In the simple case its the in memory
-TDO and hence simple POJO getters will be used for fields values.  In more complex cases, you may examine it to know
+* ``<T> T getSource()`` - the ``source`` object is used to get information for a field.  Its the object that is the result
+of the parent field fetch.  In the common case it is an in memory DTO object and hence simple POJO getters will be used for fields values.  In more complex cases, you may examine it to know
 how to get the specific information for the current field.  As the graphql field tree is executed, each returned field value
 becomes the ``source`` object for child fields.
 
