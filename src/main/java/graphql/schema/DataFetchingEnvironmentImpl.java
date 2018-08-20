@@ -9,6 +9,7 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,8 +49,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        ExecutionTypeInfo fieldTypeInfo,
                                        ExecutionContext executionContext) {
         this.source = source;
-        this.arguments = arguments == null ? Collections.emptyMap() : unmodifiableMap(arguments);
-        this.fragmentsByName = fragmentsByName == null ? Collections.emptyMap() : unmodifiableMap(fragmentsByName);
+        this.arguments = arguments == null ? Collections.emptyMap() : arguments;
+        this.fragmentsByName = fragmentsByName == null ? Collections.emptyMap() : fragmentsByName;
         this.context = context;
         this.root = root;
         this.fieldDefinition = fieldDefinition;
@@ -70,7 +71,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getArguments() {
-        return arguments;
+        return new HashMap<>(arguments);
     }
 
     @Override
@@ -125,7 +126,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, FragmentDefinition> getFragmentsByName() {
-        return fragmentsByName;
+        return new HashMap<>(fragmentsByName);
     }
 
     @Override
