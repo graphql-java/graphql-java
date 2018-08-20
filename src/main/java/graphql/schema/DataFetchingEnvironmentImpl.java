@@ -8,12 +8,15 @@ import graphql.execution.ExecutionTypeInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
+import static java.util.Collections.unmodifiableMap;
 
-@SuppressWarnings({"unchecked","TypeParameterUnusedInFormals"})
+@SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
 @Internal
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
@@ -46,7 +49,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        ExecutionTypeInfo fieldTypeInfo,
                                        ExecutionContext executionContext) {
         this.source = source;
-        this.arguments = arguments;
+        this.arguments = arguments == null ? Collections.emptyMap() : arguments;
+        this.fragmentsByName = fragmentsByName == null ? Collections.emptyMap() : fragmentsByName;
         this.context = context;
         this.root = root;
         this.fieldDefinition = fieldDefinition;
@@ -54,7 +58,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.fieldType = fieldType;
         this.parentType = parentType;
         this.graphQLSchema = graphQLSchema;
-        this.fragmentsByName = fragmentsByName;
         this.executionId = executionId;
         this.selectionSet = selectionSet;
         this.fieldTypeInfo = fieldTypeInfo;
@@ -68,7 +71,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getArguments() {
-        return arguments;
+        return new HashMap<>(arguments);
     }
 
     @Override
@@ -123,7 +126,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, FragmentDefinition> getFragmentsByName() {
-        return fragmentsByName;
+        return new HashMap<>(fragmentsByName);
     }
 
     @Override
