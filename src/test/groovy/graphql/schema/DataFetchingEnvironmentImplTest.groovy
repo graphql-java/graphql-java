@@ -11,11 +11,16 @@ class DataFetchingEnvironmentImplTest extends Specification {
     def executionContext = newExecutionContextBuilder().executionId(ExecutionId.from("123")).build()
 
     def "immutable arguments"() {
-        def dataFetchingEnvironment = newDataFetchingEnvironment(executionContext).arguments([some: "arg"]).build()
+        def dataFetchingEnvironment = newDataFetchingEnvironment(executionContext).arguments([arg: "argVal"]).build()
 
         when:
-        dataFetchingEnvironment.getArguments().put("mutation", "not possible")
+        def value = dataFetchingEnvironment.getArguments().get("arg")
         then:
-        thrown(UnsupportedOperationException)
+        value == "argVal"
+        when:
+        dataFetchingEnvironment.getArguments().put("arg", "some other value")
+        value = dataFetchingEnvironment.getArguments().get("arg")
+        then:
+        value == "argVal"
     }
 }
