@@ -163,7 +163,7 @@ public class FieldLevelTrackingApproach {
         };
     }
 
-    private void handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
+    private synchronized void handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
         callStack.increaseHappenedOnFieldValueCalls(curLevel);
         int expectedStrategyCalls = 0;
         for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
