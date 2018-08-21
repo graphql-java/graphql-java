@@ -21,12 +21,12 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
 
     @Internal
     protected InputValueDefinition(String name,
-                                 Type type,
-                                 Value defaultValue,
-                                 List<Directive> directives,
-                                 Description description,
-                                 SourceLocation sourceLocation,
-                                 List<Comment> comments) {
+                                   Type type,
+                                   Value defaultValue,
+                                   List<Directive> directives,
+                                   Description description,
+                                   SourceLocation sourceLocation,
+                                   List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.type = type;
@@ -81,7 +81,9 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.add(type);
-        result.add(defaultValue);
+        if (defaultValue != null) {
+            result.add(defaultValue);
+        }
         result.addAll(directives);
         return result;
     }
