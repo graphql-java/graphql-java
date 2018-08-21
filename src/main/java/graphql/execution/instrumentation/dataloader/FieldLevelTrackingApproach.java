@@ -163,7 +163,7 @@ public class FieldLevelTrackingApproach {
         };
     }
 
-    private synchronized void handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
+    private void handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
         callStack.increaseHappenedOnFieldValueCalls(curLevel);
         int expectedStrategyCalls = 0;
         for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
@@ -230,7 +230,7 @@ public class FieldLevelTrackingApproach {
     }
 
 
-    private void dispatchIfNeeded(CallStack callStack, int level) {
+    private synchronized void dispatchIfNeeded(CallStack callStack, int level) {
         if (levelReady(callStack, level)) {
             callStack.dispatchIfNotDispatchedBefore(level, this::dispatch);
         }
