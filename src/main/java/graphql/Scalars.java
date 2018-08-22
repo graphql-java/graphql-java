@@ -10,10 +10,16 @@ import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
+import graphql.util.DateTimeHelper;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.UUID;
+
+import java.time.LocalDateTime;
 
 import static graphql.Assert.assertShouldNeverHappen;
 
@@ -50,7 +56,7 @@ public class Scalars {
 
     /**
      * This represents the "Int" type as defined in the graphql specification : http://facebook.github.io/graphql/#sec-Int
-     *
+     * <p>
      * The Int scalar type represents a signed 32‐bit numeric non‐fractional value.
      */
     public static final GraphQLScalarType GraphQLInt = new GraphQLScalarType("Int", "Built-in Int", new Coercing<Integer, Integer>() {
@@ -116,7 +122,7 @@ public class Scalars {
 
     /**
      * This represents the "Float" type as defined in the graphql specification : http://facebook.github.io/graphql/#sec-Float
-     *
+     * <p>
      * Note: The Float type in GraphQL is equivalent to Double in Java. (double precision IEEE 754)
      */
     public static final GraphQLScalarType GraphQLFloat = new GraphQLScalarType("Float", "Built-in Float", new Coercing<Double, Double>() {
@@ -258,7 +264,7 @@ public class Scalars {
 
     /**
      * This represents the "ID" type as defined in the graphql specification : http://facebook.github.io/graphql/#sec-ID
-     *
+     * <p>
      * The ID scalar type represents a unique identifier, often used to re-fetch an object or as the key for a cache. The
      * ID type is serialized in the same way as a String; however, it is not intended to be human‐readable. While it is
      * often numeric, it should always serialize as a String.
@@ -709,4 +715,96 @@ public class Scalars {
             return value.charAt(0);
         }
     });
+
+    public static final GraphQLScalarType GraphQLLocalDate = new GraphQLScalarType("LocalDate", "Built-in Date", new Coercing<LocalDate, LocalDate>() {
+
+        private LocalDate convertImpl(Object input) {
+            if (input instanceof LocalDate) {
+                return LocalDate.parse(((LocalDate) input).format(DateTimeFormatter.ISO_LOCAL_DATE));
+            } else {
+                return null;
+            }
+        }
+
+        @Override
+        public LocalDate serialize(Object input) {
+            LocalDate result = convertImpl(input);
+            if (result == null) {
+                throw new CoercingSerializeException(
+                        "Expected type 'LocalDate' but was '" + typeName(input) + "'."
+                );
+            }
+            return result;
+        }
+
+        @Override
+        public LocalDate parseValue(Object input) {
+            LocalDate result = convertImpl(input);
+            if (result == null) {
+                throw new CoercingParseValueException(
+                        "Expected type 'LocalDate' but was '" + typeName(input) + "'."
+                );
+            }
+            return result;
+        }
+
+        @Override
+        public LocalDate parseLiteral(Object input) {
+            if (input instanceof StringValue && !((StringValue) input).isEqualTo(null)) {
+                return LocalDate.parse(((StringValue) input).getValue());
+            } else {
+                throw new CoercingParseLiteralException("Empty 'StringValue' provided.");
+            }
+        }
+
+    });
+
+    public static final GraphQLScalarType GraphQLLocalDateTime = new GraphQLScalarType("LocalDateTime", "Built-in DateTime", new Coercing<LocalDateTime, LocalDateTime>() {
+
+        private LocalDateTime convertImpl(Object input) {
+            if (input instanceof LocalDate) {
+                return LocalDateTime.parse(((LocalDateTime) input).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+            } else {
+                throw new CoercingParseLiteralException("Empty 'StringValue' provided.");
+            }
+        }
+
+        @Override
+        public LocalDateTime serialize(Object input) {
+
+            LocalDateTime result;
+            try {
+                result = convertImpl(input);
+            } catch(Exception e){
+                throw new CoercingSerializeException(
+                        "Expected type 'LocalDateTime' but was '" + typeName(input) + "'."
+                );
+            }
+            return result;
+        }
+
+        @Override
+        public LocalDateTime parseValue(Object input) {
+            LocalDateTime result;
+            try {
+                result = convertImpl(input);
+            } catch(Exception e){
+                throw new CoercingParseValueException(
+                        "Expected type 'LocalDateTime' but was '" + typeName(input) + "'."
+                );
+            }
+            return result;
+        }
+
+        @Override
+        public LocalDateTime parseLiteral(Object input) {
+            if (input instanceof StringValue) {
+                return LocalDateTime.parse(((StringValue) input).getValue());
+            } else {
+                throw new CoercingParseLiteralException("Empty 'StringValue' provided.");
+            }
+        }
+
+    });
 }
+
