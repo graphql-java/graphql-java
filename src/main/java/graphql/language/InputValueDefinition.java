@@ -21,12 +21,12 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
 
     @Internal
     protected InputValueDefinition(String name,
-                                   Type type,
-                                   Value defaultValue,
-                                   List<Directive> directives,
-                                   Description description,
-                                   SourceLocation sourceLocation,
-                                   List<Comment> comments) {
+                                 Type type,
+                                 Value defaultValue,
+                                 List<Directive> directives,
+                                 Description description,
+                                 SourceLocation sourceLocation,
+                                 List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.type = type;
