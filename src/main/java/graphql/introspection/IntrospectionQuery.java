@@ -74,6 +74,22 @@ public interface IntrospectionQuery {
             "        ofType {\n" +
             "          kind\n" +
             "          name\n" +
+            "            ofType {\n" +
+            "              kind\n" +
+            "              name\n" +
+            "              ofType {\n" +
+            "                kind\n" +
+            "                name\n" +
+            "                ofType {\n" +
+            "                  kind\n" +
+            "                  name\n" +
+            "                  ofType {\n" +
+            "                    kind\n" +
+            "                    name\n" +
+            "                }\n" +
+            "              }\n" +
+            "            }\n" +
+            "          }\n" +
             "        }\n" +
             "      }\n" +
             "    }\n" +
