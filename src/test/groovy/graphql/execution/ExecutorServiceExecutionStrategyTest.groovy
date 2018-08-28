@@ -9,6 +9,7 @@ import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
+@Deprecated
 class ExecutorServiceExecutionStrategyTest extends Specification {
 
     def 'Example usage of ExecutorServiceExecutionStrategy.'() {

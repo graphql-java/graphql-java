@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -135,15 +136,15 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         if (source instanceof Map) {
             return (T) ((Map<?, ?>) source).get(propertyName);
         }
-        return (T) getPropertyViaGetter(source, environment.getFieldType());
+        return (T) getPropertyViaGetter(source, environment.getFieldType(), environment);
     }
 
-    private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType) {
+    private Object getPropertyViaGetter(Object object, GraphQLOutputType outputType, DataFetchingEnvironment environment) {
         try {
-            return getPropertyViaGetterMethod(object, outputType, this::findPubliclyAccessibleMethod);
+            return getPropertyViaGetterMethod(object, outputType, this::findPubliclyAccessibleMethod, environment);
         } catch (NoSuchMethodException ignored) {
             try {
-                return getPropertyViaGetterMethod(object, outputType, this::findViaSetAccessible);
+                return getPropertyViaGetterMethod(object, outputType, this::findViaSetAccessible, environment);
             } catch (NoSuchMethodException ignored2) {
                 return getPropertyViaFieldAccess(object);
             }
@@ -155,23 +156,27 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         Method apply(Class aClass, String s) throws NoSuchMethodException;
     }
 
-    private Object getPropertyViaGetterMethod(Object object, GraphQLOutputType outputType, MethodFinder methodFinder) throws NoSuchMethodException {
+    private Object getPropertyViaGetterMethod(Object object, GraphQLOutputType outputType, MethodFinder methodFinder, DataFetchingEnvironment environment) throws NoSuchMethodException {
         if (isBooleanProperty(outputType)) {
             try {
-                return getPropertyViaGetterUsingPrefix(object, "is", methodFinder);
+                return getPropertyViaGetterUsingPrefix(object, "is", methodFinder, environment);
             } catch (NoSuchMethodException e) {
-                return getPropertyViaGetterUsingPrefix(object, "get", methodFinder);
+                return getPropertyViaGetterUsingPrefix(object, "get", methodFinder, environment);
             }
         } else {
-            return getPropertyViaGetterUsingPrefix(object, "get", methodFinder);
+            return getPropertyViaGetterUsingPrefix(object, "get", methodFinder, environment);
         }
     }
 
-    private Object getPropertyViaGetterUsingPrefix(Object object, String prefix, MethodFinder methodFinder) throws NoSuchMethodException {
+    private Object getPropertyViaGetterUsingPrefix(Object object, String prefix, MethodFinder methodFinder, DataFetchingEnvironment environment) throws NoSuchMethodException {
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         try {
             Method method = methodFinder.apply(object.getClass(), getterName);
-            return method.invoke(object);
+            if (takesDataFetcherEnvironmentAsOnlyArgument(method)) {
+                return method.invoke(object, environment);
+            } else {
+                return method.invoke(object);
+            }
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new GraphQLException(e);
         }
@@ -209,6 +214,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
     }
 
     // by not filling out the stack trace, we gain speed when using the exception as flow control
+    @SuppressWarnings("serial")
     private static class FastNoSuchMethodException extends NoSuchMethodException {
         public FastNoSuchMethodException(String methodName) {
             super(methodName);
@@ -238,6 +244,17 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
                 return method;
             }
             if (Modifier.isPublic(currentClass.getModifiers())) {
+                //
+                // try a getter that takes DataFetchingEnvironment first
+                try {
+                    method = currentClass.getMethod(methodName, DataFetchingEnvironment.class);
+                    if (Modifier.isPublic(method.getModifiers())) {
+                        METHOD_CACHE.putIfAbsent(key, method);
+                        return method;
+                    }
+                } catch (NoSuchMethodException e) {
+                    // ok try the next approach
+                }
                 method = currentClass.getMethod(methodName);
                 if (Modifier.isPublic(method.getModifiers())) {
                     METHOD_CACHE.putIfAbsent(key, method);
@@ -259,6 +276,8 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         Method[] declaredMethods = aClass.getDeclaredMethods();
         Optional<Method> m = Arrays.stream(declaredMethods)
                 .filter(mth -> methodName.equals(mth.getName()))
+                .filter(mth -> hasZeroArgs(mth) || takesDataFetcherEnvironmentAsOnlyArgument(mth))
+                .sorted(mostMethodArgsFirst())
                 .findFirst();
         if (m.isPresent()) {
             try {
@@ -271,6 +290,19 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
             }
         }
         throw new FastNoSuchMethodException(methodName);
+    }
+
+    private boolean hasZeroArgs(Method mth) {
+        return mth.getParameterCount() == 0;
+    }
+
+    private boolean takesDataFetcherEnvironmentAsOnlyArgument(Method mth) {
+        return mth.getParameterCount() == 1 &&
+                mth.getParameterTypes()[0].equals(DataFetchingEnvironment.class);
+    }
+
+    private Comparator<? super Method> mostMethodArgsFirst() {
+        return Comparator.comparingInt(Method::getParameterCount).reversed();
     }
 
     private Object getPropertyViaFieldAccess(Object object) {
