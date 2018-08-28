@@ -68,7 +68,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     public DataLoaderDispatcherInstrumentation(DataLoaderRegistry dataLoaderRegistry, DataLoaderDispatcherInstrumentationOptions options) {
         this(() -> dataLoaderRegistry, options);
     }
-    
+
     /**
      * You pass in supplier of a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
      * each level of the query executes.
@@ -78,13 +78,13 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     public DataLoaderDispatcherInstrumentation(Supplier<DataLoaderRegistry> supplier) {
         this(supplier, DataLoaderDispatcherInstrumentationOptions.newOptions());
     }
-    
+
     /**
      * You pass in a supplier of registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
      * each level of the query executes.
      *
-     * @param dataLoaderRegistry the registry of data loaders that will be dispatched
-     * @param options            the options to control the behaviour
+     * @param supplier the supplier of registry of data loaders that will be dispatched
+     * @param options  the options to control the behaviour
      */
     public DataLoaderDispatcherInstrumentation(Supplier<DataLoaderRegistry> supplier, DataLoaderDispatcherInstrumentationOptions options) {
         this.supplier = supplier;
@@ -177,7 +177,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), statsMap));
     }
 
-    private Map<Object, Object> buildStatsMap(DataLoaderDispatcherInstrumentationState state ) {
+    private Map<Object, Object> buildStatsMap(DataLoaderDispatcherInstrumentationState state) {
         DataLoaderRegistry dataLoaderRegistry = state.getDataLoaderRegistry();
         Statistics allStats = dataLoaderRegistry.getStatistics();
         Map<Object, Object> statsMap = new LinkedHashMap<>();
