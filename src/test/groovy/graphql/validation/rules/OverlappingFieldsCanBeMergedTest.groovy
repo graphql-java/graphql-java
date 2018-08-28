@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.language.Document
 import graphql.language.SourceLocation
@@ -527,5 +528,103 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: deepField: (x: a and b are different fields) @ 'field'"
         errorCollector.getErrors()[0].locations.size() == 4
     }
+
+
+    def "parent type is of List NonNull"() {
+        given:
+        def query = """
+        query (\$id: String!) {
+          services(ids: [\$id]) {
+            componentInfoLocationUrl
+            ...ComponentInformation
+          }
+        }
+
+        fragment ComponentInformation on Component {
+          componentInfoLocationUrl
+        }
+"""
+        def schema = TestUtil.schema("""
+    type Query {
+      services(ids: [String!]): [Component!]
+    }
+
+    type Component {
+      componentInfoLocationUrl: String!
+    }
+""")
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 0
+
+    }
+
+    def "parent type is of List List NonNull"() {
+        given:
+        def query = """
+        query (\$id: String!) {
+          services(ids: [\$id]) {
+            componentInfoLocationUrl
+            ...ComponentInformation
+          }
+        }
+
+        fragment ComponentInformation on Component {
+          componentInfoLocationUrl
+        }
+"""
+        def schema = TestUtil.schema("""
+    type Query {
+      services(ids: [String!]): [[Component!]]
+    }
+
+    type Component {
+      componentInfoLocationUrl: String!
+    }
+""")
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 0
+
+    }
+
+    def "parent type is of List NonNull and field is nullable"() {
+        given:
+        def query = """
+        query (\$id: String!) {
+          services(ids: [\$id]) {
+            componentInfoLocationUrl
+            ...ComponentInformation
+          }
+        }
+
+        fragment ComponentInformation on Component {
+          componentInfoLocationUrl
+        }
+"""
+        def schema = TestUtil.schema("""
+    type Query {
+      services(ids: [String!]): [Component!]
+    }
+
+    type Component {
+      componentInfoLocationUrl: String
+    }
+""")
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 0
+
+    }
+
 
 }
