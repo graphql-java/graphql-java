@@ -19,6 +19,8 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class Issue1178DataLoaderDispatchTest extends Specification {
 
+    public static final int NUM_OF_REPS = 100
+
     def "shouldn't dispatch twice in multithreaded env"() {
         setup:
         def sdl = """
@@ -78,7 +80,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                 .build()
 
         then: "execution shouldn't error"
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < NUM_OF_REPS; i++) {
             def result = graphql.execute("""
                 query { 
                     getTodos { __typename id 
