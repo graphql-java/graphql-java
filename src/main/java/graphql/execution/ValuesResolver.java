@@ -151,7 +151,7 @@ public class ValuesResolver {
                 Object returnValue =
                         coerceValue(fieldVisibility, variableDefinition, inputName, unwrapOne(graphQLType), value);
                 if (returnValue == null) {
-                    throw new NonNullableValueCoercedAsNullException(variableDefinition, graphQLType);
+                    throw new NonNullableValueCoercedAsNullException(variableDefinition, inputName, graphQLType);
                 }
                 return returnValue;
             }
