@@ -28,6 +28,12 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
         this.sourceLocations = Collections.singletonList(variableDefinition.getSourceLocation());
     }
 
+    public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, String fieldName, GraphQLType graphQLType) {
+        super(format("Field '%s' of variable '%s' has coerced Null value for NonNull type '%s'",
+                fieldName, variableDefinition.getName(), GraphQLTypeUtil.getUnwrappedTypeName(graphQLType)));
+        this.sourceLocations = Collections.singletonList(variableDefinition.getSourceLocation());
+    }
+
     public NonNullableValueCoercedAsNullException(GraphQLInputObjectField inputTypeField) {
         super(format("Input field '%s' has coerced Null value for NonNull type '%s'",
                 inputTypeField.getName(), GraphQLTypeUtil.getUnwrappedTypeName(inputTypeField.getType())));
