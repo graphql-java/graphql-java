@@ -71,7 +71,9 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.add(type);
-        result.add(defaultValue);
+        if (defaultValue != null) {
+            result.add(defaultValue);
+        }
         result.addAll(directives);
         return result;
     }
