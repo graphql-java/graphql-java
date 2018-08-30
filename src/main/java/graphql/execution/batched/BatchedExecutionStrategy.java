@@ -59,16 +59,16 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * <blockquote>
- *   BatchedExecutionStrategy has been deprecated in favour of {@link graphql.execution.AsyncExecutionStrategy}
- *   and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}.
+ * BatchedExecutionStrategy has been deprecated in favour of {@link graphql.execution.AsyncExecutionStrategy}
+ * and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}.
  *
- *   BatchedExecutionStrategy does not properly implement the graphql runtime specification.  Specifically it
- *   does not correctly handle non null fields and how they are to cascade up their parent fields.  It has proven
- *   an intractable problem to make this code handle these cases.
+ * BatchedExecutionStrategy does not properly implement the graphql runtime specification.  Specifically it
+ * does not correctly handle non null fields and how they are to cascade up their parent fields.  It has proven
+ * an intractable problem to make this code handle these cases.
  *
- *   See http://facebook.github.io/graphql/October2016/#sec-Errors-and-Non-Nullability
+ * See http://facebook.github.io/graphql/October2016/#sec-Errors-and-Non-Nullability
  *
- *   We will remove it once we are sure the alternative is as least good as the BatchedExecutionStrategy.
+ * We will remove it once we are sure the alternative is as least good as the BatchedExecutionStrategy.
  *
  * </blockquote>
  *
@@ -158,6 +158,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         ExecutionTypeInfo newParentTypeInfo = newTypeInfo()
                 .type(curNode.getType())
                 .fieldDefinition(currentParentTypeInfo.getFieldDefinition())
+                .field(currentParentTypeInfo.getField())
                 .path(currentParentTypeInfo.getPath())
                 .parentInfo(currentParentTypeInfo.getParentTypeInfo())
                 .build();
@@ -168,6 +169,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         ExecutionTypeInfo typeInfo = newTypeInfo()
                 .type(fieldDefinition.getType())
                 .fieldDefinition(fieldDefinition)
+                .field(currentField.get(0))
                 .path(fieldPath)
                 .parentInfo(newParentTypeInfo)
                 .build();
