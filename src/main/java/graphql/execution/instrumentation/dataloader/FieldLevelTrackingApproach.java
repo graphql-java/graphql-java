@@ -230,7 +230,7 @@ public class FieldLevelTrackingApproach {
     }
 
 
-    private void dispatchIfNeeded(CallStack callStack, int level) {
+    private synchronized void dispatchIfNeeded(CallStack callStack, int level) {
         if (levelReady(callStack, level)) {
             callStack.dispatchIfNotDispatchedBefore(level, this::dispatch);
         }
