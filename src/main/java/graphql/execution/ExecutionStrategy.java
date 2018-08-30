@@ -476,6 +476,7 @@ public abstract class ExecutionStrategy {
         ExecutionTypeInfo typeInfo = parameters.getTypeInfo();
         GraphQLList fieldType = typeInfo.castType(GraphQLList.class);
         GraphQLFieldDefinition fieldDef = parameters.getTypeInfo().getFieldDefinition();
+        Field field = parameters.getTypeInfo().getField();
 
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef), values);
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -494,6 +495,7 @@ public abstract class ExecutionStrategy {
                     .type(fieldType.getWrappedType())
                     .path(indexedPath)
                     .fieldDefinition(fieldDef)
+                    .field(field)
                     .build();
 
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedTypeInfo);
@@ -878,12 +880,18 @@ public abstract class ExecutionStrategy {
      */
     protected ExecutionTypeInfo fieldTypeInfo(ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
+        Field field = null;
+        if (parameters.getField() != null && ! parameters.getField().isEmpty()) {
+            field = parameters.getField().get(0);
+        }
         return newTypeInfo()
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
+                .field(field)
                 .path(parameters.getPath())
                 .parentInfo(parameters.getTypeInfo())
                 .build();
 
     }
+
 }

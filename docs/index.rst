@@ -49,7 +49,8 @@ graphql-java is licensed under the MIT License.
     getting_started
     schema
     execution
-    mapping
+    data_fetching
+    data_mapping
     fieldselection
     scalars
     subscriptions
