@@ -7,11 +7,14 @@ import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
 import graphql.language.InlineFragment
 import graphql.parser.Parser
+import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 import static java.util.Collections.emptyMap
 
 class QueryTraversalTest extends Specification {
@@ -464,7 +467,8 @@ class QueryTraversalTest extends Specification {
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
             it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
-                    it.parentType.name == "Foo" &&
+                    it.fieldsContainer.name == "Foo" &&
+                    (it.parentType instanceof GraphQLNonNull) &&
                     it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.wrappedType.name == "Foo"
         })
         2 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "subFoo" })
@@ -995,8 +999,55 @@ class QueryTraversalTest extends Specification {
 
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "foo" && it.fieldDefinition.type.name == "CatOrDog" && it.parentType.name == "Query" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" && it.fieldsContainer.name == "Cat" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" && it.fieldsContainer.name == "Dog" })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+
+    }
+
+    def "works for modified types (non null list elements)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+              foo: [CatOrDog!]
+              bar: [Bar!]!
+            }
+            
+            type Cat {
+                catName: String
+            }
+            
+            type Bar {
+                id: String
+            }
+            
+            type Dog {
+                dogName: String
+            }
+            
+            union CatOrDog = Cat | Dog
+            
+            schema {query: Query}
+        """)
+        def catOrDog = schema.getType("CatOrDog")
+        def bar = schema.getType("Bar")
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {foo {... on Cat {catName} ... on Dog {dogName}} bar {id}}
+        """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "foo" && it.fieldDefinition.type == list(nonNull(catOrDog)) && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" && it.fieldsContainer.name == "Cat" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" && it.fieldsContainer.name == "Dog" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && it.parentType == nonNull(list(nonNull(bar))) && it.fieldsContainer.name == "Bar" })
 
         where:
         order       | visitFn
@@ -1040,7 +1091,7 @@ class QueryTraversalTest extends Specification {
 
     }
 
-    def "#763 handles union types"() {
+    def "#763 handles union types and introspection fields"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -1083,7 +1134,7 @@ class QueryTraversalTest extends Specification {
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "someObject" && it.fieldDefinition.type.name == "SomeObject" && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "someUnionType" && it.fieldDefinition.type.name == "SomeUnionType" && it.parentType.name == "SomeObject" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "__typename" && it.fieldDefinition.type.wrappedType.name == "String" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "__typename" && it.fieldDefinition.type.wrappedType.name == "String" && it.typeNameIntrospectionField })
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "field1" && it.fieldDefinition.type.name == "String" && it.parentType.name == "TypeX" })
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "field2" && it.fieldDefinition.type.name == "String" && it.parentType.name == "TypeY" })
 
@@ -1112,13 +1163,13 @@ class QueryTraversalTest extends Specification {
         def query = createQuery("""
             {foo { subFoo {id}} }
             """)
-        def root = query.children[0].children[0].children[0].children[0].children[0]
-        assert root instanceof Field
-        ((Field) root).name == "subFoo"
+        def subFooAsRoot = query.children[0].children[0].children[0].children[0].children[0]
+        assert subFooAsRoot instanceof Field
+        ((Field) subFooAsRoot).name == "subFoo"
         def rootParentType = schema.getType("Foo")
         QueryTraversal queryTraversal = QueryTraversal.newQueryTraversal()
                 .schema(schema)
-                .root(root)
+                .root(subFooAsRoot)
                 .rootParentType(rootParentType)
                 .variables(emptyMap())
                 .fragmentsByName(emptyMap())
@@ -1135,6 +1186,7 @@ class QueryTraversalTest extends Specification {
 
     }
 
+
     @Unroll
     def "builder doesn't allow ambiguous arguments"() {
         when:
@@ -1150,19 +1202,45 @@ class QueryTraversalTest extends Specification {
         thrown(IllegalStateException)
 
         where:
-        document             | operationName | root        | rootParentType          | fragmentsByName
-        createQuery("{foo}") | null          | new Field() | null                    | null
-        createQuery("{foo}") | "foo"         | new Field() | null                    | null
-        createQuery("{foo}") | "foo"         | new Field() | Mock(GraphQLObjectType) | null
-        createQuery("{foo}") | "foo"         | new Field() | null                    | emptyMap()
-        null                 | "foo"         | new Field() | Mock(GraphQLObjectType) | null
-        null                 | "foo"         | new Field() | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | new Field() | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | new Field() | null                    | emptyMap()
-        null                 | "foo"         | null        | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | null        | Mock(GraphQLObjectType) | null
-        null                 | "foo"         | null        | null                    | emptyMap()
+        document             | operationName | root                     | rootParentType          | fragmentsByName
+        createQuery("{foo}") | null          | Field.newField().build() | null                    | null
+        createQuery("{foo}") | "foo"         | Field.newField().build() | null                    | null
+        createQuery("{foo}") | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | null
+        createQuery("{foo}") | "foo"         | Field.newField().build() | null                    | emptyMap()
+        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | null
+        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | Field.newField().build() | null                    | emptyMap()
+        null                 | "foo"         | null                     | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | null                     | Mock(GraphQLObjectType) | null
+        null                 | "foo"         | null                     | null                    | emptyMap()
 
+
+    }
+
+    def "typename special field doens't have a fields container and throws exception"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                bar: String
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            { __typename }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        QueryVisitorFieldEnvironment env
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            env = it
+        })
+        when:
+        queryTraversal.visitPreOrder(visitor)
+        env.typeNameIntrospectionField
+        env.getFieldsContainer()
+
+        then:
+        thrown(IllegalStateException)
 
     }
 

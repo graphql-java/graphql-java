@@ -1,9 +1,12 @@
 package graphql.language;
 
 
+import graphql.PublicApi;
+
 import java.util.List;
 
-public interface TypeDefinition<T extends TypeDefinition> extends Definition<T>{
+@PublicApi
+public interface TypeDefinition<T extends TypeDefinition> extends SDLDefinition<T> {
     /**
      * @return the name of the type being defined.
      */
@@ -13,10 +16,4 @@ public interface TypeDefinition<T extends TypeDefinition> extends Definition<T>{
      * @return the directives of this type being defined
      */
     List<Directive> getDirectives();
-
-    /**
-     * @return a deep copy of this type definition
-     */
-    @Override
-    T deepCopy();
 }

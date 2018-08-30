@@ -9,6 +9,8 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import static graphql.language.Field.newField
+
 class ScalarLeafsTest extends Specification {
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
@@ -17,7 +19,7 @@ class ScalarLeafsTest extends Specification {
 
     def "sub selection not allowed"() {
         given:
-        Field field = new Field("hello", new SelectionSet([new Field("world")]))
+        Field field = newField("hello", SelectionSet.newSelectionSet([newField("world").build()]).build()).build()
         validationContext.getOutputType() >> Scalars.GraphQLString
         when:
         scalarLeafs.checkField(field)
@@ -31,7 +33,7 @@ class ScalarLeafsTest extends Specification {
 
     def "sub selection required"() {
         given:
-        Field field = new Field("hello")
+        Field field = newField("hello").build()
         validationContext.getOutputType() >> GraphQLObjectType.newObject().name("objectType").build()
         when:
         scalarLeafs.checkField(field)

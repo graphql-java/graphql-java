@@ -1,18 +1,19 @@
 <code_scheme name="graphql-java" version="173">
+  <GroovyCodeStyleSettings>
+    <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
+    <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
+  </GroovyCodeStyleSettings>
+  <JavaCodeStyleSettings>
     <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
     <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
     <option name="JD_ADD_BLANK_AFTER_PARM_COMMENTS" value="true"/>
     <option name="JD_ADD_BLANK_AFTER_RETURN" value="true"/>
     <option name="JD_P_AT_EMPTY_LINES" value="false"/>
-    <GroovyCodeStyleSettings>
-        <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
-        <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
-    </GroovyCodeStyleSettings>
-    <JavaCodeStyleSettings>
-        <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
-        <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="999"/>
-        <option name="JD_ADD_BLANK_AFTER_PARM_COMMENTS" value="true"/>
-        <option name="JD_ADD_BLANK_AFTER_RETURN" value="true"/>
-        <option name="JD_P_AT_EMPTY_LINES" value="false"/>
-    </JavaCodeStyleSettings>
+  </JavaCodeStyleSettings>
+  <codeStyleSettings language="JAVA">
+    <option name="IF_BRACE_FORCE" value="3"/>
+    <option name="DOWHILE_BRACE_FORCE" value="3"/>
+    <option name="WHILE_BRACE_FORCE" value="3"/>
+    <option name="FOR_BRACE_FORCE" value="3"/>
+  </codeStyleSettings>
 </code_scheme>

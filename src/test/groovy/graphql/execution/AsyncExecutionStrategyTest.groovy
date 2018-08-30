@@ -83,7 +83,7 @@ class AsyncExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .typeInfo(typeInfo)
-                .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -121,7 +121,7 @@ class AsyncExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .typeInfo(typeInfo)
-                .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -161,7 +161,7 @@ class AsyncExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .typeInfo(typeInfo)
-                .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -200,7 +200,7 @@ class AsyncExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .typeInfo(typeInfo)
-                .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
+                .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()

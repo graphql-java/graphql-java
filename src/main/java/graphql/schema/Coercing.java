@@ -3,6 +3,8 @@ package graphql.schema;
 
 import graphql.PublicSpi;
 
+import java.util.Map;
+
 /**
  * The Coercing interface is used by {@link graphql.schema.GraphQLScalarType}s to parse and serialise object values.
  * <p>
@@ -50,7 +52,7 @@ public interface Coercing<I, O> {
     I parseValue(Object input) throws CoercingParseValueException;
 
     /**
-     * Called to convert an query input AST node into a Java object acceptable for the scalar type.  The input
+     * Called during query validation to convert an query input AST node into a Java object acceptable for the scalar type.  The input
      * object will be an instance of {@link graphql.language.Value}.
      *
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather
@@ -63,4 +65,29 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
     I parseLiteral(Object input) throws CoercingParseLiteralException;
+
+    /**
+     * Called during query execution to convert an query input AST node into a Java object acceptable for the scalar type.  The input
+     * object will be an instance of {@link graphql.language.Value}.
+     *
+     * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather
+     * catch them and fire them as {@link graphql.schema.CoercingParseLiteralException} instead as per the method contract.
+     *
+     * Many scalar types don't need to implement this method because they do'nt take AST {@link graphql.language.VariableReference}
+     * objects and convert them into actual values.  But for those scalar types that want to do this, then this
+     * method should be implemented.
+     *
+     * @param input     is never null
+     * @param variables the resolved variables passed to the query
+     *
+     * @return a parsed value which is never null
+     *
+     * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
+     */
+    @SuppressWarnings("unused")
+    default I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
+        return parseLiteral(input);
+    }
+
+    ;
 }

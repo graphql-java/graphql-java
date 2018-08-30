@@ -1,49 +1,57 @@
 package graphql.language;
 
 
+import graphql.Internal;
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graphql.language.NodeUtil.directivesByName;
 
+@PublicApi
 public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment> {
-    private TypeName typeCondition;
-    private List<Directive> directives;
-    private SelectionSet selectionSet;
+    private final TypeName typeCondition;
+    private final List<Directive> directives;
+    private final SelectionSet selectionSet;
 
-    public InlineFragment() {
-        this(null, new ArrayList<>(), null);
-    }
-
-    public InlineFragment(TypeName typeCondition) {
-        this(typeCondition, new ArrayList<>(), null);
-    }
-
-    public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
-        this(typeCondition, new ArrayList<>(), selectionSet);
-    }
-
-    public InlineFragment(TypeName typeCondition, List<Directive> directives, SelectionSet selectionSet) {
+    @Internal
+    protected InlineFragment(TypeName typeCondition,
+                           List<Directive> directives,
+                           SelectionSet selectionSet,
+                           SourceLocation sourceLocation,
+                           List<Comment> comments) {
+        super(sourceLocation, comments);
         this.typeCondition = typeCondition;
         this.directives = directives;
         this.selectionSet = selectionSet;
     }
 
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public InlineFragment(TypeName typeCondition) {
+        this(typeCondition, new ArrayList<>(), null, null, new ArrayList<>());
+    }
+
+    /**
+     * alternative to using a Builder for convenience
+     */
+    public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
+        this(typeCondition, new ArrayList<>(), selectionSet, null, new ArrayList<>());
+    }
 
     public TypeName getTypeCondition() {
         return typeCondition;
     }
 
-    public void setTypeCondition(TypeName typeCondition) {
-        this.typeCondition = typeCondition;
-    }
 
     public List<Directive> getDirectives() {
-        return directives;
+        return new ArrayList<>(directives);
     }
 
     public Map<String, Directive> getDirectivesByName() {
@@ -55,17 +63,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     }
 
 
-    public void setDirectives(List<Directive> directives) {
-        this.directives = directives;
-    }
-
     @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
-    }
-
-    public void setSelectionSet(SelectionSet selectionSet) {
-        this.selectionSet = selectionSet;
     }
 
     @Override
@@ -92,7 +92,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return new InlineFragment(
                 deepCopy(typeCondition),
                 deepCopy(directives),
-                deepCopy(selectionSet)
+                deepCopy(selectionSet),
+                getSourceLocation(),
+                getComments()
         );
     }
 
@@ -108,5 +110,66 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitInlineFragment(this, context);
+    }
+
+    public static Builder newInlineFragment() {
+        return new Builder();
+    }
+
+    public InlineFragment transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    public static final class Builder implements NodeBuilder {
+        private SourceLocation sourceLocation;
+        private List<Comment> comments = new ArrayList<>();
+        private TypeName typeCondition;
+        private List<Directive> directives = new ArrayList<>();
+        private SelectionSet selectionSet;
+
+        private Builder() {
+        }
+
+
+        private Builder(InlineFragment existing) {
+            this.sourceLocation = existing.getSourceLocation();
+            this.comments = existing.getComments();
+            this.typeCondition = existing.getTypeCondition();
+            this.directives = existing.getDirectives();
+            this.selectionSet = existing.getSelectionSet();
+        }
+
+
+        public Builder sourceLocation(SourceLocation sourceLocation) {
+            this.sourceLocation = sourceLocation;
+            return this;
+        }
+
+        public Builder comments(List<Comment> comments) {
+            this.comments = comments;
+            return this;
+        }
+
+        public Builder typeCondition(TypeName typeCondition) {
+            this.typeCondition = typeCondition;
+            return this;
+        }
+
+        public Builder directives(List<Directive> directives) {
+            this.directives = directives;
+            return this;
+        }
+
+        public Builder selectionSet(SelectionSet selectionSet) {
+            this.selectionSet = selectionSet;
+            return this;
+        }
+
+        public InlineFragment build() {
+            InlineFragment inlineFragment = new InlineFragment(typeCondition, directives, selectionSet, sourceLocation, comments);
+            return inlineFragment;
+        }
     }
 }

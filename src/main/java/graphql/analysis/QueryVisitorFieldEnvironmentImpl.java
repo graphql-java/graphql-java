@@ -3,29 +3,38 @@ package graphql.analysis;
 import graphql.Internal;
 import graphql.language.Field;
 import graphql.language.SelectionSetContainer;
-import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLOutputType;
 
 import java.util.Map;
+import java.util.Objects;
 
 @Internal
 public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnvironment {
+
+    private final boolean typeNameIntrospectionField;
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
-    private final GraphQLCompositeType parentType;
+    private final GraphQLOutputType parentType;
+    private final GraphQLFieldsContainer unmodifiedParentType;
     private final Map<String, Object> arguments;
     private final QueryVisitorFieldEnvironment parentEnvironment;
     private final SelectionSetContainer selectionSetContainer;
 
-    public QueryVisitorFieldEnvironmentImpl(Field field,
+    public QueryVisitorFieldEnvironmentImpl(boolean typeNameIntrospectionField,
+                                            Field field,
                                             GraphQLFieldDefinition fieldDefinition,
-                                            GraphQLCompositeType parentType,
+                                            GraphQLOutputType parentType,
+                                            GraphQLFieldsContainer unmodifiedParentType,
                                             QueryVisitorFieldEnvironment parentEnvironment,
                                             Map<String, Object> arguments,
                                             SelectionSetContainer selectionSetContainer) {
+        this.typeNameIntrospectionField = typeNameIntrospectionField;
         this.field = field;
         this.fieldDefinition = fieldDefinition;
         this.parentType = parentType;
+        this.unmodifiedParentType = unmodifiedParentType;
         this.parentEnvironment = parentEnvironment;
         this.arguments = arguments;
         this.selectionSetContainer = selectionSetContainer;
@@ -42,7 +51,7 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
     }
 
     @Override
-    public GraphQLCompositeType getParentType() {
+    public GraphQLOutputType getParentType() {
         return parentType;
     }
 
@@ -62,29 +71,37 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
     }
 
     @Override
+    public GraphQLFieldsContainer getFieldsContainer() {
+        if (isTypeNameIntrospectionField()) {
+            throw new IllegalStateException("introspection field __typename doesn't have a fields container");
+        }
+        return unmodifiedParentType;
+    }
+
+    @Override
+    public boolean isTypeNameIntrospectionField() {
+        return typeNameIntrospectionField;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
         QueryVisitorFieldEnvironmentImpl that = (QueryVisitorFieldEnvironmentImpl) o;
-
-        if (field != null ? !field.equals(that.field) : that.field != null) return false;
-        if (fieldDefinition != null ? !fieldDefinition.equals(that.fieldDefinition) : that.fieldDefinition != null)
-            return false;
-        if (parentType != null ? !parentType.equals(that.parentType) : that.parentType != null) return false;
-        if (parentEnvironment != null ? !parentEnvironment.equals(that.parentEnvironment) : that.parentEnvironment != null)
-            return false;
-        return arguments != null ? arguments.equals(that.arguments) : that.arguments == null;
+        return typeNameIntrospectionField == that.typeNameIntrospectionField &&
+                Objects.equals(field, that.field) &&
+                Objects.equals(fieldDefinition, that.fieldDefinition) &&
+                Objects.equals(parentType, that.parentType) &&
+                Objects.equals(unmodifiedParentType, that.unmodifiedParentType) &&
+                Objects.equals(arguments, that.arguments) &&
+                Objects.equals(parentEnvironment, that.parentEnvironment) &&
+                Objects.equals(selectionSetContainer, that.selectionSetContainer);
     }
 
     @Override
     public int hashCode() {
-        int result = field != null ? field.hashCode() : 0;
-        result = 31 * result + (fieldDefinition != null ? fieldDefinition.hashCode() : 0);
-        result = 31 * result + (parentType != null ? parentType.hashCode() : 0);
-        result = 31 * result + (parentEnvironment != null ? parentEnvironment.hashCode() : 0);
-        result = 31 * result + (arguments != null ? arguments.hashCode() : 0);
-        return result;
+
+        return Objects.hash(typeNameIntrospectionField, field, fieldDefinition, parentType, unmodifiedParentType, arguments, parentEnvironment, selectionSetContainer);
     }
 
     @Override

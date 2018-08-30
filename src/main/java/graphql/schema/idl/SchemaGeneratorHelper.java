@@ -56,12 +56,19 @@ import static java.util.stream.Collectors.toMap;
 public class SchemaGeneratorHelper {
 
     static final String NO_LONGER_SUPPORTED = "No longer supported";
-    static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION = new DirectiveDefinition("deprecated");
+    static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
 
     static {
-        DEPRECATED_DIRECTIVE_DEFINITION.getDirectiveLocations().add(new graphql.language.DirectiveLocation(DirectiveLocation.FIELD_DEFINITION.name()));
-        DEPRECATED_DIRECTIVE_DEFINITION.getDirectiveLocations().add(new graphql.language.DirectiveLocation(DirectiveLocation.ENUM_VALUE.name()));
-        DEPRECATED_DIRECTIVE_DEFINITION.getInputValueDefinitions().add(new InputValueDefinition("reason", new TypeName("String"), new StringValue(NO_LONGER_SUPPORTED)));
+        DirectiveDefinition.Builder builder = DirectiveDefinition.newDirectiveDefinition().name("deprecated");
+        builder.directiveLocation(graphql.language.DirectiveLocation.newDirectiveLocation().name(DirectiveLocation.FIELD_DEFINITION.name()).build());
+        builder.directiveLocation(graphql.language.DirectiveLocation.newDirectiveLocation().name((DirectiveLocation.ENUM_VALUE.name())).build());
+        builder.inputValueDefinition(
+                InputValueDefinition.newInputValueDefinition()
+                        .name("reason")
+                        .type(TypeName.newTypeName().name("String").build())
+                        .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
+                        .build());
+        DEPRECATED_DIRECTIVE_DEFINITION = builder.build();
     }
 
     public Object buildValue(Value value, GraphQLType requiredType) {

@@ -7,7 +7,7 @@ execution of a query and also change the runtime behaviour.
 
 The primary use case for this is to allow say performance monitoring and custom logging but it could be used for many different purposes.
 
-When you build the ```Graphql`` object you can specify what ``Instrumentation`` to use (if any).
+When you build the ``Graphql`` object you can specify what ``Instrumentation`` to use (if any).
 
 
 .. code-block:: java

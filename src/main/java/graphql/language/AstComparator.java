@@ -1,9 +1,12 @@
 package graphql.language;
 
 
+import graphql.Internal;
+
 import java.util.Iterator;
 import java.util.List;
 
+@Internal
 public class AstComparator {
 
 

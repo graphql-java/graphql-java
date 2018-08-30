@@ -23,10 +23,10 @@ class NodeVisitorStubTest extends Specification {
         control == TraversalControl.QUIT
 
         where:
-        node                 | visitMethod
-        new Field()          | 'visitField'
-        new FragmentSpread() | 'visitFragmentSpread'
-        new InlineFragment() | 'visitInlineFragment'
+        node                                       | visitMethod
+        Field.newField().build()                   | 'visitField'
+        FragmentSpread.newFragmentSpread().build() | 'visitFragmentSpread'
+        InlineFragment.newInlineFragment().build() | 'visitInlineFragment'
 
     }
 
@@ -43,16 +43,16 @@ class NodeVisitorStubTest extends Specification {
         control == TraversalControl.QUIT
 
         where:
-        node                    | visitMethod
-        new FloatValue()        | 'visitFloatValue'
-        new ArrayValue()        | 'visitArrayValue'
-        new IntValue()          | 'visitIntValue'
-        new BooleanValue(true)  | 'visitBooleanValue'
-        NullValue.Null          | 'visitNullValue'
-        new ObjectValue()       | 'visitObjectValue'
-        new VariableReference() | 'visitVariableReference'
-        new EnumValue()         | 'visitEnumValue'
-        new StringValue()       | 'visitStringValue'
+        node                                             | visitMethod
+        FloatValue.newFloatValue().build()               | 'visitFloatValue'
+        ArrayValue.newArrayValue().build()               | 'visitArrayValue'
+        IntValue.newIntValue().build()                   | 'visitIntValue'
+        new BooleanValue(true)                           | 'visitBooleanValue'
+        NullValue.Null                                   | 'visitNullValue'
+        ObjectValue.newObjectValue().build()             | 'visitObjectValue'
+        VariableReference.newVariableReference().build() | 'visitVariableReference'
+        EnumValue.newEnumValue().build()                 | 'visitEnumValue'
+        StringValue.newStringValue().build()             | 'visitStringValue'
     }
 
     @Unroll
@@ -69,11 +69,11 @@ class NodeVisitorStubTest extends Specification {
 
 
         where:
-        node                        | visitMethod
-        new OperationDefinition()   | 'visitOperationDefinition'
-        new FragmentDefinition()    | 'visitFragmentDefinition'
-        new DirectiveDefinition("") | 'visitDirectiveDefinition'
-        new SchemaDefinition()      | 'visitSchemaDefinition'
+        node                                                 | visitMethod
+        OperationDefinition.newOperationDefinition().build() | 'visitOperationDefinition'
+        FragmentDefinition.newFragmentDefinition().build()   | 'visitFragmentDefinition'
+        new DirectiveDefinition("")                          | 'visitDirectiveDefinition'
+        SchemaDefinition.newSchemaDefinition().build()       | 'visitSchemaDefinition'
     }
 
     @Unroll
@@ -89,13 +89,13 @@ class NodeVisitorStubTest extends Specification {
         control == TraversalControl.QUIT
 
         where:
-        node                              | visitMethod
-        new UnionTypeDefinition("")       | 'visitUnionTypeDefinition'
-        new InputObjectTypeDefinition("") | 'visitInputObjectTypeDefinition'
-        new ScalarTypeDefinition("")      | 'visitScalarTypeDefinition'
-        new InterfaceTypeDefinition("")   | 'visitInterfaceTypeDefinition'
-        new EnumTypeDefinition("")        | 'visitEnumTypeDefinition'
-        new ObjectTypeDefinition("")      | 'visitObjectTypeDefinition'
+        node                                                         | visitMethod
+        new UnionTypeDefinition("")                                  | 'visitUnionTypeDefinition'
+        InputObjectTypeDefinition.newInputObjectDefinition().build() | 'visitInputObjectTypeDefinition'
+        new ScalarTypeDefinition("")                                 | 'visitScalarTypeDefinition'
+        new InterfaceTypeDefinition("")                              | 'visitInterfaceTypeDefinition'
+        new EnumTypeDefinition("")                                   | 'visitEnumTypeDefinition'
+        new ObjectTypeDefinition("")                                 | 'visitObjectTypeDefinition'
     }
 
     @Unroll
@@ -111,10 +111,10 @@ class NodeVisitorStubTest extends Specification {
         control == TraversalControl.QUIT
 
         where:
-        node              | visitMethod
-        new NonNullType() | 'visitNonNullType'
-        new ListType()    | 'visitListType'
-        new TypeName("")  | 'visitTypeName'
+        node                                 | visitMethod
+        NonNullType.newNonNullType().build() | 'visitNonNullType'
+        ListType.newListType().build()       | 'visitListType'
+        new TypeName("")                     | 'visitTypeName'
 
     }
 
@@ -131,25 +131,25 @@ class NodeVisitorStubTest extends Specification {
         control == TraversalControl.QUIT
 
         where:
-        node                           | visitMethod
-        new Argument("", null)         | 'visitArgument'
-        new Directive("", emptyList()) | 'visitDirective'
-        new DirectiveLocation("")      | 'visitDirectiveLocation'
-        new Document()                 | 'visitDocument'
-        new EnumValueDefinition("")    | 'visitEnumValueDefinition'
-        new FieldDefinition("")        | 'visitFieldDefinition'
-        new InputValueDefinition("")   | 'visitInputValueDefinition'
-        new InputValueDefinition("")   | 'visitInputValueDefinition'
-        new ObjectField("", null)      | 'visitObjectField'
-        new OperationTypeDefinition()  | 'visitOperationTypeDefinition'
-        new OperationTypeDefinition()  | 'visitOperationTypeDefinition'
-        new SelectionSet()             | 'visitSelectionSet'
-        new VariableDefinition()       | 'visitVariableDefinition'
-        new StringValue("")            | 'visitValue'
-        new OperationDefinition()      | 'visitDefinition'
-        new UnionTypeDefinition("")    | 'visitTypeDefinition'
-        new Field()                    | 'visitSelection'
-        new NonNullType()              | 'visitType'
+        node                                                         | visitMethod
+        new Argument("", null)                                       | 'visitArgument'
+        new Directive("", emptyList())                               | 'visitDirective'
+        new DirectiveLocation("")                                    | 'visitDirectiveLocation'
+        Document.newDocument().build()                               | 'visitDocument'
+        new EnumValueDefinition("")                                  | 'visitEnumValueDefinition'
+        FieldDefinition.newFieldDefinition().build()                 | 'visitFieldDefinition'
+        InputValueDefinition.newInputValueDefinition().build()       | 'visitInputValueDefinition'
+        InputValueDefinition.newInputValueDefinition().build()       | 'visitInputValueDefinition'
+        new ObjectField("", null)                                    | 'visitObjectField'
+        OperationTypeDefinition.newOperationTypeDefinition().build() | 'visitOperationTypeDefinition'
+        OperationTypeDefinition.newOperationTypeDefinition().build() | 'visitOperationTypeDefinition'
+        SelectionSet.newSelectionSet().build()                       | 'visitSelectionSet'
+        VariableDefinition.newVariableDefinition().build()           | 'visitVariableDefinition'
+        new StringValue("")                                          | 'visitValue'
+        OperationDefinition.newOperationDefinition().build()         | 'visitDefinition'
+        new UnionTypeDefinition("")                                  | 'visitTypeDefinition'
+        Field.newField().build()                                     | 'visitSelection'
+        NonNullType.newNonNullType().build()                         | 'visitType'
 
     }
 

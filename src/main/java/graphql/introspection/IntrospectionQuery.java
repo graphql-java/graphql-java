@@ -62,7 +62,12 @@ public interface IntrospectionQuery {
             "    defaultValue\n" +
             "  }\n" +
             "\n" +
-            "  fragment TypeRef on __Type {\n" +
+            //
+            // The depth of the types is actually an arbitrary decision.  It could be any depth in fact.  This depth
+            // was taken from GraphIQL https://github.com/graphql/graphiql/blob/master/src/utility/introspectionQueries.js
+            // which uses 7 levels and hence could represent a type like say [[[[[Float!]]]]]
+            //
+            "fragment TypeRef on __Type {\n" +
             "    kind\n" +
             "    name\n" +
             "    ofType {\n" +
@@ -74,8 +79,25 @@ public interface IntrospectionQuery {
             "        ofType {\n" +
             "          kind\n" +
             "          name\n" +
+            "          ofType {\n" +
+            "            kind\n" +
+            "            name\n" +
+            "            ofType {\n" +
+            "              kind\n" +
+            "              name\n" +
+            "              ofType {\n" +
+            "                kind\n" +
+            "                name\n" +
+            "                ofType {\n" +
+            "                  kind\n" +
+            "                  name\n" +
+            "                }\n" +
+            "              }\n" +
+            "            }\n" +
+            "          }\n" +
             "        }\n" +
             "      }\n" +
             "    }\n" +
-            "  }\n";
+            "  }\n" +
+            "\n";
 }

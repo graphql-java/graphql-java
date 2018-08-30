@@ -3,6 +3,7 @@ package graphql.language;
 import graphql.Assert;
 import graphql.AssertException;
 import graphql.GraphQLException;
+import graphql.Internal;
 import graphql.Scalars;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLEnumType;
@@ -30,6 +31,7 @@ import java.util.Map;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 
+@Internal
 public class AstValueHelper {
 
     /**
@@ -88,7 +90,7 @@ public class AstValueHelper {
 
         // Others serialize based on their corresponding JavaScript scalar types.
         if (serialized instanceof Boolean) {
-            return new BooleanValue((Boolean) serialized);
+            return BooleanValue.newBooleanValue().value((Boolean) serialized).build();
         }
 
         String stringValue = serialized.toString();
@@ -100,16 +102,16 @@ public class AstValueHelper {
         if (serialized instanceof String) {
             // Enum types use Enum literals.
             if (type instanceof GraphQLEnumType) {
-                return new EnumValue(stringValue);
+                return EnumValue.newEnumValue().name(stringValue).build();
             }
 
             // ID types can use Int literals.
             if (type == Scalars.GraphQLID && stringValue.matches("^[0-9]+$")) {
-                return new IntValue(new BigInteger(stringValue));
+                return IntValue.newIntValue().value(new BigInteger(stringValue)).build();
             }
 
             // String types are just strings but JSON'ised
-            return new StringValue(jsonStringify(stringValue));
+            return StringValue.newStringValue().value(jsonStringify(stringValue)).build();
         }
 
         throw new AssertException("'Cannot convert value to AST: " + serialized);
@@ -124,17 +126,17 @@ public class AstValueHelper {
             Value nodeValue = astFromValue(mapValue.get(field.getName()), fieldType);
             if (nodeValue != null) {
 
-                fieldNodes.add(new ObjectField(field.getName(), nodeValue));
+                fieldNodes.add(ObjectField.newObjectField().name(field.getName()).value(nodeValue).build());
             }
         });
-        return new ObjectValue(fieldNodes);
+        return ObjectValue.newObjectValue().objectFields(fieldNodes).build();
     }
 
     private static Value handleNumber(String stringValue) {
         if (stringValue.matches("^[0-9]+$")) {
-            return new IntValue(new BigInteger(stringValue));
+            return IntValue.newIntValue().value(new BigInteger(stringValue)).build();
         } else {
-            return new FloatValue(new BigDecimal(stringValue));
+            return FloatValue.newFloatValue().value(new BigDecimal(stringValue)).build();
         }
     }
 
@@ -149,7 +151,7 @@ public class AstValueHelper {
                     valuesNodes.add(itemNode);
                 }
             }
-            return new ArrayValue(valuesNodes);
+            return ArrayValue.newArrayValue().values(valuesNodes).build();
         }
         return astFromValue(_value, itemType);
     }
