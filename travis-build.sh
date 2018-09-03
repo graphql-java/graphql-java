@@ -3,7 +3,7 @@ set -ev
 echo "current git hash:"
 git rev-parse --short HEAD
 BUILD_COMMAND="./gradlew assemble && ./gradlew check --info"
-if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_BRANCH}" = "9.x" ]; then
+if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_BRANCH}" = "master" ]; then
     echo "Building on master"
     BUILD_COMMAND="./gradlew clean assemble && ./gradlew check  --info && ./gradlew bintrayUpload -x check --info"
 fi
