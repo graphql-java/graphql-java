@@ -1,10 +1,10 @@
 package graphql.schema;
 
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-@Internal
+@PublicApi
 public interface GraphQLTypeVisitor {
     TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLType> context);
 
