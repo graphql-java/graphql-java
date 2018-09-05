@@ -46,6 +46,10 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
 
         List<Edge<T>> edges = buildEdges();
 
+        if (edges.isEmpty()) {
+            return emptyConnection();
+        }
+
         ConnectionCursor firstPresliceCursor = edges.get(0).getCursor();
         ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
 
@@ -57,7 +61,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
         if (begin > end) begin = end;
 
         edges = edges.subList(begin, end);
-        if (edges.size() == 0) {
+        if (edges.isEmpty()) {
             return emptyConnection();
         }
 
