@@ -163,7 +163,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .parentInfo(currentParentTypeInfo.getParentTypeInfo())
                 .build();
 
-        ExecutionPath fieldPath = curNode.getTypeInfo().getPath().segment(fieldName);
+        ExecutionPath fieldPath = curNode.getTypeInfo().getPath().segment(mkNameForPath(currentField));
         GraphQLFieldDefinition fieldDefinition = getFieldDef(executionContext.getGraphQLSchema(), curNode.getType(), currentField.get(0));
 
         ExecutionTypeInfo typeInfo = newTypeInfo()

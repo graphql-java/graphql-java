@@ -40,6 +40,19 @@ class ExecutionPathTest extends Specification {
         ExecutionPath.rootPath().segment("A").segment("B").segment(1) || "/A/B[1]"
     }
 
+    @Unroll
+    "unit test sibling works as expected : #actual"() {
+
+        expect:
+        actual.toList() == expected
+
+        where:
+        actual                                                                     || expected
+        ExecutionPath.rootPath()                                                   || []
+        ExecutionPath.rootPath().segment("A").sibling("B")                         || ["B"]
+        ExecutionPath.rootPath().segment("A").segment(1).segment("B").sibling("C") || ["A", 1, "C"]
+    }
+
 
     def "full integration test of path support"() {
         when:
