@@ -122,7 +122,7 @@ class ExecutionPathTest extends Specification {
                             sub1 
                             sub2
                         } 
-                        f3
+                        aliasedF3 : f3
                         f4 {
                           nonNullField
                         }
@@ -143,7 +143,7 @@ class ExecutionPathTest extends Specification {
         ["f2", 1, "sub2"] == error2.getPath()
 
         def error3 = errors.get(2) as SerializationError
-        ["f3"] == error3.getPath()
+        ["aliasedF3"] == error3.getPath()
 
         def error4 = errors.get(3) as NonNullableFieldWasNullError
         ["f4", "nonNullField"] == error4.getPath()
