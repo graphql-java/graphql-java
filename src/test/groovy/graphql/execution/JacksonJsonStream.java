@@ -4,14 +4,19 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import graphql.execution.instrumentation.streaming.JsonStream;
+import graphql.execution.streaming.JsonStream;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UncheckedIOException;
 
 public class JacksonJsonStream implements JsonStream {
 
     private final JsonGenerator jGenerator;
+
+    private static void toUncheckedIOException(IOException e) {
+        throw new UncheckedIOException(e);
+    }
 
     public JacksonJsonStream(PrintStream out) {
         jGenerator = mkJsonGenerator(out);
@@ -25,13 +30,9 @@ public class JacksonJsonStream implements JsonStream {
             jGenerator.setCodec(new ObjectMapper());
             jGenerator.useDefaultPrettyPrinter();
         } catch (IOException e) {
-            toRuntimeException(e);
+            toUncheckedIOException(e);
         }
         return jGenerator;
-    }
-
-    private static void toRuntimeException(IOException e) {
-        throw new RuntimeException("Unable to Jackson", e);
     }
 
     @Override
@@ -40,7 +41,7 @@ public class JacksonJsonStream implements JsonStream {
             jGenerator.writeStartObject();
             jGenerator.flush();
         } catch (IOException e) {
-            toRuntimeException(e);
+            toUncheckedIOException(e);
         }
     }
 
@@ -50,7 +51,7 @@ public class JacksonJsonStream implements JsonStream {
             jGenerator.writeArrayFieldStart(fieldName);
             jGenerator.flush();
         } catch (IOException e) {
-            toRuntimeException(e);
+            toUncheckedIOException(e);
         }
     }
 
@@ -60,7 +61,7 @@ public class JacksonJsonStream implements JsonStream {
             jGenerator.writeObjectFieldStart(fieldName);
             jGenerator.flush();
         } catch (IOException e) {
-            toRuntimeException(e);
+            toUncheckedIOException(e);
         }
     }
 
@@ -70,7 +71,7 @@ public class JacksonJsonStream implements JsonStream {
             jGenerator.writeEndArray();
             jGenerator.flush();
         } catch (IOException e) {
-            toRuntimeException(e);
+            toUncheckedIOException(e);
         }
     }
 
@@ -80,7 +81,7 @@ public class JacksonJsonStream implements JsonStream {
             jGenerator.writeEndObject();
             jGenerator.flush();
         } catch (IOException e) {
-            toRuntimeException(e);
+            toUncheckedIOException(e);
         }
     }
 
@@ -90,7 +91,7 @@ public class JacksonJsonStream implements JsonStream {
             jGenerator.writeObjectField(fieldName, fieldValue);
             jGenerator.flush();
         } catch (IOException e) {
-            toRuntimeException(e);
+            toUncheckedIOException(e);
         }
     }
 
@@ -100,7 +101,7 @@ public class JacksonJsonStream implements JsonStream {
             jGenerator.flush();
             jGenerator.flush();
         } catch (IOException e) {
-            toRuntimeException(e);
+            toUncheckedIOException(e);
         }
     }
 }

@@ -1,6 +1,8 @@
-package graphql.execution.instrumentation.streaming;
+package graphql.execution.streaming;
 
 import graphql.PublicSpi;
+
+import java.io.UncheckedIOException;
 
 /**
  * This SPI will be called by {@link graphql.execution.instrumentation.streaming.StreamingJsonInstrumentation} to output
@@ -13,31 +15,31 @@ public interface JsonStream {
     /**
      * Start a JSON object
      */
-    void writeStartObject();
+    void writeStartObject() throws UncheckedIOException;
 
     /**
      * Start a field array with the specified name
      *
      * @param fieldName the name of the JSON field
      */
-    void writeArrayFieldStart(String fieldName);
+    void writeArrayFieldStart(String fieldName) throws UncheckedIOException;
 
     /**
      * Start a field object with the specified name
      *
      * @param fieldName the name of the JSON field
      */
-    void writeObjectFieldStart(String fieldName);
+    void writeObjectFieldStart(String fieldName)  throws UncheckedIOException;
 
     /**
      * End a JSON array
      */
-    void writeEndArray();
+    void writeEndArray() throws UncheckedIOException;
 
     /**
      * End a JSON object
      */
-    void writeEndObject();
+    void writeEndObject() throws UncheckedIOException;
 
     /**
      * This is called to write a leaf value (scalar or enum) to the JSON.  You will be given what ever
@@ -47,11 +49,11 @@ public interface JsonStream {
      * @param fieldName  the name of the JSON field
      * @param fieldValue the Java value to write
      */
-    void writeJavaObject(String fieldName, Object fieldValue);
+    void writeJavaObject(String fieldName, Object fieldValue) throws UncheckedIOException;
 
     /**
      * Called when the graphql query has finished and the underlying stream
      * of data can be flushed and closed
      */
-    void finished();
+    void finished() throws UncheckedIOException;
 }

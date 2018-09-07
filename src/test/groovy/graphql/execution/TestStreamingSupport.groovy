@@ -8,6 +8,7 @@ import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.SimpleInstrumentationContext
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.execution.instrumentation.streaming.StreamingJsonInstrumentation
+import graphql.execution.streaming.AsyncStreamingExecutionStrategy
 import spock.lang.Specification
 
 class TestStreamingSupport extends Specification {
@@ -25,6 +26,46 @@ class TestStreamingSupport extends Specification {
         }
     }
 
+    def dumpResults(ExecutionResult executionResult) {
+        System.out.printf("\n\n------------------------------------------------\n")
+        System.out.printf("JSON direct (scroll up for results)\n")
+        System.out.printf("----------------------------------------------------\n")
+        def jsonGenerator = JacksonJsonStream.mkJsonGenerator(System.out)
+        jsonGenerator.writeObject(executionResult.data)
+        System.out.printf("\n\n------------------------------------------------\n")
+    }
+
+    def longerQuery = '''
+        { 
+            hero {
+                id
+                name
+                friends {
+                    id
+                    name
+                    friends {
+                        id
+                        name
+                        appearsIn
+                    }
+                    appearsIn
+                }
+                appearsIn
+            }
+        }
+        '''
+
+    def goodQuery = '''
+        { 
+            hero {
+                name
+                friends {
+                    name
+                }
+            }
+        }
+        '''
+
     def "test streaming"() {
 
         def jsonStream = new JacksonJsonStream(System.out)
@@ -35,43 +76,28 @@ class TestStreamingSupport extends Specification {
 
         def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .instrumentation(instrumentation)
-                //.instrumentation(new PathOrder())
+        //.instrumentation(new PathOrder())
                 .build()
 
-        def badQuery = '''
-        { 
-            hero {
-                name
-                friends {
-                    name
-                    friends {
-                        name
-                    }
-                }
-            }
-        }
-        '''
-
-        def goodQuery = '''
-        { 
-            hero {
-                name
-                friends {
-                    name
-                }
-            }
-        }
-        '''
         when:
-        def result = graphQL.execute(badQuery)
+        def result = graphQL.execute(longerQuery)
         then:
 
-        System.out.printf("\n\n------------------------------------------------\n")
-        System.out.printf("JSON direct (scroll up for results)\n")
-        System.out.printf("----------------------------------------------------\n")
-        def jsonGenerator = JacksonJsonStream.mkJsonGenerator(System.out)
-        jsonGenerator.writeObject(result.data)
-        System.out.printf("\n\n------------------------------------------------\n")
+        dumpResults(result)
     }
 
+    def "stream via execution strategy"() {
+        def strategy = new AsyncStreamingExecutionStrategy({ -> new JacksonJsonStream(System.out) })
+
+
+        def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(strategy)
+                .build()
+
+        when:
+        def result = graphQL.execute(longerQuery)
+        then:
+
+        dumpResults(result)
+    }
 }
