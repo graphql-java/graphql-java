@@ -3,6 +3,9 @@ package graphql.schema;
 
 import graphql.PublicApi;
 
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+
 import static graphql.Assert.assertValidName;
 
 /**
@@ -35,5 +38,10 @@ public class GraphQLTypeReference implements GraphQLType, GraphQLOutputType, Gra
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLTypeReference(this, context);
     }
 }

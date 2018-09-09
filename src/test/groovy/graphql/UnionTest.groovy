@@ -37,8 +37,8 @@ class UnionTest extends Specification {
                 ],
                 interfaces   : null,
                 possibleTypes: [
-                        [name: 'Person'],
                         [name: 'Cat'],
+                        [name: 'Person'],
                         [name: 'Dog']
                 ],
                 enumValues   : null,

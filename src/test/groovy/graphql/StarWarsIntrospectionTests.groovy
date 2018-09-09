@@ -19,21 +19,22 @@ class StarWarsIntrospectionTests extends Specification {
         """
         def expected = [
                 __schema: [types:
-                                   [[name: 'QueryType'],
-                                    [name: 'Character'],
-                                    [name: 'String'],
-                                    [name: 'Episode'],
-                                    [name: 'Human'],
-                                    [name: 'Droid'],
-                                    [name: '__Schema'],
-                                    [name: '__Type'],
+                                   [[name: 'Human'],
                                     [name: '__TypeKind'],
                                     [name: '__Field'],
+                                    [name: 'Character'],
+                                    [name: '__Schema'],
+                                    [name: '__Type'],
+                                    [name: '__EnumValue'],
+                                    [name: '__DirectiveLocation'],
+                                    [name: 'String'],
+                                    [name: 'Droid'],
+                                    [name: 'Episode'],
                                     [name: '__InputValue'],
                                     [name: 'Boolean'],
-                                    [name: '__EnumValue'],
-                                    [name: '__Directive'],
-                                    [name: '__DirectiveLocation']]
+                                    [name: 'QueryType'],
+                                    [name: '__Directive']
+                                   ]
                 ]
 
         ]

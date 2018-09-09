@@ -4,8 +4,11 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +62,8 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         this.definition = definition;
     }
 
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        type = (GraphQLInputType) new SchemaUtil().resolveTypeReference(type, typeMap);
+    void replaceType(GraphQLInputType type) {
+        this.type = type;
     }
 
     @Override
@@ -101,6 +104,16 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         Builder builder = newInputObjectField(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLInputObjectField(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        return Collections.singletonList(type);
     }
 
     public static Builder newInputObjectField(GraphQLInputObjectField existing) {

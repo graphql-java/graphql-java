@@ -2,7 +2,11 @@ package graphql.schema;
 
 
 import graphql.PublicApi;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -41,8 +45,9 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
         return wrappedType;
     }
 
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        wrappedType = new SchemaUtil().resolveTypeReference(wrappedType, typeMap);
+
+    void replaceType(GraphQLType type) {
+        wrappedType = type;
     }
 
     @Override
@@ -71,5 +76,15 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     @Override
     public String getName() {
         return null;
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLNonNull(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        return Collections.singletonList(wrappedType);
     }
 }

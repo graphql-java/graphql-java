@@ -4,6 +4,8 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,9 +66,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         this.definition = definition;
     }
 
-
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        this.type = (GraphQLOutputType) new SchemaUtil().resolveTypeReference(this.type, typeMap);
+    void replaceType(GraphQLOutputType type) {
+        this.type = type;
     }
 
     @Override
@@ -142,6 +143,19 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         Builder builder = newFieldDefinition(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLFieldDefinition(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        List<GraphQLType> children =  new ArrayList<>();
+        children.add(type);
+        children.addAll(arguments);
+        return children;
     }
 
     public static Builder newFieldDefinition(GraphQLFieldDefinition existing) {

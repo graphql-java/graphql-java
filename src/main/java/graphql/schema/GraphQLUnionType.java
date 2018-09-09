@@ -4,6 +4,8 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.UnionTypeDefinition;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -61,10 +63,8 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         this.directives = directives;
     }
 
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        this.types = this.types.stream()
-                .map(type -> (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap))
-                .collect(Collectors.toList());
+    void replaceTypes(List<GraphQLOutputType> types) {
+        this.types = types;
     }
 
     /**
@@ -110,6 +110,16 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         Builder builder = newUnionType(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLUnionType(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(types);
     }
 
     public static Builder newUnionType() {

@@ -4,6 +4,8 @@ import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.ObjectTypeDefinition;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -60,10 +62,8 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         buildDefinitionMap(fieldDefinitions);
     }
 
-    void replaceTypeReferences(Map<String, GraphQLType> typeMap) {
-        this.interfaces = this.interfaces.stream()
-                .map(type -> (GraphQLOutputType) new SchemaUtil().resolveTypeReference(type, typeMap))
-                .collect(Collectors.toList());
+    void replaceInterfaces(List<GraphQLOutputType> interfaces) {
+        this.interfaces = interfaces;
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
@@ -136,6 +136,18 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         Builder builder = newObject(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLObjectType(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        List<GraphQLType> children = new ArrayList<>(fieldDefinitionsByName.values());
+        children.addAll(interfaces);
+        return children;
     }
 
     public static Builder newObject() {
