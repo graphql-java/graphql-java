@@ -6,6 +6,8 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValue;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -173,6 +175,16 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         Builder builder = newEnum(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLEnumType(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(valueDefinitionMap.values());
     }
 
     public static Builder newEnum() {
