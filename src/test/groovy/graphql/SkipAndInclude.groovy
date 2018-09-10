@@ -4,11 +4,11 @@ import spock.lang.Specification
 
 class SkipAndInclude extends Specification {
 
-    private def graphQL = GraphQL.newGraphQL(TestUtil.schema("""
+    private def graphQL = TestUtil.graphQL("""
             type Query {
                 field: Int
             }
-        """)).build()
+        """).build()
 
     def "@skip and @include"() {
         when:

@@ -42,10 +42,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
                 .type(newTypeWiring("Subscription").dataFetcher("newMessage", newMessageDF).build())
                 .build()
 
-        def schema = TestUtil.schema(idl, runtimeWiring)
-
-        def graphQL = GraphQL.newGraphQL(schema).subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
-        graphQL
+        return TestUtil.graphQL(idl, runtimeWiring).subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
     }
 
 
