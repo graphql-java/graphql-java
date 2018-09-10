@@ -16,6 +16,8 @@ public interface GraphQLTypeVisitor {
 
     TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLType> context);
 
+    TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLType> context);
+
     TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLType> context);
 
     TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLType> context);

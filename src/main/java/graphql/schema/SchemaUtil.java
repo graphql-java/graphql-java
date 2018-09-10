@@ -32,6 +32,10 @@ public class SchemaUtil {
                 addAll(additionalTypes);
             }
 
+            if (schema.getDirectives() != null) {
+                addAll(schema.getDirectives());
+            }
+
             add(Introspection.__Schema);
         }};
 

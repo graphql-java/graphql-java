@@ -3,6 +3,8 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,7 +28,7 @@ import static graphql.util.FpKit.valuesToList;
  */
 @SuppressWarnings("DeprecatedIsStillUsed") // because the graphql spec still has some of these deprecated fields
 @PublicApi
-public class GraphQLDirective {
+public class GraphQLDirective implements GraphQLType {
 
     private final String name;
     private final String description;
@@ -49,6 +51,7 @@ public class GraphQLDirective {
         this.onField = onField;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -125,6 +128,15 @@ public class GraphQLDirective {
         return builder.build();
     }
 
+    @Override
+    public TraversalControl accept(TraverserContext<GraphQLType> context, GraphQLTypeVisitor visitor) {
+        return visitor.visitGraphQLDirective(this, context);
+    }
+
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(arguments);
+    }
 
     public static Builder newDirective() {
         return new Builder();

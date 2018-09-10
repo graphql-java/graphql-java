@@ -38,7 +38,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
-    private List<GraphQLOutputType> interfaces = new ArrayList<>();
+    private List<GraphQLOutputType> interfaces;
     private final List<GraphQLDirective> directives;
     private final ObjectTypeDefinition definition;
 
@@ -147,6 +147,7 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     public List<GraphQLType> getChildren() {
         List<GraphQLType> children = new ArrayList<>(fieldDefinitionsByName.values());
         children.addAll(interfaces);
+        children.addAll(directives);
         return children;
     }
 
