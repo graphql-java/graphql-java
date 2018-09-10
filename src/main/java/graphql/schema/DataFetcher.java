@@ -24,5 +24,5 @@ public interface DataFetcher<T> {
      *
      * @return a value of type T
      */
-    T get(DataFetchingEnvironment environment);
+    T get(DataFetchingEnvironment environment) throws Exception;
 }

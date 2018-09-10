@@ -64,7 +64,13 @@ public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
 
     @Override
     public CompletableFuture<T> get(DataFetchingEnvironment environment) {
-        return CompletableFuture.supplyAsync(() -> wrappedDataFetcher.get(environment), executor);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return wrappedDataFetcher.get(environment);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }, executor);
     }
 
 }
