@@ -18,6 +18,7 @@ import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import graphql.schema.CoercingParseValueException
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLInputObjectFieldDataTransformer
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -431,5 +432,82 @@ class ValuesResolverTest extends Specification {
 
         then:
         thrown(GraphQLException)
+    }
+
+    def "getArgumentValues: applies transformation correctly"() {
+        given:
+        def inputObjectType = newInputObject()
+                .name("InputObject")
+                .field(newInputObjectField()
+                .name("toUpperCase")
+                .type(nonNull(GraphQLString))
+                .withDataTransformer(new GraphQLInputObjectFieldDataTransformer() {
+                    @Override
+                    Object transform(Object value) {
+                        if (value instanceof String) {
+                            return value.toUpperCase()
+                        } else {
+                            return value
+                        }
+                    }
+                }))
+                .build()
+        def fieldArgument = new GraphQLArgument("arg", inputObjectType)
+
+        when:
+        def argument = new Argument("arg", inputValue)
+        def values = resolver.getArgumentValues([fieldArgument], [argument], [:])
+
+        then:
+        values['arg'] == outputValue
+
+        where:
+        inputValue << [
+                buildObjectLiteral([
+                        toUpperCase: new StringValue("lowercase"),
+                ]),
+                buildObjectLiteral([
+                        toUpperCase: new StringValue("123")
+                ])
+        ]
+        outputValue << [
+                [toUpperCase: 'LOWERCASE'],
+                [toUpperCase: '123']
+        ]
+    }
+
+    def "getVariableInput: applies tranformation correctly"() {
+        given:
+
+        def inputObjectType = newInputObject()
+                .name("InputObject")
+                .field(newInputObjectField()
+                .name("toUpperCase")
+                .type(nonNull(GraphQLString))
+                .withDataTransformer(new GraphQLInputObjectFieldDataTransformer() {
+                    @Override
+                    Object transform(Object value) {
+                        if (value instanceof String) {
+                            return value.toUpperCase()
+                        } else {
+                            return value
+                        }
+                    }
+                }))
+                .build()
+
+        def schema = TestUtil.schemaWithInputType(inputObjectType)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
+
+        when:
+        def resolvedValues = resolver.coerceArgumentValues(schema, [variableDefinition], [variable: inputValue])
+
+        then:
+        resolvedValues['variable'] == outputValue
+
+        where:
+        inputValue                    || outputValue
+        [toUpperCase: "lowercase"]    || [toUpperCase: "LOWERCASE"]
+        [toUpperCase: "123"]          || [toUpperCase: "123"]
     }
 }

@@ -15,6 +15,7 @@ import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectFieldDataTransformer;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
@@ -207,6 +208,13 @@ public class ValuesResolver {
                         inputField.getName(),
                         inputField.getType(),
                         input.get(inputField.getName()));
+
+                if (value != null) {
+                    for (GraphQLInputObjectFieldDataTransformer transformer : inputField.getDataTransformers()) {
+                        value = transformer.transform(value);
+                    }
+                }
+
                 result.put(inputField.getName(), value == null ? inputField.getDefaultValue() : value);
             }
         }
@@ -306,11 +314,18 @@ public class ValuesResolver {
                     fieldObject = coerceValueAst(fieldVisibility, inputTypeField.getType(), fieldInputValue, variables);
                 }
 
+                if (fieldObject != null) {
+                    for (GraphQLInputObjectFieldDataTransformer transformer : inputTypeField.getDataTransformers()) {
+                        fieldObject = transformer.transform(fieldObject);
+                    }
+                }
+
                 if (fieldObject == null) {
                     if (!field.getValue().isEqualTo(NullValue.Null)) {
                         fieldObject = inputTypeField.getDefaultValue();
                     }
                 }
+
                 if (putObjectInMap) {
                     result.put(field.getName(), fieldObject);
                 } else {

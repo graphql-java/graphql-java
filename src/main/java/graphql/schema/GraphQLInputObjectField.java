@@ -37,22 +37,24 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
     private final Object defaultValue;
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
+    private final List<GraphQLInputObjectFieldDataTransformer> transformers;
 
     @Internal
     public GraphQLInputObjectField(String name, GraphQLInputType type) {
-        this(name, null, type, null, emptyList(), null);
+        this(name, null, type, null, emptyList(), null, emptyList());
     }
 
     @Internal
     public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue) {
-        this(name, description, type, defaultValue, emptyList(), null);
+        this(name, description, type, defaultValue, emptyList(), null, emptyList());
     }
 
     @Internal
-    public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue, List<GraphQLDirective> directives, InputValueDefinition definition) {
+    public GraphQLInputObjectField(String name, String description, GraphQLInputType type, Object defaultValue, List<GraphQLDirective> directives, InputValueDefinition definition, List<GraphQLInputObjectFieldDataTransformer> transformers) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
         assertNotNull(directives, "directives cannot be null");
+        assertNotNull(transformers, "transformers cannot be null");
 
         this.name = name;
         this.type = type;
@@ -60,6 +62,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         this.description = description;
         this.directives = directives;
         this.definition = definition;
+        this.transformers = transformers;
     }
 
     void replaceType(GraphQLInputType type) {
@@ -91,6 +94,8 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
     public List<GraphQLDirective> getDirectives() {
         return new ArrayList<>(directives);
     }
+
+    public List<GraphQLInputObjectFieldDataTransformer> getDataTransformers() { return transformers; }
 
     /**
      * This helps you transform the current GraphQLInputObjectField into another one by starting a builder with all
@@ -133,6 +138,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         private GraphQLInputType type;
         private InputValueDefinition definition;
         private final Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
+        private List<GraphQLInputObjectFieldDataTransformer> transformers = new ArrayList<>();
 
         public Builder() {
         }
@@ -144,6 +150,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
             this.type = existing.getType();
             this.definition = existing.getDefinition();
             this.directives.putAll(getByName(existing.getDirectives(), GraphQLDirective::getName));
+            this.transformers = new ArrayList<>(existing.transformers);
         }
 
         public Builder name(String name) {
@@ -203,8 +210,19 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
             return this;
         }
 
+        public Builder withDataTransformer(GraphQLInputObjectFieldDataTransformer transformer) {
+            assertNotNull(transformer, "transformer can't be null");
+            transformers.add(transformer);
+            return this;
+        }
+
+        public Builder clearDataTransformers() {
+            transformers.clear();
+            return this;
+        }
+
         public GraphQLInputObjectField build() {
-            return new GraphQLInputObjectField(name, description, type, defaultValue, valuesToList(directives), definition);
+            return new GraphQLInputObjectField(name, description, type, defaultValue, valuesToList(directives), definition, transformers);
         }
     }
 }
