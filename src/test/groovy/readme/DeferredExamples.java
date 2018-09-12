@@ -1,5 +1,6 @@
 package readme;
 
+import graphql.DeferredExecutionResult;
 import graphql.Directives;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
@@ -37,15 +38,15 @@ public class DeferredExamples {
         // then initial results happen first, the deferred ones will begin AFTER these initial
         // results have completed
         //
-        sendResult(httpServletResponse, initialResult);
+        sendMultipartHttpResult(httpServletResponse, initialResult);
 
         Map<Object, Object> extensions = initialResult.getExtensions();
-        Publisher<ExecutionResult> deferredResults = (Publisher<ExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS);
+        Publisher<DeferredExecutionResult> deferredResults = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS);
 
         //
         // you subscribe to the deferred results like any other reactive stream
         //
-        deferredResults.subscribe(new Subscriber<ExecutionResult>() {
+        deferredResults.subscribe(new Subscriber<DeferredExecutionResult>() {
 
             Subscription subscription;
 
@@ -58,11 +59,11 @@ public class DeferredExamples {
             }
 
             @Override
-            public void onNext(ExecutionResult executionResult) {
+            public void onNext(DeferredExecutionResult executionResult) {
                 //
                 // as each deferred result arrives, send it to where it needs to go
                 //
-                sendResult(httpServletResponse, executionResult);
+                sendMultipartHttpResult(httpServletResponse, executionResult);
                 subscription.request(10);
             }
 
@@ -84,7 +85,7 @@ public class DeferredExamples {
     private void handleError(HttpServletResponse httpServletResponse, Throwable t) {
     }
 
-    private void sendResult(HttpServletResponse httpServletResponse, ExecutionResult initialResult) {
+    private void sendMultipartHttpResult(HttpServletResponse httpServletResponse, ExecutionResult initialResult) {
     }
 
 

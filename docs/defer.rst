@@ -24,7 +24,7 @@ to the client.  All three data elements are bound to the one query
 
 A naive approach would be to make two queries to get the most important data first but there is now a better way.
 
-There is ``experimental`` support for deferred execution in graphql-java.
+There is support for deferred execution in graphql-java.
 
 .. code-block:: graphql
 
@@ -63,15 +63,15 @@ the ``extensions`` map
         // then initial results happen first, the deferred ones will begin AFTER these initial
         // results have completed
         //
-        sendResult(httpServletResponse, initialResult);
+        sendMultipartHttpResult(httpServletResponse, initialResult);
 
         Map<Object, Object> extensions = initialResult.getExtensions();
-        Publisher<ExecutionResult> deferredResults = (Publisher<ExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS);
+        Publisher<DeferredExecutionResult> deferredResults = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS);
 
         //
         // you subscribe to the deferred results like any other reactive stream
         //
-        deferredResults.subscribe(new Subscriber<ExecutionResult>() {
+        deferredResults.subscribe(new Subscriber<DeferredExecutionResult>() {
 
             Subscription subscription;
 
@@ -84,11 +84,11 @@ the ``extensions`` map
             }
 
             @Override
-            public void onNext(ExecutionResult executionResult) {
+            public void onNext(DeferredExecutionResult executionResult) {
                 //
                 // as each deferred result arrives, send it to where it needs to go
                 //
-                sendResult(httpServletResponse, executionResult);
+                sendMultipartHttpResult(httpServletResponse, executionResult);
                 subscription.request(10);
             }
 
@@ -103,19 +103,28 @@ the ``extensions`` map
             }
         });
 
-The above code subscribes to the deferred results and when each one arrives, sends it down to the client.
+The above code subscribes to the deferred results and when each one arrives, sends it down to the client as a http multipart message.
 
 You can see more details on reactive-streams code here http://www.reactive-streams.org/
 
 ``RxJava`` is a popular implementation of reactive-streams.  Check out http://reactivex.io/intro.html to find out more
 about creating Subscriptions.
 
-graphql-java only produces a stream of deferred results.  It does not concern itself with sending these over the network on things
-like web sockets and so on.  That is important but not a concern of the base graphql-java library.  Its up to you
+graphql-java only produces a stream of deferred results.  It does not concern itself with sending these over the network using techniques
+like http multipart, web sockets and so on.  That is important but not a concern of the base graphql-java library.  Its up to you
 to use whatever network mechanism (websockets / long poll / ....) to get results back to you clients.
 
 Also note that this capability is currently ``experimental`` and not defined by the official ``graphql`` specification.  We reserve the
 right to change it in a future release or if it enters the official specification.  The graphql-java project
 is keen to get feedback on this capability.
+
+Where @defer is allowed
+-----------------------
+
+- It can be used on query operations only, not mutations or subscriptions
+- It takes an optional ''if'' argument that can turn the defer behaviour on or off
+- It is only allowed on nullable types
+- Fragments are supported, however if one field at the same level has the @defer directive, then all fields at that level must have it
+
 
 
