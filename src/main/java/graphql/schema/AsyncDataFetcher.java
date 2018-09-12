@@ -21,7 +21,7 @@ public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
      * {@code .dataFetcher(async(fooDataFetcher))}
      * <p>
      * By default this will run in the {@link ForkJoinPool#commonPool()}. You can set
-     * your own {@link Executor} with {@link #async(DataFetcher)} (DataFetcher, Executor)}
+     * your own {@link Executor} with {@link #async(DataFetcher, Executor)}
      *
      * @param wrappedDataFetcher the data fetcher to run asynchronously
      * @param <T>                the type of data
@@ -64,7 +64,17 @@ public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
 
     @Override
     public CompletableFuture<T> get(DataFetchingEnvironment environment) {
-        return CompletableFuture.supplyAsync(() -> wrappedDataFetcher.get(environment), executor);
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return wrappedDataFetcher.get(environment);
+            } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException) e;
+                } else {
+                    throw new RuntimeException(e);
+                }
+            }
+        }, executor);
     }
 
 }

@@ -48,7 +48,7 @@ public class DirectivesExamples {
             DataFetcher originalDataFetcher = field.getDataFetcher();
             DataFetcher authDataFetcher = new DataFetcher() {
                 @Override
-                public Object get(DataFetchingEnvironment dataFetchingEnvironment) {
+                public Object get(DataFetchingEnvironment dataFetchingEnvironment) throws Exception {
                     Map<String, Object> contextMap = dataFetchingEnvironment.getContext();
                     AuthorisationCtx authContext = (AuthorisationCtx) contextMap.get("authContext");
 
