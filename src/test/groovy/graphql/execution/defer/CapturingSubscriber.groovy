@@ -1,7 +1,6 @@
 package graphql.execution.defer
 
 import graphql.DeferredExecutionResult
-import graphql.ExecutionResult
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
