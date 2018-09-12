@@ -74,6 +74,10 @@ public class AbstractRule {
         return validationContext;
     }
 
+    public ValidationErrorCollector getValidationErrorCollector() {
+        return validationErrorCollector;
+    }
+
     protected List<String> getQueryPath() {
         return validationContext.getQueryPath();
     }

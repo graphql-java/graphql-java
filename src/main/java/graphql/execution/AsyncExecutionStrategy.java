@@ -62,12 +62,15 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
 
+            resolvedFields.add(fieldName);
+            CompletableFuture<FieldValueInfo> future;
+
             if (isDeferred(executionContext, newParameters, currentField)) {
                 executionStrategyCtx.onDeferredField(currentField);
-                continue;
+                future = resolveFieldWithInfoToNull(executionContext, newParameters);
+            } else {
+                future = resolveFieldWithInfo(executionContext, newParameters);
             }
-            resolvedFields.add(fieldName);
-            CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
             futures.add(future);
         }
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
@@ -96,7 +99,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters parameters, List<Field> currentField) {
         DeferSupport deferSupport = executionContext.getDeferSupport();
-        if (deferSupport.checkForDeferDirective(currentField)) {
+        if (deferSupport.checkForDeferDirective(currentField, executionContext.getVariables())) {
             DeferredErrorSupport errorSupport = new DeferredErrorSupport();
 
             // with a deferred field we are really resetting where we execute from, that is from this current field onwards
@@ -112,7 +115,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                             .currentListIndex(0)
             );
 
-            DeferredCall call = new DeferredCall(deferredExecutionResult(executionContext, callParameters), errorSupport);
+            DeferredCall call = new DeferredCall(parameters.getPath(), deferredExecutionResult(executionContext, callParameters), errorSupport);
             deferSupport.enqueue(call);
             return true;
         }
