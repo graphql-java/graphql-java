@@ -1,5 +1,6 @@
 package graphql.execution.defer
 
+import graphql.DeferredExecutionResult
 import graphql.ExecutionResult
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
@@ -7,14 +8,14 @@ import org.reactivestreams.Subscription
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-class CapturingSubscriber implements Subscriber<ExecutionResult> {
+class CapturingSubscriber implements Subscriber<DeferredExecutionResult> {
     Subscription subscription
     AtomicBoolean finished = new AtomicBoolean()
     Throwable throwable
-    List<ExecutionResult> executionResults = []
+    List<DeferredExecutionResult> executionResults = []
     List<Object> executionResultData = []
 
-    AtomicBoolean subscribeTo(Publisher<ExecutionResult> publisher) {
+    AtomicBoolean subscribeTo(Publisher<DeferredExecutionResult> publisher) {
         publisher.subscribe(this)
         return finished
     }
@@ -27,7 +28,7 @@ class CapturingSubscriber implements Subscriber<ExecutionResult> {
     }
 
     @Override
-    void onNext(ExecutionResult executionResult) {
+    void onNext(DeferredExecutionResult executionResult) {
         executionResults.add(executionResult)
         executionResultData.add(executionResult.getData())
         subscription.request(1)
