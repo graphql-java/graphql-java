@@ -23,6 +23,10 @@ public interface DataFetcher<T> {
      * @param environment this is the data fetching environment which contains all the context you need to fetch a value
      *
      * @return a value of type T
+     *
+     * @throws Exception to relieve the implementations from having to wrap checked exceptions. Any exception thrown
+     * from a {@code DataFetcher} will eventually be handled by the registered {@link graphql.execution.DataFetcherExceptionHandler}
+     * and the related field will have a value of {@code null} in the result.
      */
-    T get(DataFetchingEnvironment environment);
+    T get(DataFetchingEnvironment environment) throws Exception;
 }
