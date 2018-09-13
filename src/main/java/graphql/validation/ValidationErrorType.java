@@ -29,6 +29,8 @@ public enum ValidationErrorType {
     InvalidFragmentType,
     LoneAnonymousOperationViolation,
     NonExecutableDefinition,
-    DuplicateOperationName
-
+    DuplicateOperationName,
+    DeferDirectiveOnNonNullField,
+    DeferDirectiveNotOnQueryOperation,
+    DeferredMustBeOnAllFields
 }

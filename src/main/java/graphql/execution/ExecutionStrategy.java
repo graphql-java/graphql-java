@@ -207,6 +207,12 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
+    protected CompletableFuture<FieldValueInfo> resolveFieldWithInfoToNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, null);
+        return CompletableFuture.completedFuture(fieldValueInfo);
+    }
+
+
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
      * {@link GraphQLFieldDefinition}.
@@ -881,7 +887,7 @@ public abstract class ExecutionStrategy {
     protected ExecutionTypeInfo fieldTypeInfo(ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
         Field field = null;
-        if (parameters.getField() != null && ! parameters.getField().isEmpty()) {
+        if (parameters.getField() != null && !parameters.getField().isEmpty()) {
             field = parameters.getField().get(0);
         }
         return newTypeInfo()

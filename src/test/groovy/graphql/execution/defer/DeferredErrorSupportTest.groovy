@@ -1,5 +1,6 @@
 package graphql.execution.defer
 
+import graphql.DeferredExecutionResult
 import graphql.Directives
 import graphql.ExecutionResult
 import graphql.GraphQL
@@ -58,7 +59,7 @@ class DeferredErrorSupportTest extends Specification {
         def executionResultDeferred = null
         def subscriber = new BasicSubscriber() {
             @Override
-            void onNext(ExecutionResult executionResultStreamed) {
+            void onNext(DeferredExecutionResult executionResultStreamed) {
                 executionResultDeferred = executionResultStreamed
                 subscription.request(1)
             }

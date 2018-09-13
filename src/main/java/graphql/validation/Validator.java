@@ -5,6 +5,9 @@ import graphql.Internal;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.rules.ArgumentsOfCorrectType;
+import graphql.validation.rules.DeferredDirectiveOnNonNullableField;
+import graphql.validation.rules.DeferredDirectiveOnQueryOperation;
+import graphql.validation.rules.DeferredMustBeOnAllFields;
 import graphql.validation.rules.ExecutableDefinitions;
 import graphql.validation.rules.FieldsOnCorrectType;
 import graphql.validation.rules.FragmentsOnCompositeType;
@@ -99,6 +102,16 @@ public class Validator {
 
         UniqueOperationNames uniqueOperationNames = new UniqueOperationNames(validationContext, validationErrorCollector);
         rules.add(uniqueOperationNames);
+
+        // our extensions beyond spec
+        DeferredDirectiveOnNonNullableField deferredDirectiveOnNonNullableField = new DeferredDirectiveOnNonNullableField(validationContext, validationErrorCollector);
+        rules.add(deferredDirectiveOnNonNullableField);
+
+        DeferredDirectiveOnQueryOperation deferredDirectiveOnQueryOperation = new DeferredDirectiveOnQueryOperation(validationContext, validationErrorCollector);
+        rules.add(deferredDirectiveOnQueryOperation);
+
+        DeferredMustBeOnAllFields deferredMustBeOnAllFields = new DeferredMustBeOnAllFields(validationContext, validationErrorCollector);
+        rules.add(deferredMustBeOnAllFields);
 
         return rules;
     }
