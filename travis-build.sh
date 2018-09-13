@@ -1,6 +1,6 @@
 #!/bin/bash
 set -ev
-echo "BRANCH: ${TRAVIS_BRANCH}"
+echo ${TRAVIS_BRANCH}
 echo "current git hash:"
 git rev-parse --short HEAD
 BUILD_COMMAND="./gradlew assemble && ./gradlew check --info"
