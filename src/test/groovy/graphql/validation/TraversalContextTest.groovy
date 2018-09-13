@@ -23,6 +23,7 @@ import spock.lang.Specification
 import static graphql.Directives.IncludeDirective
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.droidType
+import static graphql.StarWarsSchema.inputHumanType
 import static graphql.StarWarsSchema.queryType
 import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.language.OperationDefinition.Operation.QUERY
@@ -134,6 +135,43 @@ class TraversalContextTest extends Specification {
 
         then:
         traversalContext.getOutputType() == droidType
+
+        when:
+        traversalContext.leave(fragmentDefinition, [])
+
+        then:
+        traversalContext.getOutputType() == null
+    }
+
+    def "inlineFragment that is not a GraphQLOutputType should result as null"() {
+        given:
+        InlineFragment inlineFragment = new InlineFragment(new TypeName(inputHumanType.getName()))
+
+        when:
+        traversalContext.enter(inlineFragment, [])
+
+        then:
+        traversalContext.getOutputType() == null
+
+        when:
+        traversalContext.leave(inlineFragment, [])
+
+        then:
+        traversalContext.getOutputType() == null
+    }
+
+    def "fragmentDefinition that is not a GraphQLOutputType should result as null"() {
+        given:
+        FragmentDefinition fragmentDefinition = FragmentDefinition.newFragmentDefinition()
+                .name("fragment")
+                .typeCondition(new TypeName(inputHumanType.getName()))
+                .build()
+
+        when:
+        traversalContext.enter(fragmentDefinition, [])
+
+        then:
+        traversalContext.getOutputType() == null
 
         when:
         traversalContext.leave(fragmentDefinition, [])
