@@ -20,7 +20,16 @@ class StarWarsIntrospectionTests extends Specification {
         def expected = [
                 __schema: [types:
                                    [[name: 'QueryType'],
+                                    [name: 'Human'],
+                                    [name: '__TypeKind'],
+                                    [name: '__Field'],
+                                    [name: 'MutationType'],
                                     [name: 'Character'],
+                                    [name: '__Schema'],
+                                    [name: 'HumanInput'],
+                                    [name: '__Type'],
+                                    [name: '__EnumValue'],
+                                    [name: '__DirectiveLocation'],
                                     [name: 'String'],
                                     [name: 'Episode'],
                                     [name: 'Human'],
@@ -42,7 +51,7 @@ class StarWarsIntrospectionTests extends Specification {
         def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query).data
 
         then:
-        result == expected
+        result.__schema.types as Set == expected.__schema.types as Set
     }
 
 
@@ -423,9 +432,9 @@ class StarWarsIntrospectionTests extends Specification {
         Map<String, Object> schemaParts = (Map<String, Map>) schema.get("__schema")
         schemaParts.size() == 5
         schemaParts.get('queryType').size() == 1
-        schemaParts.get('mutationType') == null
+        schemaParts.get('mutationType').size() == 1
         schemaParts.get('subscriptionType') == null
-        schemaParts.get('types').size() == 15
+        schemaParts.get('types').size() == 17
         schemaParts.get('directives').size() == 3
     }
 }
