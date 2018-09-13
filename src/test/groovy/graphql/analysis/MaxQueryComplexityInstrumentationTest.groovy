@@ -101,6 +101,28 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
 
     }
 
+    def "complexity calculator works with __typename field with score 0"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: String 
+            }
+        """)
+        def query = createQuery("""
+            { f1: foo f2: foo __typename }
+            """)
+        MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(1)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationContext instrumentationContext = queryComplexityInstrumentation.beginValidation(validationParameters)
+        when:
+        instrumentationContext.onCompleted(null, null)
+        then:
+        def e = thrown(AbortExecutionException)
+        e.message == "maximum query complexity exceeded 2 > 1"
+
+    }
+
     def "custom calculator"() {
         given:
         def schema = TestUtil.schema("""
