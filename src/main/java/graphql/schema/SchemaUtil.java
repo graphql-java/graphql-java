@@ -17,27 +17,26 @@ public class SchemaUtil {
 
 
     Map<String, GraphQLType> allTypes(final GraphQLSchema schema, final Set<GraphQLType> additionalTypes) {
-        List<GraphQLType> roots = new ArrayList<GraphQLType>() {{
-            add(schema.getQueryType());
+        List<GraphQLType> roots = new ArrayList<>();
+        roots.add(schema.getQueryType());
 
-            if (schema.isSupportingMutations()) {
-                add(schema.getMutationType());
-            }
+        if (schema.isSupportingMutations()) {
+            roots.add(schema.getMutationType());
+        }
 
-            if (schema.isSupportingSubscriptions()) {
-                add(schema.getSubscriptionType());
-            }
+        if (schema.isSupportingSubscriptions()) {
+            roots.add(schema.getSubscriptionType());
+        }
 
-            if (additionalTypes != null) {
-                addAll(additionalTypes);
-            }
+        if (additionalTypes != null) {
+            roots.addAll(additionalTypes);
+        }
 
-            if (schema.getDirectives() != null) {
-                addAll(schema.getDirectives());
-            }
+        if (schema.getDirectives() != null) {
+            roots.addAll(schema.getDirectives());
+        }
 
-            add(Introspection.__Schema);
-        }};
+        roots.add(Introspection.__Schema);
 
         GraphQLTypeCollectingVisitor visitor = new GraphQLTypeCollectingVisitor();
         TRAVERSER.depthFirst(visitor, roots);
@@ -102,6 +101,8 @@ public class SchemaUtil {
 
     void replaceTypeReferences(GraphQLSchema schema) {
         final Map<String, GraphQLType> typeMap = schema.getTypeMap();
-        TRAVERSER.depthFirst(new GraphQLTypeResolvingVisitor(typeMap), typeMap.values());
+        List<GraphQLType> roots = new ArrayList<>(typeMap.values());
+        roots.addAll(schema.getDirectives());
+        TRAVERSER.depthFirst(new GraphQLTypeResolvingVisitor(typeMap), roots);
     }
 }
