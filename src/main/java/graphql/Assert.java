@@ -13,6 +13,13 @@ public class Assert {
         throw new AssertException(format(format, args));
     }
 
+    public static <T> T assertNotNullWithNPE(T object, String format, Object... args) {
+        if (object != null) {
+            return object;
+        }
+        throw new NullPointerException(format(format, args));
+    }
+
     public static <T> T assertNotNull(T object) {
         if (object != null) return object;
         throw new AssertException("Object required to be not null");

@@ -68,7 +68,15 @@ dependencies {
 
     testCompile 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testCompile "io.reactivex.rxjava2:rxjava:2.1.5"
+    testCompile 'org.testng:testng:6.1.1'
+
 }
+
+
+task testng(type: Test) {
+    useTestNG()
+}
+check.dependsOn testng
 
 compileJava.source file("build/generated-src"), sourceSets.main.java
 

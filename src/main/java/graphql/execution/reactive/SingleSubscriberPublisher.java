@@ -9,6 +9,7 @@ import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertNotNullWithNPE;
 
 /**
  * A Publisher of things that are buffered and handles a single subscriber at a time.
@@ -101,7 +102,7 @@ public class SingleSubscriberPublisher<T> implements Publisher<T> {
 
     @Override
     public void subscribe(Subscriber<? super T> subscriber) {
-        assertNotNull(subscriber, "Subscriber passed to subscribe must not be null");
+        assertNotNullWithNPE(subscriber, "Subscriber passed to subscribe must not be null");
         mutex.execute(() -> {
             if (this.subscriber == null) {
                 this.subscriber = subscriber;
