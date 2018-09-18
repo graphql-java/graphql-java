@@ -161,8 +161,7 @@ class ExecutionTypeInfoTest extends Specification {
                 .type(newTypeWiring("User").dataFetcher("mates", friendsDF))
                 .build()
 
-        def schema = TestUtil.schema(spec, runtimeWiring)
-        def graphQL = GraphQL.newGraphQL(schema).build()
+        def graphQL = TestUtil.graphQL(spec, runtimeWiring).build()
 
         def query = ''' 
             {

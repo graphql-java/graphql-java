@@ -1,6 +1,6 @@
 package graphql.introspection
 
-import graphql.GraphQL
+
 import graphql.TestUtil
 import spock.lang.Specification
 
@@ -17,8 +17,7 @@ class IntrospectionTest extends Specification {
             }
         '''
 
-        def schema = TestUtil.schema(spec)
-        def graphQL = GraphQL.newGraphQL(schema).build()
+        def graphQL = TestUtil.graphQL(spec).build()
         when:
         def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
         then:

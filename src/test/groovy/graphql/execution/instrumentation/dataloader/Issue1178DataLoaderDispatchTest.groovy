@@ -1,6 +1,6 @@
 package graphql.execution.instrumentation.dataloader
 
-import graphql.GraphQL
+
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -44,7 +44,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.supplyAsync({
-                    return keys.collect({ [id: 'r'+ it]})
+                    return keys.collect({ [id: 'r' + it] })
                 }, executor)
             }
         })
@@ -52,7 +52,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.supplyAsync({
-                    return keys.collect({ [id: 'r'+ it]})
+                    return keys.collect({ [id: 'r' + it] })
                 }, executor)
             }
         })
@@ -72,10 +72,9 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                 .dataFetcher("related2", relatedDf2))
                 .build()
 
-        def schema = TestUtil.schema(sdl, wiring)
 
         when:
-        def graphql = GraphQL.newGraphQL(schema)
+        def graphql = TestUtil.graphQL(sdl, wiring)
                 .instrumentation(new DataLoaderDispatcherInstrumentation(dataLoaderRegistry))
                 .build()
 
@@ -122,7 +121,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
         private final DataLoader dataLoader
 
-        public MyDataFetcher(DataLoader dataLoader) {
+        MyDataFetcher(DataLoader dataLoader) {
             this.dataLoader = dataLoader
         }
 

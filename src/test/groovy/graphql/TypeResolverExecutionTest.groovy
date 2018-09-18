@@ -118,8 +118,7 @@ class TypeResolverExecutionTest extends Specification {
 
         def runTimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new SimpleTestWiringFactory(simpleTypeResolver))
-        def schema = TestUtil.schema(idl, runTimeWiring)
-        def graphql = new GraphQL(schema)
+        def graphql = TestUtil.graphQL(idl, runTimeWiring).build()
 
         when:
         def res = graphql.execute('''
@@ -167,8 +166,7 @@ class TypeResolverExecutionTest extends Specification {
 
         def runTimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new SimpleTestWiringFactory(aberrantTypeResolver))
-        def schema = TestUtil.schema(idl, runTimeWiring)
-        def graphql = new GraphQL(schema)
+        def graphql = TestUtil.graphQL(idl, runTimeWiring).build()
 
         when:
         def res = graphql.execute('''
@@ -213,8 +211,7 @@ class TypeResolverExecutionTest extends Specification {
 
         def runTimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new SimpleTestWiringFactory(aberrantTypeResolver))
-        def schema = TestUtil.schema(idl, runTimeWiring)
-        def graphql = new GraphQL(schema)
+        def graphql = TestUtil.graphQL(idl, runTimeWiring).build()
 
         when:
         def res = graphql.execute('''
@@ -257,8 +254,7 @@ class TypeResolverExecutionTest extends Specification {
 
         def runTimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new SimpleTestWiringFactory(nullTypeResolver))
-        def schema = TestUtil.schema(idl, runTimeWiring)
-        def graphql = new GraphQL(schema)
+        def graphql = TestUtil.graphQL(idl, runTimeWiring).build()
 
         when:
         def res = graphql.execute('''
@@ -301,8 +297,7 @@ class TypeResolverExecutionTest extends Specification {
 
         def runTimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new SimpleTestWiringFactory(nullTypeResolver))
-        def schema = TestUtil.schema(idl, runTimeWiring)
-        def graphql = new GraphQL(schema)
+        def graphql = TestUtil.graphQL(idl, runTimeWiring).build()
 
         when:
         def res = graphql.execute('''
@@ -345,8 +340,7 @@ class TypeResolverExecutionTest extends Specification {
 
         def runTimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new SimpleTestWiringFactory(aberrantTypeResolver))
-        def schema = TestUtil.schema(idl, runTimeWiring)
-        def graphql = new GraphQL(schema)
+        def graphql = TestUtil.graphQL(idl, runTimeWiring).build()
 
         when:
         def res = graphql.execute('''
@@ -389,8 +383,7 @@ class TypeResolverExecutionTest extends Specification {
 
         def runTimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new SimpleTestWiringFactory(aberrantTypeResolver))
-        def schema = TestUtil.schema(idl, runTimeWiring)
-        def graphql = new GraphQL(schema)
+        def graphql = TestUtil.graphQL(idl, runTimeWiring).build()
 
         when:
         def res = graphql.execute('''
@@ -430,8 +423,7 @@ class TypeResolverExecutionTest extends Specification {
 
         def runTimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new SimpleTestWiringFactory(nullTypeResolver))
-        def schema = TestUtil.schema(idl, runTimeWiring)
-        def graphql = new GraphQL(schema)
+        def graphql = TestUtil.graphQL(idl, runTimeWiring).build()
 
         when:
         def res = graphql.execute('''
@@ -471,8 +463,7 @@ class TypeResolverExecutionTest extends Specification {
 
         def runTimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new SimpleTestWiringFactory(nullTypeResolver))
-        def schema = TestUtil.schema(idl, runTimeWiring)
-        def graphql = new GraphQL(schema)
+        def graphql = TestUtil.graphQL(idl, runTimeWiring).build()
 
         when:
         def res = graphql.execute('''

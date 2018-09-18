@@ -554,9 +554,9 @@ input CharacterInput {
         when:
         def printedSchema = new SchemaPrinter().print(graphQLSchema)
 
-        GraphQLSchema schema = TestUtil.schema(printedSchema)
+        def graphQL = TestUtil.graphQL(printedSchema).build()
 
-        def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
+        def introspectionResult = graphQL.execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
         Document schemaDefinitionDocument = introspectionResultToSchema.createSchemaDefinition(introspectionResult.data as Map)
         AstPrinter astPrinter = new AstPrinter()
         def astPrinterResult = astPrinter.printAst(schemaDefinitionDocument)

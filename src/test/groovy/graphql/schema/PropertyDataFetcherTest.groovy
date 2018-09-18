@@ -294,8 +294,7 @@ class PropertyDataFetcherTest extends Specification {
             }
         '''
 
-        def schema = TestUtil.schema(spec)
-        def graphQL = GraphQL.newGraphQL(schema).build()
+        def graphQL = TestUtil.graphQL(spec).build()
         def executionInput = ExecutionInput.newExecutionInput().query('''
             {
                 products(reverseNames : true) {

@@ -22,6 +22,7 @@ import graphql.schema.idl.TypeRuntimeWiring
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
 
+import java.util.function.Supplier
 import java.util.stream.Collectors
 
 import static graphql.Scalars.GraphQLString
@@ -44,27 +45,6 @@ class TestUtil {
             .build())
             .build()
 
-    static GraphQLSchema schema(String spec, Map<String, Map<String, DataFetcher>> dataFetchers) {
-        def wiring = RuntimeWiring.newRuntimeWiring()
-        dataFetchers.each { type, fieldFetchers ->
-            def tw = TypeRuntimeWiring.newTypeWiring(type).dataFetchers(fieldFetchers)
-            wiring.type(tw)
-        }
-        schema(spec, wiring)
-    }
-
-    static GraphQLSchema schema(String spec, RuntimeWiring.Builder runtimeWiring) {
-        schema(spec, runtimeWiring.build())
-    }
-
-    static GraphQLSchema schema(String spec) {
-        schema(spec, mockRuntimeWiring)
-    }
-
-    static GraphQLSchema schema(Reader specReader) {
-        schema(specReader, mockRuntimeWiring)
-    }
-
     static GraphQLSchema schemaFile(String fileName) {
         return schemaFile(fileName, mockRuntimeWiring)
     }
@@ -85,6 +65,26 @@ class TestUtil {
         schema
     }
 
+    static GraphQLSchema schema(String spec, Map<String, Map<String, DataFetcher>> dataFetchers) {
+        def wiring = RuntimeWiring.newRuntimeWiring()
+        dataFetchers.each { type, fieldFetchers ->
+            def tw = TypeRuntimeWiring.newTypeWiring(type).dataFetchers(fieldFetchers)
+            wiring.type(tw)
+        }
+        schema(spec, wiring)
+    }
+
+    static GraphQLSchema schema(String spec, RuntimeWiring.Builder runtimeWiring) {
+        schema(spec, runtimeWiring.build())
+    }
+
+    static GraphQLSchema schema(String spec) {
+        schema(spec, mockRuntimeWiring)
+    }
+
+    static GraphQLSchema schema(Reader specReader) {
+        schema(specReader, mockRuntimeWiring)
+    }
 
     static GraphQLSchema schema(String spec, RuntimeWiring runtimeWiring) {
         schema(new StringReader(spec), runtimeWiring)
@@ -109,6 +109,36 @@ class TestUtil {
         try {
             def registry = new SchemaParser().parse(spec)
             return new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+        } catch (SchemaProblem e) {
+            assert false: "The schema could not be compiled : ${e}"
+            return null
+        }
+    }
+
+    static GraphQL.Builder graphQL(String spec) {
+        return graphQL(new StringReader(spec), mockRuntimeWiring)
+    }
+
+    static GraphQL.Builder graphQL(String spec, RuntimeWiring runtimeWiring) {
+        return graphQL(new StringReader(spec), runtimeWiring)
+    }
+
+    static GraphQL.Builder graphQL(String spec, RuntimeWiring.Builder runtimeWiring) {
+        return graphQL(new StringReader(spec), runtimeWiring.build())
+    }
+
+    static GraphQL.Builder graphQL(String spec, Map<String, Map<String, DataFetcher>> dataFetchers) {
+        toGraphqlBuilder({ -> schema(spec, dataFetchers) })
+    }
+
+    static GraphQL.Builder graphQL(Reader specReader, RuntimeWiring runtimeWiring) {
+        return toGraphqlBuilder({ -> schema(specReader, runtimeWiring) })
+    }
+
+    private static GraphQL.Builder toGraphqlBuilder(Supplier<GraphQLSchema> supplier) {
+        try {
+            def schema = supplier.get()
+            return GraphQL.newGraphQL(schema)
         } catch (SchemaProblem e) {
             assert false: "The schema could not be compiled : ${e}"
             return null

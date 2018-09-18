@@ -52,15 +52,14 @@ class Issue526 extends Specification {
             }
         """
 
-        def schema = TestUtil.schema(spec, newRuntimeWiring()
+        def graphQL = TestUtil.graphQL(spec, newRuntimeWiring()
                 .type(newTypeWiring("Query").dataFetcher("droid", new DataFetcher() {
             @Override
             Object get(DataFetchingEnvironment environment) {
                 return new Droid()
             }
-        })))
+        }))).build()
 
-        def graphQL = GraphQL.newGraphQL(schema).build()
         def query = """
         {
             droid {

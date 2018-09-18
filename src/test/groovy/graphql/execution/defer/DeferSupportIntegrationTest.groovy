@@ -130,9 +130,8 @@ class DeferSupportIntegrationTest extends Specification {
                 .type(newTypeWiring("Comment").dataFetcher("comments", commentsFetcher))
                 .type(newTypeWiring("Review").dataFetcher("comments", commentsFetcher))
                 .build()
-        def schema = TestUtil.schema(schemaSpec, runtimeWiring)
 
-        graphQL = GraphQL.newGraphQL(schema).build()
+        graphQL = TestUtil.graphQL(schemaSpec, runtimeWiring).build()
     }
 
     def "test defer support end to end"() {
