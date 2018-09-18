@@ -153,7 +153,7 @@ public class GraphQL {
     }
 
     private GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, ExecutionIdProvider idProvider, Instrumentation instrumentation, PreparsedDocumentProvider preparsedDocumentProvider) {
-        this.graphQLSchema = assertNotNull(graphQLSchema, "queryStrategy must be non null");
+        this.graphQLSchema = assertNotNull(graphQLSchema, "graphQLSchema must be non null");
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new SubscriptionExecutionStrategy();
@@ -251,7 +251,7 @@ public class GraphQL {
         }
 
         public GraphQL build() {
-            assertNotNull(graphQLSchema, "queryStrategy must be non null");
+            assertNotNull(graphQLSchema, "graphQLSchema must be non null");
             assertNotNull(queryExecutionStrategy, "queryStrategy must be non null");
             assertNotNull(idProvider, "idProvider must be non null");
             return new GraphQL(graphQLSchema, queryExecutionStrategy, mutationExecutionStrategy, subscriptionExecutionStrategy, idProvider, instrumentation, preparsedDocumentProvider);
