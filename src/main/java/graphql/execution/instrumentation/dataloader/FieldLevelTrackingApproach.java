@@ -133,9 +133,7 @@ public class FieldLevelTrackingApproach {
         int parentLevel = path.getLevel();
         int curLevel = parentLevel + 1;
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
-        log.info("About to acquire lock on callstack {} for path", path);
         synchronized (callStack) {
-            log.info("Acquired lock on callstack {} for path", path);
             callStack.increaseExpectedFetchCount(curLevel, fieldCount);
             callStack.increaseHappenedStrategyCalls(curLevel);
         }
