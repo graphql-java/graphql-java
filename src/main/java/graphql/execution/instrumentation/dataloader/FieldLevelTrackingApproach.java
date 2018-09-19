@@ -133,7 +133,9 @@ public class FieldLevelTrackingApproach {
         int parentLevel = path.getLevel();
         int curLevel = parentLevel + 1;
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
+        log.info("About to acquire lock on callstack {} for path", path);
         synchronized (callStack) {
+            log.info("Acquired lock on callstack {} for path", path);
             callStack.increaseExpectedFetchCount(curLevel, fieldCount);
             callStack.increaseHappenedStrategyCalls(curLevel);
         }
@@ -151,9 +153,7 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
-                synchronized (callStack) {
-                    handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
-                }
+                handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
             }
 
             @Override
@@ -171,16 +171,18 @@ public class FieldLevelTrackingApproach {
     // thread safety : called with synchronised(callStack)
     //
     private void handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
-        callStack.increaseHappenedOnFieldValueCalls(curLevel);
-        int expectedStrategyCalls = 0;
-        for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
-            if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
-                expectedStrategyCalls++;
-            } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
-                expectedStrategyCalls += getCountForList(fieldValueInfo);
+        synchronized (callStack) {
+            callStack.increaseHappenedOnFieldValueCalls(curLevel);
+            int expectedStrategyCalls = 0;
+            for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
+                if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
+                    expectedStrategyCalls++;
+                } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
+                    expectedStrategyCalls += getCountForList(fieldValueInfo);
+                }
             }
+            callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
         }
-        callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
         dispatchIfNeeded(callStack, curLevel + 1);
     }
 
@@ -215,9 +217,7 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
-                synchronized (callStack) {
-                    handleOnFieldValuesInfo(Collections.singletonList(fieldValueInfo), callStack, level);
-                }
+                handleOnFieldValuesInfo(Collections.singletonList(fieldValueInfo), callStack, level);
             }
         };
     }
@@ -232,8 +232,8 @@ public class FieldLevelTrackingApproach {
             public void onDispatched(CompletableFuture result) {
                 synchronized (callStack) {
                     callStack.increaseFetchCount(level);
-                    dispatchIfNeeded(callStack, level);
                 }
+                dispatchIfNeeded(callStack, level);
             }
 
             @Override
@@ -256,15 +256,17 @@ public class FieldLevelTrackingApproach {
     // thread safety : called with synchronised(callStack)
     //
     private boolean levelReady(CallStack callStack, int level) {
-        if (level == 1) {
-            // level 1 is special: there is only one strategy call and that's it
-            return callStack.allFetchesHappened(1);
+        synchronized (callStack) {
+            if (level == 1) {
+                // level 1 is special: there is only one strategy call and that's it
+                return callStack.allFetchesHappened(1);
+            }
+            if (levelReady(callStack, level - 1) && callStack.allOnFieldCallsHappened(level - 1)
+                    && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
+                return true;
+            }
+            return false;
         }
-        if (levelReady(callStack, level - 1) && callStack.allOnFieldCallsHappened(level - 1)
-                && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
-            return true;
-        }
-        return false;
     }
 
     void dispatch() {
