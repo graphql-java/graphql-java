@@ -228,9 +228,9 @@ public class GraphQLSchema {
     }
 
     public static class Builder {
-        private GraphQLObjectType queryType;
-        private GraphQLObjectType mutationType;
-        private GraphQLObjectType subscriptionType;
+        public GraphQLObjectType queryType;
+        public GraphQLObjectType mutationType;
+        public GraphQLObjectType subscriptionType;
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         private Set<GraphQLType> additionalTypes = new HashSet<>();
         // we default these in
