@@ -1,7 +1,7 @@
 Using Dataloader
 ================
 
-If you are using ``graphql``, you are likely to making queries on a graph of data (surprise surprise).  But it's easy
+If you are using ``graphql``, you are likely to make queries on a graph of data (surprise surprise).  But it's easy
 to implement inefficient code with naive loading of a graph of data.
 
 Using ``java-dataloader`` will help you to make this a more efficient process by both caching and batching requests for that graph of data items.  If ``dataloader``
@@ -198,6 +198,171 @@ build out a new ``GraphQL`` set of objects on each request.
         // you can now throw away the GraphQL and hence DataLoaderDispatcherInstrumentation
         // and DataLoaderRegistry objects since they are really cheap to build per request
 
+
+Getting Per Request Data Loaders to Work
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To create a per-request ``DataLoader``, you will certainly be using a dependency injection framework
+like Google Guice, or Spring, or Java CDI. These frameworks make sure that an object is created,
+put into the "scope" (that is a Map of objects that live as long as the request runs), and 
+that it is forgotten when the request has been processed.
+
+One of the fundamental laws of dependency injection is: An object cannot get an injected reference to an
+object with a shorter lifetime (i.e. scope) than itself. So, you cannot inject a ``DataLoader``
+into a ``DataFetcher`` because the ``DataFetcher`` must already exist at the time the ``RuntimeWiring``
+is constructed. That time is long before the first request comes into graphql-java. But: You will
+need dependency injection for data loaders because they will need to connect to your backend
+services, right?
+
+So, how do you solve this "catch 22"? Let your "query context" object come to rescue.
+
+When you run a ``GraphQL`` query using ``ExecutionInput``, you can specify a "context" object that
+will be passed to every ``DataFetcher`` that you use. This query context object usually holds
+important information that you need for every query. Example: the currently logged-in user's id.
+Now, the solution is to construct the query context object using dependency injection, too,
+and add a ``DataLoaderRegistry`` to it that you can use inside your data fetchers. Put all
+data loaders that you need into that registry so that you have access to them inside your
+``DataFetcher``.
+
+It is a good idea to have a ``QueryContext`` base class with the the context data that
+you already have, and add an abstract ``getDataLoader()`` method to it that you implement inside
+a ``QueryContextImpl`` class that keeps all the technical bells and whistles. That way, your 
+``DataFetcher`` implementations will stay free of additional dependencies to other modules:
+
+.. code-block:: java
+
+        public abstract class QueryContext {
+
+            /**
+            * The ID of the user who started this GraphQL query.
+            */
+            public Long currentUserId;
+
+            /**
+            * Get a data loader for a certain purpose.
+            */
+            public abstract <T> DataLoader<Long, T> getDataLoader(String purpose);
+        }
+
+The implementation class might look like this, using dependency injection in the constructor:
+
+.. code-block:: java
+
+        import javax.inject.Inject;
+        
+        public class QueryContextImpl extends QueryContext {
+
+            private final DataLoaderRegistry dataLoaderRegistry;
+
+            @Inject
+            public QueryContextImpl(UserBatchLoader userBatchLoader,
+                                    TeamBatchLoader teamBatchLoader) {
+                dataLoaderRegistry = new DataLoaderRegistry();
+                dataLoaderRegistry.register("users", DataLoader.newMappedDataLoader(userBatchLoader));
+                dataLoaderRegistry.register("teams", DataLoader.newMappedDataLoader(teamBatchLoader));
+            }
+
+            @Override
+            public <T> DataLoader<Long, T> getDataLoader(String purpose) {
+                return dataLoaderRegistry.getDataLoader(purpose);
+            }
+
+            DataLoaderRegistry getDataLoaderRegistry() {
+                return dataLoaderRegistry;
+            }
+        }
+
+You will use this ``QueryContext`` inside your data fetchers. This example fetches the user to
+whom a certain task has been assigned:
+
+.. code-block:: java
+
+        public class TaskAssignedUserFetcher implements DataFetcher<CompletableFuture<User>> {
+
+            @Override
+            public CompletableFuture<User> get(DataFetchingEnvironment environment) {
+                Task task = environment.getSource();
+                QueryContext queryContext = environment.getContext();
+                DataLoader<Long, User> userDataLoader = queryContext.getDataLoader("users");
+                return task.assignedUserId == null
+                        ? CompletableFuture.completedFuture(null)
+                        : userDataLoader.load(task.assignedUserId);
+            }
+
+        }
+
+The ``DataLoader`` in turn possibly uses a ``MappedBatchLoader`` because your database service
+operates with sets of ids instead of lists of ids:
+
+.. code-block:: java
+
+        public class UserBatchLoader implements MappedBatchLoader<Long, User> {
+
+            @Inject
+            private UserAppService userAppService;
+
+            @Override
+            public CompletionStage<Map<Long, User>> load(Set<Long> objectIdSet) {
+                return CompletableFuture.completedFuture(
+                        this.userAppService.usersOfIds(objectIdSet)
+                                .stream()
+                                .collect(Collectors.toMap(object -> object.id, Function.identity()))
+                );
+            }
+        }
+
+OK. Finally, you will connect the data loaders when you really execute a ``GraphQL`` query:
+
+.. code-block:: java
+
+        import javax.inject.Inject;
+        import javax.inject.Provider;
+
+        ...some class declaration...
+        
+        @Inject
+        private Provider<QueryContextImpl> queryContextProvider;
+
+        void executeGraphQL() {
+            ...
+            QueryContextImpl queryContext = queryContextProvider.get();
+            queryContext.currentUserId = getTheCurrentUserFromSomewhere();
+
+            ExecutionInput.Builder builder = ExecutionInput.newExecutionInput()
+                    .query(myQueryString)
+                    .variables(variables)
+                    .context(queryContext);
+
+            ExecutionInput executionInput = builder.build();
+
+            DataLoaderDispatcherInstrumentation dispatcherInstrumentation
+                    = new DataLoaderDispatcherInstrumentation(queryContext.getDataLoaderRegistry());
+
+            final ExecutionResult executionResult =
+                    GraphQL
+                            .newGraphQL(this.graphQLSchema)
+                            .instrumentation(dispatcherInstrumentation)
+                            .build()
+                            .execute(executionInput);
+
+Of course, you will tell the dependency injection framework to create a ``QueryContext`` in request
+scope. This means that all data loaders will also be created once per request, as planned. Here is
+an example for the Ratpack/Guice environment. If you use Spring or Java CDI, this will have to
+look differently, of course:
+
+.. code-block:: java
+
+        import com.google.inject.AbstractModule;
+        import ratpack.guice.RequestScoped;
+
+        public class GraphQLModule extends AbstractModule {
+            @Override
+            protected void configure() {
+                bind(QueryContextImpl.class).in(RequestScoped.class);
+            }
+        }
+
+Phew! Quite a few things to care about, right? However, you'll get a lot for the price that you pay.
 
 Async Calls On Your Batch Loader Function Only
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
