@@ -15,7 +15,10 @@ import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvir
  * Given a normal data fetcher as a delegate,
  * uses that fetcher in a batched context by iterating through each source value and calling
  * the delegate.
+ *
+ * @deprecated This has been deprecated in favour of using {@link graphql.execution.AsyncExecutionStrategy} and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
+@Deprecated
 public class UnbatchedDataFetcher implements BatchedDataFetcher {
 
     private final DataFetcher delegate;

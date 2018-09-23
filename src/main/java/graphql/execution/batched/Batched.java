@@ -51,8 +51,11 @@ import java.lang.annotation.Target;
  * }
  * </code>
  * </pre>
+ *
+ * @deprecated This has been deprecated in favour of using {@link graphql.execution.AsyncExecutionStrategy} and {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation}
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
+@Deprecated
 public @interface Batched {
 }
