@@ -129,9 +129,14 @@ public class TraversalContext implements DocumentVisitor {
         TypeName typeCondition = inlineFragment.getTypeCondition();
         GraphQLOutputType type;
         if (typeCondition != null) {
-            type = (GraphQLOutputType) schema.getType(typeCondition.getName());
+            GraphQLType typeConditionType = schema.getType(typeCondition.getName());
+            if (typeConditionType instanceof GraphQLOutputType) {
+                type = (GraphQLOutputType) typeConditionType;
+            } else {
+                type = null;
+            }
         } else {
-            type = (GraphQLOutputType) getParentType();
+            type = getParentType();
         }
         addOutputType(type);
     }
@@ -139,7 +144,7 @@ public class TraversalContext implements DocumentVisitor {
     private void enterImpl(FragmentDefinition fragmentDefinition) {
         enterName(fragmentDefinition.getName());
         GraphQLType type = schema.getType(fragmentDefinition.getTypeCondition().getName());
-        addOutputType((GraphQLOutputType) type);
+        addOutputType(type instanceof GraphQLOutputType ? (GraphQLOutputType) type : null);
     }
 
     private void enterImpl(VariableDefinition variableDefinition) {

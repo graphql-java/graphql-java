@@ -79,7 +79,7 @@ class ExecutionPathTest extends Specification {
         def f4Fetcher = { env -> "Some Value" } as DataFetcher
         def nonNullFieldFetcher = { env -> null } as DataFetcher
 
-        def schema = TestUtil.schema(spec,
+        def graphQL = TestUtil.graphQL(spec,
                 ["Query"      :
                          [
                                  "f1": f1Fetcher,
@@ -96,10 +96,8 @@ class ExecutionPathTest extends Specification {
                          [
                                  "nonNullField": nonNullFieldFetcher
                          ]
-                ])
+                ]).build()
 
-
-        GraphQL graphQL = GraphQL.newGraphQL(schema).build()
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query("""

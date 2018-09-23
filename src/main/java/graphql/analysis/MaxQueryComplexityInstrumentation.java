@@ -95,8 +95,11 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
                 .build();
     }
 
-    private int calculateComplexity(QueryVisitorFieldEnvironment QueryVisitorFieldEnvironment, int childsComplexity) {
-        FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(QueryVisitorFieldEnvironment);
+    private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childsComplexity) {
+        if (queryVisitorFieldEnvironment.isTypeNameIntrospectionField()) {
+            return 0;
+        }
+        FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(queryVisitorFieldEnvironment);
         return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childsComplexity);
     }
 

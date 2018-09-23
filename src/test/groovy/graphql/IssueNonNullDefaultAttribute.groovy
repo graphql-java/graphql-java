@@ -26,8 +26,7 @@ class IssueNonNullDefaultAttribute extends Specification {
 
     def typeRuntimeWiring = newTypeWiring('Query').dataFetcher("name", nameFetcher).build()
     def runtimeWiring = newRuntimeWiring().type(typeRuntimeWiring).build()
-    def qLSchema = TestUtil.schema(spec, runtimeWiring)
-    def graphql = GraphQL.newGraphQL(qLSchema).build()
+    def graphql = TestUtil.graphQL(spec, runtimeWiring).build()
 
     def "Can omit non-null attributes that have default values"() {
         when:

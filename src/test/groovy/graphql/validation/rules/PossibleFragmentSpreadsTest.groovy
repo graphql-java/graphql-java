@@ -297,4 +297,42 @@ class PossibleFragmentSpreadsTest extends Specification {
 
     }
 
+    def 'when fragment target type is not composite type do not error - FragmentsOnCompositeType takes care of the validation'() {
+        setup: "LeashInput is an input type so it shouldn't be target-able"
+        def query = """
+           query {
+            dogWithInput {
+             ...LeashInputFragment
+            }
+           }
+           
+           fragment LeashInputFragment on LeashInput {
+            id
+           }
+        """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def 'when inline fragment target type is not composite type do not error - FragmentsOnCompositeType takes care of the validation'() {
+        setup: "LeashInput is an input type so it shouldn't be target-able"
+        def query = """
+           query {
+            dogWithInput {
+             ...on LeashInput {
+              id 
+             }
+            }
+           }           
+        """
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
 }

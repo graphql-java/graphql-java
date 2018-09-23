@@ -95,8 +95,7 @@ class CoercingTest extends Specification {
                 .build()
 
 
-        def schema = TestUtil.schema(spec, runtimeWiring)
-        def graphQL = GraphQL.newGraphQL(schema).build()
+        def graphQL = TestUtil.graphQL(spec,runtimeWiring).build()
         def executionInput = ExecutionInput.newExecutionInput()
                 .variables([
                 strVar: "strVar",
