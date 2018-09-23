@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TypeMismatchError;
@@ -37,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -881,7 +883,7 @@ public abstract class ExecutionStrategy {
     protected ExecutionTypeInfo fieldTypeInfo(ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
         Field field = null;
-        if (parameters.getField() != null && ! parameters.getField().isEmpty()) {
+        if (parameters.getField() != null && !parameters.getField().isEmpty()) {
             field = parameters.getField().get(0);
         }
         return newTypeInfo()
@@ -894,4 +896,15 @@ public abstract class ExecutionStrategy {
 
     }
 
+
+    @Internal
+    public static String mkNameForPath(Field currentField) {
+        return mkNameForPath(Collections.singletonList(currentField));
+    }
+
+    @Internal
+    public static String mkNameForPath(List<Field> currentField) {
+        Field field = currentField.get(0);
+        return field.getAlias() != null ? field.getAlias() : field.getName();
+    }
 }
