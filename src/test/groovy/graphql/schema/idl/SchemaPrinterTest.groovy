@@ -832,4 +832,53 @@ input SomeInput @inputTypeDirective {
     }
 
 
+    def "directives with default values are printed correctly"() {
+        given:
+        def idl = """
+
+            type Field {
+              active : Enum
+              deprecated : Enum @deprecated
+              deprecatedWithReason : Enum @deprecated(reason : "Custom reason 1")
+            }
+            
+            type Query {
+                field : Field
+            }
+            
+            enum Enum {
+              ACTIVE
+              DEPRECATED @deprecated
+              DEPRECATED_WITH_REASON @deprecated(reason : "Custom reason 2")
+            }
+        """
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions().enforceSchemaDirectives(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
+
+        then:
+        // args and directives are sorted like the rest of the schema printer
+        result == '''type Field {
+  active: Enum
+  deprecated: Enum @deprecated(reason : "No longer supported")
+  deprecatedWithReason: Enum @deprecated(reason : "Custom reason 1")
 }
+
+type Query {
+  field: Field
+}
+
+enum Enum {
+  ACTIVE
+  DEPRECATED @deprecated(reason : "No longer supported")
+  DEPRECATED_WITH_REASON @deprecated(reason : "Custom reason 2")
+}
+'''
+    }
+
+}
+
