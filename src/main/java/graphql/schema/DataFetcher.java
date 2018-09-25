@@ -11,7 +11,7 @@ import graphql.PublicSpi;
  * In other implementations, these are sometimes called "Resolvers" or "Field Resolvers", because that is there function,
  * they resolve a logical graphql field into an actual data value.
  *
- * @param <T> the type of object returned
+ * @param <T> the type of object returned. May also be wrapped in a {@link graphql.execution.DataFetcherResult}
  */
 @PublicSpi
 public interface DataFetcher<T> {
@@ -22,7 +22,7 @@ public interface DataFetcher<T> {
      *
      * @param environment this is the data fetching environment which contains all the context you need to fetch a value
      *
-     * @return a value of type T
+     * @return a value of type T. May be wrapped in a {@link graphql.execution.DataFetcherResult}
      *
      * @throws Exception to relieve the implementations from having to wrap checked exceptions. Any exception thrown
      * from a {@code DataFetcher} will eventually be handled by the registered {@link graphql.execution.DataFetcherExceptionHandler}
