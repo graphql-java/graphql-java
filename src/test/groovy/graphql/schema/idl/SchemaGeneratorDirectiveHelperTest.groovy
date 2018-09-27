@@ -23,6 +23,7 @@ import readme.DirectivesExamples
 import spock.lang.Specification
 
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import static graphql.TestUtil.schema
 import static graphql.schema.DataFetcherFactories.wrapDataFetcher
@@ -324,6 +325,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def day = LocalDateTime.of(1969, 10, 8, 0, 0)
+        // MMM is Locale sensitive
+        def localizedYearFirst = DateTimeFormatter.ofPattern("YYYY, MMM dd").format(day)
         when:
         def executionInput = ExecutionInput.newExecutionInput().root([dateField: day])
                 .query(''' 
@@ -341,7 +344,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         executionResult.errors.isEmpty()
         executionResult.data['default'] == '08-10-1969'
         executionResult.data['usa'] == '10-08-1969'
-        executionResult.data['yearFirst'] == '1969, Oct 08'
+        executionResult.data['yearFirst'] == localizedYearFirst
     }
 
     def "can state-fully track wrapped elements"() {
