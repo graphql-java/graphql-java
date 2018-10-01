@@ -7,13 +7,13 @@ import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
+import static java.util.Optional.ofNullable;
 
 /**
  * Prevents execution if the query complexity is greater than the specified maxComplexity
@@ -54,20 +54,21 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
             }
             QueryTraversal queryTraversal = newQueryTraversal(parameters);
 
-            Map<QueryVisitorFieldEnvironment, List<Integer>> valuesByParent = new LinkedHashMap<>();
+            Map<QueryVisitorFieldEnvironment, Integer> valuesByParent = new LinkedHashMap<>();
             queryTraversal.visitPostOrder(new QueryVisitorStub() {
                 @Override
                 public void visitField(QueryVisitorFieldEnvironment env) {
-                    int childsComplexity = 0;
-                    if (valuesByParent.containsKey(env)) {
-                        childsComplexity = valuesByParent.get(env).stream().mapToInt(Integer::intValue).sum();
-                    }
+                    int childsComplexity = valuesByParent.getOrDefault(env, 0);
                     int value = calculateComplexity(env, childsComplexity);
-                    valuesByParent.putIfAbsent(env.getParentEnvironment(), new ArrayList<>());
-                    valuesByParent.get(env.getParentEnvironment()).add(value);
+
+                    valuesByParent.compute(env.getParentEnvironment(), (key, oldValue) ->
+                        ofNullable(oldValue).orElse(0) + value
+                    );
                 }
             });
-            int totalComplexity = valuesByParent.get(null).stream().mapToInt(Integer::intValue).sum();
+
+            int totalComplexity = valuesByParent.getOrDefault(null, 0);
+
             if (totalComplexity > maxComplexity) {
                 throw mkAbortException(totalComplexity, maxComplexity);
             }
@@ -88,11 +89,11 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
 
     QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
         return QueryTraversal.newQueryTraversal()
-                .schema(parameters.getSchema())
-                .document(parameters.getDocument())
-                .operationName(parameters.getOperation())
-                .variables(parameters.getVariables())
-                .build();
+                             .schema(parameters.getSchema())
+                             .document(parameters.getDocument())
+                             .operationName(parameters.getOperation())
+                             .variables(parameters.getVariables())
+                             .build();
     }
 
     private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childsComplexity) {
@@ -109,11 +110,11 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
             parentEnv = convertEnv(queryVisitorFieldEnvironment.getParentEnvironment());
         }
         return new FieldComplexityEnvironment(
-                queryVisitorFieldEnvironment.getField(),
-                queryVisitorFieldEnvironment.getFieldDefinition(),
-                queryVisitorFieldEnvironment.getFieldsContainer(),
-                queryVisitorFieldEnvironment.getArguments(),
-                parentEnv
+            queryVisitorFieldEnvironment.getField(),
+            queryVisitorFieldEnvironment.getFieldDefinition(),
+            queryVisitorFieldEnvironment.getFieldsContainer(),
+            queryVisitorFieldEnvironment.getArguments(),
+            parentEnv
         );
     }
 
