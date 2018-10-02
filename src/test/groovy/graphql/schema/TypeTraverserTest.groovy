@@ -184,6 +184,161 @@ class TypeTraverserTest extends Specification {
                                "reference: dummyRef", "fallback: dummyRef"]
     }
 
+    def "reachable scalar directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def coercing = new Coercing() {
+            private static final String TEST_ONLY = "For testing only";
+
+            @Override
+            Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                throw new UnsupportedOperationException(TEST_ONLY);
+            }
+
+            @Override
+            Object parseValue(Object input) throws CoercingParseValueException {
+                throw new UnsupportedOperationException(TEST_ONLY);
+            }
+
+            @Override
+            Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                throw new UnsupportedOperationException(TEST_ONLY);
+            }
+        }
+        def scalarType = GraphQLScalarType.newScalar()
+                .name("foo")
+                .coercing(coercing)
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, scalarType)
+        then:
+        visitor.getStack() == ["scalar: foo", "fallback: foo", "directive: bar", "fallback: bar"]
+    }
+
+    def "reachable object directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def objectType = GraphQLObjectType.newObject()
+                .name("foo")
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, objectType)
+        then:
+        visitor.getStack() == ["object: foo", "fallback: foo", "directive: bar", "fallback: bar"]
+    }
+
+    def "reachable field definition directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition()
+                .name("foo")
+                .type(Scalars.GraphQLString)
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, fieldDefinition)
+        then:
+        visitor.getStack() == ["field: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
+    }
+
+    def "reachable argument directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def argument = GraphQLArgument.newArgument()
+                .name("foo")
+                .type(Scalars.GraphQLString)
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, argument)
+        then:
+        visitor.getStack() == ["argument: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
+    }
+
+    def "reachable interface directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def interfaceType = GraphQLInterfaceType.newInterface()
+                .name("foo")
+                .typeResolver(NOOP_RESOLVER)
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, interfaceType)
+        then:
+        visitor.getStack() == ["interface: foo", "fallback: foo", "directive: bar", "fallback: bar"]
+    }
+
+    def "reachable union directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def unionType = GraphQLUnionType.newUnionType()
+                .name("foo")
+                .possibleType(GraphQLObjectType.newObject().name("dummy").build())
+                .typeResolver(NOOP_RESOLVER)
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, unionType)
+        then:
+        visitor.getStack() == ["union: foo", "fallback: foo", "object: dummy", "fallback: dummy", "directive: bar", "fallback: bar"]
+    }
+
+    def "reachable enum directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def enumType = GraphQLEnumType.newEnum()
+                .name("foo")
+                .value("dummy")
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, enumType)
+        then:
+        visitor.getStack() == ["enum: foo", "fallback: foo", "enum value: dummy", "fallback: dummy", "directive: bar", "fallback: bar"]
+    }
+
+    def "reachable enum value directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def enumValue = GraphQLEnumValueDefinition.newEnumValueDefinition()
+                .name("foo")
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, enumValue)
+        then:
+        visitor.getStack() == ["enum value: foo", "fallback: foo", "directive: bar", "fallback: bar"]
+    }
+
+    def "reachable input object directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def inputObjectType = GraphQLInputObjectType.newInputObject()
+                .name("foo")
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, inputObjectType)
+        then:
+        visitor.getStack() == ["input object: foo", "fallback: foo", "directive: bar", "fallback: bar"]
+    }
+
+    def "reachable input field definition directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def inputField = GraphQLInputObjectField.newInputObjectField()
+                .name("foo")
+                .type(Scalars.GraphQLString)
+                .withDirective(GraphQLDirective.newDirective()
+                .name("bar"))
+                .build()
+        new TypeTraverser().depthFirst(visitor, inputField)
+        then:
+        visitor.getStack() == ["input object field: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
+    }
 
     def NOOP_RESOLVER = new TypeResolver() {
         @Override
@@ -231,6 +386,12 @@ class TypeTraverserTest extends Specification {
         TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLType> context) {
             stack.add("field: ${node.getName()}")
             return super.visitGraphQLFieldDefinition(node, context)
+        }
+
+        @Override
+        TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLType> context) {
+            stack.add("directive: ${node.getName()}")
+            return super.visitGraphQLDirective(node, context)
         }
 
         @Override

@@ -134,7 +134,9 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
     @Override
     public List<GraphQLType> getChildren() {
-        return new ArrayList<>(fieldDefinitionsByName.values());
+        List<GraphQLType> children = new ArrayList<>(fieldDefinitionsByName.values());
+        children.addAll(directives);
+        return children;
     }
 
     public static Builder newInterface() {

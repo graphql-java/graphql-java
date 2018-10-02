@@ -149,7 +149,10 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
 
     @Override
     public List<GraphQLType> getChildren() {
-        return Collections.singletonList(type);
+        List<GraphQLType> children = new ArrayList<>();
+        children.add(type);
+        children.addAll(directives);
+        return children;
     }
 
     public static class Builder {

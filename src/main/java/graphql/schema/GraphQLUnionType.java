@@ -36,7 +36,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
     private final String name;
     private final String description;
-    private List<GraphQLOutputType> types = new ArrayList<>();
+    private List<GraphQLOutputType> types;
     private final TypeResolver typeResolver;
     private final UnionTypeDefinition definition;
     private final List<GraphQLDirective> directives;
@@ -119,7 +119,9 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
     @Override
     public List<GraphQLType> getChildren() {
-        return new ArrayList<>(types);
+        List<GraphQLType> children = new ArrayList<>(types);
+        children.addAll(directives);
+        return children;
     }
 
     public static Builder newUnionType() {

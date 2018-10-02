@@ -155,6 +155,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         List<GraphQLType> children =  new ArrayList<>();
         children.add(type);
         children.addAll(arguments);
+        children.addAll(directives);
         return children;
     }
 

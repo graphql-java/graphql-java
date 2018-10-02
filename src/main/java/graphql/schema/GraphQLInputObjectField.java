@@ -113,7 +113,10 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
 
     @Override
     public List<GraphQLType> getChildren() {
-        return Collections.singletonList(type);
+        List<GraphQLType> children = new ArrayList<>();
+        children.add(type);
+        children.addAll(directives);
+        return children;
     }
 
     public static Builder newInputObjectField(GraphQLInputObjectField existing) {

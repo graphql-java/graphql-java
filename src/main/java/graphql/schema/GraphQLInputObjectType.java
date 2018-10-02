@@ -119,7 +119,9 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
 
     @Override
     public List<GraphQLType> getChildren() {
-        return new ArrayList<>(fieldMap.values());
+        List<GraphQLType> children = new ArrayList<>(fieldMap.values());
+        children.addAll(directives);
+        return children;
     }
 
     public static Builder newInputObject(GraphQLInputObjectType existing) {
