@@ -7,6 +7,7 @@ import graphql.schema.GraphQLObjectType;
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 class ExecutionNode {
 
     private final GraphQLObjectType type;

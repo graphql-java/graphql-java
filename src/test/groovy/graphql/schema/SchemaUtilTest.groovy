@@ -1,6 +1,7 @@
 package graphql.schema
 
 import graphql.AssertException
+import graphql.DirectivesUtil
 import graphql.NestedInputSchema
 import graphql.introspection.Introspection
 import spock.lang.Specification
@@ -16,7 +17,18 @@ import static graphql.StarWarsSchema.mutationType
 import static graphql.StarWarsSchema.inputHumanType
 import static graphql.StarWarsSchema.queryType
 import static graphql.StarWarsSchema.starWarsSchema
+import static graphql.TypeReferenceSchema.ArgumentDirectiveInput
+import static graphql.TypeReferenceSchema.Cache
+import static graphql.TypeReferenceSchema.EnumDirectiveInput
+import static graphql.TypeReferenceSchema.EnumValueDirectiveInput
+import static graphql.TypeReferenceSchema.FieldDefDirectiveInput
+import static graphql.TypeReferenceSchema.InputFieldDefDirectiveInput
+import static graphql.TypeReferenceSchema.InputObjectDirectiveInput
+import static graphql.TypeReferenceSchema.InterfaceDirectiveInput
+import static graphql.TypeReferenceSchema.ObjectDirectiveInput
+import static graphql.TypeReferenceSchema.QueryDirectiveInput
 import static graphql.TypeReferenceSchema.SchemaWithReferences
+import static graphql.TypeReferenceSchema.UnionDirectiveInput
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
@@ -74,6 +86,23 @@ class SchemaUtilTest extends Specification {
         types.keySet() == expected.keySet()
     }
 
+    def "collect all types defined in directives"() {
+        when:
+        Map<String, GraphQLType> types = new SchemaUtil().allTypes(SchemaWithReferences, Collections.emptySet())
+        then:
+        types.size() == 30
+        types.containsValue(UnionDirectiveInput)
+        types.containsValue(InputObjectDirectiveInput)
+        types.containsValue(ObjectDirectiveInput)
+        types.containsValue(FieldDefDirectiveInput)
+        types.containsValue(ArgumentDirectiveInput)
+        types.containsValue(InputFieldDefDirectiveInput)
+        types.containsValue(InterfaceDirectiveInput)
+        types.containsValue(EnumDirectiveInput)
+        types.containsValue(EnumValueDirectiveInput)
+        types.containsValue(QueryDirectiveInput)
+    }
+
     def "group all types by implemented interface"() {
         when:
         Map<String, List<GraphQLObjectType>> byInterface = new SchemaUtil().groupImplementations(starWarsSchema)
@@ -115,15 +144,16 @@ class SchemaUtilTest extends Specification {
     }
 
     def "all references are replaced"() {
-        given:
+        when:
         GraphQLUnionType pet = ((GraphQLUnionType) SchemaWithReferences.getType("Pet"))
         GraphQLObjectType person = ((GraphQLObjectType) SchemaWithReferences.getType("Person"))
-        when:
-        new SchemaUtil().replaceTypeReferences(SchemaWithReferences)
+        GraphQLArgument cacheEnabled = DirectivesUtil.directiveWithArg(
+                SchemaWithReferences.getDirectives(), Cache.getName(), "enabled").get();
         then:
         SchemaWithReferences.allTypesAsList.findIndexOf { it instanceof GraphQLTypeReference } == -1
         pet.types.findIndexOf { it instanceof GraphQLTypeReference } == -1
         person.interfaces.findIndexOf { it instanceof GraphQLTypeReference } == -1
+        !(cacheEnabled.getType() instanceof GraphQLTypeReference)
     }
 
     def "redefined types are caught"() {

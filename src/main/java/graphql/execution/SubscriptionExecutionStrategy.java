@@ -121,7 +121,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
         List<Field> firstField = fields.get(fieldNames.get(0));
 
-        ExecutionPath fieldPath = parameters.getPath().segment(firstField.get(0).getName());
+        ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField));
         return parameters.transform(builder -> builder.field(firstField).path(fieldPath));
     }
 

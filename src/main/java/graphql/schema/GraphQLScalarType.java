@@ -112,6 +112,11 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
         return visitor.visitGraphQLScalarType(this, context);
     }
 
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(directives);
+    }
+
     public static Builder newScalar() {
         return new Builder();
     }

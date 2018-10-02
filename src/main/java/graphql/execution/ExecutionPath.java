@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.AssertException;
 import graphql.PublicApi;
 
@@ -59,7 +60,7 @@ public class ExecutionPath {
     }
 
     public ExecutionPath getPathWithoutListEnd() {
-        if(ROOT_PATH.equals(this)) {
+        if (ROOT_PATH.equals(this)) {
             return ROOT_PATH;
         }
         if (segment instanceof StringPathSegment) {
@@ -83,6 +84,7 @@ public class ExecutionPath {
      * Parses an execution path from the provided path string in the format /segment1/segment2[index]/segmentN
      *
      * @param pathString the path string
+     *
      * @return a parsed execution path
      */
     public static ExecutionPath parse(String pathString) {
@@ -111,6 +113,7 @@ public class ExecutionPath {
      * This will create an execution path from the list of objects
      *
      * @param objects the path objects
+     *
      * @return a new execution path
      */
     public static ExecutionPath fromList(List<?> objects) {
@@ -134,6 +137,7 @@ public class ExecutionPath {
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the string path segment to add
+     *
      * @return a new path containing that segment
      */
     public ExecutionPath segment(String segment) {
@@ -144,10 +148,16 @@ public class ExecutionPath {
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the int path segment to add
+     *
      * @return a new path containing that segment
      */
     public ExecutionPath segment(int segment) {
         return new ExecutionPath(this, new IntPathSegment(segment));
+    }
+
+    public ExecutionPath sibling(String siblingField) {
+        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
+        return new ExecutionPath(this.parent, new StringPathSegment(siblingField));
     }
 
     /**

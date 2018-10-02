@@ -5,6 +5,7 @@ import graphql.execution.ExecutionTypeInfo;
 
 import java.util.List;
 
+@Deprecated
 public class FetchedValues {
 
     private final List<FetchedValue> fetchedValues;

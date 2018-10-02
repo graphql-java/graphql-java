@@ -112,6 +112,10 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         return visitor.visitGraphQLEnumValueDefinition(this, context);
     }
 
+    @Override
+    public List<GraphQLType> getChildren() {
+        return new ArrayList<>(directives);
+    }
 
     public static Builder newEnumValueDefinition() {
         return new Builder();

@@ -184,7 +184,9 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
 
     @Override
     public List<GraphQLType> getChildren() {
-        return new ArrayList<>(valueDefinitionMap.values());
+        List<GraphQLType> children = new ArrayList<>(valueDefinitionMap.values());
+        children.addAll(directives);
+        return children;
     }
 
     public static Builder newEnum() {
