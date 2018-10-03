@@ -86,7 +86,10 @@ Here is how you might put this in place:
 
 .. code-block:: java
 
+        //
         // a batch loader function that will be called with N or more keys for batch loading
+        // This can be a singleton object since its stateless
+        //
         BatchLoader<String, Object> characterBatchLoader = new BatchLoader<String, Object>() {
             @Override
             public CompletionStage<List<Object>> load(List<String> keys) {
@@ -97,8 +100,6 @@ Here is how you might put this in place:
             }
         };
 
-        // a data loader for characters that points to the character batch loader
-        DataLoader<String, Object> characterDataLoader = new DataLoader<>(characterBatchLoader);
 
         //
         // use this data loader in the data fetchers associated with characters and put them into
@@ -107,7 +108,8 @@ Here is how you might put this in place:
         DataFetcher heroDataFetcher = new DataFetcher() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
-                return characterDataLoader.load("2001"); // R2D2
+                DataLoader<String, Object> dataLoader = environment.getDataLoader("character");
+                return dataLoader.load("2001"); // R2D2
             }
         };
 
@@ -116,24 +118,22 @@ Here is how you might put this in place:
             public Object get(DataFetchingEnvironment environment) {
                 StarWarsCharacter starWarsCharacter = environment.getSource();
                 List<String> friendIds = starWarsCharacter.getFriendIds();
-                return characterDataLoader.loadMany(friendIds);
+                DataLoader<String, Object> dataLoader = environment.getDataLoader("character");
+                return dataLoader.loadMany(friendIds);
             }
         };
 
-        //
-        // DataLoaderRegistry is a place to register all data loaders in that needs to be dispatched together
-        // in this case there is 1 but you can have many
-        //
-        DataLoaderRegistry registry = new DataLoaderRegistry();
-        registry.register("character", characterDataLoader);
 
         //
-        // this instrumentation implementation will dispatch all the dataloaders
+        // this instrumentation implementation will dispatched all the data loaders
         // as each level fo the graphql query is executed and hence make batched objects
         // available to the query and the associated DataFetchers
         //
+        DataLoaderDispatcherInstrumentationOptions options = DataLoaderDispatcherInstrumentationOptions
+                .newOptions().includeStatistics(true);
+
         DataLoaderDispatcherInstrumentation dispatcherInstrumentation
-                = new DataLoaderDispatcherInstrumentation(registry);
+                = new DataLoaderDispatcherInstrumentation(options);
 
         //
         // now build your graphql object and execute queries on it.
@@ -144,10 +144,31 @@ Here is how you might put this in place:
                 .instrumentation(dispatcherInstrumentation)
                 .build();
 
+        //
+        // a data loader for characters that points to the character batch loader
+        //
+        // Since data loaders are stateful, they are created per execution request.
+        //
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(characterBatchLoader);
 
-One thing to note is the above only works if you use `DataLoaderDispatcherInstrumentation` which makes sure `dataLoader.dispatch()`
-is called.  If this was not in place, then all the promises to data will never be dispatched ot the batch loader function
-and hence nothing would ever resolve.
+        //
+        // DataLoaderRegistry is a place to register all data loaders in that needs to be dispatched together
+        // in this case there is 1 but you can have many.
+        //
+        // Also note that the data loaders are created per execution request
+        //
+        DataLoaderRegistry registry = new DataLoaderRegistry();
+        registry.register("character", characterDataLoader);
+
+        ExecutionInput executionInput = newExecutionInput()
+                .query(getQuery())
+                .dataLoaderRegistry(registry)
+                .build();
+
+        ExecutionResult executionResult = graphQL.execute(executionInput);
+
+In this example we explicitly added the `DataLoaderDispatcherInstrumentation` because we wanted to tweak its options.  However
+it will be automatically added for you if you don't add it manually.
 
 Data Loader only works with AsyncExecutionStrategy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -166,37 +187,54 @@ Per Request Data Loaders
 If you are serving web requests then the data can be specific to the user requesting it. If you have user specific data then you will not want to
 cache data meant for user A to then later give it to user B in a subsequent request.
 
-The scope of your DataLoader instances is important. You might want to create them per web request to
-ensure data is only cached within that web request and no more.
+The scope of your DataLoader instances is important. You will want to create them per web request to
+ensure data is only cached within that web request and no more. It also ensures that a ``dispatch`` call
+only affects that graphql execution and no other.
 
-If your data can be shared across web requests then you might want to scope your data loaders so they survive
-longer than the web request say.
+DataLoaders by default act as caches.  If they have seen a value before for a key then they will automatically return
+it in order to be efficient.
 
-But if you are doing per request data loaders then creating a new set of ``GraphQL`` and ``DataLoader`` objects per
-request is super cheap.  It's the ``GraphQLSchema`` creation that can be expensive, especially if you are using graphql SDL parsing.
+If your data can be shared across web requests then you might want to change the caching implementation of your data loaders so they share
+data via a caching layer say like memcached or redis.
 
-Structure your code so that the schema is statically held, perhaps in a static variable or in a singleton IoC component but
-build out a new ``GraphQL`` set of objects on each request.
+You still create data loaders per request, however the caching layer will allow data sharing (if that's suitable).
 
 
 .. code-block:: java
 
-        GraphQLSchema staticSchema = staticSchema_Or_MayBeFrom_IoC_Injection();
+        CacheMap<String, Object> crossRequestCacheMap = new CacheMap<String, Object>() {
+            @Override
+            public boolean containsKey(String key) {
+                return redisIntegration.containsKey(key);
+            }
 
-        DataLoaderRegistry registry = new DataLoaderRegistry();
-        registry.register("character", getCharacterDataLoader());
+            @Override
+            public Object get(String key) {
+                return redisIntegration.getValue(key);
+            }
 
-        DataLoaderDispatcherInstrumentation dispatcherInstrumentation
-                = new DataLoaderDispatcherInstrumentation(registry);
+            @Override
+            public CacheMap<String, Object> set(String key, Object value) {
+                redisIntegration.setValue(key, value);
+                return this;
+            }
 
-        GraphQL graphQL = GraphQL.newGraphQL(staticSchema)
-                .instrumentation(dispatcherInstrumentation)
-                .build();
+            @Override
+            public CacheMap<String, Object> delete(String key) {
+                redisIntegration.clearKey(key);
+                return this;
+            }
 
-        graphQL.execute("{ helloworld }");
+            @Override
+            public CacheMap<String, Object> clear() {
+                redisIntegration.clearAll();
+                return this;
+            }
+        };
 
-        // you can now throw away the GraphQL and hence DataLoaderDispatcherInstrumentation
-        // and DataLoaderRegistry objects since they are really cheap to build per request
+        DataLoaderOptions options = DataLoaderOptions.newOptions().setCacheMap(crossRequestCacheMap);
+
+        DataLoader<String, Object> dataLoader = DataLoader.newDataLoader(batchLoader, options);
 
 
 Async Calls On Your Batch Loader Function Only
@@ -214,14 +252,16 @@ The following will not work (it will never complete).
 
 .. code-block:: java
 
-      BatchLoader<String, Object> batchLoader = new BatchLoader<String, Object>() {
+        BatchLoader<String, Object> batchLoader = new BatchLoader<String, Object>() {
             @Override
             public CompletionStage<List<Object>> load(List<String> keys) {
                 return CompletableFuture.completedFuture(getTheseCharacters(keys));
             }
         };
 
-        DataLoader<String, Object> characterDataLoader = new DataLoader<>(batchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoader);
+
+        // .... later in your data fetcher
 
         DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
             @Override
@@ -231,7 +271,8 @@ The following will not work (it will never complete).
                 //
                 return CompletableFuture.supplyAsync(() -> {
                     String argId = environment.getArgument("id");
-                    return characterDataLoader.load(argId);
+                    DataLoader<String, Object> characterLoader = environment.getDataLoader("characterLoader");
+                    return characterLoader.load(argId);
                 });
             }
         };
@@ -254,7 +295,9 @@ The following is how you can still have asynchronous code, by placing it into th
             }
         };
 
-        DataLoader<String, Object> characterDataLoader = new DataLoader<>(batchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoader);
+
+        // .... later in your data fetcher
 
         DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
             @Override
@@ -263,7 +306,8 @@ The following is how you can still have asynchronous code, by placing it into th
                 // This is OK
                 //
                 String argId = environment.getArgument("id");
-                return characterDataLoader.load(argId);
+                DataLoader<String, Object> characterLoader = environment.getDataLoader("characterLoader");
+                return characterLoader.load(argId);
             }
         };
 
@@ -273,3 +317,63 @@ the graphql fields are dispatched.
 Then later when the ``DataLoader`` is dispatched, it's ``BatchLoader`` function is called.  This code can be asynchronous so that if you have multiple batch loader
 functions they all can run at once.  In the code above ``CompletableFuture.supplyAsync(() -> getTheseCharacters(keys));`` will run the ``getTheseCharacters``
 method in another thread.
+
+Passing context to your data loader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The data loader library supports two types of context being passed to the batch loader. The first is
+an overall context object per dataloader and the second is a map of per loaded key context objects.
+
+This allows you to pass in the extra details you may need to make downstream calls.  The dataloader key is used
+in the caching of results but the context objects can be made available to help with the call.
+
+So in the example below we have an overall security context object that gives out a call token and we also pass the graphql source
+object to each ``dataLoader.load()`` call.
+
+.. code-block:: java
+
+        BatchLoaderWithContext<String, Object> batchLoaderWithCtx = new BatchLoaderWithContext<String, Object>() {
+
+            @Override
+            public CompletionStage<List<Object>> load(List<String> keys, BatchLoaderEnvironment loaderContext) {
+                //
+                // we can have an overall context object
+                SecurityContext securityCtx = loaderContext.getContext();
+                //
+                // and we can have a per key set of context objects
+                Map<Object, Object> keysToSourceObjects = loaderContext.getKeyContexts();
+
+                return CompletableFuture.supplyAsync(() -> getTheseCharacters(securityCtx.getToken(), keys, keysToSourceObjects));
+            }
+        };
+
+        // ....
+
+        SecurityContext securityCtx = SecurityContext.newSecurityContext();
+
+        BatchLoaderContextProvider contextProvider = new BatchLoaderContextProvider() {
+            @Override
+            public Object getContext() {
+                return securityCtx;
+            }
+        };
+        //
+        // this creates an overall context for the dataloader
+        //
+        DataLoaderOptions loaderOptions = DataLoaderOptions.newOptions().setBatchLoaderContextProvider(contextProvider);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoaderWithCtx, loaderOptions);
+
+        // .... later in your data fetcher
+
+        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                String argId = environment.getArgument("id");
+                Object source = environment.getSource();
+                //
+                // you can pass per load call contexts
+                //
+                return characterDataLoader.load(argId, source);
+            }
+        };
+
