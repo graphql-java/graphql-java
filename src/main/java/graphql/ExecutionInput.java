@@ -21,8 +21,12 @@ public class ExecutionInput {
     private final DataLoaderRegistry dataLoaderRegistry;
 
 
+    public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
+        this(query,operationName,context,root,variables, new DataLoaderRegistry());
+    }
+
     @Internal
-    public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry) {
+    private  ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry) {
         this.query = query;
         this.operationName = operationName;
         this.context = context;

@@ -57,17 +57,6 @@ public class ChainedInstrumentation implements Instrumentation {
         return instrumentations;
     }
 
-    /**
-     * Creates a new ChainedInstrumentation after adding the passed in instrumentation to the list
-     *
-     * @return a new ChainedInstrumentation
-     */
-    public ChainedInstrumentation addInstrumentation(Instrumentation instrumentation) {
-        List<Instrumentation> instrumentations = new ArrayList<>(this.instrumentations);
-        instrumentations.add(assertNotNull(instrumentation));
-        return new ChainedInstrumentation(instrumentations);
-    }
-
     private InstrumentationState getState(Instrumentation instrumentation, InstrumentationState parametersInstrumentationState) {
         ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) parametersInstrumentationState;
         return chainedInstrumentationState.getState(instrumentation);

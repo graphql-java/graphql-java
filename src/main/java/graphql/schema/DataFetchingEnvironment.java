@@ -93,14 +93,19 @@ public interface DataFetchingEnvironment {
      *
      * Example query with more than one Field returned:
      *
-     * query Foo {
-     * bar
-     * ...BarFragment
-     * }
+     * <pre>
+     * {@code
      *
-     * fragment BarFragment on Query {
-     * bar
+     *      query Foo {
+     *          bar
+     *          ...BarFragment
+     *      }
+     *
+     *      fragment BarFragment on Query {
+     *          bar
+     *      }
      * }
+     * </pre>
      *
      * @return the list of fields currently queried
      */
