@@ -94,13 +94,13 @@ public class FieldLevelTrackingApproach {
                     '}';
         }
 
-        public void dispatchIfNotDispatchedBefore(int level, Runnable dispatch) {
+        public boolean dispatchIfNotDispatchedBefore(int level) {
             if (dispatchedLevels.contains(level)) {
                 Assert.assertShouldNeverHappen("level " + level + " already dispatched");
-                return;
+                return false;
             }
             dispatchedLevels.add(level);
-            dispatch.run();
+            return true;
         }
 
         public void clearAndMarkCurrentLevelAsReady(int level) {
@@ -151,17 +151,25 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+                boolean dispatchNeeded;
                 synchronized (callStack) {
-                    handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
+                    dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
+                }
+                if (dispatchNeeded) {
+                    dispatch();
                 }
             }
 
             @Override
             public void onDeferredField(List<Field> field) {
+                boolean dispatchNeeded;
                 // fake fetch count for this field
                 synchronized (callStack) {
                     callStack.increaseFetchCount(curLevel);
-                    dispatchIfNeeded(callStack, curLevel);
+                    dispatchNeeded = dispatchIfNeeded(callStack, curLevel);
+                }
+                if (dispatchNeeded) {
+                    dispatch();
                 }
             }
         };
@@ -170,7 +178,7 @@ public class FieldLevelTrackingApproach {
     //
     // thread safety : called with synchronised(callStack)
     //
-    private void handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
+    private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
         callStack.increaseHappenedOnFieldValueCalls(curLevel);
         int expectedStrategyCalls = 0;
         for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
@@ -181,7 +189,7 @@ public class FieldLevelTrackingApproach {
             }
         }
         callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
-        dispatchIfNeeded(callStack, curLevel + 1);
+        return dispatchIfNeeded(callStack, curLevel + 1);
     }
 
     private int getCountForList(FieldValueInfo fieldValueInfo) {
@@ -215,8 +223,12 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
+                boolean dispatchNeeded;
                 synchronized (callStack) {
-                    handleOnFieldValuesInfo(Collections.singletonList(fieldValueInfo), callStack, level);
+                    dispatchNeeded = handleOnFieldValuesInfo(Collections.singletonList(fieldValueInfo), callStack, level);
+                }
+                if (dispatchNeeded) {
+                    dispatch();
                 }
             }
         };
@@ -230,10 +242,15 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onDispatched(CompletableFuture result) {
+                boolean dispatchNeeded;
                 synchronized (callStack) {
                     callStack.increaseFetchCount(level);
-                    dispatchIfNeeded(callStack, level);
+                    dispatchNeeded = dispatchIfNeeded(callStack, level);
                 }
+                if (dispatchNeeded) {
+                    dispatch();
+                }
+
             }
 
             @Override
@@ -246,10 +263,11 @@ public class FieldLevelTrackingApproach {
     //
     // thread safety : called with synchronised(callStack)
     //
-    private void dispatchIfNeeded(CallStack callStack, int level) {
+    private boolean dispatchIfNeeded(CallStack callStack, int level) {
         if (levelReady(callStack, level)) {
-            callStack.dispatchIfNotDispatchedBefore(level, this::dispatch);
+            return callStack.dispatchIfNotDispatchedBefore(level);
         }
+        return false;
     }
 
     //
