@@ -1,8 +1,12 @@
 package graphql;
 
+import org.dataloader.DataLoaderRegistry;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * This represents the series of values that can be input on a graphql query execution
@@ -14,14 +18,17 @@ public class ExecutionInput {
     private final Object context;
     private final Object root;
     private final Map<String, Object> variables;
+    private final DataLoaderRegistry dataLoaderRegistry;
 
 
-    public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
+    @Internal
+    public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry) {
         this.query = query;
         this.operationName = operationName;
         this.context = context;
         this.root = root;
         this.variables = variables;
+        this.dataLoaderRegistry = dataLoaderRegistry;
     }
 
     /**
@@ -60,6 +67,13 @@ public class ExecutionInput {
     }
 
     /**
+     * @return the data loader registry associated with this execution
+     */
+    public DataLoaderRegistry getDataLoaderRegistry() {
+        return dataLoaderRegistry;
+    }
+
+    /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
@@ -89,6 +103,7 @@ public class ExecutionInput {
                 ", context=" + context +
                 ", root=" + root +
                 ", variables=" + variables +
+                ", dataLoaderRegistry=" + dataLoaderRegistry +
                 '}';
     }
 
@@ -106,6 +121,7 @@ public class ExecutionInput {
         private Object context;
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
+        private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
 
         public Builder query(String query) {
             this.query = query;
@@ -132,8 +148,13 @@ public class ExecutionInput {
             return this;
         }
 
+        public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
+            this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
+            return this;
+        }
+
         public ExecutionInput build() {
-            return new ExecutionInput(query, operationName, context, root, variables);
+            return new ExecutionInput(query, operationName, context, root, variables, dataLoaderRegistry);
         }
     }
 }

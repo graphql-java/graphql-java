@@ -172,13 +172,13 @@ class TestBatchLoadingSupported extends Specification {
 
         given:
         def dlRegistry = new DataLoaderRegistry().register("characters", characterDataLoader)
-        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(dlRegistry)
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
 
         def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
 
         when:
 
-        def asyncResult = graphql.executeAsync(ExecutionInput.newExecutionInput().query(query))
+        def asyncResult = graphql.executeAsync(ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dlRegistry))
 
         def er = asyncResult.join()
 
@@ -210,7 +210,7 @@ class TestBatchLoadingSupported extends Specification {
         given:
         def dlRegistry = new DataLoaderRegistry().register("characters", characterDataLoader)
 
-        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(dlRegistry)
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
 
         def graphql = GraphQL.newGraphQL(schema)
                 .queryExecutionStrategy(executionStrategy)
@@ -218,7 +218,7 @@ class TestBatchLoadingSupported extends Specification {
 
         when:
 
-        def asyncResult = graphql.executeAsync(ExecutionInput.newExecutionInput().query(query))
+        def asyncResult = graphql.executeAsync(ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dlRegistry))
 
         def er = asyncResult.join()
 
@@ -246,7 +246,7 @@ class TestBatchLoadingSupported extends Specification {
 
         given:
         def dlRegistry = new DataLoaderRegistry().register("characters", characterDataLoader)
-        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation(dlRegistry)
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
 
         def graphql = GraphQL.newGraphQL(schema).instrumentation(batchingInstrumentation).build()
 
@@ -269,7 +269,7 @@ class TestBatchLoadingSupported extends Specification {
         }
         """
 
-        def asyncResult = graphql.executeAsync(ExecutionInput.newExecutionInput().query(query))
+        def asyncResult = graphql.executeAsync(ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dlRegistry))
 
         def er = asyncResult.join()
 

@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -20,6 +21,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,14 +50,32 @@ public class ChainedInstrumentation implements Instrumentation {
         this.instrumentations = Collections.unmodifiableList(assertNotNull(instrumentations));
     }
 
+    /**
+     * @return the list of instrumentations in play
+     */
+    public List<Instrumentation> getInstrumentations() {
+        return instrumentations;
+    }
+
+    /**
+     * Creates a new ChainedInstrumentation after adding the passed in instrumentation to the list
+     *
+     * @return a new ChainedInstrumentation
+     */
+    public ChainedInstrumentation addInstrumentation(Instrumentation instrumentation) {
+        List<Instrumentation> instrumentations = new ArrayList<>(this.instrumentations);
+        instrumentations.add(assertNotNull(instrumentation));
+        return new ChainedInstrumentation(instrumentations);
+    }
+
     private InstrumentationState getState(Instrumentation instrumentation, InstrumentationState parametersInstrumentationState) {
         ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) parametersInstrumentationState;
         return chainedInstrumentationState.getState(instrumentation);
     }
 
     @Override
-    public InstrumentationState createState() {
-        return new ChainedInstrumentationState(instrumentations);
+    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+        return new ChainedInstrumentationState(instrumentations, parameters);
     }
 
     @Override
@@ -208,9 +228,9 @@ public class ChainedInstrumentation implements Instrumentation {
         private final Map<Instrumentation, InstrumentationState> instrumentationStates;
 
 
-        private ChainedInstrumentationState(List<Instrumentation> instrumentations) {
+        private ChainedInstrumentationState(List<Instrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
             instrumentationStates = new LinkedHashMap<>(instrumentations.size());
-            instrumentations.forEach(i -> instrumentationStates.put(i, i.createState()));
+            instrumentations.forEach(i -> instrumentationStates.put(i, i.createState(parameters)));
         }
 
         private InstrumentationState getState(Instrumentation instrumentation) {

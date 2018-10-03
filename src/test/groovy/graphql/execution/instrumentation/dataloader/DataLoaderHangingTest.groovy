@@ -22,6 +22,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
+import static graphql.ExecutionInput.*
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class DataLoaderHangingTest extends Specification {
@@ -154,13 +155,14 @@ class DataLoaderHangingTest extends Specification {
 
         when:
         def graphql = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(dataLoaderRegistry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         then: "execution shouldn't hang"
         List<CompletableFuture<ExecutionResult>> futures = []
         for (int i = 0; i < NUM_OF_REPS; i++) {
-            def result = graphql.executeAsync(ExecutionInput.newExecutionInput()
+            def result = graphql.executeAsync(newExecutionInput()
+                    .dataLoaderRegistry(dataLoaderRegistry)
                     .query("""
                     query getArtistsWithData {
                       listArtists(limit: 1) {

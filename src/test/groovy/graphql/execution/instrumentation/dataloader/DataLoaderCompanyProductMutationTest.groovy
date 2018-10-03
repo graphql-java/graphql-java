@@ -66,11 +66,12 @@ class DataLoaderCompanyProductMutationTest extends Specification {
         def graphQL = TestUtil.graphQL(spec, wiring)
                 .queryExecutionStrategy(queryES)
                 .mutationExecutionStrategy(mutationES)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(registry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
+                .dataLoaderRegistry(registry)
                 .build()
 
         when:

@@ -1,5 +1,6 @@
 package readme;
 
+import graphql.ExecutionInput;
 import graphql.GraphQL;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.schema.DataFetcher;
@@ -23,9 +24,16 @@ public class BatchingExamples {
         }
     }
 
+    private String getQuery() {
+        return null;
+    }
+
     void starWarsExample() {
 
+        //
         // a batch loader function that will be called with N or more keys for batch loading
+        // This can be a singleton object since its stateless
+        //
         BatchLoader<String, Object> characterBatchLoader = new BatchLoader<String, Object>() {
             @Override
             public CompletionStage<List<Object>> load(List<String> keys) {
@@ -36,8 +44,6 @@ public class BatchingExamples {
             }
         };
 
-        // a data loader for characters that points to the character batch loader
-        DataLoader<String, Object> characterDataLoader = new DataLoader<>(characterBatchLoader);
 
         //
         // use this data loader in the data fetchers associated with characters and put them into
@@ -46,7 +52,8 @@ public class BatchingExamples {
         DataFetcher heroDataFetcher = new DataFetcher() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
-                return characterDataLoader.load("2001"); // R2D2
+                DataLoader<String, Object> dataLoader = environment.getDataLoader("character");
+                return dataLoader.load("2001"); // R2D2
             }
         };
 
@@ -55,24 +62,19 @@ public class BatchingExamples {
             public Object get(DataFetchingEnvironment environment) {
                 StarWarsCharacter starWarsCharacter = environment.getSource();
                 List<String> friendIds = starWarsCharacter.getFriendIds();
-                return characterDataLoader.loadMany(friendIds);
+                DataLoader<String, Object> dataLoader = environment.getDataLoader("character");
+                return dataLoader.loadMany(friendIds);
             }
         };
 
-        //
-        // DataLoaderRegistry is a place to register all data loaders in that needs to be dispatched together
-        // in this case there is 1 but you can have many
-        //
-        DataLoaderRegistry registry = new DataLoaderRegistry();
-        registry.register("character", characterDataLoader);
 
         //
-        // this instrumentation implementation will dispatched all the dataloaders
+        // this instrumentation implementation will dispatched all the data loaders
         // as each level fo the graphql query is executed and hence make batched objects
         // available to the query and the associated DataFetchers
         //
         DataLoaderDispatcherInstrumentation dispatcherInstrumentation
-                = new DataLoaderDispatcherInstrumentation(registry);
+                = new DataLoaderDispatcherInstrumentation();
 
         //
         // now build your graphql object and execute queries on it.
@@ -83,26 +85,24 @@ public class BatchingExamples {
                 .instrumentation(dispatcherInstrumentation)
                 .build();
 
-    }
+        //
+        // a data loader for characters that points to the character batch loader
+        //
+        // Since data loaders are stateful, they are created per execution request.
+        //
+        DataLoader<String, Object> characterDataLoader = new DataLoader<>(characterBatchLoader);
 
-    private void perRequestGraphQl() {
-
-        GraphQLSchema staticSchema = staticSchema_Or_MayBeFrom_IoC_Injection();
-
+        //
+        // DataLoaderRegistry is a place to register all data loaders in that needs to be dispatched together
+        // in this case there is 1 but you can have many
+        //
         DataLoaderRegistry registry = new DataLoaderRegistry();
-        registry.register("character", getCharacterDataLoader());
+        registry.register("character", characterDataLoader);
 
-        DataLoaderDispatcherInstrumentation dispatcherInstrumentation
-                = new DataLoaderDispatcherInstrumentation(registry);
-
-        GraphQL graphQL = GraphQL.newGraphQL(staticSchema)
-                .instrumentation(dispatcherInstrumentation)
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(getQuery())
+                .dataLoaderRegistry(registry)
                 .build();
-
-        graphQL.execute("{ helloworld }");
-
-        // you can now throw away the GraphQL and hence DataLoaderDispatcherInstrumentation
-        // and DataLoaderRegistry objects since they are really cheap to build per request
 
     }
 

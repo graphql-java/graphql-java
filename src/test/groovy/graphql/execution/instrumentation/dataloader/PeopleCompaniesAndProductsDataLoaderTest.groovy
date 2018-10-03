@@ -185,7 +185,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(registry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         when:
@@ -193,6 +193,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .context(registry)
+                .dataLoaderRegistry(registry)
                 .build()
 
         def executionResult = graphQL.execute(executionInput)

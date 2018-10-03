@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.dataloader
 
+import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -61,11 +62,11 @@ class DataLoaderTypeMismatchTest extends Specification {
         def schema = new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, wiring)
 
         def graphql = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(dataLoaderRegistry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         when:
-        def result = graphql.execute("query { getTodos { id } }")
+        def result = graphql.execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query("query { getTodos { id } }").build())
 
         then: "execution shouldn't hang"
         !result.errors.empty

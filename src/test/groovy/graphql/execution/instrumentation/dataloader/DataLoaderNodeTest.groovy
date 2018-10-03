@@ -1,10 +1,10 @@
 package graphql.execution.instrumentation.dataloader
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLTypeReference
 import graphql.schema.StaticDataFetcher
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderRegistry
@@ -105,9 +105,10 @@ class DataLoaderNodeTest extends Specification {
         DataLoaderRegistry registry = new DataLoaderRegistry().register("childNodes", loader)
 
         ExecutionResult result = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(registry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
-                .execute('''
+                .execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(registry).query(
+                '''
                         query Q { 
                             root { 
                                 id 
@@ -122,7 +123,7 @@ class DataLoaderNodeTest extends Specification {
                                 }
                             }
                         }
-                    ''')
+                    ''').build())
 
         expect:
         result != null
