@@ -7,15 +7,22 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.BatchLoader;
+import org.dataloader.BatchLoaderContextProvider;
+import org.dataloader.BatchLoaderEnvironment;
+import org.dataloader.BatchLoaderWithContext;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderOptions;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import static graphql.ExecutionInput.newExecutionInput;
+
 @SuppressWarnings({"unused", "Convert2Lambda", "ConstantConditions", "ClassCanBeStatic"})
-public class BatchingExamples {
+public class DataLoaderBatchingExamples {
 
 
     class StarWarsCharacter {
@@ -90,7 +97,7 @@ public class BatchingExamples {
         //
         // Since data loaders are stateful, they are created per execution request.
         //
-        DataLoader<String, Object> characterDataLoader = new DataLoader<>(characterBatchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(characterBatchLoader);
 
         //
         // DataLoaderRegistry is a place to register all data loaders in that needs to be dispatched together
@@ -99,7 +106,7 @@ public class BatchingExamples {
         DataLoaderRegistry registry = new DataLoaderRegistry();
         registry.register("character", characterDataLoader);
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+        ExecutionInput executionInput = newExecutionInput()
                 .query(getQuery())
                 .dataLoaderRegistry(registry)
                 .build();
@@ -115,7 +122,9 @@ public class BatchingExamples {
             }
         };
 
-        DataLoader<String, Object> characterDataLoader = new DataLoader<>(batchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoader);
+
+        // .... later in your data fetcher
 
         DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
             @Override
@@ -125,7 +134,8 @@ public class BatchingExamples {
                 //
                 return CompletableFuture.supplyAsync(() -> {
                     String argId = environment.getArgument("id");
-                    return characterDataLoader.load(argId);
+                    DataLoader<String, Object> characterLoader = environment.getDataLoader("characterLoader");
+                    return characterLoader.load(argId);
                 });
             }
         };
@@ -140,7 +150,9 @@ public class BatchingExamples {
             }
         };
 
-        DataLoader<String, Object> characterDataLoader = new DataLoader<>(batchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoader);
+
+        // .... later in your data fetcher
 
         DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
             @Override
@@ -149,12 +161,77 @@ public class BatchingExamples {
                 // This is OK
                 //
                 String argId = environment.getArgument("id");
-                return characterDataLoader.load(argId);
+                DataLoader<String, Object> characterLoader = environment.getDataLoader("characterLoader");
+                return characterLoader.load(argId);
             }
         };
     }
 
+    private void passingContextToYourBatchLoader() {
+
+        BatchLoaderWithContext<String, Object> batchLoaderWithCtx = new BatchLoaderWithContext<String, Object>() {
+
+            @Override
+            public CompletionStage<List<Object>> load(List<String> keys, BatchLoaderEnvironment loaderContext) {
+                //
+                // we can have an overall context object
+                SecurityContext securityCtx = loaderContext.getContext();
+                //
+                // and we can have a per key set of context objects
+                Map<Object, Object> keysToSourceObjects = loaderContext.getKeyContexts();
+
+                return CompletableFuture.supplyAsync(() -> getTheseCharacters(securityCtx.getToken(), keys, keysToSourceObjects));
+            }
+        };
+
+        // ....
+
+        SecurityContext securityCtx = SecurityContext.newSecurityContext();
+
+        BatchLoaderContextProvider contextProvider = new BatchLoaderContextProvider() {
+            @Override
+            public Object getContext() {
+                return securityCtx;
+            }
+        };
+        //
+        // this creates an overall context for the dataloader
+        //
+        DataLoaderOptions loaderOptions = DataLoaderOptions.newOptions().setBatchLoaderContextProvider(contextProvider);
+        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoaderWithCtx, loaderOptions);
+
+        // .... later in your data fetcher
+
+        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+            @Override
+            public Object get(DataFetchingEnvironment environment) {
+                String argId = environment.getArgument("id");
+                Object source = environment.getSource();
+                //
+                // you can pass per load call contexts
+                //
+                return characterDataLoader.load(argId, source);
+            }
+        };
+    }
+
+    static class SecurityContext {
+
+        static SecurityContext newSecurityContext() {
+            return null;
+        }
+
+        Object getToken() {
+            return null;
+        }
+    }
+
+
     private List<Object> getTheseCharacters(List<String> keys) {
+        return null;
+    }
+
+    private List<Object> getTheseCharacters(Object token, List<String> keys, Object sources) {
         return null;
     }
 
