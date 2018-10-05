@@ -258,10 +258,22 @@ class PropertyDataFetcherTest extends Specification {
         result == "methodYouMustImplement"
 
         when:
+        fetcher = new PropertyDataFetcher("methodYouMustAlsoImplement")
+        result = fetcher.get(environment)
+        then:
+        result == "methodYouMustAlsoImplement"
+
+        when:
         fetcher = new PropertyDataFetcher("methodThatIsADefault")
         result = fetcher.get(environment)
         then:
         result == "methodThatIsADefault"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodThatIsAlsoADefault")
+        result = fetcher.get(environment)
+        then:
+        result == "methodThatIsAlsoADefault"
 
     }
 
