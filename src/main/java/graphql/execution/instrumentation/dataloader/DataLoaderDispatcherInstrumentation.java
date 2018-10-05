@@ -34,9 +34,12 @@ import java.util.concurrent.CompletableFuture;
  * This graphql {@link graphql.execution.instrumentation.Instrumentation} will dispatch
  * all the contained {@link org.dataloader.DataLoader}s when each level of the graphql
  * query is executed.
- *
+ * <p>
  * This allows you to use {@link org.dataloader.DataLoader}s in your {@link graphql.schema.DataFetcher}s
  * to optimal loading of data.
+ * <p>
+ * A DataLoaderDispatcherInstrumentation will be automatically added to the {@link graphql.GraphQL}
+ * instrumentation list if one is not present.
  *
  * @see org.dataloader.DataLoader
  * @see org.dataloader.DataLoaderRegistry

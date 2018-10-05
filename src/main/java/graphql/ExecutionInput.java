@@ -91,6 +91,7 @@ public class ExecutionInput {
                 .operationName(this.operationName)
                 .context(this.context)
                 .root(this.root)
+                .dataLoaderRegistry(this.dataLoaderRegistry)
                 .variables(this.variables);
 
         builderConsumer.accept(builder);
