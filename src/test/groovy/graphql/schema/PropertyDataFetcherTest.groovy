@@ -1,10 +1,10 @@
 package graphql.schema
 
 import graphql.ExecutionInput
-import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.ExecutionContext
 import graphql.schema.somepackage.ClassWithDFEMethods
+import graphql.schema.somepackage.ClassWithInterfaces
 import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
@@ -246,6 +246,23 @@ class PropertyDataFetcherTest extends Specification {
         result = fetcher.get(environment)
         then:
         result == null
+
+    }
+
+    def "finds interface methods"() {
+        when:
+        def environment = env(new ClassWithInterfaces())
+        def fetcher = new PropertyDataFetcher("methodYouMustImplement")
+        def result = fetcher.get(environment)
+        then:
+        result == "methodYouMustImplement"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodThatIsADefault")
+        result = fetcher.get(environment)
+        then:
+        result == "methodThatIsADefault"
+
     }
 
     def "ensure DFE is passed to method"() {
