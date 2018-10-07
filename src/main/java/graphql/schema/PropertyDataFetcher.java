@@ -44,6 +44,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
  *
  * @see graphql.schema.DataFetcher
  */
+@SuppressWarnings("unchecked")
 @PublicApi
 public class PropertyDataFetcher<T> implements DataFetcher<T> {
 
@@ -121,16 +122,26 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         return propertyName;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
     @Override
     public T get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();
+        T result = getImpl(source, environment);
+        return result;
+    }
+
+    private T getImpl(Object source, DataFetchingEnvironment environment) {
         if (source == null) {
             return null;
         }
 
         if (function != null) {
             return (T) function.apply(source);
+        }
+
+        if (source instanceof PropertyDelegate) {
+            Object delegate = ((PropertyDelegate) source).getDelegate();
+            return getImpl(delegate, environment);
         }
 
         if (source instanceof Map) {

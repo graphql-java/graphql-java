@@ -1,7 +1,6 @@
 package graphql.schema
 
 import graphql.ExecutionInput
-import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.ExecutionContext
 import graphql.schema.somepackage.ClassWithDFEMethods
@@ -264,6 +263,7 @@ class PropertyDataFetcherTest extends Specification {
         result == "value2"
     }
 
+
     class ProductDTO {
         String name
         String model
@@ -310,4 +310,100 @@ class PropertyDataFetcherTest extends Specification {
         er.errors.isEmpty()
         er.data == [products: [[name: "odarP", model: "GLX"], [name: "yrmaC", model: "Momento"]]]
     }
+
+    class SuperHeroDTO {
+        String name
+        String country
+        List villains
+    }
+
+    class VillainDTO {
+        String name
+    }
+
+    class VillainWrapper implements PropertyDelegate<VillainDTO> {
+        VillainDTO delegate
+
+        @Override
+        VillainDTO getDelegate() {
+            return delegate
+        }
+
+        String getName() {
+            assert false, "should never be called"
+        }
+    }
+
+    class SuperHeroWrapper implements PropertyDelegate<SuperHeroDTO> {
+        SuperHeroDTO delegate
+
+        @Override
+        SuperHeroDTO getDelegate() {
+            return delegate
+        }
+
+        String getName() {
+            assert false, "should never be called"
+        }
+
+        String getCountry() {
+            assert false, "should never be called"
+        }
+    }
+
+    class SuperHeroData {
+        def data = [new SuperHeroWrapper(delegate: new SuperHeroDTO(name: "LadyBug", country: "France", villains: [new VillainWrapper(delegate: new VillainDTO(name: "HawkMoth"))]))
+                    ,
+                    new SuperHeroWrapper(delegate: new SuperHeroDTO(name: "SpiderMan", country: "USA", villains: [new VillainWrapper(delegate: new VillainDTO(name: "GreenGoblin"))]))]
+
+        List<SuperHeroWrapper> getSuperHeroes(DataFetchingEnvironment env) {
+            return data
+        }
+    }
+
+    def "basic property delegate support works"() {
+
+    }
+
+
+    def "delegate end to end support"() {
+        def spec = '''
+            type Query {
+                superHeroes : [SuperHero]
+            }
+            
+            type SuperHero {
+                name : String
+                country : String
+                villains : [Villain]
+            }
+            
+            type Villain {
+                name : String
+            }
+            
+        '''
+
+        def graphQL = TestUtil.graphQL(spec).build()
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            {
+                superHeroes {
+                    name
+                    country
+                    villains {
+                        name
+                    } 
+                }
+            }
+        ''').root(new SuperHeroData()).build()
+
+        when:
+        def er = graphQL.execute(executionInput)
+        then:
+        er.errors.isEmpty()
+        er.data == [superHeroes: [[name: "LadyBug", country: "France", villains: [[name: "HawkMoth"]]],
+                                  [name: "SpiderMan", country: "USA", villains: [[name: "GreenGoblin"]]]]
+        ]
+    }
+
 }
