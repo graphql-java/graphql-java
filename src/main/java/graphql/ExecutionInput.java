@@ -22,11 +22,11 @@ public class ExecutionInput {
 
 
     public ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables) {
-        this(query,operationName,context,root,variables, new DataLoaderRegistry());
+        this(query, operationName, context, root, variables, new DataLoaderRegistry());
     }
 
     @Internal
-    private  ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry) {
+    private ExecutionInput(String query, String operationName, Object context, Object root, Map<String, Object> variables, DataLoaderRegistry dataLoaderRegistry) {
         this.query = query;
         this.operationName = operationName;
         this.context = context;
@@ -153,6 +153,14 @@ public class ExecutionInput {
             return this;
         }
 
+        /**
+         * You should create new {@link org.dataloader.DataLoaderRegistry}s and new {@link org.dataloader.DataLoader}s for each execution.  Do not re-use
+         * instances as this will create unexpected results.
+         *
+         * @param dataLoaderRegistry a registry of {@link org.dataloader.DataLoader}s
+         *
+         * @return this builder
+         */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
             this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
             return this;

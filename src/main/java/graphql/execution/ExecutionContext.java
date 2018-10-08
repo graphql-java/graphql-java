@@ -2,6 +2,7 @@ package graphql.execution;
 
 
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
@@ -39,10 +40,7 @@ public class ExecutionContext {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final DeferSupport deferSupport = new DeferSupport();
 
-    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
-        this(instrumentation, executionId, graphQLSchema, instrumentationState, queryStrategy, mutationStrategy, subscriptionStrategy, fragmentsByName, document, operationDefinition, variables, context, root, new DataLoaderRegistry(), Collections.emptyList());
-    }
-
+    @Internal
     ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, List<GraphQLError> startingErrors) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
