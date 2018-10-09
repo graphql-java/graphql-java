@@ -7,6 +7,7 @@ import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionTypeInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import org.dataloader.DataLoader;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.unmodifiableMap;
 
 @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
 @Internal
@@ -147,6 +147,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public ExecutionContext getExecutionContext() {
         return executionContext;
+    }
+
+    @Override
+    public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
+        return executionContext.getDataLoaderRegistry().getDataLoader(dataLoaderName);
     }
 
     @Override

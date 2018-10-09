@@ -48,10 +48,11 @@ public class BatchCompare {
         dataLoaderRegistry.register("products", BatchCompareDataFetchers.productsForDepartmentDataLoader);
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(dataLoaderRegistry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build();
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query("query { shops { id name departments { id name products { id name } } } }")
+                .dataLoaderRegistry(dataLoaderRegistry)
                 .build();
         ExecutionResult result = graphQL.execute(executionInput);
         System.out.println("\nExecutionResult: " + result.toSpecification());

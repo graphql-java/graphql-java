@@ -9,6 +9,7 @@ import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
+import org.dataloader.DataLoaderRegistry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ public class ExecutionContextBuilder {
     private OperationDefinition operationDefinition;
     private Map<String, Object> variables = new HashMap<>();
     private Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
+    private DataLoaderRegistry dataLoaderRegistry;
     private List<GraphQLError> errors = new ArrayList<>();
 
     /**
@@ -72,6 +74,7 @@ public class ExecutionContextBuilder {
         operationDefinition = other.getOperationDefinition();
         variables = new HashMap<>(other.getVariables());
         fragmentsByName = new HashMap<>(other.getFragmentsByName());
+        dataLoaderRegistry = other.getDataLoaderRegistry();
         errors = new ArrayList<>(other.getErrors());
     }
 
@@ -141,6 +144,11 @@ public class ExecutionContextBuilder {
     }
 
 
+    public ExecutionContextBuilder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
+        this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
+        return this;
+    }
+
     public ExecutionContext build() {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
@@ -159,6 +167,7 @@ public class ExecutionContextBuilder {
                 variables,
                 context,
                 root,
-                errors);
+                dataLoaderRegistry, errors
+        );
     }
 }

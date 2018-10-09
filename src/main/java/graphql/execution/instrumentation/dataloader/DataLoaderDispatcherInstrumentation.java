@@ -11,6 +11,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.SimpleInstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -28,15 +29,17 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 /**
  * This graphql {@link graphql.execution.instrumentation.Instrumentation} will dispatch
  * all the contained {@link org.dataloader.DataLoader}s when each level of the graphql
  * query is executed.
- *
+ * <p>
  * This allows you to use {@link org.dataloader.DataLoader}s in your {@link graphql.schema.DataFetcher}s
  * to optimal loading of data.
+ * <p>
+ * A DataLoaderDispatcherInstrumentation will be automatically added to the {@link graphql.GraphQL}
+ * instrumentation list if one is not present.
  *
  * @see org.dataloader.DataLoader
  * @see org.dataloader.DataLoaderRegistry
@@ -46,57 +49,28 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     private static final Logger log = LoggerFactory.getLogger(DataLoaderDispatcherInstrumentation.class);
 
     private final DataLoaderDispatcherInstrumentationOptions options;
-    private final Supplier<DataLoaderRegistry> supplier;
 
     /**
-     * You pass in a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
-     * each level of the query executes.
-     *
-     * @param dataLoaderRegistry the registry of data loaders that will be dispatched
+     * Creates a DataLoaderDispatcherInstrumentation with the default options
      */
-    public DataLoaderDispatcherInstrumentation(DataLoaderRegistry dataLoaderRegistry) {
-        this(dataLoaderRegistry, DataLoaderDispatcherInstrumentationOptions.newOptions());
+    public DataLoaderDispatcherInstrumentation() {
+        this(DataLoaderDispatcherInstrumentationOptions.newOptions());
     }
 
     /**
-     * You pass in a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
-     * each level of the query executes.
+     * Creates a DataLoaderDispatcherInstrumentation with the specified options
      *
-     * @param dataLoaderRegistry the registry of data loaders that will be dispatched
-     * @param options            the options to control the behaviour
+     * @param options the options to control the behaviour
      */
-    public DataLoaderDispatcherInstrumentation(DataLoaderRegistry dataLoaderRegistry, DataLoaderDispatcherInstrumentationOptions options) {
-        this(() -> dataLoaderRegistry, options);
-    }
-
-    /**
-     * You pass in supplier of a registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
-     * each level of the query executes.
-     *
-     * @param supplier the supplier of registry of data loaders that will be dispatched
-     */
-    public DataLoaderDispatcherInstrumentation(Supplier<DataLoaderRegistry> supplier) {
-        this(supplier, DataLoaderDispatcherInstrumentationOptions.newOptions());
-    }
-
-    /**
-     * You pass in a supplier of registry of N data loaders which will be {@link org.dataloader.DataLoader#dispatch() dispatched} as
-     * each level of the query executes.
-     *
-     * @param supplier the supplier of registry of data loaders that will be dispatched
-     * @param options  the options to control the behaviour
-     */
-    public DataLoaderDispatcherInstrumentation(Supplier<DataLoaderRegistry> supplier, DataLoaderDispatcherInstrumentationOptions options) {
-        this.supplier = supplier;
+    public DataLoaderDispatcherInstrumentation(DataLoaderDispatcherInstrumentationOptions options) {
         this.options = options;
     }
 
 
     @Override
-    public InstrumentationState createState() {
-        return new DataLoaderDispatcherInstrumentationState(log, supplier.get());
+    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+        return new DataLoaderDispatcherInstrumentationState(log, parameters.getExecutionInput().getDataLoaderRegistry());
     }
-
 
     @Override
     public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
@@ -145,18 +119,54 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     @Override
     public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        //
+        // if there are no data loaders, there is nothing to do
+        //
+        if (state.hasNoDataLoaders()) {
+            return new ExecutionStrategyInstrumentationContext() {
+                @Override
+                public void onDispatched(CompletableFuture<ExecutionResult> result) {
+                }
+
+                @Override
+                public void onCompleted(ExecutionResult result, Throwable t) {
+                }
+            };
+
+        }
         return state.getApproach().beginExecutionStrategy(parameters.withNewState(state.getState()));
     }
 
     @Override
     public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
         DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        //
+        // if there are no data loaders, there is nothing to do
+        //
+        if (state.hasNoDataLoaders()) {
+            return new DeferredFieldInstrumentationContext() {
+                @Override
+                public void onDispatched(CompletableFuture<ExecutionResult> result) {
+                }
+
+                @Override
+                public void onCompleted(ExecutionResult result, Throwable t) {
+                }
+            };
+
+        }
         return state.getApproach().beginDeferredField(parameters.withNewState(state.getState()));
     }
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        //
+        // if there are no data loaders, there is nothing to do
+        //
+        if (state.hasNoDataLoaders()) {
+            return new SimpleInstrumentationContext<>();
+        }
         return state.getApproach().beginFieldFetch(parameters.withNewState(state.getState()));
     }
 
