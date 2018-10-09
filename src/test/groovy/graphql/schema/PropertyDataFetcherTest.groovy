@@ -1,10 +1,11 @@
 package graphql.schema
 
 import graphql.ExecutionInput
-import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.ExecutionContext
 import graphql.schema.somepackage.ClassWithDFEMethods
+import graphql.schema.somepackage.ClassWithInterfaces
+import graphql.schema.somepackage.ClassWithInteritanceAndInterfaces
 import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
@@ -246,6 +247,77 @@ class PropertyDataFetcherTest extends Specification {
         result = fetcher.get(environment)
         then:
         result == null
+
+    }
+
+    def "finds interface methods"() {
+        when:
+        def environment = env(new ClassWithInterfaces())
+        def fetcher = new PropertyDataFetcher("methodYouMustImplement")
+        def result = fetcher.get(environment)
+        then:
+        result == "methodYouMustImplement"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodYouMustAlsoImplement")
+        result = fetcher.get(environment)
+        then:
+        result == "methodYouMustAlsoImplement"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodThatIsADefault")
+        result = fetcher.get(environment)
+        then:
+        result == "methodThatIsADefault"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodThatIsAlsoADefault")
+        result = fetcher.get(environment)
+        then:
+        result == "methodThatIsAlsoADefault"
+
+    }
+
+    def "finds interface methods with inheritance"() {
+        def environment = env(new ClassWithInteritanceAndInterfaces.StartingClass())
+
+        when:
+        def fetcher = new PropertyDataFetcher("methodYouMustImplement")
+        def result = fetcher.get(environment)
+        then:
+        result == "methodYouMustImplement"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodThatIsADefault")
+        result = fetcher.get(environment)
+        then:
+        result == "methodThatIsADefault"
+
+        def environment2 = env(new ClassWithInteritanceAndInterfaces.InheritedClass())
+
+        when:
+        fetcher = new PropertyDataFetcher("methodYouMustImplement")
+        result = fetcher.get(environment2)
+        then:
+        result == "methodYouMustImplement"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodThatIsADefault")
+        result = fetcher.get(environment2)
+        then:
+        result == "methodThatIsADefault"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodYouMustAlsoImplement")
+        result = fetcher.get(environment2)
+        then:
+        result == "methodYouMustAlsoImplement"
+
+        when:
+        fetcher = new PropertyDataFetcher("methodThatIsAlsoADefault")
+        result = fetcher.get(environment2)
+        then:
+        result == "methodThatIsAlsoADefault"
     }
 
     def "ensure DFE is passed to method"() {
