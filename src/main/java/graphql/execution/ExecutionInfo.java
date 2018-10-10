@@ -118,7 +118,7 @@ public class ExecutionInfo {
      * @return the resolved arguments that have been passed to this field
      */
     public Map<String, Object> getArguments() {
-        return arguments;
+        return new LinkedHashMap<>(arguments);
     }
 
     /**
