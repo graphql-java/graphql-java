@@ -7,6 +7,6 @@ Welcome to graphql-java
     :alt: graphql-java-logo
 
 
-    Our documentation moved: please go to `https://www.graphql-java.com/documentation <https://www.graphql-java.com/documentation>`_
+Our documentation moved: please go to `https://www.graphql-java.com/documentation <https://www.graphql-java.com/documentation>`_
 --------------------------------------------------------------------------------------------------------------------------------
 
