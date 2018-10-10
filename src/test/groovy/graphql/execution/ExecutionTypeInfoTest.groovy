@@ -1,7 +1,6 @@
 package graphql.execution
 
 import graphql.ExecutionInput
-import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.Field
 import graphql.schema.DataFetcher
@@ -137,12 +136,12 @@ class ExecutionTypeInfoTest extends Specification {
     def "end to end type hierarchy is maintained during execution"() {
         def spec = '''
             type Query {
-                hero : User
+                hero(id:String) : User
             }
             
             type User {
                 name : String
-                friends : [User]
+                friends(closeFriends: Boolean) : [User]
                 mates : [User]
             }
         '''
@@ -165,9 +164,9 @@ class ExecutionTypeInfoTest extends Specification {
 
         def query = ''' 
             {
-                hero {
+                hero(id : "1234")  {
                     name
-                    friends {
+                    friends(closeFriends : true) {
                         name
                         mates {
                             name
@@ -189,6 +188,8 @@ class ExecutionTypeInfoTest extends Specification {
         executionTypeInfos[0].field.getName() == "hero"
         executionTypeInfos[0].parentTypeInfo.path == ExecutionPath.rootPath()
         (executionTypeInfos[0].parentTypeInfo.type as GraphQLObjectType).name == "Query"
+        executionTypeInfos[0].arguments == [id: "1234"]
+        executionTypeInfos[0].getArgument("id") == "1234"
 
         executionTypeInfos[1].path.toString() == "/hero/friends"
         executionTypeInfos[1].field.name == "friends"
@@ -196,6 +197,8 @@ class ExecutionTypeInfoTest extends Specification {
         executionTypeInfos[1].parentTypeInfo.path.toString() == "/hero"
         executionTypeInfos[1].parentTypeInfo.field.name == "hero"
         (unwrapAll(executionTypeInfos[1].parentTypeInfo.type) as GraphQLObjectType).name == "User"
+        executionTypeInfos[1].arguments == [closeFriends: true]
+        executionTypeInfos[1].parentTypeInfo.arguments == [id: "1234"]
 
         // we have 3 list items here
         for (int i = 2; i < 5; i++) {

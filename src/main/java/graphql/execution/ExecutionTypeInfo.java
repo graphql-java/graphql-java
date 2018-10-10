@@ -9,6 +9,9 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Stack;
 
 import static graphql.Assert.assertNotNull;
@@ -34,15 +37,17 @@ public class ExecutionTypeInfo {
     private final GraphQLFieldDefinition fieldDefinition;
     private final ExecutionPath path;
     private final boolean typeIsNonNull;
+    private final Map<String, Object> arguments;
     private final ExecutionTypeInfo parentType;
 
-    private ExecutionTypeInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionTypeInfo parentType, boolean nonNull) {
+    private ExecutionTypeInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionTypeInfo parentType, boolean nonNull, Map<String, Object> arguments) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
         this.parentType = parentType;
         this.type = type;
         this.typeIsNonNull = nonNull;
+        this.arguments = arguments;
         assertNotNull(this.type, "you must provide a graphql type");
     }
 
@@ -110,6 +115,26 @@ public class ExecutionTypeInfo {
     }
 
     /**
+     * @return the resolved arguments that have been passed to this field
+     */
+    Map<String, Object> getArguments() {
+        return arguments;
+    }
+
+    /**
+     * Returns the named argument
+     *
+     * @param name the name of the argument
+     * @param <T>  you decide what type it is
+     *
+     * @return the named argument or null if its not present
+     */
+    @SuppressWarnings("unchecked")
+    <T> T getArgument(String name) {
+        return (T) arguments.get(name);
+    }
+
+    /**
      * @return the parent type information
      */
     public ExecutionTypeInfo getParentTypeInfo() {
@@ -134,7 +159,7 @@ public class ExecutionTypeInfo {
      * @return a new type info with the same
      */
     public ExecutionTypeInfo treatAs(GraphQLType newType) {
-        return new ExecutionTypeInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parentType, this.typeIsNonNull);
+        return new ExecutionTypeInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parentType, this.typeIsNonNull, arguments);
     }
 
 
@@ -218,6 +243,7 @@ public class ExecutionTypeInfo {
         GraphQLFieldDefinition fieldDefinition;
         Field field;
         ExecutionPath executionPath;
+        Map<String, Object> arguments = new LinkedHashMap<>();
 
         /**
          * @see ExecutionTypeInfo#newTypeInfo()
@@ -250,12 +276,16 @@ public class ExecutionTypeInfo {
             return this;
         }
 
+        public Builder arguments(Map<String, Object> arguments) {
+            this.arguments = new LinkedHashMap<>(arguments == null ? Collections.emptyMap() : arguments);
+            return this;
+        }
 
         public ExecutionTypeInfo build() {
             if (isNonNull(type)) {
-                return new ExecutionTypeInfo(unwrapNonNull(type), fieldDefinition, field, executionPath, parentType, true);
+                return new ExecutionTypeInfo(unwrapNonNull(type), fieldDefinition, field, executionPath, parentType, true, arguments);
             }
-            return new ExecutionTypeInfo(type, fieldDefinition, field, executionPath, parentType, false);
+            return new ExecutionTypeInfo(type, fieldDefinition, field, executionPath, parentType, false, arguments);
         }
     }
 }

@@ -15,6 +15,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldComplete
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.introspection.Introspection;
+import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
@@ -195,7 +196,7 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
-                new InstrumentationFieldParameters(executionContext, fieldDef, fieldTypeInfo(parameters, fieldDef))
+                new InstrumentationFieldParameters(executionContext, fieldDef, fieldTypeInfo(executionContext, parameters, fieldDef))
         );
 
         CompletableFuture<Object> fetchFieldFuture = fetchField(executionContext, parameters);
@@ -233,7 +234,7 @@ public abstract class ExecutionStrategy {
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
-        ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
+        ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(executionContext, parameters, fieldDef);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(parameters.getSource())
@@ -340,7 +341,7 @@ public abstract class ExecutionStrategy {
         Field field = parameters.getField().get(0);
         GraphQLObjectType parentType = parameters.getTypeInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
-        ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(parameters, fieldDef);
+        ExecutionTypeInfo fieldTypeInfo = fieldTypeInfo(executionContext, parameters, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo, fetchedValue);
@@ -480,7 +481,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = parameters.getTypeInfo().getFieldDefinition();
         Field field = parameters.getTypeInfo().getField();
 
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef), values);
+        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, fieldTypeInfo(executionContext, parameters, fieldDef), values);
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         InstrumentationContext<ExecutionResult> completeListCtx = instrumentation.beginFieldListComplete(
@@ -875,23 +876,30 @@ public abstract class ExecutionStrategy {
     /**
      * Builds the type info hierarchy for the current field
      *
-     * @param parameters      contains the parameters holding the fields to be executed and source object
-     * @param fieldDefinition the field definition to build type info for
+     * @param executionContext the execution context  in play
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param fieldDefinition  the field definition to build type info for
      *
      * @return a new type info
      */
-    protected ExecutionTypeInfo fieldTypeInfo(ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
+    protected ExecutionTypeInfo fieldTypeInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
         Field field = null;
+        List<Argument> fieldArgs = Collections.emptyList();
         if (parameters.getField() != null && !parameters.getField().isEmpty()) {
             field = parameters.getField().get(0);
+            fieldArgs = field.getArguments();
         }
+        GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
+
         return newTypeInfo()
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
                 .field(field)
                 .path(parameters.getPath())
                 .parentInfo(parameters.getTypeInfo())
+                .arguments(argumentValues)
                 .build();
 
     }
