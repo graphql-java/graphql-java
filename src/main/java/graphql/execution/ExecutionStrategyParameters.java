@@ -16,7 +16,7 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 public class ExecutionStrategyParameters {
-    private final ExecutionTypeInfo typeInfo;
+    private final ExecutionInfo executionInfo;
     private final Object source;
     private final Map<String, Object> arguments;
     private final Map<String, List<Field>> fields;
@@ -28,7 +28,7 @@ public class ExecutionStrategyParameters {
     private final ExecutionStrategyParameters parent;
     private final DeferredErrorSupport deferredErrorSupport;
 
-    private ExecutionStrategyParameters(ExecutionTypeInfo typeInfo,
+    private ExecutionStrategyParameters(ExecutionInfo executionInfo,
                                         Object source,
                                         Map<String, List<Field>> fields,
                                         Map<String, Object> arguments,
@@ -40,7 +40,7 @@ public class ExecutionStrategyParameters {
                                         ExecutionStrategyParameters parent,
                                         DeferredErrorSupport deferredErrorSupport) {
 
-        this.typeInfo = assertNotNull(typeInfo, "typeInfo is null");
+        this.executionInfo = assertNotNull(executionInfo, "executionInfo is null");
         this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
         this.arguments = arguments;
@@ -53,8 +53,8 @@ public class ExecutionStrategyParameters {
         this.deferredErrorSupport = deferredErrorSupport;
     }
 
-    public ExecutionTypeInfo getTypeInfo() {
-        return typeInfo;
+    public ExecutionInfo getExecutionInfo() {
+        return executionInfo;
     }
 
     public Object getSource() {
@@ -88,6 +88,7 @@ public class ExecutionStrategyParameters {
     public ExecutionStrategyParameters getParent() {
         return parent;
     }
+
     public DeferredErrorSupport deferredErrorSupport() {
         return deferredErrorSupport;
     }
@@ -111,8 +112,8 @@ public class ExecutionStrategyParameters {
 
     @Override
     public String toString() {
-        return String.format("ExecutionStrategyParameters { path=%s, typeInfo=%s, source=%s, fields=%s }",
-                path, typeInfo, source, fields);
+        return String.format("ExecutionStrategyParameters { path=%s, executionInfo=%s, source=%s, fields=%s }",
+                path, executionInfo, source, fields);
     }
 
     public static Builder newParameters() {
@@ -124,7 +125,7 @@ public class ExecutionStrategyParameters {
     }
 
     public static class Builder {
-        ExecutionTypeInfo typeInfo;
+        ExecutionInfo executionInfo;
         Object source;
         Map<String, List<Field>> fields;
         Map<String, Object> arguments;
@@ -146,7 +147,7 @@ public class ExecutionStrategyParameters {
          * @see ExecutionStrategyParameters#newParameters(ExecutionStrategyParameters)
          */
         private Builder(ExecutionStrategyParameters oldParameters) {
-            this.typeInfo = oldParameters.typeInfo;
+            this.executionInfo = oldParameters.executionInfo;
             this.source = oldParameters.source;
             this.fields = oldParameters.fields;
             this.arguments = oldParameters.arguments;
@@ -159,13 +160,13 @@ public class ExecutionStrategyParameters {
             this.currentListIndex = oldParameters.currentListIndex;
         }
 
-        public Builder typeInfo(ExecutionTypeInfo type) {
-            this.typeInfo = type;
+        public Builder executionInfo(ExecutionInfo type) {
+            this.executionInfo = type;
             return this;
         }
 
-        public Builder typeInfo(ExecutionTypeInfo.Builder type) {
-            this.typeInfo = type.build();
+        public Builder executionInfo(ExecutionInfo.Builder type) {
+            this.executionInfo = type.build();
             return this;
         }
 
@@ -220,7 +221,7 @@ public class ExecutionStrategyParameters {
         }
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(typeInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent, deferredErrorSupport);
+            return new ExecutionStrategyParameters(executionInfo, source, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent, deferredErrorSupport);
         }
     }
 }

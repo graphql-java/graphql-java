@@ -1,7 +1,7 @@
 package graphql.execution.instrumentation.tracing;
 
 import graphql.PublicApi;
-import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.ExecutionInfo;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -62,13 +62,13 @@ public class TracingSupport implements InstrumentationState {
             long now = System.nanoTime();
             long duration = now - startFieldFetch;
             long startOffset = startFieldFetch - startRequestNanos;
-            ExecutionTypeInfo typeInfo = dataFetchingEnvironment.getFieldTypeInfo();
+            ExecutionInfo executionInfo = dataFetchingEnvironment.getExecutionInfo();
 
             Map<String, Object> fetchMap = new LinkedHashMap<>();
-            fetchMap.put("path", typeInfo.getPath().toList());
-            fetchMap.put("parentType", typeInfo.getParentTypeInfo().getType().getName());
-            fetchMap.put("returnType", typeInfo.toAst());
-            fetchMap.put("fieldName", typeInfo.getFieldDefinition().getName());
+            fetchMap.put("path", executionInfo.getPath().toList());
+            fetchMap.put("parentType", executionInfo.getParent().getType().getName());
+            fetchMap.put("returnType", executionInfo.toAst());
+            fetchMap.put("fieldName", executionInfo.getFieldDefinition().getName());
             fetchMap.put("startOffset", startOffset);
             fetchMap.put("duration", duration);
 

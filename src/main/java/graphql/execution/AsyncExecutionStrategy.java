@@ -126,7 +126,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
             Instrumentation instrumentation = executionContext.getInstrumentation();
             DeferredFieldInstrumentationContext fieldCtx = instrumentation.beginDeferredField(
-                    new InstrumentationDeferredFieldParameters(executionContext, parameters, fieldDef, fieldTypeInfo(parameters, fieldDef))
+                    new InstrumentationDeferredFieldParameters(executionContext, parameters, fieldDef, executionInfo(executionContext, parameters, fieldDef))
             );
             CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
             fieldCtx.onDispatched(result);

@@ -13,11 +13,11 @@ import graphql.Internal;
 public class NonNullableFieldValidator {
 
     private final ExecutionContext executionContext;
-    private final ExecutionTypeInfo typeInfo;
+    private final ExecutionInfo executionInfo;
 
-    public NonNullableFieldValidator(ExecutionContext executionContext, ExecutionTypeInfo typeInfo) {
+    public NonNullableFieldValidator(ExecutionContext executionContext, ExecutionInfo executionInfo) {
         this.executionContext = executionContext;
-        this.typeInfo = typeInfo;
+        this.executionInfo = executionInfo;
     }
 
     /**
@@ -33,7 +33,7 @@ public class NonNullableFieldValidator {
      */
     public <T> T validate(ExecutionPath path, T result) throws NonNullableFieldWasNullException {
         if (result == null) {
-            if (typeInfo.isNonNullType()) {
+            if (executionInfo.isNonNullType()) {
                 // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
                 //
                 //    > If the field returns null because of an error which has already been added to the "errors" list in the response,
@@ -46,7 +46,7 @@ public class NonNullableFieldValidator {
                 //
                 // We will do this until the spec makes this more explicit.
                 //
-                NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(typeInfo, path);
+                NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(executionInfo, path);
                 executionContext.addError(new NonNullableFieldWasNullError(nonNullException), path);
                 throw nonNullException;
             }

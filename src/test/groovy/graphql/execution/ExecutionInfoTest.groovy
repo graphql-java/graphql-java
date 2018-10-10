@@ -1,7 +1,6 @@
 package graphql.execution
 
 import graphql.ExecutionInput
-import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.Field
 import graphql.schema.DataFetcher
@@ -15,7 +14,7 @@ import spock.lang.Specification
 
 import java.util.function.Function
 
-import static ExecutionTypeInfo.newTypeInfo
+import static ExecutionInfo.newExecutionInfo
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLList.list
@@ -24,7 +23,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
-class ExecutionTypeInfoTest extends Specification {
+class ExecutionInfoTest extends Specification {
 
     def field = new Field("someAstField")
 
@@ -48,10 +47,10 @@ class ExecutionTypeInfoTest extends Specification {
 
     def "basic hierarchy"() {
         given:
-        def rootTypeInfo = newTypeInfo().type(rootType).build()
-        def fieldTypeInfo = newTypeInfo().type(fieldType).fieldDefinition(field1Def).field(field).parentInfo(rootTypeInfo).build()
-        def nonNullFieldTypeInfo = newTypeInfo().type(nonNull(fieldType)).parentInfo(rootTypeInfo).build()
-        def listTypeInfo = newTypeInfo().type(list(fieldType)).parentInfo(rootTypeInfo).build()
+        def rootTypeInfo = newExecutionInfo().type(rootType).build()
+        def fieldTypeInfo = newExecutionInfo().type(fieldType).fieldDefinition(field1Def).field(field).parentInfo(rootTypeInfo).build()
+        def nonNullFieldTypeInfo = newExecutionInfo().type(nonNull(fieldType)).parentInfo(rootTypeInfo).build()
+        def listTypeInfo = newExecutionInfo().type(list(fieldType)).parentInfo(rootTypeInfo).build()
 
         expect:
         rootTypeInfo.type == rootType
@@ -61,26 +60,26 @@ class ExecutionTypeInfoTest extends Specification {
 
         fieldTypeInfo.type == fieldType
         fieldTypeInfo.hasParentType()
-        fieldTypeInfo.parentTypeInfo.type == rootType
+        fieldTypeInfo.parent.type == rootType
         !fieldTypeInfo.isNonNullType()
         fieldTypeInfo.getFieldDefinition() == field1Def
         fieldTypeInfo.getField() == field
 
         nonNullFieldTypeInfo.type == fieldType
         nonNullFieldTypeInfo.hasParentType()
-        nonNullFieldTypeInfo.parentTypeInfo.type == rootType
+        nonNullFieldTypeInfo.parent.type == rootType
         nonNullFieldTypeInfo.isNonNullType()
 
         listTypeInfo.type == list(fieldType)
         listTypeInfo.hasParentType()
-        listTypeInfo.parentTypeInfo.type == rootType
+        listTypeInfo.parent.type == rootType
         listTypeInfo.isListType()
     }
 
     def "morphing type works"() {
         given:
-        def rootTypeInfo = newTypeInfo().type(rootType).build()
-        def interfaceTypeInfo = newTypeInfo().type(interfaceType).parentInfo(rootTypeInfo).build()
+        def rootTypeInfo = newExecutionInfo().type(rootType).build()
+        def interfaceTypeInfo = newExecutionInfo().type(interfaceType).parentInfo(rootTypeInfo).build()
         def morphedTypeInfo = interfaceTypeInfo.treatAs(fieldType)
 
         expect:
@@ -94,7 +93,7 @@ class ExecutionTypeInfoTest extends Specification {
         given:
         // [[String!]!]
         GraphQLType wrappedType = list(nonNull(list(nonNull(GraphQLString))))
-        def stack = ExecutionTypeInfo.unwrapType(wrappedType)
+        def stack = ExecutionInfo.unwrapType(wrappedType)
 
         expect:
         stack.pop() == GraphQLString
@@ -105,18 +104,18 @@ class ExecutionTypeInfoTest extends Specification {
         stack.isEmpty()
     }
 
-    List<ExecutionTypeInfo> executionTypeInfos = []
+    List<ExecutionInfo> executionTypeInfos = []
 
-    class ExecutionTypeInfoCapturingDF implements DataFetcher {
+    class ExecutionInfoCapturingDF implements DataFetcher {
         Function function
 
-        ExecutionTypeInfoCapturingDF(function) {
+        ExecutionInfoCapturingDF(function) {
             this.function = function
         }
 
         @Override
         Object get(DataFetchingEnvironment environment) {
-            executionTypeInfos.add(environment.getFieldTypeInfo())
+            executionTypeInfos.add(environment.getExecutionInfo())
             def val = function.apply(environment)
             return val
         }
@@ -137,12 +136,12 @@ class ExecutionTypeInfoTest extends Specification {
     def "end to end type hierarchy is maintained during execution"() {
         def spec = '''
             type Query {
-                hero : User
+                hero(id:String) : User
             }
             
             type User {
                 name : String
-                friends : [User]
+                friends(closeFriends: Boolean) : [User]
                 mates : [User]
             }
         '''
@@ -152,8 +151,8 @@ class ExecutionTypeInfoTest extends Specification {
         def frodo = new User("frodo", [bilbo, gandalf])
         def samwise = new User("samwise", [bilbo, gandalf, frodo])
 
-        DataFetcher samwiseDF = new ExecutionTypeInfoCapturingDF({ env -> env.getSource() })
-        DataFetcher friendsDF = new ExecutionTypeInfoCapturingDF({ env -> (env.getSource() as User).friends })
+        DataFetcher samwiseDF = new ExecutionInfoCapturingDF({ env -> env.getSource() })
+        DataFetcher friendsDF = new ExecutionInfoCapturingDF({ env -> (env.getSource() as User).friends })
 
         def runtimeWiring = newRuntimeWiring()
                 .type(newTypeWiring("Query").dataFetcher("hero", samwiseDF))
@@ -165,9 +164,9 @@ class ExecutionTypeInfoTest extends Specification {
 
         def query = ''' 
             {
-                hero {
+                hero(id : "1234")  {
                     name
-                    friends {
+                    friends(closeFriends : true) {
                         name
                         mates {
                             name
@@ -187,15 +186,19 @@ class ExecutionTypeInfoTest extends Specification {
         executionTypeInfos[0].path.toString() == "/hero"
         (executionTypeInfos[0].type as GraphQLObjectType).name == "User"
         executionTypeInfos[0].field.getName() == "hero"
-        executionTypeInfos[0].parentTypeInfo.path == ExecutionPath.rootPath()
-        (executionTypeInfos[0].parentTypeInfo.type as GraphQLObjectType).name == "Query"
+        executionTypeInfos[0].parent.path == ExecutionPath.rootPath()
+        (executionTypeInfos[0].parent.type as GraphQLObjectType).name == "Query"
+        executionTypeInfos[0].arguments == [id: "1234"]
+        executionTypeInfos[0].getArgument("id") == "1234"
 
         executionTypeInfos[1].path.toString() == "/hero/friends"
         executionTypeInfos[1].field.name == "friends"
         (unwrapAll(executionTypeInfos[1].type) as GraphQLObjectType).name == "User"
-        executionTypeInfos[1].parentTypeInfo.path.toString() == "/hero"
-        executionTypeInfos[1].parentTypeInfo.field.name == "hero"
-        (unwrapAll(executionTypeInfos[1].parentTypeInfo.type) as GraphQLObjectType).name == "User"
+        executionTypeInfos[1].parent.path.toString() == "/hero"
+        executionTypeInfos[1].parent.field.name == "hero"
+        (unwrapAll(executionTypeInfos[1].parent.type) as GraphQLObjectType).name == "User"
+        executionTypeInfos[1].arguments == [closeFriends: true]
+        executionTypeInfos[1].parent.arguments == [id: "1234"]
 
         // we have 3 list items here
         for (int i = 2; i < 5; i++) {
@@ -203,9 +206,9 @@ class ExecutionTypeInfoTest extends Specification {
             assert executionTypeInfos[i].field.name == "mates"
             assert (unwrapAll(executionTypeInfos[i].type) as GraphQLObjectType).name == "User"
 
-            assert executionTypeInfos[i].parentTypeInfo.path.toString() == "/hero/friends[" + (i - 2) + "]"
-            assert executionTypeInfos[i].parentTypeInfo.field.name == "friends"
-            assert (unwrapAll(executionTypeInfos[i].parentTypeInfo.type) as GraphQLObjectType).name == "User"
+            assert executionTypeInfos[i].parent.path.toString() == "/hero/friends[" + (i - 2) + "]"
+            assert executionTypeInfos[i].parent.field.name == "friends"
+            assert (unwrapAll(executionTypeInfos[i].parent.type) as GraphQLObjectType).name == "User"
         }
     }
 }

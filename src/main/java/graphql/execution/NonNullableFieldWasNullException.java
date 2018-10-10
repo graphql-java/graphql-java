@@ -9,41 +9,41 @@ import static graphql.Assert.assertNotNull;
  */
 public class NonNullableFieldWasNullException extends RuntimeException {
 
-    private final ExecutionTypeInfo typeInfo;
+    private final ExecutionInfo executionInfo;
     private final ExecutionPath path;
 
 
-    public NonNullableFieldWasNullException(ExecutionTypeInfo typeInfo, ExecutionPath path) {
+    public NonNullableFieldWasNullException(ExecutionInfo executionInfo, ExecutionPath path) {
         super(
-                mkMessage(assertNotNull(typeInfo),
+                mkMessage(assertNotNull(executionInfo),
                         assertNotNull(path))
         );
-        this.typeInfo = typeInfo;
+        this.executionInfo = executionInfo;
         this.path = path;
     }
 
     public NonNullableFieldWasNullException(NonNullableFieldWasNullException previousException) {
         super(
                 mkMessage(
-                        assertNotNull(previousException.typeInfo.getParentTypeInfo()),
-                        assertNotNull(previousException.typeInfo.getParentTypeInfo().getPath())
+                        assertNotNull(previousException.executionInfo.getParent()),
+                        assertNotNull(previousException.executionInfo.getParent().getPath())
                 ),
                 previousException
         );
-        this.typeInfo = previousException.typeInfo.getParentTypeInfo();
-        this.path = previousException.typeInfo.getParentTypeInfo().getPath();
+        this.executionInfo = previousException.executionInfo.getParent();
+        this.path = previousException.executionInfo.getParent().getPath();
     }
 
 
-    private static String mkMessage(ExecutionTypeInfo typeInfo, ExecutionPath path) {
-        if (typeInfo.hasParentType()) {
-            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", typeInfo.getType().getName(), typeInfo.getParentTypeInfo().getType().getName(), path);
+    private static String mkMessage(ExecutionInfo executionInfo, ExecutionPath path) {
+        if (executionInfo.hasParentType()) {
+            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", executionInfo.getType().getName(), executionInfo.getParent().getType().getName(), path);
         }
-        return String.format("Cannot return null for non-nullable type: '%s' (%s)", typeInfo.getType().getName(), path);
+        return String.format("Cannot return null for non-nullable type: '%s' (%s)", executionInfo.getType().getName(), path);
     }
 
-    public ExecutionTypeInfo getTypeInfo() {
-        return typeInfo;
+    public ExecutionInfo getExecutionInfo() {
+        return executionInfo;
     }
 
     public ExecutionPath getPath() {
@@ -54,7 +54,7 @@ public class NonNullableFieldWasNullException extends RuntimeException {
     public String toString() {
         return "NonNullableFieldWasNullException{" +
                 " path=" + path +
-                " typeInfo=" + typeInfo +
+                " executionInfo=" + executionInfo +
                 '}';
     }
 }
