@@ -182,10 +182,10 @@ query.
 The interesting parts of ExecutionTypeInfo
 ------------------------------------------
 
-The execution of a graphql query creates a call tree of fields and their types.  ``graphql.execution.ExecutionTypeInfo.getParentTypeInfo``
+The execution of a graphql query creates a call tree of fields and their types.  ``getParent``
 allows you to navigate upwards and see what types and fields led to the current field execution.
 
-Since this forms a tree path during execution, the ``graphql.execution.ExecutionTypeInfo.getPath`` method returns the representation of that
+Since this forms a tree path during execution, the ``graphql.execution.ExecutionInfo.getPath`` method returns the representation of that
 path.  This can be useful for logging and debugging queries.
 
 There are also helper methods there to help you get the underlying type name of non null and list wrapped types.

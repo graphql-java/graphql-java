@@ -73,7 +73,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+        def typeInfo = ExecutionInfo.newExecutionInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -85,7 +85,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .typeInfo(typeInfo)
+                .executionInfo(typeInfo)
                 .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')], 'hello3': [new Field('hello3')]])
                 .build()
 
@@ -116,7 +116,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionTypeInfo.newTypeInfo()
+        def typeInfo = ExecutionInfo.newExecutionInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -128,7 +128,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .typeInfo(typeInfo)
+                .executionInfo(typeInfo)
                 .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')], 'hello3': [new Field('hello3')]])
                 .build()
 
