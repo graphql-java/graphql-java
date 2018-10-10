@@ -7,6 +7,7 @@ import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import org.dataloader.DataLoader;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -146,6 +147,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public ExecutionContext getExecutionContext() {
         return executionContext;
+    }
+
+    @Override
+    public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
+        return executionContext.getDataLoaderRegistry().getDataLoader(dataLoaderName);
     }
 
     @Override

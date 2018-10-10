@@ -2,6 +2,7 @@ package graphql.execution;
 
 
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.defer.DeferSupport;
 import graphql.execution.instrumentation.Instrumentation;
@@ -10,6 +11,7 @@ import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
+import org.dataloader.DataLoaderRegistry;
 
 import java.util.Collections;
 import java.util.List;
@@ -35,13 +37,11 @@ public class ExecutionContext {
     private final Object context;
     private final Instrumentation instrumentation;
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
+    private final DataLoaderRegistry dataLoaderRegistry;
     private final DeferSupport deferSupport = new DeferSupport();
 
-    public ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root) {
-        this(instrumentation, executionId, graphQLSchema, instrumentationState, queryStrategy, mutationStrategy, subscriptionStrategy, fragmentsByName, document, operationDefinition, variables, context, root, Collections.emptyList());
-    }
-
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, List<GraphQLError> startingErrors) {
+    @Internal
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, List<GraphQLError> startingErrors) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -55,6 +55,7 @@ public class ExecutionContext {
         this.context = context;
         this.root = root;
         this.instrumentation = instrumentation;
+        this.dataLoaderRegistry = dataLoaderRegistry;
         this.errors.addAll(startingErrors);
     }
 
@@ -102,6 +103,10 @@ public class ExecutionContext {
 
     public FragmentDefinition getFragment(String name) {
         return fragmentsByName.get(name);
+    }
+
+    public DataLoaderRegistry getDataLoaderRegistry() {
+        return dataLoaderRegistry;
     }
 
     /**

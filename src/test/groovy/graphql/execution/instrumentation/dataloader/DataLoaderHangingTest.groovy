@@ -1,6 +1,5 @@
 package graphql.execution.instrumentation.dataloader
 
-import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
@@ -22,6 +21,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
+import static graphql.ExecutionInput.newExecutionInput
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class DataLoaderHangingTest extends Specification {
@@ -87,47 +87,8 @@ class DataLoaderHangingTest extends Specification {
                 TimeUnit.MILLISECONDS, new SynchronousQueue<>(), threadFactory,
                 new ThreadPoolExecutor.CallerRunsPolicy())
 
-        def dataLoaderAlbums = new DataLoader<Object, Object>(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
-            @Override
-            CompletionStage<List<List<Object>>> load(List<DataFetchingEnvironment> keys) {
-                return CompletableFuture.supplyAsync({
-                    def limit = keys.first().getArgument("limit") as Integer
-                    return keys.collect({ k ->
-                        def albums = []
-                        for (int i = 1; i <= limit; i++) {
-                            albums.add(['id': "artist-$k.source.id-$i", 'title': "album-$i"])
-                        }
-                        def albumsConnection = ['nextToken': 'album-next', 'items': albums]
-                        return albumsConnection
-                    })
-                }, executor)
-            }
-        }, DataLoaderOptions.newOptions().setMaxBatchSize(5))
-
-        def dataLoaderSongs = new DataLoader<Object, Object>(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
-            @Override
-            CompletionStage<List<List<Object>>> load(List<DataFetchingEnvironment> keys) {
-                return CompletableFuture.supplyAsync({
-                    def limit = keys.first().getArgument("limit") as Integer
-                    return keys.collect({ k ->
-                        def songs = []
-                        for (int i = 1; i <= limit; i++) {
-                            songs.add(['id': "album-$k.source.id-$i", 'title': "song-$i"])
-                        }
-                        def songsConnection = ['nextToken': 'song-next', 'items': songs]
-                        return songsConnection
-                    })
-                }, executor)
-            }
-        }, DataLoaderOptions.newOptions().setMaxBatchSize(5))
-
-        def dataLoaderRegistry = new DataLoaderRegistry()
-        dataLoaderRegistry.register("artist.albums", dataLoaderAlbums)
-        dataLoaderRegistry.register("album.songs", dataLoaderSongs)
-
-
-        def albumsDf = new MyForwardingDataFetcher(dataLoaderAlbums)
-        def songsDf = new MyForwardingDataFetcher(dataLoaderSongs)
+        DataFetcher albumsDf = { env -> env.getDataLoader("artist.albums").load(env) }
+        DataFetcher songsDf = { env -> env.getDataLoader("album.songs").load(env) }
 
         def dataFetcherArtists = new DataFetcher() {
             @Override
@@ -154,13 +115,16 @@ class DataLoaderHangingTest extends Specification {
 
         when:
         def graphql = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(dataLoaderRegistry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         then: "execution shouldn't hang"
         List<CompletableFuture<ExecutionResult>> futures = []
         for (int i = 0; i < NUM_OF_REPS; i++) {
-            def result = graphql.executeAsync(ExecutionInput.newExecutionInput()
+            DataLoaderRegistry dataLoaderRegistry = mkNewDataLoaderRegistry(executor)
+
+            def result = graphql.executeAsync(newExecutionInput()
+                    .dataLoaderRegistry(dataLoaderRegistry)
                     .query("""
                     query getArtistsWithData {
                       listArtists(limit: 1) {
@@ -203,17 +167,44 @@ class DataLoaderHangingTest extends Specification {
                 .join()
     }
 
-    static class MyForwardingDataFetcher implements DataFetcher<CompletableFuture<Object>> {
+    private DataLoaderRegistry mkNewDataLoaderRegistry(executor) {
+        def dataLoaderAlbums = new DataLoader<Object, Object>(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
+            @Override
+            CompletionStage<List<List<Object>>> load(List<DataFetchingEnvironment> keys) {
+                return CompletableFuture.supplyAsync({
+                    def limit = keys.first().getArgument("limit") as Integer
+                    return keys.collect({ k ->
+                        def albums = []
+                        for (int i = 1; i <= limit; i++) {
+                            albums.add(['id': "artist-$k.source.id-$i", 'title': "album-$i"])
+                        }
+                        def albumsConnection = ['nextToken': 'album-next', 'items': albums]
+                        return albumsConnection
+                    })
+                }, executor)
+            }
+        }, DataLoaderOptions.newOptions().setMaxBatchSize(5))
 
-        private final DataLoader dataLoader
+        def dataLoaderSongs = new DataLoader<Object, Object>(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
+            @Override
+            CompletionStage<List<List<Object>>> load(List<DataFetchingEnvironment> keys) {
+                return CompletableFuture.supplyAsync({
+                    def limit = keys.first().getArgument("limit") as Integer
+                    return keys.collect({ k ->
+                        def songs = []
+                        for (int i = 1; i <= limit; i++) {
+                            songs.add(['id': "album-$k.source.id-$i", 'title': "song-$i"])
+                        }
+                        def songsConnection = ['nextToken': 'song-next', 'items': songs]
+                        return songsConnection
+                    })
+                }, executor)
+            }
+        }, DataLoaderOptions.newOptions().setMaxBatchSize(5))
 
-        public MyForwardingDataFetcher(DataLoader dataLoader) {
-            this.dataLoader = dataLoader
-        }
-
-        @Override
-        CompletableFuture<Object> get(DataFetchingEnvironment environment) {
-            return dataLoader.load(environment)
-        }
+        def dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("artist.albums", dataLoaderAlbums)
+        dataLoaderRegistry.register("album.songs", dataLoaderSongs)
+        dataLoaderRegistry
     }
 }

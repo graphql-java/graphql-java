@@ -90,6 +90,7 @@ public class Execution {
                 .variables(coercedVariables)
                 .document(document)
                 .operationDefinition(operationDefinition)
+                .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .build();
 
 

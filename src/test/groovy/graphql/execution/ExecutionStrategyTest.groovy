@@ -22,6 +22,7 @@ import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
+import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -61,7 +62,7 @@ class ExecutionStrategyTest extends Specification {
         new ExecutionContext(SimpleInstrumentation.INSTANCE, executionId, schema ?: StarWarsSchema.starWarsSchema, null,
                 executionStrategy, executionStrategy, executionStrategy,
                 null, null, null,
-                variables, "context", "root")
+                variables, "context", "root", new DataLoaderRegistry(), Collections.emptyList())
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
@@ -203,8 +204,8 @@ class ExecutionStrategyTest extends Specification {
         executionResult.data == expected
 
         where:
-        result                    || expected
-        OptionalInt.of(10)      || "10"
+        result              || expected
+        OptionalInt.of(10)  || "10"
         OptionalInt.empty() || null
     }
 
@@ -251,8 +252,8 @@ class ExecutionStrategyTest extends Specification {
         executionResult.data == expected
 
         where:
-        result                    || expected
-        OptionalDouble.of(10)      || "10.0"
+        result                 || expected
+        OptionalDouble.of(10)  || "10.0"
         OptionalDouble.empty() || null
     }
 
@@ -299,8 +300,8 @@ class ExecutionStrategyTest extends Specification {
         executionResult.data == expected
 
         where:
-        result                    || expected
-        OptionalLong.of(10)      || "10"
+        result               || expected
+        OptionalLong.of(10)  || "10"
         OptionalLong.empty() || null
     }
 
@@ -683,11 +684,11 @@ class ExecutionStrategyTest extends Specification {
         def typeInfo = ExecutionInfo.newExecutionInfo().type(fieldType).fieldDefinition(fldDef).build()
         def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
         def parameters = newParameters()
-            .path(ExecutionPath.fromList(["parent"]))
-            .field([field])
-            .fields(["parent":[field]])
-            .executionInfo(typeInfo)
-            .build()
+                .path(ExecutionPath.fromList(["parent"]))
+                .field([field])
+                .fields(["parent": [field]])
+                .executionInfo(typeInfo)
+                .build()
 
         def executionData = ["child": [:]]
         when:
@@ -712,7 +713,7 @@ class ExecutionStrategyTest extends Specification {
         def parameters = newParameters()
                 .path(ExecutionPath.fromList(["parent"]))
                 .field([field])
-                .fields(["parent":[field]])
+                .fields(["parent": [field]])
                 .executionInfo(typeInfo)
                 .build()
 
