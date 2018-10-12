@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
-import static graphql.execution.ExecutionTypeInfo.newTypeInfo;
+import static graphql.execution.ExecutionInfo.newExecutionInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
@@ -90,6 +90,7 @@ public class Execution {
                 .variables(coercedVariables)
                 .document(document)
                 .operationDefinition(operationDefinition)
+                .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .build();
 
 
@@ -133,11 +134,11 @@ public class Execution {
         Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
         ExecutionPath path = ExecutionPath.rootPath();
-        ExecutionTypeInfo typeInfo = newTypeInfo().type(operationRootType).path(path).build();
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo);
+        ExecutionInfo executionInfo = newExecutionInfo().type(operationRootType).path(path).build();
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionInfo);
 
         ExecutionStrategyParameters parameters = newParameters()
-                .typeInfo(typeInfo)
+                .executionInfo(executionInfo)
                 .source(root)
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)

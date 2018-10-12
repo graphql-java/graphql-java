@@ -1,7 +1,7 @@
 package graphql
 
 import graphql.execution.ExecutionPath
-import graphql.execution.ExecutionTypeInfo
+import graphql.execution.ExecutionInfo
 import graphql.execution.MissingRootTypeException
 import graphql.execution.NonNullableFieldWasNullError
 import graphql.execution.NonNullableFieldWasNullException
@@ -116,8 +116,8 @@ class GraphQLErrorTest extends Specification {
                 .segment(4)
     }
 
-    ExecutionTypeInfo mkTypeInfo() {
-        return ExecutionTypeInfo.newTypeInfo()
+    ExecutionInfo mkTypeInfo() {
+        return ExecutionInfo.newExecutionInfo()
                 .type(Introspection.__Schema)
                 .path(mkPath())
                 .build()

@@ -27,18 +27,19 @@ import static graphql.execution.instrumentation.dataloader.DataLoaderPerformance
 class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification {
 
     GraphQL graphQL
+    DataLoaderRegistry dataLoaderRegistry
 
     void setup() {
-        DataLoaderRegistry dataLoaderRegistry = setupDataLoaderRegistry()
+        dataLoaderRegistry = setupDataLoaderRegistry()
         Instrumentation instrumentation = new ChainedInstrumentation(
-                Collections.singletonList(new DataLoaderDispatcherInstrumentation(dataLoaderRegistry)))
+                Collections.singletonList(new DataLoaderDispatcherInstrumentation()))
         graphQL = setupGraphQL(instrumentation)
     }
 
     def "chainedInstrumentation: 760 ensure data loader is performant for lists"() {
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
 
         then:
@@ -53,7 +54,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
 
         then:
@@ -69,7 +70,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         BatchCompareDataFetchers.useAsyncBatchLoading(true)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
 
         then:
@@ -87,7 +88,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         BatchCompareDataFetchers.useAsyncBatchLoading(true)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
 
         then:
@@ -101,7 +102,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(deferredQuery).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(deferredQuery).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
 
         Map<Object, Object> extensions = result.getExtensions()
@@ -128,7 +129,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveDeferredQuery).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveDeferredQuery).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
 
         Map<Object, Object> extensions = result.getExtensions()

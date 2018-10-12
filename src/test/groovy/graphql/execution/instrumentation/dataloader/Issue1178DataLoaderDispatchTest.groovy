@@ -1,6 +1,6 @@
 package graphql.execution.instrumentation.dataloader
 
-
+import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -75,12 +75,14 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
         when:
         def graphql = TestUtil.graphQL(sdl, wiring)
-                .instrumentation(new DataLoaderDispatcherInstrumentation(dataLoaderRegistry))
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
+                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         then: "execution shouldn't error"
         for (int i = 0; i < NUM_OF_REPS; i++) {
-            def result = graphql.execute("""
+            def result = graphql.execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(dataLoaderRegistry)
+                    .query("""
                 query { 
                     getTodos { __typename id 
                         related { id __typename 
@@ -112,7 +114,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                             } 
                         }
                     } 
-                }""")
+                }""").build())
             assert result.errors.empty
         }
     }

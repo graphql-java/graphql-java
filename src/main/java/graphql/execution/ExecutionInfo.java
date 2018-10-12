@@ -9,6 +9,9 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Stack;
 
 import static graphql.Assert.assertNotNull;
@@ -27,22 +30,24 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
  * type instances, so this helper class adds this information during query execution.
  */
 @PublicApi
-public class ExecutionTypeInfo {
+public class ExecutionInfo {
 
     private final GraphQLType type;
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final ExecutionPath path;
     private final boolean typeIsNonNull;
-    private final ExecutionTypeInfo parentType;
+    private final Map<String, Object> arguments;
+    private final ExecutionInfo parentType;
 
-    private ExecutionTypeInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionTypeInfo parentType, boolean nonNull) {
+    private ExecutionInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionInfo parentType, boolean nonNull, Map<String, Object> arguments) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
         this.parentType = parentType;
         this.type = type;
         this.typeIsNonNull = nonNull;
+        this.arguments = arguments;
         assertNotNull(this.type, "you must provide a graphql type");
     }
 
@@ -110,9 +115,29 @@ public class ExecutionTypeInfo {
     }
 
     /**
+     * @return the resolved arguments that have been passed to this field
+     */
+    public Map<String, Object> getArguments() {
+        return new LinkedHashMap<>(arguments);
+    }
+
+    /**
+     * Returns the named argument
+     *
+     * @param name the name of the argument
+     * @param <T>  you decide what type it is
+     *
+     * @return the named argument or null if its not present
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getArgument(String name) {
+        return (T) arguments.get(name);
+    }
+
+    /**
      * @return the parent type information
      */
-    public ExecutionTypeInfo getParentTypeInfo() {
+    public ExecutionInfo getParent() {
         return parentType;
     }
 
@@ -133,8 +158,8 @@ public class ExecutionTypeInfo {
      *
      * @return a new type info with the same
      */
-    public ExecutionTypeInfo treatAs(GraphQLType newType) {
-        return new ExecutionTypeInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parentType, this.typeIsNonNull);
+    public ExecutionInfo treatAs(GraphQLType newType) {
+        return new ExecutionInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parentType, this.typeIsNonNull, arguments);
     }
 
 
@@ -188,10 +213,10 @@ public class ExecutionTypeInfo {
 
     @Override
     public String toString() {
-        return "ExecutionTypeInfo{" +
+        return "ExecutionInfo{" +
                 " path=" + path +
                 ", type=" + type +
-                ", parentType=" + parentType +
+                ", parentInfo=" + parentType +
                 ", typeIsNonNull=" + typeIsNonNull +
                 ", fieldDefinition=" + fieldDefinition +
                 '}';
@@ -208,19 +233,20 @@ public class ExecutionTypeInfo {
     /**
      * @return a builder of type info
      */
-    public static ExecutionTypeInfo.Builder newTypeInfo() {
+    public static ExecutionInfo.Builder newExecutionInfo() {
         return new Builder();
     }
 
     public static class Builder {
         GraphQLType type;
-        ExecutionTypeInfo parentType;
+        ExecutionInfo parentInfo;
         GraphQLFieldDefinition fieldDefinition;
         Field field;
         ExecutionPath executionPath;
+        Map<String, Object> arguments = new LinkedHashMap<>();
 
         /**
-         * @see ExecutionTypeInfo#newTypeInfo()
+         * @see ExecutionInfo#newExecutionInfo()
          */
         private Builder() {
         }
@@ -230,8 +256,8 @@ public class ExecutionTypeInfo {
             return this;
         }
 
-        public Builder parentInfo(ExecutionTypeInfo typeInfo) {
-            this.parentType = typeInfo;
+        public Builder parentInfo(ExecutionInfo executionInfo) {
+            this.parentInfo = executionInfo;
             return this;
         }
 
@@ -250,12 +276,16 @@ public class ExecutionTypeInfo {
             return this;
         }
 
+        public Builder arguments(Map<String, Object> arguments) {
+            this.arguments = new LinkedHashMap<>(arguments == null ? Collections.emptyMap() : arguments);
+            return this;
+        }
 
-        public ExecutionTypeInfo build() {
+        public ExecutionInfo build() {
             if (isNonNull(type)) {
-                return new ExecutionTypeInfo(unwrapNonNull(type), fieldDefinition, field, executionPath, parentType, true);
+                return new ExecutionInfo(unwrapNonNull(type), fieldDefinition, field, executionPath, parentInfo, true, arguments);
             }
-            return new ExecutionTypeInfo(type, fieldDefinition, field, executionPath, parentType, false);
+            return new ExecutionInfo(type, fieldDefinition, field, executionPath, parentInfo, false, arguments);
         }
     }
 }

@@ -236,7 +236,7 @@ public class FieldLevelTrackingApproach {
 
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         CallStack callStack = parameters.getInstrumentationState();
-        ExecutionPath path = parameters.getEnvironment().getFieldTypeInfo().getPath();
+        ExecutionPath path = parameters.getEnvironment().getExecutionInfo().getPath();
         int level = path.getLevel();
         return new InstrumentationContext<Object>() {
 

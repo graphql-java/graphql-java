@@ -4,9 +4,10 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.ExecutionInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import org.dataloader.DataLoader;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -14,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.unmodifiableMap;
 
 @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
 @Internal
@@ -31,7 +31,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
-    private final ExecutionTypeInfo fieldTypeInfo;
+    private final ExecutionInfo executionInfo;
     private ExecutionContext executionContext;
 
     public DataFetchingEnvironmentImpl(Object source,
@@ -46,7 +46,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        Map<String, FragmentDefinition> fragmentsByName,
                                        ExecutionId executionId,
                                        DataFetchingFieldSelectionSet selectionSet,
-                                       ExecutionTypeInfo fieldTypeInfo,
+                                       ExecutionInfo executionInfo,
                                        ExecutionContext executionContext) {
         this.source = source;
         this.arguments = arguments == null ? Collections.emptyMap() : arguments;
@@ -60,7 +60,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.selectionSet = selectionSet;
-        this.fieldTypeInfo = fieldTypeInfo;
+        this.executionInfo = executionInfo;
         this.executionContext = assertNotNull(executionContext);
     }
 
@@ -140,8 +140,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public ExecutionTypeInfo getFieldTypeInfo() {
-        return fieldTypeInfo;
+    public ExecutionInfo getExecutionInfo() {
+        return executionInfo;
     }
 
     @Override
@@ -150,9 +150,14 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
+        return executionContext.getDataLoaderRegistry().getDataLoader(dataLoaderName);
+    }
+
+    @Override
     public String toString() {
         return "DataFetchingEnvironmentImpl{" +
-                "fieldTypeInfo=" + fieldTypeInfo +
+                "executionInfo=" + executionInfo +
                 '}';
     }
 }

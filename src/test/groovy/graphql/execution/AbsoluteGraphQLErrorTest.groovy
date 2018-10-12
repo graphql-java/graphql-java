@@ -27,7 +27,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionInfo(ExecutionInfo.newExecutionInfo().type(objectType))
                 .source(new Object())
                 .fields(["fld": [Field.newField().build()]])
                 .field([field])
@@ -62,7 +62,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionInfo(ExecutionInfo.newExecutionInfo().type(objectType))
                 .source(new Object())
                 .fields(["fld": [Field.newField().build()]])
                 .field([field])
@@ -86,7 +86,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionInfo(ExecutionInfo.newExecutionInfo().type(objectType))
                 .source(new Object())
                 .fields(["fld": [Field.newField().build()]])
                 .field([field])
@@ -111,7 +111,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionInfo(ExecutionInfo.newExecutionInfo().type(objectType))
                 .source(new Object())
                 .fields(["fld": [Field.newField().build()]])
                 .field([field])
@@ -136,7 +136,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(expectedSourceLocation).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionInfo(ExecutionInfo.newExecutionInfo().type(objectType))
                 .source(new Object())
                 .fields(["fld": [Field.newField().build()]])
                 .field([field])
@@ -160,7 +160,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def field = Field.newField().name("test").sourceLocation(new SourceLocation(4, 5)).build()
 
         def parameters = newParameters()
-                .typeInfo(ExecutionTypeInfo.newTypeInfo().type(objectType))
+                .executionInfo(ExecutionInfo.newExecutionInfo().type(objectType))
                 .source(new Object())
                 .fields(["fld": [Field.newField().build()]])
                 .field([field])

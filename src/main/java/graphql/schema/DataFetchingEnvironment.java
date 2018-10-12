@@ -3,9 +3,10 @@ package graphql.schema;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.ExecutionInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
+import org.dataloader.DataLoader;
 
 import java.util.List;
 import java.util.Map;
@@ -92,15 +93,19 @@ public interface DataFetchingEnvironment {
      *
      * Example query with more than one Field returned:
      *
-     *  query Foo {
-     *      bar
-     *      ...BarFragment
-     *  }
+     * <pre>
+     * {@code
      *
-     *  fragment BarFragment on Query {
-     *      bar
-     *  }
+     *      query Foo {
+     *          bar
+     *          ...BarFragment
+     *      }
      *
+     *      fragment BarFragment on Query {
+     *          bar
+     *      }
+     * }
+     * </pre>
      *
      * @return the list of fields currently queried
      */
@@ -118,9 +123,9 @@ public interface DataFetchingEnvironment {
 
 
     /**
-     * @return the field {@link ExecutionTypeInfo} for the current data fetch operation
+     * @return the field {@link graphql.execution.ExecutionInfo} for the current data fetch operation
      */
-    ExecutionTypeInfo getFieldTypeInfo();
+    ExecutionInfo getExecutionInfo();
 
     /**
      * @return the type of the parent of the current field
@@ -151,4 +156,18 @@ public interface DataFetchingEnvironment {
      * @return the current {@link ExecutionContext}. It gives access to the overall schema and other things related to the overall execution of the current request.
      */
     ExecutionContext getExecutionContext();
+
+    /**
+     * This allows you to retrieve a named dataloader from the underlying {@link org.dataloader.DataLoaderRegistry}
+     *
+     * @param dataLoaderName the name of the data loader to fetch
+     * @param <K>            the key type
+     * @param <V>            the value type
+     *
+     * @return the named data loader or null
+     *
+     * @see graphql.execution.ExecutionContext#getDataLoaderRegistry()
+     * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
+     */
+    <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
 }

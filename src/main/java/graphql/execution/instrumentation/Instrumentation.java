@@ -3,6 +3,7 @@ package graphql.execution.instrumentation;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.execution.ExecutionContext;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -42,6 +43,18 @@ public interface Instrumentation {
      */
     default InstrumentationState createState() {
         return null;
+    }
+
+    /**
+     * This will be called just before execution to create an object that is given back to all instrumentation methods
+     * to allow them to have per execution request state
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a state object that is passed to each method
+     */
+    default InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+        return createState();
     }
 
     /**

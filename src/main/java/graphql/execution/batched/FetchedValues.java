@@ -1,7 +1,7 @@
 package graphql.execution.batched;
 
 import graphql.execution.ExecutionPath;
-import graphql.execution.ExecutionTypeInfo;
+import graphql.execution.ExecutionInfo;
 
 import java.util.List;
 
@@ -9,12 +9,12 @@ import java.util.List;
 public class FetchedValues {
 
     private final List<FetchedValue> fetchedValues;
-    private final ExecutionTypeInfo executionTypeInfo;
+    private final ExecutionInfo executionInfo;
     private final ExecutionPath path;
 
-    public FetchedValues(List<FetchedValue> fetchedValues, ExecutionTypeInfo executionTypeInfo, ExecutionPath path) {
+    public FetchedValues(List<FetchedValue> fetchedValues, ExecutionInfo executionInfo, ExecutionPath path) {
         this.fetchedValues = fetchedValues;
-        this.executionTypeInfo = executionTypeInfo;
+        this.executionInfo = executionInfo;
         this.path = path;
     }
 
@@ -22,8 +22,8 @@ public class FetchedValues {
         return fetchedValues;
     }
 
-    public ExecutionTypeInfo getExecutionTypeInfo() {
-        return executionTypeInfo;
+    public ExecutionInfo getExecutionInfo() {
+        return executionInfo;
     }
 
     public ExecutionPath getPath() {
