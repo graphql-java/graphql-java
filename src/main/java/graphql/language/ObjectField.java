@@ -25,6 +25,9 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name  of the field
+     * @param value of the field
      */
     public ObjectField(String name, Value value) {
         this(name, value, null, new ArrayList<>());

@@ -42,6 +42,8 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the field
      */
     public Field(String name) {
         this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
@@ -49,6 +51,9 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name      of the field
+     * @param arguments to the field
      */
     public Field(String name, List<Argument> arguments) {
         this(name, null, arguments, new ArrayList<>(), null, null, new ArrayList<>());
@@ -56,6 +61,10 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name         of the field
+     * @param arguments    to the field
+     * @param selectionSet of the field
      */
     public Field(String name, List<Argument> arguments, SelectionSet selectionSet) {
         this(name, null, arguments, new ArrayList<>(), selectionSet, null, new ArrayList<>());
@@ -63,6 +72,9 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name         of the field
+     * @param selectionSet of the field
      */
     public Field(String name, SelectionSet selectionSet) {
         this(name, null, new ArrayList<>(), new ArrayList<>(), selectionSet, null, new ArrayList<>());

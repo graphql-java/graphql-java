@@ -24,6 +24,8 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param value of the Float
      */
     public FloatValue(BigDecimal value) {
         this(value, null, new ArrayList<>());

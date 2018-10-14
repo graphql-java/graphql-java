@@ -27,6 +27,9 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name      of the directive
+     * @param arguments of the directive
      */
     public Directive(String name, List<Argument> arguments) {
         this(name, arguments, null, new ArrayList<>());
@@ -35,6 +38,8 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the directive
      */
     public Directive(String name) {
         this(name, new ArrayList<>(), null, new ArrayList<>());

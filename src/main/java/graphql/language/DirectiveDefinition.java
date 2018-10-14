@@ -19,10 +19,10 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
 
     @Internal
     protected DirectiveDefinition(String name,
-                                List<InputValueDefinition> inputValueDefinitions,
-                                List<DirectiveLocation> directiveLocations,
-                                SourceLocation sourceLocation,
-                                List<Comment> comments
+                                  List<InputValueDefinition> inputValueDefinitions,
+                                  List<DirectiveLocation> directiveLocations,
+                                  SourceLocation sourceLocation,
+                                  List<Comment> comments
     ) {
         super(sourceLocation, comments);
         this.name = name;
@@ -32,6 +32,8 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the directive definition
      */
     public DirectiveDefinition(String name) {
         this(name, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>());

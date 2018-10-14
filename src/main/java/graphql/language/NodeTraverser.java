@@ -44,8 +44,8 @@ public class NodeTraverser {
     /**
      * depthFirst traversal with a enter/leave phase.
      *
-     * @param nodeVisitor
-     * @param root
+     * @param nodeVisitor the visitor of the nodes
+     * @param root        the root node
      */
     public void depthFirst(NodeVisitor nodeVisitor, Node root) {
         depthFirst(nodeVisitor, Collections.singleton(root));
@@ -54,8 +54,8 @@ public class NodeTraverser {
     /**
      * depthFirst traversal with a enter/leave phase.
      *
-     * @param nodeVisitor
-     * @param roots
+     * @param nodeVisitor the visitor of the nodes
+     * @param roots       the root nodes
      */
     public void depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
@@ -79,8 +79,8 @@ public class NodeTraverser {
     /**
      * Version of {@link #preOrder(NodeVisitor, Collection)} with one root.
      *
-     * @param nodeVisitor
-     * @param root
+     * @param nodeVisitor the visitor of the nodes
+     * @param root        the root node
      */
     public void preOrder(NodeVisitor nodeVisitor, Node root) {
         preOrder(nodeVisitor, Collections.singleton(root));
@@ -89,8 +89,8 @@ public class NodeTraverser {
     /**
      * Pre-Order traversal: This is a specialized version of depthFirst with only the enter phase.
      *
-     * @param nodeVisitor
-     * @param roots
+     * @param nodeVisitor the visitor of the nodes
+     * @param roots       the root nodes
      */
     public void preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
@@ -114,8 +114,8 @@ public class NodeTraverser {
     /**
      * Version of {@link #postOrder(NodeVisitor, Collection)} with one root.
      *
-     * @param nodeVisitor
-     * @param root
+     * @param nodeVisitor the visitor of the nodes
+     * @param root        the root node
      */
     public void postOrder(NodeVisitor nodeVisitor, Node root) {
         postOrder(nodeVisitor, Collections.singleton(root));
@@ -124,8 +124,8 @@ public class NodeTraverser {
     /**
      * Post-Order traversal: This is a specialized version of depthFirst with only the leave phase.
      *
-     * @param nodeVisitor
-     * @param roots
+     * @param nodeVisitor the visitor of the nodes
+     * @param roots       the root nodes
      */
     public void postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {

@@ -25,6 +25,9 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the operation
+     * @param type the type in play
      */
     public OperationTypeDefinition(String name, Type type) {
         this(name, type, null, new ArrayList<>());

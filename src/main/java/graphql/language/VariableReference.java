@@ -23,6 +23,8 @@ public class VariableReference extends AbstractNode<VariableReference> implement
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the variable
      */
     public VariableReference(String name) {
         super(null, new ArrayList<>());

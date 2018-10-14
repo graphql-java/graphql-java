@@ -21,12 +21,12 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
 
     @Internal
     protected InputValueDefinition(String name,
-                                 Type type,
-                                 Value defaultValue,
-                                 List<Directive> directives,
-                                 Description description,
-                                 SourceLocation sourceLocation,
-                                 List<Comment> comments) {
+                                   Type type,
+                                   Value defaultValue,
+                                   List<Directive> directives,
+                                   Description description,
+                                   SourceLocation sourceLocation,
+                                   List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.type = type;
@@ -38,6 +38,9 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the input value
+     * @param type of the input value
      */
     public InputValueDefinition(String name,
                                 Type type) {
@@ -47,6 +50,10 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name         of the input value
+     * @param type         of the input value
+     * @param defaultValue of the input value
      */
 
     public InputValueDefinition(String name,

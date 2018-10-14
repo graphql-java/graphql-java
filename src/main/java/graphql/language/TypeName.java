@@ -24,7 +24,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
     /**
      * alternative to using a Builder for convenience
      *
-     * @param name
+     * @param name of the type
      */
     public TypeName(String name) {
         super(null, new ArrayList<>());

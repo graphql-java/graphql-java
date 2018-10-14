@@ -23,6 +23,8 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param objectFields the list of field that make up this object value
      */
     public ObjectValue(List<ObjectField> objectFields) {
         this(objectFields, null, new ArrayList<>());

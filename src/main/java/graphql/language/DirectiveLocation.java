@@ -30,6 +30,8 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the directive location
      */
     public DirectiveLocation(String name) {
         this(name, null, new ArrayList<>());

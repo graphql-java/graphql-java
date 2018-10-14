@@ -25,7 +25,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
     /**
      * alternative to using a Builder for convenience
      *
-     * @param name
+     * @param name of the enum value
      */
     public EnumValue(String name) {
         super(null, new ArrayList<>());
