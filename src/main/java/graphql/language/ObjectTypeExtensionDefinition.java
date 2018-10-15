@@ -13,18 +13,20 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
 
     @Internal
     protected ObjectTypeExtensionDefinition(String name,
-                                          List<Type> implementz,
-                                          List<Directive> directives,
-                                          List<FieldDefinition> fieldDefinitions,
-                                          Description description,
-                                          SourceLocation sourceLocation,
-                                          List<Comment> comments) {
+                                            List<Type> implementz,
+                                            List<Directive> directives,
+                                            List<FieldDefinition> fieldDefinitions,
+                                            Description description,
+                                            SourceLocation sourceLocation,
+                                            List<Comment> comments) {
         super(name, implementz, directives, fieldDefinitions,
                 description, sourceLocation, comments);
     }
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the object type extension
      */
     public ObjectTypeExtensionDefinition(String name) {
         this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());

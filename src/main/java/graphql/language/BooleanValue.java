@@ -24,7 +24,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
     /**
      * alternative to using a Builder for convenience
      *
-     * @param value
+     * @param value of the Boolean
      */
     public BooleanValue(boolean value) {
         super(null, new ArrayList<>());

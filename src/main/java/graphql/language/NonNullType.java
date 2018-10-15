@@ -25,7 +25,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
     /**
      * alternative to using a Builder for convenience
      *
-     * @param type
+     * @param type the wrapped type
      */
     public NonNullType(Type type) {
         super(null, new ArrayList<>());

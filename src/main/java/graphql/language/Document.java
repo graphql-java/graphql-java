@@ -23,6 +23,8 @@ public class Document extends AbstractNode<Document> {
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param definitions the definitions that make up this document
      */
     public Document(List<Definition> definitions) {
         this(definitions, null, new ArrayList<>());

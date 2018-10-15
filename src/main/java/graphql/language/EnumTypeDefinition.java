@@ -18,11 +18,11 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
 
     @Internal
     protected EnumTypeDefinition(String name,
-                       List<EnumValueDefinition> enumValueDefinitions,
-                       List<Directive> directives,
-                       Description description,
-                       SourceLocation sourceLocation,
-                       List<Comment> comments) {
+                                 List<EnumValueDefinition> enumValueDefinitions,
+                                 List<Directive> directives,
+                                 Description description,
+                                 SourceLocation sourceLocation,
+                                 List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.description = description;
@@ -32,6 +32,8 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the enum
      */
     public EnumTypeDefinition(String name) {
         this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());

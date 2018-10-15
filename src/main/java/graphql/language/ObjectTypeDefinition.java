@@ -20,12 +20,12 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
 
     @Internal
     protected ObjectTypeDefinition(String name,
-                         List<Type> implementz,
-                         List<Directive> directives,
-                         List<FieldDefinition> fieldDefinitions,
-                         Description description,
-                         SourceLocation sourceLocation,
-                         List<Comment> comments) {
+                                   List<Type> implementz,
+                                   List<Directive> directives,
+                                   List<FieldDefinition> fieldDefinitions,
+                                   Description description,
+                                   SourceLocation sourceLocation,
+                                   List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.implementz = implementz;
@@ -36,6 +36,8 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the object type
      */
     public ObjectTypeDefinition(String name) {
         this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());

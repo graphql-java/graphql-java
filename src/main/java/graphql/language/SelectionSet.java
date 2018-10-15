@@ -23,6 +23,8 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param selections the list of selection in this selection set
      */
     public SelectionSet(List<Selection> selections) {
         this(selections, null, new ArrayList<>());

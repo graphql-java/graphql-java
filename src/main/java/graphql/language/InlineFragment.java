@@ -21,10 +21,10 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
     @Internal
     protected InlineFragment(TypeName typeCondition,
-                           List<Directive> directives,
-                           SelectionSet selectionSet,
-                           SourceLocation sourceLocation,
-                           List<Comment> comments) {
+                             List<Directive> directives,
+                             SelectionSet selectionSet,
+                             SourceLocation sourceLocation,
+                             List<Comment> comments) {
         super(sourceLocation, comments);
         this.typeCondition = typeCondition;
         this.directives = directives;
@@ -33,6 +33,8 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param typeCondition the type condition of the inline fragment
      */
     public InlineFragment(TypeName typeCondition) {
         this(typeCondition, new ArrayList<>(), null, null, new ArrayList<>());
@@ -40,6 +42,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param typeCondition the type condition of the inline fragment
+     * @param selectionSet  of the inline fragment
      */
     public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
         this(typeCondition, new ArrayList<>(), selectionSet, null, new ArrayList<>());

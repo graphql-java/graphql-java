@@ -20,11 +20,11 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
 
     @Internal
     protected InterfaceTypeDefinition(String name,
-                            List<FieldDefinition> definitions,
-                            List<Directive> directives,
-                            Description description,
-                            SourceLocation sourceLocation,
-                            List<Comment> comments) {
+                                      List<FieldDefinition> definitions,
+                                      List<Directive> directives,
+                                      Description description,
+                                      SourceLocation sourceLocation,
+                                      List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.definitions = definitions;
@@ -34,6 +34,8 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the interface
      */
     public InterfaceTypeDefinition(String name) {
         this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
@@ -132,7 +134,6 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
             this.directives = existing.getDirectives();
             this.definitions = existing.getFieldDefinitions();
         }
-
 
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
