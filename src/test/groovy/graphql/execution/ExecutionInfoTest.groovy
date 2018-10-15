@@ -56,22 +56,22 @@ class ExecutionInfoTest extends Specification {
         rootTypeInfo.type == rootType
         rootTypeInfo.field == null
         rootTypeInfo.fieldDefinition == null
-        !rootTypeInfo.hasParentType()
+        !rootTypeInfo.hasParent()
 
         fieldTypeInfo.type == fieldType
-        fieldTypeInfo.hasParentType()
+        fieldTypeInfo.hasParent()
         fieldTypeInfo.parent.type == rootType
         !fieldTypeInfo.isNonNullType()
         fieldTypeInfo.getFieldDefinition() == field1Def
         fieldTypeInfo.getField() == field
 
         nonNullFieldTypeInfo.type == fieldType
-        nonNullFieldTypeInfo.hasParentType()
+        nonNullFieldTypeInfo.hasParent()
         nonNullFieldTypeInfo.parent.type == rootType
         nonNullFieldTypeInfo.isNonNullType()
 
         listTypeInfo.type == list(fieldType)
-        listTypeInfo.hasParentType()
+        listTypeInfo.hasParent()
         listTypeInfo.parent.type == rootType
         listTypeInfo.isListType()
     }
