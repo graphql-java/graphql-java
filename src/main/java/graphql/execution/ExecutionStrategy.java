@@ -837,14 +837,14 @@ public abstract class ExecutionStrategy {
      */
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
         ExecutionInfo executionInfo = e.getExecutionInfo();
-        if (executionInfo.hasParentType() && executionInfo.getParent().isNonNullType()) {
+        if (executionInfo.hasParent() && executionInfo.getParent().isNonNullType()) {
             throw new NonNullableFieldWasNullException(e);
         }
     }
 
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e, CompletableFuture<?> completableFuture) throws NonNullableFieldWasNullException {
         ExecutionInfo executionInfo = e.getExecutionInfo();
-        if (executionInfo.hasParentType() && executionInfo.getParent().isNonNullType()) {
+        if (executionInfo.hasParent() && executionInfo.getParent().isNonNullType()) {
             completableFuture.completeExceptionally(new NonNullableFieldWasNullException(e));
         }
     }

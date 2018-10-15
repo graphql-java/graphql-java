@@ -38,13 +38,13 @@ public class ExecutionInfo {
     private final ExecutionPath path;
     private final boolean typeIsNonNull;
     private final Map<String, Object> arguments;
-    private final ExecutionInfo parentType;
+    private final ExecutionInfo parentInfo;
 
-    private ExecutionInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionInfo parentType, boolean nonNull, Map<String, Object> arguments) {
+    private ExecutionInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionInfo parentInfo, boolean nonNull, Map<String, Object> arguments) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
-        this.parentType = parentType;
+        this.parentInfo = parentInfo;
         this.type = type;
         this.typeIsNonNull = nonNull;
         this.arguments = arguments;
@@ -138,14 +138,14 @@ public class ExecutionInfo {
      * @return the parent type information
      */
     public ExecutionInfo getParent() {
-        return parentType;
+        return parentInfo;
     }
 
     /**
      * @return true if the type has a parent (most do)
      */
-    public boolean hasParentType() {
-        return parentType != null;
+    public boolean hasParent() {
+        return parentInfo != null;
     }
 
     /**
@@ -159,7 +159,7 @@ public class ExecutionInfo {
      * @return a new type info with the same
      */
     public ExecutionInfo treatAs(GraphQLType newType) {
-        return new ExecutionInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parentType, this.typeIsNonNull, arguments);
+        return new ExecutionInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parentInfo, this.typeIsNonNull, arguments);
     }
 
 
@@ -216,7 +216,7 @@ public class ExecutionInfo {
         return "ExecutionInfo{" +
                 " path=" + path +
                 ", type=" + type +
-                ", parentInfo=" + parentType +
+                ", parentInfo=" + parentInfo +
                 ", typeIsNonNull=" + typeIsNonNull +
                 ", fieldDefinition=" + fieldDefinition +
                 '}';

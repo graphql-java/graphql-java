@@ -36,7 +36,7 @@ public class NonNullableFieldWasNullException extends RuntimeException {
 
 
     private static String mkMessage(ExecutionInfo executionInfo, ExecutionPath path) {
-        if (executionInfo.hasParentType()) {
+        if (executionInfo.hasParent()) {
             return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", executionInfo.getType().getName(), executionInfo.getParent().getType().getName(), path);
         }
         return String.format("Cannot return null for non-nullable type: '%s' (%s)", executionInfo.getType().getName(), path);
