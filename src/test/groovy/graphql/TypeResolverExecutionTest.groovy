@@ -13,7 +13,7 @@ import graphql.schema.idl.WiringFactory
 import spock.lang.Specification
 
 import static graphql.Assert.assertShouldNeverHappen
-import static graphql.execution.ExecutionInfo.unwrapBaseType
+import static graphql.execution.ExecutionStepInfo.unwrapBaseType
 
 class TypeResolverExecutionTest extends Specification {
 

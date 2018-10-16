@@ -98,14 +98,14 @@ class InstrumentationTest extends Specification {
         instrumentation.dfInvocations.size() == 2
 
         instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
-        instrumentation.dfInvocations[0].getExecutionInfo().getPath().toList() == ['hero']
-        instrumentation.dfInvocations[0].getExecutionInfo().getType().name == 'Character'
-        !instrumentation.dfInvocations[0].getExecutionInfo().isNonNullType()
+        instrumentation.dfInvocations[0].getExecutionStepInfo().getPath().toList() == ['hero']
+        instrumentation.dfInvocations[0].getExecutionStepInfo().getType().name == 'Character'
+        !instrumentation.dfInvocations[0].getExecutionStepInfo().isNonNullType()
 
         instrumentation.dfInvocations[1].getFieldDefinition().name == 'id'
-        instrumentation.dfInvocations[1].getExecutionInfo().getPath().toList() == ['hero', 'id']
-        instrumentation.dfInvocations[1].getExecutionInfo().getType().name == 'String'
-        instrumentation.dfInvocations[1].getExecutionInfo().isNonNullType()
+        instrumentation.dfInvocations[1].getExecutionStepInfo().getPath().toList() == ['hero', 'id']
+        instrumentation.dfInvocations[1].getExecutionStepInfo().getType().name == 'String'
+        instrumentation.dfInvocations[1].getExecutionStepInfo().isNonNullType()
     }
 
     def '#630 - Instrumentation of batched execution strategy is called'() {
@@ -229,7 +229,7 @@ class InstrumentationTest extends Specification {
 
         @Override
         DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-            System.out.println(String.format("t%s instrument DF for %s", Thread.currentThread().getId(), parameters.environment.getExecutionInfo().getPath()))
+            System.out.println(String.format("t%s instrument DF for %s", Thread.currentThread().getId(), parameters.environment.getExecutionStepInfo().getPath()))
 
             return new DataFetcher<Object>() {
                 @Override
@@ -237,9 +237,9 @@ class InstrumentationTest extends Specification {
                     // off thread call - that waits
                     return CompletableFuture.supplyAsync({
                         def value = dataFetcher.get(environment)
-                        System.out.println(String.format("   t%s awaiting %s", Thread.currentThread().getId(), environment.getExecutionInfo().getPath()))
+                        System.out.println(String.format("   t%s awaiting %s", Thread.currentThread().getId(), environment.getExecutionStepInfo().getPath()))
                         Awaitility.await().atMost(20, TimeUnit.SECONDS).untilTrue(goSignal)
-                        System.out.println(String.format("      t%s returning value %s", Thread.currentThread().getId(), environment.getExecutionInfo().getPath()))
+                        System.out.println(String.format("      t%s returning value %s", Thread.currentThread().getId(), environment.getExecutionStepInfo().getPath()))
                         return value
                     })
                 }

@@ -4,7 +4,7 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionInfo;
+import graphql.execution.ExecutionStepInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
@@ -31,7 +31,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
-    private final ExecutionInfo executionInfo;
+    private final ExecutionStepInfo executionStepInfo;
     private ExecutionContext executionContext;
 
     public DataFetchingEnvironmentImpl(Object source,
@@ -46,7 +46,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        Map<String, FragmentDefinition> fragmentsByName,
                                        ExecutionId executionId,
                                        DataFetchingFieldSelectionSet selectionSet,
-                                       ExecutionInfo executionInfo,
+                                       ExecutionStepInfo executionStepInfo,
                                        ExecutionContext executionContext) {
         this.source = source;
         this.arguments = arguments == null ? Collections.emptyMap() : arguments;
@@ -60,7 +60,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.selectionSet = selectionSet;
-        this.executionInfo = executionInfo;
+        this.executionStepInfo = executionStepInfo;
         this.executionContext = assertNotNull(executionContext);
     }
 
@@ -140,8 +140,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public ExecutionInfo getExecutionInfo() {
-        return executionInfo;
+    public ExecutionStepInfo getExecutionStepInfo() {
+        return executionStepInfo;
     }
 
     @Override
@@ -157,7 +157,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public String toString() {
         return "DataFetchingEnvironmentImpl{" +
-                "executionInfo=" + executionInfo +
+                "executionStepInfo=" + executionStepInfo +
                 '}';
     }
 }

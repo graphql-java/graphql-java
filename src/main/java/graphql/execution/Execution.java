@@ -32,8 +32,8 @@ import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
+import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
-import static graphql.execution.ExecutionInfo.newExecutionInfo;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
@@ -134,11 +134,11 @@ public class Execution {
         Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
         ExecutionPath path = ExecutionPath.rootPath();
-        ExecutionInfo executionInfo = newExecutionInfo().type(operationRootType).path(path).build();
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionInfo);
+        ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
         ExecutionStrategyParameters parameters = newParameters()
-                .executionInfo(executionInfo)
+                .executionStepInfo(executionStepInfo)
                 .source(root)
                 .fields(fields)
                 .nonNullFieldValidator(nonNullableFieldValidator)

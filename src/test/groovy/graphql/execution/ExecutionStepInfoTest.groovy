@@ -14,7 +14,7 @@ import spock.lang.Specification
 
 import java.util.function.Function
 
-import static ExecutionInfo.newExecutionInfo
+import static ExecutionStepInfo.newExecutionStepInfo
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLList.list
@@ -23,7 +23,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
-class ExecutionInfoTest extends Specification {
+class ExecutionStepInfoTest extends Specification {
 
     def field = new Field("someAstField")
 
@@ -47,10 +47,10 @@ class ExecutionInfoTest extends Specification {
 
     def "basic hierarchy"() {
         given:
-        def rootTypeInfo = newExecutionInfo().type(rootType).build()
-        def fieldTypeInfo = newExecutionInfo().type(fieldType).fieldDefinition(field1Def).field(field).parentInfo(rootTypeInfo).build()
-        def nonNullFieldTypeInfo = newExecutionInfo().type(nonNull(fieldType)).parentInfo(rootTypeInfo).build()
-        def listTypeInfo = newExecutionInfo().type(list(fieldType)).parentInfo(rootTypeInfo).build()
+        def rootTypeInfo = newExecutionStepInfo().type(rootType).build()
+        def fieldTypeInfo = newExecutionStepInfo().type(fieldType).fieldDefinition(field1Def).field(field).parentInfo(rootTypeInfo).build()
+        def nonNullFieldTypeInfo = newExecutionStepInfo().type(nonNull(fieldType)).parentInfo(rootTypeInfo).build()
+        def listTypeInfo = newExecutionStepInfo().type(list(fieldType)).parentInfo(rootTypeInfo).build()
 
         expect:
         rootTypeInfo.type == rootType
@@ -78,8 +78,8 @@ class ExecutionInfoTest extends Specification {
 
     def "morphing type works"() {
         given:
-        def rootTypeInfo = newExecutionInfo().type(rootType).build()
-        def interfaceTypeInfo = newExecutionInfo().type(interfaceType).parentInfo(rootTypeInfo).build()
+        def rootTypeInfo = newExecutionStepInfo().type(rootType).build()
+        def interfaceTypeInfo = newExecutionStepInfo().type(interfaceType).parentInfo(rootTypeInfo).build()
         def morphedTypeInfo = interfaceTypeInfo.treatAs(fieldType)
 
         expect:
@@ -93,7 +93,7 @@ class ExecutionInfoTest extends Specification {
         given:
         // [[String!]!]
         GraphQLType wrappedType = list(nonNull(list(nonNull(GraphQLString))))
-        def stack = ExecutionInfo.unwrapType(wrappedType)
+        def stack = ExecutionStepInfo.unwrapType(wrappedType)
 
         expect:
         stack.pop() == GraphQLString
@@ -104,18 +104,18 @@ class ExecutionInfoTest extends Specification {
         stack.isEmpty()
     }
 
-    List<ExecutionInfo> executionTypeInfos = []
+    List<ExecutionStepInfo> executionTypeInfos = []
 
-    class ExecutionInfoCapturingDF implements DataFetcher {
+    class ExecutionStepInfoCapturingDF implements DataFetcher {
         Function function
 
-        ExecutionInfoCapturingDF(function) {
+        ExecutionStepInfoCapturingDF(function) {
             this.function = function
         }
 
         @Override
         Object get(DataFetchingEnvironment environment) {
-            executionTypeInfos.add(environment.getExecutionInfo())
+            executionTypeInfos.add(environment.getExecutionStepInfo())
             def val = function.apply(environment)
             return val
         }
@@ -151,8 +151,8 @@ class ExecutionInfoTest extends Specification {
         def frodo = new User("frodo", [bilbo, gandalf])
         def samwise = new User("samwise", [bilbo, gandalf, frodo])
 
-        DataFetcher samwiseDF = new ExecutionInfoCapturingDF({ env -> env.getSource() })
-        DataFetcher friendsDF = new ExecutionInfoCapturingDF({ env -> (env.getSource() as User).friends })
+        DataFetcher samwiseDF = new ExecutionStepInfoCapturingDF({ env -> env.getSource() })
+        DataFetcher friendsDF = new ExecutionStepInfoCapturingDF({ env -> (env.getSource() as User).friends })
 
         def runtimeWiring = newRuntimeWiring()
                 .type(newTypeWiring("Query").dataFetcher("hero", samwiseDF))

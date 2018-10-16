@@ -3,7 +3,7 @@ package graphql.schema;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionInfo;
+import graphql.execution.ExecutionStepInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
@@ -123,9 +123,9 @@ public interface DataFetchingEnvironment {
 
 
     /**
-     * @return the field {@link graphql.execution.ExecutionInfo} for the current data fetch operation
+     * @return the field {@link ExecutionStepInfo} for the current data fetch operation
      */
-    ExecutionInfo getExecutionInfo();
+    ExecutionStepInfo getExecutionStepInfo();
 
     /**
      * @return the type of the parent of the current field

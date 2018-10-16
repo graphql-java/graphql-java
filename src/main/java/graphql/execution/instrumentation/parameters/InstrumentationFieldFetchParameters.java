@@ -15,13 +15,13 @@ public class InstrumentationFieldFetchParameters extends InstrumentationFieldPar
     private final ExecutionStrategyParameters executionStrategyParameters;
 
     public InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionStrategyParameters executionStrategyParameters) {
-        super(getExecutionContext, fieldDef, environment.getExecutionInfo());
+        super(getExecutionContext, fieldDef, environment.getExecutionStepInfo());
         this.environment = environment;
         this.executionStrategyParameters = executionStrategyParameters;
     }
 
     private InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, InstrumentationState instrumentationState, ExecutionStrategyParameters executionStrategyParameters) {
-        super(getExecutionContext, fieldDef, environment.getExecutionInfo(), instrumentationState);
+        super(getExecutionContext, fieldDef, environment.getExecutionStepInfo(), instrumentationState);
         this.environment = environment;
         this.executionStrategyParameters = executionStrategyParameters;
     }

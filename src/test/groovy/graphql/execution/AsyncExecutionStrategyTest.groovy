@@ -70,7 +70,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionInfo.newExecutionInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -82,7 +82,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionInfo(typeInfo)
+                .executionStepInfo(typeInfo)
                 .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
                 .build()
 
@@ -108,7 +108,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionInfo.newExecutionInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -120,7 +120,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionInfo(typeInfo)
+                .executionStepInfo(typeInfo)
                 .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
                 .build()
 
@@ -148,7 +148,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionInfo.newExecutionInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -160,7 +160,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionInfo(typeInfo)
+                .executionStepInfo(typeInfo)
                 .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
                 .build()
 
@@ -187,7 +187,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionInfo.newExecutionInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -199,7 +199,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionInfo(typeInfo)
+                .executionStepInfo(typeInfo)
                 .fields(['hello': [Field.newField('hello').build()], 'hello2': [Field.newField('hello2').build()]])
                 .build()
 
@@ -225,7 +225,7 @@ class AsyncExecutionStrategyTest extends Specification {
         def document = new Parser().parseDocument(query)
         def operation = document.definitions[0] as OperationDefinition
 
-        def typeInfo = ExecutionInfo.newExecutionInfo()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
                 .build()
 
@@ -258,7 +258,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionInfo(typeInfo)
+                .executionStepInfo(typeInfo)
                 .fields(['hello': [new Field('hello')], 'hello2': [new Field('hello2')]])
                 .build()
 
