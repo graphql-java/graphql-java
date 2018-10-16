@@ -207,14 +207,14 @@ class ChainedInstrumentationStateTest extends Specification {
 
     private void assertCalls(NamedInstrumentation instrumentation) {
         assert instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
-        assert instrumentation.dfInvocations[0].getExecutionInfo().getPath().toList() == ['hero']
-        assert instrumentation.dfInvocations[0].getExecutionInfo().getType().name == 'Character'
-        assert !instrumentation.dfInvocations[0].getExecutionInfo().isNonNullType()
+        assert instrumentation.dfInvocations[0].getExecutionStepInfo().getPath().toList() == ['hero']
+        assert instrumentation.dfInvocations[0].getExecutionStepInfo().getType().name == 'Character'
+        assert !instrumentation.dfInvocations[0].getExecutionStepInfo().isNonNullType()
 
         assert instrumentation.dfInvocations[1].getFieldDefinition().name == 'id'
-        assert instrumentation.dfInvocations[1].getExecutionInfo().getPath().toList() == ['hero', 'id']
-        assert instrumentation.dfInvocations[1].getExecutionInfo().getType().name == 'String'
-        assert instrumentation.dfInvocations[1].getExecutionInfo().isNonNullType()
+        assert instrumentation.dfInvocations[1].getExecutionStepInfo().getPath().toList() == ['hero', 'id']
+        assert instrumentation.dfInvocations[1].getExecutionStepInfo().getType().name == 'String'
+        assert instrumentation.dfInvocations[1].getExecutionStepInfo().isNonNullType()
     }
 
 }

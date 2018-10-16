@@ -3,7 +3,7 @@ package graphql.schema;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionInfo;
+import graphql.execution.ExecutionStepInfo;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
@@ -33,7 +33,7 @@ public class DataFetchingEnvironmentBuilder {
                 .root(environment.getRoot())
                 .fields(environment.getFields())
                 .fieldType(environment.getFieldType())
-                .executionInfo(environment.getExecutionInfo())
+                .executionStepInfo(environment.getExecutionStepInfo())
                 .parentType(environment.getParentType())
                 .graphQLSchema(environment.getGraphQLSchema())
                 .fragmentsByName(environment.getFragmentsByName())
@@ -67,7 +67,7 @@ public class DataFetchingEnvironmentBuilder {
     private Map<String, FragmentDefinition> fragmentsByName = Collections.emptyMap();
     private ExecutionId executionId;
     private DataFetchingFieldSelectionSet selectionSet;
-    private ExecutionInfo executionInfo;
+    private ExecutionStepInfo executionStepInfo;
     private ExecutionContext executionContext;
 
     public DataFetchingEnvironmentBuilder source(Object source) {
@@ -130,8 +130,8 @@ public class DataFetchingEnvironmentBuilder {
         return this;
     }
 
-    public DataFetchingEnvironmentBuilder executionInfo(ExecutionInfo executionInfo) {
-        this.executionInfo = executionInfo;
+    public DataFetchingEnvironmentBuilder executionStepInfo(ExecutionStepInfo executionStepInfo) {
+        this.executionStepInfo = executionStepInfo;
         return this;
     }
 
@@ -143,7 +143,7 @@ public class DataFetchingEnvironmentBuilder {
     public DataFetchingEnvironment build() {
         return new DataFetchingEnvironmentImpl(source, arguments, context, root,
                 fieldDefinition, fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
-                executionInfo,
+                executionStepInfo,
                 executionContext);
     }
 }

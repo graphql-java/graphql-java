@@ -1,21 +1,16 @@
 package example.http;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-
 import graphql.ExceptionWhileDataFetching;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.InvalidSyntaxError;
 import graphql.SerializationError;
-import graphql.execution.ExecutionInfo;
 import graphql.execution.ExecutionPath;
+import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MissingRootTypeException;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
@@ -24,6 +19,11 @@ import graphql.language.SourceLocation;
 import graphql.schema.CoercingSerializeException;
 import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorType;
+
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import static java.util.Arrays.stream;
 import static java.util.stream.Collectors.toList;
@@ -92,8 +92,8 @@ public class ExecutionResultJSONTesting {
         return ExecutionPath.rootPath().segment("heroes").segment(0).segment("abilities").segment("speed").segment(4);
     }
 
-    private ExecutionInfo mkExecutionInfo() {
-        return ExecutionInfo.newExecutionInfo()
+    private ExecutionStepInfo mkExecutionInfo() {
+        return ExecutionStepInfo.newExecutionStepInfo()
                 .type(Introspection.__Schema)
                 .path(mkPath())
                 .build();

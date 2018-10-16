@@ -9,41 +9,41 @@ import static graphql.Assert.assertNotNull;
  */
 public class NonNullableFieldWasNullException extends RuntimeException {
 
-    private final ExecutionInfo executionInfo;
+    private final ExecutionStepInfo executionStepInfo;
     private final ExecutionPath path;
 
 
-    public NonNullableFieldWasNullException(ExecutionInfo executionInfo, ExecutionPath path) {
+    public NonNullableFieldWasNullException(ExecutionStepInfo executionStepInfo, ExecutionPath path) {
         super(
-                mkMessage(assertNotNull(executionInfo),
+                mkMessage(assertNotNull(executionStepInfo),
                         assertNotNull(path))
         );
-        this.executionInfo = executionInfo;
+        this.executionStepInfo = executionStepInfo;
         this.path = path;
     }
 
     public NonNullableFieldWasNullException(NonNullableFieldWasNullException previousException) {
         super(
                 mkMessage(
-                        assertNotNull(previousException.executionInfo.getParent()),
-                        assertNotNull(previousException.executionInfo.getParent().getPath())
+                        assertNotNull(previousException.executionStepInfo.getParent()),
+                        assertNotNull(previousException.executionStepInfo.getParent().getPath())
                 ),
                 previousException
         );
-        this.executionInfo = previousException.executionInfo.getParent();
-        this.path = previousException.executionInfo.getParent().getPath();
+        this.executionStepInfo = previousException.executionStepInfo.getParent();
+        this.path = previousException.executionStepInfo.getParent().getPath();
     }
 
 
-    private static String mkMessage(ExecutionInfo executionInfo, ExecutionPath path) {
-        if (executionInfo.hasParent()) {
-            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", executionInfo.getType().getName(), executionInfo.getParent().getType().getName(), path);
+    private static String mkMessage(ExecutionStepInfo executionStepInfo, ExecutionPath path) {
+        if (executionStepInfo.hasParent()) {
+            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", executionStepInfo.getType().getName(), executionStepInfo.getParent().getType().getName(), path);
         }
-        return String.format("Cannot return null for non-nullable type: '%s' (%s)", executionInfo.getType().getName(), path);
+        return String.format("Cannot return null for non-nullable type: '%s' (%s)", executionStepInfo.getType().getName(), path);
     }
 
-    public ExecutionInfo getExecutionInfo() {
-        return executionInfo;
+    public ExecutionStepInfo getExecutionStepInfo() {
+        return executionStepInfo;
     }
 
     public ExecutionPath getPath() {
@@ -54,7 +54,7 @@ public class NonNullableFieldWasNullException extends RuntimeException {
     public String toString() {
         return "NonNullableFieldWasNullException{" +
                 " path=" + path +
-                " executionInfo=" + executionInfo +
+                " executionStepInfo=" + executionStepInfo +
                 '}';
     }
 }

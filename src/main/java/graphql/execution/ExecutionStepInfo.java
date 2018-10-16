@@ -30,7 +30,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
  * type instances, so this helper class adds this information during query execution.
  */
 @PublicApi
-public class ExecutionInfo {
+public class ExecutionStepInfo {
 
     private final GraphQLType type;
     private final Field field;
@@ -38,13 +38,13 @@ public class ExecutionInfo {
     private final ExecutionPath path;
     private final boolean typeIsNonNull;
     private final Map<String, Object> arguments;
-    private final ExecutionInfo parentInfo;
+    private final ExecutionStepInfo parent;
 
-    private ExecutionInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionInfo parentInfo, boolean nonNull, Map<String, Object> arguments) {
+    private ExecutionStepInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionStepInfo parent, boolean nonNull, Map<String, Object> arguments) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
-        this.parentInfo = parentInfo;
+        this.parent = parent;
         this.type = type;
         this.typeIsNonNull = nonNull;
         this.arguments = arguments;
@@ -137,15 +137,15 @@ public class ExecutionInfo {
     /**
      * @return the parent type information
      */
-    public ExecutionInfo getParent() {
-        return parentInfo;
+    public ExecutionStepInfo getParent() {
+        return parent;
     }
 
     /**
      * @return true if the type has a parent (most do)
      */
     public boolean hasParent() {
-        return parentInfo != null;
+        return parent != null;
     }
 
     /**
@@ -158,8 +158,8 @@ public class ExecutionInfo {
      *
      * @return a new type info with the same
      */
-    public ExecutionInfo treatAs(GraphQLType newType) {
-        return new ExecutionInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parentInfo, this.typeIsNonNull, arguments);
+    public ExecutionStepInfo treatAs(GraphQLType newType) {
+        return new ExecutionStepInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parent, this.typeIsNonNull, arguments);
     }
 
 
@@ -213,10 +213,10 @@ public class ExecutionInfo {
 
     @Override
     public String toString() {
-        return "ExecutionInfo{" +
+        return "ExecutionStepInfo{" +
                 " path=" + path +
                 ", type=" + type +
-                ", parentInfo=" + parentInfo +
+                ", parentInfo=" + parent +
                 ", typeIsNonNull=" + typeIsNonNull +
                 ", fieldDefinition=" + fieldDefinition +
                 '}';
@@ -233,20 +233,20 @@ public class ExecutionInfo {
     /**
      * @return a builder of type info
      */
-    public static ExecutionInfo.Builder newExecutionInfo() {
+    public static ExecutionStepInfo.Builder newExecutionStepInfo() {
         return new Builder();
     }
 
     public static class Builder {
         GraphQLType type;
-        ExecutionInfo parentInfo;
+        ExecutionStepInfo parentInfo;
         GraphQLFieldDefinition fieldDefinition;
         Field field;
         ExecutionPath executionPath;
         Map<String, Object> arguments = new LinkedHashMap<>();
 
         /**
-         * @see ExecutionInfo#newExecutionInfo()
+         * @see ExecutionStepInfo#newExecutionStepInfo()
          */
         private Builder() {
         }
@@ -256,8 +256,8 @@ public class ExecutionInfo {
             return this;
         }
 
-        public Builder parentInfo(ExecutionInfo executionInfo) {
-            this.parentInfo = executionInfo;
+        public Builder parentInfo(ExecutionStepInfo executionStepInfo) {
+            this.parentInfo = executionStepInfo;
             return this;
         }
 
@@ -281,11 +281,11 @@ public class ExecutionInfo {
             return this;
         }
 
-        public ExecutionInfo build() {
+        public ExecutionStepInfo build() {
             if (isNonNull(type)) {
-                return new ExecutionInfo(unwrapNonNull(type), fieldDefinition, field, executionPath, parentInfo, true, arguments);
+                return new ExecutionStepInfo(unwrapNonNull(type), fieldDefinition, field, executionPath, parentInfo, true, arguments);
             }
-            return new ExecutionInfo(type, fieldDefinition, field, executionPath, parentInfo, false, arguments);
+            return new ExecutionStepInfo(type, fieldDefinition, field, executionPath, parentInfo, false, arguments);
         }
     }
 }
