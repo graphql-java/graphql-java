@@ -1,5 +1,7 @@
 package graphql.execution;
 
+import graphql.schema.GraphQLType;
+
 import static graphql.Assert.assertNotNull;
 
 /**
@@ -36,10 +38,12 @@ public class NonNullableFieldWasNullException extends RuntimeException {
 
 
     private static String mkMessage(ExecutionStepInfo executionStepInfo, ExecutionPath path) {
+        GraphQLType unwrappedTyped = executionStepInfo.getUnwrapNonNullType();
         if (executionStepInfo.hasParent()) {
-            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", executionStepInfo.getType().getName(), executionStepInfo.getParent().getType().getName(), path);
+            GraphQLType unwrappedParentType = executionStepInfo.getParent().getUnwrapNonNullType();
+            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", unwrappedTyped.getName(), unwrappedParentType.getName(), path);
         }
-        return String.format("Cannot return null for non-nullable type: '%s' (%s)", executionStepInfo.getType().getName(), path);
+        return String.format("Cannot return null for non-nullable type: '%s' (%s)", unwrappedTyped.getName(), path);
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {

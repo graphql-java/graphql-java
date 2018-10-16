@@ -10,6 +10,7 @@ import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
+import graphql.schema.GraphQLTypeUtil
 import spock.lang.Specification
 
 import java.util.function.Function
@@ -53,24 +54,24 @@ class ExecutionStepInfoTest extends Specification {
         def listTypeInfo = newExecutionStepInfo().type(list(fieldType)).parentInfo(rootTypeInfo).build()
 
         expect:
-        rootTypeInfo.type == rootType
+        rootTypeInfo.getUnwrapNonNullType() == rootType
         rootTypeInfo.field == null
         rootTypeInfo.fieldDefinition == null
         !rootTypeInfo.hasParent()
 
-        fieldTypeInfo.type == fieldType
+        fieldTypeInfo.getUnwrapNonNullType() == fieldType
         fieldTypeInfo.hasParent()
         fieldTypeInfo.parent.type == rootType
         !fieldTypeInfo.isNonNullType()
         fieldTypeInfo.getFieldDefinition() == field1Def
         fieldTypeInfo.getField() == field
 
-        nonNullFieldTypeInfo.type == fieldType
+        nonNullFieldTypeInfo.getUnwrapNonNullType() == fieldType
         nonNullFieldTypeInfo.hasParent()
         nonNullFieldTypeInfo.parent.type == rootType
         nonNullFieldTypeInfo.isNonNullType()
 
-        listTypeInfo.type == list(fieldType)
+        listTypeInfo.getUnwrapNonNullType() == list(fieldType)
         listTypeInfo.hasParent()
         listTypeInfo.parent.type == rootType
         listTypeInfo.isListType()
@@ -80,7 +81,7 @@ class ExecutionStepInfoTest extends Specification {
         given:
         def rootTypeInfo = newExecutionStepInfo().type(rootType).build()
         def interfaceTypeInfo = newExecutionStepInfo().type(interfaceType).parentInfo(rootTypeInfo).build()
-        def morphedTypeInfo = interfaceTypeInfo.treatAs(fieldType)
+        def morphedTypeInfo = interfaceTypeInfo.changeTypeWithPreservedNonNull(fieldType)
 
         expect:
 
@@ -93,7 +94,7 @@ class ExecutionStepInfoTest extends Specification {
         given:
         // [[String!]!]
         GraphQLType wrappedType = list(nonNull(list(nonNull(GraphQLString))))
-        def stack = ExecutionStepInfo.unwrapType(wrappedType)
+        def stack = GraphQLTypeUtil.unwrapType(wrappedType)
 
         expect:
         stack.pop() == GraphQLString

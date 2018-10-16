@@ -4,7 +4,6 @@ import graphql.PublicApi;
 import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
@@ -12,15 +11,10 @@ import graphql.schema.GraphQLTypeUtil;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Stack;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.schema.GraphQLNonNull.nonNull;
+import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.isList;
-import static graphql.schema.GraphQLTypeUtil.isNonNull;
-import static graphql.schema.GraphQLTypeUtil.isNotWrapped;
-import static graphql.schema.GraphQLTypeUtil.unwrapAll;
-import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 /**
  * As the graphql query executes, it forms a hierarchy from parent fields (and their type) to their child fields (and their type)
@@ -36,19 +30,26 @@ public class ExecutionStepInfo {
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final ExecutionPath path;
-    private final boolean typeIsNonNull;
     private final Map<String, Object> arguments;
     private final ExecutionStepInfo parent;
 
-    private ExecutionStepInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionStepInfo parent, boolean nonNull, Map<String, Object> arguments) {
+    private ExecutionStepInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
         this.parent = parent;
-        this.type = type;
-        this.typeIsNonNull = nonNull;
+        this.type = assertNotNull(type, "you must provide a graphql type");
         this.arguments = arguments;
-        assertNotNull(this.type, "you must provide a graphql type");
+
+    }
+
+    /**
+     * This returns the type for the current step.
+     *
+     * @return the graphql type in question
+     */
+    public GraphQLType getType() {
+        return type;
     }
 
     /**
@@ -56,8 +57,8 @@ public class ExecutionStepInfo {
      *
      * @return the graphql type in question
      */
-    public GraphQLType getType() {
-        return type;
+    public GraphQLType getUnwrapNonNullType() {
+        return GraphQLTypeUtil.unwrapNonNull(this.type);
     }
 
     /**
@@ -87,24 +88,10 @@ public class ExecutionStepInfo {
     }
 
     /**
-     * This will cast the type to a specific graphql type such
-     * as {@link graphql.schema.GraphQLObjectType} say
-     *
-     * @param clazz the class to cast to
-     * @param <T>   the type you want to become
-     *
-     * @return this type cast as that
-     */
-    @SuppressWarnings("unchecked")
-    public <T extends GraphQLType> T castType(Class<T> clazz) {
-        return clazz.cast(type);
-    }
-
-    /**
      * @return true if the type must be nonnull
      */
     public boolean isNonNullType() {
-        return typeIsNonNull;
+        return GraphQLTypeUtil.isNonNull(this.type);
     }
 
     /**
@@ -158,43 +145,13 @@ public class ExecutionStepInfo {
      *
      * @return a new type info with the same
      */
-    public ExecutionStepInfo treatAs(GraphQLType newType) {
-        return new ExecutionStepInfo(unwrapNonNull(newType), fieldDefinition, field, path, this.parent, this.typeIsNonNull, arguments);
-    }
-
-
-    /**
-     * graphql types can be wrapped in {@link GraphQLNonNull} and {@link GraphQLList} type wrappers
-     * so this method will unwrap the type down to the raw unwrapped type and return that wrapping
-     * as a stack, with the top of the stack being the raw underling type.
-     *
-     * @param type the type to unwrap
-     *
-     * @return a stack of the type wrapping which will be at least 1 later deep
-     */
-    public static Stack<GraphQLType> unwrapType(GraphQLType type) {
-        type = assertNotNull(type);
-        Stack<GraphQLType> decoration = new Stack<>();
-        while (true) {
-            decoration.push(type);
-            if (isNotWrapped(type)) {
-                break;
-            }
-            type = unwrapOne(type);
+    public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLType newType) {
+        assertTrue(!GraphQLTypeUtil.isNonNull(newType), "newType can't be non null");
+        if (isNonNullType()) {
+            return new ExecutionStepInfo(GraphQLNonNull.nonNull(newType), fieldDefinition, field, path, this.parent, arguments);
+        } else {
+            return new ExecutionStepInfo(newType, fieldDefinition, field, path, this.parent, arguments);
         }
-        return decoration;
-    }
-
-    /**
-     * graphql types can be wrapped in {@link GraphQLNonNull} and {@link GraphQLList} type wrappers
-     * so this method will unwrap the type down to the raw underlying type.
-     *
-     * @param type the type to unwrap
-     *
-     * @return the underlying raw type with {@link GraphQLNonNull} and {@link GraphQLList} type wrappers removed
-     */
-    public static GraphQLType unwrapBaseType(GraphQLType type) {
-        return unwrapAll(type);
     }
 
 
@@ -202,13 +159,7 @@ public class ExecutionStepInfo {
      * @return the type in graphql AST format, eg [typeName!]!
      */
     public String toAst() {
-        // type info unwraps non nulls - we need it back here
-        GraphQLType type = this.getType();
-        if (isNonNullType()) {
-            type = nonNull(type);
-        }
         return GraphQLTypeUtil.getUnwrappedTypeName(type);
-
     }
 
     @Override
@@ -216,19 +167,11 @@ public class ExecutionStepInfo {
         return "ExecutionStepInfo{" +
                 " path=" + path +
                 ", type=" + type +
-                ", parentInfo=" + parent +
-                ", typeIsNonNull=" + typeIsNonNull +
+                ", parent=" + parent +
                 ", fieldDefinition=" + fieldDefinition +
                 '}';
     }
 
-    private static GraphQLType unwrapNonNull(GraphQLType type) {
-        // its possible to have non nulls wrapping non nulls of things but it must end at some point
-        while (isNonNull(type)) {
-            type = unwrapOne(type);
-        }
-        return type;
-    }
 
     /**
      * @return a builder of type info
@@ -282,10 +225,7 @@ public class ExecutionStepInfo {
         }
 
         public ExecutionStepInfo build() {
-            if (isNonNull(type)) {
-                return new ExecutionStepInfo(unwrapNonNull(type), fieldDefinition, field, executionPath, parentInfo, true, arguments);
-            }
-            return new ExecutionStepInfo(type, fieldDefinition, field, executionPath, parentInfo, false, arguments);
+            return new ExecutionStepInfo(type, fieldDefinition, field, executionPath, parentInfo, arguments);
         }
     }
 }

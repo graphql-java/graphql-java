@@ -208,12 +208,12 @@ class ChainedInstrumentationStateTest extends Specification {
     private void assertCalls(NamedInstrumentation instrumentation) {
         assert instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
         assert instrumentation.dfInvocations[0].getExecutionStepInfo().getPath().toList() == ['hero']
-        assert instrumentation.dfInvocations[0].getExecutionStepInfo().getType().name == 'Character'
+        assert instrumentation.dfInvocations[0].getExecutionStepInfo().getUnwrapNonNullType().name == 'Character'
         assert !instrumentation.dfInvocations[0].getExecutionStepInfo().isNonNullType()
 
         assert instrumentation.dfInvocations[1].getFieldDefinition().name == 'id'
         assert instrumentation.dfInvocations[1].getExecutionStepInfo().getPath().toList() == ['hero', 'id']
-        assert instrumentation.dfInvocations[1].getExecutionStepInfo().getType().name == 'String'
+        assert instrumentation.dfInvocations[1].getExecutionStepInfo().getUnwrapNonNullType().name == 'String'
         assert instrumentation.dfInvocations[1].getExecutionStepInfo().isNonNullType()
     }
 
