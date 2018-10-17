@@ -25,6 +25,8 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the fragment
      */
     public FragmentSpread(String name) {
         this(name, new ArrayList<>(), null, new ArrayList<>());

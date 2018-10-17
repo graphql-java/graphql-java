@@ -24,7 +24,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
     /**
      * alternative to using a Builder for convenience
      *
-     * @param values
+     * @param values of the array
      */
     public ArrayValue(List<Value> values) {
         super(null, new ArrayList<>());

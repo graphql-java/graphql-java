@@ -87,15 +87,11 @@ class SchemaPrinterTest extends Specification {
     def "typeString"() {
 
         GraphQLType type1 = nonNull(list(nonNull(list(nonNull(Scalars.GraphQLInt)))))
-        GraphQLType type2 = nonNull(nonNull(list(nonNull(Scalars.GraphQLInt))))
 
         def typeStr1 = new SchemaPrinter().typeString(type1)
-        def typeStr2 = new SchemaPrinter().typeString(type2)
 
         expect:
         typeStr1 == "[[Int!]!]!"
-        typeStr2 == "[Int!]!!"
-
     }
 
     def "argsString"() {

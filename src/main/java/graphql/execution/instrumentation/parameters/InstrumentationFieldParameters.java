@@ -1,7 +1,7 @@
 package graphql.execution.instrumentation.parameters;
 
 import graphql.execution.ExecutionContext;
-import graphql.execution.ExecutionInfo;
+import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.GraphQLFieldDefinition;
@@ -12,17 +12,17 @@ import graphql.schema.GraphQLFieldDefinition;
 public class InstrumentationFieldParameters {
     private final ExecutionContext executionContext;
     private final graphql.schema.GraphQLFieldDefinition fieldDef;
-    private final ExecutionInfo executionInfo;
+    private final ExecutionStepInfo executionStepInfo;
     private final InstrumentationState instrumentationState;
 
-    public InstrumentationFieldParameters(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef, ExecutionInfo executionInfo) {
-        this(executionContext, fieldDef, executionInfo, executionContext.getInstrumentationState());
+    public InstrumentationFieldParameters(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef, ExecutionStepInfo executionStepInfo) {
+        this(executionContext, fieldDef, executionStepInfo, executionContext.getInstrumentationState());
     }
 
-    InstrumentationFieldParameters(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef, ExecutionInfo executionInfo, InstrumentationState instrumentationState) {
+    InstrumentationFieldParameters(ExecutionContext executionContext, GraphQLFieldDefinition fieldDef, ExecutionStepInfo executionStepInfo, InstrumentationState instrumentationState) {
         this.executionContext = executionContext;
         this.fieldDef = fieldDef;
-        this.executionInfo = executionInfo;
+        this.executionStepInfo = executionStepInfo;
         this.instrumentationState = instrumentationState;
     }
 
@@ -35,7 +35,7 @@ public class InstrumentationFieldParameters {
      */
     public InstrumentationFieldParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationFieldParameters(
-                this.executionContext, this.fieldDef, this.executionInfo, instrumentationState);
+                this.executionContext, this.fieldDef, this.executionStepInfo, instrumentationState);
     }
 
 
@@ -47,8 +47,8 @@ public class InstrumentationFieldParameters {
         return fieldDef;
     }
 
-    public ExecutionInfo getExecutionInfo() {
-        return executionInfo;
+    public ExecutionStepInfo getExecutionStepInfo() {
+        return executionStepInfo;
     }
 
     @SuppressWarnings("TypeParameterUnusedInFormals")

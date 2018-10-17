@@ -31,6 +31,8 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the enum value
      */
     public EnumValueDefinition(String name) {
         this(name, new ArrayList<>(), null, null, new ArrayList<>());
@@ -38,6 +40,9 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name       of the enum value
+     * @param directives the directives on the enum value
      */
     public EnumValueDefinition(String name, List<Directive> directives) {
         this(name, directives, null, null, new ArrayList<>());

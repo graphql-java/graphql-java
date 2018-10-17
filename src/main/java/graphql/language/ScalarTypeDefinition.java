@@ -27,6 +27,8 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the scalar
      */
     public ScalarTypeDefinition(String name) {
         this(name, new ArrayList<>(), null, null, new ArrayList<>());

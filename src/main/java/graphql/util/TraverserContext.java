@@ -32,7 +32,7 @@ public interface TraverserContext<T> {
     /**
      * The result of the {@link #getParentContext()}.
      *
-     * @return
+     * @return the parent result
      */
     Object getParentResult();
 
@@ -76,21 +76,21 @@ public interface TraverserContext<T> {
     /**
      * Set the result for this TraverserContext.
      *
-     * @param result
+     * @param result to set
      */
     void setResult(Object result);
 
     /**
      * The result of this TraverserContext..
      *
-     * @return
+     * @return the result
      */
     Object getResult();
 
     /**
      * Used to share something across all TraverserContext.
      *
-     * @return
+     * @return the initial data
      */
     Object getInitialData();
 

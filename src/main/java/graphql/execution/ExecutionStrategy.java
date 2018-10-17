@@ -50,7 +50,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
-import static graphql.execution.ExecutionInfo.newExecutionInfo;
+import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
 import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
@@ -196,7 +196,7 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
-                new InstrumentationFieldParameters(executionContext, fieldDef, executionInfo(executionContext, parameters, fieldDef))
+                new InstrumentationFieldParameters(executionContext, fieldDef, createExecutionStepInfo(executionContext, parameters, fieldDef))
         );
 
         CompletableFuture<Object> fetchFieldFuture = fetchField(executionContext, parameters);
@@ -226,7 +226,7 @@ public abstract class ExecutionStrategy {
      */
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         Field field = parameters.getField().get(0);
-        GraphQLObjectType parentType = parameters.getExecutionInfo().castType(GraphQLObjectType.class);
+        GraphQLObjectType parentType = parameters.getExecutionStepInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
 
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
@@ -234,7 +234,7 @@ public abstract class ExecutionStrategy {
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
-        ExecutionInfo executionInfo = executionInfo(executionContext, parameters, fieldDef);
+        ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(parameters.getSource())
@@ -242,7 +242,7 @@ public abstract class ExecutionStrategy {
                 .fieldDefinition(fieldDef)
                 .fields(parameters.getField())
                 .fieldType(fieldType)
-                .executionInfo(executionInfo)
+                .executionStepInfo(executionStepInfo)
                 .parentType(parentType)
                 .selectionSet(fieldCollector)
                 .build();
@@ -257,13 +257,13 @@ public abstract class ExecutionStrategy {
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
         ExecutionId executionId = executionContext.getExecutionId();
         try {
-            log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, executionInfo.getPath(), dataFetcher.getClass().getName());
+            log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, executionStepInfo.getPath(), dataFetcher.getClass().getName());
             Object fetchedValueRaw = dataFetcher.get(environment);
-            log.debug("'{}' field '{}' fetch returned '{}'", executionId, executionInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+            log.debug("'{}' field '{}' fetch returned '{}'", executionId, executionStepInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
 
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
-            log.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionInfo.getPath()), e);
+            log.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.getPath()), e);
 
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
@@ -339,12 +339,12 @@ public abstract class ExecutionStrategy {
      */
     protected FieldValueInfo completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
         Field field = parameters.getField().get(0);
-        GraphQLObjectType parentType = parameters.getExecutionInfo().castType(GraphQLObjectType.class);
+        GraphQLObjectType parentType = parameters.getExecutionStepInfo().castType(GraphQLObjectType.class);
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
-        ExecutionInfo executionInfo = executionInfo(executionContext, parameters, fieldDef);
+        ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, executionInfo, fetchedValue);
+        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, executionStepInfo, fetchedValue);
         InstrumentationContext<ExecutionResult> ctxCompleteField = instrumentation.beginFieldComplete(
                 instrumentationParams
         );
@@ -352,16 +352,16 @@ public abstract class ExecutionStrategy {
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionInfo);
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
         ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                builder.executionInfo(executionInfo)
+                builder.executionStepInfo(executionStepInfo)
                         .arguments(argumentValues)
                         .source(fetchedValue)
                         .nonNullFieldValidator(nonNullableFieldValidator)
         );
 
-        log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), executionInfo.getPath());
+        log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), executionStepInfo.getPath());
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
 
@@ -389,9 +389,9 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        ExecutionInfo executionInfo = parameters.getExecutionInfo();
+        ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
         Object result = unboxPossibleOptional(parameters.getSource());
-        GraphQLType fieldType = executionInfo.getType();
+        GraphQLType fieldType = executionStepInfo.getType();
         CompletableFuture<ExecutionResult> fieldValue;
 
         if (result == null) {
@@ -426,7 +426,7 @@ public abstract class ExecutionStrategy {
     }
 
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
-        UnresolvedTypeError error = new UnresolvedTypeError(parameters.getPath(), parameters.getExecutionInfo(), e);
+        UnresolvedTypeError error = new UnresolvedTypeError(parameters.getPath(), parameters.getExecutionStepInfo(), e);
         log.warn(error.getMessage(), e);
         context.addError(error);
 
@@ -476,12 +476,12 @@ public abstract class ExecutionStrategy {
     protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Iterable<Object> iterableValues) {
 
         Collection<Object> values = FpKit.toCollection(iterableValues);
-        ExecutionInfo executionInfo = parameters.getExecutionInfo();
-        GraphQLList fieldType = executionInfo.castType(GraphQLList.class);
-        GraphQLFieldDefinition fieldDef = parameters.getExecutionInfo().getFieldDefinition();
-        Field field = parameters.getExecutionInfo().getField();
+        ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
+        GraphQLList fieldType = executionStepInfo.castType(GraphQLList.class);
+        GraphQLFieldDefinition fieldDef = parameters.getExecutionStepInfo().getFieldDefinition();
+        Field field = parameters.getExecutionStepInfo().getField();
 
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, executionInfo(executionContext, parameters, fieldDef), values);
+        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, createExecutionStepInfo(executionContext, parameters, fieldDef), values);
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         InstrumentationContext<ExecutionResult> completeListCtx = instrumentation.beginFieldListComplete(
@@ -493,19 +493,19 @@ public abstract class ExecutionStrategy {
         for (Object item : values) {
             ExecutionPath indexedPath = parameters.getPath().segment(index);
 
-            ExecutionInfo wrappedExecutionInfo = ExecutionInfo.newExecutionInfo()
-                    .parentInfo(executionInfo)
+            ExecutionStepInfo wrappedExecutionStepInfo = ExecutionStepInfo.newExecutionStepInfo()
+                    .parentInfo(executionStepInfo)
                     .type(fieldType.getWrappedType())
                     .path(indexedPath)
                     .fieldDefinition(fieldDef)
                     .field(field)
                     .build();
 
-            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedExecutionInfo);
+            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedExecutionStepInfo);
 
             int finalIndex = index;
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                    builder.executionInfo(wrappedExecutionInfo)
+                    builder.executionStepInfo(wrappedExecutionStepInfo)
                             .nonNullFieldValidator(nonNullableFieldValidator)
                             .listSize(values.size())
                             .currentListIndex(finalIndex)
@@ -610,7 +610,7 @@ public abstract class ExecutionStrategy {
      * @return a promise to an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
-        ExecutionInfo executionInfo = parameters.getExecutionInfo();
+        ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())
@@ -621,11 +621,11 @@ public abstract class ExecutionStrategy {
 
         Map<String, List<Field>> subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
 
-        ExecutionInfo newExecutionInfo = executionInfo.treatAs(resolvedObjectType);
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionInfo);
+        ExecutionStepInfo newExecutionStepInfo = executionStepInfo.treatAs(resolvedObjectType);
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);
 
         ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                builder.executionInfo(newExecutionInfo)
+                builder.executionStepInfo(newExecutionStepInfo)
                         .fields(subFields)
                         .nonNullFieldValidator(nonNullableFieldValidator)
                         .source(result)
@@ -786,7 +786,7 @@ public abstract class ExecutionStrategy {
     }
 
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
-        TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionInfo().getType());
+        TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getType());
         log.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
 
@@ -804,7 +804,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Field field) {
-        GraphQLObjectType parentType = parameters.getExecutionInfo().castType(GraphQLObjectType.class);
+        GraphQLObjectType parentType = parameters.getExecutionStepInfo().castType(GraphQLObjectType.class);
         return getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
     }
 
@@ -836,15 +836,15 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
-        ExecutionInfo executionInfo = e.getExecutionInfo();
-        if (executionInfo.hasParentType() && executionInfo.getParent().isNonNullType()) {
+        ExecutionStepInfo executionStepInfo = e.getExecutionStepInfo();
+        if (executionStepInfo.hasParent() && executionStepInfo.getParent().isNonNullType()) {
             throw new NonNullableFieldWasNullException(e);
         }
     }
 
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e, CompletableFuture<?> completableFuture) throws NonNullableFieldWasNullException {
-        ExecutionInfo executionInfo = e.getExecutionInfo();
-        if (executionInfo.hasParentType() && executionInfo.getParent().isNonNullType()) {
+        ExecutionStepInfo executionStepInfo = e.getExecutionStepInfo();
+        if (executionStepInfo.hasParent() && executionStepInfo.getParent().isNonNullType()) {
             completableFuture.completeExceptionally(new NonNullableFieldWasNullException(e));
         }
     }
@@ -882,7 +882,7 @@ public abstract class ExecutionStrategy {
      *
      * @return a new type info
      */
-    protected ExecutionInfo executionInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
+    protected ExecutionStepInfo createExecutionStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
         Field field = null;
         List<Argument> fieldArgs = Collections.emptyList();
@@ -893,12 +893,12 @@ public abstract class ExecutionStrategy {
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
-        return newExecutionInfo()
+        return newExecutionStepInfo()
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
                 .field(field)
                 .path(parameters.getPath())
-                .parentInfo(parameters.getExecutionInfo())
+                .parentInfo(parameters.getExecutionStepInfo())
                 .arguments(argumentValues)
                 .build();
 

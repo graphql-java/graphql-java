@@ -23,6 +23,8 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param type the wrapped type
      */
     public ListType(Type type) {
         super(null, new ArrayList<>());

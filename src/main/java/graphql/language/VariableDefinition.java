@@ -19,10 +19,10 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
 
     @Internal
     protected VariableDefinition(String name,
-                               Type type,
-                               Value defaultValue,
-                               SourceLocation sourceLocation,
-                               List<Comment> comments) {
+                                 Type type,
+                                 Value defaultValue,
+                                 SourceLocation sourceLocation,
+                                 List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.type = type;
@@ -31,6 +31,10 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name         of the variable
+     * @param type         of the variable
+     * @param defaultValue of the variable
      */
     public VariableDefinition(String name,
                               Type type,
@@ -40,6 +44,9 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the variable
+     * @param type of the variable
      */
     public VariableDefinition(String name,
                               Type type) {

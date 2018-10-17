@@ -20,11 +20,11 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
 
     @Internal
     protected UnionTypeDefinition(String name,
-                        List<Directive> directives,
-                        List<Type> memberTypes,
-                        Description description,
-                        SourceLocation sourceLocation,
-                        List<Comment> comments) {
+                                  List<Directive> directives,
+                                  List<Type> memberTypes,
+                                  Description description,
+                                  SourceLocation sourceLocation,
+                                  List<Comment> comments) {
         super(sourceLocation, comments);
         this.name = name;
         this.directives = directives;
@@ -34,6 +34,9 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name       of the union
+     * @param directives on the union
      */
     public UnionTypeDefinition(String name,
                                List<Directive> directives) {
@@ -42,6 +45,8 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
 
     /**
      * alternative to using a Builder for convenience
+     *
+     * @param name of the union
      */
     public UnionTypeDefinition(String name) {
         this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());

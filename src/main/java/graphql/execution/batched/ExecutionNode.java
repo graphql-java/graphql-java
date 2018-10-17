@@ -1,6 +1,6 @@
 package graphql.execution.batched;
 
-import graphql.execution.ExecutionInfo;
+import graphql.execution.ExecutionStepInfo;
 import graphql.language.Field;
 import graphql.schema.GraphQLObjectType;
 
@@ -11,18 +11,18 @@ import java.util.Map;
 class ExecutionNode {
 
     private final GraphQLObjectType type;
-    private final ExecutionInfo executionInfo;
+    private final ExecutionStepInfo executionStepInfo;
     private final Map<String, List<Field>> fields;
     private final List<MapOrList> parentResults;
     private final List<Object> sources;
 
     public ExecutionNode(GraphQLObjectType type,
-                         ExecutionInfo executionInfo,
+                         ExecutionStepInfo executionStepInfo,
                          Map<String, List<Field>> fields,
                          List<MapOrList> parentResults,
                          List<Object> sources) {
         this.type = type;
-        this.executionInfo = executionInfo;
+        this.executionStepInfo = executionStepInfo;
         this.fields = fields;
         this.parentResults = parentResults;
         this.sources = sources;
@@ -32,8 +32,8 @@ class ExecutionNode {
         return type;
     }
 
-    public ExecutionInfo getExecutionInfo() {
-        return executionInfo;
+    public ExecutionStepInfo getExecutionStepInfo() {
+        return executionStepInfo;
     }
 
     public Map<String, List<Field>> getFields() {
