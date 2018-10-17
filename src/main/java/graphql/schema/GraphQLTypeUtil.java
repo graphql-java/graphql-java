@@ -9,12 +9,11 @@ import graphql.PublicApi;
 public class GraphQLTypeUtil {
 
     /**
-     * This will get the SDL type name that includes the non null and list wrappers
-     * so it might be '[typeName!]'
+     * This will return the type in graphql AST format, eg [typeName!]!
      *
      * @param type the type in play
      *
-     * @return the unwrapped type name
+     * @return the type in graphql AST format, eg [typeName!]!
      */
     public static String toAst(GraphQLType type) {
         StringBuilder sb = new StringBuilder();
