@@ -104,7 +104,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         InstrumentationContext<ExecutionResult> executionStrategyCtx = executionContext.getInstrumentation()
                 .beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext, parameters));
 
-        GraphQLObjectType type = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrapNonNullType();
+        GraphQLObjectType type = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
         ExecutionNode root = new ExecutionNode(type,
                 parameters.getExecutionStepInfo(),
@@ -333,7 +333,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         handleNonNullType(executionContext, fetchedValues);
 
-        GraphQLType unwrappedFieldType = executionStepInfo.getUnwrapNonNullType();
+        GraphQLType unwrappedFieldType = executionStepInfo.getUnwrappedNonNullType();
 
         if (isPrimitive(unwrappedFieldType)) {
             handlePrimitives(fetchedValues, fieldName, unwrappedFieldType);
@@ -352,7 +352,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                            FetchedValues fetchedValues, String fieldName, List<Field> fields,
                                            ExecutionStepInfo executionStepInfo) {
 
-        GraphQLList listType = (GraphQLList) executionStepInfo.getUnwrapNonNullType();
+        GraphQLList listType = (GraphQLList) executionStepInfo.getUnwrappedNonNullType();
         List<FetchedValue> flattenedValues = new ArrayList<>();
 
         for (FetchedValue value : fetchedValues.getValues()) {
@@ -393,7 +393,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
             MapOrList childResult = mapOrList.createAndPutMap(fieldName);
 
-            GraphQLObjectType resolvedType = getGraphQLObjectType(executionContext, fields.get(0), executionStepInfo.getUnwrapNonNullType(), value.getValue(), argumentValues);
+            GraphQLObjectType resolvedType = getGraphQLObjectType(executionContext, fields.get(0), executionStepInfo.getUnwrappedNonNullType(), value.getValue(), argumentValues);
             resultsByType.putIfAbsent(resolvedType, new ArrayList<>());
             resultsByType.get(resolvedType).add(childResult);
 

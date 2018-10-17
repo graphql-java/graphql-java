@@ -226,7 +226,7 @@ public abstract class ExecutionStrategy {
      */
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         Field field = parameters.getField().get(0);
-        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrapNonNullType();
+        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
 
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
@@ -339,7 +339,7 @@ public abstract class ExecutionStrategy {
      */
     protected FieldValueInfo completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
         Field field = parameters.getField().get(0);
-        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrapNonNullType();
+        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef);
 
@@ -391,7 +391,7 @@ public abstract class ExecutionStrategy {
     protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
         Object result = unboxPossibleOptional(parameters.getSource());
-        GraphQLType fieldType = executionStepInfo.getUnwrapNonNullType();
+        GraphQLType fieldType = executionStepInfo.getUnwrappedNonNullType();
         CompletableFuture<ExecutionResult> fieldValue;
 
         if (result == null) {
@@ -477,7 +477,7 @@ public abstract class ExecutionStrategy {
 
         Collection<Object> values = FpKit.toCollection(iterableValues);
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
-        GraphQLList fieldType = (GraphQLList) executionStepInfo.getUnwrapNonNullType();
+        GraphQLList fieldType = (GraphQLList) executionStepInfo.getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = parameters.getExecutionStepInfo().getFieldDefinition();
         Field field = parameters.getExecutionStepInfo().getField();
 
@@ -786,7 +786,7 @@ public abstract class ExecutionStrategy {
     }
 
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
-        TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrapNonNullType());
+        TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         log.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
 
@@ -804,7 +804,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Field field) {
-        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrapNonNullType();
+        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         return getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
     }
 
