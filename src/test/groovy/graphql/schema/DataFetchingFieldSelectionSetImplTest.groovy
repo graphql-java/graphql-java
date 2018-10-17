@@ -245,7 +245,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         selectedNodesField.getName() == "nodes"
-        GraphQLTypeUtil.getUnwrappedTypeName(selectedNodesField.fieldDefinition.type) == "[Thing]"
+        GraphQLTypeUtil.toAst(selectedNodesField.fieldDefinition.type) == "[Thing]"
         selectedNodesField.getSelectionSet().contains("key")
         selectedNodesField.getSelectionSet().contains("summary")
         selectedNodesField.getSelectionSet().contains("status")
@@ -262,14 +262,14 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         selectedKeyField.getName() == "key"
-        GraphQLTypeUtil.getUnwrappedTypeName(selectedKeyField.fieldDefinition.type) == "String"
+        GraphQLTypeUtil.toAst(selectedKeyField.fieldDefinition.type) == "String"
 
         when:
         def selectedStatusField = selectedNodesField.getSelectionSet().getField("status")
 
         then:
         selectedStatusField.getName() == "status"
-        GraphQLTypeUtil.getUnwrappedTypeName(selectedStatusField.fieldDefinition.type) == "Status"
+        GraphQLTypeUtil.toAst(selectedStatusField.fieldDefinition.type) == "Status"
         selectedStatusField.getSelectionSet().contains("name")
 
         // jump straight to compound fq name (which is 2 down from 'nodes')
@@ -278,7 +278,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         selectedStatusNameField.getName() == "name"
-        GraphQLTypeUtil.getUnwrappedTypeName(selectedStatusNameField.fieldDefinition.type) == "String"
+        GraphQLTypeUtil.toAst(selectedStatusNameField.fieldDefinition.type) == "String"
 
     }
 
@@ -299,10 +299,10 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def fieldNames = sortedSelectedUnderNodesAster.collect({ sf -> sf.name })
         fieldNames == ["key", "status", "stuff", "summary"]
 
-        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[0].fieldDefinition.type) == "String"
-        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[1].fieldDefinition.type) == "Status"
-        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[2].fieldDefinition.type) == "Stuff"
-        GraphQLTypeUtil.getUnwrappedTypeName(sortedSelectedUnderNodesAster[3].fieldDefinition.type) == "String"
+        GraphQLTypeUtil.toAst(sortedSelectedUnderNodesAster[0].fieldDefinition.type) == "String"
+        GraphQLTypeUtil.toAst(sortedSelectedUnderNodesAster[1].fieldDefinition.type) == "Status"
+        GraphQLTypeUtil.toAst(sortedSelectedUnderNodesAster[2].fieldDefinition.type) == "Stuff"
+        GraphQLTypeUtil.toAst(sortedSelectedUnderNodesAster[3].fieldDefinition.type) == "String"
 
         // descend one down from here Status.name which has not further sub selection
         when:
@@ -310,7 +310,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         then:
         statusName.name == "name"
-        GraphQLTypeUtil.getUnwrappedTypeName(statusName.fieldDefinition.type) == "String"
+        GraphQLTypeUtil.toAst(statusName.fieldDefinition.type) == "String"
         statusName.getSelectionSet().get().isEmpty()
     }
 

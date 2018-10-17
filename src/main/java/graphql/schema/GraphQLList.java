@@ -7,7 +7,6 @@ import graphql.util.TraverserContext;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 
@@ -82,7 +81,7 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
     @Override
     public String toString() {
-        return GraphQLTypeUtil.getUnwrappedTypeName(this);
+        return GraphQLTypeUtil.toAst(this);
     }
 
 }

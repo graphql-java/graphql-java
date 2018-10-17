@@ -207,7 +207,7 @@ public class ExecutionStepInfo {
         if (isNonNullType()) {
             type = nonNull(type);
         }
-        return GraphQLTypeUtil.getUnwrappedTypeName(type);
+        return GraphQLTypeUtil.toAst(type);
 
     }
 
