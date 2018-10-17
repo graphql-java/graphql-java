@@ -57,7 +57,7 @@ public class ExecutionStepInfo {
      *
      * @return the graphql type in question
      */
-    public GraphQLType getUnwrapNonNullType() {
+    public GraphQLType getUnwrappedNonNullType() {
         return GraphQLTypeUtil.unwrapNonNull(this.type);
     }
 

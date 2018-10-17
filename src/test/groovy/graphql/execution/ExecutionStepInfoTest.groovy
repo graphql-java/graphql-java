@@ -54,24 +54,24 @@ class ExecutionStepInfoTest extends Specification {
         def listTypeInfo = newExecutionStepInfo().type(list(fieldType)).parentInfo(rootTypeInfo).build()
 
         expect:
-        rootTypeInfo.getUnwrapNonNullType() == rootType
+        rootTypeInfo.getUnwrappedNonNullType() == rootType
         rootTypeInfo.field == null
         rootTypeInfo.fieldDefinition == null
         !rootTypeInfo.hasParent()
 
-        fieldTypeInfo.getUnwrapNonNullType() == fieldType
+        fieldTypeInfo.getUnwrappedNonNullType() == fieldType
         fieldTypeInfo.hasParent()
         fieldTypeInfo.parent.type == rootType
         !fieldTypeInfo.isNonNullType()
         fieldTypeInfo.getFieldDefinition() == field1Def
         fieldTypeInfo.getField() == field
 
-        nonNullFieldTypeInfo.getUnwrapNonNullType() == fieldType
+        nonNullFieldTypeInfo.getUnwrappedNonNullType() == fieldType
         nonNullFieldTypeInfo.hasParent()
         nonNullFieldTypeInfo.parent.type == rootType
         nonNullFieldTypeInfo.isNonNullType()
 
-        listTypeInfo.getUnwrapNonNullType() == list(fieldType)
+        listTypeInfo.getUnwrappedNonNullType() == list(fieldType)
         listTypeInfo.hasParent()
         listTypeInfo.parent.type == rootType
         listTypeInfo.isListType()

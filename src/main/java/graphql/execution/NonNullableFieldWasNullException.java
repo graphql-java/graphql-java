@@ -38,9 +38,9 @@ public class NonNullableFieldWasNullException extends RuntimeException {
 
 
     private static String mkMessage(ExecutionStepInfo executionStepInfo, ExecutionPath path) {
-        GraphQLType unwrappedTyped = executionStepInfo.getUnwrapNonNullType();
+        GraphQLType unwrappedTyped = executionStepInfo.getUnwrappedNonNullType();
         if (executionStepInfo.hasParent()) {
-            GraphQLType unwrappedParentType = executionStepInfo.getParent().getUnwrapNonNullType();
+            GraphQLType unwrappedParentType = executionStepInfo.getParent().getUnwrappedNonNullType();
             return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", unwrappedTyped.getName(), unwrappedParentType.getName(), path);
         }
         return String.format("Cannot return null for non-nullable type: '%s' (%s)", unwrappedTyped.getName(), path);

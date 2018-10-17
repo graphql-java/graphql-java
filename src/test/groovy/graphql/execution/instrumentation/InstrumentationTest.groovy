@@ -99,12 +99,12 @@ class InstrumentationTest extends Specification {
 
         instrumentation.dfInvocations[0].getFieldDefinition().name == 'hero'
         instrumentation.dfInvocations[0].getExecutionStepInfo().getPath().toList() == ['hero']
-        instrumentation.dfInvocations[0].getExecutionStepInfo().getUnwrapNonNullType().name == 'Character'
+        instrumentation.dfInvocations[0].getExecutionStepInfo().getUnwrappedNonNullType().name == 'Character'
         !instrumentation.dfInvocations[0].getExecutionStepInfo().isNonNullType()
 
         instrumentation.dfInvocations[1].getFieldDefinition().name == 'id'
         instrumentation.dfInvocations[1].getExecutionStepInfo().getPath().toList() == ['hero', 'id']
-        instrumentation.dfInvocations[1].getExecutionStepInfo().getUnwrapNonNullType().name == 'String'
+        instrumentation.dfInvocations[1].getExecutionStepInfo().getUnwrappedNonNullType().name == 'String'
         instrumentation.dfInvocations[1].getExecutionStepInfo().isNonNullType()
     }
 
