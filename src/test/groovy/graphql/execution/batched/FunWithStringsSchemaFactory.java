@@ -300,10 +300,6 @@ public class FunWithStringsSchemaFactory {
                         .type(nonNull(GraphQLString))
                         .dataFetcher(stringObjectValueFetcher))
                 .field(newFieldDefinition()
-                        .name("veryNonNullValue")
-                        .type(nonNull(nonNull(GraphQLString)))
-                        .dataFetcher(stringObjectValueFetcher))
-                .field(newFieldDefinition()
                         .name("throwException")
                         .type(GraphQLString)
                         .dataFetcher(throwExceptionFetcher))
@@ -322,7 +318,7 @@ public class FunWithStringsSchemaFactory {
 
                 .field(newFieldDefinition()
                         .name("wordsAndLetters")
-                        .type(nonNull(list(nonNull(list(nonNull(nonNull(typeRef("StringObject"))))))))
+                        .type(nonNull(list(nonNull(list(nonNull(typeRef("StringObject")))))))
                         .dataFetcher(wordsAndLettersFetcher))
 
                 .field(newFieldDefinition()

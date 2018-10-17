@@ -122,9 +122,9 @@ class BatchedExecutionStrategyTest extends Specification {
 
     def "Basic case works"() {
         given:
-        String query = "{ string(value: \"Basic\"){value, nonNullValue, veryNonNullValue} }"
+        String query = "{ string(value: \"Basic\"){value, nonNullValue} }"
 
-        def expected = [string: [veryNonNullValue: "Basic", nonNullValue: "Basic", value: "Basic"]]
+        def expected = [string: [nonNullValue: "Basic", value: "Basic"]]
         println expected
 
         expect:
@@ -358,13 +358,10 @@ class BatchedExecutionStrategyTest extends Specification {
                         append(text:"1") {
                             v1:value
                             v2:nonNullValue
-                            v3:veryNonNullValue
-                            v4:value
-                            v5:nonNullValue
-                            v6:veryNonNullValue
-                            v7:value
-                            v8:nonNullValue
-                            v9:veryNonNullValue
+                            v3:value
+                            v4:nonNullValue
+                            v5:value
+                            v6:nonNullValue
                         }
                     }
                 }"""
@@ -373,7 +370,7 @@ class BatchedExecutionStrategyTest extends Specification {
         Arrays.asList(this.graphQLAsync, this.graphQLBatchedButUnbatched, this.graphQLBatchedValue).each { GraphQL graphQL ->
             Map<String, Object> response = graphQL.execute(query).getData() as Map<String, Object>
             Map<String, Object> values = (response.get("string") as Map<String, Object>).get("append") as Map<String, Object>
-            assert ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"] == values.keySet().toList()
+            assert ["v1", "v2", "v3", "v4", "v5", "v6"] == values.keySet().toList()
         }
     }
 

@@ -79,4 +79,10 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
     public List<GraphQLType> getChildren() {
         return Collections.singletonList(wrappedType);
     }
+
+    @Override
+    public String toString() {
+        return GraphQLTypeUtil.getUnwrappedTypeName(this);
+    }
+
 }
