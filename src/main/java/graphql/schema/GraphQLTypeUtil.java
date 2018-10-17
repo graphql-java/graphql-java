@@ -15,7 +15,7 @@ public class GraphQLTypeUtil {
      *
      * @return the type in graphql AST format, eg [typeName!]!
      */
-    public static String toAst(GraphQLType type) {
+    public static String simplePrint(GraphQLType type) {
         StringBuilder sb = new StringBuilder();
         if (isNonNull(type)) {
             sb.append(toAst(unwrapOne(type)));
