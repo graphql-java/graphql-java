@@ -8,12 +8,13 @@ import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.Scalars
+import graphql.TestUtil
 import graphql.execution.AsyncExecutionStrategy
-import graphql.execution.NonNullableFieldWasNullError
 import graphql.execution.instrumentation.TestingInstrumentation
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -472,6 +473,71 @@ class BatchedExecutionStrategyTest extends Specification {
         expect:
         result.getErrors().size() == 1
         result.getErrors()[0] instanceof ExceptionWhileDataFetching
+    }
+
+    def "multi level batching with two different path"() {
+        given:
+        def foo1s = [[id: 'id1'], [id: 'id2']] as List
+        def foo1DF = { env -> foo1s } as DataFetcher
+        def foo2s = [[id: 'id3'], [id: 'id4']] as List
+        def foo2DF = { env -> foo2s } as DataFetcher
+
+
+        def subFooDF = { env ->
+            def result = [[[batchThat: 'batchThat1-2'], [batchThat: 'batchThat1-2']], [[batchThat: 'batchThat2-1'], [batchThat: 'batchThat2-2']]]
+            result
+        } as BatchedDataFetcher
+
+        def expectedBatchThatCount = 0
+        def batchThatDF = { env ->
+            expectedBatchThatCount++
+            env.getSource()
+        } as BatchedDataFetcher
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type("Query",
+                { builder ->
+                    builder
+                            .dataFetcher("foo1", foo1DF)
+                            .dataFetcher("foo2", foo2DF)
+                })
+                .type("Foo",
+                { builder ->
+                    builder
+                            .dataFetcher("subFoo", subFooDF)
+                })
+                .type("SubFoo",
+                { builder ->
+                    builder
+                            .dataFetcher("batchThat", batchThatDF)
+                })
+                .build()
+        def schema = TestUtil.schema("""
+            type Query {
+                foo1: [Foo]
+                foo2: [Foo]
+            }
+            type Foo{
+                id: ID
+                subFoo: [SubFoo]
+            }
+            type SubFoo{
+                batchThat: String
+            }
+        """, runtimeWiring)
+
+        def query = """
+            {foo1 {id subFoo{batchThat}} foo2 {id subFoo{batchThat}} }
+        """
+
+        when:
+        GraphQL.newGraphQL(schema).queryExecutionStrategy(new BatchedExecutionStrategy())
+                .build().execute(query)
+
+        then:
+        expectedBatchThatCount == 2
+
+
     }
 
 }
