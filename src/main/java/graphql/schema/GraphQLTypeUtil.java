@@ -2,6 +2,10 @@ package graphql.schema;
 
 import graphql.PublicApi;
 
+import java.util.Stack;
+
+import static graphql.Assert.assertNotNull;
+
 /**
  * A utility class that helps work with {@link graphql.schema.GraphQLType}s
  */
@@ -196,6 +200,4 @@ public class GraphQLTypeUtil {
         }
         return decoration;
     }
-
-
 }
