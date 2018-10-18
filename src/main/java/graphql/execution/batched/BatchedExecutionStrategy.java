@@ -34,6 +34,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
@@ -103,7 +104,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         InstrumentationContext<ExecutionResult> executionStrategyCtx = executionContext.getInstrumentation()
                 .beginExecutionStrategy(new InstrumentationExecutionStrategyParameters(executionContext, parameters));
 
-        GraphQLObjectType type = parameters.getExecutionStepInfo().castType(GraphQLObjectType.class);
+        GraphQLObjectType type = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
         ExecutionNode root = new ExecutionNode(type,
                 parameters.getExecutionStepInfo(),
@@ -332,7 +333,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         handleNonNullType(executionContext, fetchedValues);
 
-        GraphQLType unwrappedFieldType = executionStepInfo.getType();
+        GraphQLType unwrappedFieldType = executionStepInfo.getUnwrappedNonNullType();
 
         if (isPrimitive(unwrappedFieldType)) {
             handlePrimitives(fetchedValues, fieldName, unwrappedFieldType);
@@ -351,7 +352,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                            FetchedValues fetchedValues, String fieldName, List<Field> fields,
                                            ExecutionStepInfo executionStepInfo) {
 
-        GraphQLList listType = (GraphQLList) executionStepInfo.getType();
+        GraphQLList listType = (GraphQLList) executionStepInfo.getUnwrappedNonNullType();
         List<FetchedValue> flattenedValues = new ArrayList<>();
 
         for (FetchedValue value : fetchedValues.getValues()) {
@@ -369,7 +370,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
         }
         GraphQLOutputType innerSubType = (GraphQLOutputType) listType.getWrappedType();
-        ExecutionStepInfo newExecutionStepInfo = executionStepInfo.treatAs(innerSubType);
+        ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(GraphQLTypeUtil.unwrapNonNull(innerSubType));
         FetchedValues flattenedFetchedValues = new FetchedValues(flattenedValues, newExecutionStepInfo, fetchedValues.getPath());
 
         return completeValues(executionContext, flattenedFetchedValues, newExecutionStepInfo, fieldName, fields, argumentValues);
@@ -392,7 +393,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
             MapOrList childResult = mapOrList.createAndPutMap(fieldName);
 
-            GraphQLObjectType resolvedType = getGraphQLObjectType(executionContext, fields.get(0), executionStepInfo.getType(), value.getValue(), argumentValues);
+            GraphQLObjectType resolvedType = getGraphQLObjectType(executionContext, fields.get(0), executionStepInfo.getUnwrappedNonNullType(), value.getValue(), argumentValues);
             resultsByType.putIfAbsent(resolvedType, new ArrayList<>());
             resultsByType.get(resolvedType).add(childResult);
 
@@ -406,7 +407,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             List<Object> sources = sourceByType.get(resolvedType);
             Map<String, List<Field>> childFields = getChildFields(executionContext, resolvedType, fields);
 
-            ExecutionStepInfo newExecutionStepInfo = executionStepInfo.treatAs(resolvedType);
+            ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedType);
 
             childNodes.add(new ExecutionNode(resolvedType, newExecutionStepInfo, childFields, results, sources));
         }
@@ -475,7 +476,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
     }
 
     private Object coerce(GraphQLType type, Object value) {
-        if (value == null) return null;
+        if (value == null) {
+            return null;
+        }
         if (type instanceof GraphQLEnumType) {
             return ((GraphQLEnumType) type).getCoercing().serialize(value);
         } else {

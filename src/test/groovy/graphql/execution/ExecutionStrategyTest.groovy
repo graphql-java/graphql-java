@@ -504,9 +504,9 @@ class ExecutionStrategyTest extends Specification {
         environment.root == "root"
         environment.parentType == objectType
         environment.arguments == ["arg1": "argVal"]
-        environment.executionStepInfo.type == GraphQLString
+        environment.executionStepInfo.getUnwrappedNonNullType() == GraphQLString
         environment.executionStepInfo.path == executionPath
-        environment.executionStepInfo.parent.type == objectType
+        environment.executionStepInfo.parent.getUnwrappedNonNullType() == objectType
         environment.executionId == ExecutionId.from("executionId123")
     }
 

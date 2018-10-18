@@ -2,7 +2,6 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
-import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.ValuesResolver;
@@ -66,7 +65,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     };
 
     public static DataFetchingFieldSelectionSet newCollector(ExecutionContext executionContext, GraphQLType fieldType, List<Field> fields) {
-        GraphQLType unwrappedType = ExecutionStepInfo.unwrapBaseType(fieldType);
+        GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldType);
         if (unwrappedType instanceof GraphQLFieldsContainer) {
             return new DataFetchingFieldSelectionSetImpl(executionContext, (GraphQLFieldsContainer) unwrappedType, fields);
         } else {
@@ -192,7 +191,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             this.name = parentFields.get(0).getName();
             this.fieldDefinition = fieldDefinition;
             this.arguments = arguments;
-            GraphQLType unwrappedType = ExecutionStepInfo.unwrapBaseType(fieldDefinition.getType());
+            GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldDefinition.getType());
             if (unwrappedType instanceof GraphQLFieldsContainer) {
                 this.selectionSet = new DataFetchingFieldSelectionSetImpl(parentFields, (GraphQLFieldsContainer) unwrappedType, graphQLSchema, variables, fragmentsByName);
             } else {
@@ -267,7 +266,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
             Field field = collectedFieldList.get(0);
             GraphQLFieldDefinition fieldDef = Introspection.getFieldDef(graphQLSchema, parentFieldType, field.getName());
-            GraphQLType unwrappedType = ExecutionStepInfo.unwrapBaseType(fieldDef.getType());
+            GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldDef.getType());
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDef.getArguments(), field.getArguments(), variables);
 
             selectionSetFieldArgs.put(fieldName, argumentValues);

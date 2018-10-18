@@ -66,7 +66,7 @@ public class TracingSupport implements InstrumentationState {
 
             Map<String, Object> fetchMap = new LinkedHashMap<>();
             fetchMap.put("path", executionStepInfo.getPath().toList());
-            fetchMap.put("parentType", executionStepInfo.getParent().getType().getName());
+            fetchMap.put("parentType", executionStepInfo.getParent().getUnwrappedNonNullType().getName());
             fetchMap.put("returnType", executionStepInfo.simplePrint());
             fetchMap.put("fieldName", executionStepInfo.getFieldDefinition().getName());
             fetchMap.put("startOffset", startOffset);

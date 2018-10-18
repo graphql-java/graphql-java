@@ -168,4 +168,34 @@ public class GraphQLTypeUtil {
         }
     }
 
+    public static GraphQLType unwrapNonNull(GraphQLType type) {
+        while (isNonNull(type)) {
+            type = unwrapOne(type);
+        }
+        return type;
+    }
+
+    /**
+     * graphql types can be wrapped in {@link GraphQLNonNull} and {@link GraphQLList} type wrappers
+     * so this method will unwrap the type down to the raw unwrapped type and return that wrapping
+     * as a stack, with the top of the stack being the raw underling type.
+     *
+     * @param type the type to unwrap
+     *
+     * @return a stack of the type wrapping which will be at least 1 later deep
+     */
+    public static Stack<GraphQLType> unwrapType(GraphQLType type) {
+        type = assertNotNull(type);
+        Stack<GraphQLType> decoration = new Stack<>();
+        while (true) {
+            decoration.push(type);
+            if (isNotWrapped(type)) {
+                break;
+            }
+            type = unwrapOne(type);
+        }
+        return decoration;
+    }
+
+
 }
