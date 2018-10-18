@@ -22,10 +22,10 @@ class GraphQLTypeUtilTest extends Specification {
         def nonnull_list_nonnull_heroType = nonNull(list_nonnull_heroType)
 
         when:
-        def heroTypeStr = GraphQLTypeUtil.getUnwrappedTypeName(heroType)
-        def nonnull_heroType_str = GraphQLTypeUtil.getUnwrappedTypeName(nonnull_heroType)
-        def list_nonnull_heroType_str = GraphQLTypeUtil.getUnwrappedTypeName(list_nonnull_heroType)
-        def nonnull_list_nonnull_heroType_str = GraphQLTypeUtil.getUnwrappedTypeName(nonnull_list_nonnull_heroType)
+        def heroTypeStr = GraphQLTypeUtil.simplePrint(heroType)
+        def nonnull_heroType_str = GraphQLTypeUtil.simplePrint(nonnull_heroType)
+        def list_nonnull_heroType_str = GraphQLTypeUtil.simplePrint(list_nonnull_heroType)
+        def nonnull_list_nonnull_heroType_str = GraphQLTypeUtil.simplePrint(nonnull_list_nonnull_heroType)
 
         then:
         heroTypeStr == "Hero"
@@ -105,7 +105,7 @@ class GraphQLTypeUtilTest extends Specification {
         def type = list(nonNull(list(nonNull(GraphQLString))))
 
         then:
-        GraphQLTypeUtil.getUnwrappedTypeName(type) == "[[String!]!]"
+        GraphQLTypeUtil.simplePrint(type) == "[[String!]!]"
 
 
         when:

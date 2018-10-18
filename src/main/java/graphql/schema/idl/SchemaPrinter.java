@@ -400,7 +400,7 @@ public class SchemaPrinter {
     }
 
     String typeString(GraphQLType rawType) {
-        return GraphQLTypeUtil.getUnwrappedTypeName(rawType);
+        return GraphQLTypeUtil.simplePrint(rawType);
     }
 
     String argsString(List<GraphQLArgument> arguments) {

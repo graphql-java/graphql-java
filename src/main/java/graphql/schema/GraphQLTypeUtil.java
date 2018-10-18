@@ -1,30 +1,32 @@
 package graphql.schema;
 
-import graphql.Internal;
+import graphql.PublicApi;
 
 import java.util.Stack;
 
 import static graphql.Assert.assertNotNull;
 
-@Internal
+/**
+ * A utility class that helps work with {@link graphql.schema.GraphQLType}s
+ */
+@PublicApi
 public class GraphQLTypeUtil {
 
     /**
-     * This will get the unwrapped type name that includes the non null and list wrappers
-     * so it might be '[typeName!]'
+     * This will return the type in graphql SDL format, eg [typeName!]!
      *
      * @param type the type in play
      *
-     * @return the unwrapped type name
+     * @return the type in graphql SDL format, eg [typeName!]!
      */
-    public static String getUnwrappedTypeName(GraphQLType type) {
+    public static String simplePrint(GraphQLType type) {
         StringBuilder sb = new StringBuilder();
         if (isNonNull(type)) {
-            sb.append(getUnwrappedTypeName(unwrapOne(type)));
+            sb.append(simplePrint(unwrapOne(type)));
             sb.append("!");
         } else if (isList(type)) {
             sb.append("[");
-            sb.append(getUnwrappedTypeName(unwrapOne(type)));
+            sb.append(simplePrint(unwrapOne(type)));
             sb.append("]");
         } else {
             sb.append(type.getName());
@@ -198,6 +200,4 @@ public class GraphQLTypeUtil {
         }
         return decoration;
     }
-
-
 }
