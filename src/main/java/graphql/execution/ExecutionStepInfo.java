@@ -199,15 +199,15 @@ public class ExecutionStepInfo {
 
 
     /**
-     * @return the type in graphql AST format, eg [typeName!]!
+     * @return the type in graphql SDL format, eg [typeName!]!
      */
-    public String toAst() {
+    public String simplePrint() {
         // type info unwraps non nulls - we need it back here
         GraphQLType type = this.getType();
         if (isNonNullType()) {
             type = nonNull(type);
         }
-        return GraphQLTypeUtil.toAst(type);
+        return GraphQLTypeUtil.simplePrint(type);
 
     }
 

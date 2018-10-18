@@ -9,20 +9,20 @@ import graphql.PublicApi;
 public class GraphQLTypeUtil {
 
     /**
-     * This will return the type in graphql AST format, eg [typeName!]!
+     * This will return the type in graphql SDL format, eg [typeName!]!
      *
      * @param type the type in play
      *
-     * @return the type in graphql AST format, eg [typeName!]!
+     * @return the type in graphql SDL format, eg [typeName!]!
      */
     public static String simplePrint(GraphQLType type) {
         StringBuilder sb = new StringBuilder();
         if (isNonNull(type)) {
-            sb.append(toAst(unwrapOne(type)));
+            sb.append(simplePrint(unwrapOne(type)));
             sb.append("!");
         } else if (isList(type)) {
             sb.append("[");
-            sb.append(toAst(unwrapOne(type)));
+            sb.append(simplePrint(unwrapOne(type)));
             sb.append("]");
         } else {
             sb.append(type.getName());

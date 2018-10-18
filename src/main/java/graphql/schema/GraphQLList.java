@@ -81,7 +81,7 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
     @Override
     public String toString() {
-        return GraphQLTypeUtil.toAst(this);
+        return GraphQLTypeUtil.simplePrint(this);
     }
 
 }
