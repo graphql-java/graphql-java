@@ -11,6 +11,8 @@ import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
+import java.util.function.Function
+
 class MaxQueryDepthInstrumentationTest extends Specification {
 
     Document createQuery(String query) {
@@ -123,6 +125,40 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         when:
         instrumentationContext.onCompleted(null, null)
         then:
+        notThrown(Exception)
+    }
+
+    def "custom max query depth exceeded function"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                scalar: String  
+                foo: Foo
+            }
+        """)
+        def query = createQuery("""
+            {f1: foo {foo {foo {scalar}}} f2: foo { foo {foo {foo {foo{foo{scalar}}}}}} }
+            """)
+        Boolean test = false
+        Function<QueryDepthInfo, Boolean> maxQueryDepthExceededFunction = new Function<QueryDepthInfo, Boolean>() {
+            @Override
+            Boolean apply(final QueryDepthInfo queryDepthInfo) {
+                test = true
+                return false
+            }
+        }
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6, maxQueryDepthExceededFunction)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
+        InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
+        when:
+        instrumentationContext.onCompleted(null, null)
+        then:
+        test == true
         notThrown(Exception)
     }
 }
