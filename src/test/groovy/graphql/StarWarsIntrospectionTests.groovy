@@ -167,7 +167,7 @@ class StarWarsIntrospectionTests extends Specification {
                                 [
                                         name: 'id',
                                         type: [
-                                                name: null,
+                                                name: 'String',
                                                 kind: 'NON_NULL'
                                         ]
                                 ],
@@ -236,7 +236,7 @@ class StarWarsIntrospectionTests extends Specification {
                                 [
                                         name: 'id',
                                         type: [
-                                                name  : null,
+                                                name  : 'String',
                                                 kind  : 'NON_NULL',
                                                 ofType: [
                                                         name: 'String',
@@ -349,7 +349,7 @@ class StarWarsIntrospectionTests extends Specification {
                                                                 description : 'id of the human',
                                                                 type        : [
                                                                         kind  : 'NON_NULL',
-                                                                        name  : null,
+                                                                        name  : 'String',
                                                                         ofType: [
                                                                                 kind: 'SCALAR',
                                                                                 name: 'String'
@@ -367,7 +367,7 @@ class StarWarsIntrospectionTests extends Specification {
                                                                 description : 'id of the droid',
                                                                 type        : [
                                                                         kind  : 'NON_NULL',
-                                                                        name  : null,
+                                                                        name  : 'String',
                                                                         ofType: [
                                                                                 kind: 'SCALAR',
                                                                                 name: 'String'

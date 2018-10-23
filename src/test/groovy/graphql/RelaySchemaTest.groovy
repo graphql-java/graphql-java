@@ -63,7 +63,7 @@ class RelaySchemaTest extends Specification {
 
         then:
         def fields = result.data["__type"]["fields"]
-        fields == [[name: "edges", type: [name: null, kind: "LIST", ofType: [name: "StuffEdge", kind: "OBJECT"]]], [name: "pageInfo", type: [name: null, kind: "NON_NULL", ofType: [name: "PageInfo", kind: "OBJECT"]]]]
+        fields == [[name: "edges", type: [name: null, kind: "LIST", ofType: [name: "StuffEdge", kind: "OBJECT"]]], [name: "pageInfo", type: [name: "PageInfo", kind: "NON_NULL", ofType: [name: "PageInfo", kind: "OBJECT"]]]]
     }
 
     def "Validate Relay StuffEdge schema"() {
@@ -90,7 +90,7 @@ class RelaySchemaTest extends Specification {
 
         then:
         def fields = result.data["__type"]["fields"]
-        fields == [[name: "node", type: [name: "Stuff", kind: "OBJECT", ofType: null]], [name: "cursor", type: [name: null, kind: "NON_NULL", ofType: [name: "String", kind: "SCALAR"]]]]
+        fields == [[name: "node", type: [name: "Stuff", kind: "OBJECT", ofType: null]], [name: "cursor", type: [name: "String", kind: "NON_NULL", ofType: [name: "String", kind: "SCALAR"]]]]
     }
 
 }

@@ -135,7 +135,7 @@ class TypeTraverserTest extends Specification {
         def visitor = new GraphQLTestingVisitor()
         new TypeTraverser().depthFirst(visitor, GraphQLNonNull.nonNull(Scalars.GraphQLString))
         then:
-        visitor.getStack() == ["nonNull: String", "fallback: null",
+        visitor.getStack() == ["nonNull: String", "fallback: String",
                                "scalar: String", "fallback: String"]
     }
 
