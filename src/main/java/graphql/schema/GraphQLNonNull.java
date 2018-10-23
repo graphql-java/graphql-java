@@ -80,7 +80,7 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
 
     @Override
     public String getName() {
-        return null;
+        return wrappedType != null ? wrappedType.getName() : null;
     }
 
     @Override
