@@ -29,7 +29,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
     private final Function<QueryDepthInfo, Boolean> maxQueryDepthExceededFunction;
 
     /**
-     * new Instrumentation
+     * Creates a new instrumentation that tracks the query depth.
      *
      * @param maxDepth max allowed depth, otherwise execution will be aborted
      */
@@ -38,7 +38,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
     }
 
     /**
-     * new Instrumentation
+     * Creates a new instrumentation that tracks the query depth.
      *
      * @param maxDepth                      max allowed depth, otherwise execution will be aborted
      * @param maxQueryDepthExceededFunction the function to perform when the max depth is exceeded
