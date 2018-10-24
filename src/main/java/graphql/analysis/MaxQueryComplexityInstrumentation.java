@@ -6,24 +6,32 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
 import static java.util.Optional.ofNullable;
 
 /**
- * Prevents execution if the query complexity is greater than the specified maxComplexity
+ * Prevents execution if the query complexity is greater than the specified maxComplexity.
+ *
+ * Use the {@link Function<QueryComplexityInfo, Boolean>} parameter to supply a function to perform a custom action when the max complexity
+ * is exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
 @PublicApi
 public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
 
+    private static final Logger log = LoggerFactory.getLogger(MaxQueryComplexityInstrumentation.class);
 
     private final int maxComplexity;
     private final FieldComplexityCalculator fieldComplexityCalculator;
+    private final Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction;
 
     /**
      * new Instrumentation with default complexity calculator which is `1 + childComplexity`
@@ -31,7 +39,17 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
      * @param maxComplexity max allowed complexity, otherwise execution will be aborted
      */
     public MaxQueryComplexityInstrumentation(int maxComplexity) {
-        this(maxComplexity, (env, childComplexity) -> 1 + childComplexity);
+        this(maxComplexity, (queryComplexityInfo) -> true);
+    }
+
+    /**
+     * new Instrumentation with default complexity calculator which is `1 + childComplexity`
+     *
+     * @param maxComplexity                      max allowed complexity, otherwise execution will be aborted
+     * @param maxQueryComplexityExceededFunction the function to perform when the max complexity is exceeded
+     */
+    public MaxQueryComplexityInstrumentation(int maxComplexity, Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction) {
+        this(maxComplexity, (env, childComplexity) -> 1 + childComplexity, maxQueryComplexityExceededFunction);
     }
 
     /**
@@ -41,10 +59,22 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
      * @param fieldComplexityCalculator custom complexity calculator
      */
     public MaxQueryComplexityInstrumentation(int maxComplexity, FieldComplexityCalculator fieldComplexityCalculator) {
-        this.maxComplexity = maxComplexity;
-        this.fieldComplexityCalculator = assertNotNull(fieldComplexityCalculator, "calculator can't be null");
+        this(maxComplexity, fieldComplexityCalculator, (queryComplexityInfo) -> true);
     }
 
+    /**
+     * new Instrumentation with custom complexity calculator
+     *
+     * @param maxComplexity                      max allowed complexity, otherwise execution will be aborted
+     * @param fieldComplexityCalculator          custom complexity calculator
+     * @param maxQueryComplexityExceededFunction the function to perform when the max complexity is exceeded
+     */
+    public MaxQueryComplexityInstrumentation(int maxComplexity, FieldComplexityCalculator fieldComplexityCalculator,
+            Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction) {
+        this.maxComplexity = maxComplexity;
+        this.fieldComplexityCalculator = assertNotNull(fieldComplexityCalculator, "calculator can't be null");
+        this.maxQueryComplexityExceededFunction = maxQueryComplexityExceededFunction;
+    }
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
@@ -66,11 +96,16 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
                     );
                 }
             });
-
             int totalComplexity = valuesByParent.getOrDefault(null, 0);
-
+            log.debug("Query complexity: {}", totalComplexity);
             if (totalComplexity > maxComplexity) {
-                throw mkAbortException(totalComplexity, maxComplexity);
+                QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
+                        .complexity(totalComplexity)
+                        .build();
+                boolean throwAbortException = maxQueryComplexityExceededFunction.apply(queryComplexityInfo);
+                if (throwAbortException) {
+                    throw mkAbortException(totalComplexity, maxComplexity);
+                }
             }
         });
     }
