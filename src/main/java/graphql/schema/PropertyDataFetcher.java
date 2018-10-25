@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 import static graphql.Scalars.GraphQLBoolean;
@@ -193,6 +194,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         return false;
     }
 
+    private static final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private static final ConcurrentMap<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
 
@@ -207,6 +209,18 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
     public static void clearReflectionCache() {
         METHOD_CACHE.clear();
         FIELD_CACHE.clear();
+    }
+
+    /**
+     * This can be used to control whether PropertyDataFetcher will use {@link java.lang.reflect.Method#setAccessible(boolean)} to gain access to property
+     * values.  By default it PropertyDataFetcher WILL use setAccessible.
+     *
+     * @param flag whether to use setAccessible
+     *
+     * @return the previous value of the flag
+     */
+    public static boolean setUseSetAccessible(boolean flag) {
+        return USE_SET_ACCESSIBLE.getAndSet(flag);
     }
 
     private String mkKey(Class clazz, String propertyName) {
@@ -267,6 +281,9 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
     }
 
     private Method findViaSetAccessible(Class aClass, String methodName) throws NoSuchMethodException {
+        if (! USE_SET_ACCESSIBLE.get()) {
+            throw new FastNoSuchMethodException(methodName);
+        }
         String key = mkKey(aClass, propertyName);
         Method method = METHOD_CACHE.get(key);
         if (method != null) {
@@ -316,6 +333,9 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
             }
             return field.get(object);
         } catch (NoSuchFieldException e) {
+            if (! USE_SET_ACCESSIBLE.get()) {
+                return null;
+            }
             // if not public fields then try via setAccessible
             try {
                 Field field = aClass.getDeclaredField(propertyName);
