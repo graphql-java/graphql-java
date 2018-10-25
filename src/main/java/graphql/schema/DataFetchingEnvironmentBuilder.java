@@ -31,6 +31,7 @@ public class DataFetchingEnvironmentBuilder {
                 .arguments(environment.getArguments())
                 .context(environment.getContext())
                 .root(environment.getRoot())
+                .fieldDefinition(environment.getFieldDefinition())
                 .fields(environment.getFields())
                 .fieldType(environment.getFieldType())
                 .executionStepInfo(environment.getExecutionStepInfo())
