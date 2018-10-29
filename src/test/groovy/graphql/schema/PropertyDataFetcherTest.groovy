@@ -17,6 +17,11 @@ import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvir
 @SuppressWarnings("GroovyUnusedDeclaration")
 class PropertyDataFetcherTest extends Specification {
 
+    void setup() {
+        PropertyDataFetcher.setUseSetAccessible(true)
+        PropertyDataFetcher.clearReflectionCache()
+    }
+
     def env(obj) {
         newDataFetchingEnvironment()
                 .executionContext(Mock(ExecutionContext))
