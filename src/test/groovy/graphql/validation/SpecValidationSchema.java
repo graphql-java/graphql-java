@@ -171,7 +171,8 @@ public class SpecValidationSchema {
     }};
     public static final GraphQLSchema specValidationSchema = GraphQLSchema.newSchema()
             .query(queryRoot)
-            .build(specValidationDictionary);
+            .additionalTypes(specValidationDictionary)
+            .build();
 
 
 }
