@@ -5,6 +5,7 @@ import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,7 +18,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
     public AbstractNode(SourceLocation sourceLocation, List<Comment> comments) {
         this.sourceLocation = sourceLocation;
         Assert.assertNotNull(comments, "comments can't be null");
-        this.comments = new ArrayList<>(comments);
+        this.comments = comments.isEmpty()? Collections.emptyList(): Collections.unmodifiableList(comments);
     }
 
     @Override
@@ -27,7 +28,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
 
     @Override
     public List<Comment> getComments() {
-        return new ArrayList<>(comments);
+        return comments;
     }
 
 
