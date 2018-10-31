@@ -18,7 +18,6 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
     @Internal
     protected NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
-
         this.type = type;
     }
 
@@ -28,9 +27,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
      * @param type the wrapped type
      */
     public NonNullType(Type type) {
-        super(null, new ArrayList<>());
-
-        this.type = type;
+        this(type,null, new ArrayList<>());
     }
 
     public Type getType() {
