@@ -27,8 +27,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
      * @param value of the String
      */
     public StringValue(String value) {
-        super(null, new ArrayList<>());
-        this.value = value;
+        this(value, null, new ArrayList<>());
     }
 
     public String getValue() {
