@@ -29,6 +29,7 @@ public class DataFetchingEnvironmentBuilder {
         return new DataFetchingEnvironmentBuilder()
                 .source(environment.getSource())
                 .arguments(environment.getArguments())
+                .directiveArguments(environment.getDirectiveArguments())
                 .context(environment.getContext())
                 .root(environment.getRoot())
                 .fieldDefinition(environment.getFieldDefinition())
@@ -58,6 +59,7 @@ public class DataFetchingEnvironmentBuilder {
 
     private Object source;
     private Map<String, Object> arguments = Collections.emptyMap();
+    private Map<String, Map<String, Object>> directiveArguments = Collections.emptyMap();
     private Object context;
     private Object root;
     private GraphQLFieldDefinition fieldDefinition;
@@ -78,6 +80,11 @@ public class DataFetchingEnvironmentBuilder {
 
     public DataFetchingEnvironmentBuilder arguments(Map<String, Object> arguments) {
         this.arguments = arguments;
+        return this;
+    }
+
+    public DataFetchingEnvironmentBuilder directiveArguments(Map<String, Map<String, Object>> directiveArguments) {
+        this.directiveArguments = directiveArguments;
         return this;
     }
 
@@ -142,7 +149,7 @@ public class DataFetchingEnvironmentBuilder {
     }
 
     public DataFetchingEnvironment build() {
-        return new DataFetchingEnvironmentImpl(source, arguments, context, root,
+        return new DataFetchingEnvironmentImpl(source, arguments, directiveArguments, context, root,
                 fieldDefinition, fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
                 executionStepInfo,
                 executionContext);

@@ -21,11 +21,13 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.language.Directive;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
@@ -50,6 +52,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
@@ -236,6 +239,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                                                        GraphQLFieldDefinition fieldDef) {
         GraphQLObjectType parentType = node.getType();
         List<Field> fields = node.getFields().get(fieldName);
+        Field field = fields.get(0);
         List<MapOrList> parentResults = node.getParentResults();
 
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
@@ -243,12 +247,22 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 fieldVisibility,
                 fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
 
+        Map<String, Map<String, Object>> directiveArgumentValues = field.getDirectives().stream()
+                .collect(Collectors.toMap(Directive::getName, dir -> {
+                    GraphQLDirective directive = executionContext.getGraphQLSchema().getDirective(dir.getName());
+                    if (directive == null) {
+                        return Collections.emptyMap();
+                    }
+                    return valuesResolver.getArgumentValues(fieldVisibility, directive.getArguments(), dir.getArguments(), executionContext.getVariables());
+                }));
+
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(node.getSources())
                 .arguments(argumentValues)
+                .directiveArguments(directiveArgumentValues)
                 .fieldDefinition(fieldDef)
                 .fields(fields)
                 .fieldType(fieldDef.getType())

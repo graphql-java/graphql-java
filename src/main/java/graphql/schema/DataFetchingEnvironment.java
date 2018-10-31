@@ -10,6 +10,7 @@ import org.dataloader.DataLoader;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 
 /**
@@ -55,6 +56,12 @@ public interface DataFetchingEnvironment {
      * @return the named argument or null if its not [present
      */
     <T> T getArgument(String name);
+
+    Map<String, Map<String, Object>> getDirectiveArguments();
+
+    Map<String, Object> getDirectiveArguments(String directiveName);
+
+    <T> Optional<T> getDirectiveArgument(String directiveName, String argumentName);
 
     /**
      * Returns a context argument that is set up when the {@link graphql.GraphQL#execute} method
