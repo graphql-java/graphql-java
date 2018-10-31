@@ -17,7 +17,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.whe
 /**
  * Prevents execution if the query depth is greater than the specified maxDepth.
  *
- * Use the {@link Function<QueryDepthInfo, Boolean>} parameter to supply a function to perform a custom action when the max depth is
+ * Use the `Function&lt;QueryDepthInfo Boolean&gt;` parameter to supply a function to perform a custom action when the max depth is
  * exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
 @PublicApi

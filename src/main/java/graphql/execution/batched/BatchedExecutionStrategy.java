@@ -7,6 +7,7 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
+import graphql.execution.DirectivesResolver;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
@@ -21,7 +22,6 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.language.Directive;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -52,7 +52,6 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
@@ -247,14 +246,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 fieldVisibility,
                 fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
 
-        Map<String, Map<String, Object>> directiveArgumentValues = field.getDirectives().stream()
-                .collect(Collectors.toMap(Directive::getName, dir -> {
-                    GraphQLDirective directive = executionContext.getGraphQLSchema().getDirective(dir.getName());
-                    if (directive == null) {
-                        return Collections.emptyMap();
-                    }
-                    return valuesResolver.getArgumentValues(fieldVisibility, directive.getArguments(), dir.getArguments(), executionContext.getVariables());
-                }));
+        Map<String, GraphQLDirective> directivesMap = DirectivesResolver.getFieldDirectives(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);
@@ -262,7 +254,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(node.getSources())
                 .arguments(argumentValues)
-                .directiveArguments(directiveArgumentValues)
+                .directives(directivesMap)
                 .fieldDefinition(fieldDef)
                 .fields(fields)
                 .fieldType(fieldDef.getType())

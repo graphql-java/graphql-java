@@ -47,5 +47,8 @@ class GraphQLDirectiveTest extends Specification {
         transformedDirective.getArgument("argStr").type == GraphQLString
         transformedDirective.getArgument("argInt").type == GraphQLBoolean // swapped
         transformedDirective.getArgument("argIntAdded").type == GraphQLInt
+
+        transformedDirective.getArgumentsByName().containsKey("argStr")
+        transformedDirective.getArgumentsByName().containsKey("argInt")
     }
 }

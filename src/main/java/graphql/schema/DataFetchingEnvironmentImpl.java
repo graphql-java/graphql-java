@@ -13,7 +13,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static graphql.Assert.assertNotNull;
 
@@ -22,7 +21,7 @@ import static graphql.Assert.assertNotNull;
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
     private final Map<String, Object> arguments;
-    private final Map<String, Map<String, Object>> directiveArguments;
+    private final Map<String, GraphQLDirective> directives;
     private final Object context;
     private final Object root;
     private final GraphQLFieldDefinition fieldDefinition;
@@ -38,7 +37,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     public DataFetchingEnvironmentImpl(Object source,
                                        Map<String, Object> arguments,
-                                       Map<String, Map<String, Object>> directiveArguments,
+                                       Map<String, GraphQLDirective> directives,
                                        Object context,
                                        Object root,
                                        GraphQLFieldDefinition fieldDefinition,
@@ -53,7 +52,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        ExecutionContext executionContext) {
         this.source = source;
         this.arguments = arguments == null ? Collections.emptyMap() : arguments;
-        this.directiveArguments = directiveArguments == null ? Collections.emptyMap() : Collections.unmodifiableMap(directiveArguments);
+        this.directives = directives == null ? Collections.emptyMap() : directives;
         this.fragmentsByName = fragmentsByName == null ? Collections.emptyMap() : fragmentsByName;
         this.context = context;
         this.root = root;
@@ -88,20 +87,25 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         return (T) arguments.get(name);
     }
 
+
     @Override
-    public Map<String, Map<String, Object>> getDirectiveArguments() {
-        return directiveArguments;
+    public Map<String, GraphQLDirective> getDirectives() {
+        return new HashMap<>(directives);
     }
 
     @Override
-    public Map<String, Object> getDirectiveArguments(String directiveName) {
-        return directiveArguments.get(directiveName);
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.get(directiveName);
     }
 
     @Override
-    public <T> Optional<T> getDirectiveArgument(String directiveName, String argumentName) {
-        return Optional.ofNullable(directiveArguments.get(directiveName))
-                .map(arg -> (T) arg.get(argumentName));
+    public GraphQLArgument getDirectiveArgument(String directiveName, String argumentName) {
+        GraphQLArgument arg = null;
+        GraphQLDirective directive = getDirective(directiveName);
+        if (directive != null) {
+            arg = directive.getArgument(argumentName);
+        }
+        return arg;
     }
 
     @Override

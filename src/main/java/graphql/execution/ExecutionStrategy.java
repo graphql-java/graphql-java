@@ -15,7 +15,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldComplete
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.introspection.Introspection;
-import graphql.language.Directive;
 import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.schema.CoercingSerializeException;
@@ -50,7 +49,6 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
@@ -233,15 +231,10 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
 
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
+
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
-        Map<String, Map<String, Object>> directiveArgumentValues = field.getDirectives().stream()
-                .collect(Collectors.toMap(Directive::getName, dir -> {
-                    GraphQLDirective directive = executionContext.getGraphQLSchema().getDirective(dir.getName());
-                    if (directive == null) {
-                        return Collections.emptyMap();
-                    }
-                    return valuesResolver.getArgumentValues(fieldVisibility, directive.getArguments(), dir.getArguments(), executionContext.getVariables());
-                }));
+
+        Map<String, GraphQLDirective> directivesMap = DirectivesResolver.getFieldDirectives(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
@@ -250,7 +243,7 @@ public abstract class ExecutionStrategy {
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
                 .source(parameters.getSource())
                 .arguments(argumentValues)
-                .directiveArguments(directiveArgumentValues)
+                .directives(directivesMap)
                 .fieldDefinition(fieldDef)
                 .fields(parameters.getField())
                 .fieldType(fieldType)

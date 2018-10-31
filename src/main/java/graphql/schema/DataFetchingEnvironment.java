@@ -10,7 +10,6 @@ import org.dataloader.DataLoader;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 
 /**
@@ -57,11 +56,31 @@ public interface DataFetchingEnvironment {
      */
     <T> T getArgument(String name);
 
-    Map<String, Map<String, Object>> getDirectiveArguments();
+    /**
+     * Returns a map of the directives that were present on the field
+     *
+     * @return a map of the directives that were present on the field
+     */
+    Map<String, GraphQLDirective> getDirectives();
 
-    Map<String, Object> getDirectiveArguments(String directiveName);
+    /**
+     * Returns a named directive that might present on the field
+     *
+     * @param directiveName the name of the directive to retrieve
+     *
+     * @return a named directive that might present on the field or null if not present
+     */
+    GraphQLDirective getDirective(String directiveName);
 
-    <T> Optional<T> getDirectiveArgument(String directiveName, String argumentName);
+    /**
+     * Returns a named argument of a named directive that might present on the field
+     *
+     * @param directiveName the name of the directive to retrieve
+     * @param argumentName  the name of the directive argument
+     *
+     * @return a named argument that might present on a directive on the field or null if not present
+     */
+    GraphQLArgument getDirectiveArgument(String directiveName, String argumentName);
 
     /**
      * Returns a context argument that is set up when the {@link graphql.GraphQL#execute} method

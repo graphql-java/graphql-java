@@ -3,6 +3,7 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -60,9 +61,16 @@ public class GraphQLDirective implements GraphQLType {
         return new ArrayList<>(arguments);
     }
 
-    public GraphQLArgument getArgument(String name) {
+    /**
+     * @return a map of directive arguments by argument name
+     */
+    public Map<String, GraphQLArgument> getArgumentsByName() {
+        return FpKit.getByName(arguments, GraphQLArgument::getName, FpKit.mergeFirst());
+    }
+
+    public GraphQLArgument getArgument(String argumentName) {
         for (GraphQLArgument argument : arguments) {
-            if (argument.getName().equals(name)) return argument;
+            if (argument.getName().equals(argumentName)) return argument;
         }
         return null;
     }
