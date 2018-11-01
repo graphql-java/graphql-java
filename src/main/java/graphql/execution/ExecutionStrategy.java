@@ -898,6 +898,11 @@ public abstract class ExecutionStrategy {
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
+        Map<String, GraphQLDirective> directivesMap = Collections.emptyMap();
+        if (field != null) {
+            directivesMap = DirectivesResolver.getFieldDirectives(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
+        }
+
         return newExecutionStepInfo()
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
@@ -905,8 +910,8 @@ public abstract class ExecutionStrategy {
                 .path(parameters.getPath())
                 .parentInfo(parameters.getExecutionStepInfo())
                 .arguments(argumentValues)
+                .directives(directivesMap)
                 .build();
-
     }
 
 

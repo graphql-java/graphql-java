@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
@@ -100,12 +101,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public GraphQLArgument getDirectiveArgument(String directiveName, String argumentName) {
-        GraphQLArgument arg = null;
-        GraphQLDirective directive = getDirective(directiveName);
-        if (directive != null) {
-            arg = directive.getArgument(argumentName);
-        }
-        return arg;
+        return DirectivesUtil.directiveWithArg(directives, directiveName, argumentName).orElse(null);
     }
 
     @Override
