@@ -28,8 +28,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
      * @param value of the Int
      */
     public IntValue(BigInteger value) {
-        super(null, new ArrayList<>());
-        this.value = value;
+        this(value, null, new ArrayList<>());
     }
 
     public BigInteger getValue() {
