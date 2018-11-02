@@ -21,7 +21,7 @@ import static java.util.Optional.ofNullable;
 /**
  * Prevents execution if the query complexity is greater than the specified maxComplexity.
  *
- * Use the {@link Function<QueryComplexityInfo, Boolean>} parameter to supply a function to perform a custom action when the max complexity
+ * Use the {@code Function<QueryComplexityInfo, Boolean>} parameter to supply a function to perform a custom action when the max complexity
  * is exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
 @PublicApi
