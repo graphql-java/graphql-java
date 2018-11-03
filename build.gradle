@@ -1,7 +1,7 @@
 import java.text.SimpleDateFormat
 
 plugins {
-    id "com.jfrog.bintray" version "1.2"
+    id "com.jfrog.bintray" version "1.8.4"
 }
 
 apply plugin: 'java'
