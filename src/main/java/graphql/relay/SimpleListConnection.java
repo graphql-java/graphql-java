@@ -42,6 +42,11 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>> {
     }
 
     @Override
+    public boolean isTrivialDataFetcher() {
+        return true;
+    }
+
+    @Override
     public Connection<T> get(DataFetchingEnvironment environment) {
 
         List<Edge<T>> edges = buildEdges();
