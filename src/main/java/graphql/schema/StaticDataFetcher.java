@@ -20,4 +20,9 @@ public class StaticDataFetcher implements DataFetcher {
     public Object get(DataFetchingEnvironment environment) {
         return value;
     }
+
+    @Override
+    public boolean isTrivialDataFetcher() {
+        return true;
+    }
 }

@@ -247,13 +247,14 @@ public abstract class ExecutionStrategy {
                 .selectionSet(fieldCollector)
                 .build();
 
+        DataFetcher dataFetcher = fieldDef.getDataFetcher();
+
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters);
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, dataFetcher.isTrivialDataFetcher());
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
 
         CompletableFuture<Object> fetchedValue;
-        DataFetcher dataFetcher = fieldDef.getDataFetcher();
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
         ExecutionId executionId = executionContext.getExecutionId();
         try {

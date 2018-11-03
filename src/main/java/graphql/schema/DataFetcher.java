@@ -25,8 +25,19 @@ public interface DataFetcher<T> {
      * @return a value of type T. May be wrapped in a {@link graphql.execution.DataFetcherResult}
      *
      * @throws Exception to relieve the implementations from having to wrap checked exceptions. Any exception thrown
-     * from a {@code DataFetcher} will eventually be handled by the registered {@link graphql.execution.DataFetcherExceptionHandler}
-     * and the related field will have a value of {@code null} in the result.
+     *                   from a {@code DataFetcher} will eventually be handled by the registered {@link graphql.execution.DataFetcherExceptionHandler}
+     *                   and the related field will have a value of {@code null} in the result.
      */
     T get(DataFetchingEnvironment environment) throws Exception;
+
+
+    /**
+     * If a data fetcher is simply mapping data from an object to a field, it can be considered a trivial data fetcher for the purposes
+     * of tracing and so on.
+     *
+     * @return true if the data fetcher can be considered a trivial data fetcher.
+     */
+    default boolean isTrivialDataFetcher() {
+        return false;
+    }
 }
