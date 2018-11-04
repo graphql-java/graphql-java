@@ -32,6 +32,8 @@ public class TracingSupport implements InstrumentationState {
 
     /**
      * The timer starts as soon as you create this object
+     *
+     * @param includeTrivialDataFetchers whether the trace trivial data fetchers
      */
     public TracingSupport(boolean includeTrivialDataFetchers) {
         this.includeTrivialDataFetchers = includeTrivialDataFetchers;
@@ -55,6 +57,7 @@ public class TracingSupport implements InstrumentationState {
      * end the call.
      *
      * @param dataFetchingEnvironment the data fetching that is occurring
+     * @param trivialDataFetcher      if the data fetcher is considered trivial
      *
      * @return a context to call end on
      */
