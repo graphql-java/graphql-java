@@ -35,8 +35,12 @@ public class TracingInstrumentation extends SimpleInstrumentation {
             this.includeTrivialDataFetchers = includeTrivialDataFetchers;
         }
 
+        public boolean isIncludeTrivialDataFetchers() {
+            return includeTrivialDataFetchers;
+        }
+
         /**
-         * By default trivial data fetchers (those that simple pull data from an object into field) are not included
+         * By default trivial data fetchers (those that simple pull data from an object into field) are included
          * in tracing but you can control this behavior.
          *
          * @param flag the flag on whether to trace trivial data fetchers
@@ -48,7 +52,7 @@ public class TracingInstrumentation extends SimpleInstrumentation {
         }
 
         public static Options newOptions() {
-            return new Options(false);
+            return new Options(true);
         }
 
     }
