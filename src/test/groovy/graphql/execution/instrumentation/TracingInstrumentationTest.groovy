@@ -31,7 +31,7 @@ class TracingInstrumentationTest extends Specification {
 
         when:
 
-        def instrumentation = new TracingInstrumentation(newOptions().includeTrivialDataFetchers(true))
+        def instrumentation = new TracingInstrumentation()
 
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
@@ -125,7 +125,8 @@ class TracingInstrumentationTest extends Specification {
             //isTrivialDataFetcher defaults to false
         }
 
-        def instrumentation = new TracingInstrumentation() // defaults to false
+        def instrumentation = new TracingInstrumentation(
+                newOptions().includeTrivialDataFetchers(false)) // defaults to true
 
         def graphQL = TestUtil.graphQL(spec, [Query: [hero: df]])
                 .queryExecutionStrategy(testExecutionStrategy)
