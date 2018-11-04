@@ -161,4 +161,11 @@ class TracingInstrumentationTest extends Specification {
         new BatchedExecutionStrategy()     | _
 
     }
+
+    def "default behavior is that trivial fields ARE recorded"() {
+        when:
+        def options = newOptions()
+        then:
+        options.isIncludeTrivialDataFetchers()
+    }
 }
