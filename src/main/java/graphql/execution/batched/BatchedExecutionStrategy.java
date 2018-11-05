@@ -263,15 +263,19 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .selectionSet(fieldCollector)
                 .build();
 
+        DataFetcher supplied = fieldDef.getDataFetcher();
+        boolean trivialDataFetcher = supplied.isTrivialDataFetcher();
+        BatchedDataFetcher batchedDataFetcher = batchingFactory.create(supplied);
+
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationFieldFetchParameters instrumentationFieldFetchParameters =
-                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters);
+                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, trivialDataFetcher);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParameters);
 
         CompletableFuture<Object> fetchedValue;
         try {
             DataFetcher<?> dataFetcher = instrumentation.instrumentDataFetcher(
-                    getDataFetcher(fieldDef), instrumentationFieldFetchParameters);
+                    batchedDataFetcher, instrumentationFieldFetchParameters);
             Object fetchedValueRaw = dataFetcher.get(environment);
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
@@ -516,8 +520,4 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return result;
     }
 
-    private BatchedDataFetcher getDataFetcher(GraphQLFieldDefinition fieldDef) {
-        DataFetcher supplied = fieldDef.getDataFetcher();
-        return batchingFactory.create(supplied);
-    }
 }

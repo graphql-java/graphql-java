@@ -121,6 +121,14 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
         return propertyName;
     }
 
+    /**
+     * @return true - because PropertyDataFetcher is one the most trivial fetchers
+     */
+    @Override
+    public boolean isTrivialDataFetcher() {
+        return true;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public T get(DataFetchingEnvironment environment) {
