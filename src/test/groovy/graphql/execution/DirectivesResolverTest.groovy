@@ -73,11 +73,14 @@ class DirectivesResolverTest extends Specification {
 
     def schema = TestUtil.schema(spec, ["Query": ["field": new DirectiveCapturingDataFetcher()]])
 
+
+    def directivesResolver = new DirectivesResolver(new ValuesResolver())
+
     def "nothing is collected if the directive is not known about"() {
         Field f = Field.newField("field").directives([Directive.newDirective().name("unknownDirective").build()]).build()
 
         when:
-        def directives = DirectivesResolver.getFieldDirectives(f, schema, [:])
+        def directives = directivesResolver.getFieldDirectives(f, schema, [:])
         then:
         directives.isEmpty()
 
@@ -87,7 +90,7 @@ class DirectivesResolverTest extends Specification {
         Field f = Field.newField("field").directives([Directive.newDirective().name("fieldDefDirective").build()]).build()
 
         when:
-        def directives = DirectivesResolver.getFieldDirectives(f, schema, [:])
+        def directives = directivesResolver.getFieldDirectives(f, schema, [:])
         then:
         directives.isEmpty()
 
@@ -97,7 +100,7 @@ class DirectivesResolverTest extends Specification {
         Field f = Field.newField("field").directives([Directive.newDirective().name("fieldDirective4").build()]).build()
 
         when:
-        def directives = DirectivesResolver.getFieldDirectives(f, schema, [:])
+        def directives = directivesResolver.getFieldDirectives(f, schema, [:])
         then:
         directives['fieldDirective4'].getArguments().isEmpty()
 
@@ -110,11 +113,10 @@ class DirectivesResolverTest extends Specification {
                                      .build()]).build()
 
         when:
-        def directives = DirectivesResolver.getFieldDirectives(f, schema, [:])
+        def directives = directivesResolver.getFieldDirectives(f, schema, [:])
         then:
         directives['fieldDirective4'].getArgument("value").getValue() == "s"
     }
-
 
 
     def "integration test of field directives"() {

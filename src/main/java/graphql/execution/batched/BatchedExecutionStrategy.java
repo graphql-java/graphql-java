@@ -246,7 +246,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 fieldVisibility,
                 fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
 
-        Map<String, GraphQLDirective> directivesMap = DirectivesResolver.getFieldDirectives(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
+        Map<String, GraphQLDirective> directivesMap = directivesResolver.getFieldDirectives(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, fields);

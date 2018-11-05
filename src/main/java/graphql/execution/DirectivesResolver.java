@@ -16,9 +16,13 @@ import java.util.Map;
 @Internal
 public class DirectivesResolver {
 
-    private final static ValuesResolver valuesResolver = new ValuesResolver();
+    private final ValuesResolver valuesResolver;
 
-    public static Map<String, GraphQLDirective> getFieldDirectives(Field field, GraphQLSchema schema, Map<String, Object> variables) {
+    public DirectivesResolver(ValuesResolver valuesResolver) {
+        this.valuesResolver = valuesResolver;
+    }
+
+    public Map<String, GraphQLDirective> getFieldDirectives(Field field, GraphQLSchema schema, Map<String, Object> variables) {
         GraphqlFieldVisibility fieldVisibility = schema.getFieldVisibility();
 
         Map<String, GraphQLDirective> directiveMap = new HashMap<>();
@@ -40,7 +44,7 @@ public class DirectivesResolver {
         return directiveMap;
     }
 
-    private static void buildArguments(GraphQLDirective.Builder directiveBuilder, GraphqlFieldVisibility fieldVisibility, GraphQLDirective protoType, Directive fieldDirective, Map<String, Object> variables) {
+    private void buildArguments(GraphQLDirective.Builder directiveBuilder, GraphqlFieldVisibility fieldVisibility, GraphQLDirective protoType, Directive fieldDirective, Map<String, Object> variables) {
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, protoType.getArguments(), fieldDirective.getArguments(), variables);
 

@@ -9,6 +9,7 @@ import graphql.SerializationError;
 import graphql.TypeMismatchError;
 import graphql.TypeResolutionEnvironment;
 import graphql.UnresolvedTypeError;
+import graphql.VisibleForTesting;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
@@ -121,8 +122,12 @@ public abstract class ExecutionStrategy {
 
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
 
-    protected final ValuesResolver valuesResolver = new ValuesResolver();
-    protected final FieldCollector fieldCollector = new FieldCollector();
+    @VisibleForTesting
+    protected ValuesResolver valuesResolver = new ValuesResolver();
+    @VisibleForTesting
+    protected FieldCollector fieldCollector = new FieldCollector();
+    @VisibleForTesting
+    protected DirectivesResolver directivesResolver = new DirectivesResolver(valuesResolver);
 
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
@@ -234,7 +239,7 @@ public abstract class ExecutionStrategy {
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
-        Map<String, GraphQLDirective> directivesMap = DirectivesResolver.getFieldDirectives(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
+        Map<String, GraphQLDirective> directivesMap = directivesResolver.getFieldDirectives(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
@@ -900,7 +905,7 @@ public abstract class ExecutionStrategy {
 
         Map<String, GraphQLDirective> directivesMap = Collections.emptyMap();
         if (field != null) {
-            directivesMap = DirectivesResolver.getFieldDirectives(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
+            directivesMap = directivesResolver.getFieldDirectives(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
         }
 
         return newExecutionStepInfo()
