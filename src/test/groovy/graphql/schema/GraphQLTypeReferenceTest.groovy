@@ -5,9 +5,9 @@ import spock.lang.Specification
 
 class GraphQLTypeReferenceTest extends Specification {
 
-    def "the same reference can be used multiple times"() {
+    def "the same reference can be used multiple times without throwing exception"() {
         when:
-        GraphQLTypeReference ref = new GraphQLTypeReference("String");
+        GraphQLTypeReference ref = new GraphQLTypeReference("String")
         def inputObject = GraphQLInputObjectType.newInputObject()
                 .name("ObjInput")
                 .field(GraphQLInputObjectField.newInputObjectField()
@@ -15,7 +15,7 @@ class GraphQLTypeReferenceTest extends Specification {
                 .type(ref)) //Will get replaced, as expected
                 .field(GraphQLInputObjectField.newInputObjectField()
                 .name("value2")
-                .type(ref)) //Will *not* get replaced the 2nd time it's used
+                .type(ref)) //Will get replaced, as expected
                 .build()
 
         GraphQLSchema schema = GraphQLSchema.newSchema()
