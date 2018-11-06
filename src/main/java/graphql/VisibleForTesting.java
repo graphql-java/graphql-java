@@ -7,12 +7,12 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.TYPE;
 
 /**
- * This represents a bit of code where the visibility is done that way for testing reasons
+ * Marks fields, methods etc as more visible than actually needed for testing purposes.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value = {CONSTRUCTOR, METHOD, TYPE, FIELD})
+@Target(value = {CONSTRUCTOR, METHOD, FIELD})
+@Internal
 public @interface VisibleForTesting {
 }
