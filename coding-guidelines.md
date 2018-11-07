@@ -14,16 +14,17 @@
 
 ## more specific topics
 
-- Use @Public and @Internal to communicate what level of stability is supported. 
+- Use `@Public` and `@Internal` to communicate what level of stability is supported. 
 
-- Never make a class or method package protected or protected: make it public or private and use @Internal to communicate that the class can be changed without notice. 
+- Never make a class or method package private or protected: 
+make it public or private and use `@Internal` to communicate that the class can be changed without notice. 
 The user can decide itself about the risk when they use internal things.
 
 ### Optional vs null
 We have a mix of Optional and allowing null values because GraphQL Java was originally written in Java 6.
 We are not aiming to change the old code.
 
-TBD: Every new code should use Optional or not?
+**TBD: Every new code should use Optional or not?**
 
 ### Unit testing and dependencies
 All tests are written in [Spock](http://spockframework.org).
@@ -56,7 +57,9 @@ Static methods imply that you never want to mock them.
 
 Typical examples are util methods like `GraphQLTypeUtil.isNonNull()` 
 
-Don't mix static and non static methods (except factory methods): every class is either a general "Util" class with only static methods or a class with no static methods.
+### "Util" class or not
+Don't mix static and non static methods (except factory methods): 
+every class is either a general "Util" class with only static methods or a class with no static methods.
 
 
 ### Naming
