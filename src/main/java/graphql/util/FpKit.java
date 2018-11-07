@@ -7,6 +7,7 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BinaryOperator;
@@ -26,7 +27,8 @@ public class FpKit {
         return namedObjects.stream().collect(Collectors.toMap(
                 nameFn,
                 identity(),
-                mergeFunc)
+                mergeFunc,
+                LinkedHashMap::new)
         );
     }
 
