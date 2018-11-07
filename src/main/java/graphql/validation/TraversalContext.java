@@ -56,8 +56,6 @@ public class TraversalContext implements DocumentVisitor {
     GraphQLDirective directive;
     GraphQLArgument argument;
 
-    final SchemaUtil schemaUtil = new SchemaUtil();
-
 
     public TraversalContext(GraphQLSchema graphQLSchema) {
         this.schema = graphQLSchema;

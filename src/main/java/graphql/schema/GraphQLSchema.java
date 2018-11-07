@@ -44,6 +44,8 @@ public class GraphQLSchema {
     private final GraphqlFieldVisibility fieldVisibility;
     private final Map<String, List<GraphQLObjectType>> byInterface;
 
+    private final SchemaUtil schemaUtil = new SchemaUtil();
+
 
     public GraphQLSchema(GraphQLObjectType queryType) {
         this(queryType, null, Collections.emptySet());
@@ -63,7 +65,6 @@ public class GraphQLSchema {
         assertNotNull(directives, "directives can't be null");
         assertNotNull(fieldVisibility, "fieldVisibility can't be null");
 
-        SchemaUtil schemaUtil = new SchemaUtil();
 
         this.queryType = queryType;
         this.mutationType = mutationType;
@@ -238,6 +239,8 @@ public class GraphQLSchema {
                 asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective)
         );
 
+        private SchemaUtil schemaUtil = new SchemaUtil();
+
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
         }
@@ -338,7 +341,7 @@ public class GraphQLSchema {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
             GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, fieldVisibility);
-            new SchemaUtil().replaceTypeReferences(graphQLSchema);
+            schemaUtil.replaceTypeReferences(graphQLSchema);
             Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
             if (errors.size() > 0) {
                 throw new InvalidSchemaException(errors);
