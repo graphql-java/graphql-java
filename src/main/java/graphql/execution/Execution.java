@@ -44,6 +44,7 @@ public class Execution {
     private static final Logger log = LoggerFactory.getLogger(Execution.class);
 
     private final FieldCollector fieldCollector = new FieldCollector();
+    private final ValuesResolver valuesResolver = new ValuesResolver();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -62,7 +63,6 @@ public class Execution {
         Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
         OperationDefinition operationDefinition = getOperationResult.operationDefinition;
 
-        ValuesResolver valuesResolver = new ValuesResolver();
         Map<String, Object> inputVariables = executionInput.getVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 

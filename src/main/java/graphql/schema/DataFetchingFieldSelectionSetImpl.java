@@ -78,6 +78,9 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         return unwrappedType instanceof GraphQLObjectType ? (GraphQLObjectType) unwrappedType : null;
     }
 
+    private final FieldCollector fieldCollector = new FieldCollector();
+    private final ValuesResolver valuesResolver = new ValuesResolver();
+
     private final List<Field> parentFields;
     private final GraphQLSchema graphQLSchema;
     private final GraphQLFieldsContainer parentFieldType;
@@ -248,8 +251,6 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
 
     private void traverseFields(List<Field> fieldList, GraphQLFieldsContainer parentFieldType, String fieldPrefix) {
-        FieldCollector fieldCollector = new FieldCollector();
-        ValuesResolver valuesResolver = new ValuesResolver();
 
         FieldCollectorParameters parameters = FieldCollectorParameters.newParameters()
                 .schema(graphQLSchema)
