@@ -247,7 +247,7 @@ public abstract class ExecutionStrategy {
                 .selectionSet(fieldCollector)
                 .build();
 
-        DataFetcher dataFetcher = fieldDef.getDataFetcher();
+        DataFetcher dataFetcher = executionContext.getGraphQLSchema().getCodeRegistry().getDataFetcher(parentType,fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 

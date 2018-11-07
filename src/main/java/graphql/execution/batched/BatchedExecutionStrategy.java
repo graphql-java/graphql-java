@@ -257,7 +257,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .selectionSet(fieldCollector)
                 .build();
 
-        DataFetcher supplied = fieldDef.getDataFetcher();
+        DataFetcher supplied = executionContext.getGraphQLSchema().getCodeRegistry().getDataFetcher(parentType,fieldDef);
         boolean trivialDataFetcher = supplied.isTrivialDataFetcher();
         BatchedDataFetcher batchedDataFetcher = batchingFactory.create(supplied);
 
