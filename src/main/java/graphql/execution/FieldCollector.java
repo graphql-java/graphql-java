@@ -30,8 +30,6 @@ public class FieldCollector {
 
     private final ConditionalNodes conditionalNodes;
 
-    private final SchemaUtil schemaUtil = new SchemaUtil();
-
     public FieldCollector() {
         conditionalNodes = new ConditionalNodes();
     }
