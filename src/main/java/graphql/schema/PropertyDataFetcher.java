@@ -4,6 +4,7 @@ package graphql.schema;
 import graphql.Assert;
 import graphql.GraphQLException;
 import graphql.PublicApi;
+import graphql.TrivialDataFetcher;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -46,7 +47,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
  * @see graphql.schema.DataFetcher
  */
 @PublicApi
-public class PropertyDataFetcher<T> implements DataFetcher<T> {
+public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetcher<T> {
 
     private final String propertyName;
     private final Function<Object, Object> function;
@@ -120,14 +121,6 @@ public class PropertyDataFetcher<T> implements DataFetcher<T> {
      */
     public String getPropertyName() {
         return propertyName;
-    }
-
-    /**
-     * @return true - because PropertyDataFetcher is one the most trivial fetchers
-     */
-    @Override
-    public boolean isTrivialDataFetcher() {
-        return true;
     }
 
     @SuppressWarnings("unchecked")
