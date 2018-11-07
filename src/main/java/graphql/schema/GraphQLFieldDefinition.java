@@ -80,6 +80,12 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         return type;
     }
 
+    /**
+     * @return the field's data fetcher
+     *
+     * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
+     */
+    @Deprecated
     public DataFetcher getDataFetcher() {
         return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(this)
@@ -152,7 +158,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
     @Override
     public List<GraphQLType> getChildren() {
-        List<GraphQLType> children =  new ArrayList<>();
+        List<GraphQLType> children = new ArrayList<>();
         children.add(type);
         children.addAll(arguments);
         children.addAll(directives);
@@ -233,7 +239,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          * @param dataFetcher the data fetcher to use
          *
          * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
+        @Deprecated
         public Builder dataFetcher(DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher, "dataFetcher must be not null");
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
@@ -246,7 +255,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          * @param dataFetcherFactory the factory to use
          *
          * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
+        @Deprecated
         public Builder dataFetcherFactory(DataFetcherFactory dataFetcherFactory) {
             assertNotNull(dataFetcherFactory, "dataFetcherFactory must be not null");
             this.dataFetcherFactory = dataFetcherFactory;
@@ -259,7 +271,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          * @param value the value to always return
          *
          * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
+        @Deprecated
         public Builder staticValue(final Object value) {
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(environment -> value);
             return this;

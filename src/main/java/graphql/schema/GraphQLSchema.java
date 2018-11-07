@@ -43,6 +43,7 @@ public class GraphQLSchema {
     private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
     private final GraphqlFieldVisibility fieldVisibility;
     private final Map<String, List<GraphQLObjectType>> byInterface;
+    private final GraphQLCodeRegistry codeRegistry;
 
 
     public GraphQLSchema(GraphQLObjectType queryType) {
@@ -54,14 +55,15 @@ public class GraphQLSchema {
     }
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
-        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), DEFAULT_FIELD_VISIBILITY);
+        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), DEFAULT_FIELD_VISIBILITY, GraphQLCodeRegistry.newCodeRegistry().build());
     }
 
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphqlFieldVisibility fieldVisibility) {
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphqlFieldVisibility fieldVisibility, GraphQLCodeRegistry codeRegistry) {
         assertNotNull(additionalTypes, "additionalTypes can't be null");
         assertNotNull(queryType, "queryType can't be null");
         assertNotNull(directives, "directives can't be null");
         assertNotNull(fieldVisibility, "fieldVisibility can't be null");
+        assertNotNull(codeRegistry, "codeRegistry can't be null");
 
         SchemaUtil schemaUtil = new SchemaUtil();
 
@@ -73,6 +75,11 @@ public class GraphQLSchema {
         this.directives.addAll(directives);
         this.typeMap = schemaUtil.allTypes(this, additionalTypes);
         this.byInterface = schemaUtil.groupImplementations(this);
+        this.codeRegistry = codeRegistry;
+    }
+
+    public GraphQLCodeRegistry getCodeRegistry() {
+        return codeRegistry;
     }
 
     public Set<GraphQLType> getAdditionalTypes() {
@@ -232,11 +239,13 @@ public class GraphQLSchema {
         private GraphQLObjectType mutationType;
         private GraphQLObjectType subscriptionType;
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
+        private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
         private Set<GraphQLType> additionalTypes = new HashSet<>();
         // we default these in
         private Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
                 asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective)
         );
+
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -267,6 +276,11 @@ public class GraphQLSchema {
 
         public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
             this.fieldVisibility = fieldVisibility;
+            return this;
+        }
+
+        public Builder codeRegistry(GraphQLCodeRegistry codeRegistry) {
+            this.codeRegistry = codeRegistry;
             return this;
         }
 
@@ -337,7 +351,7 @@ public class GraphQLSchema {
         public GraphQLSchema build() {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
-            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, fieldVisibility);
+            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, fieldVisibility, codeRegistry);
             new SchemaUtil().replaceTypeReferences(graphQLSchema);
             Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
             if (errors.size() > 0) {

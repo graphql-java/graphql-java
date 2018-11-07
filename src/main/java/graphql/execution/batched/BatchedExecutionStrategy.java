@@ -33,6 +33,7 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
@@ -265,7 +266,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         CompletableFuture<Object> fetchedValue;
         try {
             DataFetcher<?> dataFetcher = instrumentation.instrumentDataFetcher(
-                    getDataFetcher(fieldDef), instrumentationFieldFetchParameters);
+                    getDataFetcher(executionContext.getGraphQLSchema(), parentType, fieldDef), instrumentationFieldFetchParameters);
             Object fetchedValueRaw = dataFetcher.get(environment);
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
@@ -510,8 +511,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return result;
     }
 
-    private BatchedDataFetcher getDataFetcher(GraphQLFieldDefinition fieldDef) {
-        DataFetcher supplied = fieldDef.getDataFetcher();
+    private BatchedDataFetcher getDataFetcher(GraphQLSchema graphQLSchema, GraphQLObjectType parentType, GraphQLFieldDefinition fieldDef) {
+        DataFetcher supplied = graphQLSchema.getCodeRegistry().getDataFetcher(parentType,fieldDef);
         return batchingFactory.create(supplied);
     }
 }

@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
 import graphql.schema.GraphQLEnumType;
@@ -28,12 +29,14 @@ class SchemaGeneratorDirectiveHelper {
         private final RuntimeWiring runtimeWiring;
         private final NodeParentTree nodeParentTree;
         private final Map<String, Object> context;
+        private final GraphQLCodeRegistry.Builder codeRegistry;
 
-        Parameters(TypeDefinitionRegistry typeRegistry, RuntimeWiring runtimeWiring, NodeParentTree<NamedNode> nodeParentTree, Map<String, Object> context) {
+        Parameters(TypeDefinitionRegistry typeRegistry, RuntimeWiring runtimeWiring, NodeParentTree<NamedNode> nodeParentTree, Map<String, Object> context, GraphQLCodeRegistry.Builder codeRegistry) {
             this.typeRegistry = typeRegistry;
             this.runtimeWiring = runtimeWiring;
             this.nodeParentTree = nodeParentTree;
             this.context = context;
+            this.codeRegistry = codeRegistry;
         }
 
         public TypeDefinitionRegistry getTypeRegistry() {
@@ -51,56 +54,60 @@ class SchemaGeneratorDirectiveHelper {
         public Map<String, Object> getContext() {
             return context;
         }
+
+        public GraphQLCodeRegistry.Builder getCodeRegistry() {
+            return codeRegistry;
+        }
     }
 
     public GraphQLObjectType onObject(GraphQLObjectType element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onObject);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry()), SchemaDirectiveWiring::onObject);
     }
 
     public GraphQLFieldDefinition onField(GraphQLFieldDefinition element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onField);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry()), SchemaDirectiveWiring::onField);
     }
 
     public GraphQLInterfaceType onInterface(GraphQLInterfaceType element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onInterface);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry()), SchemaDirectiveWiring::onInterface);
     }
 
     public GraphQLUnionType onUnion(GraphQLUnionType element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onUnion);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry()), SchemaDirectiveWiring::onUnion);
     }
 
     public GraphQLScalarType onScalar(GraphQLScalarType element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onScalar);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry()), SchemaDirectiveWiring::onScalar);
     }
 
     public GraphQLEnumType onEnum(GraphQLEnumType element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onEnum);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry()), SchemaDirectiveWiring::onEnum);
     }
 
     public GraphQLEnumValueDefinition onEnumValue(GraphQLEnumValueDefinition element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onEnumValue);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry()), SchemaDirectiveWiring::onEnumValue);
     }
 
     public GraphQLArgument onArgument(GraphQLArgument element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onArgument);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry()), SchemaDirectiveWiring::onArgument);
     }
 
     public GraphQLInputObjectType onInputObjectType(GraphQLInputObjectType element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onInputObjectType);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry()), SchemaDirectiveWiring::onInputObjectType);
     }
 
     public GraphQLInputObjectField onInputObjectField(GraphQLInputObjectField element, Parameters params) {
         return wireForEachDirective(params, element, element.getDirectives(),
-                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext()), SchemaDirectiveWiring::onInputObjectField);
+                (outputElement, directive) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directive, params.getNodeParentTree(), params.getTypeRegistry(), params.getContext(), params.getCodeRegistry() ), SchemaDirectiveWiring::onInputObjectField);
     }
 
 

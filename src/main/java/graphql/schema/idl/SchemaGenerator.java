@@ -32,6 +32,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -143,6 +144,7 @@ public class SchemaGenerator {
         private final Map<String, GraphQLInputType> inputGTypes = new HashMap<>();
         private final Map<String, Object> directiveBehaviourContext = new HashMap<>();
         private final Set<GraphQLDirective> directiveDefinitions = new HashSet<>();
+        private final GraphQLCodeRegistry.Builder codeRegistry = GraphQLCodeRegistry.newCodeRegistry();
 
         BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
             this.typeRegistry = typeRegistry;
@@ -185,7 +187,7 @@ public class SchemaGenerator {
                     .map(NamedNode.class::cast)
                     .collect(Collectors.toList());
             Deque<NamedNode> deque = new ArrayDeque<>(list);
-            return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, wiring, new NodeParentTree<>(deque), directiveBehaviourContext);
+            return new SchemaGeneratorDirectiveHelper.Parameters(typeRegistry, wiring, new NodeParentTree<>(deque), directiveBehaviourContext, codeRegistry);
         }
 
         GraphQLOutputType hasOutputType(TypeDefinition typeDefinition) {
@@ -214,6 +216,10 @@ public class SchemaGenerator {
 
         RuntimeWiring getWiring() {
             return wiring;
+        }
+
+        public GraphQLCodeRegistry.Builder getCodeRegistry() {
+            return codeRegistry;
         }
 
         public void setDirectiveDefinitions(Set<GraphQLDirective> directiveDefinitions) {
@@ -508,14 +514,14 @@ public class SchemaGenerator {
         }));
 
         interfaces.values().forEach(interfaze -> {
-          if (interfaze instanceof GraphQLInterfaceType) {
-            builder.withInterface((GraphQLInterfaceType) interfaze);
-            return;
-          }
-          if (interfaze instanceof GraphQLTypeReference) {
-            builder.withInterface((GraphQLTypeReference) interfaze);
-            return;
-          }
+            if (interfaze instanceof GraphQLInterfaceType) {
+                builder.withInterface((GraphQLInterfaceType) interfaze);
+                return;
+            }
+            if (interfaze instanceof GraphQLTypeReference) {
+                builder.withInterface((GraphQLTypeReference) interfaze);
+                return;
+            }
         });
     }
 
@@ -704,9 +710,10 @@ public class SchemaGenerator {
         GraphQLOutputType fieldType = buildOutputType(buildCtx, fieldDef.getType());
         builder.type(fieldType);
 
-        builder.dataFetcherFactory(buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives)));
+        DataFetcherFactory dataFetcherFactory = buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives));
 
         GraphQLFieldDefinition fieldDefinition = builder.build();
+        buildCtx.getCodeRegistry().dataFetcher(parentType.getName(), fieldDefinition, dataFetcherFactory);
         fieldDefinition = directiveBehaviour.onField(fieldDefinition, buildCtx.mkBehaviourParams());
         return buildCtx.exitNode(fieldDefinition);
     }
