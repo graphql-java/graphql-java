@@ -32,6 +32,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.TypeResolver;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.FpKit;
 import org.slf4j.Logger;
@@ -247,7 +248,7 @@ public abstract class ExecutionStrategy {
                 .selectionSet(fieldCollector)
                 .build();
 
-        DataFetcher dataFetcher = executionContext.getGraphQLSchema().getCodeRegistry().getDataFetcher(parentType,fieldDef);
+        DataFetcher dataFetcher = executionContext.getGraphQLSchema().getCodeRegistry().getDataFetcher(parentType, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
@@ -742,7 +743,8 @@ public abstract class ExecutionStrategy {
     protected GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema(), params.getContext());
         GraphQLInterfaceType abstractType = params.getGraphQLInterfaceType();
-        GraphQLObjectType result = abstractType.getTypeResolver().getType(env);
+        TypeResolver typeResolver = params.getSchema().getCodeRegistry().getTypeResolver(abstractType);
+        GraphQLObjectType result = typeResolver.getType(env);
         if (result == null) {
             throw new UnresolvedTypeException(abstractType);
         }
@@ -764,7 +766,8 @@ public abstract class ExecutionStrategy {
     protected GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema(), params.getContext());
         GraphQLUnionType abstractType = params.getGraphQLUnionType();
-        GraphQLObjectType result = abstractType.getTypeResolver().getType(env);
+        TypeResolver typeResolver = params.getSchema().getCodeRegistry().getTypeResolver(abstractType);
+        GraphQLObjectType result = typeResolver.getType(env);
         if (result == null) {
             throw new UnresolvedTypeException(abstractType);
         }

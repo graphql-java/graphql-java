@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
 
 
@@ -46,12 +47,14 @@ public class GraphQLCodeRegistry {
 
     public TypeResolver getTypeResolver(GraphQLInterfaceType parentType) {
         assertNotNull(parentType);
-        return typeResolverMap.get(parentType.getName());
+        TypeResolver typeResolver = typeResolverMap.get(parentType.getName());
+        return assertNotNull(typeResolver, "There must be a type resolver for interface " + parentType.getName());
     }
 
     public TypeResolver getTypeResolver(GraphQLUnionType parentType) {
         assertNotNull(parentType);
-        return typeResolverMap.get(parentType.getName());
+        TypeResolver typeResolver = typeResolverMap.get(parentType.getName());
+        return assertNotNull(typeResolver, "There must be a type resolver for union " + parentType.getName());
     }
 
     private static class TypeAndField {
@@ -127,7 +130,7 @@ public class GraphQLCodeRegistry {
 
         public Builder dataFetcher(String parentTypeName, GraphQLFieldDefinition fieldDefinition, DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory);
-            dataFetcherMap.put(mkKey(parentTypeName, fieldDefinition), dataFetcherFactory);
+            dataFetcherMap.put(mkKey(assertValidName(parentTypeName), fieldDefinition), dataFetcherFactory);
             return this;
         }
 
@@ -138,6 +141,11 @@ public class GraphQLCodeRegistry {
 
         public Builder typeResolver(GraphQLUnionType parentType, TypeResolver typeResolver) {
             typeResolverMap.put(parentType.getName(), typeResolver);
+            return this;
+        }
+
+        public Builder typeResolver(String parentTypeName, TypeResolver typeResolver) {
+            typeResolverMap.put(assertValidName(parentTypeName), typeResolver);
             return this;
         }
 
