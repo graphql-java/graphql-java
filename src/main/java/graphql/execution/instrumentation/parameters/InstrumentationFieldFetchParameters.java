@@ -13,17 +13,20 @@ import graphql.schema.GraphQLFieldDefinition;
 public class InstrumentationFieldFetchParameters extends InstrumentationFieldParameters {
     private final DataFetchingEnvironment environment;
     private final ExecutionStrategyParameters executionStrategyParameters;
+    private final boolean trivialDataFetcher;
 
-    public InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionStrategyParameters executionStrategyParameters) {
+    public InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionStrategyParameters executionStrategyParameters, boolean trivialDataFetcher) {
         super(getExecutionContext, fieldDef, environment.getExecutionStepInfo());
         this.environment = environment;
         this.executionStrategyParameters = executionStrategyParameters;
+        this.trivialDataFetcher = trivialDataFetcher;
     }
 
-    private InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, InstrumentationState instrumentationState, ExecutionStrategyParameters executionStrategyParameters) {
+    private InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, InstrumentationState instrumentationState, ExecutionStrategyParameters executionStrategyParameters, boolean trivialDataFetcher) {
         super(getExecutionContext, fieldDef, environment.getExecutionStepInfo(), instrumentationState);
         this.environment = environment;
         this.executionStrategyParameters = executionStrategyParameters;
+        this.trivialDataFetcher = trivialDataFetcher;
     }
 
     /**
@@ -37,11 +40,15 @@ public class InstrumentationFieldFetchParameters extends InstrumentationFieldPar
     public InstrumentationFieldFetchParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationFieldFetchParameters(
                 this.getExecutionContext(), this.getField(), this.getEnvironment(),
-                instrumentationState, executionStrategyParameters);
+                instrumentationState, executionStrategyParameters, trivialDataFetcher);
     }
 
 
     public DataFetchingEnvironment getEnvironment() {
         return environment;
+    }
+
+    public boolean isTrivialDataFetcher() {
+        return trivialDataFetcher;
     }
 }

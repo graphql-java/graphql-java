@@ -17,6 +17,11 @@ import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvir
 @SuppressWarnings("GroovyUnusedDeclaration")
 class PropertyDataFetcherTest extends Specification {
 
+    void setup() {
+        PropertyDataFetcher.setUseSetAccessible(true)
+        PropertyDataFetcher.clearReflectionCache()
+    }
+
     def env(obj) {
         newDataFetchingEnvironment()
                 .executionContext(Mock(ExecutionContext))
@@ -82,6 +87,15 @@ class PropertyDataFetcherTest extends Specification {
         result == "privateValue"
     }
 
+    def "fetch via method that is private with setAccessible OFF"() {
+        PropertyDataFetcher.setUseSetAccessible(false)
+        def environment = env(new TestClass())
+        def fetcher = new PropertyDataFetcher("privateProperty")
+        def result = fetcher.get(environment)
+        expect:
+        result == null
+    }
+
     def "fetch via public method"() {
         def environment = env(new TestClass())
         def fetcher = new PropertyDataFetcher("publicProperty")
@@ -121,6 +135,15 @@ class PropertyDataFetcherTest extends Specification {
         def result = fetcher.get(environment)
         expect:
         result == "privateFieldValue"
+    }
+
+    def "fetch via private field when setAccessible OFF"() {
+        PropertyDataFetcher.setUseSetAccessible(false)
+        def environment = env(new TestClass())
+        def fetcher = new PropertyDataFetcher("privateField")
+        def result = fetcher.get(environment)
+        expect:
+        result == null
     }
 
     def "fetch when caching is in place has no bad effects"() {

@@ -33,7 +33,6 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
@@ -258,15 +257,19 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .selectionSet(fieldCollector)
                 .build();
 
+        DataFetcher supplied = fieldDef.getDataFetcher();
+        boolean trivialDataFetcher = supplied.isTrivialDataFetcher();
+        BatchedDataFetcher batchedDataFetcher = batchingFactory.create(supplied);
+
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationFieldFetchParameters instrumentationFieldFetchParameters =
-                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters);
+                new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, trivialDataFetcher);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParameters);
 
         CompletableFuture<Object> fetchedValue;
         try {
             DataFetcher<?> dataFetcher = instrumentation.instrumentDataFetcher(
-                    getDataFetcher(executionContext.getGraphQLSchema(), parentType, fieldDef), instrumentationFieldFetchParameters);
+                    batchedDataFetcher, instrumentationFieldFetchParameters);
             Object fetchedValueRaw = dataFetcher.get(environment);
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
@@ -511,8 +514,4 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return result;
     }
 
-    private BatchedDataFetcher getDataFetcher(GraphQLSchema graphQLSchema, GraphQLObjectType parentType, GraphQLFieldDefinition fieldDef) {
-        DataFetcher supplied = graphQLSchema.getCodeRegistry().getDataFetcher(parentType,fieldDef);
-        return batchingFactory.create(supplied);
-    }
 }

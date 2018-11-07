@@ -92,13 +92,12 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
     DataFetcher productsDF = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {
-            return IntStream.range(0, 5)
-                    .mapToObj(
-                    { id ->
-                        List<Integer> madeBy = [id * 10001, id * 10002, id * 10003, id * 10004, id * 10005]
-                        new Product(id.toString(), faker.commerce().productName(), id + 200, madeBy)
-                    })
-                    .collect(Collectors.toList())
+            List<Product> products = new ArrayList<>();
+            for (int id = 0; id < 5; id++) {
+                List<Integer> madeBy = [id * 10001, id * 10002, id * 10003, id * 10004, id * 10005]
+                products.add(new Product(id.toString(), faker.commerce().productName(), id + 200, madeBy))
+            }
+            return products
         }
     }
 
