@@ -28,12 +28,7 @@ import static graphql.execution.TypeFromAST.getTypeFromAST;
 @Internal
 public class FieldCollector {
 
-    private final ConditionalNodes conditionalNodes;
-
-    public FieldCollector() {
-        conditionalNodes = new ConditionalNodes();
-    }
-
+    private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
     /**
      * Given a list of fields this will collect the sub-field selections and return it as a map
