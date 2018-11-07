@@ -23,7 +23,11 @@ public class GraphQLCodeRegistry {
         this.typeResolverMap = typeResolverMap;
     }
 
-    public DataFetcher getDataFetcher(GraphQLObjectType parentType, GraphQLFieldDefinition fieldDefinition) {
+    public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
+        return getDataFetcherImpl(parentType, fieldDefinition, dataFetcherMap);
+    }
+
+    private static DataFetcher getDataFetcherImpl(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, Map<TypeAndField, DataFetcherFactory> dataFetcherMap) {
         assertNotNull(parentType);
         assertNotNull(fieldDefinition);
 
@@ -46,14 +50,28 @@ public class GraphQLCodeRegistry {
     }
 
     public TypeResolver getTypeResolver(GraphQLInterfaceType parentType) {
-        assertNotNull(parentType);
-        TypeResolver typeResolver = typeResolverMap.get(parentType.getName());
-        return assertNotNull(typeResolver, "There must be a type resolver for interface " + parentType.getName());
+        return getTypeResolverForInterface(parentType, typeResolverMap);
     }
 
     public TypeResolver getTypeResolver(GraphQLUnionType parentType) {
+        return getTypeResolverForUnion(parentType, typeResolverMap);
+    }
+
+    private static TypeResolver getTypeResolverForInterface(GraphQLInterfaceType parentType, Map<String, TypeResolver> typeResolverMap) {
         assertNotNull(parentType);
         TypeResolver typeResolver = typeResolverMap.get(parentType.getName());
+        if (typeResolver == null) {
+            typeResolver = parentType.getTypeResolver();
+        }
+        return assertNotNull(typeResolver, "There must be a type resolver for interface " + parentType.getName());
+    }
+
+    private static TypeResolver getTypeResolverForUnion(GraphQLUnionType parentType, Map<String, TypeResolver> typeResolverMap) {
+        assertNotNull(parentType);
+        TypeResolver typeResolver = typeResolverMap.get(parentType.getName());
+        if (typeResolver == null) {
+            typeResolver = parentType.getTypeResolver();
+        }
         return assertNotNull(typeResolver, "There must be a type resolver for union " + parentType.getName());
     }
 
@@ -84,9 +102,14 @@ public class GraphQLCodeRegistry {
         public int hashCode() {
             return Objects.hash(typeName, fieldName);
         }
+
+        @Override
+        public String toString() {
+            return typeName + ':' + fieldName + '\'';
+        }
     }
 
-    private static TypeAndField mkKey(GraphQLObjectType parentType, GraphQLFieldDefinition fieldDefinition) {
+    private static TypeAndField mkKey(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
         return new TypeAndField(parentType.getName(), fieldDefinition.getName());
     }
 
@@ -117,12 +140,24 @@ public class GraphQLCodeRegistry {
             typeResolverMap.putAll(codeRegistry.typeResolverMap);
         }
 
-        public Builder dataFetcher(GraphQLObjectType parentType, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
+        public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
+            return getDataFetcherImpl(parentType, fieldDefinition, dataFetcherMap);
+        }
+
+        public TypeResolver getTypeResolver(GraphQLInterfaceType parentType) {
+            return getTypeResolverForInterface(parentType, typeResolverMap);
+        }
+
+        public TypeResolver getTypeResolver(GraphQLUnionType parentType) {
+            return getTypeResolverForUnion(parentType, typeResolverMap);
+        }
+
+        public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher);
             return dataFetcher(parentType, fieldDefinition, DataFetcherFactories.useDataFetcher(dataFetcher));
         }
 
-        public Builder dataFetcher(GraphQLObjectType parentType, GraphQLFieldDefinition fieldDefinition, DataFetcherFactory<?> dataFetcherFactory) {
+        public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory);
             dataFetcherMap.put(mkKey(parentType, fieldDefinition), dataFetcherFactory);
             return this;

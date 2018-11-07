@@ -340,6 +340,9 @@ public class SchemaGenerator {
 
         schemaBuilder.fieldVisibility(buildCtx.getWiring().getFieldVisibility());
 
+        GraphQLCodeRegistry codeRegistry = buildCtx.getCodeRegistry().build();
+        schemaBuilder.codeRegistry(codeRegistry);
+
         return schemaBuilder.build();
     }
 
@@ -502,7 +505,7 @@ public class SchemaGenerator {
 
         for (FieldDefAndDirectiveParams encounteredField : encounteredFields) {
             GraphQLFieldDefinition fieldDefinition = directiveBehaviour.onField(encounteredField.fieldDefinition, new SchemaGeneratorDirectiveHelper.Parameters(encounteredField.directiveWiringParams, objectType));
-            objectType.transform( objBuilder -> objBuilder.field(fieldDefinition));
+            objectType = objectType.transform( objBuilder -> objBuilder.field(fieldDefinition));
         }
         objectType = directiveBehaviour.onObject(objectType, buildCtx.mkBehaviourParams());
         return buildCtx.exitNode(objectType);
@@ -573,7 +576,7 @@ public class SchemaGenerator {
 
         for (FieldDefAndDirectiveParams encounteredField : encounteredFields) {
             GraphQLFieldDefinition fieldDefinition = directiveBehaviour.onField(encounteredField.fieldDefinition, new SchemaGeneratorDirectiveHelper.Parameters(encounteredField.directiveWiringParams, interfaceType));
-            interfaceType.transform( interfaceBuilder -> interfaceBuilder.field(fieldDefinition));
+            interfaceType = interfaceType.transform( interfaceBuilder -> interfaceBuilder.field(fieldDefinition));
         }
 
         interfaceType = directiveBehaviour.onInterface(interfaceType, buildCtx.mkBehaviourParams());

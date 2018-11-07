@@ -228,6 +228,7 @@ public class GraphQLSchema {
                 .mutation(existingSchema.getMutationType())
                 .subscription(existingSchema.getSubscriptionType())
                 .fieldVisibility(existingSchema.getFieldVisibility())
+                .codeRegistry(existingSchema.getCodeRegistry())
                 .clearAdditionalTypes()
                 .clearDirectives()
                 .additionalDirectives(existingSchema.directives)

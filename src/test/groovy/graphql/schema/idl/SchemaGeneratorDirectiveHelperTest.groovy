@@ -2,17 +2,18 @@ package graphql.schema.idl
 
 import graphql.ExecutionInput
 import graphql.GraphQL
-import graphql.language.ObjectTypeDefinition
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLEnumValueDefinition
 import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
@@ -228,7 +229,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> directiveEnv) {
                 GraphQLFieldDefinition field = directiveEnv.getElement()
-                def newFetcher = wrapDataFetcher(field.getDataFetcher(), { dfEnv, value ->
+                def fetcher = directiveEnv.getCodeRegistry().getDataFetcher(directiveEnv.fieldsContainer,field)
+                def newFetcher = wrapDataFetcher(fetcher, { dfEnv, value ->
                     def directiveName = directiveEnv.directive.name
                     if (directiveName == "uppercase") {
                         return String.valueOf(value).toUpperCase()
@@ -240,7 +242,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                         return String.valueOf(value).reverse()
                     }
                 })
-                field = field.transform({ builder -> builder.dataFetcher(newFetcher) })
+                directiveEnv.getCodeRegistry().dataFetcher(directiveEnv.getFieldsContainer(), field, newFetcher)
                 return field
             }
 
@@ -260,9 +262,9 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 def fieldName = field.getName()
                 DataFetcher echoDF = { dfEnv ->
                     return fieldName
-                 }
-                GraphQLFieldDefinition newField = field.transform({ builder -> builder.dataFetcher(echoDF) })
-                return newField
+                }
+                env.codeRegistry.dataFetcher(env.fieldsContainer, field, echoDF)
+                return field
             }
         }
 
@@ -374,7 +376,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 def definitions = objectType.getFieldDefinitions()
                 def contextMap = environment.getBuildContext()
 
-                definitions = definitions.collect { fld -> wrapField(fld, objectType.getName(), contextMap) }
+                definitions = definitions.collect { fld -> wrapField(environment.getElement(), fld, contextMap, environment.getCodeRegistry()) }
 
                 return objectType.transform({ builder -> builder.clearFields().fields(definitions) })
             }
@@ -382,17 +384,13 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
                 GraphQLFieldDefinition element = environment.getElement()
-                def tree = environment.getNodeParentTree()
-                ObjectTypeDefinition objectTypeDef = tree.parentInfo.get().node
-                def contextMap = environment.getBuildContext()
-
-                return wrapField(element, objectTypeDef.getName(), contextMap)
+                return wrapField(environment.fieldsContainer, element, environment.getBuildContext(), environment.getCodeRegistry())
             }
 
-            private GraphQLFieldDefinition wrapField(GraphQLFieldDefinition field, String objectTypeName, Map<String, Object> contextMap) {
-                def originalFetcher = field.getDataFetcher()
+            private GraphQLFieldDefinition wrapField(GraphQLFieldsContainer parentType, GraphQLFieldDefinition field, Map<String, Object> contextMap, GraphQLCodeRegistry.Builder codeRegistry) {
+                def originalFetcher = codeRegistry.getDataFetcher(parentType, field)
 
-                String key = mkFieldKey(objectTypeName, field.getName())
+                String key = mkFieldKey(parentType.getName(), field.getName())
 
                 // are we already wrapped
                 if (contextMap.containsKey(key)) {
@@ -407,7 +405,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                     }
                     return null
                 }
-                return field.transform({ builder -> builder.dataFetcher(wrapper) })
+                codeRegistry.dataFetcher(parentType, field, wrapper)
+                return field
             }
 
             String mkFieldKey(String objectName, String fieldName) {
