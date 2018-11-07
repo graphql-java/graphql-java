@@ -22,9 +22,10 @@ The user can decide itself about the risk when they use internal things.
 
 ### Optional vs null
 We have a mix of Optional and allowing null values because GraphQL Java was originally written in Java 6.
-We are not aiming to change the old code.
 
-**TBD: Every new code should use Optional or not?**
+We are aiming to not use Optional moving forward in order to be consistent overall.
+
+
 
 ### Unit testing and dependencies
 All tests are written in [Spock](http://spockframework.org).
