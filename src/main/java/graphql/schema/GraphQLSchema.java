@@ -41,7 +41,6 @@ public class GraphQLSchema {
     private final Map<String, GraphQLType> typeMap;
     private final Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
     private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
-    private final GraphqlFieldVisibility fieldVisibility;
     private final Map<String, List<GraphQLObjectType>> byInterface;
     private final GraphQLCodeRegistry codeRegistry;
 
@@ -55,14 +54,13 @@ public class GraphQLSchema {
     }
 
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
-        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), DEFAULT_FIELD_VISIBILITY, GraphQLCodeRegistry.newCodeRegistry().build());
+        this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), GraphQLCodeRegistry.newCodeRegistry().build());
     }
 
-    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphqlFieldVisibility fieldVisibility, GraphQLCodeRegistry codeRegistry) {
+    private GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphQLCodeRegistry codeRegistry) {
         assertNotNull(additionalTypes, "additionalTypes can't be null");
         assertNotNull(queryType, "queryType can't be null");
         assertNotNull(directives, "directives can't be null");
-        assertNotNull(fieldVisibility, "fieldVisibility can't be null");
         assertNotNull(codeRegistry, "codeRegistry can't be null");
 
         SchemaUtil schemaUtil = new SchemaUtil();
@@ -70,7 +68,6 @@ public class GraphQLSchema {
         this.queryType = queryType;
         this.mutationType = mutationType;
         this.subscriptionType = subscriptionType;
-        this.fieldVisibility = fieldVisibility;
         this.additionalTypes.addAll(additionalTypes);
         this.directives.addAll(directives);
         this.typeMap = schemaUtil.allTypes(this, additionalTypes);
@@ -168,8 +165,12 @@ public class GraphQLSchema {
         return subscriptionType;
     }
 
+    /**
+     * @deprecated use {@link GraphQLCodeRegistry#getFieldVisibility()} instead
+     */
+    @Deprecated
     public GraphqlFieldVisibility getFieldVisibility() {
-        return fieldVisibility;
+        return codeRegistry.getFieldVisibility();
     }
 
     public List<GraphQLDirective> getDirectives() {
@@ -227,7 +228,6 @@ public class GraphQLSchema {
                 .query(existingSchema.getQueryType())
                 .mutation(existingSchema.getMutationType())
                 .subscription(existingSchema.getSubscriptionType())
-                .fieldVisibility(existingSchema.getFieldVisibility())
                 .codeRegistry(existingSchema.getCodeRegistry())
                 .clearAdditionalTypes()
                 .clearDirectives()
@@ -239,7 +239,6 @@ public class GraphQLSchema {
         private GraphQLObjectType queryType;
         private GraphQLObjectType mutationType;
         private GraphQLObjectType subscriptionType;
-        private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
         private Set<GraphQLType> additionalTypes = new HashSet<>();
         // we default these in
@@ -275,8 +274,12 @@ public class GraphQLSchema {
             return this;
         }
 
+        /**
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#fieldVisibility(graphql.schema.visibility.GraphqlFieldVisibility)} instead
+         */
+        @Deprecated
         public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
-            this.fieldVisibility = fieldVisibility;
+            this.codeRegistry = this.codeRegistry.transform(builder -> builder.fieldVisibility(fieldVisibility));
             return this;
         }
 
@@ -352,7 +355,7 @@ public class GraphQLSchema {
         public GraphQLSchema build() {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
-            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, fieldVisibility, codeRegistry);
+            GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, codeRegistry);
             new SchemaUtil().replaceTypeReferences(graphQLSchema);
             Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
             if (errors.size() > 0) {

@@ -338,7 +338,7 @@ public class SchemaGenerator {
         Set<GraphQLType> additionalTypes = buildAdditionalTypes(buildCtx);
         schemaBuilder.additionalTypes(additionalTypes);
 
-        schemaBuilder.fieldVisibility(buildCtx.getWiring().getFieldVisibility());
+        buildCtx.getCodeRegistry().fieldVisibility(buildCtx.getWiring().getFieldVisibility());
 
         GraphQLCodeRegistry codeRegistry = buildCtx.getCodeRegistry().build();
         schemaBuilder.codeRegistry(codeRegistry);

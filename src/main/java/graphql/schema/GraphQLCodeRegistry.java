@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -10,6 +11,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 
 @PublicApi
@@ -17,10 +19,16 @@ public class GraphQLCodeRegistry {
 
     private final Map<TypeAndField, DataFetcherFactory> dataFetcherMap;
     private final Map<String, TypeResolver> typeResolverMap;
+    private final GraphqlFieldVisibility fieldVisibility;
 
-    private GraphQLCodeRegistry(Map<TypeAndField, DataFetcherFactory> dataFetcherMap, Map<String, TypeResolver> typeResolverMap) {
+    private GraphQLCodeRegistry(Map<TypeAndField, DataFetcherFactory> dataFetcherMap, Map<String, TypeResolver> typeResolverMap, GraphqlFieldVisibility fieldVisibility) {
         this.dataFetcherMap = dataFetcherMap;
         this.typeResolverMap = typeResolverMap;
+        this.fieldVisibility = fieldVisibility;
+    }
+
+    public GraphqlFieldVisibility getFieldVisibility() {
+        return fieldVisibility;
     }
 
     public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
@@ -77,6 +85,7 @@ public class GraphQLCodeRegistry {
 
     private static class TypeAndField {
 
+
         private final String typeName;
         private final String fieldName;
 
@@ -130,14 +139,16 @@ public class GraphQLCodeRegistry {
     public static class Builder {
         private final Map<TypeAndField, DataFetcherFactory> dataFetcherMap = new HashMap<>();
         private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
+        private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
 
 
         private Builder() {
         }
 
         private Builder(GraphQLCodeRegistry codeRegistry) {
-            dataFetcherMap.putAll(codeRegistry.dataFetcherMap);
-            typeResolverMap.putAll(codeRegistry.typeResolverMap);
+            this.dataFetcherMap.putAll(codeRegistry.dataFetcherMap);
+            this.typeResolverMap.putAll(codeRegistry.typeResolverMap);
+            this.fieldVisibility = codeRegistry.fieldVisibility;
         }
 
         public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
@@ -184,6 +195,11 @@ public class GraphQLCodeRegistry {
             return this;
         }
 
+        public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
+            this.fieldVisibility = assertNotNull(fieldVisibility);
+            return this;
+        }
+
         public Builder clearDataFetchers() {
             dataFetcherMap.clear();
             return this;
@@ -195,7 +211,7 @@ public class GraphQLCodeRegistry {
         }
 
         public GraphQLCodeRegistry build() {
-            return new GraphQLCodeRegistry(dataFetcherMap, typeResolverMap);
+            return new GraphQLCodeRegistry(dataFetcherMap, typeResolverMap, fieldVisibility);
         }
 
     }
