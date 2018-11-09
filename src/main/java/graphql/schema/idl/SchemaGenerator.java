@@ -505,7 +505,7 @@ public class SchemaGenerator {
 
         for (FieldDefAndDirectiveParams encounteredField : encounteredFields) {
             GraphQLFieldDefinition fieldDefinition = directiveBehaviour.onField(encounteredField.fieldDefinition, new SchemaGeneratorDirectiveHelper.Parameters(encounteredField.directiveWiringParams, objectType));
-            objectType = objectType.transform( objBuilder -> objBuilder.field(fieldDefinition));
+            objectType = objectType.transform(objBuilder -> objBuilder.field(fieldDefinition));
         }
         objectType = directiveBehaviour.onObject(objectType, buildCtx.mkBehaviourParams());
         return buildCtx.exitNode(objectType);
@@ -576,7 +576,7 @@ public class SchemaGenerator {
 
         for (FieldDefAndDirectiveParams encounteredField : encounteredFields) {
             GraphQLFieldDefinition fieldDefinition = directiveBehaviour.onField(encounteredField.fieldDefinition, new SchemaGeneratorDirectiveHelper.Parameters(encounteredField.directiveWiringParams, interfaceType));
-            interfaceType = interfaceType.transform( interfaceBuilder -> interfaceBuilder.field(fieldDefinition));
+            interfaceType = interfaceType.transform(interfaceBuilder -> interfaceBuilder.field(fieldDefinition));
         }
 
         interfaceType = directiveBehaviour.onInterface(interfaceType, buildCtx.mkBehaviourParams());
@@ -750,7 +750,7 @@ public class SchemaGenerator {
         DataFetcherFactory dataFetcherFactory = buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives));
 
         GraphQLFieldDefinition fieldDefinition = builder.build();
-        buildCtx.getCodeRegistry().dataFetcher(parentType.getName(), fieldDefinition, dataFetcherFactory);
+        buildCtx.getCodeRegistry().dataFetcher(parentType.getName(), fieldDefinition.getName(), dataFetcherFactory);
 
         return buildCtx.exitNode(new FieldDefAndDirectiveParams(fieldDefinition, buildCtx.mkBehaviourParams()));
     }
