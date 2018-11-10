@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -42,13 +41,33 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
     private final List<GraphQLDirective> directives;
     private final ObjectTypeDefinition definition;
 
+    /**
+     * @param name             the name
+     * @param description      the description
+     * @param fieldDefinitions the fields
+     * @param interfaces       the possible interfaces
+     *
+     * @deprecated use the {@link #newObject()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
                              List<GraphQLOutputType> interfaces) {
         this(name, description, fieldDefinitions, interfaces, emptyList(), null);
     }
 
+    /**
+     * @param name             the name
+     * @param description      the description
+     * @param fieldDefinitions the fields
+     * @param interfaces       the possible interfaces
+     * @param directives       the directives on this type element
+     * @param definition       the AST definition
+     *
+     * @deprecated use the {@link #newObject()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions,
                              List<GraphQLOutputType> interfaces, List<GraphQLDirective> directives, ObjectTypeDefinition definition) {
         assertValidName(name);

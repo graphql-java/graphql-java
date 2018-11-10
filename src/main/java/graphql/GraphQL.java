@@ -108,6 +108,7 @@ public class GraphQL {
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
+    @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema) {
         //noinspection deprecation
         this(graphQLSchema, null, null);
@@ -122,6 +123,7 @@ public class GraphQL {
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
+    @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy) {
         //noinspection deprecation
         this(graphQLSchema, queryStrategy, null);
@@ -137,6 +139,7 @@ public class GraphQL {
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
+    @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy) {
         this(graphQLSchema, queryStrategy, mutationStrategy, null, DEFAULT_EXECUTION_ID_PROVIDER, SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
     }
@@ -152,6 +155,7 @@ public class GraphQL {
      * @deprecated use the {@link #newGraphQL(GraphQLSchema)} builder instead.  This will be removed in a future version.
      */
     @Internal
+    @Deprecated
     public GraphQL(GraphQLSchema graphQLSchema, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy) {
         this(graphQLSchema, queryStrategy, mutationStrategy, subscriptionStrategy, DEFAULT_EXECUTION_ID_PROVIDER, SimpleInstrumentation.INSTANCE, NoOpPreparsedDocumentProvider.INSTANCE);
     }

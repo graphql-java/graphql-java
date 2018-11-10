@@ -42,12 +42,30 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
     private final ScalarTypeDefinition definition;
     private final List<GraphQLDirective> directives;
 
+    /**
+     * @param name        the name
+     * @param description the description
+     * @param coercing    the coercing function
+     *
+     * @deprecated use the {@link #newScalar()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLScalarType(String name, String description, Coercing coercing) {
         this(name, description, coercing, emptyList(), null);
     }
 
+    /**
+     * @param name        the name
+     * @param description the description
+     * @param coercing    the coercing function
+     * @param directives  the directives on this type element
+     * @param definition  the AST definition
+     *
+     * @deprecated use the {@link #newScalar()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLScalarType(String name, String description, Coercing coercing, List<GraphQLDirective> directives, ScalarTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(coercing, "coercing can't be null");
