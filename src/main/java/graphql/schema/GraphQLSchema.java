@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Directives;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
@@ -47,18 +48,55 @@ public class GraphQLSchema {
     private final SchemaUtil schemaUtil = new SchemaUtil();
 
 
+    /**
+     * @param queryType the query type
+     *
+     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
+    @Deprecated
     public GraphQLSchema(GraphQLObjectType queryType) {
         this(queryType, null, Collections.emptySet());
     }
 
+    /**
+     * @param queryType       the query type
+     * @param mutationType    the mutation type
+     * @param additionalTypes additional types
+     *
+     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
+    @Deprecated
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> additionalTypes) {
         this(queryType, mutationType, null, additionalTypes);
     }
 
+    /**
+     * @param queryType        the query type
+     * @param mutationType     the mutation type
+     * @param subscriptionType the subscription type
+     * @param additionalTypes  additional types
+     *
+     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
+    @Deprecated
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
         this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), DEFAULT_FIELD_VISIBILITY);
     }
 
+    /**
+     * @param queryType        the query type
+     * @param mutationType     the mutation type
+     * @param subscriptionType the subscription type
+     * @param additionalTypes  additional types
+     * @param directives       the directives on this schema
+     * @param fieldVisibility  the field visibility
+     *
+     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphqlFieldVisibility fieldVisibility) {
         assertNotNull(additionalTypes, "additionalTypes can't be null");
         assertNotNull(queryType, "queryType can't be null");
