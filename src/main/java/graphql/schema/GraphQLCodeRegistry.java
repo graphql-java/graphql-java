@@ -16,11 +16,11 @@ import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FI
 
 /**
  * The {@link graphql.schema.GraphQLCodeRegistry} holds that execution code that is associated with graphql types, namely
- * the {@link graphql.schema.DataFetcher}s associated with fields, the {@link graphql.schema.TypeResolver}s associatewd with
+ * the {@link graphql.schema.DataFetcher}s associated with fields, the {@link graphql.schema.TypeResolver}s associated with
  * abstract types and the {@link graphql.schema.visibility.GraphqlFieldVisibility}
  *
  * For legacy reasons these code functions can still exist on the original type objects but this will be removed in a future version.  Once
- * removed the type systen objects will be able have proper hashCode/equals methods and be checked for proper equality.
+ * removed the type system objects will be able have proper hashCode/equals methods and be checked for proper equality.
  */
 @PublicApi
 public class GraphQLCodeRegistry {
@@ -154,13 +154,6 @@ public class GraphQLCodeRegistry {
     }
 
     /**
-     * @return a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects
-     */
-    public static Builder newCodeRegistry() {
-        return new Builder();
-    }
-
-    /**
      * This helps you transform the current {@link graphql.schema.GraphQLCodeRegistry} object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
@@ -172,6 +165,13 @@ public class GraphQLCodeRegistry {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    /**
+     * @return a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects
+     */
+    public static Builder newCodeRegistry() {
+        return new Builder();
     }
 
     public static class Builder {
@@ -223,31 +223,83 @@ public class GraphQLCodeRegistry {
             return getTypeResolverForUnion(unionType, typeResolverMap);
         }
 
-        public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
+        /**
+         * Sets the data fetcher for a specific field inside a container type
+         *
+         * @param parentTypeContainer the parent container type
+         * @param fieldDefinition     the field definition
+         * @param dataFetcher         the data fetcher code for that field
+         *
+         * @return this builder
+         */
+        public Builder dataFetcher(GraphQLFieldsContainer parentTypeContainer, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher);
-            return dataFetcher(parentType, fieldDefinition, DataFetcherFactories.useDataFetcher(dataFetcher));
+            return dataFetcher(parentTypeContainer, fieldDefinition, DataFetcherFactories.useDataFetcher(dataFetcher));
         }
 
-        public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcherFactory<?> dataFetcherFactory) {
+        /**
+         * Sets the data fetcher factory for a specific field inside a container type
+         *
+         * @param parentTypeContainer the parent container type
+         * @param fieldDefinition     the field definition
+         * @param dataFetcherFactory  the data fetcher factory code for that field
+         *
+         * @return this builder
+         */
+        public Builder dataFetcher(GraphQLFieldsContainer parentTypeContainer, GraphQLFieldDefinition fieldDefinition, DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory);
-            dataFetcherMap.put(mkKey(parentType, fieldDefinition), dataFetcherFactory);
+            dataFetcherMap.put(mkKey(parentTypeContainer, fieldDefinition), dataFetcherFactory);
             return this;
         }
 
+        /**
+         * Sets the data fetcher for a specific field inside a container type
+         *
+         * @param parentTypeName the parent container type
+         * @param fieldName      the field name
+         * @param dataFetcher    the data fetcher code for that field
+         *
+         * @return this builder
+         */
         public Builder dataFetcher(String parentTypeName, String fieldName, DataFetcher<?> dataFetcher) {
             return dataFetcher(parentTypeName, fieldName, DataFetcherFactories.useDataFetcher(dataFetcher));
         }
 
+        /**
+         * Sets the data fetcher factory for a specific field inside a container type
+         *
+         * @param parentTypeName     the parent container type
+         * @param fieldName          the field name
+         * @param dataFetcherFactory the data fetcher factory code for that field
+         *
+         * @return this builder
+         */
         public Builder dataFetcher(String parentTypeName, String fieldName, DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory);
             dataFetcherMap.put(mkKey(assertValidName(parentTypeName), assertValidName(fieldName)), dataFetcherFactory);
             return this;
         }
 
+        /**
+         * This allows you you to build all the data fetchers for the fields of a container type.
+         *
+         * @param parentTypeContainer the parent container type
+         * @param fieldDataFetchers   the map of field names to data fetchers
+         *
+         * @return this builder
+         */
         public Builder dataFetchers(GraphQLFieldsContainer parentTypeContainer, Map<String, DataFetcher> fieldDataFetchers) {
             return dataFetchers(parentTypeContainer.getName(), fieldDataFetchers);
         }
 
+        /**
+         * This allows you you to build all the data fetchers for the fields of a container type.
+         *
+         * @param parentTypeName    the parent container type
+         * @param fieldDataFetchers the map of field names to data fetchers
+         *
+         * @return this builder
+         */
         public Builder dataFetchers(String parentTypeName, Map<String, DataFetcher> fieldDataFetchers) {
             assertNotNull(fieldDataFetchers);
             fieldDataFetchers.forEach((fieldName, dataFetcher) -> {
