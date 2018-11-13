@@ -5,7 +5,7 @@ import graphql.Internal;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static java.lang.String.format;
@@ -13,7 +13,7 @@ import static java.lang.String.format;
 @Internal
 public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
-    private final Map<String, GraphQLType> result = new HashMap<>();
+    private final Map<String, GraphQLType> result = new LinkedHashMap<>();
 
     public GraphQLTypeCollectingVisitor() {
     }
