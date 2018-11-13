@@ -1,10 +1,23 @@
 package graphql
 
+import graphql.schema.DataFetcher
 import spock.lang.Specification
 
 import java.util.stream.Collectors
 
+import static graphql.ExecutionInput.newExecutionInput
+
 class GraphQLContextTest extends Specification {
+
+    def buildContext(Map<String, String> map) {
+        def context = GraphQLContext.newContext()
+        map.forEach({ k, v -> context.of(k, v) })
+        return context.build()
+    }
+
+    int sizeOf(GraphQLContext graphQLContext) {
+        graphQLContext.stream().count();
+    }
 
     def "of builder"() {
         def context
@@ -138,16 +151,29 @@ class GraphQLContextTest extends Specification {
         context.getOrDefault("k1", "default") == "default"
 
         sizeOf(context) == 0
-
     }
 
-    def buildContext(Map<String, String> map) {
-        def context = GraphQLContext.newContext()
-        map.forEach({ k, v -> context.of(k, v) })
-        return context.build()
-    }
+    def "graphql context integration test"() {
+        def spec = '''
+            type Query {
+                field : String
+            }
+        '''
 
-    int sizeOf(GraphQLContext graphQLContext) {
-        graphQLContext.stream().count();
+        DataFetcher df = { env ->
+            GraphQLContext context = env.context
+            return context.get("ctx1")
+        }
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["field": df]]).build()
+
+        def context = GraphQLContext.newContext().of("ctx1", "ctx1value").build()
+        ExecutionInput input = newExecutionInput().query("{ field }")
+                .context(context).build()
+
+        when:
+        def executionResult = graphQL.execute(input)
+        then:
+        executionResult.errors.isEmpty()
+        executionResult.data == [field: "ctx1value"]
     }
 }
