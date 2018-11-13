@@ -123,7 +123,7 @@ public class ExecutionInput {
 
         private String query;
         private String operationName;
-        private Object context;
+        private Object context = GraphqlContext.newContext();
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
         private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
@@ -138,6 +138,13 @@ public class ExecutionInput {
             return this;
         }
 
+        /**
+         * By default you will get a {@link graphql.GraphqlContext} object but you can set your own.
+         *
+         * @param context the context object to use
+         *
+         * @return this builder
+         */
         public Builder context(Object context) {
             this.context = context;
             return this;
