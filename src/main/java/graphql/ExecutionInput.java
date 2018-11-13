@@ -5,6 +5,7 @@ import org.dataloader.DataLoaderRegistry;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 
@@ -123,7 +124,7 @@ public class ExecutionInput {
 
         private String query;
         private String operationName;
-        private Object context = GraphqlContext.newContext();
+        private Object context = GraphQLContext.newContext();
         private Object root;
         private Map<String, Object> variables = Collections.emptyMap();
         private DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
@@ -139,7 +140,7 @@ public class ExecutionInput {
         }
 
         /**
-         * By default you will get a {@link graphql.GraphqlContext} object but you can set your own.
+         * By default you will get a {@link GraphQLContext} object but you can set your own.
          *
          * @param context the context object to use
          *
@@ -148,6 +149,17 @@ public class ExecutionInput {
         public Builder context(Object context) {
             this.context = context;
             return this;
+        }
+
+        public Builder context(GraphQLContext.Builder contextBuilder) {
+            this.context = contextBuilder.build();
+            return this;
+        }
+
+        public Builder context(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
+            GraphQLContext.Builder builder = GraphQLContext.newContext();
+            builder = contextBuilderFunction.apply(builder);
+            return context(builder.build());
         }
 
         public Builder root(Object root) {
