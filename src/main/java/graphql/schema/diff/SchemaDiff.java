@@ -24,7 +24,7 @@ import graphql.schema.diff.reporting.DifferenceReporter;
 import graphql.schema.idl.TypeInfo;
 
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -273,7 +273,7 @@ public class SchemaDiff {
         return typeName.startsWith("__");
     }
 
-    private final static Set<String> SYSTEM_SCALARS = new HashSet<>();
+    private final static Set<String> SYSTEM_SCALARS = new LinkedHashSet<>();
 
     static {
         SYSTEM_SCALARS.add("ID");

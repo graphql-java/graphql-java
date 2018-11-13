@@ -44,7 +44,7 @@ import graphql.schema.idl.errors.SchemaProblem;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -208,7 +208,7 @@ public class SchemaTypeChecker {
                     errors.add(new DirectiveIllegalLocationError(directiveDefinition, locationName));
                 }
             });
-            });
+        });
     }
 
     private void checkScalarImplementationsArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
@@ -373,7 +373,7 @@ public class SchemaTypeChecker {
      * @param errorFunction     the function producing an error
      */
     static <T, E extends GraphQLError> void checkNamedUniqueness(List<GraphQLError> errors, List<T> listOfNamedThings, Function<T, String> namer, BiFunction<String, T, E> errorFunction) {
-        Set<String> names = new HashSet<>();
+        Set<String> names = new LinkedHashSet<>();
         listOfNamedThings.forEach(thing -> {
             String name = namer.apply(thing);
             if (names.contains(name)) {
