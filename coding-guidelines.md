@@ -101,7 +101,7 @@ don't rely on anything impl specific.
 The default implementations for `Set` and `Map` should be the `LinkedHashSet` and `LinkedHashMap` 
 because it offers stable iteration order.
 
-### Stream API vs forEach, index loop etc
+### Stream API vs for, index loop etc
 Using the Stream API is ok in general, but it must kept simple. Stream maps inside 
 maps should be avoided and the inner logic should be refactored into a method.   
 
@@ -174,7 +174,7 @@ method call should be on a new line:
 Every class/interface should have its one file in general. 
 Inner classes are almost never ok (especially public ones). Every class should have its own file to make it easier to read and explore the code.
 
-### User `graphql.Assert` instead of `Objects`
+### Use `graphql.Assert` instead of `Objects`
 We maintain our own small set of Assert util methods. Don't use `Objects.requireNonNull` and others in order
 to be consistent.
 
