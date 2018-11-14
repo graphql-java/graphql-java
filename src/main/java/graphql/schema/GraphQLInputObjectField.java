@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
@@ -84,7 +85,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         this.type = type;
         this.defaultValue = defaultValue;
         this.description = description;
-        this.directives = directives;
+        this.directives = sortGraphQLTypes(directives);
         this.definition = definition;
     }
 

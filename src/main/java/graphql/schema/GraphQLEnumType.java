@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
@@ -106,8 +107,8 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         this.name = name;
         this.description = description;
         this.definition = definition;
-        this.directives = directives;
-        buildMap(values);
+        this.directives = GraphqlTypeComparators.sortGraphQLTypes(directives);
+        buildMap(sortGraphQLTypes(values));
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {

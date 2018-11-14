@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.valuesToList;
 
 /**
@@ -97,7 +98,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         this.defaultValue = defaultValue;
         this.value = value;
         this.definition = definition;
-        this.directives = directives;
+        this.directives = sortGraphQLTypes(directives);
     }
 
 

@@ -18,6 +18,7 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 
@@ -75,7 +76,6 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     @Internal
     @Deprecated
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, List<GraphQLDirective> directives, FieldDefinition definition) {
-        this.directives = directives;
         assertValidName(name);
         assertNotNull(dataFetcherFactory, "you have to provide a DataFetcher (or DataFetcherFactory)");
         assertNotNull(type, "type can't be null");
@@ -84,7 +84,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         this.description = description;
         this.type = type;
         this.dataFetcherFactory = dataFetcherFactory;
-        this.arguments = Collections.unmodifiableList(new ArrayList<>(arguments));
+        this.arguments = Collections.unmodifiableList(sortGraphQLTypes(arguments));
+        this.directives = sortGraphQLTypes(directives);
         this.deprecationReason = deprecationReason;
         this.definition = definition;
     }

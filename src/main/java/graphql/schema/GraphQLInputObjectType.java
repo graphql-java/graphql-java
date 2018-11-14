@@ -16,6 +16,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
@@ -67,8 +68,8 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         this.name = name;
         this.description = description;
         this.definition = definition;
-        this.directives = directives;
-        buildMap(fields);
+        this.directives = sortGraphQLTypes(directives);
+        buildMap(sortGraphQLTypes(fields));
     }
 
     private void buildMap(List<GraphQLInputObjectField> fields) {

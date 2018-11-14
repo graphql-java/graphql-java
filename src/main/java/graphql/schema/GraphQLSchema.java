@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -144,7 +145,7 @@ public class GraphQLSchema {
     }
 
     public List<GraphQLType> getAllTypesAsList() {
-        return new ArrayList<>(typeMap.values());
+        return sortGraphQLTypes(typeMap.values());
     }
 
     /**
@@ -159,7 +160,7 @@ public class GraphQLSchema {
         List<GraphQLObjectType> implementations = byInterface.get(type.getName());
         return (implementations == null)
                 ? Collections.emptyList()
-                : Collections.unmodifiableList(implementations);
+                : Collections.unmodifiableList(sortGraphQLTypes(implementations));
     }
 
     /**
@@ -204,7 +205,7 @@ public class GraphQLSchema {
     }
 
     public List<GraphQLDirective> getDirectives() {
-        return new ArrayList<>(directives);
+        return sortGraphQLTypes(directives);
     }
 
     public GraphQLDirective getDirective(String name) {
