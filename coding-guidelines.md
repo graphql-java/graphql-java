@@ -101,4 +101,86 @@ don't rely on anything impl specific.
 The default implementations for `Set` and `Map` should be the `LinkedHashSet` and `LinkedHashMap` 
 because it offers stable iteration order.
 
+### Stream API vs forEach, index loop etc
+Using the Stream API is ok in general, but it must kept simple. Stream maps inside 
+maps should be avoided and the inner logic should be refactored into a method.   
+
+It also ok to use the traditional for loop or other constructs: sometimes it is more readable than
+the modern Stream API. The Stream API is not a replacement for all other loops/iterations.
+
+
+### Maximum Indentation is two
+One of the most important rules is to keep the number of indentations as low as possible.
+In general the max number should be two. This means a for loop inside a condition is ok.
+A condition inside a for loop inside a for loop is not.
+
+Extracting a method is the easy way out.
+
+### Early method exit
+Exit the method early to avoid an indentation:
+
+```java
+public void foo() {
+  if(cond) {
+    return;
+  }
+  ...do something
+}
+```
+is better than:
+
+```java
+public void foo() {
+  if(!cond) {
+    ...do something
+  }
+}
+```
+
+### Maximum line length and multi line statements 
+
+We don't have a strict max line length.
+But of course every statement should be limited. Not so much in terms of length but much more in terms
+of what the statement does.
+
+If a statement is multiple lines long it should be broken down into the same indentation level. 
+
+For example this is ok:
+```java
+        return myMap
+                .entrySet()
+                .stream()
+                .map(entry -> mapEntry(entry))
+                .collect(Collectors.toList());
+```
+This is not ok:
+```java
+        return fooListOfList.stream().map(
+                 fooList -> fooList.stream()
+                        .sorted((x,y) -> sort(x,y))
+                        .map(foo -> foo.getMyProp())
+                        .collect(toList())
+```
+It has a lambda in streams in streams. The inside stream should be extracted in a extra method and each
+method call should be on a new line:
+```java
+        return fooListOfList
+                 .stream()
+                 .map(this::mapFooList)
+                 .collect(toList());
+```
+
+### Every class its own file: avoid inner classes and interfaces
+Every class/interface should have its one file in general. 
+Inner classes are almost never ok (especially public ones). Every class should have its own file to make it easier to read and explore the code.
+
+### User `graphql.Assert` instead of `Objects`
+We maintain our own small set of Assert util methods. Don't use `Objects.requireNonNull` and others in order
+to be consistent.
+
+### `FooEnvironment` method arguments for public API
+Don't use specific arguments for interface methods but rather a `FooEnvironment` argument. This ensures future
+backwards compatibility when new inputs are added.
+
+
 
