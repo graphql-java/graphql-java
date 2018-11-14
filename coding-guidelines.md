@@ -25,8 +25,6 @@ We have a mix of Optional and allowing null values because GraphQL Java was orig
 
 We are aiming to not use Optional moving forward in order to be consistent overall.
 
-
-
 ### Unit testing and dependencies
 All tests are written in [Spock](http://spockframework.org).
 
@@ -80,7 +78,7 @@ Every public data class should be:
 
 - Immutable 
 - having a Builder class 
-- having a transform method
+- having a `transform` method
 
 
 Every data class should be immutable and contain a `public static class Builder {..}` with a static factory method `newFoo` (not `newBuilder`).
@@ -90,4 +88,17 @@ The Builder methods are just named like the property (`Builder.foo(Foo foo)` not
 The class should also contain a `public Foo transform(Consumer<Builder> builderConsumer)` to allow for easy copies with minimal effort.
 
 Private classes should follow the same design, but they don't have to.
+
+### Default Collections idiom
+
+The default pattern for using Set, Map and List is:
+- List<Foo> fooList = new ArrayList<>();
+- Set<Foo> fooSet = new LinkedHashSet<>();
+- Map<Foo> fooMap = new LinkedHashMap<>();
+
+By using the generic interface instead of using an implementation we are making sure we 
+don't rely on anything impl specific.
+The default implementations for `Set` and `Map` should be the `LinkedHashSet` and `LinkedHashMap` 
+because it offers stable iteration order.
+
 
