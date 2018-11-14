@@ -92,9 +92,9 @@ Private classes should follow the same design, but they don't have to.
 ### Default Collections idiom
 
 The default pattern for using Set, Map and List is:
-- List<Foo> fooList = new ArrayList<>();
-- Set<Foo> fooSet = new LinkedHashSet<>();
-- Map<Foo> fooMap = new LinkedHashMap<>();
+- `List<Foo> fooList = new ArrayList<>()`
+- `Set<Foo> fooSet = new LinkedHashSet<>()`
+- `Map<Foo> fooMap = new LinkedHashMap<>()`
 
 By using the generic interface instead of using an implementation we are making sure we 
 don't rely on anything impl specific.
