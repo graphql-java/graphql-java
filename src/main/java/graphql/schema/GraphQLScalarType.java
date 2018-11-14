@@ -76,7 +76,7 @@ public class GraphQLScalarType implements GraphQLType, GraphQLInputType, GraphQL
         this.description = description;
         this.coercing = coercing;
         this.definition = definition;
-        this.directives = sortGraphQLTypes(directives);
+        this.directives = directives;
     }
 
     @Override

@@ -82,7 +82,7 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
         this.description = description;
         this.value = value;
         this.deprecationReason = deprecationReason;
-        this.directives = sortGraphQLTypes(directives);
+        this.directives = directives;
     }
 
     @Override

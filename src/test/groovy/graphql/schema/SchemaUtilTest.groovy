@@ -111,7 +111,7 @@ class SchemaUtilTest extends Specification {
         byInterface.size() == 1
         byInterface[characterInterface.getName()].size() == 2
         byInterface == [
-                (characterInterface.getName()): [humanType, droidType]
+                (characterInterface.getName()): [ droidType, humanType]
         ]
     }
 

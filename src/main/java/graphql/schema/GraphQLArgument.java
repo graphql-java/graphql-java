@@ -98,7 +98,7 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
         this.defaultValue = defaultValue;
         this.value = value;
         this.definition = definition;
-        this.directives = sortGraphQLTypes(directives);
+        this.directives = directives;
     }
 
 

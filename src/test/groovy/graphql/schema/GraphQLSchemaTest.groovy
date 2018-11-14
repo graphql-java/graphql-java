@@ -28,7 +28,7 @@ class GraphQLSchemaTest extends Specification {
         then:
         objectTypes.size() == 2
         objectTypes == [
-                humanType, droidType
+                droidType, humanType
         ]
 
     }

@@ -28,6 +28,8 @@ public class GraphqlTypeComparators {
     /**
      * Returns a comparator that compares {@link graphql.schema.GraphQLType} objects by ascending name
      *
+     * @param <T> the type of type
+     *
      * @return a comparator that compares {@link graphql.schema.GraphQLType} objects by ascending name
      */
     public static <T extends GraphQLType> Comparator<? super GraphQLType> graphQLTypeComparator() {
