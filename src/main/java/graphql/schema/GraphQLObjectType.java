@@ -13,10 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.lang.String.format;
@@ -56,10 +56,10 @@ public class GraphQLObjectType implements GraphQLType, GraphQLOutputType, GraphQ
         assertNotNull(interfaces, "interfaces can't be null");
         this.name = name;
         this.description = description;
-        this.interfaces = interfaces;
+        this.interfaces = sortGraphQLTypes(interfaces);
         this.definition = definition;
         this.directives = assertNotNull(directives);
-        buildDefinitionMap(fieldDefinitions);
+        buildDefinitionMap(sortGraphQLTypes(fieldDefinitions));
     }
 
     void replaceInterfaces(List<GraphQLOutputType> interfaces) {

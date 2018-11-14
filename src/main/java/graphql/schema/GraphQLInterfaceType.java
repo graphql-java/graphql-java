@@ -17,6 +17,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.lang.String.format;
@@ -55,10 +56,10 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
 
         this.name = name;
         this.description = description;
-        buildDefinitionMap(fieldDefinitions);
+        buildDefinitionMap(sortGraphQLTypes(fieldDefinitions));
         this.typeResolver = typeResolver;
         this.definition = definition;
-        this.directives = directives;
+        this.directives = sortGraphQLTypes(directives);
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {

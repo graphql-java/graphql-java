@@ -12,11 +12,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
@@ -57,10 +57,10 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
         this.name = name;
         this.description = description;
-        this.types = types;
+        this.types = sortGraphQLTypes(types);
         this.typeResolver = typeResolver;
         this.definition = definition;
-        this.directives = directives;
+        this.directives = sortGraphQLTypes(directives);
     }
 
     void replaceTypes(List<GraphQLOutputType> types) {

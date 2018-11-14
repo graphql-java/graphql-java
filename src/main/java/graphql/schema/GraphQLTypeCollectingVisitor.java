@@ -7,6 +7,7 @@ import graphql.util.TraverserContext;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static java.lang.String.format;
 
@@ -87,13 +88,13 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
 
     /*
-From http://facebook.github.io/graphql/#sec-Type-System
+        From http://facebook.github.io/graphql/#sec-Type-System
 
-   All types within a GraphQL schema must have unique names. No two provided types may have the same name.
-   No provided type may have a name which conflicts with any built in types (including Scalar and Introspection types).
+           All types within a GraphQL schema must have unique names. No two provided types may have the same name.
+           No provided type may have a name which conflicts with any built in types (including Scalar and Introspection types).
 
-Enforcing this helps avoid problems later down the track fo example https://github.com/graphql-java/graphql-java/issues/373
-*/
+        Enforcing this helps avoid problems later down the track fo example https://github.com/graphql-java/graphql-java/issues/373
+    */
     private void assertTypeUniqueness(GraphQLType type, Map<String, GraphQLType> result) {
         GraphQLType existingType = result.get(type.getName());
         // do we have an existing definition
@@ -111,8 +112,7 @@ Enforcing this helps avoid problems later down the track fo example https://gith
     }
 
     public Map<String, GraphQLType> getResult() {
-        return result;
+        // sorted by type name
+        return new TreeMap<>(result);
     }
-
-
 }
