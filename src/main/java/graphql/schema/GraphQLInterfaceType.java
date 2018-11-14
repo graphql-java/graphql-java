@@ -59,7 +59,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         buildDefinitionMap(sortGraphQLTypes(fieldDefinitions));
         this.typeResolver = typeResolver;
         this.definition = definition;
-        this.directives = sortGraphQLTypes(directives);
+        this.directives = directives;
     }
 
     private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {

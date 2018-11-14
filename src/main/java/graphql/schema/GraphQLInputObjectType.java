@@ -50,7 +50,7 @@ public class GraphQLInputObjectType implements GraphQLType, GraphQLInputType, Gr
         this.name = name;
         this.description = description;
         this.definition = definition;
-        this.directives = sortGraphQLTypes(directives);
+        this.directives = directives;
         buildMap(sortGraphQLTypes(fields));
     }
 

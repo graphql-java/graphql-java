@@ -62,7 +62,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         this.type = type;
         this.dataFetcherFactory = dataFetcherFactory;
         this.arguments = Collections.unmodifiableList(sortGraphQLTypes(arguments));
-        this.directives = sortGraphQLTypes(directives);
+        this.directives = directives;
         this.deprecationReason = deprecationReason;
         this.definition = definition;
     }

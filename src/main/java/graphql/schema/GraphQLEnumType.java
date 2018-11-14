@@ -89,7 +89,7 @@ public class GraphQLEnumType implements GraphQLType, GraphQLInputType, GraphQLOu
         this.name = name;
         this.description = description;
         this.definition = definition;
-        this.directives = GraphqlTypeComparators.sortGraphQLTypes(directives);
+        this.directives = directives;
         buildMap(sortGraphQLTypes(values));
     }
 

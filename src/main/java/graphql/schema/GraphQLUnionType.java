@@ -60,7 +60,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         this.types = sortGraphQLTypes(types);
         this.typeResolver = typeResolver;
         this.definition = definition;
-        this.directives = sortGraphQLTypes(directives);
+        this.directives = directives;
     }
 
     void replaceTypes(List<GraphQLOutputType> types) {

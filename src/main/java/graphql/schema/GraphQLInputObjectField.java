@@ -58,7 +58,7 @@ public class GraphQLInputObjectField implements GraphQLDirectiveContainer {
         this.type = type;
         this.defaultValue = defaultValue;
         this.description = description;
-        this.directives = sortGraphQLTypes(directives);
+        this.directives = directives;
         this.definition = definition;
     }
 
