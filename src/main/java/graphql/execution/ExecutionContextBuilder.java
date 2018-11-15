@@ -13,6 +13,7 @@ import org.dataloader.DataLoaderRegistry;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,8 +33,8 @@ public class ExecutionContextBuilder {
     private Object root;
     private Document document;
     private OperationDefinition operationDefinition;
-    private Map<String, Object> variables = new HashMap<>();
-    private Map<String, FragmentDefinition> fragmentsByName = new HashMap<>();
+    private Map<String, Object> variables = new LinkedHashMap<>();
+    private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
     private DataLoaderRegistry dataLoaderRegistry;
     private List<GraphQLError> errors = new ArrayList<>();
 

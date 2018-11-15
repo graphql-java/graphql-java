@@ -11,7 +11,6 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -236,7 +235,7 @@ public class GraphQLSchema {
         private GraphQLObjectType mutationType;
         private GraphQLObjectType subscriptionType;
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
-        private Set<GraphQLType> additionalTypes = new HashSet<>();
+        private Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
         // we default these in
         private Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
                 asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective)

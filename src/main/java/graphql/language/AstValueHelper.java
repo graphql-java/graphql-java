@@ -24,7 +24,7 @@ import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -223,7 +223,7 @@ public class AstValueHelper {
             return (Map) value;
         }
         // java bean inspector
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new LinkedHashMap<>();
         try {
             BeanInfo info = Introspector.getBeanInfo(value.getClass());
             for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
