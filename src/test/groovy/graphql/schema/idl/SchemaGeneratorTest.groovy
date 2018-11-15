@@ -413,8 +413,8 @@ class SchemaGeneratorTest extends Specification {
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
-        types[0].name == "Foo"
-        types[1].name == "Bar"
+        types[0].name == "Bar"
+        types[1].name == "Foo"
 
     }
 
