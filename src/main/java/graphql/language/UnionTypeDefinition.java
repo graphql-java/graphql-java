@@ -24,8 +24,9 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
                                   List<Type> memberTypes,
                                   Description description,
                                   SourceLocation sourceLocation,
-                                  List<Comment> comments) {
-        super(sourceLocation, comments);
+                                  List<Comment> comments,
+                                  IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.directives = directives;
         this.memberTypes = memberTypes;
@@ -40,7 +41,7 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
      */
     public UnionTypeDefinition(String name,
                                List<Directive> directives) {
-        this(name, directives, new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, directives, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     /**
@@ -49,7 +50,7 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
      * @param name of the union
      */
     public UnionTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -80,8 +81,12 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         UnionTypeDefinition that = (UnionTypeDefinition) o;
 
@@ -95,7 +100,8 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
                 deepCopy(memberTypes),
                 description,
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -130,6 +136,7 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
         private Description description;
         private List<Directive> directives = new ArrayList<>();
         private List<Type> memberTypes = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -141,6 +148,7 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.memberTypes = existing.getMemberTypes();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -183,13 +191,19 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public UnionTypeDefinition build() {
             UnionTypeDefinition unionTypeDefinition = new UnionTypeDefinition(name,
                     directives,
                     memberTypes,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return unionTypeDefinition;
         }
     }

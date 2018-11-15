@@ -26,13 +26,14 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     @Internal
     protected OperationDefinition(String name,
-                                Operation operation,
-                                List<VariableDefinition> variableDefinitions,
-                                List<Directive> directives,
-                                SelectionSet selectionSet,
-                                SourceLocation sourceLocation,
-                                List<Comment> comments) {
-        super(sourceLocation, comments);
+                                  Operation operation,
+                                  List<VariableDefinition> variableDefinitions,
+                                  List<Directive> directives,
+                                  SelectionSet selectionSet,
+                                  SourceLocation sourceLocation,
+                                  List<Comment> comments,
+                                  IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.operation = operation;
         this.variableDefinitions = variableDefinitions;
@@ -42,11 +43,11 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     public OperationDefinition(String name,
                                Operation operation) {
-        this(name, operation, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, operation, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public OperationDefinition(String name) {
-        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -89,8 +90,12 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         OperationDefinition that = (OperationDefinition) o;
 
@@ -106,7 +111,8 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 deepCopy(directives),
                 deepCopy(selectionSet),
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -144,6 +150,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         private List<VariableDefinition> variableDefinitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -156,6 +163,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
             this.variableDefinitions = existing.getVariableDefinitions();
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -194,6 +202,11 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public OperationDefinition build() {
             OperationDefinition operationDefinition = new OperationDefinition(
                     name,
@@ -202,7 +215,8 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                     directives,
                     selectionSet,
                     sourceLocation,
-                    comments
+                    comments,
+                    ignoredChars
             );
             return operationDefinition;
         }

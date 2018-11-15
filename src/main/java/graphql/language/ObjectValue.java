@@ -16,8 +16,8 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
     private final List<ObjectField> objectFields = new ArrayList<>();
 
     @Internal
-    protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.objectFields.addAll(objectFields);
     }
 
@@ -27,7 +27,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
      * @param objectFields the list of field that make up this object value
      */
     public ObjectValue(List<ObjectField> objectFields) {
-        this(objectFields, null, new ArrayList<>());
+        this(objectFields, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public List<ObjectField> getObjectFields() {
@@ -43,8 +43,12 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ObjectValue that = (ObjectValue) o;
 
@@ -54,7 +58,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     @Override
     public ObjectValue deepCopy() {
-        return new ObjectValue(deepCopy(objectFields), getSourceLocation(), getComments());
+        return new ObjectValue(deepCopy(objectFields), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
 
@@ -85,6 +89,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
         private SourceLocation sourceLocation;
         private List<ObjectField> objectFields = new ArrayList<>();
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -115,8 +120,13 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public ObjectValue build() {
-            ObjectValue objectValue = new ObjectValue(objectFields, sourceLocation, comments);
+            ObjectValue objectValue = new ObjectValue(objectFields, sourceLocation, comments, ignoredChars);
             return objectValue;
         }
     }

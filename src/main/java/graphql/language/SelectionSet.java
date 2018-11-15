@@ -16,8 +16,8 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     private final List<Selection> selections = new ArrayList<>();
 
     @Internal
-    protected SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.selections.addAll(selections);
     }
 
@@ -27,7 +27,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
      * @param selections the list of selection in this selection set
      */
     public SelectionSet(List<Selection> selections) {
-        this(selections, null, new ArrayList<>());
+        this(selections, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public List<Selection> getSelections() {
@@ -44,8 +44,12 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         SelectionSet that = (SelectionSet) o;
 
@@ -55,7 +59,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     @Override
     public SelectionSet deepCopy() {
-        return new SelectionSet(deepCopy(selections), getSourceLocation(), getComments());
+        return new SelectionSet(deepCopy(selections), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -89,6 +93,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         private List<Selection> selections = new ArrayList<>();
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -97,6 +102,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.selections = existing.getSelections();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder selections(List<Selection> selections) {
@@ -114,8 +120,13 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public SelectionSet build() {
-            SelectionSet selectionSet = new SelectionSet(selections, sourceLocation, comments);
+            SelectionSet selectionSet = new SelectionSet(selections, sourceLocation, comments, ignoredChars);
             return selectionSet;
         }
     }

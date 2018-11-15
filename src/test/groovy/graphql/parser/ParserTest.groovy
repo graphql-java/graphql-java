@@ -13,6 +13,7 @@ import graphql.language.Field
 import graphql.language.FloatValue
 import graphql.language.FragmentDefinition
 import graphql.language.FragmentSpread
+import graphql.language.IgnoredChar
 import graphql.language.InlineFragment
 import graphql.language.InputObjectTypeDefinition
 import graphql.language.IntValue
@@ -28,6 +29,7 @@ import graphql.language.OperationDefinition
 import graphql.language.ScalarTypeDefinition
 import graphql.language.Selection
 import graphql.language.SelectionSet
+import graphql.language.SourceLocation
 import graphql.language.StringValue
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
@@ -672,4 +674,28 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         }
         true
     }
+
+
+    def "parse ignored chars"() {
+        given:
+        def input = "{,\r me\n\t} ,"
+
+        when:
+        Document document = new Parser().parseDocument(input)
+        def field = (document.definitions[0] as OperationDefinition).selectionSet.selections[0]
+        then:
+        field.getIgnoredChars().getLeft().size() == 3
+        field.getIgnoredChars().getLeft()[0] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(1, 2))
+        field.getIgnoredChars().getLeft()[1] == new IgnoredChar("\r", IgnoredChar.IgnoredCharKind.CR, new SourceLocation(1, 3))
+        field.getIgnoredChars().getLeft()[2] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(1, 4))
+
+        field.getIgnoredChars().getRight().size() == 2
+        field.getIgnoredChars().getRight()[0] == new IgnoredChar("\n", IgnoredChar.IgnoredCharKind.LF, new SourceLocation(1, 7))
+        field.getIgnoredChars().getRight()[1] == new IgnoredChar("\t", IgnoredChar.IgnoredCharKind.TAB, new SourceLocation(2, 1))
+
+        document.getIgnoredChars().getRight().size() == 2
+        document.getIgnoredChars().getRight()[0] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(2, 3))
+        document.getIgnoredChars().getRight()[1] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(2, 4))
+    }
+
 }
