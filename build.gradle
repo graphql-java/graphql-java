@@ -20,7 +20,7 @@ def getDevelopmentVersion() {
         println "git hash is empty: error: ${error.toString()}"
         throw new IllegalStateException("git hash could not be determined")
     }
-    new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-" + gitHash
+    new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-" + gitHash + "-ignored-chars"
 }
 
 
