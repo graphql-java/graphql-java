@@ -7,7 +7,6 @@ import graphql.util.TraverserContext;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 
 import static java.lang.String.format;
 
@@ -112,7 +111,6 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     }
 
     public Map<String, GraphQLType> getResult() {
-        // sorted by type name
-        return new TreeMap<>(result);
+        return result;
     }
 }

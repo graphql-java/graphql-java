@@ -16,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -109,9 +110,10 @@ public class GraphQLSchema {
         this.subscriptionType = subscriptionType;
         this.fieldVisibility = fieldVisibility;
         this.additionalTypes.addAll(additionalTypes);
-        this.directives.addAll(directives);
-        this.typeMap = schemaUtil.allTypes(this, additionalTypes);
-        this.byInterface = schemaUtil.groupImplementations(this);
+        this.directives.addAll(sortGraphQLTypes(directives));
+        // sorted by type name
+        this.typeMap = new TreeMap<>(schemaUtil.allTypes(this, additionalTypes));
+        this.byInterface = new TreeMap<>(schemaUtil.groupImplementations(this));
     }
 
     public Set<GraphQLType> getAdditionalTypes() {
@@ -205,7 +207,7 @@ public class GraphQLSchema {
     }
 
     public List<GraphQLDirective> getDirectives() {
-        return sortGraphQLTypes(directives);
+        return new ArrayList<>(directives);
     }
 
     public GraphQLDirective getDirective(String name) {
