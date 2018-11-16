@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 @PublicApi
-public class TypeName extends AbstractNode<TypeName> implements Type<TypeName> {
+public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, NamedNode<TypeName> {
 
     private final String name;
 
