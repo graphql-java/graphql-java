@@ -139,7 +139,7 @@ public class Tuple2<T1, T2> implements Iterable<Object>, Serializable {
      *
      * @return An unmodifiable {@link Iterator} over the elements in this Tuple.
      *
-     * @implNote As an {@link Iterator} is always tied to its {@link Iterable} source by
+     * implNote: As an {@link Iterator} is always tied to its {@link Iterable} source by
      * definition, the iterator cannot be mutable without the iterable also being mutable.
      * Since {@link Tuples} are <strong>immutable</strong>, so is the {@link Iterator}
      * returned by this method.
