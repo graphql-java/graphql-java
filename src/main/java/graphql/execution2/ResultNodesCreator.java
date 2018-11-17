@@ -24,7 +24,7 @@ public class ResultNodesCreator {
             return new LeafExecutionResultNode(fetchedValueAnalysis, null);
         }
         if (fetchedValueAnalysis.getValueType() == FetchedValueAnalysis.FetchedValueType.OBJECT) {
-            return createObjectResultNode(fetchedValueAnalysis);
+            return createUnresolvedNode(fetchedValueAnalysis);
         }
         if (fetchedValueAnalysis.getValueType() == FetchedValueAnalysis.FetchedValueType.LIST) {
             return createListResultNode(fetchedValueAnalysis);
@@ -32,7 +32,7 @@ public class ResultNodesCreator {
         return new LeafExecutionResultNode(fetchedValueAnalysis, null);
     }
 
-    private ExecutionResultNode createObjectResultNode(FetchedValueAnalysis fetchedValueAnalysis) {
+    private ExecutionResultNode createUnresolvedNode(FetchedValueAnalysis fetchedValueAnalysis) {
         return new ObjectExecutionResultNode.UnresolvedObjectResultNode(fetchedValueAnalysis);
     }
 

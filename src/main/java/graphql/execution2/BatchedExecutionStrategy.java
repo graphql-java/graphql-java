@@ -9,7 +9,6 @@ import graphql.execution2.result.ExecutionResultNode;
 import graphql.execution2.result.ExecutionResultZipper;
 import graphql.execution2.result.ObjectExecutionResultNode;
 import graphql.execution2.result.ObjectExecutionResultNode.RootExecutionResultNode;
-import graphql.execution2.result.ObjectExecutionResultNode.UnresolvedObjectResultNode;
 import graphql.execution2.result.ResultNodesUtil;
 import graphql.language.Field;
 import graphql.tuples.Tuple2;
@@ -25,7 +24,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
-public class ExecutionStrategyBatching {
+public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     ExecutionStepInfoFactory executionInfoFactory;
     ValueFetcher valueFetcher;
@@ -34,8 +33,7 @@ public class ExecutionStrategyBatching {
     private final ExecutionContext executionContext;
     private FetchedValueAnalyzer fetchedValueAnalyzer;
 
-
-    public ExecutionStrategyBatching(ExecutionContext executionContext) {
+    public BatchedExecutionStrategy(ExecutionContext executionContext) {
         this.executionContext = executionContext;
         this.fetchedValueAnalyzer = new FetchedValueAnalyzer(executionContext);
         this.valueFetcher = new ValueFetcher(executionContext);
@@ -53,7 +51,6 @@ public class ExecutionStrategyBatching {
                 .thenApply(finalZipper -> finalZipper.toRootNode())
                 .thenApply(RootExecutionResultNode.class::cast);
     }
-
 
     private CompletableFuture<Map<String, ExecutionResultNode>> fetchSubSelection(FieldSubSelection fieldSubSelection) {
         CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux = fetchAndAnalyze(fieldSubSelection);
@@ -153,7 +150,7 @@ public class ExecutionStrategyBatching {
     }
 
     private ExecutionResultZipper resolvedZipper(ExecutionResultZipper unresolvedNodeZipper, List<FetchedValueAnalysis> fetchedValuesForNode) {
-        UnresolvedObjectResultNode unresolvedNode = (UnresolvedObjectResultNode) unresolvedNodeZipper.getCurNode();
+        ObjectExecutionResultNode.UnresolvedObjectResultNode unresolvedNode = (ObjectExecutionResultNode.UnresolvedObjectResultNode) unresolvedNodeZipper.getCurNode();
         Map<String, ExecutionResultNode> newChildren = fetchedValueAnalysisToNodes(fetchedValuesForNode);
         ObjectExecutionResultNode newNode = unresolvedNode.withChildren(newChildren);
         return unresolvedNodeZipper.withNode(newNode);
@@ -203,5 +200,4 @@ public class ExecutionStrategyBatching {
         }
         return result;
     }
-
 }

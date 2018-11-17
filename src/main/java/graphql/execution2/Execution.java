@@ -33,7 +33,7 @@ public class Execution {
 
     private final FieldCollector fieldCollector = new FieldCollector();
 
-    public CompletableFuture<ExecutionResult> execute(Document document,
+    public CompletableFuture<ExecutionResult> execute(Class<? extends ExecutionStrategy> executionStrategy, Document document,
                                                       GraphQLSchema graphQLSchema,
                                                       ExecutionId executionId,
                                                       ExecutionInput executionInput) {
@@ -68,11 +68,11 @@ public class Execution {
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .build();
 
-        return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
+        return executeOperation(executionStrategy, executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
 
-    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
+    private CompletableFuture<ExecutionResult> executeOperation(Class<? extends ExecutionStrategy> executionStrategy, ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         GraphQLObjectType operationRootType;
 
@@ -92,15 +92,21 @@ public class Execution {
         fieldSubSelection.setFields(fields);
         fieldSubSelection.setExecutionStepInfo(executionInfo);
 
-        ExecutionStrategyBatching executionStrategyBatching = new ExecutionStrategyBatching(executionContext);
-        return executionStrategyBatching.execute(fieldSubSelection)
-                .thenApply(rootExecutionResultNode -> {
-                    Object data = ResultNodesUtil.toData(rootExecutionResultNode);
-                    return ExecutionResultImpl.newExecutionResult()
-                            .data(data)
-                            .build();
-                })
-                .thenApply(ExecutionResult.class::cast);
+        try {
+            return executionStrategy
+                    .getConstructor(ExecutionContext.class)
+                    .newInstance(executionContext)
+                    .execute(fieldSubSelection)
+                    .thenApply(rootExecutionResultNode -> {
+                        Object data = ResultNodesUtil.toData(rootExecutionResultNode);
+                        return ExecutionResultImpl.newExecutionResult()
+                                .data(data)
+                                .build();
+                    })
+                    .thenApply(ExecutionResult.class::cast);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
