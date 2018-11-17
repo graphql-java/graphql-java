@@ -70,14 +70,14 @@ public class ResultNodesUtil {
         return null;
     }
 
-    public static List<ExecutionResultNodeZipper> getUnresolvedNodes(Collection<ExecutionResultNode> roots) {
-        List<ExecutionResultNodeZipper> result = new ArrayList<>();
+    public static List<ExecutionResultZipper> getUnresolvedNodes(Collection<ExecutionResultNode> roots) {
+        List<ExecutionResultZipper> result = new ArrayList<>();
 
         ResultNodeTraverser resultNodeTraverser = new ResultNodeTraverser(new ResultNodeVisitor() {
             @Override
             public void visit(ExecutionResultNode node, List<Breadcrumb> breadcrumbs) {
                 if (node instanceof UnresolvedObjectResultNode) {
-                    result.add(new ExecutionResultNodeZipper(node, breadcrumbs));
+                    result.add(new ExecutionResultZipper(node, breadcrumbs));
                 }
             }
         });
@@ -85,19 +85,19 @@ public class ResultNodesUtil {
         return result;
     }
 
-    public static MultiZipper getUnresolvedNodes(ExecutionResultNode root) {
-        List<ExecutionResultNodeZipper> zippers = new ArrayList<>();
+    public static ExecutionResultMultiZipper getUnresolvedNodes(ExecutionResultNode root) {
+        List<ExecutionResultZipper> zippers = new ArrayList<>();
 
         ResultNodeTraverser resultNodeTraverser = new ResultNodeTraverser(new ResultNodeVisitor() {
             @Override
             public void visit(ExecutionResultNode node, List<Breadcrumb> breadcrumbs) {
                 if (node instanceof UnresolvedObjectResultNode) {
-                    zippers.add(new ExecutionResultNodeZipper(node, breadcrumbs));
+                    zippers.add(new ExecutionResultZipper(node, breadcrumbs));
                 }
             }
         });
         resultNodeTraverser.traverse(root);
-        return new MultiZipper(root, zippers);
+        return new ExecutionResultMultiZipper(root, zippers);
     }
 
 

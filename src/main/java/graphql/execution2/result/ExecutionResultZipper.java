@@ -5,13 +5,13 @@ import graphql.Assert;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ExecutionResultNodeZipper {
+public class ExecutionResultZipper {
 
     private final ExecutionResultNode curNode;
     // from curNode upwards
     private final List<Breadcrumb> breadcrumbList;
 
-    public ExecutionResultNodeZipper(ExecutionResultNode curNode, List<Breadcrumb> breadcrumbs) {
+    public ExecutionResultZipper(ExecutionResultNode curNode, List<Breadcrumb> breadcrumbs) {
         Assert.assertNotNull(breadcrumbs, "breadcrumbs can't be null");
         Assert.assertNotNull(curNode, "curNode can't be null");
         this.curNode = curNode;
@@ -37,15 +37,15 @@ public class ExecutionResultNodeZipper {
         return breadcrumbList.get(0).node;
     }
 
-    public ExecutionResultNodeZipper withNode(ExecutionResultNode newNode) {
-        return new ExecutionResultNodeZipper(newNode, breadcrumbList);
+    public ExecutionResultZipper withNode(ExecutionResultNode newNode) {
+        return new ExecutionResultZipper(newNode, breadcrumbList);
     }
 
-    public ExecutionResultNodeZipper moveUp() {
+    public ExecutionResultZipper moveUp() {
         Assert.assertTrue(breadcrumbList.size() > 0, "no parent");
         Breadcrumb breadCrumb = breadcrumbList.get(0);
         ExecutionResultNode parent = breadCrumb.node.withChild(curNode, breadCrumb.position);
-        return new ExecutionResultNodeZipper(parent, breadcrumbList.subList(1, breadcrumbList.size()));
+        return new ExecutionResultZipper(parent, breadcrumbList.subList(1, breadcrumbList.size()));
     }
 
     public ExecutionResultNode toRootNode() {
@@ -59,7 +59,7 @@ public class ExecutionResultNodeZipper {
 
     @Override
     public String toString() {
-        return "ExecutionResultNodeZipper{" +
+        return "ExecutionResultZipper{" +
                 "curNode=" + curNode +
                 ", breadcrumbList=" + breadcrumbList +
                 '}';

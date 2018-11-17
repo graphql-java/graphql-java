@@ -4,9 +4,9 @@ import graphql.Assert;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution2.result.ExecutionResultMultiZipper;
 import graphql.execution2.result.ExecutionResultNode;
-import graphql.execution2.result.ExecutionResultNodeZipper;
-import graphql.execution2.result.MultiZipper;
+import graphql.execution2.result.ExecutionResultZipper;
 import graphql.execution2.result.ObjectExecutionResultNode;
 import graphql.execution2.result.ObjectExecutionResultNode.RootExecutionResultNode;
 import graphql.execution2.result.ObjectExecutionResultNode.UnresolvedObjectResultNode;
@@ -47,7 +47,7 @@ public class ExecutionStrategyBatching {
 
         return rootMono
                 .thenCompose(rootNode -> {
-                    MultiZipper unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(rootNode);
+                    ExecutionResultMultiZipper unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(rootNode);
                     return nextStep(unresolvedNodes);
                 })
                 .thenApply(finalZipper -> finalZipper.toRootNode())
@@ -75,41 +75,41 @@ public class ExecutionStrategyBatching {
         });
     }
 
-    private CompletableFuture<MultiZipper> nextStep(MultiZipper multizipper) {
-        MultiZipper nextUnresolvedNodes = ResultNodesUtil.getUnresolvedNodes(multizipper.toRootNode());
+    private CompletableFuture<ExecutionResultMultiZipper> nextStep(ExecutionResultMultiZipper multizipper) {
+        ExecutionResultMultiZipper nextUnresolvedNodes = ResultNodesUtil.getUnresolvedNodes(multizipper.toRootNode());
         if (nextUnresolvedNodes.getZippers().size() == 0) {
             return CompletableFuture.completedFuture(nextUnresolvedNodes);
         }
-        List<MultiZipper> groups = groupNodesIntoBatches(nextUnresolvedNodes);
+        List<ExecutionResultMultiZipper> groups = groupNodesIntoBatches(nextUnresolvedNodes);
         return nextStepImpl(groups).thenCompose(this::nextStep);
     }
 
     // all multizipper have the same root
-    private CompletableFuture<MultiZipper> nextStepImpl(List<MultiZipper> unresolvedNodes) {
+    private CompletableFuture<ExecutionResultMultiZipper> nextStepImpl(List<ExecutionResultMultiZipper> unresolvedNodes) {
         Assert.assertNotEmpty(unresolvedNodes, "unresolvedNodes can't be empty");
         ExecutionResultNode commonRoot = unresolvedNodes.get(0).getCommonRoot();
 
-        CompletableFuture<List<List<ExecutionResultNodeZipper>>> listListCF = Async.flatMap(unresolvedNodes,
-                multiZipper -> fetchAndAnalyze(multiZipper.getZippers()));
+        CompletableFuture<List<List<ExecutionResultZipper>>> listListCF = Async.flatMap(unresolvedNodes,
+                executionResultMultiZipper -> fetchAndAnalyze(executionResultMultiZipper.getZippers()));
 
         return Common.flatList(listListCF)
-                .thenApply(zippers -> new MultiZipper(commonRoot, zippers));
+                .thenApply(zippers -> new ExecutionResultMultiZipper(commonRoot, zippers));
 
     }
 
-    private List<MultiZipper> groupNodesIntoBatches(MultiZipper unresolvedZipper) {
-        Map<Map<String, List<Field>>, List<ExecutionResultNodeZipper>> zipperBySubSelection = unresolvedZipper.getZippers().stream()
-                .collect(groupingBy(executionResultNodeZipper -> executionResultNodeZipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection().getFields()));
+    private List<ExecutionResultMultiZipper> groupNodesIntoBatches(ExecutionResultMultiZipper unresolvedZipper) {
+        Map<Map<String, List<Field>>, List<ExecutionResultZipper>> zipperBySubSelection = unresolvedZipper.getZippers().stream()
+                .collect(groupingBy(executionResultZipper -> executionResultZipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection().getFields()));
 
         return zipperBySubSelection
                 .entrySet()
                 .stream()
-                .map(entry -> new MultiZipper(unresolvedZipper.getCommonRoot(), entry.getValue()))
+                .map(entry -> new ExecutionResultMultiZipper(unresolvedZipper.getCommonRoot(), entry.getValue()))
                 .collect(Collectors.toList());
     }
 
     //constrain: all fieldSubSelections have the same fields
-    private CompletableFuture<List<ExecutionResultNodeZipper>> fetchAndAnalyze(List<ExecutionResultNodeZipper> unresolvedNodes) {
+    private CompletableFuture<List<ExecutionResultZipper>> fetchAndAnalyze(List<ExecutionResultZipper> unresolvedNodes) {
         Assert.assertTrue(unresolvedNodes.size() > 0, "unresolvedNodes can't be empty");
 
         List<FieldSubSelection> fieldSubSelections = unresolvedNodes.stream()
@@ -139,20 +139,20 @@ public class ExecutionStrategyBatching {
                 .collect(toList());
 
         return Async.each(fetchedValues).thenApply(fetchedValuesMatrix -> {
-            List<ExecutionResultNodeZipper> result = new ArrayList<>();
+            List<ExecutionResultZipper> result = new ArrayList<>();
             List<List<FetchedValueAnalysis>> newChildsPerNode = Common.transposeMatrix(fetchedValuesMatrix);
 
             for (int i = 0; i < newChildsPerNode.size(); i++) {
-                ExecutionResultNodeZipper unresolvedNodeZipper = unresolvedNodes.get(i);
+                ExecutionResultZipper unresolvedNodeZipper = unresolvedNodes.get(i);
                 List<FetchedValueAnalysis> fetchedValuesForNode = newChildsPerNode.get(i);
-                ExecutionResultNodeZipper resolvedZipper = resolvedZipper(unresolvedNodeZipper, fetchedValuesForNode);
+                ExecutionResultZipper resolvedZipper = resolvedZipper(unresolvedNodeZipper, fetchedValuesForNode);
                 result.add(resolvedZipper);
             }
             return result;
         });
     }
 
-    private ExecutionResultNodeZipper resolvedZipper(ExecutionResultNodeZipper unresolvedNodeZipper, List<FetchedValueAnalysis> fetchedValuesForNode) {
+    private ExecutionResultZipper resolvedZipper(ExecutionResultZipper unresolvedNodeZipper, List<FetchedValueAnalysis> fetchedValuesForNode) {
         UnresolvedObjectResultNode unresolvedNode = (UnresolvedObjectResultNode) unresolvedNodeZipper.getCurNode();
         Map<String, ExecutionResultNode> newChildren = fetchedValueAnalysisToNodes(fetchedValuesForNode);
         ObjectExecutionResultNode newNode = unresolvedNode.withChildren(newChildren);
