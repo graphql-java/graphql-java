@@ -56,17 +56,18 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
         List<CompletableFuture<ExecutionResultZipper>> cfList = unresolvedMultiZipper
                 .getZippers()
                 .stream()
-                .map(unresolvedNodeZipper -> {
-                    ExecutionResultNode node = unresolvedNodeZipper.getCurNode();
-                    return resolveSubSelection((UnresolvedObjectResultNode) node)
-                            .thenApply(unresolvedNodeZipper::withNode);
-                })
+                .map(this::resolveZipper)
                 .collect(Collectors.toList());
 
         return Async
                 .each(cfList)
                 .thenApply(unresolvedMultiZipper::withZippers)
                 .thenApply(ExecutionResultMultiZipper::toRootNode);
+    }
+
+    private CompletableFuture<ExecutionResultZipper> resolveZipper(ExecutionResultZipper unresolvedNodeZipper) {
+        return resolveSubSelection((UnresolvedObjectResultNode) unresolvedNodeZipper.getCurNode())
+                .thenApply(unresolvedNodeZipper::withNode);
     }
 
     private CompletableFuture<ExecutionResultNode> resolveSubSelection(UnresolvedObjectResultNode unresolvedNode) {
