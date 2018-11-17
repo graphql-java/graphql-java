@@ -13,7 +13,8 @@ public class FetchedValueAnalysis {
         OBJECT,
         LIST,
         SCALAR,
-        ENUM
+        ENUM,
+        DEFER
     }
 
 

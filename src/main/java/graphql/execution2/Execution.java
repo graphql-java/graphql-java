@@ -97,13 +97,7 @@ public class Execution {
                     .getConstructor(ExecutionContext.class)
                     .newInstance(executionContext)
                     .execute(fieldSubSelection)
-                    .thenApply(rootExecutionResultNode -> {
-                        Object data = ResultNodesUtil.toData(rootExecutionResultNode);
-                        return ExecutionResultImpl.newExecutionResult()
-                                .data(data)
-                                .build();
-                    })
-                    .thenApply(ExecutionResult.class::cast);
+                    .thenApply(ResultNodesUtil::toExecutionResult);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

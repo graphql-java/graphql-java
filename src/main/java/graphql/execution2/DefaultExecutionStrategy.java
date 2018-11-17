@@ -112,12 +112,12 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
                     List<Field> sameFields = entry.getValue();
                     String name = entry.getKey();
                     ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(sameFields, fieldSubSelection.getExecutionStepInfo());
+                    //
                     return valueFetcher
                             .fetchValue(fieldSubSelection.getSource(), sameFields, newExecutionStepInfo)
                             .thenApply(fetchValue -> analyseValue(fetchValue, name, sameFields, newExecutionStepInfo));
                 })
                 .collect(toList());
-
         return Async.each(fetchedValues);
     }
 

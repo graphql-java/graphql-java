@@ -1,12 +1,17 @@
 package graphql.execution2.result;
 
 import graphql.Assert;
+import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
+import graphql.GraphQLError;
+import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution2.FetchedValueAnalysis;
 import graphql.execution2.result.ObjectExecutionResultNode.UnresolvedObjectResultNode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedHashMap;
@@ -20,28 +25,81 @@ import static graphql.execution2.result.ExecutionResultNodePosition.key;
 
 public class ResultNodesUtil {
 
-    public static Object toData(ExecutionResultNode root) {
+    public static ExecutionResult toExecutionResult(ExecutionResultNode root) {
+        ExecutionResultData executionResultData = toDataImpl(root);
+        return ExecutionResultImpl.newExecutionResult()
+                .data(executionResultData.data)
+                .errors(executionResultData.errors)
+                .build();
+    }
+
+    private static class ExecutionResultData {
+        Object data;
+        List<GraphQLError> errors = new ArrayList<>();
+
+
+        public ExecutionResultData(Object data) {
+            this.data = data;
+        }
+
+        public ExecutionResultData(Object data, List<GraphQLError> errors) {
+            this.data = data;
+            this.errors = errors;
+        }
+    }
+
+    private static ExecutionResultData data(Object data) {
+        return new ExecutionResultData(data);
+    }
+
+    private static ExecutionResultData data(Object data, ExecutionResultNode executionResultNode) {
+        return new ExecutionResultData(data, executionResultNode.getFetchedValueAnalysis().getErrors());
+    }
+
+    private static ExecutionResultData data(Object data, List<GraphQLError> errors) {
+        return new ExecutionResultData(data, errors);
+    }
+
+    private static ExecutionResultData data(Object data, NonNullableFieldWasNullException exception) {
+        return new ExecutionResultData(data, Arrays.asList(new NonNullableFieldWasNullError(exception)));
+    }
+
+    private static ExecutionResultData toDataImpl(ExecutionResultNode root) {
         if (root instanceof LeafExecutionResultNode) {
-            return root.getFetchedValueAnalysis().isNullValue() ? null : ((LeafExecutionResultNode) root).getValue();
+            return root.getFetchedValueAnalysis().isNullValue() ? data(null) : data(((LeafExecutionResultNode) root).getValue(), root);
         }
         if (root instanceof ListExecutionResultNode) {
-            if (((ListExecutionResultNode) root).getChildNonNullableException().isPresent()) {
-                return null;
+            Optional<NonNullableFieldWasNullException> childNonNullableException = ((ListExecutionResultNode) root).getChildNonNullableException();
+            if (childNonNullableException.isPresent()) {
+                return data(null, childNonNullableException.get());
             }
-            return root.getChildren().stream().map(ResultNodesUtil::toData).collect(Collectors.toList());
+            List<ExecutionResultData> list = root.getChildren().stream().map(ResultNodesUtil::toDataImpl).collect(Collectors.toList());
+            List<Object> data = list
+                    .stream()
+                    .map(erd -> erd.data)
+                    .collect(Collectors.toList());
+            List<GraphQLError> errors = new ArrayList<>();
+            list.forEach(erd -> errors.addAll(erd.errors));
+            return data(data, errors);
         }
 
         if (root instanceof UnresolvedObjectResultNode) {
             FetchedValueAnalysis fetchedValueAnalysis = root.getFetchedValueAnalysis();
-            return "Not resolved : " + fetchedValueAnalysis.getExecutionStepInfo().getPath() + " with subSelection " + fetchedValueAnalysis.getFieldSubSelection().toShortString();
+            return data("Not resolved : " + fetchedValueAnalysis.getExecutionStepInfo().getPath() + " with subSelection " + fetchedValueAnalysis.getFieldSubSelection().toShortString());
         }
         if (root instanceof ObjectExecutionResultNode) {
-            if (((ObjectExecutionResultNode) root).getChildrenNonNullableException().isPresent()) {
-                return null;
+            Optional<NonNullableFieldWasNullException> childrenNonNullableException = ((ObjectExecutionResultNode) root).getChildrenNonNullableException();
+            if (childrenNonNullableException.isPresent()) {
+                return data(null, childrenNonNullableException.get());
             }
-            Map<String, Object> result = new LinkedHashMap<>();
-            ((ObjectExecutionResultNode) root).getChildrenMap().forEach((key, value) -> result.put(key, toData(value)));
-            return result;
+            Map<String, Object> resultMap = new LinkedHashMap<>();
+            List<GraphQLError> errors = new ArrayList<>();
+            ((ObjectExecutionResultNode) root).getChildrenMap().forEach((key, value) -> {
+                ExecutionResultData executionResultData = toDataImpl(value);
+                resultMap.put(key, executionResultData.data);
+                errors.addAll(executionResultData.errors);
+            });
+            return data(resultMap, errors);
         }
         throw new RuntimeException("Unexpected root " + root);
     }
