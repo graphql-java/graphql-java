@@ -33,17 +33,17 @@ import java.util.stream.Collectors;
 
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 
-public class ValueFetcherCF {
+public class ValueFetcher {
 
     private final ExecutionContext executionContext;
 
     ValuesResolver valuesResolver = new ValuesResolver();
 
-    private static final Logger log = LoggerFactory.getLogger(ValueFetcherCF.class);
+    private static final Logger log = LoggerFactory.getLogger(ValueFetcher.class);
 
     public static final Object NULL_VALUE = new Object();
 
-    public ValueFetcherCF(ExecutionContext executionContext) {
+    public ValueFetcher(ExecutionContext executionContext) {
         this.executionContext = executionContext;
     }
 

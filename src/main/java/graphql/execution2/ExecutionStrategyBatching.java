@@ -28,7 +28,7 @@ import static java.util.stream.Collectors.toList;
 public class ExecutionStrategyBatching {
 
     ExecutionStepInfoFactory executionInfoFactory;
-    ValueFetcherCF valueFetcher;
+    ValueFetcher valueFetcher;
     ResultNodesCreator resultNodesCreator = new ResultNodesCreator();
 
     private final ExecutionContext executionContext;
@@ -38,7 +38,7 @@ public class ExecutionStrategyBatching {
     public ExecutionStrategyBatching(ExecutionContext executionContext) {
         this.executionContext = executionContext;
         this.fetchedValueAnalyzer = new FetchedValueAnalyzer(executionContext);
-        this.valueFetcher = new ValueFetcherCF(executionContext);
+        this.valueFetcher = new ValueFetcher(executionContext);
         this.executionInfoFactory = new ExecutionStepInfoFactory(executionContext);
     }
 
