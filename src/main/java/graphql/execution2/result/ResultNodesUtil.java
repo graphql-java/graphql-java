@@ -112,6 +112,18 @@ public class ResultNodesUtil {
                 .findFirst();
     }
 
+    public static NonNullableFieldWasNullException newNullableException(FetchedValueAnalysis fetchedValueAnalysis, List<NamedResultNode> children) {
+        return newNullableException(fetchedValueAnalysis, children.stream().map(NamedResultNode::getNode).collect(Collectors.toList()));
+    }
+
+    public static Map<String, ExecutionResultNode> namedNodesToMap(List<NamedResultNode> namedResultNodes) {
+        Map<String, ExecutionResultNode> result = new LinkedHashMap<>();
+        for (NamedResultNode namedResultNode : namedResultNodes) {
+            result.put(namedResultNode.getName(), namedResultNode.getNode());
+        }
+        return result;
+    }
+
     public static NonNullableFieldWasNullException newNullableException(FetchedValueAnalysis fetchedValueAnalysis, Collection<ExecutionResultNode> children) {
         // can only happen for the root node
         if (fetchedValueAnalysis == null) {

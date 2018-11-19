@@ -20,6 +20,12 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
         this.children = children;
     }
 
+    public ObjectExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
+                                     List<NamedResultNode> children) {
+        super(fetchedValueAnalysis, ResultNodesUtil.newNullableException(fetchedValueAnalysis, children));
+        this.children = ResultNodesUtil.namedNodesToMap(children);
+    }
+
     @Override
     public List<ExecutionResultNode> getChildren() {
         return new ArrayList<>(children.values());
@@ -71,6 +77,10 @@ public class ObjectExecutionResultNode extends ExecutionResultNode {
     public static class RootExecutionResultNode extends ObjectExecutionResultNode {
 
         public RootExecutionResultNode(Map<String, ExecutionResultNode> children) {
+            super(null, children);
+        }
+
+        public RootExecutionResultNode(List<NamedResultNode> children) {
             super(null, children);
         }
 
