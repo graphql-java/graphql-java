@@ -35,14 +35,8 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
 
     @Override
     public CompletableFuture<ObjectExecutionResultNode.RootExecutionResultNode> execute(FieldSubSelection fieldSubSelection) {
-        return fetchSubSelection(fieldSubSelection).thenCompose(children -> {
-            List<CompletableFuture<NamedResultNode>> listOfCF = children
-                    .stream()
-                    .map(this::resolveNode)
-                    .collect(Collectors.toList());
-            return Async.each(listOfCF)
-                    .thenApply(ObjectExecutionResultNode.RootExecutionResultNode::new);
-        });
+        return resolveSubSelection(fieldSubSelection)
+                .thenApply(ObjectExecutionResultNode.RootExecutionResultNode::new);
     }
 
     private CompletableFuture<NamedResultNode> resolveNode(NamedResultNode namedResultNode) {
@@ -62,17 +56,20 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
 
     private CompletableFuture<ExecutionResultZipper> resolveZipper(ExecutionResultZipper unresolvedNodeZipper) {
         FetchedValueAnalysis fetchedValueAnalysis = unresolvedNodeZipper.getCurNode().getFetchedValueAnalysis();
+        return resolveSubSelection(fetchedValueAnalysis.getFieldSubSelection())
+                .thenApply(resolvedChildMap -> new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap))
+                .thenApply(unresolvedNodeZipper::withNode);
+    }
 
-        return fetchSubSelection(fetchedValueAnalysis.getFieldSubSelection())
+    private CompletableFuture<List<NamedResultNode>> resolveSubSelection(FieldSubSelection fieldSubSelection) {
+        return fetchSubSelection(fieldSubSelection)
                 .thenCompose(children -> {
                     List<CompletableFuture<NamedResultNode>> listOfCF = children
                             .stream()
                             .map(this::resolveNode)
                             .collect(Collectors.toList());
-                    return Async.each(listOfCF)
-                            .thenApply(resolvedChildMap -> new ObjectExecutionResultNode(fetchedValueAnalysis, resolvedChildMap));
-                })
-                .thenApply(unresolvedNodeZipper::withNode);
+                    return Async.each(listOfCF);
+                });
     }
 
 
