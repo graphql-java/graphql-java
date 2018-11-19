@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.GraphQLError;
 import graphql.PublicApi;
+import graphql.execution.validation.ValidationRule;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Directive;
 import graphql.language.EnumTypeDefinition;
@@ -464,8 +465,10 @@ public class SchemaGenerator {
             throw new NotAnInputTypeError(rawType, typeDefinition);
         }
 
+        List<ValidationRule> validationRules = buildCtx.getWiring().getInputTypeValidationRules(inputType.getName());
+        buildCtx.getCodeRegistry().inputTypeValidationRules(inputType, validationRules);
+
         buildCtx.putInputType(inputType);
-        buildCtx.pop();
         return typeInfo.decorate(inputType);
     }
 
@@ -508,6 +511,12 @@ public class SchemaGenerator {
             objectType = objectType.transform(objBuilder -> objBuilder.field(fieldDefinition));
         }
         objectType = directiveBehaviour.onObject(objectType, buildCtx.mkBehaviourParams());
+
+        Map<String, List<ValidationRule>> fieldValidationRules = buildCtx.getWiring().getFieldValidationRules(objectType.getName());
+        for (GraphQLFieldDefinition fieldDefinition : objectType.getFieldDefinitions()) {
+            List<ValidationRule> rules = fieldValidationRules.getOrDefault(fieldDefinition.getName(), Collections.emptyList());
+            buildCtx.getCodeRegistry().fieldValidationRules(objectType, fieldDefinition, rules);
+        }
         return buildCtx.exitNode(objectType);
     }
 
@@ -580,6 +589,13 @@ public class SchemaGenerator {
         }
 
         interfaceType = directiveBehaviour.onInterface(interfaceType, buildCtx.mkBehaviourParams());
+
+        Map<String, List<ValidationRule>> fieldValidationRules = buildCtx.getWiring().getFieldValidationRules(interfaceType.getName());
+        for (GraphQLFieldDefinition fieldDefinition : interfaceType.getFieldDefinitions()) {
+            List<ValidationRule> rules = fieldValidationRules.getOrDefault(fieldDefinition.getName(), Collections.emptyList());
+            buildCtx.getCodeRegistry().fieldValidationRules(interfaceType, fieldDefinition, rules);
+        }
+
         return buildCtx.exitNode(interfaceType);
     }
 

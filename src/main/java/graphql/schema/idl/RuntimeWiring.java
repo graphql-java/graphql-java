@@ -1,13 +1,16 @@
 package graphql.schema.idl;
 
 import graphql.PublicApi;
+import graphql.execution.validation.ValidationRule;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
@@ -28,9 +31,11 @@ public class RuntimeWiring {
     private final Map<String, SchemaDirectiveWiring> directiveWiring;
     private final WiringFactory wiringFactory;
     private final Map<String, EnumValuesProvider> enumValuesProviders;
+    private final Map<String, Map<String, List<ValidationRule>>> fieldValidationRules;
+    private final Map<String, List<ValidationRule>> inputTypeValidationRules;
     private final GraphqlFieldVisibility fieldVisibility;
 
-    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, SchemaDirectiveWiring> directiveWiring, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory, GraphqlFieldVisibility fieldVisibility) {
+    private RuntimeWiring(Map<String, Map<String, DataFetcher>> dataFetchers, Map<String, DataFetcher> defaultDataFetchers, Map<String, GraphQLScalarType> scalars, Map<String, TypeResolver> typeResolvers, Map<String, SchemaDirectiveWiring> directiveWiring, Map<String, EnumValuesProvider> enumValuesProviders, WiringFactory wiringFactory, Map<String, Map<String, List<ValidationRule>>> fieldValidationRules, Map<String, List<ValidationRule>> inputTypeValidationRules, GraphqlFieldVisibility fieldVisibility) {
         this.dataFetchers = dataFetchers;
         this.defaultDataFetchers = defaultDataFetchers;
         this.scalars = scalars;
@@ -38,6 +43,8 @@ public class RuntimeWiring {
         this.directiveWiring = directiveWiring;
         this.wiringFactory = wiringFactory;
         this.enumValuesProviders = enumValuesProviders;
+        this.fieldValidationRules = fieldValidationRules;
+        this.inputTypeValidationRules = inputTypeValidationRules;
         this.fieldVisibility = fieldVisibility;
     }
 
@@ -84,6 +91,15 @@ public class RuntimeWiring {
         return directiveWiring;
     }
 
+    public Map<String, List<ValidationRule>> getFieldValidationRules(String typeName) {
+        return fieldValidationRules.getOrDefault(typeName, Collections.emptyMap());
+    }
+
+    public List<ValidationRule> getInputTypeValidationRules(String typeName) {
+        return inputTypeValidationRules.getOrDefault(typeName, Collections.emptyList());
+    }
+
+
     @PublicApi
     public static class Builder {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
@@ -94,6 +110,8 @@ public class RuntimeWiring {
         private final Map<String, SchemaDirectiveWiring> directiveWiring = new LinkedHashMap<>();
         private WiringFactory wiringFactory = new NoopWiringFactory();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
+        private final Map<String, Map<String, List<ValidationRule>>> fieldValidationRules = new LinkedHashMap<>();
+        private final Map<String, List<ValidationRule>> inputTypeValidationRules = new LinkedHashMap<>();
 
         private Builder() {
             ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);
@@ -185,6 +203,10 @@ public class RuntimeWiring {
             if (enumValuesProvider != null) {
                 this.enumValuesProviders.put(typeName, enumValuesProvider);
             }
+
+            inputTypeValidationRules.put(typeName, typeRuntimeWiring.getInputTypeValidationRules());
+            fieldValidationRules.put(typeName, typeRuntimeWiring.getFieldValidationRules());
+
             return this;
         }
 
@@ -207,7 +229,7 @@ public class RuntimeWiring {
          * @return the built runtime wiring
          */
         public RuntimeWiring build() {
-            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, directiveWiring, enumValuesProviders, wiringFactory, fieldVisibility);
+            return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, directiveWiring, enumValuesProviders, wiringFactory, fieldValidationRules, inputTypeValidationRules, fieldVisibility);
         }
 
     }

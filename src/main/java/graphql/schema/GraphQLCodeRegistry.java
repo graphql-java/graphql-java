@@ -1,9 +1,14 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import graphql.execution.validation.ValidationRule;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -27,11 +32,15 @@ public class GraphQLCodeRegistry {
 
     private final Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap;
     private final Map<String, TypeResolver> typeResolverMap;
+    private final Map<TypeAndFieldKey, List<ValidationRule>> fieldValidationRules;
+    private final Map<String, List<ValidationRule>> inputTypeValidationRules;
     private final GraphqlFieldVisibility fieldVisibility;
 
-    private GraphQLCodeRegistry(Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap, Map<String, TypeResolver> typeResolverMap, GraphqlFieldVisibility fieldVisibility) {
+    private GraphQLCodeRegistry(Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap, Map<String, TypeResolver> typeResolverMap, Map<TypeAndFieldKey, List<ValidationRule>> fieldValidationRules, Map<String, List<ValidationRule>> inputTypeValidationRules, GraphqlFieldVisibility fieldVisibility) {
         this.dataFetcherMap = dataFetcherMap;
         this.typeResolverMap = typeResolverMap;
+        this.fieldValidationRules = fieldValidationRules;
+        this.inputTypeValidationRules = inputTypeValidationRules;
         this.fieldVisibility = fieldVisibility;
     }
 
@@ -40,6 +49,36 @@ public class GraphQLCodeRegistry {
      */
     public GraphqlFieldVisibility getFieldVisibility() {
         return fieldVisibility;
+    }
+
+    /**
+     * Returns a list of validation rules for a given input type
+     *
+     * @param inputType the type to look up
+     *
+     * @return the list of rules or an empty list
+     */
+    public List<ValidationRule> getInputTypeValidationRules(GraphQLInputType inputType) {
+        return new ArrayList<>(inputTypeValidationRules.getOrDefault(inputType.getName(), Collections.emptyList()));
+    }
+
+    /**
+     * Returns a list of validation rules for a given parent type and field definition
+     *
+     * @param parentType      the container type
+     * @param fieldDefinition the field definition
+     *
+     * @return the list of rules or an empty list
+     */
+    public List<ValidationRule> getFieldValidationRules(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
+        return new ArrayList<>(fieldValidationRules.getOrDefault(mkKey(parentType.getName(), fieldDefinition.getName()), Collections.emptyList()));
+    }
+
+    /**
+     * @return true of there are any validation rules at all, which may allow optimised code paths
+     */
+    public boolean hasAnyValidationRules() {
+        return fieldValidationRules.size() > 0 || inputTypeValidationRules.size() > 0;
     }
 
     /**
@@ -174,9 +213,12 @@ public class GraphQLCodeRegistry {
         return new Builder();
     }
 
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     public static class Builder {
-        private final Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap = new HashMap<>();
-        private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
+        private final Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap = new LinkedHashMap<>();
+        private final Map<String, TypeResolver> typeResolverMap = new LinkedHashMap<>();
+        private final Map<TypeAndFieldKey, List<ValidationRule>> fieldValidationRules = new LinkedHashMap<>();
+        private final Map<String, List<ValidationRule>> inputTypeValidationRules = new LinkedHashMap<>();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
 
 
@@ -186,7 +228,32 @@ public class GraphQLCodeRegistry {
         private Builder(GraphQLCodeRegistry codeRegistry) {
             this.dataFetcherMap.putAll(codeRegistry.dataFetcherMap);
             this.typeResolverMap.putAll(codeRegistry.typeResolverMap);
+            this.inputTypeValidationRules.putAll(codeRegistry.inputTypeValidationRules);
+            this.fieldValidationRules.putAll(codeRegistry.fieldValidationRules);
             this.fieldVisibility = codeRegistry.fieldVisibility;
+        }
+
+        public Builder inputTypeValidationRules(GraphQLInputType inputType, ValidationRule... validationRules) {
+            return inputTypeValidationRules(inputType, Arrays.asList(validationRules));
+        }
+
+        public Builder inputTypeValidationRules(GraphQLInputType inputType, List<ValidationRule> validationRules) {
+            List<ValidationRule> rules = inputTypeValidationRules.getOrDefault(inputType.getName(), new ArrayList<>());
+            rules.addAll(validationRules);
+            inputTypeValidationRules.put(inputType.getName(), rules);
+            return this;
+        }
+
+        public Builder fieldValidationRules(GraphQLFieldsContainer parentTypeContainer, GraphQLFieldDefinition fieldDefinition, ValidationRule... validationRules) {
+            return fieldValidationRules(parentTypeContainer, fieldDefinition, Arrays.asList(validationRules));
+        }
+
+        public Builder fieldValidationRules(GraphQLFieldsContainer parentTypeContainer, GraphQLFieldDefinition fieldDefinition, List<ValidationRule> validationRules) {
+            TypeAndFieldKey key = mkKey(parentTypeContainer.getName(), fieldDefinition.getName());
+            List<ValidationRule> rules = fieldValidationRules.getOrDefault(key, new ArrayList<>());
+            rules.addAll(validationRules);
+            fieldValidationRules.put(key, rules);
+            return this;
         }
 
         /**
@@ -338,8 +405,14 @@ public class GraphQLCodeRegistry {
             return this;
         }
 
+        public Builder clearValidationRules() {
+            inputTypeValidationRules.clear();
+            fieldValidationRules.clear();
+            return this;
+        }
+
         public GraphQLCodeRegistry build() {
-            return new GraphQLCodeRegistry(dataFetcherMap, typeResolverMap, fieldVisibility);
+            return new GraphQLCodeRegistry(dataFetcherMap, typeResolverMap, fieldValidationRules, inputTypeValidationRules, fieldVisibility);
         }
     }
 }

@@ -198,7 +198,7 @@ tasks.withType(PublishToMavenRepository) {
 }
 
 
-task wrapper(type: Wrapper) {
+task wr     apper(type: Wrapper) {
     gradleVersion = '4.10.2'
     distributionUrl = "https://services.gradle.org/distributions/gradle-${gradleVersion}-all.zip"
 }

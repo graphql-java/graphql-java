@@ -14,6 +14,8 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution.validation.ValidationExecution;
+import graphql.execution.validation.ValidationResult;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
@@ -123,6 +125,7 @@ public abstract class ExecutionStrategy {
 
     protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
+    protected final ValidationExecution validationExecution = new ValidationExecution();
 
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
@@ -248,6 +251,7 @@ public abstract class ExecutionStrategy {
                 .selectionSet(fieldCollector)
                 .build();
 
+
         DataFetcher dataFetcher = executionContext.getGraphQLSchema().getCodeRegistry().getDataFetcher(parentType, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -258,12 +262,19 @@ public abstract class ExecutionStrategy {
         CompletableFuture<Object> fetchedValue;
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
         ExecutionId executionId = executionContext.getExecutionId();
+        Object fetchedValueRaw;
         try {
-            log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, executionStepInfo.getPath(), dataFetcher.getClass().getName());
-            Object fetchedValueRaw = dataFetcher.get(environment);
-            log.debug("'{}' field '{}' fetch returned '{}'", executionId, executionStepInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+            ValidationResult validationResult = validationExecution.validateField(environment);
+            validationResult.getErrors().forEach(validationError -> executionContext.addError(validationError, parameters.getPath()));
+            if (validationResult.getInstruction() == ValidationResult.Instruction.RETURN_NULL) {
+                fetchedValue = CompletableFuture.completedFuture(null);
+            } else {
+                log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, executionStepInfo.getPath(), dataFetcher.getClass().getName());
+                fetchedValueRaw = dataFetcher.get(environment);
+                log.debug("'{}' field '{}' fetch returned '{}'", executionId, executionStepInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
 
-            fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
+                fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
+            }
         } catch (Exception e) {
             log.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.getPath()), e);
 
