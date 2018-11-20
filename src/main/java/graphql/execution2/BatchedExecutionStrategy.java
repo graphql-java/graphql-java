@@ -7,12 +7,11 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution2.result.ExecutionResultMultiZipper;
 import graphql.execution2.result.ExecutionResultNode;
 import graphql.execution2.result.ExecutionResultZipper;
+import graphql.execution2.result.NamedResultNode;
 import graphql.execution2.result.ObjectExecutionResultNode;
 import graphql.execution2.result.ObjectExecutionResultNode.RootExecutionResultNode;
 import graphql.execution2.result.ResultNodesUtil;
 import graphql.language.Field;
-import graphql.tuples.Tuple2;
-import graphql.tuples.Tuples;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -52,25 +51,16 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
                 .thenApply(RootExecutionResultNode.class::cast);
     }
 
-    private CompletableFuture<Map<String, ExecutionResultNode>> fetchSubSelection(FieldSubSelection fieldSubSelection) {
+    private CompletableFuture<List<NamedResultNode>> fetchSubSelection(FieldSubSelection fieldSubSelection) {
         CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux = fetchAndAnalyze(fieldSubSelection);
         return fetchedValueAnalysisFluxToNodes(fetchedValueAnalysisFlux);
     }
 
-    private CompletableFuture<Map<String, ExecutionResultNode>> fetchedValueAnalysisFluxToNodes(CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux) {
-        CompletableFuture<List<Tuple2<String, ExecutionResultNode>>> tuplesList = Async.map(fetchedValueAnalysisFlux,
-                fetchedValueAnalysis -> Tuples.of(fetchedValueAnalysis.getName(), resultNodesCreator.createResultNode(fetchedValueAnalysis)));
-        return tuplesToMap(tuplesList);
+    private CompletableFuture<List<NamedResultNode>> fetchedValueAnalysisFluxToNodes(CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalysisFlux) {
+        return Async.map(fetchedValueAnalysisFlux,
+                fetchedValueAnalysis -> new NamedResultNode(fetchedValueAnalysis.getName(), resultNodesCreator.createResultNode(fetchedValueAnalysis)));
     }
 
-
-    private <U> CompletableFuture<Map<String, U>> tuplesToMap(CompletableFuture<List<Tuple2<String, U>>> tuplesFlux) {
-        return Async.reduce(tuplesFlux, new LinkedHashMap<>(), (acc, tuple) -> {
-            U value = tuple.getT2();
-            acc.put(tuple.getT1(), value);
-            return acc;
-        });
-    }
 
     private CompletableFuture<ExecutionResultMultiZipper> nextStep(ExecutionResultMultiZipper multizipper) {
         ExecutionResultMultiZipper nextUnresolvedNodes = ResultNodesUtil.getUnresolvedNodes(multizipper.toRootNode());
