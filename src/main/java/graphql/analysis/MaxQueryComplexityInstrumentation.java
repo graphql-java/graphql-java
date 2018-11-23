@@ -70,7 +70,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
      * @param maxQueryComplexityExceededFunction the function to perform when the max complexity is exceeded
      */
     public MaxQueryComplexityInstrumentation(int maxComplexity, FieldComplexityCalculator fieldComplexityCalculator,
-            Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction) {
+                                             Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction) {
         this.maxComplexity = maxComplexity;
         this.fieldComplexityCalculator = assertNotNull(fieldComplexityCalculator, "calculator can't be null");
         this.maxQueryComplexityExceededFunction = maxQueryComplexityExceededFunction;
@@ -92,7 +92,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
                     int value = calculateComplexity(env, childsComplexity);
 
                     valuesByParent.compute(env.getParentEnvironment(), (key, oldValue) ->
-                        ofNullable(oldValue).orElse(0) + value
+                            ofNullable(oldValue).orElse(0) + value
                     );
                 }
             });
@@ -124,11 +124,11 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
 
     QueryTraversal newQueryTraversal(InstrumentationValidationParameters parameters) {
         return QueryTraversal.newQueryTraversal()
-                             .schema(parameters.getSchema())
-                             .document(parameters.getDocument())
-                             .operationName(parameters.getOperation())
-                             .variables(parameters.getVariables())
-                             .build();
+                .schema(parameters.getSchema())
+                .document(parameters.getDocument())
+                .operationName(parameters.getOperation())
+                .variables(parameters.getVariables())
+                .build();
     }
 
     private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childsComplexity) {
@@ -145,11 +145,11 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
             parentEnv = convertEnv(queryVisitorFieldEnvironment.getParentEnvironment());
         }
         return new FieldComplexityEnvironment(
-            queryVisitorFieldEnvironment.getField(),
-            queryVisitorFieldEnvironment.getFieldDefinition(),
-            queryVisitorFieldEnvironment.getFieldsContainer(),
-            queryVisitorFieldEnvironment.getArguments(),
-            parentEnv
+                queryVisitorFieldEnvironment.getField(),
+                queryVisitorFieldEnvironment.getFieldDefinition(),
+                queryVisitorFieldEnvironment.getFieldsContainer(),
+                queryVisitorFieldEnvironment.getArguments(),
+                parentEnv
         );
     }
 
