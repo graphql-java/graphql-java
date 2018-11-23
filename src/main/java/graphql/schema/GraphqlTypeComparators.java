@@ -1,13 +1,13 @@
 package graphql.schema;
 
-import graphql.PublicApi;
+import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
-@PublicApi
+@Internal
 public class GraphqlTypeComparators {
 
     /**
@@ -20,7 +20,7 @@ public class GraphqlTypeComparators {
      * @return a new allocated list of sorted things
      */
     public static <T extends GraphQLType> List<T> sortGraphQLTypes(Collection<T> types) {
-        ArrayList<T> sorted = new ArrayList<>(types);
+        List<T> sorted = new ArrayList<>(types);
         sorted.sort(graphQLTypeComparator());
         return sorted;
     }
