@@ -27,6 +27,7 @@ import static graphql.Assert.assertNotNull;
  * You can set this up via {@link ExecutionInput.Builder#context(graphql.GraphQLContext.Builder)}
  */
 @PublicApi
+@ThreadSafe
 @SuppressWarnings("unchecked")
 public class GraphQLContext {
 
