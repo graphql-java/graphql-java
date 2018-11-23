@@ -13,16 +13,17 @@ import static graphql.Assert.assertNotNull;
  * This context object can be used to contain key values that can be useful as "context" when executing
  * {@link graphql.schema.DataFetcher}s
  *
- * {@code
  * <pre>
+ * {@code
  *     DataFetcher df = new DataFetcher() {
  *        public Object get(DataFetchingEnvironment env) {
  *            GraphQLContext ctx = env.getContext()
  *            User currentUser = ctx.getOrDefault("userKey",new AnonymousUser())
  *            ...
  *        }
- * </pre>
+ *     }
  * }
+ * </pre>
  *
  * You can set this up via {@link ExecutionInput.Builder#context(graphql.GraphQLContext.Builder)}
  */
