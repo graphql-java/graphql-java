@@ -13,10 +13,19 @@ public interface ValidationRuleEnvironment {
 
     DataFetchingEnvironment getDataFetchingEnvironment();
 
+    /**
+     * @return the field that is being validated
+     */
     GraphQLFieldDefinition getValidatedField();
 
+    /**
+     * @return the argument that is being validated or null if its a field level rule
+     */
     GraphQLArgument getValidatedArgument();
 
+    /**
+     * @return the argument value that is being validated or null if its a field level rule
+     */
     Object getValidatedArgumentValue();
 
     /**

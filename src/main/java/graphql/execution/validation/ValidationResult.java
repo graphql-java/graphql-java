@@ -51,6 +51,13 @@ public class ValidationResult {
         private List<GraphQLError> errors = new ArrayList<>();
 
 
+        /**
+         * @return true if any errors have been put in the result
+         */
+        public boolean hasErrors() {
+            return !errors.isEmpty();
+        }
+
         public Builder instruction(Instruction instruction) {
             this.instruction = instruction;
             return this;
@@ -61,16 +68,38 @@ public class ValidationResult {
             return this;
         }
 
+        /**
+         * Combines the given validattion result into the current one and IF it returns
+         * the {@link graphql.execution.validation.ValidationResult.Instruction#RETURN_NULL} instruction then
+         * this will be transferred as well.
+         *
+         * @param validationResult the result to combine
+         *
+         * @return this builder
+         */
+        public Builder withResult(ValidationResult validationResult) {
+            this.errors.addAll(validationResult.getErrors());
+            if (validationResult.getInstruction() == Instruction.RETURN_NULL) {
+                instruction(Instruction.RETURN_NULL);
+            }
+            return this;
+        }
+
         public Builder withErrors(List<GraphQLError> errrors) {
             this.errors.addAll(errrors);
             return this;
         }
 
+        /**
+         * @return a CONTINUE result if there no errors in the result
+         */
+        public ValidationResult continueIfNoErrors() {
+            return new ValidationResult(hasErrors() ? Instruction.RETURN_NULL : Instruction.CONTINUE_FETCHING, errors);
+        }
+
         public ValidationResult build() {
             return new ValidationResult(instruction, errors);
         }
-
-
     }
 
 }

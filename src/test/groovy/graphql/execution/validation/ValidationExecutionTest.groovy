@@ -32,7 +32,35 @@ class ValidationExecutionTest extends Specification {
         
     '''
 
-    def df = { env -> "beer" }
+    ValidationRule requiresFirstOrLast = new ValidationRule() {
+        @Override
+        ValidationResult validate(ValidationRuleEnvironment env) {
+            def result = ValidationResult.newResult()
+            if (!(env.containsArgument("first") || env.containsArgument("last"))) {
+                result.withErrors(env.mkError("You must provide either the first or last argument"))
+            }
+            return result.continueIfNoErrors()
+        }
+    }
+
+    ValidationRule barInputIsAllowed = new ValidationRule() {
+        @Override
+        ValidationResult validate(ValidationRuleEnvironment env) {
+            def result = ValidationResult.newResult()
+            def barInput = env.getValidatedArgumentValue()
+            if (barInput != null) {
+                result.withResult(Validations.nonNull(barInput['age'], env, { env2 -> "You must be over 18 to enter this bar" }))
+                if (barInput['age'] < 18) {
+                    result.withErrors(env.mkError("You must be over 18 to enter this bar"))
+                }
+                if (barInput['hasShoes'] != true) {
+                    result.withErrors(env.mkError("You must be wearing shoes"))
+                }
+            }
+            return result.continueIfNoErrors()
+        }
+    }
+
 
     private DataFetchingEnvironment buildDFE(List<ValidationRule> fieldRules, List<ValidationRule> typeRules, Map<String, Object> args) {
         def schema = TestUtil.schema(spec)
@@ -75,18 +103,8 @@ class ValidationExecutionTest extends Specification {
         dfe
     }
 
-    ValidationRule requiresFirstOrLast = new ValidationRule() {
-        @Override
-        ValidationResult validate(ValidationRuleEnvironment env) {
-            def result = ValidationResult.newResult()
-            if (!(env.containsArgument("first") || env.containsArgument("last"))) {
-                result.withErrors(env.mkError("You must provide either the first or last argument"))
-            }
-            return result.instruction(ValidationResult.Instruction.RETURN_NULL).build()
-        }
-    }
 
-    def "rules gte found"() {
+    def "field rules get found"() {
         def args = [:]
         DataFetchingEnvironment dfe = buildDFE([requiresFirstOrLast], [], args)
 
@@ -100,8 +118,36 @@ class ValidationExecutionTest extends Specification {
         result.errors[0].errorType == ErrorType.ValidationError
     }
 
+    def "input type rules get found"() {
+        def args = [barInput: [age: 14, hasShoes: true]]
+        DataFetchingEnvironment dfe = buildDFE([], [barInputIsAllowed], args)
+
+        ValidationExecution validationExecution = new ValidationExecution()
+        when:
+        def result = validationExecution.validateField(dfe)
+        then:
+        result.instruction == ValidationResult.Instruction.RETURN_NULL
+        result.errors.size() == 1
+        result.errors[0].message == "You must be over 18 to enter this bar"
+        result.errors[0].path == ["walksIntoABar"]
+        result.errors[0].errorType == ErrorType.ValidationError
+
+        when:
+
+        args = [barInput: [age: 18, hasShoes: true]]
+        dfe = buildDFE([], [barInputIsAllowed], args)
+
+        result = validationExecution.validateField(dfe)
+
+        then:
+        result.instruction == ValidationResult.Instruction.CONTINUE_FETCHING
+        result.errors.isEmpty()
+    }
+
+
     def "integration test of rules running"() {
 
+        def df = { env -> "beer" }
 
         def typeWiring = TypeRuntimeWiring.newTypeWiring("Query")
                 .dataFetcher("walksIntoABar", df)
