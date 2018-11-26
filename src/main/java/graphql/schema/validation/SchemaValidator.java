@@ -8,14 +8,14 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 @Internal
 public class SchemaValidator {
 
-    private final Set<GraphQLOutputType> processed = new HashSet<>();
+    private final Set<GraphQLOutputType> processed = new LinkedHashSet<>();
 
     private List<SchemaValidationRule> rules = new ArrayList<>();
 

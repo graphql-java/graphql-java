@@ -60,9 +60,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -140,10 +139,10 @@ public class SchemaGenerator {
         private final Deque<String> typeStack = new ArrayDeque<>();
         private final Deque<Node> nodeStack = new ArrayDeque<>();
 
-        private final Map<String, GraphQLOutputType> outputGTypes = new HashMap<>();
-        private final Map<String, GraphQLInputType> inputGTypes = new HashMap<>();
-        private final Map<String, Object> directiveBehaviourContext = new HashMap<>();
-        private final Set<GraphQLDirective> directiveDefinitions = new HashSet<>();
+        private final Map<String, GraphQLOutputType> outputGTypes = new LinkedHashMap<>();
+        private final Map<String, GraphQLInputType> inputGTypes = new LinkedHashMap<>();
+        private final Map<String, Object> directiveBehaviourContext = new LinkedHashMap<>();
+        private final Set<GraphQLDirective> directiveDefinitions = new LinkedHashSet<>();
         private final GraphQLCodeRegistry.Builder codeRegistry = GraphQLCodeRegistry.newCodeRegistry();
 
         BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
@@ -361,7 +360,7 @@ public class SchemaGenerator {
      * @return the additional types not referenced from the top level operations
      */
     private Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
-        Set<GraphQLType> additionalTypes = new HashSet<>();
+        Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         typeRegistry.types().values().forEach(typeDefinition -> {
             TypeName typeName = TypeName.newTypeName().name(typeDefinition.getName()).build();
@@ -379,7 +378,7 @@ public class SchemaGenerator {
     }
 
     private Set<GraphQLDirective> buildAdditionalDirectives(BuildContext buildCtx) {
-        Set<GraphQLDirective> additionalDirectives = new HashSet<>();
+        Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
         typeRegistry.getDirectiveDefinitions().values().forEach(directiveDefinition -> {
             Function<Type, GraphQLInputType> inputTypeFactory = inputType -> buildInputType(buildCtx, inputType);
@@ -930,7 +929,7 @@ public class SchemaGenerator {
     private GraphQLDirective[] buildDirectives(List<Directive> directives, List<Directive> extensionDirectives, DirectiveLocation directiveLocation, Set<GraphQLDirective> directiveDefinitions) {
         directives = directives == null ? emptyList() : directives;
         extensionDirectives = extensionDirectives == null ? emptyList() : extensionDirectives;
-        Set<String> names = new HashSet<>();
+        Set<String> names = new LinkedHashSet<>();
 
         List<GraphQLDirective> output = new ArrayList<>();
         for (Directive directive : directives) {

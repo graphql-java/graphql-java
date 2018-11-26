@@ -16,6 +16,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
@@ -41,12 +42,32 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
     private final List<GraphQLDirective> directives;
 
 
+    /**
+     * @param name         the name
+     * @param description  the description
+     * @param types        the possible types
+     * @param typeResolver the type resolver function
+     *
+     * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver) {
         this(name, description, types, typeResolver, emptyList(), null);
     }
 
+    /**
+     * @param name         the name
+     * @param description  the description
+     * @param types        the possible types
+     * @param typeResolver the type resolver function
+     * @param directives   the directives on this type element
+     * @param definition   the AST definition
+     *
+     * @deprecated use the {@link #newUnionType()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLUnionType(String name, String description, List<GraphQLOutputType> types, TypeResolver typeResolver, List<GraphQLDirective> directives, UnionTypeDefinition definition) {
         assertValidName(name);
         assertNotNull(types, "types can't be null");
@@ -55,7 +76,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
 
         this.name = name;
         this.description = description;
-        this.types = types;
+        this.types = sortGraphQLTypes(types);
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.directives = directives;

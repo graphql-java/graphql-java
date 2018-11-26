@@ -13,7 +13,7 @@ import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -100,7 +100,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             DeferredErrorSupport errorSupport = new DeferredErrorSupport();
 
             // with a deferred field we are really resetting where we execute from, that is from this current field onwards
-            Map<String, List<Field>> fields = new HashMap<>();
+            Map<String, List<Field>> fields = new LinkedHashMap<>();
             fields.put(currentField.get(0).getName(), currentField);
 
             ExecutionStrategyParameters callParameters = parameters.transform(builder ->

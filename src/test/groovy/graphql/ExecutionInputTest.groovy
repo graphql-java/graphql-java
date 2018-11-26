@@ -3,6 +3,8 @@ package graphql
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
+import java.util.function.UnaryOperator
+
 class ExecutionInputTest extends Specification {
 
     def query = "query { hello }"
@@ -25,6 +27,22 @@ class ExecutionInputTest extends Specification {
         executionInput.variables == variables
         executionInput.dataLoaderRegistry == registry
         executionInput.query == query
+    }
+
+    def "context methods work"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().query(query)
+                .context({ builder -> builder.of("k1", "v1") } as UnaryOperator)
+                .build()
+        then:
+        (executionInput.context as GraphQLContext).get("k1") == "v1"
+
+        when:
+        executionInput = ExecutionInput.newExecutionInput().query(query)
+                .context(GraphQLContext.newContext().of("k2", "v2"))
+                .build()
+        then:
+        (executionInput.context as GraphQLContext).get("k2") == "v2"
     }
 
     def "transform works and copies values"() {

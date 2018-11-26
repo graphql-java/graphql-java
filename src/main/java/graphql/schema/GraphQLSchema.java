@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Directives;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
@@ -11,16 +12,17 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -44,26 +46,64 @@ public class GraphQLSchema {
     private final Map<String, List<GraphQLObjectType>> byInterface;
     private final GraphQLCodeRegistry codeRegistry;
 
+    private final SchemaUtil schemaUtil = new SchemaUtil();
 
+
+    /**
+     * @param queryType the query type
+     *
+     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
+    @Deprecated
     public GraphQLSchema(GraphQLObjectType queryType) {
         this(queryType, null, Collections.emptySet());
     }
 
+    /**
+     * @param queryType       the query type
+     * @param mutationType    the mutation type
+     * @param additionalTypes additional types
+     *
+     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
+    @Deprecated
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, Set<GraphQLType> additionalTypes) {
         this(queryType, mutationType, null, additionalTypes);
     }
 
+    /**
+     * @param queryType        the query type
+     * @param mutationType     the mutation type
+     * @param subscriptionType the subscription type
+     * @param additionalTypes  additional types
+     *
+     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
+    @Deprecated
     public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes) {
         this(queryType, mutationType, subscriptionType, additionalTypes, Collections.emptySet(), GraphQLCodeRegistry.newCodeRegistry().build());
     }
 
-    private GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphQLCodeRegistry codeRegistry) {
+    /**
+     * @param queryType        the query type
+     * @param mutationType     the mutation type
+     * @param subscriptionType the subscription type
+     * @param additionalTypes  additional types
+     * @param directives       the directives on this schema
+     * @param fieldVisibility  the field visibility
+     *
+     * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
+    public GraphQLSchema(GraphQLObjectType queryType, GraphQLObjectType mutationType, GraphQLObjectType subscriptionType, Set<GraphQLType> additionalTypes, Set<GraphQLDirective> directives, GraphQLCodeRegistry codeRegistry) {
         assertNotNull(additionalTypes, "additionalTypes can't be null");
         assertNotNull(queryType, "queryType can't be null");
         assertNotNull(directives, "directives can't be null");
         assertNotNull(codeRegistry, "codeRegistry can't be null");
 
-        SchemaUtil schemaUtil = new SchemaUtil();
 
         this.queryType = queryType;
         this.mutationType = mutationType;
@@ -110,7 +150,7 @@ public class GraphQLSchema {
     }
 
     public List<GraphQLType> getAllTypesAsList() {
-        return new ArrayList<>(typeMap.values());
+        return sortGraphQLTypes(typeMap.values());
     }
 
     /**
@@ -125,7 +165,7 @@ public class GraphQLSchema {
         List<GraphQLObjectType> implementations = byInterface.get(type.getName());
         return (implementations == null)
                 ? Collections.emptyList()
-                : Collections.unmodifiableList(implementations);
+                : Collections.unmodifiableList(sortGraphQLTypes(implementations));
     }
 
     /**
@@ -240,12 +280,13 @@ public class GraphQLSchema {
         private GraphQLObjectType mutationType;
         private GraphQLObjectType subscriptionType;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
-        private Set<GraphQLType> additionalTypes = new HashSet<>();
+        private Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
         // we default these in
         private Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
                 asList(Directives.IncludeDirective, Directives.SkipDirective, Directives.DeferDirective)
         );
 
+        private SchemaUtil schemaUtil = new SchemaUtil();
 
         public Builder query(GraphQLObjectType.Builder builder) {
             return query(builder.build());
@@ -356,7 +397,7 @@ public class GraphQLSchema {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
             GraphQLSchema graphQLSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, codeRegistry);
-            new SchemaUtil().replaceTypeReferences(graphQLSchema);
+            schemaUtil.replaceTypeReferences(graphQLSchema);
             Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
             if (errors.size() > 0) {
                 throw new InvalidSchemaException(errors);

@@ -17,6 +17,7 @@ public class DataFetchingExamples {
 
     }
 
+    //::FigureA
     class ProductDTO {
 
         private ID id;
@@ -39,8 +40,10 @@ public class DataFetchingExamples {
             return yodaTimeFormatter(launchDate,dateFormat);
         }
     }
+    //::/FigureA
 
     void getProductsDataFetcher() {
+        //::FigureB
         DataFetcher productsDataFetcher = new DataFetcher<List<ProductDTO>>() {
             @Override
             public List<ProductDTO> get(DataFetchingEnvironment environment) {
@@ -56,6 +59,7 @@ public class DataFetchingExamples {
                 return products;
             }
         };
+        //::/FigureB
     }
 
     private String yodaTimeFormatter(LocalDateTime date, String dateFormat) {
