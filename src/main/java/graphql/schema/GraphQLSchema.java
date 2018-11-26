@@ -23,7 +23,6 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
-import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
@@ -93,7 +92,7 @@ public class GraphQLSchema {
      * @param subscriptionType the subscription type
      * @param additionalTypes  additional types
      * @param directives       the directives on this schema
-     * @param fieldVisibility  the field visibility
+     * @param codeRegistry     the code registry to use
      *
      * @deprecated use the {@link #newSchema()} builder pattern instead, as this constructor will be made private in a future version.
      */
@@ -110,8 +109,9 @@ public class GraphQLSchema {
         this.subscriptionType = subscriptionType;
         this.additionalTypes.addAll(additionalTypes);
         this.directives.addAll(directives);
-        this.typeMap = schemaUtil.allTypes(this, additionalTypes);
-        this.byInterface = schemaUtil.groupImplementations(this);
+        // sorted by type name
+        this.typeMap = new TreeMap<>(schemaUtil.allTypes(this, additionalTypes));
+        this.byInterface = new TreeMap<>(schemaUtil.groupImplementations(this));
         this.codeRegistry = codeRegistry;
     }
 
@@ -206,6 +206,8 @@ public class GraphQLSchema {
     }
 
     /**
+     * @return the field visibility
+     *
      * @deprecated use {@link GraphQLCodeRegistry#getFieldVisibility()} instead
      */
     @Deprecated
@@ -316,6 +318,10 @@ public class GraphQLSchema {
         }
 
         /**
+         * @param fieldVisibility the field visibility
+         *
+         * @return this builder
+         *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#fieldVisibility(graphql.schema.visibility.GraphqlFieldVisibility)} instead
          */
         @Deprecated
