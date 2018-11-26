@@ -105,4 +105,8 @@ public class SchemaUtil {
         roots.addAll(schema.getDirectives());
         TRAVERSER.depthFirst(new GraphQLTypeResolvingVisitor(typeMap), roots);
     }
+
+    void extractCodeFromTypes(GraphQLCodeRegistry.Builder codeRegistry, List<GraphQLType> roots) {
+        TRAVERSER.depthFirst(new GraphQLTypeCodeVisitor(codeRegistry), roots);
+    }
 }

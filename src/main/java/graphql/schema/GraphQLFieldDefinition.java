@@ -104,13 +104,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         return type;
     }
 
-    /**
-     * @return the field's data fetcher
-     *
-     * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
-     */
-    @Deprecated
-    public DataFetcher getDataFetcher() {
+    // to be removed in a future version when all code is in the code registry
+    DataFetcher getDataFetcher() {
         return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(this)
                 .build());

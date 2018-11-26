@@ -110,8 +110,8 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         return description;
     }
 
-    @Deprecated
-    public TypeResolver getTypeResolver() {
+    // to be removed in a future version when all code is in the code registry
+    TypeResolver getTypeResolver() {
         return typeResolver;
     }
 

@@ -7,10 +7,17 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
+
 class GraphQLCodeRegistryTest extends Specification {
 
     class NamedDF implements DataFetcher {
         String name
+
+        NamedDF(name) {
+            this.name = name
+        }
 
         @Override
         Object get(DataFetchingEnvironment environment) throws Exception {
@@ -21,6 +28,10 @@ class GraphQLCodeRegistryTest extends Specification {
     class NamedTypeResolver implements TypeResolver {
         String name
 
+        NamedTypeResolver(name) {
+            this.name = name
+        }
+
         @Override
         GraphQLObjectType getType(TypeResolutionEnvironment env) {
             return objectType(name)
@@ -29,6 +40,10 @@ class GraphQLCodeRegistryTest extends Specification {
 
     class NamedFieldVisibility implements GraphqlFieldVisibility {
         String name
+
+        NamedFieldVisibility(name) {
+            this.name = name
+        }
 
         @Override
         List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
@@ -42,11 +57,11 @@ class GraphQLCodeRegistryTest extends Specification {
     }
 
     static GraphQLFieldDefinition field(String name) {
-        return GraphQLFieldDefinition.newFieldDefinition().name(name).type(Scalars.GraphQLString).build()
+        return newFieldDefinition().name(name).type(Scalars.GraphQLString).build()
     }
 
     static GraphQLObjectType objectType(String name) {
-        return GraphQLObjectType.newObject().name(name).build()
+        return newObject().name(name).build()
     }
 
     static GraphQLInterfaceType interfaceType(String name) {
@@ -61,44 +76,41 @@ class GraphQLCodeRegistryTest extends Specification {
 
         when:
         def codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry()
-                .dataFetcher(objectType("parentTyoe1"), field("A"), new NamedDF(name: "A"))
-                .dataFetcher(objectType("parentTyoe2"), field("B"), new NamedDF(name: "B"))
-                .dataFetcher(interfaceType("interfaceType1"), field("C"), new NamedDF(name: "C"))
-                .dataFetchers(objectType("parentTyoe3"), [
-                fieldD: new NamedDF(name: "D"),
-                fieldE: new NamedDF(name: "E"),
-        ])
+                .dataFetcher(objectType("parentType1"), field("A"), new NamedDF("A"))
+                .dataFetcher(objectType("parentType2"), field("B"), new NamedDF("B"))
+                .dataFetcher(interfaceType("interfaceType1"), field("C"), new NamedDF("C"))
+                .dataFetchers(objectType("parentType3"), [fieldD: new NamedDF("D"), fieldE: new NamedDF("E")])
 
         // we can do a read on a half built code registry, namely for schema directive wiring use cases
         then:
-        (codeRegistryBuilder.getDataFetcher(objectType("parentTyoe1"), field("A")) as NamedDF).name == "A"
-        (codeRegistryBuilder.getDataFetcher(objectType("parentTyoe2"), field("B")) as NamedDF).name == "B"
+        (codeRegistryBuilder.getDataFetcher(objectType("parentType1"), field("A")) as NamedDF).name == "A"
+        (codeRegistryBuilder.getDataFetcher(objectType("parentType2"), field("B")) as NamedDF).name == "B"
         (codeRegistryBuilder.getDataFetcher(interfaceType("interfaceType1"), field("C")) as NamedDF).name == "C"
         (codeRegistryBuilder.getDataFetcher(interfaceType("interfaceType1"), field("C")) as NamedDF).name == "C"
-        (codeRegistryBuilder.getDataFetcher(objectType("parentTyoe3"), field("fieldD")) as NamedDF).name == "D"
-        (codeRegistryBuilder.getDataFetcher(objectType("parentTyoe3"), field("fieldE")) as NamedDF).name == "E"
+        (codeRegistryBuilder.getDataFetcher(objectType("parentType3"), field("fieldD")) as NamedDF).name == "D"
+        (codeRegistryBuilder.getDataFetcher(objectType("parentType3"), field("fieldE")) as NamedDF).name == "E"
 
-        codeRegistryBuilder.getDataFetcher(objectType("parentTyoe2"), field("A")) instanceof PropertyDataFetcher // a default one
+        codeRegistryBuilder.getDataFetcher(objectType("parentType2"), field("A")) instanceof PropertyDataFetcher // a default one
 
         when:
         def codeRegistry = codeRegistryBuilder.build()
         then:
-        (codeRegistry.getDataFetcher(objectType("parentTyoe1"), field("A")) as NamedDF).name == "A"
-        (codeRegistry.getDataFetcher(objectType("parentTyoe2"), field("B")) as NamedDF).name == "B"
+        (codeRegistry.getDataFetcher(objectType("parentType1"), field("A")) as NamedDF).name == "A"
+        (codeRegistry.getDataFetcher(objectType("parentType2"), field("B")) as NamedDF).name == "B"
         (codeRegistry.getDataFetcher(interfaceType("interfaceType1"), field("C")) as NamedDF).name == "C"
-        (codeRegistry.getDataFetcher(objectType("parentTyoe3"), field("fieldD")) as NamedDF).name == "D"
-        (codeRegistry.getDataFetcher(objectType("parentTyoe3"), field("fieldE")) as NamedDF).name == "E"
+        (codeRegistry.getDataFetcher(objectType("parentType3"), field("fieldD")) as NamedDF).name == "D"
+        (codeRegistry.getDataFetcher(objectType("parentType3"), field("fieldE")) as NamedDF).name == "E"
 
-        codeRegistry.getDataFetcher(objectType("parentTyoe2"), field("A")) instanceof PropertyDataFetcher // a default one
+        codeRegistry.getDataFetcher(objectType("parentType2"), field("A")) instanceof PropertyDataFetcher // a default one
 
     }
 
     def "records type resolvers against unions and interfaces"() {
         when:
         def codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry()
-                .typeResolver(interfaceType("interfaceType1"), new NamedTypeResolver(name: "A"))
-                .typeResolver(interfaceType("interfaceType2"), new NamedTypeResolver(name: "B"))
-                .typeResolver(unionType("unionType1"), new NamedTypeResolver(name: "C"))
+                .typeResolver(interfaceType("interfaceType1"), new NamedTypeResolver("A"))
+                .typeResolver(interfaceType("interfaceType2"), new NamedTypeResolver("B"))
+                .typeResolver(unionType("unionType1"), new NamedTypeResolver("C"))
 
         then:
         (codeRegistryBuilder.getTypeResolver(interfaceType("interfaceType1")) as NamedTypeResolver).name == "A"
@@ -116,7 +128,7 @@ class GraphQLCodeRegistryTest extends Specification {
     def "records field visibility"() {
 
         when:
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(new NamedFieldVisibility(name: "A")).build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(new NamedFieldVisibility("A")).build()
         then:
         (codeRegistry.getFieldVisibility() as NamedFieldVisibility).name == "A"
     }
@@ -124,7 +136,7 @@ class GraphQLCodeRegistryTest extends Specification {
     def "schema delegates field visibility to code registry"() {
 
         when:
-        def schema = GraphQLSchema.newSchema().fieldVisibility(new NamedFieldVisibility(name: "B")).query(objectType("query")).build()
+        def schema = GraphQLSchema.newSchema().fieldVisibility(new NamedFieldVisibility("B")).query(objectType("query")).build()
         then:
         (schema.getFieldVisibility() as NamedFieldVisibility).name == "B"
         (schema.getCodeRegistry().getFieldVisibility() as NamedFieldVisibility).name == "B"
@@ -132,16 +144,17 @@ class GraphQLCodeRegistryTest extends Specification {
 
     def "integration test that code registry gets asked for data fetchers"() {
 
-        def queryType = GraphQLObjectType.newObject().name("Query")
-                .field(GraphQLFieldDefinition.newFieldDefinition().name("codeRegistryField").type(Scalars.GraphQLString))
-                .field(GraphQLFieldDefinition.newFieldDefinition().name("nonCodeRegistryField").type(Scalars.GraphQLString)
+        def queryType = newObject().name("Query")
+                .field(newFieldDefinition().name("codeRegistryField").type(Scalars.GraphQLString))
+                .field(newFieldDefinition().name("nonCodeRegistryField").type(Scalars.GraphQLString)
         // df comes from the field itself here
-                .dataFetcher(new NamedDF(name: "nonCodeRegistryFieldValue")))
+                .dataFetcher(new NamedDF("nonCodeRegistryFieldValue")))
+                .field(newFieldDefinition().name("neitherSpecified").type(Scalars.GraphQLString))
                 .build()
 
         // here we wire in a specific data fetcher via the code registry
         def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-                .dataFetchers("Query", [codeRegistryField: new NamedDF(name: "codeRegistryFieldValue")])
+                .dataFetchers("Query", [codeRegistryField: new NamedDF("codeRegistryFieldValue")])
                 .build()
 
         def schema = GraphQLSchema.newSchema().query(queryType).codeRegistry(codeRegistry).build()
@@ -149,12 +162,15 @@ class GraphQLCodeRegistryTest extends Specification {
         when:
         def er = graphQL.execute(ExecutionInput.newExecutionInput().query('''
             query {
-                codeRegistryField, nonCodeRegistryField
+                codeRegistryField, nonCodeRegistryField,neitherSpecified
             }
-            ''').build())
+            ''').root([neitherSpecified: "neitherSpecified"]).build())
         then:
         er.errors.isEmpty()
-        er.data == [codeRegistryField: "codeRegistryFieldValue", nonCodeRegistryField: "nonCodeRegistryFieldValue"]
+        er.data == [codeRegistryField: "codeRegistryFieldValue", nonCodeRegistryField: "nonCodeRegistryFieldValue", neitherSpecified: "neitherSpecified"]
+
+        // when nothing is specified then its a plain old PropertyDataFetcher
+        schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof PropertyDataFetcher
 
     }
 }

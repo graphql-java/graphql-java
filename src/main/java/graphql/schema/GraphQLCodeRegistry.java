@@ -60,10 +60,7 @@ public class GraphQLCodeRegistry {
 
         DataFetcherFactory dataFetcherFactory = dataFetcherMap.get(mkKey(parentType, fieldDefinition));
         if (dataFetcherFactory == null) {
-            // ok lets use the old skool field - later when the field DF is fully removed we
-            // will create a property data fetcher but until then we go back to the field def
-            // as a back up
-            return fieldDefinition.getDataFetcher();
+            dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(fieldDefinition.getName()));
         }
         return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(fieldDefinition)
@@ -253,6 +250,20 @@ public class GraphQLCodeRegistry {
         }
 
         /**
+         * Sets the data fetcher factory for a specific field inside a container type ONLY if not mapping has already been made
+         *
+         * @param parentTypeContainer the parent container type
+         * @param fieldDefinition     the field definition
+         * @param dataFetcher         the data fetcher code for that field
+         *
+         * @return this builder
+         */
+        public Builder dataFetcherIfAbsent(GraphQLFieldsContainer parentTypeContainer, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
+            dataFetcherMap.putIfAbsent(mkKey(parentTypeContainer, fieldDefinition), DataFetcherFactories.useDataFetcher(dataFetcher));
+            return this;
+        }
+
+        /**
          * Sets the data fetcher for a specific field inside a container type
          *
          * @param parentTypeName the parent container type
@@ -313,8 +324,18 @@ public class GraphQLCodeRegistry {
             return this;
         }
 
+        public Builder typeResolverIfAbsent(GraphQLInterfaceType parentType, TypeResolver typeResolver) {
+            typeResolverMap.putIfAbsent(parentType.getName(), typeResolver);
+            return this;
+        }
+
         public Builder typeResolver(GraphQLUnionType parentType, TypeResolver typeResolver) {
             typeResolverMap.put(parentType.getName(), typeResolver);
+            return this;
+        }
+
+        public Builder typeResolverIfAbsent(GraphQLUnionType parentType, TypeResolver typeResolver) {
+            typeResolverMap.putIfAbsent(parentType.getName(), typeResolver);
             return this;
         }
 
