@@ -57,6 +57,32 @@ public interface DataFetchingEnvironment {
     <T> T getArgument(String name);
 
     /**
+     * Returns a map of the directives that were present on the field
+     *
+     * @return a map of the directives that were present on the field
+     */
+    Map<String, GraphQLDirective> getDirectives();
+
+    /**
+     * Returns a named directive that might present on the field
+     *
+     * @param directiveName the name of the directive to retrieve
+     *
+     * @return a named directive that might present on the field or null if not present
+     */
+    GraphQLDirective getDirective(String directiveName);
+
+    /**
+     * Returns a named argument of a named directive that might present on the field
+     *
+     * @param directiveName the name of the directive to retrieve
+     * @param argumentName  the name of the directive argument
+     *
+     * @return a named argument that might present on a directive on the field or null if not present
+     */
+    GraphQLArgument getDirectiveArgument(String directiveName, String argumentName);
+
+    /**
      * Returns a context argument that is set up when the {@link graphql.GraphQL#execute} method
      * is invoked.
      * <p>

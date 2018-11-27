@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
@@ -21,6 +22,7 @@ import static graphql.Assert.assertNotNull;
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
     private final Map<String, Object> arguments;
+    private final Map<String, GraphQLDirective> directives;
     private final Object context;
     private final Object root;
     private final GraphQLFieldDefinition fieldDefinition;
@@ -36,6 +38,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     public DataFetchingEnvironmentImpl(Object source,
                                        Map<String, Object> arguments,
+                                       Map<String, GraphQLDirective> directives,
                                        Object context,
                                        Object root,
                                        GraphQLFieldDefinition fieldDefinition,
@@ -50,6 +53,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        ExecutionContext executionContext) {
         this.source = source;
         this.arguments = arguments == null ? Collections.emptyMap() : arguments;
+        this.directives = directives == null ? Collections.emptyMap() : directives;
         this.fragmentsByName = fragmentsByName == null ? Collections.emptyMap() : fragmentsByName;
         this.context = context;
         this.root = root;
@@ -82,6 +86,22 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public <T> T getArgument(String name) {
         return (T) arguments.get(name);
+    }
+
+
+    @Override
+    public Map<String, GraphQLDirective> getDirectives() {
+        return new LinkedHashMap<>(directives);
+    }
+
+    @Override
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.get(directiveName);
+    }
+
+    @Override
+    public GraphQLArgument getDirectiveArgument(String directiveName, String argumentName) {
+        return DirectivesUtil.directiveWithArg(directives, directiveName, argumentName).orElse(null);
     }
 
     @Override

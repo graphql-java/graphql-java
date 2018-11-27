@@ -1,7 +1,10 @@
 package graphql.execution;
 
+import graphql.DirectivesUtil;
 import graphql.PublicApi;
 import graphql.language.Field;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNonNull;
@@ -31,9 +34,10 @@ public class ExecutionStepInfo {
     private final GraphQLFieldDefinition fieldDefinition;
     private final ExecutionPath path;
     private final Map<String, Object> arguments;
+    private final Map<String, GraphQLDirective> directives;
     private final ExecutionStepInfo parent;
 
-    private ExecutionStepInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments) {
+    private ExecutionStepInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments, Map<String, GraphQLDirective> directives) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
@@ -41,6 +45,7 @@ public class ExecutionStepInfo {
         this.type = assertNotNull(type, "you must provide a graphql type");
         this.arguments = arguments;
 
+        this.directives = directives;
     }
 
     /**
@@ -122,6 +127,36 @@ public class ExecutionStepInfo {
     }
 
     /**
+     * @return the resolved directives that have been passed to this field
+     */
+    public Map<String, GraphQLDirective> getDirectives() {
+        return new LinkedHashMap<>(directives);
+    }
+
+    /**
+     * Returns a named directive or null if it is not present
+     *
+     * @param directiveName the name of the directive
+     *
+     * @return a named directive or null if it is not present
+     */
+    public GraphQLDirective getDirective(String directiveName) {
+        return directives.get(directiveName);
+    }
+
+    /**
+     * Returns a named argument for a named directive or null if there is not one present
+     *
+     * @param directiveName the name of the directive
+     * @param argumentName  the name of the argument
+     *
+     * @return a named argument for a named directive or null if there is not one present
+     */
+    public GraphQLArgument getDirectiveArgument(String directiveName, String argumentName) {
+        return DirectivesUtil.directiveWithArg(directives, directiveName, argumentName).orElse(null);
+    }
+
+    /**
      * @return the parent type information
      */
     public ExecutionStepInfo getParent() {
@@ -148,9 +183,9 @@ public class ExecutionStepInfo {
     public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLType newType) {
         assertTrue(!GraphQLTypeUtil.isNonNull(newType), "newType can't be non null");
         if (isNonNullType()) {
-            return new ExecutionStepInfo(GraphQLNonNull.nonNull(newType), fieldDefinition, field, path, this.parent, arguments);
+            return new ExecutionStepInfo(GraphQLNonNull.nonNull(newType), fieldDefinition, field, path, this.parent, arguments, directives);
         } else {
-            return new ExecutionStepInfo(newType, fieldDefinition, field, path, this.parent, arguments);
+            return new ExecutionStepInfo(newType, fieldDefinition, field, path, this.parent, arguments, directives);
         }
     }
 
@@ -187,6 +222,7 @@ public class ExecutionStepInfo {
         Field field;
         ExecutionPath executionPath;
         Map<String, Object> arguments = new LinkedHashMap<>();
+        Map<String, GraphQLDirective> directives = new LinkedHashMap<>();
 
         /**
          * @see ExecutionStepInfo#newExecutionStepInfo()
@@ -224,8 +260,13 @@ public class ExecutionStepInfo {
             return this;
         }
 
+        public Builder directives(Map<String, GraphQLDirective> directives) {
+            this.directives = new LinkedHashMap<>(directives == null ? Collections.emptyMap() : directives);
+            return this;
+        }
+
         public ExecutionStepInfo build() {
-            return new ExecutionStepInfo(type, fieldDefinition, field, executionPath, parentInfo, arguments);
+            return new ExecutionStepInfo(type, fieldDefinition, field, executionPath, parentInfo, arguments, directives);
         }
     }
 }
