@@ -1,5 +1,6 @@
 package graphql.execution2;
 
+import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
+@Internal
 public class DefaultExecutionStrategy implements ExecutionStrategy {
 
     ExecutionStepInfoFactory executionInfoFactory;

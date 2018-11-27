@@ -1,10 +1,12 @@
 package graphql.execution2;
 
 import graphql.GraphQLError;
+import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Internal
 public class FetchedValue {
     private final Object fetchedValue;
     private final Object rawFetchedValue;

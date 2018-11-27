@@ -4,6 +4,7 @@ import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution2.FetchedValueAnalysis;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 import static graphql.execution2.result.ExecutionResultNodePosition.index;
 import static graphql.execution2.result.ExecutionResultNodePosition.key;
 
+@Internal
 public class ResultNodesUtil {
 
     public static ExecutionResult toExecutionResult(ExecutionResultNode root) {

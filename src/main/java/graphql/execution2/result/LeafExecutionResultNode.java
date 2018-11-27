@@ -1,12 +1,14 @@
 package graphql.execution2.result;
 
 import graphql.Assert;
+import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution2.FetchedValueAnalysis;
 
 import java.util.List;
 import java.util.Map;
 
+@Internal
 public class LeafExecutionResultNode extends ExecutionResultNode {
 
     public LeafExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,

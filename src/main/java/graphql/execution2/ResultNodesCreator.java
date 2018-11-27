@@ -1,5 +1,6 @@
 package graphql.execution2;
 
+import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution2.result.ExecutionResultNode;
 import graphql.execution2.result.LeafExecutionResultNode;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 
+@Internal
 public class ResultNodesCreator {
 
     public ExecutionResultNode createResultNode(FetchedValueAnalysis fetchedValueAnalysis) {

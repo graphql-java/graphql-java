@@ -1,6 +1,7 @@
 package graphql.execution2.result;
 
 import graphql.Assert;
+import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Internal
 public class ExecutionResultMultiZipper {
 
     private final ExecutionResultNode commonRoot;

@@ -1,5 +1,6 @@
 package graphql.execution2;
 
+import graphql.Internal;
 import graphql.TypeResolutionEnvironment;
 import graphql.execution.ExecutionContext;
 import graphql.execution.TypeResolutionParameters;
@@ -12,6 +13,7 @@ import graphql.schema.GraphQLUnionType;
 
 import java.util.Map;
 
+@Internal
 public class ResolveType {
 
     private final ExecutionContext executionContext;

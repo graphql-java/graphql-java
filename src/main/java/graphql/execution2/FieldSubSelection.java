@@ -1,5 +1,6 @@
 package graphql.execution2;
 
+import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
 import graphql.language.Field;
 
@@ -12,6 +13,7 @@ import java.util.Map;
  * A map from name to List of Field representing the actual sub selections (during execution) of a Field with Fragments
  * evaluated and conditional directives considered.
  */
+@Internal
 public class FieldSubSelection {
 
     private Object source;

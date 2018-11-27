@@ -1,7 +1,9 @@
 package graphql.execution2.result;
 
 import graphql.Assert;
+import graphql.Internal;
 
+@Internal
 public class ExecutionResultNodePosition {
 
     private final Integer index;

@@ -4,6 +4,7 @@ package graphql.execution2;
 import graphql.Assert;
 import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.execution.AbsoluteGraphQLError;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherResult;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 
+@Internal
 public class ValueFetcher {
 
     private final ExecutionContext executionContext;

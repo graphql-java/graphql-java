@@ -1,10 +1,12 @@
 package graphql.execution2.result;
 
 import graphql.Assert;
+import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Internal
 public class ExecutionResultZipper {
 
     private final ExecutionResultNode curNode;

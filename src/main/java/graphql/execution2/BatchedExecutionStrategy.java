@@ -1,6 +1,7 @@
 package graphql.execution2;
 
 import graphql.Assert;
+import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
+@Internal
 public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     ExecutionStepInfoFactory executionInfoFactory;
@@ -142,6 +144,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
     private ExecutionResultZipper resolvedZipper(ExecutionResultZipper unresolvedNodeZipper, List<FetchedValueAnalysis> fetchedValuesForNode) {
         ObjectExecutionResultNode.UnresolvedObjectResultNode unresolvedNode = (ObjectExecutionResultNode.UnresolvedObjectResultNode) unresolvedNodeZipper.getCurNode();
         Map<String, ExecutionResultNode> newChildren = fetchedValueAnalysisToNodes(fetchedValuesForNode);
+
         ObjectExecutionResultNode newNode = unresolvedNode.withChildren(newChildren);
         return unresolvedNodeZipper.withNode(newNode);
     }

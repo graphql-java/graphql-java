@@ -1,5 +1,8 @@
 package graphql.execution2.result;
 
+import graphql.Internal;
+
+@Internal
 public class Breadcrumb {
     public final ExecutionResultNode node;
     public final ExecutionResultNodePosition position;

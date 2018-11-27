@@ -1,5 +1,6 @@
 package graphql.execution2;
 
+import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
@@ -16,6 +17,7 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 import java.util.List;
 import java.util.Map;
 
+@Internal
 public class ExecutionStepInfoFactory {
 
     private final ExecutionContext executionContext;

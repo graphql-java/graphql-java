@@ -1,5 +1,8 @@
 package graphql.execution2.result;
 
+import graphql.Internal;
+
+@Internal
 public class NamedResultNode {
     private final String name;
     private final ExecutionResultNode node;

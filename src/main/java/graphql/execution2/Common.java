@@ -1,5 +1,6 @@
 package graphql.execution2;
 
+import graphql.Internal;
 import graphql.execution.MissingRootTypeException;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -15,6 +16,7 @@ import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 
+@Internal
 public class Common {
 
     public static GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {

@@ -1,5 +1,6 @@
 package graphql.execution2;
 
+import graphql.Internal;
 import graphql.SerializationError;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
@@ -34,6 +35,7 @@ import static graphql.execution2.FetchedValueAnalysis.newFetchedValueAnalysis;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static java.util.Collections.singletonList;
 
+@Internal
 public class FetchedValueAnalyzer {
 
     private final ExecutionContext executionContext;

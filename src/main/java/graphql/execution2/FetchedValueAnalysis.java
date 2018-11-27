@@ -1,11 +1,13 @@
 package graphql.execution2;
 
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Internal
 public class FetchedValueAnalysis {
 
 

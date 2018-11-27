@@ -1,5 +1,6 @@
 package graphql.execution2.result;
 
+import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution2.FetchedValueAnalysis;
 
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+@Internal
 public class ObjectExecutionResultNode extends ExecutionResultNode {
 
     private Map<String, ExecutionResultNode> children;

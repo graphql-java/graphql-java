@@ -1,10 +1,13 @@
 package graphql.execution2;
 
+import graphql.Internal;
+
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 
+@Internal
 public class UnboxPossibleOptional {
 
     public static Object unboxPossibleOptional(Object result) {
