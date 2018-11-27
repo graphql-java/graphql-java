@@ -22,8 +22,9 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
                                  List<Directive> directives,
                                  Description description,
                                  SourceLocation sourceLocation,
-                                 List<Comment> comments) {
-        super(sourceLocation, comments);
+                                 List<Comment> comments,
+                                 IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.description = description;
         this.directives = (null == directives) ? new ArrayList<>() : directives;
@@ -36,7 +37,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
      * @param name of the enum
      */
     public EnumTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public List<EnumValueDefinition> getEnumValueDefinitions() {
@@ -67,8 +68,12 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         EnumTypeDefinition that = (EnumTypeDefinition) o;
 
@@ -81,7 +86,9 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
                 deepCopy(enumValueDefinitions),
                 deepCopy(directives),
                 description,
-                getSourceLocation(), getComments());
+                getSourceLocation(),
+                getComments(),
+                getIgnoredChars());
     }
 
     @Override
@@ -115,6 +122,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
         private Description description;
         private List<EnumValueDefinition> enumValueDefinitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -126,6 +134,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.enumValueDefinitions = existing.getEnumValueDefinitions();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -168,8 +177,13 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public EnumTypeDefinition build() {
-            EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition(name, enumValueDefinitions, directives, description, sourceLocation, comments);
+            EnumTypeDefinition enumTypeDefinition = new EnumTypeDefinition(name, enumValueDefinitions, directives, description, sourceLocation, comments, ignoredChars);
             return enumTypeDefinition;
         }
     }

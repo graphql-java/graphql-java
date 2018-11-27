@@ -20,12 +20,13 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
 
     @Internal
     protected InputObjectTypeDefinition(String name,
-                              List<Directive> directives,
-                              List<InputValueDefinition> inputValueDefinitions,
-                              Description description,
-                              SourceLocation sourceLocation,
-                              List<Comment> comments) {
-        super(sourceLocation, comments);
+                                        List<Directive> directives,
+                                        List<InputValueDefinition> inputValueDefinitions,
+                                        Description description,
+                                        SourceLocation sourceLocation,
+                                        List<Comment> comments,
+                                        IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.description = description;
         this.directives = directives;
@@ -60,8 +61,12 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         InputObjectTypeDefinition that = (InputObjectTypeDefinition) o;
 
@@ -75,7 +80,8 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
                 deepCopy(inputValueDefinitions),
                 description,
                 getSourceLocation(),
-                getComments());
+                getComments(),
+                getIgnoredChars());
     }
 
     @Override
@@ -110,6 +116,7 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
         private Description description;
         private List<Directive> directives = new ArrayList<>();
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -164,13 +171,19 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public InputObjectTypeDefinition build() {
             InputObjectTypeDefinition inputObjectTypeDefinition = new InputObjectTypeDefinition(name,
                     directives,
                     inputValueDefinitions,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return inputObjectTypeDefinition;
         }
     }

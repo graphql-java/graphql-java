@@ -23,12 +23,13 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     @Internal
     protected FragmentDefinition(String name,
-                               TypeName typeCondition,
-                               List<Directive> directives,
-                               SelectionSet selectionSet,
-                               SourceLocation sourceLocation,
-                               List<Comment> comments) {
-        super(sourceLocation, comments);
+                                 TypeName typeCondition,
+                                 List<Directive> directives,
+                                 SelectionSet selectionSet,
+                                 SourceLocation sourceLocation,
+                                 List<Comment> comments,
+                                 IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.typeCondition = typeCondition;
         this.directives = directives;
@@ -67,8 +68,12 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FragmentDefinition that = (FragmentDefinition) o;
 
@@ -82,7 +87,8 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
                 deepCopy(directives),
                 deepCopy(selectionSet),
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -118,6 +124,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         private TypeName typeCondition;
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -129,6 +136,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             this.typeCondition = existing.getTypeCondition();
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -162,8 +170,13 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public FragmentDefinition build() {
-            FragmentDefinition fragmentDefinition = new FragmentDefinition(name, typeCondition, directives, selectionSet, sourceLocation, comments);
+            FragmentDefinition fragmentDefinition = new FragmentDefinition(name, typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars);
             return fragmentDefinition;
         }
     }

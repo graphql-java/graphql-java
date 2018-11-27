@@ -16,8 +16,8 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
     private final List<Value> values = new ArrayList<>();
 
     @Internal
-    protected ArrayValue(List<Value> values, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected ArrayValue(List<Value> values, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.values.addAll(values);
     }
 
@@ -27,7 +27,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
      * @param values of the array
      */
     public ArrayValue(List<Value> values) {
-        this(values,null, new ArrayList<>());
+        this(values, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public List<Value> getValues() {
@@ -41,8 +41,12 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         return true;
     }
@@ -56,7 +60,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
     @Override
     public ArrayValue deepCopy() {
-        return new ArrayValue(deepCopy(values), getSourceLocation(), getComments());
+        return new ArrayValue(deepCopy(values), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -78,6 +82,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
         private SourceLocation sourceLocation;
         private List<Value> values = new ArrayList<>();
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -86,6 +91,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.values = existing.getValues();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -108,8 +114,13 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public ArrayValue build() {
-            ArrayValue arrayValue = new ArrayValue(values, sourceLocation, comments);
+            ArrayValue arrayValue = new ArrayValue(values, sourceLocation, comments, ignoredChars);
             return arrayValue;
         }
     }

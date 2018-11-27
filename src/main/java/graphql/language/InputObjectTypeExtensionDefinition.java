@@ -12,12 +12,13 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
 
     @Internal
     protected InputObjectTypeExtensionDefinition(String name,
-                                               List<Directive> directives,
-                                               List<InputValueDefinition> inputValueDefinitions,
-                                               Description description,
-                                               SourceLocation sourceLocation,
-                                               List<Comment> comments) {
-        super(name, directives, inputValueDefinitions, description, sourceLocation, comments);
+                                                 List<Directive> directives,
+                                                 List<InputValueDefinition> inputValueDefinitions,
+                                                 Description description,
+                                                 SourceLocation sourceLocation,
+                                                 List<Comment> comments,
+                                                 IgnoredChars ignoredChars) {
+        super(name, directives, inputValueDefinitions, description, sourceLocation, comments, ignoredChars);
     }
 
     @Override
@@ -27,7 +28,8 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
                 deepCopy(getInputValueDefinitions()),
                 getDescription(),
                 getSourceLocation(),
-                getComments());
+                getComments(),
+                getIgnoredChars());
     }
 
     @Override
@@ -57,6 +59,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
         private Description description;
         private List<Directive> directives = new ArrayList<>();
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -68,6 +71,7 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.inputValueDefinitions = existing.getInputValueDefinitions();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -101,13 +105,19 @@ public class InputObjectTypeExtensionDefinition extends InputObjectTypeDefinitio
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public InputObjectTypeExtensionDefinition build() {
             InputObjectTypeExtensionDefinition inputObjectTypeDefinition = new InputObjectTypeExtensionDefinition(name,
                     directives,
                     inputValueDefinitions,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return inputObjectTypeDefinition;
         }
     }

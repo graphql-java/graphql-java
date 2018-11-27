@@ -12,16 +12,17 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
 
     @Internal
     protected ScalarTypeExtensionDefinition(String name,
-                                          List<Directive> directives,
-                                          Description description,
-                                          SourceLocation sourceLocation,
-                                          List<Comment> comments) {
-        super(name, directives, description, sourceLocation, comments);
+                                            List<Directive> directives,
+                                            Description description,
+                                            SourceLocation sourceLocation,
+                                            List<Comment> comments,
+                                            IgnoredChars ignoredChars) {
+        super(name, directives, description, sourceLocation, comments, ignoredChars);
     }
 
     @Override
     public ScalarTypeExtensionDefinition deepCopy() {
-        return new ScalarTypeExtensionDefinition(getName(), deepCopy(getDirectives()), getDescription(), getSourceLocation(), getComments());
+        return new ScalarTypeExtensionDefinition(getName(), deepCopy(getDirectives()), getDescription(), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -49,6 +50,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
         private String name;
         private Description description;
         private List<Directive> directives = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -60,6 +62,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -88,12 +91,18 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition {
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public ScalarTypeExtensionDefinition build() {
             ScalarTypeExtensionDefinition scalarTypeDefinition = new ScalarTypeExtensionDefinition(name,
                     directives,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return scalarTypeDefinition;
         }
     }

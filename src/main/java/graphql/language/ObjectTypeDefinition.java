@@ -25,8 +25,9 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
                                    List<FieldDefinition> fieldDefinitions,
                                    Description description,
                                    SourceLocation sourceLocation,
-                                   List<Comment> comments) {
-        super(sourceLocation, comments);
+                                   List<Comment> comments,
+                                   IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.implementz = implementz;
         this.directives = directives;
@@ -40,7 +41,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
      * @param name of the object type
      */
     public ObjectTypeDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public List<Type> getImplements() {
@@ -76,8 +77,12 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         ObjectTypeDefinition that = (ObjectTypeDefinition) o;
         return NodeUtil.isEqualTo(this.name, that.name);
@@ -91,7 +96,8 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
                 deepCopy(fieldDefinitions),
                 description,
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -128,6 +134,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
         private List<Type> implementz = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private List<FieldDefinition> fieldDefinitions = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -140,6 +147,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
             this.directives = existing.getDirectives();
             this.implementz = existing.getImplements();
             this.fieldDefinitions = existing.getFieldDefinitions();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -192,6 +200,11 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public ObjectTypeDefinition build() {
             ObjectTypeDefinition objectTypeDefinition = new ObjectTypeDefinition(name,
                     implementz,
@@ -199,7 +212,8 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
                     fieldDefinitions,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return objectTypeDefinition;
         }
     }

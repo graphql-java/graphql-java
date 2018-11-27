@@ -26,8 +26,9 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
                                    List<Directive> directives,
                                    Description description,
                                    SourceLocation sourceLocation,
-                                   List<Comment> comments) {
-        super(sourceLocation, comments);
+                                   List<Comment> comments,
+                                   IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
@@ -44,7 +45,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
      */
     public InputValueDefinition(String name,
                                 Type type) {
-        this(name, type, null, new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, type, null, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
 
     }
 
@@ -59,7 +60,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     public InputValueDefinition(String name,
                                 Type type,
                                 Value defaultValue) {
-        this(name, type, defaultValue, new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, type, defaultValue, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
 
     }
 
@@ -97,8 +98,12 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         InputValueDefinition that = (InputValueDefinition) o;
 
@@ -113,7 +118,8 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
                 deepCopy(directives),
                 description,
                 getSourceLocation(),
-                getComments());
+                getComments(),
+                getIgnoredChars());
     }
 
     @Override
@@ -149,6 +155,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         private Value defaultValue;
         private Description description;
         private List<Directive> directives = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -204,6 +211,11 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public InputValueDefinition build() {
             InputValueDefinition inputValueDefinition = new InputValueDefinition(name,
                     type,
@@ -211,7 +223,8 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
                     directives,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return inputValueDefinition;
         }
     }

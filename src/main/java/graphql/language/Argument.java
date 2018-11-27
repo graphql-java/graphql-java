@@ -17,8 +17,8 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     private Value value;
 
     @Internal
-    protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.value = value;
     }
@@ -26,11 +26,11 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     /**
      * alternative to using a Builder for convenience
      *
-     * @param name of the argument
+     * @param name  of the argument
      * @param value of the argument
      */
     public Argument(String name, Value value) {
-        this(name, value, null, new ArrayList<>());
+        this(name, value, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -60,8 +60,12 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         Argument that = (Argument) o;
 
@@ -71,7 +75,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     @Override
     public Argument deepCopy() {
-        return new Argument(name, deepCopy(value), getSourceLocation(), getComments());
+        return new Argument(name, deepCopy(value), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -106,6 +110,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         private List<Comment> comments = new ArrayList<>();
         private String name;
         private Value value;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -115,6 +120,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
             this.comments = existing.getComments();
             this.name = existing.getName();
             this.value = existing.getValue();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -137,8 +143,13 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public Argument build() {
-            Argument argument = new Argument(name, value, sourceLocation, comments);
+            Argument argument = new Argument(name, value, sourceLocation, comments, ignoredChars);
             return argument;
         }
     }

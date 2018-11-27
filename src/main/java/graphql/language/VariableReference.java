@@ -16,8 +16,8 @@ public class VariableReference extends AbstractNode<VariableReference> implement
     private final String name;
 
     @Internal
-    protected VariableReference(String name, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected VariableReference(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
     }
 
@@ -27,7 +27,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
      * @param name of the variable
      */
     public VariableReference(String name) {
-        this(name,null, new ArrayList<>());
+        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -42,8 +42,12 @@ public class VariableReference extends AbstractNode<VariableReference> implement
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         VariableReference that = (VariableReference) o;
 
@@ -52,7 +56,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
 
     @Override
     public VariableReference deepCopy() {
-        return new VariableReference(name, getSourceLocation(), getComments());
+        return new VariableReference(name, getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -81,6 +85,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
         private String name;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -89,6 +94,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.name = existing.getName();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -106,8 +112,13 @@ public class VariableReference extends AbstractNode<VariableReference> implement
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public VariableReference build() {
-            VariableReference variableReference = new VariableReference(name, sourceLocation, comments);
+            VariableReference variableReference = new VariableReference(name, sourceLocation, comments, ignoredChars);
             return variableReference;
         }
     }
