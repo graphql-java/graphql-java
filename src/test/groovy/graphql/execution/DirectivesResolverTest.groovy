@@ -138,7 +138,7 @@ class DirectivesResolverTest extends Specification {
         executionResult.data == [field: "" +
                 "@fieldDirective1(value:fromQueryOnDirective1)," +
                 "@fieldDirective2(value:defaultValueOfFieldDirective2)," +
-                "@fieldDirective3(value:[strVal:fromVariables, boolVal:false])," +
+                "@fieldDirective3(value:[boolVal:false, strVal:fromVariables])," +
                 "@fieldDirective4"
         ]
     }
