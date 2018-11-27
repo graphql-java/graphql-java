@@ -410,7 +410,7 @@ public class GraphQLSchema {
 
             // grab the legacy code things from types
             final GraphQLSchema tempSchema = new GraphQLSchema(queryType, mutationType, subscriptionType, additionalTypes, additionalDirectives, codeRegistry);
-            codeRegistry = codeRegistry.transform(codeRegistryBuilder -> schemaUtil.extractCodeFromTypes(codeRegistryBuilder, tempSchema.getAllTypesAsList()));
+            codeRegistry = codeRegistry.transform(codeRegistryBuilder -> schemaUtil.extractCodeFromTypes(codeRegistryBuilder, tempSchema));
 
             GraphQLSchema graphQLSchema = new GraphQLSchema(tempSchema, codeRegistry);
             schemaUtil.replaceTypeReferences(graphQLSchema);

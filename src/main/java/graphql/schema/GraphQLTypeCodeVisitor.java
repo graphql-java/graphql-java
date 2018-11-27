@@ -5,9 +5,10 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import static graphql.Assert.assertTrue;
+import static graphql.util.TraversalControl.CONTINUE;
 
 /**
- * This ensure that all fields have data fetchers and that unions and interfaces hve type resolvers
+ * This ensure that all fields have data fetchers and that unions and interfaces have type resolvers
  */
 @Internal
 class GraphQLTypeCodeVisitor extends GraphQLTypeVisitorStub {
@@ -25,7 +26,7 @@ class GraphQLTypeCodeVisitor extends GraphQLTypeVisitorStub {
             dataFetcher = new PropertyDataFetcher<>(node.getName());
         }
         codeRegistry.dataFetcherIfAbsent(parentContainerType, node, dataFetcher);
-        return super.visitGraphQLFieldDefinition(node, context);
+        return CONTINUE;
     }
 
     @Override
@@ -35,7 +36,7 @@ class GraphQLTypeCodeVisitor extends GraphQLTypeVisitorStub {
             codeRegistry.typeResolverIfAbsent(node, typeResolver);
         }
         assertTrue(codeRegistry.getTypeResolver(node) != null, "You MUST provide a type resolver for the interface type '" + node.getName() + "'");
-        return super.visitGraphQLInterfaceType(node, context);
+        return CONTINUE;
     }
 
     @Override
@@ -45,6 +46,6 @@ class GraphQLTypeCodeVisitor extends GraphQLTypeVisitorStub {
             codeRegistry.typeResolverIfAbsent(node, typeResolver);
         }
         assertTrue(codeRegistry.getTypeResolver(node) != null, "You MUST provide a type resolver for the union type '" + node.getName() + "'");
-        return super.visitGraphQLUnionType(node, context);
+        return CONTINUE;
     }
 }
