@@ -11,6 +11,7 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Internal
@@ -25,7 +26,7 @@ public class DirectivesResolver {
     public Map<String, GraphQLDirective> getFieldDirectives(Field field, GraphQLSchema schema, Map<String, Object> variables) {
         GraphqlFieldVisibility fieldVisibility = schema.getFieldVisibility();
 
-        Map<String, GraphQLDirective> directiveMap = new HashMap<>();
+        Map<String, GraphQLDirective> directiveMap = new LinkedHashMap<>();
 
         field.getDirectives().forEach(fieldDirective -> {
             GraphQLDirective protoType = schema.getDirective(fieldDirective.getName());

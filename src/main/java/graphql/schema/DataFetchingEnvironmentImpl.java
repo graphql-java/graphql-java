@@ -91,7 +91,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, GraphQLDirective> getDirectives() {
-        return new HashMap<>(directives);
+        return new LinkedHashMap<>(directives);
     }
 
     @Override
