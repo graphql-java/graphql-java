@@ -58,8 +58,8 @@ class TypeTraverserTest extends Specification {
                 .build())
         then:
         visitor.getStack() == ["enum: foo", "fallback: foo",
-                               "enum value: bar", "fallback: bar",
-                               "enum value: abc", "fallback: abc"]
+                               "enum value: abc", "fallback: abc",
+                               "enum value: bar", "fallback: bar"]
 
     }
 

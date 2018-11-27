@@ -15,6 +15,7 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.util.Collections.emptyList;
@@ -35,17 +36,44 @@ public class GraphQLEnumValueDefinition implements GraphQLDirectiveContainer {
     private final String deprecationReason;
     private final List<GraphQLDirective> directives;
 
+    /**
+     * @param name        the name
+     * @param description the description
+     * @param value       the value
+     *
+     * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLEnumValueDefinition(String name, String description, Object value) {
         this(name, description, value, null, emptyList());
     }
 
+    /**
+     * @param name              the name
+     * @param description       the description
+     * @param value             the value
+     * @param deprecationReason the deprecation reasons
+     *
+     * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason) {
         this(name, description, value, deprecationReason, emptyList());
     }
 
+    /**
+     * @param name              the name
+     * @param description       the description
+     * @param value             the value
+     * @param deprecationReason the deprecation reasons
+     * @param directives        the directives on this type element
+     *
+     * @deprecated use the {@link #newEnumValueDefinition()}   builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLEnumValueDefinition(String name, String description, Object value, String deprecationReason, List<GraphQLDirective> directives) {
         assertValidName(name);
         assertNotNull(directives, "directives cannot be null");

@@ -18,6 +18,7 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
+import static graphql.schema.GraphqlTypeComparators.sortGraphQLTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 
@@ -44,15 +45,37 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
     private final FieldDefinition definition;
 
 
-    @Deprecated
+    /**
+     * @param name              the name
+     * @param description       the description
+     * @param type              the field type
+     * @param dataFetcher       the field data fetcher
+     * @param arguments         the field arguments
+     * @param deprecationReason the deprecation reason
+     *
+     * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcher<?> dataFetcher, List<GraphQLArgument> arguments, String deprecationReason) {
         this(name, description, type, DataFetcherFactories.useDataFetcher(dataFetcher), arguments, deprecationReason, Collections.emptyList(), null);
     }
 
+    /**
+     * @param name               the name
+     * @param description        the description
+     * @param type               the field type
+     * @param dataFetcherFactory the field data fetcher factory
+     * @param arguments          the field arguments
+     * @param deprecationReason  the deprecation reason
+     * @param directives         the directives on this type element
+     * @param definition         the AST definition
+     *
+     * @deprecated use the {@link #newFieldDefinition()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     @Internal
+    @Deprecated
     public GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, List<GraphQLDirective> directives, FieldDefinition definition) {
-        this.directives = directives;
         assertValidName(name);
         assertNotNull(dataFetcherFactory, "you have to provide a DataFetcher (or DataFetcherFactory)");
         assertNotNull(type, "type can't be null");
@@ -61,7 +84,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         this.description = description;
         this.type = type;
         this.dataFetcherFactory = dataFetcherFactory;
-        this.arguments = Collections.unmodifiableList(new ArrayList<>(arguments));
+        this.arguments = Collections.unmodifiableList(sortGraphQLTypes(arguments));
+        this.directives = directives;
         this.deprecationReason = deprecationReason;
         this.definition = definition;
     }
@@ -152,7 +176,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
 
     @Override
     public List<GraphQLType> getChildren() {
-        List<GraphQLType> children =  new ArrayList<>();
+        List<GraphQLType> children = new ArrayList<>();
         children.add(type);
         children.addAll(arguments);
         children.addAll(directives);

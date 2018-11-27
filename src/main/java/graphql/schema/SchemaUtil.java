@@ -5,7 +5,7 @@ import graphql.Internal;
 import graphql.introspection.Introspection;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +53,7 @@ public class SchemaUtil {
      *
      */
     Map<String, List<GraphQLObjectType>> groupImplementations(GraphQLSchema schema) {
-        Map<String, List<GraphQLObjectType>> result = new HashMap<>();
+        Map<String, List<GraphQLObjectType>> result = new LinkedHashMap<>();
         for (GraphQLType type : schema.getAllTypesAsList()) {
             if (type instanceof GraphQLObjectType) {
                 for (GraphQLOutputType interfaceType : ((GraphQLObjectType) type).getInterfaces()) {

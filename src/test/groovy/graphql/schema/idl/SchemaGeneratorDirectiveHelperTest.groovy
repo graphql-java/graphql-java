@@ -204,7 +204,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         targetList.contains("ScalarType")
     }
 
-    def "can modify the existing behaviour"() {
+    def     "can modify the existing behaviour"() {
         def spec = '''
             type Query {
                 lowerCaseValue : String @uppercase

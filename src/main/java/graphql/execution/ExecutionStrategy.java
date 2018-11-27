@@ -6,6 +6,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.SerializationError;
+import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.TypeResolutionEnvironment;
 import graphql.UnresolvedTypeError;
@@ -261,7 +262,7 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, dataFetcher.isTrivialDataFetcher());
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
         InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
 
         CompletableFuture<Object> fetchedValue;

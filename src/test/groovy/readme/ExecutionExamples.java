@@ -42,6 +42,7 @@ public class ExecutionExamples {
     }
 
     private void simpleQueryExecution() throws Exception {
+        //::FigureA
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(queryType)
                 .build();
@@ -56,10 +57,12 @@ public class ExecutionExamples {
 
         Object data = executionResult.getData();
         List<GraphQLError> errors = executionResult.getErrors();
+        //::/FigureA
     }
 
     @SuppressWarnings({"Convert2MethodRef","unused","FutureReturnValueIgnored"})
     private void simpleAsyncQueryExecution() throws Exception {
+        //::FigureB
         GraphQL graphQL = buildSchema();
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query("query { hero { name } }")
@@ -73,6 +76,7 @@ public class ExecutionExamples {
         });
 
         promise.join();
+        //::/FigureB
     }
 
     private GraphQL graphQL = buildSchema();
@@ -80,6 +84,7 @@ public class ExecutionExamples {
             .build();
 
     private void equivalentSerialAndAsyncQueryExecution() throws Exception {
+        //::FigureC
 
         ExecutionResult executionResult = graphQL.execute(executionInput);
 
@@ -87,22 +92,24 @@ public class ExecutionExamples {
 
         CompletableFuture<ExecutionResult> promise = graphQL.executeAsync(executionInput);
         ExecutionResult executionResult2 = promise.join();
-
+        //::/FigureC
     }
 
     @SuppressWarnings("Convert2Lambda")
     private void simpleDataFetcher() {
+        //::FigureD
         DataFetcher userDataFetcher = new DataFetcher() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 return fetchUserFromDatabase(environment.getArgument("userId"));
             }
         };
+        //::/FigureD
     }
 
     @SuppressWarnings({"Convert2Lambda", "CodeBlock2Expr"})
     private void asyncDataFetcher() {
-
+        //::FigureE
         DataFetcher userDataFetcher = new DataFetcher() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
@@ -113,24 +120,27 @@ public class ExecutionExamples {
                 return userPromise;
             }
         };
+        //::/FigureE
     }
 
     private void succinctAsyncDataFetcher() {
-
+        //::FigureF
         DataFetcher userDataFetcher = environment -> CompletableFuture.supplyAsync(
                 () -> fetchUserFromDatabase(environment.getArgument("userId")));
+        //::/FigureF
     }
 
     private void wireInExecutionStrategies() {
-
+        //::FigureG
         GraphQL.newGraphQL(schema)
                 .queryExecutionStrategy(new AsyncExecutionStrategy())
                 .mutationExecutionStrategy(new AsyncSerialExecutionStrategy())
                 .build();
-
+        //::/FigureG
     }
 
     private void exampleExecutorServiceExecutionStrategy() {
+        //::FigureH
         ExecutorService executorService = new ThreadPoolExecutor(
                 2, /* core pool size 2 thread */
                 2, /* max pool size 2 thread */
@@ -142,9 +152,11 @@ public class ExecutionExamples {
                 .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(executorService))
                 .mutationExecutionStrategy(new AsyncSerialExecutionStrategy())
                 .build();
+        //::/FigureH
     }
 
     private void exceptionHandler() {
+        //::FigureI
         DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
             @Override
             public void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
@@ -153,9 +165,11 @@ public class ExecutionExamples {
             }
         };
         ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
+        //::/FigureI
     }
 
     private void blockedFields() {
+        //::FigureJ
         GraphqlFieldVisibility blockedFields = BlockedFields.newBlock()
                 .addPattern("Character.id")
                 .addPattern("Droid.appearsIn")
@@ -166,14 +180,18 @@ public class ExecutionExamples {
                 .query(StarWarsSchema.queryType)
                 .fieldVisibility(blockedFields)
                 .build();
+
+        //::/FigureJ
     }
 
     private void noIntrospection() {
+        //::FigureK
 
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
                 .fieldVisibility(NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY)
                 .build();
+        //::/FigureK
     }
 
     class YourUserAccessService {
@@ -183,6 +201,7 @@ public class ExecutionExamples {
         }
     }
 
+    //::FigureL
     class CustomFieldVisibility implements GraphqlFieldVisibility {
 
         final YourUserAccessService userAccessService;
@@ -211,19 +230,23 @@ public class ExecutionExamples {
             return fieldsContainer.getFieldDefinition(fieldName);
         }
     }
+    //::/FigureL
 
     private void sendAsJson(Map<String, Object> toSpecificationResult) {
     }
 
     public void toSpec() throws Exception {
+        //::FigureM
 
         ExecutionResult executionResult = graphQL.execute(executionInput);
 
         Map<String, Object> toSpecificationResult = executionResult.toSpecification();
 
         sendAsJson(toSpecificationResult);
+        //::/FigureM
     }
 
+    //::FigureN
     class CustomRuntimeException extends RuntimeException implements GraphQLError {
         @Override
         public Map<String, Object> getExtensions() {
@@ -243,6 +266,7 @@ public class ExecutionExamples {
             return ErrorType.DataFetchingException;
         }
     }
+    //::/FigureN
 
     private class User {
 

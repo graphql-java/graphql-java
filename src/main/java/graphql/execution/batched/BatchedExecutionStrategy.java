@@ -4,6 +4,7 @@ import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
+import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
 import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
@@ -264,7 +265,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .build();
 
         DataFetcher supplied = fieldDef.getDataFetcher();
-        boolean trivialDataFetcher = supplied.isTrivialDataFetcher();
+        boolean trivialDataFetcher = supplied instanceof TrivialDataFetcher;
         BatchedDataFetcher batchedDataFetcher = batchingFactory.create(supplied);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
