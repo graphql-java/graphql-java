@@ -55,6 +55,7 @@ import java.util.stream.IntStream;
 
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
+import static graphql.execution2.UnboxPossibleOptional.unboxPossibleOptional;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;

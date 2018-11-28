@@ -15,6 +15,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution2.UnboxPossibleOptional;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
@@ -43,10 +44,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -282,7 +279,7 @@ public abstract class ExecutionStrategy {
                     }
                 })
                 .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result))
-                .thenApply(this::unboxPossibleOptional);
+                .thenApply(UnboxPossibleOptional::unboxPossibleOptional);
     }
 
     Object unboxPossibleDataFetcherResult(ExecutionContext executionContext,
@@ -392,7 +389,7 @@ public abstract class ExecutionStrategy {
      */
     protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
-        Object result = unboxPossibleOptional(parameters.getSource());
+        Object result = UnboxPossibleOptional.unboxPossibleOptional(parameters.getSource());
         GraphQLType fieldType = executionStepInfo.getUnwrappedNonNullType();
         CompletableFuture<ExecutionResult> fieldValue;
 
@@ -649,47 +646,6 @@ public abstract class ExecutionStrategy {
         return null;
     }
 
-    /**
-     * We treat Optional objects as "boxed" values where an empty Optional
-     * equals a null object and a present Optional is the underlying value.
-     *
-     * @param result the incoming value
-     *
-     * @return an un-boxed result
-     */
-    protected Object unboxPossibleOptional(Object result) {
-        if (result instanceof Optional) {
-            Optional optional = (Optional) result;
-            if (optional.isPresent()) {
-                return optional.get();
-            } else {
-                return null;
-            }
-        } else if (result instanceof OptionalInt) {
-            OptionalInt optional = (OptionalInt) result;
-            if (optional.isPresent()) {
-                return optional.getAsInt();
-            } else {
-                return null;
-            }
-        } else if (result instanceof OptionalDouble) {
-            OptionalDouble optional = (OptionalDouble) result;
-            if (optional.isPresent()) {
-                return optional.getAsDouble();
-            } else {
-                return null;
-            }
-        } else if (result instanceof OptionalLong) {
-            OptionalLong optional = (OptionalLong) result;
-            if (optional.isPresent()) {
-                return optional.getAsLong();
-            } else {
-                return null;
-            }
-        }
-
-        return result;
-    }
 
     /**
      * Converts an object that is known to should be an Iterable into one
