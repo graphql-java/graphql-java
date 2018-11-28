@@ -126,6 +126,9 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     }
 
     /**
+     * An argument ONLY has a value when its used in a schema definition language (SDL) context as the arguments to SDL directives.  The method
+     * should not be called in a query context, but rather the AST / variables map should be used to obtain an arguments value.
+     *
      * @return the argument value
      */
     public Object getValue() {

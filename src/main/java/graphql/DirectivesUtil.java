@@ -23,13 +23,4 @@ public class DirectivesUtil {
         }
         return Optional.ofNullable(argument);
     }
-
-    public static Optional<GraphQLArgument> directiveWithArg(Map<String,GraphQLDirective> directives, String directiveName, String argumentName) {
-        GraphQLDirective directive =directives.get(directiveName);
-        GraphQLArgument argument = null;
-        if (directive != null) {
-            argument = directive.getArgument(argumentName);
-        }
-        return Optional.ofNullable(argument);
-    }
 }
