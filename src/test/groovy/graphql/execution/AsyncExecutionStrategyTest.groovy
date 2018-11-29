@@ -72,6 +72,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
+                .path(ExecutionPath.rootPath())
                 .build()
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
@@ -110,6 +111,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
+                .path(ExecutionPath.rootPath())
                 .build()
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
@@ -150,6 +152,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
+                .path(ExecutionPath.rootPath())
                 .build()
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
@@ -189,6 +192,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
+                .path(ExecutionPath.rootPath())
                 .build()
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
@@ -227,6 +231,7 @@ class AsyncExecutionStrategyTest extends Specification {
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
+                .path(ExecutionPath.rootPath())
                 .build()
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
@@ -234,27 +239,27 @@ class AsyncExecutionStrategyTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .instrumentation(new SimpleInstrumentation() {
+            @Override
+            ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+                return new ExecutionStrategyInstrumentationContext() {
+
                     @Override
-                    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-                        return new ExecutionStrategyInstrumentationContext() {
-
-                            @Override
-                            void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
-                                throw new RuntimeException("Exception raised from instrumentation")
-                            }
-
-                            @Override
-                            public void onDispatched(CompletableFuture<ExecutionResult> result) {
-
-                            }
-
-                            @Override
-                            public void onCompleted(ExecutionResult result, Throwable t) {
-
-                            }
-                        }
+                    void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+                        throw new RuntimeException("Exception raised from instrumentation")
                     }
-                })
+
+                    @Override
+                    public void onDispatched(CompletableFuture<ExecutionResult> result) {
+
+                    }
+
+                    @Override
+                    public void onCompleted(ExecutionResult result, Throwable t) {
+
+                    }
+                }
+            }
+        })
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()

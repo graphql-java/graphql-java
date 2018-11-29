@@ -1,18 +1,13 @@
-package graphql.execution2;
+package graphql.execution;
 
 
 import graphql.Assert;
 import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.execution.AbsoluteGraphQLError;
-import graphql.execution.Async;
-import graphql.execution.DataFetcherResult;
-import graphql.execution.ExecutionContext;
-import graphql.execution.ExecutionId;
-import graphql.execution.ExecutionPath;
-import graphql.execution.ExecutionStepInfo;
-import graphql.execution.ValuesResolver;
+import graphql.VisibleForTesting;
+import graphql.execution2.BatchedDataFetcher;
+import graphql.execution2.FetchedValue;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -32,13 +27,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
+import static java.util.Collections.singletonList;
 
 @Internal
 public class ValueFetcher {
 
     private final ExecutionContext executionContext;
+    private boolean useNullObject;
 
+    @VisibleForTesting
     ValuesResolver valuesResolver = new ValuesResolver();
 
     private static final Logger log = LoggerFactory.getLogger(ValueFetcher.class);
@@ -47,11 +46,15 @@ public class ValueFetcher {
 
     public ValueFetcher(ExecutionContext executionContext) {
         this.executionContext = executionContext;
+        this.useNullObject = true;
     }
 
+    public ValueFetcher(ExecutionContext executionContext, boolean useNullObject) {
+        this.executionContext = executionContext;
+        this.useNullObject = useNullObject;
+    }
 
     public CompletableFuture<List<FetchedValue>> fetchBatchedValues(List<Object> sources, List<Field> sameFields, List<ExecutionStepInfo> executionInfos) {
-        System.out.println("Fetch batch values size: " + sources.size());
         ExecutionStepInfo executionStepInfo = executionInfos.get(0);
         if (isDataFetcherBatched(sameFields, executionStepInfo)) {
             //TODO: the stepInfo is not correct for all values: how to give the DF all executionInfos?
@@ -88,9 +91,9 @@ public class ValueFetcher {
         return fieldDef.getDataFetcher() instanceof BatchedDataFetcher;
     }
 
-    public CompletableFuture<FetchedValue> fetchValue(Object source, List<Field> sameFields, ExecutionStepInfo executionInfo) {
+    public CompletableFuture<FetchedValue> fetchValue(Object source, List<Field> sameFields, ExecutionStepInfo executionStepInfo) {
         Field field = sameFields.get(0);
-        GraphQLFieldDefinition fieldDef = executionInfo.getFieldDefinition();
+        GraphQLFieldDefinition fieldDef = assertNotNull(executionStepInfo.getFieldDefinition());
 
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
@@ -104,38 +107,66 @@ public class ValueFetcher {
                 .fieldDefinition(fieldDef)
                 .fields(sameFields)
                 .fieldType(fieldType)
-                .executionStepInfo(executionInfo)
-                .parentType(executionInfo.getParent().getType())
+                .executionStepInfo(executionStepInfo)
+                .parentType(executionStepInfo.getParent().getType())
                 .selectionSet(fieldCollector)
                 .build();
 
         ExecutionId executionId = executionContext.getExecutionId();
-        ExecutionPath path = executionInfo.getPath();
-        return callDataFetcher(fieldDef, environment, executionId, path)
-                .thenApply(rawFetchedValue -> new FetchedValue(rawFetchedValue, rawFetchedValue, Collections.emptyList()))
-                .exceptionally(exception -> handleExceptionWhileFetching(field, path, exception))
+        ExecutionPath path = executionStepInfo.getPath();
+        DataFetcher dataFetcher = beforeCallingDataFetcher(fieldDef.getDataFetcher(), executionContext, fieldDef, environment);
+        CompletableFuture<Object> dataFetcherCallCF = callDataFetcher(dataFetcher, environment, executionId, path);
+        afterCallingDataFetcher(dataFetcherCallCF);
+        return dataFetcherCallCF
+                .handle((fetchedValue, throwable) -> {
+                    handleResult(fetchedValue, throwable);
+                    if (throwable != null) {
+                        return handleExceptionWhileFetching(field, path, throwable, environment, argumentValues, fieldDef, path);
+                    }
+                    return new FetchedValue(fetchedValue, fetchedValue);
+                })
                 .thenApply(result -> unboxPossibleDataFetcherResult(sameFields, path, result))
                 .thenApply(this::unboxPossibleOptional);
     }
 
-    private FetchedValue handleExceptionWhileFetching(Field field, ExecutionPath path, Throwable exception) {
+    protected DataFetcher beforeCallingDataFetcher(DataFetcher dataFetcher,
+                                                   ExecutionContext executionContext,
+                                                   GraphQLFieldDefinition fieldDef,
+                                                   DataFetchingEnvironment environment) {
+        return dataFetcher;
+
+    }
+
+    protected void afterCallingDataFetcher(CompletableFuture<Object> dataFetcherCallCF) {
+
+    }
+
+    protected void handleResult(Object value, Throwable throwable) {
+
+    }
+
+    protected FetchedValue handleExceptionWhileFetching(Field field,
+                                                        ExecutionPath path,
+                                                        Throwable exception,
+                                                        DataFetchingEnvironment environment,
+                                                        Map<String, Object> argumentValues,
+                                                        GraphQLFieldDefinition fieldDefinition,
+                                                        ExecutionPath executionPath) {
         ExceptionWhileDataFetching exceptionWhileDataFetching = new ExceptionWhileDataFetching(path, exception, field.getSourceLocation());
         FetchedValue fetchedValue = new FetchedValue(
+                useNullObject ? NULL_VALUE : false,
                 null,
-                null,
-                Collections.singletonList(exceptionWhileDataFetching));
+                singletonList(exceptionWhileDataFetching));
         return fetchedValue;
     }
 
     private FetchedValue unboxPossibleOptional(FetchedValue result) {
         return new FetchedValue(UnboxPossibleOptional.unboxPossibleOptional(result.getFetchedValue()), result.getRawFetchedValue(), result.getErrors());
-
     }
 
-    private CompletableFuture<Object> callDataFetcher(GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionId executionId, ExecutionPath path) {
+    private CompletableFuture<Object> callDataFetcher(DataFetcher dataFetcher, DataFetchingEnvironment environment, ExecutionId executionId, ExecutionPath path) {
         CompletableFuture<Object> result = new CompletableFuture<>();
         try {
-            DataFetcher dataFetcher = fieldDef.getDataFetcher();
             log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, path, dataFetcher.getClass().getName());
             Object fetchedValueRaw = dataFetcher.get(environment);
             log.debug("'{}' field '{}' fetch returned '{}'", executionId, path, fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
@@ -149,7 +180,7 @@ public class ValueFetcher {
 
     private void handleFetchedValue(Object fetchedValue, CompletableFuture<Object> cf) {
         if (fetchedValue == null) {
-            cf.complete(NULL_VALUE);
+            cf.complete(useNullObject ? NULL_VALUE : null);
             return;
         }
         if (fetchedValue instanceof CompletionStage) {

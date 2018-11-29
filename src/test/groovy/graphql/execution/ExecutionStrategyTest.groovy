@@ -55,7 +55,6 @@ class ExecutionStrategyTest extends Specification {
     }
 
 
-
     def buildContext(GraphQLSchema schema = null) {
         ExecutionId executionId = ExecutionId.from("executionId123")
         def variables = [arg1: "value1"]
@@ -475,11 +474,11 @@ class ExecutionStrategyTest extends Specification {
 
         GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
         ExecutionContext executionContext = buildContext(schema)
-        ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
+        ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).path(ExecutionPath.rootPath()).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         Argument argument = new Argument("arg1", new StringValue("argVal"))
         Field field = new Field("someField", [argument])
-        ExecutionPath executionPath = ExecutionPath.rootPath().segment("test")
+        ExecutionPath executionPath = ExecutionPath.rootPath().segment("someField")
 
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
@@ -524,7 +523,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
         def schema = GraphQLSchema.newSchema().query(objectType).build()
         ExecutionContext executionContext = buildContext(schema)
-        def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).path(ExecutionPath.rootPath()).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         ExecutionPath expectedPath = ExecutionPath.rootPath().segment("someField")
 
@@ -629,7 +628,7 @@ class ExecutionStrategyTest extends Specification {
         GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
         ExecutionContext executionContext = buildContext(schema)
 
-        def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
+        def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).path(ExecutionPath.rootPath()).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         Field field = new Field("someField")
 

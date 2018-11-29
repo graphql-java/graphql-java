@@ -15,15 +15,13 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.execution2.UnboxPossibleOptional;
+import graphql.execution2.FetchedValue;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.DataFetchingFieldSelectionSet;
-import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
@@ -55,7 +53,6 @@ import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
-import static graphql.schema.DataFetchingEnvironmentBuilder.newDataFetchingEnvironment;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
@@ -122,6 +119,7 @@ public abstract class ExecutionStrategy {
     protected final FieldCollector fieldCollector = new FieldCollector();
 
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
+
 
     /**
      * The default execution strategy constructor uses the {@link SimpleDataFetcherExceptionHandler}
@@ -208,6 +206,62 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
+    protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        ValueFetcher valueFetcher = new ValueFetcher(executionContext, false) {
+            InstrumentationContext<Object> fetchCtx;
+
+            @Override
+            protected FetchedValue handleExceptionWhileFetching(Field field, ExecutionPath path, Throwable exception, DataFetchingEnvironment environment, Map<String, Object> argumentValues, GraphQLFieldDefinition fieldDefinition, ExecutionPath executionPath) {
+                DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
+                        .executionContext(executionContext)
+                        .dataFetchingEnvironment(environment)
+                        .argumentValues(argumentValues)
+                        .field(field)
+                        .fieldDefinition(fieldDefinition)
+                        .path(parameters.getPath())
+                        .exception(exception)
+                        .build();
+                dataFetcherExceptionHandler.accept(handlerParameters);
+                parameters.deferredErrorSupport().onFetchingException(parameters, exception);
+                return new FetchedValue(null, null);
+            }
+
+            @Override
+            protected DataFetcher beforeCallingDataFetcher(DataFetcher dataFetcher,
+                                                           ExecutionContext executionContext,
+                                                           GraphQLFieldDefinition fieldDef,
+                                                           DataFetchingEnvironment environment) {
+                Instrumentation instrumentation = executionContext.getInstrumentation();
+
+                InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext,
+                        fieldDef,
+                        environment,
+                        parameters,
+                        dataFetcher instanceof TrivialDataFetcher);
+                fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
+                return instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
+            }
+
+            @Override
+            protected void afterCallingDataFetcher(CompletableFuture<Object> dataFetcherCallCF) {
+                fetchCtx.onDispatched(dataFetcherCallCF);
+            }
+
+            @Override
+            protected void handleResult(Object value, Throwable throwable) {
+                fetchCtx.onCompleted(value, throwable);
+            }
+        };
+        ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory(executionContext);
+        ExecutionStepInfo subStepInfo = executionStepInfoFactory.newExecutionStepInfoForSubField(parameters.getField(), parameters.getExecutionStepInfo());
+        return valueFetcher
+                .fetchValue(parameters.getSource(), parameters.getField(), subStepInfo)
+                .thenApply(fetchedValue -> {
+                    fetchedValue.getErrors().forEach(executionContext::addError);
+                    return fetchedValue.getFetchedValue();
+                });
+    }
+
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
      * {@link GraphQLFieldDefinition}.
@@ -222,102 +276,82 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
-    protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        Field field = parameters.getField().get(0);
-        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+//    protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+//        Field field = parameters.getField().get(0);
+//        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
+//        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+//
+//        GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
+//        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
+//
+//        GraphQLOutputType fieldType = fieldDef.getType();
+//        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
+//        ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef);
+//
+//        DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
+//                .source(parameters.getSource())
+//                .arguments(argumentValues)
+//                .fieldDefinition(fieldDef)
+//                .fields(parameters.getField())
+//                .fieldType(fieldType)
+//                .executionStepInfo(executionStepInfo)
+//                .parentType(parentType)
+//                .selectionSet(fieldCollector)
+//                .build();
+//
+//        DataFetcher dataFetcher = fieldDef.getDataFetcher();
+//
+//        Instrumentation instrumentation = executionContext.getInstrumentation();
+//
+//        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
+//        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
+//
+//        CompletableFuture<Object> fetchedValue;
+//        dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
+//        ExecutionId executionId = executionContext.getExecutionId();
+//        try {
+//            log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, executionStepInfo.getPath(), dataFetcher.getClass().getName());
+//            Object fetchedValueRaw = dataFetcher.get(environment);
+//            log.debug("'{}' field '{}' fetch returned '{}'", executionId, executionStepInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
+//
+//            fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
+//        } catch (Exception e) {
+//            log.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.getPath()), e);
+//
+//            fetchedValue = new CompletableFuture<>();
+//            fetchedValue.completeExceptionally(e);
+//        }
+//        fetchCtx.onDispatched(fetchedValue);
+//        return fetchedValue
+//                .handle((result, exception) -> {
+//                    fetchCtx.onCompleted(result, exception);
+//                    if (exception != null) {
+//                        handleFetchingException(executionContext, parameters, field, fieldDef, argumentValues, environment, exception);
+//                        return null;
+//                    } else {
+//                        return result;
+//                    }
+//                })
+//                .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result))
+//                .thenApply(UnboxPossibleOptional::unboxPossibleOptional);
+//    }
+//
+//    Object unboxPossibleDataFetcherResult(ExecutionContext executionContext,
+//                                          ExecutionStrategyParameters parameters,
+//                                          Object result) {
+//        if (result instanceof DataFetcherResult) {
+//            //noinspection unchecked
+//            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
+//            dataFetcherResult.getErrors().stream()
+//                    .map(relError -> new AbsoluteGraphQLError(parameters, relError))
+//                    .forEach(executionContext::addError);
+//            return dataFetcherResult.getData();
+//        } else {
+//            return result;
+//        }
+//    }
+//
 
-        GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
-
-        GraphQLOutputType fieldType = fieldDef.getType();
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, parameters.getField());
-        ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef);
-
-        DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
-                .source(parameters.getSource())
-                .arguments(argumentValues)
-                .fieldDefinition(fieldDef)
-                .fields(parameters.getField())
-                .fieldType(fieldType)
-                .executionStepInfo(executionStepInfo)
-                .parentType(parentType)
-                .selectionSet(fieldCollector)
-                .build();
-
-        DataFetcher dataFetcher = fieldDef.getDataFetcher();
-
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
-        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
-
-        CompletableFuture<Object> fetchedValue;
-        dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
-        ExecutionId executionId = executionContext.getExecutionId();
-        try {
-            log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, executionStepInfo.getPath(), dataFetcher.getClass().getName());
-            Object fetchedValueRaw = dataFetcher.get(environment);
-            log.debug("'{}' field '{}' fetch returned '{}'", executionId, executionStepInfo.getPath(), fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
-
-            fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
-        } catch (Exception e) {
-            log.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.getPath()), e);
-
-            fetchedValue = new CompletableFuture<>();
-            fetchedValue.completeExceptionally(e);
-        }
-        fetchCtx.onDispatched(fetchedValue);
-        return fetchedValue
-                .handle((result, exception) -> {
-                    fetchCtx.onCompleted(result, exception);
-                    if (exception != null) {
-                        handleFetchingException(executionContext, parameters, field, fieldDef, argumentValues, environment, exception);
-                        return null;
-                    } else {
-                        return result;
-                    }
-                })
-                .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result))
-                .thenApply(UnboxPossibleOptional::unboxPossibleOptional);
-    }
-
-    Object unboxPossibleDataFetcherResult(ExecutionContext executionContext,
-                                          ExecutionStrategyParameters parameters,
-                                          Object result) {
-        if (result instanceof DataFetcherResult) {
-            //noinspection unchecked
-            DataFetcherResult<?> dataFetcherResult = (DataFetcherResult) result;
-            dataFetcherResult.getErrors().stream()
-                    .map(relError -> new AbsoluteGraphQLError(parameters, relError))
-                    .forEach(executionContext::addError);
-            return dataFetcherResult.getData();
-        } else {
-            return result;
-        }
-    }
-
-    private void handleFetchingException(ExecutionContext executionContext,
-                                         ExecutionStrategyParameters parameters,
-                                         Field field,
-                                         GraphQLFieldDefinition fieldDef,
-                                         Map<String, Object> argumentValues,
-                                         DataFetchingEnvironment environment,
-                                         Throwable e) {
-        DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
-                .executionContext(executionContext)
-                .dataFetchingEnvironment(environment)
-                .argumentValues(argumentValues)
-                .field(field)
-                .fieldDefinition(fieldDef)
-                .path(parameters.getPath())
-                .exception(e)
-                .build();
-
-        dataFetcherExceptionHandler.accept(handlerParameters);
-
-        parameters.deferredErrorSupport().onFetchingException(parameters, e);
-    }
 
     /**
      * Called to complete a field based on the type of the field.

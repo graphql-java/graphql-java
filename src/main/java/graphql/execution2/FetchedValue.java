@@ -4,6 +4,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Internal
@@ -16,6 +17,12 @@ public class FetchedValue {
         this.fetchedValue = fetchedValue;
         this.rawFetchedValue = rawFetchedValue;
         this.errors = errors;
+    }
+
+    public FetchedValue(Object fetchedValue, Object rawFetchedValue) {
+        this.fetchedValue = fetchedValue;
+        this.rawFetchedValue = rawFetchedValue;
+        this.errors = Collections.emptyList();
     }
 
     public Object getFetchedValue() {

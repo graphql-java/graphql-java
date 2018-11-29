@@ -75,6 +75,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
+                .path(ExecutionPath.rootPath())
                 .build()
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
@@ -118,6 +119,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo()
                 .type(schema.getQueryType())
+                .path(ExecutionPath.rootPath())
                 .build()
 
         ExecutionContext executionContext = new ExecutionContextBuilder()
