@@ -41,6 +41,10 @@ public class ChildrenContainer {
         return builder.build();
     }
 
+    public boolean isEmpty() {
+        return this.children.isEmpty();
+    }
+
     public static class Builder {
         private final Map<String, List<Node>> children = new LinkedHashMap<>();
 

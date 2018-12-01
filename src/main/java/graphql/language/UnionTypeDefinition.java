@@ -18,6 +18,9 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
     private final List<Directive> directives;
     private final List<Type> memberTypes;
 
+    private static final String CHILD_DIRECTIVES = "directives";
+    private static final String CHILD_MEMBER_TYPES = "memberTypes";
+
     @Internal
     protected UnionTypeDefinition(String name,
                         List<Directive> directives,
@@ -71,6 +74,22 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
         result.addAll(directives);
         result.addAll(memberTypes);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_MEMBER_TYPES, memberTypes)
+                .build();
+    }
+
+    @Override
+    public UnionTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .memberTypes(newChildren.getList(CHILD_MEMBER_TYPES))
+        );
     }
 
     @Override

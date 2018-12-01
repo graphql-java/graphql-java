@@ -15,6 +15,8 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     private final List<Selection> selections = new ArrayList<>();
 
+    private static final String CHILD_SELECTIONS = "selections";
+
     @Internal
     protected SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
@@ -32,12 +34,25 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         return selections;
     }
 
-
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(selections);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_SELECTIONS, selections)
+                .build();
+    }
+
+    @Override
+    public SelectionSet withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .selections(newChildren.getList(CHILD_SELECTIONS))
+        );
     }
 
     @Override
