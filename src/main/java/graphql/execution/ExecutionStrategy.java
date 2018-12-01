@@ -15,6 +15,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution2.ExecutionStepInfoFactory;
 import graphql.execution2.UnboxPossibleOptional;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
@@ -120,6 +121,7 @@ public abstract class ExecutionStrategy {
 
     protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
+    private ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory();
 
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
@@ -492,19 +494,13 @@ public abstract class ExecutionStrategy {
         for (Object item : values) {
             ExecutionPath indexedPath = parameters.getPath().segment(index);
 
-            ExecutionStepInfo wrappedExecutionStepInfo = ExecutionStepInfo.newExecutionStepInfo()
-                    .parentInfo(executionStepInfo)
-                    .type(fieldType.getWrappedType())
-                    .path(indexedPath)
-                    .fieldDefinition(fieldDef)
-                    .field(field)
-                    .build();
+            ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
 
-            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, wrappedExecutionStepInfo);
+            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
 
             int finalIndex = index;
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                    builder.executionStepInfo(wrappedExecutionStepInfo)
+                    builder.executionStepInfo(stepInfoForListElement)
                             .nonNullFieldValidator(nonNullableFieldValidator)
                             .listSize(values.size())
                             .currentListIndex(finalIndex)

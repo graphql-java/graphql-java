@@ -32,7 +32,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
     private final ExecutionStepInfo executionStepInfo;
-    private ExecutionContext executionContext;
+    private final ExecutionContext executionContext;
 
     public DataFetchingEnvironmentImpl(Object source,
                                        Map<String, Object> arguments,
