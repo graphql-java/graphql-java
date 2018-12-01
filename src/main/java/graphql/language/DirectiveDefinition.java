@@ -13,12 +13,16 @@ import java.util.function.Consumer;
 @PublicApi
 public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements SDLDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
-    private Description description;
+    private final Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<DirectiveLocation> directiveLocations;
 
+    private static final String CHILD_INPUT_VALUE_DEFINITIONS = "inputValueDefinitions";
+    private static final String CHILD_DIRECTIVE_LOCATION = "directiveLocation";
+
     @Internal
     protected DirectiveDefinition(String name,
+                                Description description,
                                 List<InputValueDefinition> inputValueDefinitions,
                                 List<DirectiveLocation> directiveLocations,
                                 SourceLocation sourceLocation,
@@ -26,6 +30,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
     ) {
         super(sourceLocation, comments);
         this.name = name;
+        this.description = description;
         this.inputValueDefinitions = inputValueDefinitions;
         this.directiveLocations = directiveLocations;
     }
@@ -34,7 +39,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
      * alternative to using a Builder for convenience
      */
     public DirectiveDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>());
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>());
     }
 
     @Override
@@ -44,10 +49,6 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
 
     public Description getDescription() {
         return description;
-    }
-
-    public void setDescription(Description description) {
-        this.description = description;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
@@ -67,6 +68,22 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
     }
 
     @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_INPUT_VALUE_DEFINITIONS, inputValueDefinitions)
+                .children(CHILD_DIRECTIVE_LOCATION, directiveLocations)
+                .build();
+    }
+
+    @Override
+    public DirectiveDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .inputValueDefinitions(newChildren.getList(CHILD_INPUT_VALUE_DEFINITIONS))
+                .directiveLocations(newChildren.getList(CHILD_DIRECTIVE_LOCATION))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -79,6 +96,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
     @Override
     public DirectiveDefinition deepCopy() {
         return new DirectiveDefinition(name,
+                description,
                 deepCopy(inputValueDefinitions),
                 deepCopy(directiveLocations),
                 getSourceLocation(),
@@ -170,8 +188,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
         }
 
         public DirectiveDefinition build() {
-            DirectiveDefinition directiveDefinition = new DirectiveDefinition(name, inputValueDefinitions, directiveLocations, sourceLocation, comments);
-            directiveDefinition.setDescription(description);
+            DirectiveDefinition directiveDefinition = new DirectiveDefinition(name, description, inputValueDefinitions, directiveLocations, sourceLocation, comments);
             return directiveDefinition;
         }
     }

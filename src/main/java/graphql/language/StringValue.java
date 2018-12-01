@@ -42,6 +42,20 @@ public class StringValue extends AbstractNode<StringValue> implements Value<Stri
     }
 
     @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer().build();
+    }
+
+    @Override
+    public StringValue withNewChildren(ChildrenContainer newChildren) {
+        if (!newChildren.isEmpty()) {
+            throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
+        }
+
+        return this;
+    }
+
+    @Override
     public String toString() {
         return "StringValue{" +
                 "value='" + value + '\'' +

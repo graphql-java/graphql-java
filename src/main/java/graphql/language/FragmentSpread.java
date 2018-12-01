@@ -16,6 +16,8 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     private final String name;
     private final List<Directive> directives;
 
+    private static final String CHILD_DIRECTIVES = "directives";
+
     @Internal
     protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
@@ -56,6 +58,20 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         List<Node> result = new ArrayList<>();
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public FragmentSpread withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+        );
     }
 
     @Override

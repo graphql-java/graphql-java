@@ -17,6 +17,9 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     private final Type type;
     private final Value defaultValue;
 
+    private static final String CHILD_TYPE = "type";
+    private static final String CHILD_DEFAULT_VALUE = "defaultValue";
+
     @Internal
     protected VariableDefinition(String name,
                                Type type,
@@ -65,6 +68,22 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         result.add(type);
         if (defaultValue != null) result.add(defaultValue);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .child(CHILD_DEFAULT_VALUE, defaultValue)
+                .build();
+    }
+
+    @Override
+    public VariableDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
+                .defaultValue(newChildren.getSingleValueOrNull(CHILD_DEFAULT_VALUE))
+        );
     }
 
     @Override

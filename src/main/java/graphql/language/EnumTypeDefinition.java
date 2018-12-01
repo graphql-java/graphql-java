@@ -16,6 +16,9 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
     private final List<EnumValueDefinition> enumValueDefinitions;
     private final List<Directive> directives;
 
+    private static final String CHILD_ENUM_VALUE_DEFINITIONS = "enumValueDefinitions";
+    private static final String CHILD_DIRECTIVES = "directives";
+
     @Internal
     protected EnumTypeDefinition(String name,
                        List<EnumValueDefinition> enumValueDefinitions,
@@ -61,6 +64,22 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
         result.addAll(enumValueDefinitions);
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_ENUM_VALUE_DEFINITIONS, enumValueDefinitions)
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public EnumTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .enumValueDefinitions(newChildren.getList(CHILD_ENUM_VALUE_DEFINITIONS))
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+        );
     }
 
     @Override

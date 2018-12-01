@@ -15,6 +15,8 @@ public class Document extends AbstractNode<Document> {
 
     private final List<Definition> definitions;
 
+    private static final String CHILD_DEFINITIONS = "definitions";
+
     @Internal
     protected Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
@@ -32,12 +34,24 @@ public class Document extends AbstractNode<Document> {
         return definitions;
     }
 
-
     @Override
     public List<Node> getChildren() {
         return new ArrayList<>(definitions);
     }
 
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_DEFINITIONS, definitions)
+                .build();
+    }
+
+    @Override
+    public Document withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .definitions(newChildren.getList(CHILD_DEFINITIONS))
+        );
+    }
 
     @Override
     public boolean isEqualTo(Node o) {

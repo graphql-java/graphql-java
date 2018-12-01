@@ -13,8 +13,10 @@ import java.util.function.Consumer;
 @PublicApi
 public class Argument extends AbstractNode<Argument> implements NamedNode<Argument> {
 
-    private String name;
-    private Value value;
+    private final String name;
+    private final Value value;
+
+    private static final String CHILD_VALUE = "value";
 
     @Internal
     protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments) {
@@ -42,14 +44,6 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         return value;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setValue(Value value) {
-        this.value = value;
-    }
-
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
@@ -57,6 +51,19 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         return result;
     }
 
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_VALUE, value)
+                .build();
+    }
+
+    @Override
+    public Argument withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .value(newChildren.getSingleValueOrNull(CHILD_VALUE))
+        );
+    }
 
     @Override
     public boolean isEqualTo(Node o) {

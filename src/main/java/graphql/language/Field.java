@@ -17,20 +17,26 @@ import java.util.function.Consumer;
 @PublicApi
 public class Field extends AbstractNode<Field> implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field> {
 
-    private String name;
-    private String alias;
-    private List<Argument> arguments;
-    private List<Directive> directives;
-    private SelectionSet selectionSet;
+    private final String name;
+    private final String alias;
+    private final List<Argument> arguments;
+    private final List<Directive> directives;
+    private final SelectionSet selectionSet;
+
+    private static final String CHILD_ARGUMENTS = "arguments";
+    private static final String CHILD_DIRECTIVES = "directives";
+    private static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
-    protected Field(String name,
-                    String alias,
-                    List<Argument> arguments,
-                    List<Directive> directives,
-                    SelectionSet selectionSet,
-                    SourceLocation sourceLocation,
-                    List<Comment> comments) {
+    protected Field(
+            String name,
+            String alias,
+            List<Argument> arguments,
+            List<Directive> directives,
+            SelectionSet selectionSet,
+            SourceLocation sourceLocation,
+            List<Comment> comments
+    ) {
         super(sourceLocation, comments);
         this.name = name;
         this.alias = alias;
@@ -79,6 +85,23 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return result;
     }
 
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_ARGUMENTS, arguments)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_SELECTION_SET, selectionSet)
+                .build();
+    }
+
+    @Override
+    public Field withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.arguments(newChildren.getList(CHILD_ARGUMENTS))
+                        .directives(newChildren.getList(CHILD_DIRECTIVES))
+                        .selectionSet(newChildren.getSingleValueOrNull(CHILD_SELECTION_SET))
+        );
+    }
 
     @Override
     public String getName() {
@@ -93,14 +116,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return arguments;
     }
 
-    public void setArguments(List<Argument> arguments) {
-        this.arguments = arguments;
-    }
-
-    public void setDirectives(List<Directive> directives) {
-        this.directives = directives;
-    }
-
     @Override
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
@@ -111,19 +126,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return selectionSet;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setAlias(String alias) {
-        this.alias = alias;
-    }
-
-    public void setSelectionSet(SelectionSet selectionSet) {
-        this.selectionSet = selectionSet;
-    }
-
-    @Override
+   @Override
     public boolean isEqualTo(Node o) {
         if (this == o) {
             return true;

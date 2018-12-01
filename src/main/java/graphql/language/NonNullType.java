@@ -15,6 +15,8 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
 
     private final Type type;
 
+    private static final String CHILD_TYPE = "type";
+
     @Internal
     protected NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
         super(sourceLocation, comments);
@@ -42,6 +44,20 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
         List<Node> result = new ArrayList<>();
         result.add(type);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .build();
+    }
+
+    @Override
+    public NonNullType withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type((Type) newChildren.getSingleValueOrNull(CHILD_TYPE))
+        );
     }
 
     @Override

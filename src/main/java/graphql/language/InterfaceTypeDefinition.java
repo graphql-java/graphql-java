@@ -18,6 +18,9 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
     private final List<FieldDefinition> definitions;
     private final List<Directive> directives;
 
+    private static final String CHILD_DEFINITIONS = "definitions";
+    private static final String CHILD_DIRECTIVES = "directives";
+
     @Internal
     protected InterfaceTypeDefinition(String name,
                             List<FieldDefinition> definitions,
@@ -57,13 +60,28 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         return description;
     }
 
-
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(definitions);
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_DEFINITIONS, definitions)
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public InterfaceTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .definitions(newChildren.getList(CHILD_DEFINITIONS))
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+        );
     }
 
     @Override
