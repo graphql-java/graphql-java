@@ -5,7 +5,11 @@ import graphql.PublicApi;
 import java.util.Set;
 
 /**
- * Traversal context
+ * Traversal context.
+ *
+ * It is used as providing context for traversing, but also for returning an accumulate value. ({@link #setAccumulate(Object)}
+ *
+ * Parts of the context are mutable.
  *
  * @param <T> type of tree node
  */
@@ -30,11 +34,10 @@ public interface TraverserContext<T> {
     TraverserContext<T> getParentContext();
 
     /**
-     * The result of the {@link #getParentContext()}.
-     *
-     * @return the parent result
+     * The position of the current node regarding to the parent node.
+     * @return the position or null if this is a root node
      */
-    Object getParentResult();
+    NodePosition getPosition();
 
     /**
      * Informs that the current node has been already "visited"
@@ -74,24 +77,34 @@ public interface TraverserContext<T> {
 
 
     /**
-     * Set the result for this TraverserContext.
+     * Sets the new accumulate value.
      *
-     * @param result to set
+     * Can be retrieved by getA
+     *
+     * @param accumulate to set
      */
-    void setResult(Object result);
+    void setAccumulate(Object accumulate);
 
     /**
-     * The result of this TraverserContext..
+     * The new accumulate value, previously set by {@link #setAccumulate(Object)}
+     * or {@link #getCurrentAccumulate()} if {@link #setAccumulate(Object)} not invoked.
      *
-     * @return the result
+     * @return new acc
      */
-    Object getResult();
+    <U> U getNewAccumulate();
+
+    /**
+     * The current accumulate value used as "input" for the current step.
+     *
+     * @return current acc
+     */
+    <U> U getCurrentAccumulate();
 
     /**
      * Used to share something across all TraverserContext.
      *
-     * @return the initial data
+     * @return contextData
      */
-    Object getInitialData();
+    <U> U getSharedContextData();
 
 }

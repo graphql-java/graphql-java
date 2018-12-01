@@ -1,7 +1,7 @@
 package graphql.language;
 
 import graphql.PublicApi;
-import graphql.util.SimpleTraverserContext;
+import graphql.util.DefaultTraverserContext;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
@@ -153,9 +153,9 @@ public class NodeTraverser {
 
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public static <T> T oneVisitWithResult(Node node, NodeVisitor nodeVisitor) {
-        SimpleTraverserContext<Node> context = new SimpleTraverserContext<>(node);
+        DefaultTraverserContext<Node> context = DefaultTraverserContext.simple(node);
         node.accept(context, nodeVisitor);
-        return (T) context.getResult();
+        return (T) context.getNewAccumulate();
     }
 
 }

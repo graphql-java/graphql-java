@@ -1,6 +1,5 @@
 package graphql.language;
 
-import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -8,6 +7,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static graphql.Assert.assertTrue;
 
 @PublicApi
 public class AstMultiZipper {
@@ -38,7 +39,7 @@ public class AstMultiZipper {
             curZippers.removeAll(deepestZippers);
             curZippers.addAll(newZippers);
         }
-        Assert.assertTrue(curZippers.size() == 1, "illegal state");
+        assertTrue(curZippers.size() == 1, "illegal state");
         return curZippers.get(0).toRoot();
     }
 
@@ -50,13 +51,19 @@ public class AstMultiZipper {
         return new ArrayList<>(zippers);
     }
 
-    public AstMultiZipper withZippers(List<AstZipper> zippers) {
+    public AstMultiZipper withReplacedZippers(List<AstZipper> zippers) {
         return new AstMultiZipper(commonRoot, zippers);
+    }
+
+    public AstMultiZipper withNewZipper(AstZipper newZipper) {
+        List<AstZipper> newZippers = getZippers();
+        newZippers.add(newZipper);
+        return new AstMultiZipper(commonRoot, newZippers);
     }
 
     public AstMultiZipper withReplacedZipper(AstZipper oldZipper, AstZipper newZipper) {
         int index = zippers.indexOf(oldZipper);
-        Assert.assertTrue(index >= 0, "oldZipper not found");
+        assertTrue(index >= 0, "oldZipper not found");
         List<AstZipper> newZippers = new ArrayList<>(zippers);
         newZippers.set(index, newZipper);
         return new AstMultiZipper(commonRoot, newZippers);
