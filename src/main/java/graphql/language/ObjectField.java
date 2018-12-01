@@ -61,7 +61,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
     @Override
     public ObjectField withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .value(newChildren.getSingleValueOrNull(CHILD_VALUE))
+                .value(newChildren.getChildOrNull(CHILD_VALUE))
         );
     }
 

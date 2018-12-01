@@ -80,8 +80,8 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
     @Override
     public EnumTypeDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .enumValueDefinitions(newChildren.getList(CHILD_ENUM_VALUE_DEFINITIONS))
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .enumValueDefinitions(newChildren.getChildren(CHILD_ENUM_VALUE_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
     }
 

@@ -51,7 +51,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
     @Override
     public ArrayValue withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .values(newChildren.getList(CHILD_VALUES))
+                .values(newChildren.getChildren(CHILD_VALUES))
         );
     }
 

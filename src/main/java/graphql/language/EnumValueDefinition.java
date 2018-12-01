@@ -81,7 +81,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
     @Override
     public EnumValueDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
     }
 

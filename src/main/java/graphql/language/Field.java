@@ -108,9 +108,9 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     @Override
     public Field withNewChildren(ChildrenContainer newChildren) {
         return transform(builder ->
-                builder.arguments(newChildren.getList(CHILD_ARGUMENTS))
-                        .directives(newChildren.getList(CHILD_DIRECTIVES))
-                        .selectionSet(newChildren.getSingleValueOrNull(CHILD_SELECTION_SET))
+                builder.arguments(newChildren.getChildren(CHILD_ARGUMENTS))
+                        .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
         );
     }
 

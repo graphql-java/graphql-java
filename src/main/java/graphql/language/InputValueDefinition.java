@@ -111,9 +111,9 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     @Override
     public InputValueDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
-                .defaultValue(newChildren.getSingleValueOrNull(CHILD_DEFAULT_VALUE))
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .defaultValue(newChildren.getChildOrNull(CHILD_DEFAULT_VALUE))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
 
         );
     }

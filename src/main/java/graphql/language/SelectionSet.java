@@ -53,7 +53,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     @Override
     public SelectionSet withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .selections(newChildren.getList(CHILD_SELECTIONS))
+                .selections(newChildren.getChildren(CHILD_SELECTIONS))
         );
     }
 

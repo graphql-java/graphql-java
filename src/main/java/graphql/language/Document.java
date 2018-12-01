@@ -51,7 +51,7 @@ public class Document extends AbstractNode<Document> {
     @Override
     public Document withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .definitions(newChildren.getList(CHILD_DEFINITIONS))
+                .definitions(newChildren.getChildren(CHILD_DEFINITIONS))
         );
     }
 

@@ -91,8 +91,8 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     @Override
     public VariableDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
-                .defaultValue(newChildren.getSingleValueOrNull(CHILD_DEFAULT_VALUE))
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .defaultValue(newChildren.getChildOrNull(CHILD_DEFAULT_VALUE))
         );
     }
 

@@ -88,26 +88,12 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
                 .build();
     }
 
-//    public ObjectTypeDefinition withNewChildren(Map<Integer, Node> newChildren) {
-//        List<Node> curChildren = getChildren();
-//        for (int ix : newChildren.keySet()) {
-//            Node curChild = curChildren.get(ix);
-//            if(curChild instanceof Type ) {
-//               // this means it is a implementz child
-//               // but at which index in the implementz list?
-//            }else if( curChild instanceof Directive) {
-//                // this means it is a directives child
-//                // but at which index in the directives list
-//            }
-//        }
-//    }
-
     @Override
     public ObjectTypeDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> {
-            builder.implementz(newChildren.getList(CHILD_IMPLEMENTZ))
-                    .directives(newChildren.getList(CHILD_DIRECTIVES))
-                    .fieldDefinitions(newChildren.getList(CHILD_FIELD_DEFINITIONS));
+            builder.implementz(newChildren.getChildren(CHILD_IMPLEMENTZ))
+                    .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                    .fieldDefinitions(newChildren.getChildren(CHILD_FIELD_DEFINITIONS));
         });
     }
 

@@ -73,7 +73,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
     @Override
     public ScalarTypeDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
     }
 

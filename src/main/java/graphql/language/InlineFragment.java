@@ -99,9 +99,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     @Override
     public InlineFragment withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .typeCondition(newChildren.getSingleValueOrNull(CHILD_TYPE_CONDITION))
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
-                .selectionSet(newChildren.getSingleValueOrNull(CHILD_SELECTION_SET))
+                .typeCondition(newChildren.getChildOrNull(CHILD_TYPE_CONDITION))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
         );
     }
 

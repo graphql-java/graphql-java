@@ -61,7 +61,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     @Override
     public Argument withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .value(newChildren.getSingleValueOrNull(CHILD_VALUE))
+                .value(newChildren.getChildOrNull(CHILD_VALUE))
         );
     }
 

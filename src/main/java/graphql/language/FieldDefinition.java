@@ -87,9 +87,9 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     @Override
     public FieldDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
-                .inputValueDefinitions(newChildren.getList(CHILD_INPUT_VALUE_DEFINITION))
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITION))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
     }
 

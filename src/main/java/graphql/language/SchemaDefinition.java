@@ -69,8 +69,8 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     @Override
     public SchemaDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
-                .operationTypeDefinitions(newChildren.getList(CHILD_OPERATION_TYPE_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .operationTypeDefinitions(newChildren.getChildren(CHILD_OPERATION_TYPE_DEFINITIONS))
         );
     }
 

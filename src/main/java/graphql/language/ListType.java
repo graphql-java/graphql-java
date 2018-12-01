@@ -53,7 +53,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
     @Override
     public ListType withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
         );
     }
 

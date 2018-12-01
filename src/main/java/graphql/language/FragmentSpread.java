@@ -76,7 +76,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     @Override
     public FragmentSpread withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
     }
 

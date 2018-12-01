@@ -53,7 +53,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
     @Override
     public ObjectValue withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .objectFields(newChildren.getList(CHILD_OBJECT_FIELDS))
+                .objectFields(newChildren.getChildren(CHILD_OBJECT_FIELDS))
         );
     }
 

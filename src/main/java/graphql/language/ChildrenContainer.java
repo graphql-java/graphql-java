@@ -18,11 +18,11 @@ public class ChildrenContainer {
         this.children.putAll(Assert.assertNotNull(children));
     }
 
-    public <T extends Node> List<T> getList(String key) {
+    public <T extends Node> List<T> getChildren(String key) {
         return (List<T>) children.getOrDefault(key, new ArrayList<>());
     }
 
-    public <T extends Node> T getSingleValueOrNull(String key) {
+    public <T extends Node> T getChildOrNull(String key) {
         List<? extends Node> result = children.getOrDefault(key, new ArrayList<>());
         if (result.size() > 1) {
             throw new IllegalStateException("children " + key + " is not a single value");

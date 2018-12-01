@@ -175,7 +175,7 @@ class AstZipperTest extends Specification {
 
         @Override
         Node withNewChildren(ChildrenContainer newChildren) {
-            return new MyNode(this.getValue(), newChildren.getList(CHILDREN))
+            return new MyNode(this.getValue(), newChildren.getChildren(CHILDREN))
         }
 
         @Override

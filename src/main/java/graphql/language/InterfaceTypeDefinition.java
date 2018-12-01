@@ -82,8 +82,8 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
     @Override
     public InterfaceTypeDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .definitions(newChildren.getList(CHILD_DEFINITIONS))
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .definitions(newChildren.getChildren(CHILD_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
     }
 

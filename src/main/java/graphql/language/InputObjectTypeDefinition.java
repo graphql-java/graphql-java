@@ -73,8 +73,8 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     @Override
     public InputObjectTypeDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .directives(newChildren.getList(CHILD_DIRECTIVES))
-                .inputValueDefinitions(newChildren.getList(CHILD_INPUT_VALUES_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUES_DEFINITIONS))
         );
     }
 

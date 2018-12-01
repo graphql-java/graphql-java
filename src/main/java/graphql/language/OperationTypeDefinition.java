@@ -61,7 +61,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     @Override
     public OperationTypeDefinition withNewChildren(ChildrenContainer newChildren) {
         return transform(builder -> builder
-                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
         );
     }
 
