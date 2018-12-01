@@ -18,6 +18,8 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     private final String name;
     private final List<Argument> arguments = new ArrayList<>();
 
+    private static final String CHILD_ARGUMENTS = "arguments";
+
     @Internal
     protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         super(sourceLocation, comments, ignoredChars);
@@ -67,6 +69,20 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     @Override
     public List<Node> getChildren() {
         return new ArrayList<>(arguments);
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_ARGUMENTS, arguments)
+                .build();
+    }
+
+    @Override
+    public Directive withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .arguments(newChildren.getList(CHILD_ARGUMENTS))
+        );
     }
 
     @Override

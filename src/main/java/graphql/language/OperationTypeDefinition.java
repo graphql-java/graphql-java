@@ -16,6 +16,8 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     private final String name;
     private final Type type;
 
+    private static final String CHILD_TYPE = "type";
+
     @Internal
     protected OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         super(sourceLocation, comments, ignoredChars);
@@ -47,6 +49,20 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         List<Node> result = new ArrayList<>();
         result.add(type);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .build();
+    }
+
+    @Override
+    public OperationTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
+        );
     }
 
     @Override

@@ -15,6 +15,8 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     private final Type type;
 
+    private static final String CHILD_TYPE = "type";
+
     @Internal
     protected ListType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         super(sourceLocation, comments, ignoredChars);
@@ -39,6 +41,20 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
         List<Node> result = new ArrayList<>();
         result.add(type);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .build();
+    }
+
+    @Override
+    public ListType withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
+        );
     }
 
     @Override

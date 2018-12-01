@@ -15,6 +15,8 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
     private final List<Value> values = new ArrayList<>();
 
+    private static final String CHILD_VALUES = "values";
+
     @Internal
     protected ArrayValue(List<Value> values, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         super(sourceLocation, comments, ignoredChars);
@@ -37,6 +39,20 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
     @Override
     public List<Node> getChildren() {
         return new ArrayList<>(values);
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_VALUES, values)
+                .build();
+    }
+
+    @Override
+    public ArrayValue withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .values(newChildren.getList(CHILD_VALUES))
+        );
     }
 
     @Override

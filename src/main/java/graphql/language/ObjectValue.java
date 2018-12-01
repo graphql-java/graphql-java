@@ -15,6 +15,8 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     private final List<ObjectField> objectFields = new ArrayList<>();
 
+    private static final String CHILD_OBJECT_FIELDS = "objectFields";
+
     @Internal
     protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         super(sourceLocation, comments, ignoredChars);
@@ -39,6 +41,20 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
         List<Node> result = new ArrayList<>();
         result.addAll(objectFields);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_OBJECT_FIELDS, objectFields)
+                .build();
+    }
+
+    @Override
+    public ObjectValue withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .objectFields(newChildren.getList(CHILD_OBJECT_FIELDS))
+        );
     }
 
     @Override

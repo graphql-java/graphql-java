@@ -18,6 +18,10 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
     private final List<Directive> directives;
     private final List<FieldDefinition> fieldDefinitions;
 
+    public static final String CHILD_IMPLEMENTZ = "implementz";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
+
     @Internal
     protected ObjectTypeDefinition(String name,
                                    List<Type> implementz,
@@ -73,6 +77,38 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
         result.addAll(directives);
         result.addAll(fieldDefinitions);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_IMPLEMENTZ, implementz)
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_FIELD_DEFINITIONS, fieldDefinitions)
+                .build();
+    }
+
+//    public ObjectTypeDefinition withNewChildren(Map<Integer, Node> newChildren) {
+//        List<Node> curChildren = getChildren();
+//        for (int ix : newChildren.keySet()) {
+//            Node curChild = curChildren.get(ix);
+//            if(curChild instanceof Type ) {
+//               // this means it is a implementz child
+//               // but at which index in the implementz list?
+//            }else if( curChild instanceof Directive) {
+//                // this means it is a directives child
+//                // but at which index in the directives list
+//            }
+//        }
+//    }
+
+    @Override
+    public ObjectTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> {
+            builder.implementz(newChildren.getList(CHILD_IMPLEMENTZ))
+                    .directives(newChildren.getList(CHILD_DIRECTIVES))
+                    .fieldDefinitions(newChildren.getList(CHILD_FIELD_DEFINITIONS));
+        });
     }
 
     @Override

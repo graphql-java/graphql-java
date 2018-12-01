@@ -21,6 +21,10 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
+    private static final String CHILD_TYPE_CONDITION = "typeCondition";
+    private static final String CHILD_DIRECTIVES = "directives";
+    private static final String CHILD_SELECTION_SET = "selectionSet";
+
     @Internal
     protected FragmentDefinition(String name,
                                  TypeName typeCondition,
@@ -64,6 +68,24 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         result.addAll(directives);
         result.add(selectionSet);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_TYPE_CONDITION, typeCondition)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_SELECTION_SET, selectionSet)
+                .build();
+    }
+
+    @Override
+    public FragmentDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .typeCondition(newChildren.getSingleValueOrNull(CHILD_TYPE_CONDITION))
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .selectionSet(newChildren.getSingleValueOrNull(CHILD_SELECTION_SET))
+        );
     }
 
     @Override

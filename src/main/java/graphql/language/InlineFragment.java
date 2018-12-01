@@ -19,6 +19,10 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
+    private static final String CHILD_TYPE_CONDITION = "typeCondition";
+    private static final String CHILD_DIRECTIVES = "directives";
+    private static final String CHILD_SELECTION_SET = "selectionSet";
+
     @Internal
     protected InlineFragment(TypeName typeCondition,
                              List<Directive> directives,
@@ -55,7 +59,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return typeCondition;
     }
 
-
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
     }
@@ -67,7 +70,6 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     public Directive getDirective(String directiveName) {
         return getDirectivesByName().get(directiveName);
     }
-
 
     @Override
     public SelectionSet getSelectionSet() {
@@ -83,6 +85,24 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         result.addAll(directives);
         result.add(selectionSet);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_TYPE_CONDITION, typeCondition)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_SELECTION_SET, selectionSet)
+                .build();
+    }
+
+    @Override
+    public InlineFragment withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .typeCondition(newChildren.getSingleValueOrNull(CHILD_TYPE_CONDITION))
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .selectionSet(newChildren.getSingleValueOrNull(CHILD_SELECTION_SET))
+        );
     }
 
     @Override

@@ -19,6 +19,9 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     private final List<Directive> directives;
     private final List<OperationTypeDefinition> operationTypeDefinitions;
 
+    private static final String CHILD_DIRECTIVES = "directives";
+    private static final String CHILD_OPERATION_TYPE_DEFINITIONS = "operationTypeDefinitions";
+
     @Internal
     protected SchemaDefinition(List<Directive> directives,
                                List<OperationTypeDefinition> operationTypeDefinitions,
@@ -53,6 +56,22 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
         result.addAll(directives);
         result.addAll(operationTypeDefinitions);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_OPERATION_TYPE_DEFINITIONS, operationTypeDefinitions)
+                .build();
+    }
+
+    @Override
+    public SchemaDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .operationTypeDefinitions(newChildren.getList(CHILD_OPERATION_TYPE_DEFINITIONS))
+        );
     }
 
     @Override

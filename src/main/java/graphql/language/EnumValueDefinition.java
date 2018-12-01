@@ -16,6 +16,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
     private final Description description;
     private final List<Directive> directives;
 
+    private static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected EnumValueDefinition(String name,
@@ -68,6 +69,20 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
         List<Node> result = new ArrayList<>();
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public EnumValueDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+        );
     }
 
     @Override

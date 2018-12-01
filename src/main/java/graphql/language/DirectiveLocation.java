@@ -48,6 +48,20 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
     }
 
     @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer().build();
+    }
+
+    @Override
+    public DirectiveLocation withNewChildren(ChildrenContainer newChildren) {
+        if (!newChildren.isEmpty()) {
+            throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
+        }
+
+        return this;
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
         if (this == o) {
             return true;

@@ -18,6 +18,9 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     private final Description description;
     private final List<Directive> directives;
 
+    private static final String CHILD_TYPE = "type";
+    private static final String CHILD_DEFAULT_VALUE = "defaultValue";
+    private static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected InputValueDefinition(String name,
@@ -94,6 +97,25 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         }
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .child(CHILD_DEFAULT_VALUE, defaultValue)
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public InputValueDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
+                .defaultValue(newChildren.getSingleValueOrNull(CHILD_DEFAULT_VALUE))
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+
+        );
     }
 
     @Override

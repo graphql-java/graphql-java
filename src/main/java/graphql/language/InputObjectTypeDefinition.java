@@ -18,6 +18,9 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     private final List<Directive> directives;
     private final List<InputValueDefinition> inputValueDefinitions;
 
+    private static final String CHILD_DIRECTIVES = "directives";
+    private static final String CHILD_INPUT_VALUES_DEFINITIONS = "inputValueDefinitions";
+
     @Internal
     protected InputObjectTypeDefinition(String name,
                                         List<Directive> directives,
@@ -57,6 +60,22 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
         result.addAll(directives);
         result.addAll(inputValueDefinitions);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_INPUT_VALUES_DEFINITIONS, inputValueDefinitions)
+                .build();
+    }
+
+    @Override
+    public InputObjectTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+                .inputValueDefinitions(newChildren.getList(CHILD_INPUT_VALUES_DEFINITIONS))
+        );
     }
 
     @Override

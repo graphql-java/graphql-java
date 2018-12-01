@@ -12,11 +12,15 @@ import java.util.function.Consumer;
 
 @PublicApi
 public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
-    private String name;
-    private Type type;
+    private final String name;
+    private final Type type;
     private final Description description;
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
+
+    private static final String CHILD_TYPE = "type";
+    private static final String CHILD_INPUT_VALUE_DEFINITION = "inputValueDefinition";
+    private static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected FieldDefinition(String name,
@@ -72,6 +76,24 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     }
 
     @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .children(CHILD_INPUT_VALUE_DEFINITION, inputValueDefinitions)
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public FieldDefinition withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getSingleValueOrNull(CHILD_TYPE))
+                .inputValueDefinitions(newChildren.getList(CHILD_INPUT_VALUE_DEFINITION))
+                .directives(newChildren.getList(CHILD_DIRECTIVES))
+        );
+    }
+
+    @Override
     public boolean isEqualTo(Node o) {
         if (this == o) {
             return true;
@@ -96,14 +118,6 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
                 getComments(),
                 getIgnoredChars()
         );
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setType(Type type) {
-        this.type = type;
     }
 
     @Override

@@ -16,6 +16,8 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
     private final String name;
     private final Value value;
 
+    private static final String CHILD_VALUE = "value";
+
     @Internal
     protected ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
         super(sourceLocation, comments, ignoredChars);
@@ -47,6 +49,20 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
         List<Node> result = new ArrayList<>();
         result.add(value);
         return result;
+    }
+
+    @Override
+    public ChildrenContainer getNamedChildren() {
+        return ChildrenContainer.newChildrenContainer()
+                .child(CHILD_VALUE, value)
+                .build();
+    }
+
+    @Override
+    public ObjectField withNewChildren(ChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .value(newChildren.getSingleValueOrNull(CHILD_VALUE))
+        );
     }
 
     @Override
