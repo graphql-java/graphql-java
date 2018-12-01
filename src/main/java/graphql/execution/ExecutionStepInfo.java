@@ -5,7 +5,7 @@ import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
 
 import java.util.Collections;
@@ -27,14 +27,16 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 @PublicApi
 public class ExecutionStepInfo {
 
-    private final GraphQLType type;
-    private final Field field;
-    private final GraphQLFieldDefinition fieldDefinition;
+    private final GraphQLOutputType type;
     private final ExecutionPath path;
-    private final Map<String, Object> arguments;
     private final ExecutionStepInfo parent;
 
-    private ExecutionStepInfo(GraphQLType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments) {
+    // field, fieldDefinition and arguments stay the same for steps inside a list field
+    private final Field field;
+    private final GraphQLFieldDefinition fieldDefinition;
+    private final Map<String, Object> arguments;
+
+    private ExecutionStepInfo(GraphQLOutputType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
@@ -49,7 +51,7 @@ public class ExecutionStepInfo {
      *
      * @return the graphql type in question
      */
-    public GraphQLType getType() {
+    public GraphQLOutputType getType() {
         return type;
     }
 
@@ -58,8 +60,8 @@ public class ExecutionStepInfo {
      *
      * @return the graphql type in question
      */
-    public GraphQLType getUnwrappedNonNullType() {
-        return GraphQLTypeUtil.unwrapNonNull(this.type);
+    public GraphQLOutputType getUnwrappedNonNullType() {
+        return (GraphQLOutputType) GraphQLTypeUtil.unwrapNonNull(this.type);
     }
 
     /**
@@ -146,7 +148,7 @@ public class ExecutionStepInfo {
      *
      * @return a new type info with the same
      */
-    public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLType newType) {
+    public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLOutputType newType) {
         assertTrue(!GraphQLTypeUtil.isNonNull(newType), "newType can't be non null");
         if (isNonNullType()) {
             return new ExecutionStepInfo(GraphQLNonNull.nonNull(newType), fieldDefinition, field, path, this.parent, arguments);
@@ -191,7 +193,7 @@ public class ExecutionStepInfo {
     }
 
     public static class Builder {
-        GraphQLType type;
+        GraphQLOutputType type;
         ExecutionStepInfo parentInfo;
         GraphQLFieldDefinition fieldDefinition;
         Field field;
@@ -213,7 +215,7 @@ public class ExecutionStepInfo {
             this.arguments = existing.getArguments();
         }
 
-        public Builder type(GraphQLType type) {
+        public Builder type(GraphQLOutputType type) {
             this.type = type;
             return this;
         }
