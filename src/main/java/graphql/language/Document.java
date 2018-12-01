@@ -15,7 +15,7 @@ public class Document extends AbstractNode<Document> {
 
     private final List<Definition> definitions;
 
-    private static final String CHILD_DEFINITIONS = "definitions";
+    public static final String CHILD_DEFINITIONS = "definitions";
 
     @Internal
     protected Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {

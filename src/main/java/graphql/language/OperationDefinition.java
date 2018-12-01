@@ -24,9 +24,9 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
-    private static final String CHILD_VARIABLE_DEFINITIONS = "variableDefinitions";
-    private static final String CHILD_DIRECTIVES = "directives";
-    private static final String CHILD_SELECTION_SET = "selectionSet";
+    public static final String CHILD_VARIABLE_DEFINITIONS = "variableDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
     protected OperationDefinition(String name,

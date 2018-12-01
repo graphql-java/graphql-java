@@ -23,9 +23,9 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
-    private static final String CHILD_ARGUMENTS = "arguments";
-    private static final String CHILD_DIRECTIVES = "directives";
-    private static final String CHILD_SELECTION_SET = "selectionSet";
+    public static final String CHILD_ARGUMENTS = "arguments";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
     protected Field(String name,

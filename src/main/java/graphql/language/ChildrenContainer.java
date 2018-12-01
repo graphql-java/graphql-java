@@ -68,6 +68,12 @@ public class ChildrenContainer {
             return this;
         }
 
+        public Builder children(Map<String, ? extends List<? extends Node>> children) {
+            this.children.clear();
+            this.children.putAll((Map<? extends String, ? extends List<Node>>) children);
+            return this;
+        }
+
         public Builder replaceChild(String key, int index, Node newChild) {
             this.children.get(key).set(index, newChild);
             return this;

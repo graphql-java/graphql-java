@@ -15,7 +15,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     private final List<Selection> selections = new ArrayList<>();
 
-    private static final String CHILD_SELECTIONS = "selections";
+    public static final String CHILD_SELECTIONS = "selections";
 
     @Internal
     protected SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
