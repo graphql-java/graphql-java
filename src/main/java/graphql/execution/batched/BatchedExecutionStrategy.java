@@ -376,7 +376,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
         }
         GraphQLOutputType innerSubType = (GraphQLOutputType) listType.getWrappedType();
-        ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(GraphQLTypeUtil.unwrapNonNull(innerSubType));
+        ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull((GraphQLOutputType) GraphQLTypeUtil.unwrapNonNull(innerSubType));
         FetchedValues flattenedFetchedValues = new FetchedValues(flattenedValues, newExecutionStepInfo, fetchedValues.getPath());
 
         return completeValues(executionContext, flattenedFetchedValues, newExecutionStepInfo, fieldName, fields, argumentValues);

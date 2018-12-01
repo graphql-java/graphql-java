@@ -8,7 +8,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
-import graphql.schema.GraphQLType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.List;
@@ -43,7 +42,7 @@ public class ExecutionStepInfoFactory {
 
     public ExecutionStepInfo newExecutionStepInfoForListElement(ExecutionStepInfo executionInfo, int index) {
         GraphQLList fieldType = (GraphQLList) executionInfo.getUnwrappedNonNullType();
-        GraphQLType typeInList = fieldType.getWrappedType();
+        GraphQLOutputType typeInList = (GraphQLOutputType) fieldType.getWrappedType();
         ExecutionPath indexedPath = executionInfo.getPath().segment(index);
         return executionInfo.transform(builder -> builder
                 .parentInfo(executionInfo)
