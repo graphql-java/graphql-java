@@ -11,6 +11,7 @@ import graphql.schema.GraphQLTypeUtil;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
@@ -172,6 +173,11 @@ public class ExecutionStepInfo {
                 '}';
     }
 
+    public ExecutionStepInfo transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
 
     /**
      * @return a builder of type info
@@ -180,18 +186,31 @@ public class ExecutionStepInfo {
         return new Builder();
     }
 
+    public static ExecutionStepInfo.Builder newExecutionStepInfo(ExecutionStepInfo existing) {
+        return new Builder(existing);
+    }
+
     public static class Builder {
         GraphQLType type;
         ExecutionStepInfo parentInfo;
         GraphQLFieldDefinition fieldDefinition;
         Field field;
-        ExecutionPath executionPath;
+        ExecutionPath path;
         Map<String, Object> arguments = new LinkedHashMap<>();
 
         /**
          * @see ExecutionStepInfo#newExecutionStepInfo()
          */
         private Builder() {
+        }
+
+        private Builder(ExecutionStepInfo existing) {
+            this.type = existing.type;
+            this.parentInfo = existing.parent;
+            this.fieldDefinition = existing.fieldDefinition;
+            this.field = existing.field;
+            this.path = existing.path;
+            this.arguments = existing.getArguments();
         }
 
         public Builder type(GraphQLType type) {
@@ -215,7 +234,7 @@ public class ExecutionStepInfo {
         }
 
         public Builder path(ExecutionPath executionPath) {
-            this.executionPath = executionPath;
+            this.path = executionPath;
             return this;
         }
 
@@ -225,7 +244,7 @@ public class ExecutionStepInfo {
         }
 
         public ExecutionStepInfo build() {
-            return new ExecutionStepInfo(type, fieldDefinition, field, executionPath, parentInfo, arguments);
+            return new ExecutionStepInfo(type, fieldDefinition, field, path, parentInfo, arguments);
         }
     }
 }
