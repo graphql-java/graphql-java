@@ -8,14 +8,12 @@ import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
-import graphql.TypeResolutionEnvironment;
 import graphql.UnresolvedTypeError;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.execution2.UnboxPossibleOptional;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
@@ -26,13 +24,11 @@ import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.FpKit;
 import org.slf4j.Logger;
@@ -120,6 +116,7 @@ public abstract class ExecutionStrategy {
     protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
     private final ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory();
+    private final ResolveType resolvedType = new ResolveType();
 
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
 
@@ -654,75 +651,7 @@ public abstract class ExecutionStrategy {
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {
-        GraphQLObjectType resolvedType;
-        if (fieldType instanceof GraphQLInterfaceType) {
-            TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
-                    .graphQLInterfaceType((GraphQLInterfaceType) fieldType)
-                    .field(parameters.getField().get(0))
-                    .value(parameters.getSource())
-                    .argumentValues(parameters.getArguments())
-                    .context(executionContext.getContext())
-                    .schema(executionContext.getGraphQLSchema()).build();
-            resolvedType = resolveTypeForInterface(resolutionParams);
-
-        } else if (fieldType instanceof GraphQLUnionType) {
-            TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
-                    .graphQLUnionType((GraphQLUnionType) fieldType)
-                    .field(parameters.getField().get(0))
-                    .value(parameters.getSource())
-                    .argumentValues(parameters.getArguments())
-                    .context(executionContext.getContext())
-                    .schema(executionContext.getGraphQLSchema()).build();
-            resolvedType = resolveTypeForUnion(resolutionParams);
-        } else {
-            resolvedType = (GraphQLObjectType) fieldType;
-        }
-
-        return resolvedType;
-    }
-
-    /**
-     * Called to resolve a {@link GraphQLInterfaceType} into a specific {@link GraphQLObjectType} so the object can be executed in terms of that type
-     *
-     * @param params the params needed for type resolution
-     *
-     * @return a {@link GraphQLObjectType}
-     */
-    protected GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
-        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema(), params.getContext());
-        GraphQLInterfaceType abstractType = params.getGraphQLInterfaceType();
-        GraphQLObjectType result = abstractType.getTypeResolver().getType(env);
-        if (result == null) {
-            throw new UnresolvedTypeException(abstractType);
-        }
-
-        if (!params.getSchema().isPossibleType(abstractType, result)) {
-            throw new UnresolvedTypeException(abstractType, result);
-        }
-
-        return result;
-    }
-
-    /**
-     * Called to resolve a {@link GraphQLUnionType} into a specific {@link GraphQLObjectType} so the object can be executed in terms of that type
-     *
-     * @param params the params needed for type resolution
-     *
-     * @return a {@link GraphQLObjectType}
-     */
-    protected GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
-        TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema(), params.getContext());
-        GraphQLUnionType abstractType = params.getGraphQLUnionType();
-        GraphQLObjectType result = abstractType.getTypeResolver().getType(env);
-        if (result == null) {
-            throw new UnresolvedTypeException(abstractType);
-        }
-
-        if (!params.getSchema().isPossibleType(abstractType, result)) {
-            throw new UnresolvedTypeException(abstractType, result);
-        }
-
-        return result;
+        return resolvedType.resolveType(executionContext, parameters.getField().get(0), parameters.getSource(), parameters.getArguments(), fieldType);
     }
 
 

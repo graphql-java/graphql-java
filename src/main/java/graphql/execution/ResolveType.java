@@ -1,10 +1,7 @@
-package graphql.execution2;
+package graphql.execution;
 
 import graphql.Internal;
 import graphql.TypeResolutionEnvironment;
-import graphql.execution.ExecutionContext;
-import graphql.execution.TypeResolutionParameters;
-import graphql.execution.UnresolvedTypeException;
 import graphql.language.Field;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
@@ -16,13 +13,8 @@ import java.util.Map;
 @Internal
 public class ResolveType {
 
-    private final ExecutionContext executionContext;
 
-    public ResolveType(ExecutionContext executionContext) {
-        this.executionContext = executionContext;
-    }
-
-    public GraphQLObjectType resolveType(Field field, Object source, Map<String, Object> arguments, GraphQLType fieldType) {
+    public GraphQLObjectType resolveType(ExecutionContext executionContext, Field field, Object source, Map<String, Object> arguments, GraphQLType fieldType) {
         GraphQLObjectType resolvedType;
         if (fieldType instanceof GraphQLInterfaceType) {
             TypeResolutionParameters resolutionParams = TypeResolutionParameters.newParameters()
