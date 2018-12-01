@@ -38,7 +38,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         this.executionContext = executionContext;
         this.fetchedValueAnalyzer = new FetchedValueAnalyzer(executionContext);
         this.valueFetcher = new ValueFetcher(executionContext);
-        this.executionInfoFactory = new ExecutionStepInfoFactory(executionContext);
+        this.executionInfoFactory = new ExecutionStepInfoFactory();
     }
 
     public CompletableFuture<RootExecutionResultNode> execute(FieldSubSelection fieldSubSelection) {
@@ -117,7 +117,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
                     String name = entry.getKey();
 
                     List<ExecutionStepInfo> newExecutionStepInfos = fieldSubSelections.stream().map(executionResultNode -> {
-                        return executionInfoFactory.newExecutionStepInfoForSubField(sameFields, executionResultNode.getExecutionStepInfo());
+                        return executionInfoFactory.newExecutionStepInfoForSubField(executionContext, sameFields, executionResultNode.getExecutionStepInfo());
                     }).collect(Collectors.toList());
 
                     CompletableFuture<List<FetchedValueAnalysis>> fetchedValueAnalyzis = valueFetcher
@@ -164,7 +164,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
                 .map(entry -> {
                     List<Field> sameFields = entry.getValue();
                     String name = entry.getKey();
-                    ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(sameFields, fieldSubSelection.getExecutionStepInfo());
+                    ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, sameFields, fieldSubSelection.getExecutionStepInfo());
                     return valueFetcher
                             .fetchValue(fieldSubSelection.getSource(), sameFields, newExecutionStepInfo)
                             .thenApply(fetchValue -> analyseValue(fetchValue, name, sameFields, newExecutionStepInfo));

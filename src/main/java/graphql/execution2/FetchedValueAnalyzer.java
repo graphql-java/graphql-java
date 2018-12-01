@@ -47,7 +47,7 @@ public class FetchedValueAnalyzer {
     public FetchedValueAnalyzer(ExecutionContext executionContext) {
         this.executionContext = executionContext;
         this.resolveType = new ResolveType(executionContext);
-        this.executionInfoFactory = new ExecutionStepInfoFactory(executionContext);
+        this.executionInfoFactory = new ExecutionStepInfoFactory();
     }
 
     private static final Logger log = LoggerFactory.getLogger(FetchedValueAnalyzer.class);
