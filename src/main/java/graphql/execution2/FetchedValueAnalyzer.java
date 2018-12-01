@@ -10,6 +10,7 @@ import graphql.execution.ExecutionStepInfoFactory;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.NonNullableFieldWasNullException;
+import graphql.execution.ResolveType;
 import graphql.execution.UnresolvedTypeException;
 import graphql.language.Field;
 import graphql.schema.CoercingSerializeException;
@@ -47,7 +48,7 @@ public class FetchedValueAnalyzer {
 
     public FetchedValueAnalyzer(ExecutionContext executionContext) {
         this.executionContext = executionContext;
-        this.resolveType = new ResolveType(executionContext);
+        this.resolveType = new ResolveType();
         this.executionInfoFactory = new ExecutionStepInfoFactory();
     }
 
@@ -87,7 +88,7 @@ public class FetchedValueAnalyzer {
                         .nullValue()
                         .build();
             }
-            resolvedObjectType = resolveType.resolveType(field.get(0), toAnalyze, executionInfo.getArguments(), fieldType);
+            resolvedObjectType = resolveType.resolveType(executionContext, field.get(0), toAnalyze, executionInfo.getArguments(), fieldType);
             return analyzeObject(toAnalyze, name, resolvedObjectType, executionInfo);
         } catch (UnresolvedTypeException ex) {
             return handleUnresolvedTypeProblem(name, executionInfo, ex);

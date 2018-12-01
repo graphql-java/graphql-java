@@ -12,6 +12,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.UnboxPossibleOptional;
 import graphql.execution.ValuesResolver;
 import graphql.language.Field;
 import graphql.schema.DataFetcher;
