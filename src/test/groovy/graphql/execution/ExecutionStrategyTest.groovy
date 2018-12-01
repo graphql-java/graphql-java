@@ -114,6 +114,7 @@ class ExecutionStrategyTest extends Specification {
         given:
         ExecutionContext executionContext = buildContext()
         def fieldType = list(GraphQLString)
+        Field field = new Field("someField")
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ExecutionPath.rootPath()).fieldDefinition(fldDef).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
@@ -125,6 +126,7 @@ class ExecutionStrategyTest extends Specification {
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": []])
+                .field([field])
                 .build()
 
         when:
@@ -339,6 +341,7 @@ class ExecutionStrategyTest extends Specification {
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": []])
+                .field([new Field("someField")])
                 .build()
 
         when:

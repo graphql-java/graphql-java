@@ -27,7 +27,6 @@ import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
@@ -477,9 +476,7 @@ public abstract class ExecutionStrategy {
 
         Collection<Object> values = FpKit.toCollection(iterableValues);
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
-        GraphQLList fieldType = (GraphQLList) executionStepInfo.getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = parameters.getExecutionStepInfo().getFieldDefinition();
-        Field field = parameters.getExecutionStepInfo().getField();
 
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, fieldDef, createExecutionStepInfo(executionContext, parameters, fieldDef), values);
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -837,12 +834,8 @@ public abstract class ExecutionStrategy {
      */
     protected ExecutionStepInfo createExecutionStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
-        Field field = null;
-        List<Argument> fieldArgs = Collections.emptyList();
-        if (parameters.getField() != null && !parameters.getField().isEmpty()) {
-            field = parameters.getField().get(0);
-            fieldArgs = field.getArguments();
-        }
+        Field field = parameters.getField().get(0);
+        List<Argument> fieldArgs = field.getArguments();
         GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
