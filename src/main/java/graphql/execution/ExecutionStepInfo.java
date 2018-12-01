@@ -186,6 +186,10 @@ public class ExecutionStepInfo {
         return new Builder();
     }
 
+    public static ExecutionStepInfo.Builder newExecutionStepInfo(ExecutionStepInfo existing) {
+        return new Builder(existing);
+    }
+
     public static class Builder {
         GraphQLType type;
         ExecutionStepInfo parentInfo;
