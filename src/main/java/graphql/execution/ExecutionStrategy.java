@@ -15,7 +15,6 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.execution2.ExecutionStepInfoFactory;
 import graphql.execution2.UnboxPossibleOptional;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;

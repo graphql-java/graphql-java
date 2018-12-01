@@ -5,6 +5,7 @@ import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.ExecutionStepInfoFactory;
 import graphql.execution2.result.ExecutionResultMultiZipper;
 import graphql.execution2.result.ExecutionResultNode;
 import graphql.execution2.result.ExecutionResultZipper;

@@ -1,10 +1,6 @@
-package graphql.execution2;
+package graphql.execution;
 
 import graphql.Internal;
-import graphql.execution.ExecutionContext;
-import graphql.execution.ExecutionPath;
-import graphql.execution.ExecutionStepInfo;
-import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;

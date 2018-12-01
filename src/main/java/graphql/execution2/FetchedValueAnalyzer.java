@@ -6,6 +6,7 @@ import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.ExecutionStepInfoFactory;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.NonNullableFieldWasNullException;
