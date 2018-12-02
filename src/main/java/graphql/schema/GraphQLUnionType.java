@@ -72,7 +72,6 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         assertValidName(name);
         assertNotNull(types, "types can't be null");
         assertNotEmpty(types, "A Union type must define one or more member types.");
-        assertNotNull(typeResolver, "typeResolver can't be null");
         assertNotNull(directives, "directives cannot be null");
 
         this.name = name;
@@ -96,7 +95,8 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         return new ArrayList<>(types);
     }
 
-    public TypeResolver getTypeResolver() {
+    // to be removed in a future version when all code is in the code registry
+    TypeResolver getTypeResolver() {
         return typeResolver;
     }
 
@@ -189,6 +189,7 @@ public class GraphQLUnionType implements GraphQLType, GraphQLOutputType, GraphQL
         }
 
 
+        @Deprecated
         public Builder typeResolver(TypeResolver typeResolver) {
             this.typeResolver = typeResolver;
             return this;

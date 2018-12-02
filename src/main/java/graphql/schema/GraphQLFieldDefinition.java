@@ -104,7 +104,8 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         return type;
     }
 
-    public DataFetcher getDataFetcher() {
+    // to be removed in a future version when all code is in the code registry
+    DataFetcher getDataFetcher() {
         return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(this)
                 .build());
@@ -257,7 +258,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          * @param dataFetcher the data fetcher to use
          *
          * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
+        @Deprecated
         public Builder dataFetcher(DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher, "dataFetcher must be not null");
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
@@ -269,7 +273,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          *
          *
          * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
+        @Deprecated
         public Builder dataFetcherFactory(DataFetcherFactory dataFetcherFactory) {
             assertNotNull(dataFetcherFactory, "dataFetcherFactory must be not null");
             this.dataFetcherFactory = dataFetcherFactory;
@@ -282,7 +289,10 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
          * @param value the value to always return
          *
          * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
+        @Deprecated
         public Builder staticValue(final Object value) {
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(environment -> value);
             return this;

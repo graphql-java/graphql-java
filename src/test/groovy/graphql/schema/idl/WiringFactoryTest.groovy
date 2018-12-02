@@ -182,21 +182,21 @@ class WiringFactoryTest extends Specification {
 
         GraphQLInterfaceType characterType = schema.getType("Character") as GraphQLInterfaceType
 
-        def characterTypeResolver = characterType.getTypeResolver() as NamedTypeResolver
+        def characterTypeResolver = schema.getCodeRegistry().getTypeResolver(characterType) as NamedTypeResolver
         characterTypeResolver.name == "Character"
 
         GraphQLUnionType unionType = schema.getType("Cyborg") as GraphQLUnionType
 
-        def unionTypeResolver = unionType.getTypeResolver() as NamedTypeResolver
+        def unionTypeResolver = schema.getCodeRegistry().getTypeResolver(unionType) as NamedTypeResolver
         unionTypeResolver.name == "Cyborg"
 
 
         GraphQLObjectType humanType = schema.getType("Human") as GraphQLObjectType
 
-        def friendsDataFetcher = humanType.getFieldDefinition("friends").getDataFetcher() as NamedDataFetcher
+        def friendsDataFetcher = schema.getCodeRegistry().getDataFetcher(humanType,humanType.getFieldDefinition("friends")) as NamedDataFetcher
         friendsDataFetcher.name == "friends"
 
-        def cyborgDataFetcher = humanType.getFieldDefinition("cyborg").getDataFetcher() as NamedDataFetcher
+        def cyborgDataFetcher = schema.getCodeRegistry().getDataFetcher(humanType,humanType.getFieldDefinition("cyborg")) as NamedDataFetcher
         cyborgDataFetcher.name == "cyborg"
 
         GraphQLScalarType longScalar = schema.getType("Long") as GraphQLScalarType
@@ -314,7 +314,7 @@ class WiringFactoryTest extends Specification {
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
 
         expect:
-        def fetcher = type.getFieldDefinition("homePlanet").getDataFetcher()
+        def fetcher = schema.getCodeRegistry().getDataFetcher(type,type.getFieldDefinition("homePlanet"))
         fetcher instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher

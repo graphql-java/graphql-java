@@ -9,6 +9,7 @@ import graphql.schema.DataFetcherFactories;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaDirectiveWiring;
@@ -38,14 +39,15 @@ public class DirectivesExamples {
     class AuthorisationDirective implements SchemaDirectiveWiring {
 
         @Override
-        public GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> schemaDirectiveWiringEnv) {
-            String targetAuthRole = (String) schemaDirectiveWiringEnv.getDirective().getArgument("role").getValue();
+        public GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
+            String targetAuthRole = (String) environment.getDirective().getArgument("role").getValue();
 
-            GraphQLFieldDefinition field = schemaDirectiveWiringEnv.getElement();
+            GraphQLFieldDefinition field = environment.getElement();
+            GraphQLFieldsContainer parentType = environment.getFieldsContainer();
             //
             // build a data fetcher that first checks authorisation roles before then calling the original data fetcher
             //
-            DataFetcher originalDataFetcher = field.getDataFetcher();
+            DataFetcher originalDataFetcher = environment.getCodeRegistry().getDataFetcher(parentType, field);
             DataFetcher authDataFetcher = new DataFetcher() {
                 @Override
                 public Object get(DataFetchingEnvironment dataFetchingEnvironment) throws Exception {
@@ -61,7 +63,8 @@ public class DirectivesExamples {
             };
             //
             // now change the field definition to have the new authorising data fetcher
-            return field.transform(builder -> builder.dataFetcher(authDataFetcher));
+            environment.getCodeRegistry().dataFetcher(parentType, field, authDataFetcher);
+            return field;
         }
     }
 
@@ -93,11 +96,13 @@ public class DirectivesExamples {
         @Override
         public GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
             GraphQLFieldDefinition field = environment.getElement();
+            GraphQLFieldsContainer parentType = environment.getFieldsContainer();
             //
             // DataFetcherFactories.wrapDataFetcher is a helper to wrap data fetchers so that CompletionStage is handled correctly
             // along with POJOs
             //
-            DataFetcher dataFetcher = DataFetcherFactories.wrapDataFetcher(field.getDataFetcher(), ((dataFetchingEnvironment, value) -> {
+            DataFetcher originalFetcher = environment.getCodeRegistry().getDataFetcher(parentType, field);
+            DataFetcher dataFetcher = DataFetcherFactories.wrapDataFetcher(originalFetcher, ((dataFetchingEnvironment, value) -> {
                 DateTimeFormatter dateTimeFormatter = buildFormatter(dataFetchingEnvironment.getArgument("format"));
                 if (value instanceof LocalDateTime) {
                     return dateTimeFormatter.format((LocalDateTime) value);
@@ -110,6 +115,8 @@ public class DirectivesExamples {
             // which allows clients to opt into that as well as wrapping the base data fetcher so it
             // performs the formatting over top of the base values.
             //
+            environment.getCodeRegistry().dataFetcher(parentType, field, dataFetcher);
+
             return field.transform(builder -> builder
                     .argument(GraphQLArgument
                             .newArgument()
@@ -117,7 +124,6 @@ public class DirectivesExamples {
                             .type(Scalars.GraphQLString)
                             .defaultValue("dd-MM-YYYY")
                     )
-                    .dataFetcher(dataFetcher)
             );
         }
 

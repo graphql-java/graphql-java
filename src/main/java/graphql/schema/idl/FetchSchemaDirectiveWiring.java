@@ -26,7 +26,8 @@ public class FetchSchemaDirectiveWiring implements SchemaDirectiveWiring {
         String fetchName = atFetchFromSupport(field.getName(), field.getDirectives());
         DataFetcher dataFetcher = new PropertyDataFetcher(fetchName);
 
-        return field.transform(builder -> builder.dataFetcher(dataFetcher));
+        environment.getCodeRegistry().dataFetcher(environment.getFieldsContainer(), field, dataFetcher);
+        return field;
     }
 
 

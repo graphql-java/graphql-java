@@ -7,6 +7,7 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.TypeResolver;
 
 import java.util.Map;
 
@@ -45,7 +46,8 @@ public class ResolveType {
     public GraphQLObjectType resolveTypeForInterface(TypeResolutionParameters params) {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLInterfaceType(), params.getSchema(), params.getContext());
         GraphQLInterfaceType abstractType = params.getGraphQLInterfaceType();
-        GraphQLObjectType result = abstractType.getTypeResolver().getType(env);
+        TypeResolver typeResolver = params.getSchema().getCodeRegistry().getTypeResolver(abstractType);
+        GraphQLObjectType result = typeResolver.getType(env);
         if (result == null) {
             throw new UnresolvedTypeException(abstractType);
         }
@@ -60,7 +62,8 @@ public class ResolveType {
     public GraphQLObjectType resolveTypeForUnion(TypeResolutionParameters params) {
         TypeResolutionEnvironment env = new TypeResolutionEnvironment(params.getValue(), params.getArgumentValues(), params.getField(), params.getGraphQLUnionType(), params.getSchema(), params.getContext());
         GraphQLUnionType abstractType = params.getGraphQLUnionType();
-        GraphQLObjectType result = abstractType.getTypeResolver().getType(env);
+        TypeResolver typeResolver = params.getSchema().getCodeRegistry().getTypeResolver(abstractType);
+        GraphQLObjectType result = typeResolver.getType(env);
         if (result == null) {
             throw new UnresolvedTypeException(abstractType);
         }

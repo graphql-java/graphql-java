@@ -70,7 +70,6 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
     @Deprecated
     public GraphQLInterfaceType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions, TypeResolver typeResolver, List<GraphQLDirective> directives, InterfaceTypeDefinition definition) {
         assertValidName(name);
-        assertNotNull(typeResolver, "typeResolver can't null");
         assertNotNull(fieldDefinitions, "fieldDefinitions can't null");
         assertNotNull(directives, "directives cannot be null");
 
@@ -111,7 +110,8 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         return description;
     }
 
-    public TypeResolver getTypeResolver() {
+    // to be removed in a future version when all code is in the code registry
+    TypeResolver getTypeResolver() {
         return typeResolver;
     }
 
@@ -264,6 +264,7 @@ public class GraphQLInterfaceType implements GraphQLType, GraphQLOutputType, Gra
         }
 
 
+        @Deprecated
         public Builder typeResolver(TypeResolver typeResolver) {
             this.typeResolver = typeResolver;
             return this;

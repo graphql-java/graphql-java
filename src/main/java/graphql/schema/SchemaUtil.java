@@ -105,4 +105,10 @@ public class SchemaUtil {
         roots.addAll(schema.getDirectives());
         TRAVERSER.depthFirst(new GraphQLTypeResolvingVisitor(typeMap), roots);
     }
+
+    void extractCodeFromTypes(GraphQLCodeRegistry.Builder codeRegistry, GraphQLSchema schema) {
+        Introspection.addCodeForIntrospectionTypes(codeRegistry);
+
+        TRAVERSER.depthFirst(new CodeRegistryVisitor(codeRegistry), schema.getAllTypesAsList());
+    }
 }

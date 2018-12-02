@@ -1671,7 +1671,7 @@ class SchemaGeneratorTest extends Specification {
         GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
 
         expect:
-        def fetcher = type.getFieldDefinition("homePlanet").getDataFetcher()
+        def fetcher = schema.getCodeRegistry().getDataFetcher(type,type.getFieldDefinition("homePlanet"))
         fetcher instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
@@ -1679,7 +1679,7 @@ class SchemaGeneratorTest extends Specification {
         //
         // no directive - plain name
         //
-        def fetcher2 = type.getFieldDefinition("name").getDataFetcher()
+        def fetcher2 = schema.getCodeRegistry().getDataFetcher(type,type.getFieldDefinition("name"))
         fetcher2 instanceof PropertyDataFetcher
 
         PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
