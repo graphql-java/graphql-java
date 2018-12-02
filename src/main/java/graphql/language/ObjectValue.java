@@ -44,14 +44,14 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_OBJECT_FIELDS, objectFields)
                 .build();
     }
 
     @Override
-    public ObjectValue withNewChildren(ChildrenContainer newChildren) {
+    public ObjectValue withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .objectFields(newChildren.getChildren(CHILD_OBJECT_FIELDS))
         );

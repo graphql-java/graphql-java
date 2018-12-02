@@ -71,8 +71,8 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .child(CHILD_TYPE_CONDITION, typeCondition)
                 .children(CHILD_DIRECTIVES, directives)
                 .child(CHILD_SELECTION_SET, selectionSet)
@@ -80,7 +80,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     }
 
     @Override
-    public FragmentDefinition withNewChildren(ChildrenContainer newChildren) {
+    public FragmentDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .typeCondition(newChildren.getChildOrNull(CHILD_TYPE_CONDITION))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))

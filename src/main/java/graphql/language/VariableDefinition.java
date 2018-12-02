@@ -81,15 +81,15 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .child(CHILD_DEFAULT_VALUE, defaultValue)
                 .build();
     }
 
     @Override
-    public VariableDefinition withNewChildren(ChildrenContainer newChildren) {
+    public VariableDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .type(newChildren.getChildOrNull(CHILD_TYPE))
                 .defaultValue(newChildren.getChildOrNull(CHILD_DEFAULT_VALUE))

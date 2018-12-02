@@ -1,6 +1,5 @@
 package graphql.language;
 
-import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -9,13 +8,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
+
 @PublicApi
-public class ChildrenContainer {
+public class NodeChildrenContainer {
 
     private final Map<String, List<Node>> children = new LinkedHashMap<>();
 
-    private ChildrenContainer(Map<String, List<Node>> children) {
-        this.children.putAll(Assert.assertNotNull(children));
+    private NodeChildrenContainer(Map<String, List<Node>> children) {
+        this.children.putAll(assertNotNull(children));
     }
 
     public <T extends Node> List<T> getChildren(String key) {
@@ -30,12 +31,15 @@ public class ChildrenContainer {
         return result.size() > 0 ? (T) result.get(0) : null;
     }
 
+    public Map<String, List<Node>> getChildren() {
+        return new LinkedHashMap<>(children);
+    }
 
-    public static Builder newChildrenContainer() {
+    public static Builder newNodeChildrenContainer() {
         return new Builder();
     }
 
-    public ChildrenContainer transform(Consumer<Builder> builderConsumer) {
+    public NodeChildrenContainer transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
@@ -52,11 +56,15 @@ public class ChildrenContainer {
 
         }
 
-        private Builder(ChildrenContainer other) {
+        private Builder(NodeChildrenContainer other) {
             this.children.putAll(other.children);
         }
 
         public Builder child(String key, Node child) {
+            // we allow null here to make the actual nodes easier
+            if (child == null) {
+                return this;
+            }
             children.computeIfAbsent(key, (k) -> new ArrayList<>());
             children.get(key).add(child);
             return this;
@@ -75,12 +83,13 @@ public class ChildrenContainer {
         }
 
         public Builder replaceChild(String key, int index, Node newChild) {
+            assertNotNull(newChild);
             this.children.get(key).set(index, newChild);
             return this;
         }
 
-        public ChildrenContainer build() {
-            return new ChildrenContainer(this.children);
+        public NodeChildrenContainer build() {
+            return new NodeChildrenContainer(this.children);
 
         }
     }

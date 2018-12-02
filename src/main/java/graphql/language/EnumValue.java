@@ -43,12 +43,12 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer().build();
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer().build();
     }
 
     @Override
-    public EnumValue withNewChildren(ChildrenContainer newChildren) {
+    public EnumValue withNewChildren(NodeChildrenContainer newChildren) {
         if (!newChildren.isEmpty()) {
             throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
         }

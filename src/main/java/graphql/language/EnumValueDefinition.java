@@ -72,14 +72,14 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_DIRECTIVES, directives)
                 .build();
     }
 
     @Override
-    public EnumValueDefinition withNewChildren(ChildrenContainer newChildren) {
+    public EnumValueDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );

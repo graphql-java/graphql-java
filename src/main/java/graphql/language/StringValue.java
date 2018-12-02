@@ -41,12 +41,12 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer().build();
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer().build();
     }
 
     @Override
-    public StringValue withNewChildren(ChildrenContainer newChildren) {
+    public StringValue withNewChildren(NodeChildrenContainer newChildren) {
         if (!newChildren.isEmpty()) {
             throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
         }

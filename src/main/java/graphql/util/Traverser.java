@@ -5,6 +5,7 @@ import graphql.Internal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,16 +21,25 @@ import static graphql.util.TraversalControl.QUIT;
 public class Traverser<T> {
 
     private final TraverserState<T> traverserState;
-    private final Function<? super T, ? extends List<T>> getChildren;
+    private final Function<? super T, Map<String, ? extends List<T>>> getChildren;
     private Object initialAccumulate;
     private final Map<Class<?>, Object> rootVars = new ConcurrentHashMap<>();
 
     private static final List<TraversalControl> CONTINUE_OR_QUIT = Arrays.asList(CONTINUE, QUIT);
 
-    private Traverser(TraverserState<T> traverserState, Function<? super T, ? extends List<T>> getChildren, Object initialAccumulate) {
+    private Traverser(TraverserState<T> traverserState, Function<? super T, Map<String, ? extends List<T>>> getChildren, Object initialAccumulate) {
         this.traverserState = assertNotNull(traverserState);
         this.getChildren = assertNotNull(getChildren);
         this.initialAccumulate = initialAccumulate;
+    }
+
+    private static <T> Function<? super T, Map<String, ? extends List<T>>> wrapListFunction(Function<? super T, ? extends List<T>> listFn) {
+        return node -> {
+            List<T> childs = listFn.apply(node);
+            Map<String, List<T>> result = new LinkedHashMap<>();
+            result.put(null, childs);
+            return result;
+        };
     }
 
     public Traverser<T> rootVars(Map<Class<?>, Object> rootVars) {
@@ -51,9 +61,13 @@ public class Traverser<T> {
     }
 
     public static <T> Traverser<T> depthFirst(Function<? super T, ? extends List<T>> getChildren, Object sharedContextData, Object initialAccumulate) {
-        return new Traverser<>(TraverserState.newStackState(sharedContextData), getChildren, initialAccumulate);
+        Function<? super T, Map<String, ? extends List<T>>> mapFunction = wrapListFunction(getChildren);
+        return new Traverser<>(TraverserState.newStackState(sharedContextData), mapFunction, initialAccumulate);
     }
 
+    public static <T> Traverser<T> depthFirstWithNamedChildren(Function<? super T, Map<String, ? extends List<T>>> getNamedChildren, Object sharedContextData, Object initialAccumulate) {
+        return new Traverser<>(TraverserState.newStackState(sharedContextData), getNamedChildren, initialAccumulate);
+    }
 
     public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren) {
         return breadthFirst(getChildren, null, null);
@@ -64,9 +78,13 @@ public class Traverser<T> {
     }
 
     public static <T> Traverser<T> breadthFirst(Function<? super T, ? extends List<T>> getChildren, Object sharedContextData, Object initialAccumulate) {
-        return new Traverser<>(TraverserState.newQueueState(sharedContextData), getChildren, initialAccumulate);
+        Function<? super T, Map<String, ? extends List<T>>> mapFunction = wrapListFunction(getChildren);
+        return new Traverser<>(TraverserState.newQueueState(sharedContextData), mapFunction, initialAccumulate);
     }
 
+    public static <T> Traverser<T> breadthFirstWithNamedChildren(Function<? super T, Map<String, ? extends List<T>>> getNamedChildren, Object sharedContextData, Object initialAccumulate) {
+        return new Traverser<>(TraverserState.newQueueState(sharedContextData), getNamedChildren, initialAccumulate);
+    }
 
     public TraverserResult traverse(T root, TraverserVisitor<? super T> visitor) {
         return traverse(Collections.singleton(root), visitor);
@@ -121,6 +139,7 @@ public class Traverser<T> {
                 currentContext.setCurAccValue(currentAccValue);
                 TraversalControl traversalControl = visitor.enter(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
+                assertNotNull(traversalControl, "result of leave must not be null");
                 assertNotNull(traversalControl, "result of enter must not be null");
                 this.traverserState.addVisited((T) currentContext.thisNode());
                 switch (traversalControl) {

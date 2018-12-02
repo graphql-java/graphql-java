@@ -4,11 +4,16 @@ import graphql.PublicApi;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 
 @PublicApi
 public class AstMultiZipper {
@@ -71,14 +76,16 @@ public class AstMultiZipper {
 
 
     private List<AstZipper> getDeepestZippers(List<AstZipper> zippers) {
-        Map<Integer, List<AstZipper>> grouped =
-                zippers.stream().collect(Collectors.groupingBy(astZipper -> astZipper.getBreadcrumbs().size()));
+        Map<Integer, List<AstZipper>> grouped = zippers
+                .stream()
+                .collect(groupingBy(astZipper -> astZipper.getBreadcrumbs().size(), LinkedHashMap::new, mapping(Function.identity(), toList())));
+
         Integer maxLevel = Collections.max(grouped.keySet());
         return grouped.get(maxLevel);
     }
 
     private AstZipper moveUp(Node parent, List<AstZipper> sameParent) {
-        ChildrenContainer.Builder newChildren = ChildrenContainer.newChildrenContainer();
+        NodeChildrenContainer.Builder newChildren = NodeChildrenContainer.newNodeChildrenContainer();
         List<AstBreadcrumb> restBreadcrumbs = Collections.emptyList();
         for (AstZipper zipper : sameParent) {
             // it is always the same actually
@@ -90,8 +97,15 @@ public class AstMultiZipper {
     }
 
     private Map<Node, List<AstZipper>> zipperWithSameParent(List<AstZipper> zippers) {
-        return zippers.stream().collect(Collectors.groupingBy(AstZipper::getParent));
+        return zippers.stream().collect(groupingBy(AstZipper::getParent, LinkedHashMap::new,
+                mapping(Function.identity(), Collectors.toList())));
     }
 
-
+    @Override
+    public String toString() {
+        return "AstMultiZipper{" +
+                "commonRoot=" + commonRoot.getClass() +
+                ", zippersCount=" + zippers.size() +
+                '}';
+    }
 }

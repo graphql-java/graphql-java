@@ -24,9 +24,9 @@ public interface Node<T extends Node> extends Serializable {
      */
     List<Node> getChildren();
 
-    ChildrenContainer getNamedChildren();
+    NodeChildrenContainer getNamedChildren();
 
-    T withNewChildren(ChildrenContainer newChildren);
+    T withNewChildren(NodeChildrenContainer newChildren);
 
     /**
      * @return the source location where this node occurs

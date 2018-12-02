@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.language.AstBreadcrumb.Location;
 
 @PublicApi
 public class AstZipper {
@@ -48,7 +47,8 @@ public class AstZipper {
         return new AstZipper(newNode, breadcrumbs);
     }
 
-    public AstZipper changeLocation(Location newLocationInParent) {
+
+    public AstZipper changeLocation(NodeLocation newLocationInParent) {
         // validate position
         List<AstBreadcrumb> newBreadcrumbs = new ArrayList<>(breadcrumbs);
         AstBreadcrumb lastBreadcrumb = newBreadcrumbs.get(newBreadcrumbs.size() - 1);
@@ -56,7 +56,7 @@ public class AstZipper {
         return new AstZipper(curNode, newBreadcrumbs);
     }
 
-    public AstZipper changeLocation(Location newLocationInParent, List<AstBreadcrumb> newBreadcrumbs) {
+    public AstZipper changeLocation(NodeLocation newLocationInParent, List<AstBreadcrumb> newBreadcrumbs) {
         // validate position
         return new AstZipper(curNode, newBreadcrumbs);
     }
@@ -69,10 +69,10 @@ public class AstZipper {
         Node curNode = this.curNode;
         for (AstBreadcrumb breadcrumb : breadcrumbs) {
             // just handle replace
-            ChildrenContainer newChildren = breadcrumb.getNode().getNamedChildren();
+            NodeChildrenContainer newChildren = breadcrumb.getNode().getNamedChildren();
             final Node newChild = curNode;
             newChildren = newChildren.transform(builder -> {
-                Location location = breadcrumb.getLocation();
+                NodeLocation location = breadcrumb.getLocation();
                 builder.replaceChild(location.getName(), location.getIndex(), newChild);
             });
             curNode = breadcrumb.getNode().withNewChildren(newChildren);

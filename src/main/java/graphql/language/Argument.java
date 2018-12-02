@@ -52,14 +52,14 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .child(CHILD_VALUE, value)
                 .build();
     }
 
     @Override
-    public Argument withNewChildren(ChildrenContainer newChildren) {
+    public Argument withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .value(newChildren.getChildOrNull(CHILD_VALUE))
         );

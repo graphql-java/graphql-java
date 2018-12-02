@@ -52,14 +52,14 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .build();
     }
 
     @Override
-    public OperationTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+    public OperationTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .type(newChildren.getChildOrNull(CHILD_TYPE))
         );

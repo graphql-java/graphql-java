@@ -42,14 +42,14 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_VALUES, values)
                 .build();
     }
 
     @Override
-    public ArrayValue withNewChildren(ChildrenContainer newChildren) {
+    public ArrayValue withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .values(newChildren.getChildren(CHILD_VALUES))
         );

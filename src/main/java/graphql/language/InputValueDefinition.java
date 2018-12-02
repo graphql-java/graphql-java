@@ -100,8 +100,8 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .child(CHILD_DEFAULT_VALUE, defaultValue)
                 .children(CHILD_DIRECTIVES, directives)
@@ -109,7 +109,7 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     }
 
     @Override
-    public InputValueDefinition withNewChildren(ChildrenContainer newChildren) {
+    public InputValueDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .type(newChildren.getChildOrNull(CHILD_TYPE))
                 .defaultValue(newChildren.getChildOrNull(CHILD_DEFAULT_VALUE))

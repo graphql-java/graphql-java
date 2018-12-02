@@ -44,14 +44,14 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_SELECTIONS, selections)
                 .build();
     }
 
     @Override
-    public SelectionSet withNewChildren(ChildrenContainer newChildren) {
+    public SelectionSet withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .selections(newChildren.getChildren(CHILD_SELECTIONS))
         );

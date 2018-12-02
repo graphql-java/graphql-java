@@ -70,15 +70,15 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_ENUM_VALUE_DEFINITIONS, enumValueDefinitions)
                 .children(CHILD_DIRECTIVES, directives)
                 .build();
     }
 
     @Override
-    public EnumTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+    public EnumTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .enumValueDefinitions(newChildren.getChildren(CHILD_ENUM_VALUE_DEFINITIONS))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))

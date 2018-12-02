@@ -88,8 +88,8 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .child(CHILD_TYPE_CONDITION, typeCondition)
                 .children(CHILD_DIRECTIVES, directives)
                 .child(CHILD_SELECTION_SET, selectionSet)
@@ -97,7 +97,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     }
 
     @Override
-    public InlineFragment withNewChildren(ChildrenContainer newChildren) {
+    public InlineFragment withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .typeCondition(newChildren.getChildOrNull(CHILD_TYPE_CONDITION))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))

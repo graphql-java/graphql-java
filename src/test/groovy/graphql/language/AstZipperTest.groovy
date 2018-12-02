@@ -4,7 +4,6 @@ import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
-import static graphql.language.AstBreadcrumb.Location
 import static java.util.Arrays.asList
 import static java.util.Collections.emptyList
 
@@ -97,8 +96,8 @@ class AstZipperTest extends Specification {
         Node child1_2 = child1.selectChild(1)
 
         List<AstBreadcrumb> breadcrumbs = asList(
-                new AstBreadcrumb(child1, new Location("children", 1)),
-                new AstBreadcrumb(root, new Location("children", 0))
+                new AstBreadcrumb(child1, new NodeLocation("children", 1)),
+                new AstBreadcrumb(root, new NodeLocation("children", 0))
         )
 
         AstZipper zipper = new AstZipper(child1_2, breadcrumbs)
@@ -170,12 +169,12 @@ class AstZipperTest extends Specification {
         }
 
         @Override
-        ChildrenContainer getNamedChildren() {
-            return ChildrenContainer.newChildrenContainer().children(CHILDREN, children).build()
+        NodeChildrenContainer getNamedChildren() {
+            return NodeChildrenContainer.newNodeChildrenContainer().children(CHILDREN, children).build()
         }
 
         @Override
-        Node withNewChildren(ChildrenContainer newChildren) {
+        Node withNewChildren(NodeChildrenContainer newChildren) {
             return new MyNode(this.getValue(), newChildren.getChildren(CHILDREN))
         }
 

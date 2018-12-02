@@ -59,15 +59,15 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_DIRECTIVES, directives)
                 .children(CHILD_OPERATION_TYPE_DEFINITIONS, operationTypeDefinitions)
                 .build();
     }
 
     @Override
-    public SchemaDefinition withNewChildren(ChildrenContainer newChildren) {
+    public SchemaDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
                 .operationTypeDefinitions(newChildren.getChildren(CHILD_OPERATION_TYPE_DEFINITIONS))

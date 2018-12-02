@@ -21,6 +21,7 @@ class TraverserTest extends Specification {
             ]
     ]
 
+
     def "test depth-first traversal"() {
         given:
         def preOrderNodes = []
@@ -278,9 +279,8 @@ class TraverserTest extends Specification {
         def visitor = [
                 enter: { TraverserContext context ->
                     List visited = context.getCurrentAccumulate()
-                    visited = visited == null ? new ArrayList<>() : visited
+                    visited = visited == null ? new ArrayList<>() : new ArrayList<>(visited)
                     visited.add(context.thisNode().number)
-                    context.setVar(List.class, visited)
                     context.setAccumulate(visited)
                     TraversalControl.CONTINUE
                 },
@@ -372,8 +372,80 @@ class TraverserTest extends Specification {
 
         then:
         result.accumulatedResult == [0, 0, 1, 0, 1]
-
     }
+
+    def treeWithNamedChildren() {
+        def leaf1 = [number: 3, children: [:]]
+        def leaf2 = [number: 4, children: [:]]
+        def leaf3 = [number: 5, children: [:]]
+        def leaf4 = [number: 6, children: [:]]
+
+        def node1 = [number: 1, children: [a: [leaf1], b: [leaf2]]]
+        def node2 = [number: 2, children: [c: [leaf3], d: [leaf4]]]
+
+        [number: 0, children: [x: [node1], y: [node2]]]
+    }
+
+    def "breadth first with named children"() {
+        def root = treeWithNamedChildren()
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    def curAcc = context.getCurrentAccumulate()
+                    if (context.getPosition() != null) {
+                        curAcc.add(context.getPosition())
+                    }
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.breadthFirstWithNamedChildren({ n -> n.children }, null, [])
+                .traverse(root, visitor)
+
+
+        then:
+        result.accumulatedResult == [new NodePosition("x", 0),
+                                     new NodePosition("y", 0),
+                                     new NodePosition("a", 0),
+                                     new NodePosition("b", 0),
+                                     new NodePosition("c", 0),
+                                     new NodePosition("d", 0),
+        ]
+    }
+
+    def "depth first with named children"() {
+        def root = treeWithNamedChildren()
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    def curAcc = context.getCurrentAccumulate()
+                    if (context.getPosition() != null) {
+                        curAcc.add(context.getPosition())
+                    }
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.depthFirstWithNamedChildren({ n -> n.children }, null, [])
+                .traverse(root, visitor)
+
+
+        then:
+        result.accumulatedResult == [new NodePosition("y", 0),
+                                     new NodePosition("d", 0),
+                                     new NodePosition("c", 0),
+                                     new NodePosition("x", 0),
+                                     new NodePosition("b", 0),
+                                     new NodePosition("a", 0),
+        ]
+    }
+
 
 }
 

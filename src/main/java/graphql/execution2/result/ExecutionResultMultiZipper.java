@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 @Internal
 public class ExecutionResultMultiZipper {
 
+
     private final ExecutionResultNode commonRoot;
     private final List<ExecutionResultZipper> zippers;
 
@@ -67,6 +68,7 @@ public class ExecutionResultMultiZipper {
 
 
     private List<ExecutionResultZipper> getDeepestZippers(List<ExecutionResultZipper> zippers) {
+        //todo: change to linkedhashmap
         Map<Integer, List<ExecutionResultZipper>> grouped =
                 zippers.stream().collect(Collectors.groupingBy(executionResultZipper -> executionResultZipper.getBreadcrumbList().size()));
         Integer maxLevel = Collections.max(grouped.keySet());
@@ -85,6 +87,7 @@ public class ExecutionResultMultiZipper {
     }
 
     private Map<ExecutionResultNode, List<ExecutionResultZipper>> zipperWithSameParent(List<ExecutionResultZipper> zippers) {
+        //todo: change to LinkedHashMap
         return zippers.stream().collect(Collectors.groupingBy(ExecutionResultZipper::getParent));
     }
 

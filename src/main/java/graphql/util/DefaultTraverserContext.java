@@ -102,6 +102,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
      * PRIVATE: Used by {@link Traverser}
      */
     void setCurAccValue(Object curAccValue) {
+        hasNewAccValue = false;
         this.curAccValue = curAccValue;
     }
 

@@ -83,15 +83,15 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_DIRECTIVES, directives)
                 .children(CHILD_MEMBER_TYPES, memberTypes)
                 .build();
     }
 
     @Override
-    public UnionTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+    public UnionTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
                 .memberTypes(newChildren.getChildren(CHILD_MEMBER_TYPES))

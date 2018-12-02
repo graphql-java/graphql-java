@@ -72,14 +72,14 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_ARGUMENTS, arguments)
                 .build();
     }
 
     @Override
-    public Directive withNewChildren(ChildrenContainer newChildren) {
+    public Directive withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .arguments(newChildren.getChildren(CHILD_ARGUMENTS))
         );

@@ -42,14 +42,14 @@ public class Document extends AbstractNode<Document> {
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_DEFINITIONS, definitions)
                 .build();
     }
 
     @Override
-    public Document withNewChildren(ChildrenContainer newChildren) {
+    public Document withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .definitions(newChildren.getChildren(CHILD_DEFINITIONS))
         );

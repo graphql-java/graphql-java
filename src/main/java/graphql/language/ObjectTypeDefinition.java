@@ -80,8 +80,8 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_IMPLEMENTZ, implementz)
                 .children(CHILD_DIRECTIVES, directives)
                 .children(CHILD_FIELD_DEFINITIONS, fieldDefinitions)
@@ -89,7 +89,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
     }
 
     @Override
-    public ObjectTypeDefinition withNewChildren(ChildrenContainer newChildren) {
+    public ObjectTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> {
             builder.implementz(newChildren.getChildren(CHILD_IMPLEMENTZ))
                     .directives(newChildren.getChildren(CHILD_DIRECTIVES))

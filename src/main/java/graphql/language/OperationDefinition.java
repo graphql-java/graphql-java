@@ -64,8 +64,8 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_VARIABLE_DEFINITIONS, variableDefinitions)
                 .children(CHILD_DIRECTIVES, directives)
                 .child(CHILD_SELECTION_SET, selectionSet)
@@ -73,7 +73,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     }
 
     @Override
-    public OperationDefinition withNewChildren(ChildrenContainer newChildren) {
+    public OperationDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .variableDefinitions(newChildren.getChildren(CHILD_VARIABLE_DEFINITIONS))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))

@@ -71,15 +71,15 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_INPUT_VALUE_DEFINITIONS, inputValueDefinitions)
                 .children(CHILD_DIRECTIVE_LOCATION, directiveLocations)
                 .build();
     }
 
     @Override
-    public DirectiveDefinition withNewChildren(ChildrenContainer newChildren) {
+    public DirectiveDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITIONS))
                 .directiveLocations(newChildren.getChildren(CHILD_DIRECTIVE_LOCATION))

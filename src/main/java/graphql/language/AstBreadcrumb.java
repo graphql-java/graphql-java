@@ -2,12 +2,15 @@ package graphql.language;
 
 import graphql.PublicApi;
 
+import java.util.Objects;
+
 @PublicApi
 public class AstBreadcrumb {
-    private final Node node;
-    private final Location location;
 
-    public AstBreadcrumb(Node node, Location location) {
+    private final Node node;
+    private final NodeLocation location;
+
+    public AstBreadcrumb(Node node, NodeLocation location) {
         this.node = node;
         this.location = location;
     }
@@ -16,27 +19,35 @@ public class AstBreadcrumb {
         return node;
     }
 
-    public Location getLocation() {
+    public NodeLocation getLocation() {
         return location;
     }
 
-    public static class Location {
-        private final String name;
-        private final int index;
 
-        public Location(String name, int index) {
-            this.name = name;
-            this.index = index;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getIndex() {
-            return index;
-        }
+    @Override
+    public String toString() {
+        return "AstBreadcrumb{" +
+                "node=" + node +
+                ", location=" + location +
+                '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AstBreadcrumb that = (AstBreadcrumb) o;
+        return Objects.equals(node, that.node) &&
+                Objects.equals(location, that.location);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(node, location);
+    }
 }
 

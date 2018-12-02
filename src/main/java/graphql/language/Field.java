@@ -97,8 +97,8 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .children(CHILD_ARGUMENTS, arguments)
                 .children(CHILD_DIRECTIVES, directives)
                 .child(CHILD_SELECTION_SET, selectionSet)
@@ -106,7 +106,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
     @Override
-    public Field withNewChildren(ChildrenContainer newChildren) {
+    public Field withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder ->
                 builder.arguments(newChildren.getChildren(CHILD_ARGUMENTS))
                         .directives(newChildren.getChildren(CHILD_DIRECTIVES))

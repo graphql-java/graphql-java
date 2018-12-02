@@ -44,14 +44,14 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer()
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .build();
     }
 
     @Override
-    public NonNullType withNewChildren(ChildrenContainer newChildren) {
+    public NonNullType withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .type((Type) newChildren.getChildOrNull(CHILD_TYPE))
         );

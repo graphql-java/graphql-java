@@ -3,7 +3,6 @@ package graphql.language
 import graphql.TestUtil
 import spock.lang.Specification
 
-import static graphql.language.AstBreadcrumb.Location
 
 class AstMultiZipperTest extends Specification {
 
@@ -22,11 +21,11 @@ class AstMultiZipperTest extends Specification {
         def leafD = midB.selectionSet.children[0] as Field
 
 
-        def b1 = new AstBreadcrumb(rootNode, new Location(Document.CHILD_DEFINITIONS, 0))
-        def b2 = new AstBreadcrumb(operationDefinition, new Location(OperationDefinition.CHILD_SELECTION_SET, 0))
-        def b3 = new AstBreadcrumb(operationDefinition.selectionSet, new Location(SelectionSet.CHILD_SELECTIONS, 0))
-        def b4 = new AstBreadcrumb(rootField, new Location(Field.CHILD_SELECTION_SET, 0))
-        def b5 = new AstBreadcrumb(rootField.selectionSet, new Location(SelectionSet.CHILD_SELECTIONS, 0))
+        def b1 = new AstBreadcrumb(rootNode, new NodeLocation(Document.CHILD_DEFINITIONS, 0))
+        def b2 = new AstBreadcrumb(operationDefinition, new NodeLocation(OperationDefinition.CHILD_SELECTION_SET, 0))
+        def b3 = new AstBreadcrumb(operationDefinition.selectionSet, new NodeLocation(SelectionSet.CHILD_SELECTIONS, 0))
+        def b4 = new AstBreadcrumb(rootField, new NodeLocation(Field.CHILD_SELECTION_SET, 0))
+        def b5 = new AstBreadcrumb(rootField.selectionSet, new NodeLocation(SelectionSet.CHILD_SELECTIONS, 0))
 
         def breadCrumbsFromMidA = [b5, b4, b3, b2, b1]
 
@@ -69,12 +68,12 @@ class AstMultiZipperTest extends Specification {
         def leafD = midB.selectionSet.children[0] as Field
 
 
-        def b1 = new AstBreadcrumb(rootNode, new Location(Document.CHILD_DEFINITIONS, 0))
-        def b2 = new AstBreadcrumb(operationDefinition, new Location(OperationDefinition.CHILD_SELECTION_SET, 0))
-        def b3 = new AstBreadcrumb(operationDefinition.selectionSet, new Location(SelectionSet.CHILD_SELECTIONS, 0))
-        def b4 = new AstBreadcrumb(rootField, new Location(Field.CHILD_SELECTION_SET, 0))
-        def bMidA = new AstBreadcrumb(rootField.selectionSet, new Location(SelectionSet.CHILD_SELECTIONS, 0))
-        def bMidB = new AstBreadcrumb(rootField.selectionSet, new Location(SelectionSet.CHILD_SELECTIONS, 1))
+        def b1 = new AstBreadcrumb(rootNode, new NodeLocation(Document.CHILD_DEFINITIONS, 0))
+        def b2 = new AstBreadcrumb(operationDefinition, new NodeLocation(OperationDefinition.CHILD_SELECTION_SET, 0))
+        def b3 = new AstBreadcrumb(operationDefinition.selectionSet, new NodeLocation(SelectionSet.CHILD_SELECTIONS, 0))
+        def b4 = new AstBreadcrumb(rootField, new NodeLocation(Field.CHILD_SELECTION_SET, 0))
+        def bMidA = new AstBreadcrumb(rootField.selectionSet, new NodeLocation(SelectionSet.CHILD_SELECTIONS, 0))
+        def bMidB = new AstBreadcrumb(rootField.selectionSet, new NodeLocation(SelectionSet.CHILD_SELECTIONS, 1))
 
         def breadCrumbsFromMidA = [bMidA, b4, b3, b2, b1]
         def breadCrumbsFromMidB = [bMidB, b4, b3, b2, b1]

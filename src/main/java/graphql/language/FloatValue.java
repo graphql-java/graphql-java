@@ -41,12 +41,12 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
     }
 
     @Override
-    public ChildrenContainer getNamedChildren() {
-        return ChildrenContainer.newChildrenContainer().build();
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer().build();
     }
 
     @Override
-    public FloatValue withNewChildren(ChildrenContainer newChildren) {
+    public FloatValue withNewChildren(NodeChildrenContainer newChildren) {
         if (!newChildren.isEmpty()) {
             throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
         }
