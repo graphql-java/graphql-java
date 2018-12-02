@@ -17,6 +17,7 @@ import graphql.language.NodeVisitorStub;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.TypeName;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -256,7 +257,8 @@ public class QueryTraversal {
             GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getRawType(), field.getName());
             boolean isTypeNameIntrospectionField = fieldDefinition == Introspection.TypeNameMetaFieldDef;
             GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
-            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
+            GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
+            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), field.getArguments(), variables);
             QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
                     field,
                     fieldDefinition,
