@@ -16,8 +16,8 @@ public class Document extends AbstractNode<Document> {
     private final List<Definition> definitions;
 
     @Internal
-    protected Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.definitions = definitions;
     }
 
@@ -27,7 +27,7 @@ public class Document extends AbstractNode<Document> {
      * @param definitions the definitions that make up this document
      */
     public Document(List<Definition> definitions) {
-        this(definitions, null, new ArrayList<>());
+        this(definitions, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public List<Definition> getDefinitions() {
@@ -43,15 +43,19 @@ public class Document extends AbstractNode<Document> {
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         return true;
     }
 
     @Override
     public Document deepCopy() {
-        return new Document(deepCopy(definitions), getSourceLocation(), getComments());
+        return new Document(deepCopy(definitions), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -80,6 +84,7 @@ public class Document extends AbstractNode<Document> {
         private List<Definition> definitions = new ArrayList<>();
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -88,6 +93,7 @@ public class Document extends AbstractNode<Document> {
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.definitions = existing.getDefinitions();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder definitions(List<Definition> definitions) {
@@ -110,8 +116,13 @@ public class Document extends AbstractNode<Document> {
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public Document build() {
-            Document document = new Document(definitions, sourceLocation, comments);
+            Document document = new Document(definitions, sourceLocation, comments, ignoredChars);
             return document;
         }
     }

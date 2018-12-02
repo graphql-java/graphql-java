@@ -22,9 +22,10 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
                                   List<InputValueDefinition> inputValueDefinitions,
                                   List<DirectiveLocation> directiveLocations,
                                   SourceLocation sourceLocation,
-                                  List<Comment> comments
+                                  List<Comment> comments,
+                                  IgnoredChars ignoredChars
     ) {
-        super(sourceLocation, comments);
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.inputValueDefinitions = inputValueDefinitions;
         this.directiveLocations = directiveLocations;
@@ -36,7 +37,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
      * @param name of the directive definition
      */
     public DirectiveDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>());
+        this(name, new ArrayList<>(), new ArrayList<>(), null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -70,8 +71,12 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         DirectiveDefinition that = (DirectiveDefinition) o;
 
@@ -84,7 +89,8 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
                 deepCopy(inputValueDefinitions),
                 deepCopy(directiveLocations),
                 getSourceLocation(),
-                getComments());
+                getComments(),
+                getIgnoredChars());
     }
 
     @Override
@@ -118,6 +124,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
         private Description description;
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
         private List<DirectiveLocation> directiveLocations = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -129,6 +136,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
             this.description = existing.getDescription();
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.directiveLocations = existing.getDirectiveLocations();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -171,8 +179,13 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public DirectiveDefinition build() {
-            DirectiveDefinition directiveDefinition = new DirectiveDefinition(name, inputValueDefinitions, directiveLocations, sourceLocation, comments);
+            DirectiveDefinition directiveDefinition = new DirectiveDefinition(name, inputValueDefinitions, directiveLocations, sourceLocation, comments, ignoredChars);
             directiveDefinition.setDescription(description);
             return directiveDefinition;
         }

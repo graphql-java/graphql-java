@@ -3,6 +3,7 @@ package graphql.schema.idl
 import graphql.AssertException
 import graphql.TestUtil
 import graphql.introspection.Introspection
+import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
@@ -17,6 +18,7 @@ import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
 import graphql.schema.PropertyDataFetcher
+import graphql.schema.SchemaTransformer
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.visibility.GraphqlFieldVisibility
@@ -1686,7 +1688,7 @@ class SchemaGeneratorTest extends Specification {
 
 
     def "does not break for circular references to interfaces"() {
-      def spec = """
+        def spec = """
           interface MyInterface {
               interfaceField: MyNonImplementingType
           }
@@ -1703,15 +1705,40 @@ class SchemaGeneratorTest extends Specification {
               hello: String
           }
       """
-      
-      def types = new SchemaParser().parse(spec)
-      def wiring = RuntimeWiring.newRuntimeWiring()
-        .type("Query", { typeWiring -> typeWiring.dataFetcher("hello", { env -> "Hello, world" }) })
-        .type("MyInterface", { typeWiring -> typeWiring.typeResolver({ env -> null}) })
-        .build();
-      GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
-      expect:
-       assert schema != null
+
+        def types = new SchemaParser().parse(spec)
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Query", { typeWiring -> typeWiring.dataFetcher("hello", { env -> "Hello, world" }) })
+                .type("MyInterface", { typeWiring -> typeWiring.typeResolver({ env -> null }) })
+                .build()
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
+        expect:
+        assert schema != null
     }
 
+    def "transformers get called once the schema is built"() {
+        def spec = """
+          type Query {
+              hello: String
+          }
+      """
+
+        def types = new SchemaParser().parse(spec)
+
+        def extraDirective = (GraphQLDirective.newDirective()).name("extra")
+                .argument(GraphQLArgument.newArgument().name("value").type(GraphQLString)).build()
+        def transformer = new SchemaTransformer() {
+            @Override
+            GraphQLSchema transform(GraphQLSchema originalSchema) {
+                originalSchema.transform({ builder -> builder.additionalDirective(extraDirective) })
+            }
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .transformer(transformer)
+                .build()
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
+        expect:
+        assert schema != null
+        schema.getDirective("extra") != null
+    }
 }

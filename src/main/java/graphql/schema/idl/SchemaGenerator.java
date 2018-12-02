@@ -49,6 +49,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.PropertyDataFetcher;
+import graphql.schema.SchemaTransformer;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
@@ -58,6 +59,7 @@ import graphql.schema.idl.errors.SchemaProblem;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
@@ -342,7 +344,13 @@ public class SchemaGenerator {
         GraphQLCodeRegistry codeRegistry = buildCtx.getCodeRegistry().build();
         schemaBuilder.codeRegistry(codeRegistry);
 
-        return schemaBuilder.build();
+        GraphQLSchema graphQLSchema = schemaBuilder.build();
+
+        Collection<SchemaTransformer> schemaTransformers = buildCtx.getWiring().getSchemaTransformers();
+        for (SchemaTransformer schemaTransformer : schemaTransformers) {
+            graphQLSchema = schemaTransformer.transform(graphQLSchema);
+        }
+        return graphQLSchema;
     }
 
     private GraphQLObjectType buildOperation(BuildContext buildCtx, OperationTypeDefinition operation) {

@@ -17,8 +17,8 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
     private final BigInteger value;
 
     @Internal
-    protected IntValue(BigInteger value, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected IntValue(BigInteger value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.value = value;
     }
 
@@ -28,7 +28,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
      * @param value of the Int
      */
     public IntValue(BigInteger value) {
-        this(value, null, new ArrayList<>());
+        this(value, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public BigInteger getValue() {
@@ -42,8 +42,12 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         IntValue that = (IntValue) o;
 
@@ -53,7 +57,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
 
     @Override
     public IntValue deepCopy() {
-        return new IntValue(value, getSourceLocation(), getComments());
+        return new IntValue(value, getSourceLocation(), getComments(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -86,6 +90,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
         private SourceLocation sourceLocation;
         private BigInteger value;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -111,8 +116,13 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public IntValue build() {
-            IntValue intValue = new IntValue(value, sourceLocation, comments);
+            IntValue intValue = new IntValue(value, sourceLocation, comments, ignoredChars);
             return intValue;
         }
     }
