@@ -11,10 +11,10 @@ import static graphql.util.TraversalControl.CONTINUE;
  * This ensure that all fields have data fetchers and that unions and interfaces have type resolvers
  */
 @Internal
-class GraphQLTypeCodeVisitor extends GraphQLTypeVisitorStub {
+class CodeRegistryVisitor extends GraphQLTypeVisitorStub {
     private final GraphQLCodeRegistry.Builder codeRegistry;
 
-    GraphQLTypeCodeVisitor(GraphQLCodeRegistry.Builder codeRegistry) {
+    CodeRegistryVisitor(GraphQLCodeRegistry.Builder codeRegistry) {
         this.codeRegistry = codeRegistry;
     }
 
