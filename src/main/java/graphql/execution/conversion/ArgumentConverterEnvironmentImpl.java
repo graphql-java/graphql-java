@@ -1,8 +1,10 @@
 package graphql.execution.conversion;
 
+import graphql.Internal;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputType;
 
+@Internal
 public class ArgumentConverterEnvironmentImpl implements ArgumentConverterEnvironment {
 
     private final GraphQLArgument argument;

@@ -1,11 +1,13 @@
 package graphql.execution.conversion;
 
+import graphql.PublicApi;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputType;
 
 /**
  * Contains the values passed to a {@link graphql.execution.conversion.ArgumentConverter}
  */
+@PublicApi
 public interface ArgumentConverterEnvironment {
 
     /**

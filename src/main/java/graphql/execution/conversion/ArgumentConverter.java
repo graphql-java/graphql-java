@@ -1,5 +1,7 @@
 package graphql.execution.conversion;
 
+import graphql.PublicApi;
+
 /**
  * An argument converter is responsible for converting a {@link graphql.schema.GraphQLArgument} value into some other
  * object representation such as a POJO.  This allows later {@link graphql.schema.DataFetcher} code to assume a specific
@@ -8,6 +10,7 @@ package graphql.execution.conversion;
  * By default graphql will receive a complex {@link graphql.schema.GraphQLInputObjectType} as a map of values.  You can use
  * this interface to convert this into a type safe POJO say which will then be passed onto DataFetcher code.
  */
+@PublicApi
 public interface ArgumentConverter {
 
     /**
