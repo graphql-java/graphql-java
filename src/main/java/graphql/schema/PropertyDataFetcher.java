@@ -52,6 +52,11 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
     private final String propertyName;
     private final Function<Object, Object> function;
 
+    private static final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
+    private static final ConcurrentMap<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
+
+
     /**
      * This constructor will use the property name and examine the {@link DataFetchingEnvironment#getSource()}
      * object for a getter method or field with that name.
@@ -194,10 +199,6 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
         }
         return false;
     }
-
-    private static final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
-    private static final ConcurrentMap<String, Method> METHOD_CACHE = new ConcurrentHashMap<>();
-    private static final ConcurrentMap<String, Field> FIELD_CACHE = new ConcurrentHashMap<>();
 
     /**
      * PropertyDataFetcher caches the methods and fields that map from a class to a property for runtime performance reasons.
