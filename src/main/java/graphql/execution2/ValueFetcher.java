@@ -19,8 +19,11 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +57,7 @@ public class ValueFetcher {
     public CompletableFuture<List<FetchedValue>> fetchBatchedValues(List<Object> sources, List<Field> sameFields, List<ExecutionStepInfo> executionInfos) {
         System.out.println("Fetch batch values size: " + sources.size());
         ExecutionStepInfo executionStepInfo = executionInfos.get(0);
-        if (isDataFetcherBatched(sameFields, executionStepInfo)) {
+        if (isDataFetcherBatched(executionStepInfo)) {
             //TODO: the stepInfo is not correct for all values: how to give the DF all executionInfos?
             return fetchValue(sources, sameFields, executionStepInfo)
                     .thenApply(fetchedValue -> extractBatchedValues(fetchedValue, sources.size()));
@@ -84,16 +87,26 @@ public class ValueFetcher {
         return result;
     }
 
-    private boolean isDataFetcherBatched(List<Field> sameFields, ExecutionStepInfo executionStepInfo) {
+    private GraphQLFieldsContainer getFieldsContainer(ExecutionStepInfo executionStepInfo) {
+        GraphQLOutputType type = executionStepInfo.getParent().getType();
+        return (GraphQLFieldsContainer) GraphQLTypeUtil.unwrapAll(type);
+    }
+
+    private boolean isDataFetcherBatched(ExecutionStepInfo executionStepInfo) {
+        GraphQLFieldsContainer parentType = getFieldsContainer(executionStepInfo);
         GraphQLFieldDefinition fieldDef = executionStepInfo.getFieldDefinition();
-        return fieldDef.getDataFetcher() instanceof BatchedDataFetcher;
+        DataFetcher dataFetcher = executionContext.getGraphQLSchema().getCodeRegistry().getDataFetcher(parentType, fieldDef);
+        return dataFetcher instanceof BatchedDataFetcher;
     }
 
     public CompletableFuture<FetchedValue> fetchValue(Object source, List<Field> sameFields, ExecutionStepInfo executionInfo) {
         Field field = sameFields.get(0);
         GraphQLFieldDefinition fieldDef = executionInfo.getFieldDefinition();
 
-        GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
+        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
+        GraphqlFieldVisibility fieldVisibility = codeRegistry.getFieldVisibility();
+        GraphQLFieldsContainer parentType = getFieldsContainer(executionInfo);
+
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
@@ -106,13 +119,13 @@ public class ValueFetcher {
                 .fields(sameFields)
                 .fieldType(fieldType)
                 .executionStepInfo(executionInfo)
-                .parentType(executionInfo.getParent().getType())
+                .parentType(parentType)
                 .selectionSet(fieldCollector)
                 .build();
 
         ExecutionId executionId = executionContext.getExecutionId();
         ExecutionPath path = executionInfo.getPath();
-        return callDataFetcher(fieldDef, environment, executionId, path)
+        return callDataFetcher(codeRegistry, parentType, fieldDef, environment, executionId, path)
                 .thenApply(rawFetchedValue -> new FetchedValue(rawFetchedValue, rawFetchedValue, Collections.emptyList()))
                 .exceptionally(exception -> handleExceptionWhileFetching(field, path, exception))
                 .thenApply(result -> unboxPossibleDataFetcherResult(sameFields, path, result))
@@ -133,10 +146,10 @@ public class ValueFetcher {
 
     }
 
-    private CompletableFuture<Object> callDataFetcher(GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionId executionId, ExecutionPath path) {
+    private CompletableFuture<Object> callDataFetcher(GraphQLCodeRegistry codeRegistry, GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDef, DataFetchingEnvironment environment, ExecutionId executionId, ExecutionPath path) {
         CompletableFuture<Object> result = new CompletableFuture<>();
         try {
-            DataFetcher dataFetcher = fieldDef.getDataFetcher();
+            DataFetcher dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
             log.debug("'{}' fetching field '{}' using data fetcher '{}'...", executionId, path, dataFetcher.getClass().getName());
             Object fetchedValueRaw = dataFetcher.get(environment);
             log.debug("'{}' field '{}' fetch returned '{}'", executionId, path, fetchedValueRaw == null ? "null" : fetchedValueRaw.getClass().getName());
