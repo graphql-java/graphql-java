@@ -145,11 +145,12 @@ public class SchemaGenerator {
         private final Map<String, GraphQLInputType> inputGTypes = new LinkedHashMap<>();
         private final Map<String, Object> directiveBehaviourContext = new LinkedHashMap<>();
         private final Set<GraphQLDirective> directiveDefinitions = new LinkedHashSet<>();
-        private final GraphQLCodeRegistry.Builder codeRegistry = GraphQLCodeRegistry.newCodeRegistry();
+        private final GraphQLCodeRegistry.Builder codeRegistry;
 
         BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
             this.typeRegistry = typeRegistry;
             this.wiring = wiring;
+            this.codeRegistry = GraphQLCodeRegistry.newCodeRegistry(wiring.getCodeRegistry());
         }
 
         public TypeDefinitionRegistry getTypeRegistry() {
@@ -553,7 +554,6 @@ public class SchemaGenerator {
         builder.name(typeDefinition.getName());
         builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
 
-        TypeResolver typeResolver = getTypeResolverForInterface(buildCtx, typeDefinition);
 
         List<InterfaceTypeExtensionDefinition> extensions = interfaceTypeExtensions(typeDefinition, buildCtx);
         builder.withDirectives(
@@ -579,7 +579,10 @@ public class SchemaGenerator {
         }));
 
         GraphQLInterfaceType interfaceType = builder.build();
-        buildCtx.getCodeRegistry().typeResolver(interfaceType, typeResolver);
+        if (!buildCtx.codeRegistry.hasTypeResolver(interfaceType.getName())) {
+            TypeResolver typeResolver = getTypeResolverForInterface(buildCtx, typeDefinition);
+            buildCtx.getCodeRegistry().typeResolver(interfaceType, typeResolver);
+        }
 
         for (FieldDefAndDirectiveParams encounteredField : encounteredFields) {
             GraphQLFieldDefinition fieldDefinition = directiveBehaviour.onField(encounteredField.fieldDefinition, new SchemaGeneratorDirectiveHelper.Parameters(encounteredField.directiveWiringParams, interfaceType));
@@ -597,7 +600,6 @@ public class SchemaGenerator {
         builder.definition(typeDefinition);
         builder.name(typeDefinition.getName());
         builder.description(schemaGeneratorHelper.buildDescription(typeDefinition, typeDefinition.getDescription()));
-        TypeResolver typeResolver = getTypeResolverForUnion(buildCtx, typeDefinition);
 
         List<UnionTypeExtensionDefinition> extensions = unionTypeExtensions(typeDefinition, buildCtx);
 
@@ -628,7 +630,10 @@ public class SchemaGenerator {
         ));
 
         GraphQLUnionType unionType = builder.build();
-        buildCtx.getCodeRegistry().typeResolver(unionType, typeResolver);
+        if (!buildCtx.codeRegistry.hasTypeResolver(unionType.getName())) {
+            TypeResolver typeResolver = getTypeResolverForUnion(buildCtx, typeDefinition);
+            buildCtx.getCodeRegistry().typeResolver(unionType, typeResolver);
+        }
         unionType = directiveBehaviour.onUnion(unionType, buildCtx.mkBehaviourParams());
         return buildCtx.exitNode(unionType);
     }
@@ -754,10 +759,12 @@ public class SchemaGenerator {
         GraphQLOutputType fieldType = buildOutputType(buildCtx, fieldDef.getType());
         builder.type(fieldType);
 
-        DataFetcherFactory dataFetcherFactory = buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives));
-
         GraphQLFieldDefinition fieldDefinition = builder.build();
-        buildCtx.getCodeRegistry().dataFetcher(parentType.getName(), fieldDefinition.getName(), dataFetcherFactory);
+        // if they have already wired in a fetcher - then leave it alone
+        if (!buildCtx.codeRegistry.hasDataFetcher(parentType.getName(), fieldDefinition.getName())) {
+            DataFetcherFactory dataFetcherFactory = buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives));
+            buildCtx.getCodeRegistry().dataFetcher(parentType.getName(), fieldDefinition.getName(), dataFetcherFactory);
+        }
 
         return buildCtx.exitNode(new FieldDefAndDirectiveParams(fieldDefinition, buildCtx.mkBehaviourParams()));
     }

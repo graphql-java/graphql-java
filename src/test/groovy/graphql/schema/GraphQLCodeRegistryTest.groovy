@@ -3,12 +3,15 @@ package graphql.schema
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.Scalars
+import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class GraphQLCodeRegistryTest extends Specification {
 
@@ -164,12 +167,47 @@ class GraphQLCodeRegistryTest extends Specification {
             query {
                 codeRegistryField, nonCodeRegistryField,neitherSpecified
             }
-            ''').root([neitherSpecified: "neitherSpecified"]).build())
+            ''').root([neitherSpecified: "neitherSpecifiedValue"]).build())
         then:
         er.errors.isEmpty()
-        er.data == [codeRegistryField: "codeRegistryFieldValue", nonCodeRegistryField: "nonCodeRegistryFieldValue", neitherSpecified: "neitherSpecified"]
+        er.data == [codeRegistryField: "codeRegistryFieldValue", nonCodeRegistryField: "nonCodeRegistryFieldValue", neitherSpecified: "neitherSpecifiedValue"]
 
         // when nothing is specified then its a plain old PropertyDataFetcher
+        schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof PropertyDataFetcher
+
+    }
+
+    def "integration test that code registry works with SDL and the code registry can be pre-specified"() {
+
+        def spec = '''
+                type Query {
+                    codeRegistryField : String
+                    nonCodeRegistryField : String
+                    neitherSpecified : String
+                }
+        '''
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetchers("Query", [codeRegistryField: new NamedDF("codeRegistryFieldValue")]
+        )
+        def runtime = newRuntimeWiring().type(newTypeWiring("Query")
+                .dataFetcher("nonCodeRegistryField", new NamedDF("nonCodeRegistryFieldValue")))
+                .codeRegistry(codeRegistry)
+                .build()
+        def schema = TestUtil.schema(spec, runtime)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        when:
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query('''
+            query {
+                codeRegistryField, nonCodeRegistryField,neitherSpecified
+            }
+            ''').root([neitherSpecified: "neitherSpecifiedValue"]).build())
+        then:
+        er.errors.isEmpty()
+        er.data == [codeRegistryField: "codeRegistryFieldValue", nonCodeRegistryField: "nonCodeRegistryFieldValue", neitherSpecified: "neitherSpecifiedValue"]
+
+        // when nothing is specified then its a plain old PropertyDataFetcher
+        def queryType = schema.getObjectType("Query")
         schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof PropertyDataFetcher
 
     }
