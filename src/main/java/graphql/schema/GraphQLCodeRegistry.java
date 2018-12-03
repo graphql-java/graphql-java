@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import graphql.execution.conversion.ArgumentConversions;
 import graphql.execution.conversion.ArgumentConverter;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
@@ -399,6 +400,10 @@ public class GraphQLCodeRegistry {
 
         public Builder argumentConverters(ArgumentConverter... argumentConverters) {
             return argumentConverters(Arrays.asList(argumentConverters));
+        }
+
+        public Builder argumentConverters(ArgumentConversions.Builder argumentConversions) {
+            return argumentConverter(argumentConversions.build());
         }
 
         public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {

@@ -2,6 +2,7 @@ package graphql.execution.conversion;
 
 import graphql.PublicApi;
 import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLTypeUtil;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -27,7 +28,7 @@ public class ArgumentConversions implements ArgumentConverter {
 
     @Override
     public Object convertArgument(ArgumentConverterEnvironment environment) {
-        String inputTypeName = environment.getArgumentType().getName();
+        String inputTypeName = GraphQLTypeUtil.unwrapAll(environment.getArgumentType()).getName();
         ArgumentConverter argumentConverter = typeToConverterMap.get(inputTypeName);
         if (argumentConverter == null) {
             return environment.getSourceObject();
