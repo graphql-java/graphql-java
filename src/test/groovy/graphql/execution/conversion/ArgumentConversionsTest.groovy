@@ -4,12 +4,11 @@ import graphql.GraphQL
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLInputObjectType
 import spock.lang.Specification
 
+import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
-import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class ArgumentConversionsTest extends Specification {
 
@@ -81,21 +80,20 @@ class ArgumentConversionsTest extends Specification {
         '''
 
         DataFetcher df = { env -> env.getArgument("arg") }
-        def runtimeWiring = newRuntimeWiring().type(newTypeWiring("Query").dataFetcher("person", df)).build()
+
+        def runtimeWiring = newRuntimeWiring()
+                .codeRegistry(newCodeRegistry()
+                .argumentConverters(ArgumentConversions.newConversions().converter("PersonInput",
+                { env ->
+                    new Person(
+                            env.sourceObject["name"].toString().reverse(),
+                            env.sourceObject["age"] * 10
+                    )
+                }))
+                .dataFetcher("Query", "person", df))
+                .build()
+
         def schema = TestUtil.schema(spec, runtimeWiring)
-
-        // TODO - remove this with the ability to inject the code registry during schema generation
-
-        GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry().transform({ codeReg ->
-            codeReg.argumentConverters(ArgumentConversions.newConversions().converter("PersonInput", { env ->
-                new Person(
-                        env.sourceObject["name"].toString().reverse(),
-                        env.sourceObject["age"] * 10
-                )
-            }))
-        })
-        schema = schema.transform({ builder -> builder.codeRegistry(codeRegistry) })
-
         def graphql = GraphQL.newGraphQL(schema).build()
 
         when:

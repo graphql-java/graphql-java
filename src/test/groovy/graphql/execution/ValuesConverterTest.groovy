@@ -1,20 +1,18 @@
 package graphql.execution
 
-
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.conversion.ArgumentConverter
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLCodeRegistry
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
+import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
-import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class ValuesConverterTest extends Specification {
 
@@ -40,7 +38,7 @@ class ValuesConverterTest extends Specification {
     def "converter gets called"() {
         given:
         ArgumentConverter converter = { env -> new ConvertedValue(env.getSourceObject(), env.getArgument()) }
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().argumentConverter(converter).build()
+        def codeRegistry = newCodeRegistry().argumentConverter(converter).build()
 
         when:
         def value = new ValuesConverter().convertValue([intKey: 1], codeRegistry, fieldArgument)
@@ -58,7 +56,7 @@ class ValuesConverterTest extends Specification {
         given:
         ArgumentConverter converter1 = { env -> new ConvertedValue(env.getSourceObject(), env.getArgument()) }
         ArgumentConverter converter2 = { env -> throw new RuntimeException("Bang") }
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().argumentConverters(converter1, converter2).build()
+        def codeRegistry = newCodeRegistry().argumentConverters(converter1, converter2).build()
 
         when:
         def value = new ValuesConverter().convertValue([intKey: 1], codeRegistry, fieldArgument)
@@ -72,7 +70,7 @@ class ValuesConverterTest extends Specification {
         ArgumentConverter converter1 = { env -> env.sourceObject }
         ArgumentConverter converter2 = { env -> new ConvertedValue("secondCalled", env.getArgument()) }
         ArgumentConverter converter3 = { env -> new ConvertedValue("thirdCalled", env.getArgument()) }
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().argumentConverters(converter1, converter2, converter3).build()
+        def codeRegistry = newCodeRegistry().argumentConverters(converter1, converter2, converter3).build()
 
         when:
         def value = new ValuesConverter().convertValue([intKey: 1], codeRegistry, fieldArgument)
@@ -119,12 +117,13 @@ class ValuesConverterTest extends Specification {
         }
 
         DataFetcher df = { env -> env.getArgument("arg") }
-        def runtimeWiring = newRuntimeWiring().type(newTypeWiring("Query").dataFetcher("person", df)).build()
-        def schema = TestUtil.schema(spec, runtimeWiring)
 
-        // TODO - remove this with the ability to inject the code registry during schema generation
-        GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry().transform({ codeReg -> codeReg.argumentConverter(argumentConverter) })
-        schema = schema.transform({ builder -> builder.codeRegistry(codeRegistry) })
+        def runtimeWiring = newRuntimeWiring()
+                .codeRegistry(newCodeRegistry()
+                .argumentConverter(argumentConverter)
+                .dataFetcher("Query", "person", df))
+                .build()
+        def schema = TestUtil.schema(spec, runtimeWiring)
 
         def graphql = GraphQL.newGraphQL(schema).build()
 
