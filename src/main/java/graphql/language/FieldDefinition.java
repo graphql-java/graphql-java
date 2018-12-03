@@ -20,13 +20,14 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
 
     @Internal
     protected FieldDefinition(String name,
-                            Type type,
-                            List<InputValueDefinition> inputValueDefinitions,
-                            List<Directive> directives,
-                            Description description,
-                            SourceLocation sourceLocation,
-                            List<Comment> comments) {
-        super(sourceLocation, comments);
+                              Type type,
+                              List<InputValueDefinition> inputValueDefinitions,
+                              List<Directive> directives,
+                              Description description,
+                              SourceLocation sourceLocation,
+                              List<Comment> comments,
+                              IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.description = description;
         this.name = name;
         this.type = type;
@@ -36,7 +37,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
 
     public FieldDefinition(String name,
                            Type type) {
-        this(name, type, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, type, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public Type getType() {
@@ -72,8 +73,12 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         FieldDefinition that = (FieldDefinition) o;
 
@@ -88,7 +93,8 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
                 deepCopy(directives),
                 description,
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -133,6 +139,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
         private Description description;
         private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -145,6 +152,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
             this.description = existing.getDescription();
             this.inputValueDefinitions = existing.getInputValueDefinitions();
             this.directives = existing.getDirectives();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -193,8 +201,13 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public FieldDefinition build() {
-            FieldDefinition fieldDefinition = new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments);
+            FieldDefinition fieldDefinition = new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments, ignoredChars);
             return fieldDefinition;
         }
     }

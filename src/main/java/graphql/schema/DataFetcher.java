@@ -31,13 +31,4 @@ public interface DataFetcher<T> {
     T get(DataFetchingEnvironment environment) throws Exception;
 
 
-    /**
-     * If a data fetcher is simply mapping data from an object to a field, it can be considered a trivial data fetcher for the purposes
-     * of tracing and so on.
-     *
-     * @return true if the data fetcher can be considered a trivial data fetcher.
-     */
-    default boolean isTrivialDataFetcher() {
-        return false;
-    }
 }

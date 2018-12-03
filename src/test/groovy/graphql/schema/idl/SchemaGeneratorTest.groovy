@@ -3,6 +3,7 @@ package graphql.schema.idl
 import graphql.AssertException
 import graphql.TestUtil
 import graphql.introspection.Introspection
+import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
@@ -17,6 +18,7 @@ import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
 import graphql.schema.PropertyDataFetcher
+import graphql.schema.SchemaTransformer
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.visibility.GraphqlFieldVisibility
@@ -301,8 +303,8 @@ class SchemaGeneratorTest extends Specification {
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
-        types[0].name == "Foo"
-        types[1].name == "Bar"
+        types[0].name == "Bar"
+        types[1].name == "Foo"
 
     }
 
@@ -338,8 +340,8 @@ class SchemaGeneratorTest extends Specification {
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
-        types[0].name == "Foo"
-        types[1].name == "Bar"
+        types[0].name == "Bar"
+        types[1].name == "Foo"
 
     }
 
@@ -374,8 +376,8 @@ class SchemaGeneratorTest extends Specification {
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
-        types[0].name == "Foo"
-        types[1].name == "Bar"
+        types[0].name == "Bar"
+        types[1].name == "Foo"
 
     }
 
@@ -413,8 +415,8 @@ class SchemaGeneratorTest extends Specification {
         types.size() == 2
         types[0] instanceof GraphQLObjectType
         types[1] instanceof GraphQLObjectType
-        types[0].name == "Foo"
-        types[1].name == "Bar"
+        types[0].name == "Bar"
+        types[1].name == "Foo"
 
     }
 
@@ -447,9 +449,9 @@ class SchemaGeneratorTest extends Specification {
         enumType.getName() == "RGB"
         enumType.getDefinition().getName() == "RGB"
 
-        enumType.values.get(0).getValue() == "RED"
+        enumType.values.get(0).getValue() == "BLUE"
         enumType.values.get(1).getValue() == "GREEN"
-        enumType.values.get(2).getValue() == "BLUE"
+        enumType.values.get(2).getValue() == "RED"
 
     }
 
@@ -482,9 +484,9 @@ class SchemaGeneratorTest extends Specification {
         interfaceType.name == "Foo"
         interfaceType.getDefinition().getName() == "Foo"
 
-        schema.queryType.fieldDefinitions[0].name == "is_foo"
+        schema.queryType.fieldDefinitions[0].name == "is_bar"
         schema.queryType.fieldDefinitions[0].type.name == "Boolean"
-        schema.queryType.fieldDefinitions[1].name == "is_bar"
+        schema.queryType.fieldDefinitions[1].name == "is_foo"
         schema.queryType.fieldDefinitions[1].type.name == "Boolean"
 
     }
@@ -607,11 +609,11 @@ class SchemaGeneratorTest extends Specification {
         GraphQLObjectType type = schema.getQueryType()
 
         type.name == "Human"
-        type.fieldDefinitions[0].name == "id"
-        type.fieldDefinitions[1].name == "name"
-        type.fieldDefinitions[2].name == "friends"
-        type.fieldDefinitions[3].name == "appearsIn"
-        type.fieldDefinitions[4].name == "homePlanet"
+        type.fieldDefinitions[0].name == "appearsIn"
+        type.fieldDefinitions[1].name == "friends"
+        type.fieldDefinitions[2].name == "homePlanet"
+        type.fieldDefinitions[3].name == "id"
+        type.fieldDefinitions[4].name == "name"
 
         type.interfaces.size() == 1
         type.interfaces[0].name == "Character"
@@ -1183,13 +1185,14 @@ class SchemaGeneratorTest extends Specification {
         directive.arguments[argIndex].type == argType
         directive.arguments[argIndex].value == argValue
 
+        // arguments are sorted
         where:
         argIndex | argName    | argType        | argValue
-        0        | "strArg"   | GraphQLString  | "String"
-        1        | "intArg"   | GraphQLInt     | 1
-        2        | "boolArg"  | GraphQLBoolean | true
-        3        | "floatArg" | GraphQLFloat   | 1.1
-        4        | "nullArg"  | GraphQLString  | null
+        0        | "boolArg"  | GraphQLBoolean | true
+        1        | "floatArg" | GraphQLFloat   | 1.1
+        2        | "intArg"   | GraphQLInt     | 1
+        3        | "nullArg"  | GraphQLString  | null
+        4        | "strArg"   | GraphQLString  | "String"
 
     }
 
@@ -1685,7 +1688,7 @@ class SchemaGeneratorTest extends Specification {
 
 
     def "does not break for circular references to interfaces"() {
-      def spec = """
+        def spec = """
           interface MyInterface {
               interfaceField: MyNonImplementingType
           }
@@ -1702,15 +1705,40 @@ class SchemaGeneratorTest extends Specification {
               hello: String
           }
       """
-      
-      def types = new SchemaParser().parse(spec)
-      def wiring = RuntimeWiring.newRuntimeWiring()
-        .type("Query", { typeWiring -> typeWiring.dataFetcher("hello", { env -> "Hello, world" }) })
-        .type("MyInterface", { typeWiring -> typeWiring.typeResolver({ env -> null}) })
-        .build();
-      GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
-      expect:
-       assert schema != null
+
+        def types = new SchemaParser().parse(spec)
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type("Query", { typeWiring -> typeWiring.dataFetcher("hello", { env -> "Hello, world" }) })
+                .type("MyInterface", { typeWiring -> typeWiring.typeResolver({ env -> null }) })
+                .build()
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
+        expect:
+        assert schema != null
     }
 
+    def "transformers get called once the schema is built"() {
+        def spec = """
+          type Query {
+              hello: String
+          }
+      """
+
+        def types = new SchemaParser().parse(spec)
+
+        def extraDirective = (GraphQLDirective.newDirective()).name("extra")
+                .argument(GraphQLArgument.newArgument().name("value").type(GraphQLString)).build()
+        def transformer = new SchemaTransformer() {
+            @Override
+            GraphQLSchema transform(GraphQLSchema originalSchema) {
+                originalSchema.transform({ builder -> builder.additionalDirective(extraDirective) })
+            }
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .transformer(transformer)
+                .build()
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring);
+        expect:
+        assert schema != null
+        schema.getDirective("extra") != null
+    }
 }

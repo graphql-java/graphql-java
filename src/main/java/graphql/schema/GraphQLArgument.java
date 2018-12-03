@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 import graphql.util.FpKit;
@@ -48,14 +49,41 @@ public class GraphQLArgument implements GraphQLDirectiveContainer {
     private final InputValueDefinition definition;
     private final List<GraphQLDirective> directives;
 
+    /**
+     * @param name         the arg name
+     * @param description  the arg description
+     * @param type         the arg type
+     * @param defaultValue the default value
+     *
+     * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
+    @Deprecated
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue) {
         this(name, description, type, defaultValue, null);
     }
 
+    /**
+     * @param name the arg name
+     * @param type the arg type
+     *
+     * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
+     */
+    @Internal
+    @Deprecated
     public GraphQLArgument(String name, GraphQLInputType type) {
         this(name, null, type, null, null);
     }
 
+    /**
+     * @param name         the arg name
+     * @param description  the arg description
+     * @param type         the arg type
+     * @param defaultValue the default value
+     * @param definition   the AST definition
+     *
+     * @deprecated use the {@link #newArgument()} builder pattern instead, as this constructor will be made private in a future version.
+     */
     public GraphQLArgument(String name, String description, GraphQLInputType type, Object defaultValue, InputValueDefinition definition) {
         this(name, description, type, defaultValue, null, definition, Collections.emptyList());
     }

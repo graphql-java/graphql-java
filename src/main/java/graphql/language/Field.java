@@ -30,8 +30,9 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
                     List<Directive> directives,
                     SelectionSet selectionSet,
                     SourceLocation sourceLocation,
-                    List<Comment> comments) {
-        super(sourceLocation, comments);
+                    List<Comment> comments,
+                    IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.alias = alias;
         this.arguments = arguments;
@@ -46,7 +47,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param name of the field
      */
     public Field(String name) {
-        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, null, new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     /**
@@ -56,7 +57,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param arguments to the field
      */
     public Field(String name, List<Argument> arguments) {
-        this(name, null, arguments, new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, null, arguments, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     /**
@@ -67,7 +68,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param selectionSet of the field
      */
     public Field(String name, List<Argument> arguments, SelectionSet selectionSet) {
-        this(name, null, arguments, new ArrayList<>(), selectionSet, null, new ArrayList<>());
+        this(name, null, arguments, new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     /**
@@ -77,7 +78,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
      * @param selectionSet of the field
      */
     public Field(String name, SelectionSet selectionSet) {
-        this(name, null, new ArrayList<>(), new ArrayList<>(), selectionSet, null, new ArrayList<>());
+        this(name, null, new ArrayList<>(), new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -157,7 +158,8 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
                 deepCopy(directives),
                 deepCopy(selectionSet),
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -203,6 +205,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         private List<Argument> arguments = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private SelectionSet selectionSet;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -215,6 +218,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
             this.arguments = existing.getArguments();
             this.directives = existing.getDirectives();
             this.selectionSet = existing.getSelectionSet();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -253,8 +257,13 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public Field build() {
-            Field field = new Field(name, alias, arguments, directives, selectionSet, sourceLocation, comments);
+            Field field = new Field(name, alias, arguments, directives, selectionSet, sourceLocation, comments, ignoredChars);
             return field;
         }
     }

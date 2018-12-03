@@ -36,6 +36,8 @@ public interface Node<T extends Node> extends Serializable {
      */
     List<Comment> getComments();
 
+    IgnoredChars getIgnoredChars();
+
     /**
      * Compares just the content and not the children.
      *

@@ -12,12 +12,13 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
 
     @Internal
     protected InterfaceTypeExtensionDefinition(String name,
-                                     List<FieldDefinition> definitions,
-                                     List<Directive> directives,
-                                     Description description,
-                                     SourceLocation sourceLocation,
-                                     List<Comment> comments) {
-        super(name, definitions, directives, description, sourceLocation, comments);
+                                               List<FieldDefinition> definitions,
+                                               List<Directive> directives,
+                                               Description description,
+                                               SourceLocation sourceLocation,
+                                               List<Comment> comments,
+                                               IgnoredChars ignoredChars) {
+        super(name, definitions, directives, description, sourceLocation, comments, ignoredChars);
     }
 
     @Override
@@ -27,7 +28,8 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
                 deepCopy(getDirectives()),
                 getDescription(),
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -58,6 +60,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
         private Description description;
         private List<FieldDefinition> definitions = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -69,6 +72,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
             this.definitions = existing.getFieldDefinitions();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -101,13 +105,19 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition {
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public InterfaceTypeExtensionDefinition build() {
             InterfaceTypeExtensionDefinition interfaceTypeDefinition = new InterfaceTypeExtensionDefinition(name,
                     definitions,
                     directives,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return interfaceTypeDefinition;
         }
     }

@@ -16,8 +16,8 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
     private final Type type;
 
     @Internal
-    protected ListType(Type type, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected ListType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.type = type;
     }
 
@@ -27,7 +27,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
      * @param type the wrapped type
      */
     public ListType(Type type) {
-        this(type, null, new ArrayList<>());
+        this(type, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public Type getType() {
@@ -43,15 +43,19 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         return true;
     }
 
     @Override
     public ListType deepCopy() {
-        return new ListType(deepCopy(type), getSourceLocation(), getComments());
+        return new ListType(deepCopy(type), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -84,6 +88,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
         private Type type;
         private SourceLocation sourceLocation;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -92,6 +97,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
             this.sourceLocation = existing.getSourceLocation();
             this.comments = existing.getComments();
             this.type = existing.getType();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -110,8 +116,13 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public ListType build() {
-            ListType listType = new ListType(type, sourceLocation, comments);
+            ListType listType = new ListType(type, sourceLocation, comments, ignoredChars);
             return listType;
         }
     }

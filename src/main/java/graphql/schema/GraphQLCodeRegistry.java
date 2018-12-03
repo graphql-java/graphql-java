@@ -4,16 +4,26 @@ import graphql.PublicApi;
 import graphql.execution.validation.ValidationRule;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import graphql.execution.validation.ValidationRule;
+import graphql.schema.visibility.GraphqlFieldVisibility;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
+import static graphql.Assert.assertValidName;
+import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
+import static graphql.schema.GraphQLCodeRegistry.TypeAndFieldKey.mkKey;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
@@ -31,17 +41,19 @@ import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FI
 public class GraphQLCodeRegistry {
 
     private final Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap;
+    private final Map<String, DataFetcherFactory> systemDataFetcherMap;
     private final Map<String, TypeResolver> typeResolverMap;
+    private final GraphqlFieldVisibility fieldVisibility;
     private final Map<TypeAndFieldKey, List<ValidationRule>> fieldValidationRules;
     private final Map<String, List<ValidationRule>> inputTypeValidationRules;
-    private final GraphqlFieldVisibility fieldVisibility;
 
-    private GraphQLCodeRegistry(Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap, Map<String, TypeResolver> typeResolverMap, Map<TypeAndFieldKey, List<ValidationRule>> fieldValidationRules, Map<String, List<ValidationRule>> inputTypeValidationRules, GraphqlFieldVisibility fieldVisibility) {
+    private GraphQLCodeRegistry(Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap, Map<String, TypeResolver> typeResolverMap, GraphqlFieldVisibility fieldVisibility) {
         this.dataFetcherMap = dataFetcherMap;
+        this.systemDataFetcherMap = systemDataFetcherMap;
         this.typeResolverMap = typeResolverMap;
+        this.fieldVisibility = fieldVisibility;
         this.fieldValidationRules = fieldValidationRules;
         this.inputTypeValidationRules = inputTypeValidationRules;
-        this.fieldVisibility = fieldVisibility;
     }
 
     /**
@@ -90,24 +102,36 @@ public class GraphQLCodeRegistry {
      * @return the DataFetcher associated with this field.  All fields have data fetchers
      */
     public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-        return getDataFetcherImpl(parentType, fieldDefinition, dataFetcherMap);
+        return getDataFetcherImpl(parentType, fieldDefinition, dataFetcherMap, systemDataFetcherMap);
     }
 
-    private static DataFetcher getDataFetcherImpl(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap) {
+    private static DataFetcher getDataFetcherImpl(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap) {
         assertNotNull(parentType);
         assertNotNull(fieldDefinition);
 
-        DataFetcherFactory dataFetcherFactory = dataFetcherMap.get(mkKey(parentType, fieldDefinition));
+        DataFetcherFactory dataFetcherFactory = systemDataFetcherMap.get(fieldDefinition.getName());
         if (dataFetcherFactory == null) {
-            // ok lets use the old skool field - later when the field DF is fully removed we
-            // will create a property data fetcher but until then we go back to the field def
-            // as a back up
-            return fieldDefinition.getDataFetcher();
+            dataFetcherFactory = dataFetcherMap.get(mkKey(parentType, fieldDefinition));
+            if (dataFetcherFactory == null) {
+                dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(fieldDefinition.getName()));
+            }
         }
         return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
                 .fieldDefinition(fieldDefinition)
                 .build());
     }
+
+    private static boolean hasDataFetcherImpl(String parentTypeName, String fieldName, Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap) {
+        assertNotNull(parentTypeName);
+        assertNotNull(fieldName);
+
+        DataFetcherFactory dataFetcherFactory = systemDataFetcherMap.get(fieldName);
+        if (dataFetcherFactory == null) {
+            dataFetcherFactory = dataFetcherMap.get(mkKey(parentTypeName, fieldName));
+        }
+        return dataFetcherFactory != null;
+    }
+
 
     /**
      * Returns the type resolver associated with this interface type
@@ -150,7 +174,7 @@ public class GraphQLCodeRegistry {
         return assertNotNull(typeResolver, "There must be a type resolver for union " + parentType.getName());
     }
 
-    private static class TypeAndFieldKey {
+    public static class TypeAndFieldKey {
 
         private final String typeName;
         private final String fieldName;
@@ -182,15 +206,16 @@ public class GraphQLCodeRegistry {
         public String toString() {
             return typeName + ':' + fieldName + '\'';
         }
+
+        public static TypeAndFieldKey mkKey(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
+            return new TypeAndFieldKey(parentType.getName(), fieldDefinition.getName());
+        }
+
+        public static TypeAndFieldKey mkKey(String parentType, String fieldName) {
+            return new TypeAndFieldKey(parentType, fieldName);
+        }
     }
 
-    private static TypeAndFieldKey mkKey(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-        return new TypeAndFieldKey(parentType.getName(), fieldDefinition.getName());
-    }
-
-    private static TypeAndFieldKey mkKey(String parentType, String fieldName) {
-        return new TypeAndFieldKey(parentType, fieldName);
-    }
 
     /**
      * This helps you transform the current {@link graphql.schema.GraphQLCodeRegistry} object into another one by starting a builder with all
@@ -201,7 +226,7 @@ public class GraphQLCodeRegistry {
      * @return a new GraphQLCodeRegistry object based on calling build on that builder
      */
     public GraphQLCodeRegistry transform(Consumer<Builder> builderConsumer) {
-        Builder builder = new Builder(this);
+        Builder builder = newCodeRegistry(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
@@ -213,10 +238,21 @@ public class GraphQLCodeRegistry {
         return new Builder();
     }
 
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+    /**
+     * Returns a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects based on the existing one
+     *
+     * @param existingCodeRegistry the existing code registry to use
+     *
+     * @return a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects
+     */
+    public static Builder newCodeRegistry(GraphQLCodeRegistry existingCodeRegistry) {
+        return new Builder(existingCodeRegistry);
+    }
+
     public static class Builder {
         private final Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap = new LinkedHashMap<>();
-        private final Map<String, TypeResolver> typeResolverMap = new LinkedHashMap<>();
+        private final Map<String, DataFetcherFactory> systemDataFetcherMap = new LinkedHashMap<>();
+        private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
         private final Map<TypeAndFieldKey, List<ValidationRule>> fieldValidationRules = new LinkedHashMap<>();
         private final Map<String, List<ValidationRule>> inputTypeValidationRules = new LinkedHashMap<>();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
@@ -228,9 +264,9 @@ public class GraphQLCodeRegistry {
         private Builder(GraphQLCodeRegistry codeRegistry) {
             this.dataFetcherMap.putAll(codeRegistry.dataFetcherMap);
             this.typeResolverMap.putAll(codeRegistry.typeResolverMap);
+            this.fieldVisibility = codeRegistry.fieldVisibility;
             this.inputTypeValidationRules.putAll(codeRegistry.inputTypeValidationRules);
             this.fieldValidationRules.putAll(codeRegistry.fieldValidationRules);
-            this.fieldVisibility = codeRegistry.fieldVisibility;
         }
 
         public Builder inputTypeValidationRules(GraphQLInputType inputType, ValidationRule... validationRules) {
@@ -265,7 +301,19 @@ public class GraphQLCodeRegistry {
          * @return the DataFetcher associated with this field.  All fields have data fetchers
          */
         public DataFetcher getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-            return getDataFetcherImpl(parentType, fieldDefinition, dataFetcherMap);
+            return getDataFetcherImpl(parentType, fieldDefinition, dataFetcherMap, systemDataFetcherMap);
+        }
+
+        /**
+         * Returns a data fetcher associated with a field within a container type
+         *
+         * @param parentTypeName the container type name
+         * @param fieldName      the field definition name
+         *
+         * @return the true if there is a data fetcher already for this field
+         */
+        public boolean hasDataFetcher(String parentTypeName, String fieldName) {
+            return hasDataFetcherImpl(parentTypeName, fieldName, dataFetcherMap, systemDataFetcherMap);
         }
 
         /**
@@ -277,6 +325,17 @@ public class GraphQLCodeRegistry {
          */
         public TypeResolver getTypeResolver(GraphQLInterfaceType interfaceType) {
             return getTypeResolverForInterface(interfaceType, typeResolverMap);
+        }
+
+        /**
+         * Returns true of a type resolver has been registered for this type name
+         *
+         * @param typeName the name to check
+         *
+         * @return true if there is already a type resolver
+         */
+        public boolean hasTypeResolver(String typeName) {
+            return typeResolverMap.containsKey(typeName);
         }
 
         /**
@@ -305,6 +364,21 @@ public class GraphQLCodeRegistry {
         }
 
         /**
+         * Called to place system data fetchers (eg Introspection fields) into the mix
+         *
+         * @param fieldDefinition the field definition
+         * @param dataFetcher     the data fetcher code for that field
+         *
+         * @return this builder
+         */
+        public Builder systemDataFetcher(GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
+            assertNotNull(dataFetcher);
+            assertTrue(fieldDefinition.getName().startsWith("__"), "Only __ fields can be named as system data fetchers");
+            systemDataFetcherMap.put(fieldDefinition.getName(), DataFetcherFactories.useDataFetcher(dataFetcher));
+            return this;
+        }
+
+        /**
          * Sets the data fetcher factory for a specific field inside a container type
          *
          * @param parentTypeContainer the parent container type
@@ -316,6 +390,20 @@ public class GraphQLCodeRegistry {
         public Builder dataFetcher(GraphQLFieldsContainer parentTypeContainer, GraphQLFieldDefinition fieldDefinition, DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory);
             dataFetcherMap.put(mkKey(parentTypeContainer, fieldDefinition), dataFetcherFactory);
+            return this;
+        }
+
+        /**
+         * Sets the data fetcher factory for a specific field inside a container type ONLY if not mapping has already been made
+         *
+         * @param parentTypeContainer the parent container type
+         * @param fieldDefinition     the field definition
+         * @param dataFetcher         the data fetcher code for that field
+         *
+         * @return this builder
+         */
+        public Builder dataFetcherIfAbsent(GraphQLFieldsContainer parentTypeContainer, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
+            dataFetcherMap.putIfAbsent(mkKey(parentTypeContainer, fieldDefinition), DataFetcherFactories.useDataFetcher(dataFetcher));
             return this;
         }
 
@@ -344,6 +432,12 @@ public class GraphQLCodeRegistry {
         public Builder dataFetcher(String parentTypeName, String fieldName, DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory);
             dataFetcherMap.put(mkKey(assertValidName(parentTypeName), assertValidName(fieldName)), dataFetcherFactory);
+            return this;
+        }
+
+        public Builder dataFetcher(TypeAndFieldKey key, DataFetcher<?> dataFetcher) {
+            assertNotNull(dataFetcher);
+            dataFetcherMap.put(key, DataFetcherFactories.useDataFetcher(dataFetcher));
             return this;
         }
 
@@ -380,8 +474,18 @@ public class GraphQLCodeRegistry {
             return this;
         }
 
+        public Builder typeResolverIfAbsent(GraphQLInterfaceType parentType, TypeResolver typeResolver) {
+            typeResolverMap.putIfAbsent(parentType.getName(), typeResolver);
+            return this;
+        }
+
         public Builder typeResolver(GraphQLUnionType parentType, TypeResolver typeResolver) {
             typeResolverMap.put(parentType.getName(), typeResolver);
+            return this;
+        }
+
+        public Builder typeResolverIfAbsent(GraphQLUnionType parentType, TypeResolver typeResolver) {
+            typeResolverMap.putIfAbsent(parentType.getName(), typeResolver);
             return this;
         }
 
@@ -413,6 +517,8 @@ public class GraphQLCodeRegistry {
 
         public GraphQLCodeRegistry build() {
             return new GraphQLCodeRegistry(dataFetcherMap, typeResolverMap, fieldValidationRules, inputTypeValidationRules, fieldVisibility);
+        public GraphQLCodeRegistry build() {
+            return new GraphQLCodeRegistry(dataFetcherMap, systemDataFetcherMap, typeResolverMap, fieldVisibility);
         }
     }
 }

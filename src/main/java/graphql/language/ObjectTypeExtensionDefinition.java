@@ -18,9 +18,10 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
                                             List<FieldDefinition> fieldDefinitions,
                                             Description description,
                                             SourceLocation sourceLocation,
-                                            List<Comment> comments) {
+                                            List<Comment> comments,
+                                            IgnoredChars ignoredChars) {
         super(name, implementz, directives, fieldDefinitions,
-                description, sourceLocation, comments);
+                description, sourceLocation, comments, ignoredChars);
     }
 
     /**
@@ -29,7 +30,7 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
      * @param name of the object type extension
      */
     public ObjectTypeExtensionDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -40,7 +41,8 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
                 deepCopy(getFieldDefinitions()),
                 getDescription(),
                 getSourceLocation(),
-                getComments()
+                getComments(),
+                getIgnoredChars()
         );
     }
 
@@ -73,6 +75,7 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
         private List<Type> implementz = new ArrayList<>();
         private List<Directive> directives = new ArrayList<>();
         private List<FieldDefinition> fieldDefinitions = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -85,6 +88,7 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
             this.directives = existing.getDirectives();
             this.implementz = existing.getImplements();
             this.fieldDefinitions = existing.getFieldDefinitions();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -137,6 +141,11 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public ObjectTypeExtensionDefinition build() {
             ObjectTypeExtensionDefinition objectTypeDefinition = new ObjectTypeExtensionDefinition(name,
                     implementz,
@@ -144,7 +153,8 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
                     fieldDefinitions,
                     description,
                     sourceLocation,
-                    comments);
+                    comments,
+                    ignoredChars);
             return objectTypeDefinition;
         }
     }

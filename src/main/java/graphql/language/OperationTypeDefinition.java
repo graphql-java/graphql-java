@@ -17,8 +17,8 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     private final Type type;
 
     @Internal
-    protected OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.type = type;
     }
@@ -30,7 +30,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
      * @param type the type in play
      */
     public OperationTypeDefinition(String name, Type type) {
-        this(name, type, null, new ArrayList<>());
+        this(name, type, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     public Type getType() {
@@ -51,8 +51,12 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         OperationTypeDefinition that = (OperationTypeDefinition) o;
 
@@ -61,7 +65,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
     @Override
     public OperationTypeDefinition deepCopy() {
-        return new OperationTypeDefinition(name, deepCopy(type), getSourceLocation(), getComments());
+        return new OperationTypeDefinition(name, deepCopy(type), getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -92,6 +96,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         private List<Comment> comments = new ArrayList<>();
         private String name;
         private Type type;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -102,6 +107,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
             this.comments = existing.getComments();
             this.name = existing.getName();
             this.type = existing.getType();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
 
@@ -125,8 +131,13 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public OperationTypeDefinition build() {
-            OperationTypeDefinition operationTypeDefinition = new OperationTypeDefinition(name, type, sourceLocation, comments);
+            OperationTypeDefinition operationTypeDefinition = new OperationTypeDefinition(name, type, sourceLocation, comments, ignoredChars);
             return operationTypeDefinition;
         }
     }

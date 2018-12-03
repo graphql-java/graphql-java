@@ -22,8 +22,9 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
                                   List<Directive> directives,
                                   Description description,
                                   SourceLocation sourceLocation,
-                                  List<Comment> comments) {
-        super(sourceLocation, comments);
+                                  List<Comment> comments,
+                                  IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
         this.description = description;
         this.directives = (null == directives) ? new ArrayList<>() : directives;
@@ -35,7 +36,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
      * @param name of the enum value
      */
     public EnumValueDefinition(String name) {
-        this(name, new ArrayList<>(), null, null, new ArrayList<>());
+        this(name, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     /**
@@ -45,7 +46,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
      * @param directives the directives on the enum value
      */
     public EnumValueDefinition(String name, List<Directive> directives) {
-        this(name, directives, null, null, new ArrayList<>());
+        this(name, directives, null, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -71,8 +72,12 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         EnumValueDefinition that = (EnumValueDefinition) o;
 
@@ -82,7 +87,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
 
     @Override
     public EnumValueDefinition deepCopy() {
-        return new EnumValueDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments());
+        return new EnumValueDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -114,6 +119,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
         private String name;
         private Description description;
         private List<Directive> directives;
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -124,6 +130,7 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
             this.name = existing.getName();
             this.description = existing.getDescription();
             this.directives = existing.getDirectives();
+            this.ignoredChars = existing.getIgnoredChars();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -151,8 +158,13 @@ public class EnumValueDefinition extends AbstractNode<EnumValueDefinition> imple
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public EnumValueDefinition build() {
-            EnumValueDefinition enumValueDefinition = new EnumValueDefinition(name, directives, description, sourceLocation, comments);
+            EnumValueDefinition enumValueDefinition = new EnumValueDefinition(name, directives, description, sourceLocation, comments, ignoredChars);
             return enumValueDefinition;
         }
     }

@@ -16,8 +16,8 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
     private final String name;
 
     @Internal
-    protected EnumValue(String name, SourceLocation sourceLocation, List<Comment> comments) {
-        super(sourceLocation, comments);
+    protected EnumValue(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
+        super(sourceLocation, comments, ignoredChars);
         this.name = name;
     }
 
@@ -28,7 +28,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
      * @param name of the enum value
      */
     public EnumValue(String name) {
-        this(name, null, new ArrayList<>());
+        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY);
     }
 
     @Override
@@ -44,8 +44,12 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
 
     @Override
     public boolean isEqualTo(Node o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         EnumValue that = (EnumValue) o;
 
@@ -54,7 +58,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
 
     @Override
     public EnumValue deepCopy() {
-        return new EnumValue(name, getSourceLocation(), getComments());
+        return new EnumValue(name, getSourceLocation(), getComments(), getIgnoredChars());
     }
 
     @Override
@@ -87,6 +91,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
         private SourceLocation sourceLocation;
         private String name;
         private List<Comment> comments = new ArrayList<>();
+        private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
 
         private Builder() {
         }
@@ -113,8 +118,13 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
             return this;
         }
 
+        public Builder ignoredChars(IgnoredChars ignoredChars) {
+            this.ignoredChars = ignoredChars;
+            return this;
+        }
+
         public EnumValue build() {
-            EnumValue enumValue = new EnumValue(name, sourceLocation, comments);
+            EnumValue enumValue = new EnumValue(name, sourceLocation, comments, ignoredChars);
             return enumValue;
         }
     }

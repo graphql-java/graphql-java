@@ -10,7 +10,7 @@ import graphql.language.FragmentDefinition;
 import org.dataloader.DataLoader;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +32,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ExecutionId executionId;
     private final DataFetchingFieldSelectionSet selectionSet;
     private final ExecutionStepInfo executionStepInfo;
-    private ExecutionContext executionContext;
+    private final ExecutionContext executionContext;
 
     public DataFetchingEnvironmentImpl(Object source,
                                        Map<String, Object> arguments,
@@ -71,7 +71,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, Object> getArguments() {
-        return new HashMap<>(arguments);
+        return new LinkedHashMap<>(arguments);
     }
 
     @Override
@@ -126,7 +126,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public Map<String, FragmentDefinition> getFragmentsByName() {
-        return new HashMap<>(fragmentsByName);
+        return new LinkedHashMap<>(fragmentsByName);
     }
 
     @Override
