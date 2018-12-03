@@ -109,6 +109,6 @@ public class SchemaUtil {
     void extractCodeFromTypes(GraphQLCodeRegistry.Builder codeRegistry, GraphQLSchema schema) {
         Introspection.addCodeForIntrospectionTypes(codeRegistry);
 
-        TRAVERSER.depthFirst(new GraphQLTypeCodeVisitor(codeRegistry), schema.getAllTypesAsList());
+        TRAVERSER.depthFirst(new CodeRegistryVisitor(codeRegistry), schema.getAllTypesAsList());
     }
 }

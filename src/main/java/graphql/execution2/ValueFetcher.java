@@ -104,7 +104,6 @@ public class ValueFetcher {
         GraphQLFieldDefinition fieldDef = executionInfo.getFieldDefinition();
 
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        GraphqlFieldVisibility fieldVisibility = codeRegistry.getFieldVisibility();
         GraphQLFieldsContainer parentType = getFieldsContainer(executionInfo);
 
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());

@@ -82,6 +82,18 @@ public class GraphQLCodeRegistry {
                 .build());
     }
 
+    private static boolean hasDataFetcherImpl(String parentTypeName, String fieldName, Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap) {
+        assertNotNull(parentTypeName);
+        assertNotNull(fieldName);
+
+        DataFetcherFactory dataFetcherFactory = systemDataFetcherMap.get(fieldName);
+        if (dataFetcherFactory == null) {
+            dataFetcherFactory = dataFetcherMap.get(mkKey(parentTypeName, fieldName));
+        }
+        return dataFetcherFactory != null;
+    }
+
+
     /**
      * Returns the type resolver associated with this interface type
      *
@@ -179,7 +191,7 @@ public class GraphQLCodeRegistry {
      * @return a new GraphQLCodeRegistry object based on calling build on that builder
      */
     public GraphQLCodeRegistry transform(Consumer<Builder> builderConsumer) {
-        Builder builder = new Builder(this);
+        Builder builder = newCodeRegistry(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
@@ -189,6 +201,17 @@ public class GraphQLCodeRegistry {
      */
     public static Builder newCodeRegistry() {
         return new Builder();
+    }
+
+    /**
+     * Returns a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects based on the existing one
+     *
+     * @param existingCodeRegistry the existing code registry to use
+     *
+     * @return a new builder of {@link graphql.schema.GraphQLCodeRegistry} objects
+     */
+    public static Builder newCodeRegistry(GraphQLCodeRegistry existingCodeRegistry) {
+        return new Builder(existingCodeRegistry);
     }
 
     public static class Builder {
@@ -222,6 +245,18 @@ public class GraphQLCodeRegistry {
         }
 
         /**
+         * Returns a data fetcher associated with a field within a container type
+         *
+         * @param parentTypeName the container type name
+         * @param fieldName      the field definition name
+         *
+         * @return the true if there is a data fetcher already for this field
+         */
+        public boolean hasDataFetcher(String parentTypeName, String fieldName) {
+            return hasDataFetcherImpl(parentTypeName, fieldName, dataFetcherMap, systemDataFetcherMap);
+        }
+
+        /**
          * Returns the type resolver associated with this interface type
          *
          * @param interfaceType the interface type
@@ -230,6 +265,17 @@ public class GraphQLCodeRegistry {
          */
         public TypeResolver getTypeResolver(GraphQLInterfaceType interfaceType) {
             return getTypeResolverForInterface(interfaceType, typeResolverMap);
+        }
+
+        /**
+         * Returns true of a type resolver has been registered for this type name
+         *
+         * @param typeName the name to check
+         *
+         * @return true if there is already a type resolver
+         */
+        public boolean hasTypeResolver(String typeName) {
+            return typeResolverMap.containsKey(typeName);
         }
 
         /**
