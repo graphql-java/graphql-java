@@ -6,14 +6,10 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import graphql.execution.validation.ValidationRule;
-import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -24,8 +20,6 @@ import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
 import static graphql.schema.GraphQLCodeRegistry.TypeAndFieldKey.mkKey;
-import static graphql.Assert.assertValidName;
-import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 
@@ -47,13 +41,13 @@ public class GraphQLCodeRegistry {
     private final Map<TypeAndFieldKey, List<ValidationRule>> fieldValidationRules;
     private final Map<String, List<ValidationRule>> inputTypeValidationRules;
 
-    private GraphQLCodeRegistry(Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap, Map<String, TypeResolver> typeResolverMap, GraphqlFieldVisibility fieldVisibility) {
+    private GraphQLCodeRegistry(Map<TypeAndFieldKey, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap, Map<String, TypeResolver> typeResolverMap, Map<TypeAndFieldKey, List<ValidationRule>> fieldValidationRules, Map<String, List<ValidationRule>> inputTypeValidationRules, GraphqlFieldVisibility fieldVisibility) {
         this.dataFetcherMap = dataFetcherMap;
         this.systemDataFetcherMap = systemDataFetcherMap;
         this.typeResolverMap = typeResolverMap;
-        this.fieldVisibility = fieldVisibility;
         this.fieldValidationRules = fieldValidationRules;
         this.inputTypeValidationRules = inputTypeValidationRules;
+        this.fieldVisibility = fieldVisibility;
     }
 
     /**
@@ -516,9 +510,7 @@ public class GraphQLCodeRegistry {
         }
 
         public GraphQLCodeRegistry build() {
-            return new GraphQLCodeRegistry(dataFetcherMap, typeResolverMap, fieldValidationRules, inputTypeValidationRules, fieldVisibility);
-        public GraphQLCodeRegistry build() {
-            return new GraphQLCodeRegistry(dataFetcherMap, systemDataFetcherMap, typeResolverMap, fieldVisibility);
+            return new GraphQLCodeRegistry(dataFetcherMap, systemDataFetcherMap, typeResolverMap, fieldValidationRules, inputTypeValidationRules, fieldVisibility);
         }
     }
 }

@@ -1,14 +1,10 @@
 package graphql.schema.idl;
 
-import graphql.execution.validation.ValidationRule;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
 
@@ -25,17 +21,13 @@ public class TypeRuntimeWiring {
     private final Map<String, DataFetcher> fieldDataFetchers;
     private final TypeResolver typeResolver;
     private final EnumValuesProvider enumValuesProvider;
-    private final Map<String, List<ValidationRule>> fieldValidationRules;
-    private final List<ValidationRule> inputTypeValidationRules;
 
-    private TypeRuntimeWiring(String typeName, DataFetcher defaultDataFetcher, Map<String, DataFetcher> fieldDataFetchers, TypeResolver typeResolver, EnumValuesProvider enumValuesProvider, List<ValidationRule> inputTypeValidationRules, Map<String, List<ValidationRule>> fieldValidationRules) {
+    private TypeRuntimeWiring(String typeName, DataFetcher defaultDataFetcher, Map<String, DataFetcher> fieldDataFetchers, TypeResolver typeResolver, EnumValuesProvider enumValuesProvider) {
         this.typeName = typeName;
         this.defaultDataFetcher = defaultDataFetcher;
         this.fieldDataFetchers = fieldDataFetchers;
         this.typeResolver = typeResolver;
         this.enumValuesProvider = enumValuesProvider;
-        this.inputTypeValidationRules = inputTypeValidationRules;
-        this.fieldValidationRules = fieldValidationRules;
     }
 
     /**
@@ -82,18 +74,9 @@ public class TypeRuntimeWiring {
         return enumValuesProvider;
     }
 
-    public Map<String, List<ValidationRule>> getFieldValidationRules() {
-        return fieldValidationRules;
-    }
-
-    public List<ValidationRule> getInputTypeValidationRules() {
-        return inputTypeValidationRules;
-    }
 
     public static class Builder {
         private final Map<String, DataFetcher> fieldDataFetchers = new LinkedHashMap<>();
-        private final Map<String, List<ValidationRule>> fieldValidationRules = new LinkedHashMap<>();
-        private final List<ValidationRule> inputTypeValidationRules = new ArrayList<>();
         private String typeName;
         private DataFetcher defaultDataFetcher;
         private TypeResolver typeResolver;
@@ -123,30 +106,6 @@ public class TypeRuntimeWiring {
             assertNotNull(dataFetcher, "you must provide a data fetcher");
             assertNotNull(fieldName, "you must tell us what field");
             fieldDataFetchers.put(fieldName, dataFetcher);
-            return this;
-        }
-
-        public Builder fieldValidationRules(String fieldName, ValidationRule... validationRules) {
-            return fieldValidationRules(fieldName, Arrays.asList(validationRules));
-        }
-
-        public Builder fieldValidationRules(String fieldName, List<ValidationRule> validationRules) {
-            List<ValidationRule> rules = fieldValidationRules.getOrDefault(assertNotNull(fieldName), new ArrayList<>());
-            for (ValidationRule validationRule : validationRules) {
-                rules.add(assertNotNull(validationRule));
-            }
-            fieldValidationRules.put(fieldName,rules);
-            return this;
-        }
-
-        public Builder validationRules(ValidationRule... validationRules) {
-            return validationRules(Arrays.asList(validationRules));
-        }
-
-        public Builder validationRules(List<ValidationRule> validationRules) {
-            for (ValidationRule validationRule : validationRules) {
-                inputTypeValidationRules.add(assertNotNull(validationRule));
-            }
             return this;
         }
 
@@ -202,7 +161,7 @@ public class TypeRuntimeWiring {
          */
         public TypeRuntimeWiring build() {
             assertNotNull(typeName, "you must provide a type name");
-            return new TypeRuntimeWiring(typeName, defaultDataFetcher, fieldDataFetchers, typeResolver, enumValuesProvider, inputTypeValidationRules, fieldValidationRules);
+            return new TypeRuntimeWiring(typeName, defaultDataFetcher, fieldDataFetchers, typeResolver, enumValuesProvider);
         }
     }
 

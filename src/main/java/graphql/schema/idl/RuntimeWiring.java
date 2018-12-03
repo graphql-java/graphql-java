@@ -36,8 +36,6 @@ public class RuntimeWiring {
     private final WiringFactory wiringFactory;
     private final Map<String, EnumValuesProvider> enumValuesProviders;
     private final Collection<SchemaTransformer> schemaTransformers;
-    private final Map<String, Map<String, List<ValidationRule>>> fieldValidationRules;
-    private final Map<String, List<ValidationRule>> inputTypeValidationRules;
     private final GraphqlFieldVisibility fieldVisibility;
     private final GraphQLCodeRegistry codeRegistry;
 
@@ -50,8 +48,6 @@ public class RuntimeWiring {
         this.wiringFactory = wiringFactory;
         this.enumValuesProviders = enumValuesProviders;
         this.schemaTransformers = schemaTransformers;
-        this.fieldValidationRules = fieldValidationRules;
-        this.inputTypeValidationRules = inputTypeValidationRules;
         this.fieldVisibility = fieldVisibility;
         this.codeRegistry = codeRegistry;
     }
@@ -103,15 +99,6 @@ public class RuntimeWiring {
         return directiveWiring;
     }
 
-    public Map<String, List<ValidationRule>> getFieldValidationRules(String typeName) {
-        return fieldValidationRules.getOrDefault(typeName, Collections.emptyMap());
-    }
-
-    public List<ValidationRule> getInputTypeValidationRules(String typeName) {
-        return inputTypeValidationRules.getOrDefault(typeName, Collections.emptyList());
-    }
-
-
     public Collection<SchemaTransformer> getSchemaTransformers() {
         return schemaTransformers;
     }
@@ -128,8 +115,6 @@ public class RuntimeWiring {
         private WiringFactory wiringFactory = new NoopWiringFactory();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
-        private final Map<String, Map<String, List<ValidationRule>>> fieldValidationRules = new LinkedHashMap<>();
-        private final Map<String, List<ValidationRule>> inputTypeValidationRules = new LinkedHashMap<>();
 
         private Builder() {
             ScalarInfo.STANDARD_SCALARS.forEach(this::scalar);
@@ -245,10 +230,6 @@ public class RuntimeWiring {
             if (enumValuesProvider != null) {
                 this.enumValuesProviders.put(typeName, enumValuesProvider);
             }
-
-            inputTypeValidationRules.put(typeName, typeRuntimeWiring.getInputTypeValidationRules());
-            fieldValidationRules.put(typeName, typeRuntimeWiring.getFieldValidationRules());
-
             return this;
         }
 
@@ -285,7 +266,6 @@ public class RuntimeWiring {
         public RuntimeWiring build() {
             return new RuntimeWiring(dataFetchers, defaultDataFetchers, scalars, typeResolvers, directiveWiring, enumValuesProviders, wiringFactory, schemaTransformers, fieldVisibility, codeRegistry);
         }
-
     }
 }
 
