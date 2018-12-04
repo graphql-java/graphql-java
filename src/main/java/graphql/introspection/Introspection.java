@@ -8,6 +8,7 @@ import graphql.language.AstPrinter;
 import graphql.language.AstValueHelper;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
@@ -38,6 +39,8 @@ import java.util.Map;
 import static graphql.Assert.assertTrue;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
+import static graphql.schema.FieldCoordinates.coordinates;
+import static graphql.schema.FieldCoordinates.systemCoordinates;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
@@ -47,18 +50,18 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 
 @PublicApi
 public class Introspection {
-    private static final Map<GraphQLCodeRegistry.TypeAndFieldKey, DataFetcher> introspectionDataFetchers = new LinkedHashMap<>();
+    private static final Map<FieldCoordinates, DataFetcher> introspectionDataFetchers = new LinkedHashMap<>();
 
     private static void register(GraphQLFieldsContainer parentType, String fieldName, DataFetcher dataFetcher) {
-        introspectionDataFetchers.put(GraphQLCodeRegistry.TypeAndFieldKey.mkKey(parentType.getName(), fieldName), dataFetcher);
+        introspectionDataFetchers.put(coordinates(parentType.getName(), fieldName), dataFetcher);
     }
 
     @Internal
     public static void addCodeForIntrospectionTypes(GraphQLCodeRegistry.Builder codeRegistry) {
         // place the system __ fields into the mix.  They have no parent types
-        codeRegistry.systemDataFetcher(SchemaMetaFieldDef, SchemaMetaFieldDefDataFetcher);
-        codeRegistry.systemDataFetcher(TypeNameMetaFieldDef, TypeNameMetaFieldDefDataFetcher);
-        codeRegistry.systemDataFetcher(TypeMetaFieldDef, TypeMetaFieldDefDataFetcher);
+        codeRegistry.systemDataFetcher(systemCoordinates(SchemaMetaFieldDef.getName()), SchemaMetaFieldDefDataFetcher);
+        codeRegistry.systemDataFetcher(systemCoordinates(TypeNameMetaFieldDef.getName()), TypeNameMetaFieldDefDataFetcher);
+        codeRegistry.systemDataFetcher(systemCoordinates(TypeMetaFieldDef.getName()), TypeMetaFieldDefDataFetcher);
 
         introspectionDataFetchers.forEach(codeRegistry::dataFetcher);
     }
