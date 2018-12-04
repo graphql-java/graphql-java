@@ -121,7 +121,7 @@ public class ValidationUtil {
             handleNotObjectError(value, type);
             return false;
         }
-        GraphqlFieldVisibility fieldVisibility = schema.getFieldVisibility();
+        GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         ObjectValue objectValue = (ObjectValue) value;
         Map<String, ObjectField> objectFieldMap = fieldMap(objectValue);
 

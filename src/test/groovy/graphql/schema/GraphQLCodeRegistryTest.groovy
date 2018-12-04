@@ -79,17 +79,14 @@ class GraphQLCodeRegistryTest extends Specification {
 
         when:
         def codeRegistryBuilder = GraphQLCodeRegistry.newCodeRegistry()
-                .dataFetcher(objectType("parentType1"), field("A"), new NamedDF("A"))
-                .dataFetcher(objectType("parentType2"), field("B"), new NamedDF("B"))
-                .dataFetcher(interfaceType("interfaceType1"), field("C"), new NamedDF("C"))
-                .dataFetchers(objectType("parentType3"), [fieldD: new NamedDF("D"), fieldE: new NamedDF("E")])
+                .dataFetcher(FieldCoordinates.coordinates("parentType1", "A"), new NamedDF("A"))
+                .dataFetcher(FieldCoordinates.coordinates("parentType2", "B"), new NamedDF("B"))
+                .dataFetchers("parentType3", [fieldD: new NamedDF("D"), fieldE: new NamedDF("E")])
 
         // we can do a read on a half built code registry, namely for schema directive wiring use cases
         then:
         (codeRegistryBuilder.getDataFetcher(objectType("parentType1"), field("A")) as NamedDF).name == "A"
         (codeRegistryBuilder.getDataFetcher(objectType("parentType2"), field("B")) as NamedDF).name == "B"
-        (codeRegistryBuilder.getDataFetcher(interfaceType("interfaceType1"), field("C")) as NamedDF).name == "C"
-        (codeRegistryBuilder.getDataFetcher(interfaceType("interfaceType1"), field("C")) as NamedDF).name == "C"
         (codeRegistryBuilder.getDataFetcher(objectType("parentType3"), field("fieldD")) as NamedDF).name == "D"
         (codeRegistryBuilder.getDataFetcher(objectType("parentType3"), field("fieldE")) as NamedDF).name == "E"
 
@@ -100,7 +97,6 @@ class GraphQLCodeRegistryTest extends Specification {
         then:
         (codeRegistry.getDataFetcher(objectType("parentType1"), field("A")) as NamedDF).name == "A"
         (codeRegistry.getDataFetcher(objectType("parentType2"), field("B")) as NamedDF).name == "B"
-        (codeRegistry.getDataFetcher(interfaceType("interfaceType1"), field("C")) as NamedDF).name == "C"
         (codeRegistry.getDataFetcher(objectType("parentType3"), field("fieldD")) as NamedDF).name == "D"
         (codeRegistry.getDataFetcher(objectType("parentType3"), field("fieldE")) as NamedDF).name == "E"
 

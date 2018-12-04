@@ -181,7 +181,7 @@ public class SchemaPrinter {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
-        GraphqlFieldVisibility visibility = schema.getFieldVisibility();
+        GraphqlFieldVisibility visibility = schema.getCodeRegistry().getFieldVisibility();
 
         printer(schema.getClass()).print(out, schema, visibility);
 
