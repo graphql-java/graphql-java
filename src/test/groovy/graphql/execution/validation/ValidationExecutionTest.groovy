@@ -6,16 +6,16 @@ import graphql.execution.ExecutionContextBuilder
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionPath
 import graphql.language.Field
+import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentBuilder
-import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLInputType
 import graphql.schema.idl.RuntimeWiring
-import graphql.schema.idl.TypeRuntimeWiring
 import spock.lang.Specification
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo
+import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
 
 class ValidationExecutionTest extends Specification {
 
@@ -61,6 +61,23 @@ class ValidationExecutionTest extends Specification {
         }
     }
 
+    class ValidationRuleWrapperWithInstruction implements ValidationRule {
+
+        ValidationRule delegate;
+        ValidationResult.Instruction instruction;
+
+        ValidationRuleWrapperWithInstruction(ValidationRule delegate, ValidationResult.Instruction instruction) {
+            this.delegate = delegate
+            this.instruction = instruction
+        }
+
+        @Override
+        ValidationResult validate(ValidationRuleEnvironment environment) {
+            def interimResult = delegate.validate(environment)
+            return ValidationResult.newResult().withResult(interimResult).instruction(instruction).build()
+        }
+    }
+
 
     private DataFetchingEnvironment buildDFE(List<ValidationRule> fieldRules, List<ValidationRule> typeRules, Map<String, Object> args) {
         def schema = TestUtil.schema(spec)
@@ -71,7 +88,7 @@ class ValidationExecutionTest extends Specification {
 
         def inputType = schema.getType("BarInput") as GraphQLInputType
 
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+        def codeRegistry = newCodeRegistry()
                 .fieldValidationRules(parentType, fieldDefinition, fieldRules)
                 .inputTypeValidationRules(inputType, typeRules)
                 .build()
@@ -145,15 +162,19 @@ class ValidationExecutionTest extends Specification {
     }
 
 
-    def "integration test of rules running"() {
+    ValidationRule continueOn(ValidationRule validationRule) {
+        new ValidationRuleWrapperWithInstruction(validationRule, ValidationResult.Instruction.CONTINUE_FETCHING)
+    }
 
-        def df = { env -> "beer" }
+    def "integration test of rules running that returns null and hence stops fetches"() {
 
-        def typeWiring = TypeRuntimeWiring.newTypeWiring("Query")
-                .dataFetcher("walksIntoABar", df)
-                .fieldValidationRules("walksIntoABar", requiresFirstOrLast)
+        DataFetcher df = { env -> "beer" }
+
+        def codeRegistry = newCodeRegistry()
+                .dataFetcher("Query", "walksIntoABar", df)
+                .fieldValidationRules("Query", "walksIntoABar", requiresFirstOrLast)
                 .build()
-        def runtimeWiring = RuntimeWiring.newRuntimeWiring().type(typeWiring).build()
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring().codeRegistry(codeRegistry).build()
 
         def graphql = TestUtil.graphQL(spec, runtimeWiring).build()
         when:
@@ -168,6 +189,59 @@ class ValidationExecutionTest extends Specification {
         result.errors[0].message == "You must provide either the first or last argument"
         result.errors[0].path == ["walksIntoABar"]
         result.errors[0].errorType == ErrorType.ValidationError
-
     }
+
+    def "integration test of rules running that returns continue"() {
+
+        DataFetcher df = { env -> "beer" }
+
+        def codeRegistry = newCodeRegistry()
+                .dataFetcher("Query", "walksIntoABar", df)
+                .fieldValidationRules("Query", "walksIntoABar", continueOn(requiresFirstOrLast))
+                .build()
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring().codeRegistry(codeRegistry).build()
+
+        def graphql = TestUtil.graphQL(spec, runtimeWiring).build()
+        when:
+        def result = graphql.execute(newExecutionInput().
+                query('''
+                    query {
+                        walksIntoABar
+                    }
+                '''))
+        then:
+        result.data["walksIntoABar"] == "beer" // continues on because of rule wrapper
+        result.errors[0].message == "You must provide either the first or last argument"
+        result.errors[0].path == ["walksIntoABar"]
+        result.errors[0].errorType == ErrorType.ValidationError
+    }
+
+    def "integration test of rules with input type rules"() {
+
+        DataFetcher df = { env -> "beer" }
+
+        def codeRegistry = newCodeRegistry()
+                .dataFetcher("Query", "walksIntoABar", df)
+                .inputTypeValidationRules("BarInput", barInputIsAllowed)
+                .build()
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring().codeRegistry(codeRegistry).build()
+
+        def graphql = TestUtil.graphQL(spec, runtimeWiring).build()
+        when:
+        def result = graphql.execute(newExecutionInput().
+                query('''
+                    query {
+                        walksIntoABar(barInput : { age : 14, hasShoes : false} )
+                    }
+                '''))
+        then:
+        result.data["walksIntoABar"] == null // set to null via rule
+        result.errors[0].message == "You must be over 18 to enter this bar"
+        result.errors[0].path == ["walksIntoABar"]
+        result.errors[0].errorType == ErrorType.ValidationError
+        result.errors[1].message == "You must be wearing shoes"
+        result.errors[1].path == ["walksIntoABar"]
+        result.errors[1].errorType == ErrorType.ValidationError
+    }
+
 }

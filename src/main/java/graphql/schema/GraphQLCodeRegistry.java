@@ -4,12 +4,10 @@ import graphql.PublicApi;
 import graphql.execution.validation.ValidationRule;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +19,7 @@ import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
 import static graphql.schema.GraphQLCodeRegistry.TypeAndFieldKey.mkKey;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static java.util.Arrays.asList;
 
 
 /**
@@ -264,24 +263,40 @@ public class GraphQLCodeRegistry {
         }
 
         public Builder inputTypeValidationRules(GraphQLInputType inputType, ValidationRule... validationRules) {
-            return inputTypeValidationRules(inputType, Arrays.asList(validationRules));
+            return inputTypeValidationRules(inputType, asList(validationRules));
         }
 
         public Builder inputTypeValidationRules(GraphQLInputType inputType, List<ValidationRule> validationRules) {
-            List<ValidationRule> rules = inputTypeValidationRules.getOrDefault(inputType.getName(), new ArrayList<>());
-            rules.addAll(validationRules);
-            inputTypeValidationRules.put(inputType.getName(), rules);
+            return inputTypeValidationRules(assertNotNull(inputType.getName()), validationRules);
+        }
+
+        public Builder inputTypeValidationRules(String inputTypeName, ValidationRule... validationRules) {
+            return inputTypeValidationRules(inputTypeName, asList(validationRules));
+        }
+
+        public Builder inputTypeValidationRules(String inputTypeName, List<ValidationRule> validationRules) {
+            List<ValidationRule> rules = inputTypeValidationRules.getOrDefault(assertNotNull(inputTypeName), new ArrayList<>());
+            rules.addAll(assertNotNull(validationRules));
+            inputTypeValidationRules.put(assertNotNull(inputTypeName), rules);
             return this;
         }
 
         public Builder fieldValidationRules(GraphQLFieldsContainer parentTypeContainer, GraphQLFieldDefinition fieldDefinition, ValidationRule... validationRules) {
-            return fieldValidationRules(parentTypeContainer, fieldDefinition, Arrays.asList(validationRules));
+            return fieldValidationRules(parentTypeContainer, fieldDefinition, asList(validationRules));
         }
 
         public Builder fieldValidationRules(GraphQLFieldsContainer parentTypeContainer, GraphQLFieldDefinition fieldDefinition, List<ValidationRule> validationRules) {
-            TypeAndFieldKey key = mkKey(parentTypeContainer.getName(), fieldDefinition.getName());
+            return fieldValidationRules(parentTypeContainer.getName(), fieldDefinition.getName(), validationRules);
+        }
+
+        public Builder fieldValidationRules(String parentTypeName, String fieldName, ValidationRule... validationRules) {
+            return fieldValidationRules(parentTypeName, fieldName, asList(validationRules));
+        }
+
+        public Builder fieldValidationRules(String parentTypeName, String fieldName, List<ValidationRule> validationRules) {
+            TypeAndFieldKey key = mkKey(assertNotNull(parentTypeName), assertNotNull(fieldName));
             List<ValidationRule> rules = fieldValidationRules.getOrDefault(key, new ArrayList<>());
-            rules.addAll(validationRules);
+            rules.addAll(assertNotNull(validationRules));
             fieldValidationRules.put(key, rules);
             return this;
         }
