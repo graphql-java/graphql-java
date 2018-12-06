@@ -18,7 +18,7 @@ public interface DataFetcher<T> {
 
     /**
      * This is called by the graphql engine to fetch the value.  The {@link graphql.schema.DataFetchingEnvironment} is a composite
-     * context object that tells you all you need to know about who to fetch a data value in graphql type terms.
+     * context object that tells you all you need to know about how to fetch a data value in graphql type terms.
      *
      * @param environment this is the data fetching environment which contains all the context you need to fetch a value
      *
