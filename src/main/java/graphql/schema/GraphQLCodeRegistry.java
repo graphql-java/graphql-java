@@ -38,7 +38,7 @@ public class GraphQLCodeRegistry {
     private final List<ArgumentConverter> argumentConverters;
     private final GraphqlFieldVisibility fieldVisibility;
 
-    private GraphQLCodeRegistry(Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap, Map<String, TypeResolver> typeResolverMap, GraphqlFieldVisibility fieldVisibility) {
+    private GraphQLCodeRegistry(Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap, Map<String, TypeResolver> typeResolverMap, List<ArgumentConverter> argumentConverters, GraphqlFieldVisibility fieldVisibility) {
         this.dataFetcherMap = dataFetcherMap;
         this.systemDataFetcherMap = systemDataFetcherMap;
         this.typeResolverMap = typeResolverMap;

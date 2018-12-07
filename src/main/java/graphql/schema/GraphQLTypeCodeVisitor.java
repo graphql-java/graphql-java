@@ -25,7 +25,7 @@ class GraphQLTypeCodeVisitor extends GraphQLTypeVisitorStub {
         if (dataFetcher == null) {
             dataFetcher = new PropertyDataFetcher<>(node.getName());
         }
-        codeRegistry.dataFetcherIfAbsent(parentContainerType, node, dataFetcher);
+        codeRegistry.dataFetcherIfAbsent(FieldCoordinates.coordinates(parentContainerType.getName(), node.getName()), dataFetcher);
         return CONTINUE;
     }
 

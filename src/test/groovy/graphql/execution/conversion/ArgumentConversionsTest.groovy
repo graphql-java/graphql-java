@@ -7,6 +7,7 @@ import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLInputObjectType
 import spock.lang.Specification
 
+import static graphql.schema.FieldCoordinates.coordinates
 import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 
@@ -90,7 +91,7 @@ class ArgumentConversionsTest extends Specification {
                             env.sourceObject["age"] * 10
                     )
                 }))
-                .dataFetcher("Query", "person", df))
+                .dataFetcher(coordinates("Query", "person"), df))
                 .build()
 
         def schema = TestUtil.schema(spec, runtimeWiring)
