@@ -55,7 +55,7 @@ public class FetchedValueAnalyzer {
     private static final Logger log = LoggerFactory.getLogger(FetchedValueAnalyzer.class);
 
 
-    /**
+    /*
      * scalar: the value, null and/or error
      * enum: same as scalar
      * list: list of X: X can be list again, list of scalars or enum or objects

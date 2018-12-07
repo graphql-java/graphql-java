@@ -5,6 +5,7 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import static graphql.Assert.assertTrue;
+import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.util.TraversalControl.CONTINUE;
 
 /**
@@ -25,7 +26,8 @@ class CodeRegistryVisitor extends GraphQLTypeVisitorStub {
         if (dataFetcher == null) {
             dataFetcher = new PropertyDataFetcher<>(node.getName());
         }
-        codeRegistry.dataFetcherIfAbsent(parentContainerType, node, dataFetcher);
+        FieldCoordinates coordinates = coordinates(parentContainerType, node);
+        codeRegistry.dataFetcherIfAbsent(coordinates, dataFetcher);
         return CONTINUE;
     }
 

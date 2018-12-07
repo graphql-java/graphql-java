@@ -31,6 +31,7 @@ import graphql.language.Value;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.DataFetcherFactory;
+import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
@@ -761,9 +762,10 @@ public class SchemaGenerator {
 
         GraphQLFieldDefinition fieldDefinition = builder.build();
         // if they have already wired in a fetcher - then leave it alone
-        if (!buildCtx.codeRegistry.hasDataFetcher(parentType.getName(), fieldDefinition.getName())) {
+        FieldCoordinates coordinates = FieldCoordinates.coordinates(parentType.getName(), fieldDefinition.getName());
+        if (!buildCtx.codeRegistry.hasDataFetcher(coordinates)) {
             DataFetcherFactory dataFetcherFactory = buildDataFetcherFactory(buildCtx, parentType, fieldDef, fieldType, Arrays.asList(directives));
-            buildCtx.getCodeRegistry().dataFetcher(parentType.getName(), fieldDefinition.getName(), dataFetcherFactory);
+            buildCtx.getCodeRegistry().dataFetcher(coordinates, dataFetcherFactory);
         }
 
         return buildCtx.exitNode(new FieldDefAndDirectiveParams(fieldDefinition, buildCtx.mkBehaviourParams()));

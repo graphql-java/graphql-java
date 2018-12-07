@@ -271,7 +271,7 @@ public class GraphQLFieldDefinition implements GraphQLDirectiveContainer {
         /**
          * Sets the {@link graphql.schema.DataFetcherFactory} to use with this field.
          *
-         *
+         * @param dataFetcherFactory the data fetcher factory
          * @return this builder
          *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead

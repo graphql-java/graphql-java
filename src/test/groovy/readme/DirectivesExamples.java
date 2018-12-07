@@ -7,6 +7,7 @@ import graphql.Scalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -63,7 +64,8 @@ public class DirectivesExamples {
             };
             //
             // now change the field definition to have the new authorising data fetcher
-            environment.getCodeRegistry().dataFetcher(parentType, field, authDataFetcher);
+            FieldCoordinates coordinates = FieldCoordinates.coordinates(parentType, field);
+            environment.getCodeRegistry().dataFetcher(coordinates, authDataFetcher);
             return field;
         }
     }
@@ -115,7 +117,8 @@ public class DirectivesExamples {
             // which allows clients to opt into that as well as wrapping the base data fetcher so it
             // performs the formatting over top of the base values.
             //
-            environment.getCodeRegistry().dataFetcher(parentType, field, dataFetcher);
+            FieldCoordinates coordinates = FieldCoordinates.coordinates(parentType, field);
+            environment.getCodeRegistry().dataFetcher(coordinates, dataFetcher);
 
             return field.transform(builder -> builder
                     .argument(GraphQLArgument
