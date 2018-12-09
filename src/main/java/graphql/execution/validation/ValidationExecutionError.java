@@ -3,6 +3,7 @@ package graphql.execution.validation;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
+import graphql.PublicApi;
 import graphql.execution.ExecutionPath;
 import graphql.language.Field;
 import graphql.language.SourceLocation;
@@ -10,6 +11,10 @@ import graphql.language.SourceLocation;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * An error that represents validation execution errors
+ */
+@PublicApi
 public class ValidationExecutionError implements GraphQLError {
 
     private final String message;

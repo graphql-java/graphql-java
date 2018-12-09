@@ -8,6 +8,9 @@ import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.Map;
 
+/**
+ * This environment object is passed to a {@link graphql.execution.validation.ValidationRule}
+ */
 @PublicApi
 public interface ValidationRuleEnvironment {
 

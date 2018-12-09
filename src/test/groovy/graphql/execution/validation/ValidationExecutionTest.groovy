@@ -18,6 +18,7 @@ import java.util.function.Function
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo
+import static graphql.schema.FieldCoordinates.coordinates
 import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
 
 class ValidationExecutionTest extends Specification {
@@ -35,6 +36,8 @@ class ValidationExecutionTest extends Specification {
         
     '''
 
+    // this is some function that some one might write to validate stuff. a later PR will contain more actual validation helpers
+    // the point is show how we can compose validations together
     static ValidationResult nonNull(Object value, ValidationRuleEnvironment environment, Function<ValidationRuleEnvironment, String> errorMsg) {
         ValidationResult.Builder result = ValidationResult.newResult()
         if (value == null) {
@@ -62,7 +65,7 @@ class ValidationExecutionTest extends Specification {
             def result = ValidationResult.newResult()
             def barInput = env.getValidatedArgumentValue()
             if (barInput != null) {
-                result.withResult(nonNull(barInput['age'], env, { env2 -> "You must be over 18 to enter this bar" }))
+                result.withResult(nonNull(barInput['age'], env, { env2 -> "You must specify your age to enter this bar" }))
                 if (barInput['age'] < 18) {
                     result.withErrors(env.mkError("You must be over 18 to enter this bar"))
                 }
@@ -76,8 +79,8 @@ class ValidationExecutionTest extends Specification {
 
     class ValidationRuleWrapperWithInstruction implements ValidationRule {
 
-        ValidationRule delegate;
-        ValidationResult.Instruction instruction;
+        ValidationRule delegate
+        ValidationResult.Instruction instruction
 
         ValidationRuleWrapperWithInstruction(ValidationRule delegate, ValidationResult.Instruction instruction) {
             this.delegate = delegate
@@ -179,12 +182,12 @@ class ValidationExecutionTest extends Specification {
         new ValidationRuleWrapperWithInstruction(validationRule, ValidationResult.Instruction.CONTINUE_FETCHING)
     }
 
-    def "integration test of rules running that returns null and hence stops fetches"() {
+    def "integration test of rules running that returns RETURN_NULL instruction and hence stops fetches"() {
 
         DataFetcher df = { env -> "beer" }
 
         def codeRegistry = newCodeRegistry()
-                .dataFetcher("Query", "walksIntoABar", df)
+                .dataFetcher(coordinates("Query", "walksIntoABar"), df)
                 .fieldValidationRules("Query", "walksIntoABar", requiresFirstOrLast)
                 .build()
         def runtimeWiring = RuntimeWiring.newRuntimeWiring().codeRegistry(codeRegistry).build()
@@ -209,7 +212,7 @@ class ValidationExecutionTest extends Specification {
         DataFetcher df = { env -> "beer" }
 
         def codeRegistry = newCodeRegistry()
-                .dataFetcher("Query", "walksIntoABar", df)
+                .dataFetcher(coordinates("Query", "walksIntoABar"), df)
                 .fieldValidationRules("Query", "walksIntoABar", continueOn(requiresFirstOrLast))
                 .build()
         def runtimeWiring = RuntimeWiring.newRuntimeWiring().codeRegistry(codeRegistry).build()
@@ -234,7 +237,7 @@ class ValidationExecutionTest extends Specification {
         DataFetcher df = { env -> "beer" }
 
         def codeRegistry = newCodeRegistry()
-                .dataFetcher("Query", "walksIntoABar", df)
+                .dataFetcher(coordinates("Query", "walksIntoABar"), df)
                 .inputTypeValidationRules("BarInput", barInputIsAllowed)
                 .build()
         def runtimeWiring = RuntimeWiring.newRuntimeWiring().codeRegistry(codeRegistry).build()

@@ -7,24 +7,32 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * A {@link graphql.execution.validation.ValidationRule} will return a {@link graphql.execution.validation.ValidationResult} as its output
+ * which may contain validation errors and instructions on how to proceed with field data fetching.
+ */
 @PublicApi
 public class ValidationResult {
+
+    /**
+     * Validation happens before field values are fetched and this enumeration controls how data fetching should
+     * proceed in the event of any validation errors
+     */
+    public enum Instruction {
+        /**
+         * The graphql system should continue fetching values for the field even if there are validation errors recorded.
+         */
+        CONTINUE_FETCHING,
+        /**
+         * The graphql system should not continue fetching values for the field and instead should return a null value.
+         */
+        RETURN_NULL
+    }
 
     /**
      * This constant represents no errors and hence fetching should continue
      */
     public static final ValidationResult CONTINUE_RESULT = new ValidationResult(Instruction.CONTINUE_FETCHING, Collections.emptyList());
-
-    public enum Instruction {
-        /**
-         * The graphql system should continue fetching values for the field
-         */
-        CONTINUE_FETCHING,
-        /**
-         * The graphql system should make the field null and not fetch values for it.  Note this can still fail for non null types.
-         */
-        RETURN_NULL
-    }
 
     private final Instruction instruction;
     private final List<GraphQLError> errors;
@@ -63,13 +71,18 @@ public class ValidationResult {
             return this;
         }
 
-        public Builder withErrors(GraphQLError... errrors) {
-            Collections.addAll(this.errors, errrors);
+        public Builder withErrors(GraphQLError... errors) {
+            Collections.addAll(this.errors, errors);
+            return this;
+        }
+
+        public Builder withErrors(List<GraphQLError> errors) {
+            this.errors.addAll(errors);
             return this;
         }
 
         /**
-         * Combines the given validattion result into the current one and IF it returns
+         * Combines the given validation result into the current one and IF it contains
          * the {@link graphql.execution.validation.ValidationResult.Instruction#RETURN_NULL} instruction then
          * this will be transferred as well.
          *
@@ -85,16 +98,11 @@ public class ValidationResult {
             return this;
         }
 
-        public Builder withErrors(List<GraphQLError> errrors) {
-            this.errors.addAll(errrors);
-            return this;
-        }
-
         /**
          * @return a CONTINUE result if there no errors in the result
          */
         public ValidationResult continueIfNoErrors() {
-            return new ValidationResult(hasErrors() ? Instruction.RETURN_NULL : Instruction.CONTINUE_FETCHING, errors);
+            return !hasErrors() ? CONTINUE_RESULT : new ValidationResult(Instruction.RETURN_NULL, errors);
         }
 
         public ValidationResult build() {

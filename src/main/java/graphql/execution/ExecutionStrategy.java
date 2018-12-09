@@ -260,7 +260,7 @@ public abstract class ExecutionStrategy {
         Object fetchedValueRaw;
         try {
             ValidationResult validationResult = validationExecution.validateField(environment);
-            validationResult.getErrors().forEach(validationError -> executionContext.addError(validationError));
+            validationResult.getErrors().forEach(executionContext::addError);
             if (validationResult.getInstruction() == ValidationResult.Instruction.RETURN_NULL) {
                 fetchedValue = CompletableFuture.completedFuture(null);
             } else {
