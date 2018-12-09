@@ -39,7 +39,10 @@ public class GraphQLCodeRegistry {
     private final Map<FieldCoordinates, List<ValidationRule>> fieldValidationRules;
     private final Map<String, List<ValidationRule>> inputTypeValidationRules;
 
-    private GraphQLCodeRegistry(Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap, Map<String, TypeResolver> typeResolverMap, Map<TypeAndFieldKey, List<ValidationRule>> fieldValidationRules, Map<String, List<ValidationRule>> inputTypeValidationRules, GraphqlFieldVisibility fieldVisibility) {
+    private GraphQLCodeRegistry(Map<FieldCoordinates, DataFetcherFactory> dataFetcherMap, Map<String, DataFetcherFactory> systemDataFetcherMap,
+                                Map<String, TypeResolver> typeResolverMap,
+                                Map<FieldCoordinates, List<ValidationRule>> fieldValidationRules, Map<String, List<ValidationRule>> inputTypeValidationRules,
+                                GraphqlFieldVisibility fieldVisibility) {
         this.dataFetcherMap = dataFetcherMap;
         this.systemDataFetcherMap = systemDataFetcherMap;
         this.typeResolverMap = typeResolverMap;
@@ -75,7 +78,7 @@ public class GraphQLCodeRegistry {
      * @return the list of rules or an empty list
      */
     public List<ValidationRule> getFieldValidationRules(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-        return new ArrayList<>(fieldValidationRules.getOrDefault(mkKey(parentType.getName(), fieldDefinition.getName()), Collections.emptyList()));
+        return new ArrayList<>(fieldValidationRules.getOrDefault(coordinates(parentType.getName(), fieldDefinition.getName()), Collections.emptyList()));
     }
 
     /**
@@ -103,7 +106,7 @@ public class GraphQLCodeRegistry {
 
         DataFetcherFactory dataFetcherFactory = systemDataFetcherMap.get(fieldDefinition.getName());
         if (dataFetcherFactory == null) {
-            dataFetcherFactory = dataFetcherMap.get(FieldCoordinates.coordinates(parentType, fieldDefinition));
+            dataFetcherFactory = dataFetcherMap.get(coordinates(parentType, fieldDefinition));
             if (dataFetcherFactory == null) {
                 dataFetcherFactory = DataFetcherFactories.useDataFetcher(new PropertyDataFetcher<>(fieldDefinition.getName()));
             }
@@ -250,7 +253,7 @@ public class GraphQLCodeRegistry {
         }
 
         public Builder fieldValidationRules(String parentTypeName, String fieldName, List<ValidationRule> validationRules) {
-            FieldCoordinates key = mkKey(assertNotNull(parentTypeName), assertNotNull(fieldName));
+            FieldCoordinates key = coordinates(assertNotNull(parentTypeName), assertNotNull(fieldName));
             List<ValidationRule> rules = fieldValidationRules.getOrDefault(key, new ArrayList<>());
             rules.addAll(assertNotNull(validationRules));
             fieldValidationRules.put(key, rules);
@@ -432,7 +435,8 @@ public class GraphQLCodeRegistry {
         }
 
         public GraphQLCodeRegistry build() {
-            return new GraphQLCodeRegistry(dataFetcherMap, systemDataFetcherMap, typeResolverMap, fieldValidationRules, inputTypeValidationRules, fieldVisibility);
+            return new GraphQLCodeRegistry(dataFetcherMap, systemDataFetcherMap, typeResolverMap, fieldValidationRules,
+                    inputTypeValidationRules, fieldVisibility);
         }
     }
 }
