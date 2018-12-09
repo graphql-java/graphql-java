@@ -7,6 +7,7 @@ import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirective
@@ -205,7 +206,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         targetList.contains("ScalarType")
     }
 
-    def     "can modify the existing behaviour"() {
+    def "can modify the existing behaviour"() {
         def spec = '''
             type Query {
                 lowerCaseValue : String @uppercase
@@ -229,7 +230,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> directiveEnv) {
                 GraphQLFieldDefinition field = directiveEnv.getElement()
-                def fetcher = directiveEnv.getCodeRegistry().getDataFetcher(directiveEnv.fieldsContainer,field)
+                def fetcher = directiveEnv.getCodeRegistry().getDataFetcher(directiveEnv.fieldsContainer, field)
                 def newFetcher = wrapDataFetcher(fetcher, { dfEnv, value ->
                     def directiveName = directiveEnv.directive.name
                     if (directiveName == "uppercase") {
@@ -242,7 +243,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                         return String.valueOf(value).reverse()
                     }
                 })
-                directiveEnv.getCodeRegistry().dataFetcher(directiveEnv.getFieldsContainer(), field, newFetcher)
+                def coordinates = FieldCoordinates.coordinates(directiveEnv.getFieldsContainer(), field)
+                directiveEnv.getCodeRegistry().dataFetcher(coordinates, newFetcher)
                 return field
             }
 
@@ -263,7 +265,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 DataFetcher echoDF = { dfEnv ->
                     return fieldName
                 }
-                env.codeRegistry.dataFetcher(env.fieldsContainer, field, echoDF)
+                def coordinates = FieldCoordinates.coordinates(env.fieldsContainer, field)
+                env.codeRegistry.dataFetcher(coordinates, echoDF)
                 return field
             }
         }
@@ -405,7 +408,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                     }
                     return null
                 }
-                codeRegistry.dataFetcher(parentType, field, wrapper)
+                def coordinates = FieldCoordinates.coordinates(parentType, field)
+                codeRegistry.dataFetcher(coordinates, wrapper)
                 return field
             }
 

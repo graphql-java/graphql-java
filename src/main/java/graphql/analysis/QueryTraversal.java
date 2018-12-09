@@ -256,7 +256,7 @@ public class QueryTraversal {
             GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, parentEnv.getRawType(), field.getName());
             boolean isTypeNameIntrospectionField = fieldDefinition == Introspection.TypeNameMetaFieldDef;
             GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
-            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
+            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(schema.getCodeRegistry().getFieldVisibility(), fieldDefinition.getArguments(), field.getArguments(), variables);
             QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
                     field,
                     fieldDefinition,

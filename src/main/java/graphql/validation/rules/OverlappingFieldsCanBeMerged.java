@@ -333,7 +333,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     private GraphQLFieldDefinition getVisibleFieldDefinition(GraphQLFieldsContainer fieldsContainer, Field field) {
-        return getValidationContext().getSchema().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
+        return getValidationContext().getSchema().getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
     }
 
     private static class FieldPair {
