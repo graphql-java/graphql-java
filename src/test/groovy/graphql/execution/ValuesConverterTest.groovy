@@ -8,6 +8,7 @@ import graphql.schema.GraphQLArgument
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLInt
+import static graphql.schema.FieldCoordinates.coordinates
 import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
@@ -121,7 +122,7 @@ class ValuesConverterTest extends Specification {
         def runtimeWiring = newRuntimeWiring()
                 .codeRegistry(newCodeRegistry()
                 .argumentConverter(argumentConverter)
-                .dataFetcher("Query", "person", df))
+                .dataFetcher(coordinates("Query", "person"), df))
                 .build()
         def schema = TestUtil.schema(spec, runtimeWiring)
 
