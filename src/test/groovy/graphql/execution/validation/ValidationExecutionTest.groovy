@@ -1,6 +1,7 @@
 package graphql.execution.validation
 
 import graphql.ErrorType
+import graphql.GraphQLError
 import graphql.TestUtil
 import graphql.execution.ExecutionContextBuilder
 import graphql.execution.ExecutionId
@@ -12,6 +13,8 @@ import graphql.schema.DataFetchingEnvironmentBuilder
 import graphql.schema.GraphQLInputType
 import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
+
+import java.util.function.Function
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo
@@ -32,6 +35,16 @@ class ValidationExecutionTest extends Specification {
         
     '''
 
+    static ValidationResult nonNull(Object value, ValidationRuleEnvironment environment, Function<ValidationRuleEnvironment, String> errorMsg) {
+        ValidationResult.Builder result = ValidationResult.newResult()
+        if (value == null) {
+            GraphQLError graphQLError = environment.mkError(errorMsg.apply(environment))
+            result.withErrors(graphQLError)
+        }
+        return result.continueIfNoErrors()
+    }
+
+
     ValidationRule requiresFirstOrLast = new ValidationRule() {
         @Override
         ValidationResult validate(ValidationRuleEnvironment env) {
@@ -49,7 +62,7 @@ class ValidationExecutionTest extends Specification {
             def result = ValidationResult.newResult()
             def barInput = env.getValidatedArgumentValue()
             if (barInput != null) {
-                result.withResult(Validations.nonNull(barInput['age'], env, { env2 -> "You must be over 18 to enter this bar" }))
+                result.withResult(nonNull(barInput['age'], env, { env2 -> "You must be over 18 to enter this bar" }))
                 if (barInput['age'] < 18) {
                     result.withErrors(env.mkError("You must be over 18 to enter this bar"))
                 }
