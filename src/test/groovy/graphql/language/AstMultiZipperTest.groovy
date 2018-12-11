@@ -13,12 +13,8 @@ class AstMultiZipperTest extends Specification {
 
         def rootField = operationDefinition.selectionSet.children[0] as Field
         def midA = rootField.selectionSet.children[0] as Field
-        def leafA = midA.selectionSet.children[0] as Field
-        def leafB = midA.selectionSet.children[0] as Field
 
         def midB = rootField.selectionSet.children[1] as Field
-        def leafC = midB.selectionSet.children[0] as Field
-        def leafD = midB.selectionSet.children[0] as Field
 
 
         def b1 = new AstBreadcrumb(rootNode, new NodeLocation(Document.CHILD_DEFINITIONS, 0))
@@ -60,12 +56,8 @@ class AstMultiZipperTest extends Specification {
 
         def rootField = operationDefinition.selectionSet.children[0] as Field
         def midA = rootField.selectionSet.children[0] as Field
-        def leafA = midA.selectionSet.children[0] as Field
-        def leafB = midA.selectionSet.children[0] as Field
 
         def midB = rootField.selectionSet.children[1] as Field
-        def leafC = midB.selectionSet.children[0] as Field
-        def leafD = midB.selectionSet.children[0] as Field
 
 
         def b1 = new AstBreadcrumb(rootNode, new NodeLocation(Document.CHILD_DEFINITIONS, 0))
