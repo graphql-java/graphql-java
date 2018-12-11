@@ -35,6 +35,43 @@ class AstTransformerTest extends Specification {
         then:
         AstPrinter.printAstCompact(newDocument) ==
                 "query { root { foo { midA-modified { leafA } midB-modified { leafB } } bar { midC-modified { leafC } midD-modified { leafD } } } }"
+    }
+
+    def "no change at all"() {
+        def document = TestUtil.parseQuery("{foo}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+
+        when:
+        def newDocument = astTransformer.transform(document, new NodeVisitorStub())
+
+        then:
+        newDocument == document
+
+    }
+
+    def "one node changed"() {
+        def document = TestUtil.parseQuery("{foo}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                Field changedField = node.transform({ builder -> builder.name("foo2") })
+                changeNode(context, changedField)
+                return TraversalControl.CONTINUE
+            }
+        }
+
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        AstPrinter.printAstCompact(newDocument) == "query { foo2 }"
 
     }
 

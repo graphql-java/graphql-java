@@ -13,11 +13,15 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+
 @PublicApi
 public class AstTransformer {
 
 
     public Node transform(Node root, NodeVisitor nodeVisitor) {
+        assertNotNull(root);
+        assertNotNull(nodeVisitor);
 
         AstMultiZipper astMultiZipper = new AstMultiZipper(root, Collections.emptyList());
 
@@ -53,6 +57,14 @@ public class AstTransformer {
         return multiZipperResult.toRootNode();
     }
 
+    /**
+     * Helper method to be used inside a {@link NodeVisitor} to actually a change a node.<p/>
+     * It generates a new {@link AstZipper} and replaces the current accumulated {@link AstMultiZipper} including the new
+     * {@link AstZipper}.
+     *
+     * @param context
+     * @param changedNode
+     */
     public static void changeNode(TraverserContext<Node> context, Node changedNode) {
         AstZipper zipperWithChangedNode = context.getVar(AstZipper.class).withNewNode(changedNode);
         AstMultiZipper multiZipper = context.getCurrentAccumulate();
