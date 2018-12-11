@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 // This should probably be an enum... but the grammar
 // doesn't enforce the names. These are the current names:
 //    QUERY
@@ -54,10 +56,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
     @Override
     public DirectiveLocation withNewChildren(NodeChildrenContainer newChildren) {
-        if (!newChildren.isEmpty()) {
-            throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
-        }
-
+        assertNewChildrenAreEmpty(newChildren);
         return this;
     }
 

@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
 public class StringValue extends AbstractNode<StringValue> implements ScalarValue<StringValue> {
 
@@ -47,10 +49,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
 
     @Override
     public StringValue withNewChildren(NodeChildrenContainer newChildren) {
-        if (!newChildren.isEmpty()) {
-            throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
-        }
-
+        assertNewChildrenAreEmpty(newChildren);
         return this;
     }
 
