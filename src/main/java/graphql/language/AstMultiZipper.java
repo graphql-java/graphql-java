@@ -44,7 +44,7 @@ public class AstMultiZipper {
             curZippers.removeAll(deepestZippers);
             curZippers.addAll(newZippers);
         }
-        assertTrue(curZippers.size() == 1, "illegal state");
+        assertTrue(curZippers.size() == 1, "unexpected state: all zippers must share the same root node");
         return curZippers.get(0).toRoot();
     }
 
