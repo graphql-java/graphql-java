@@ -5,6 +5,8 @@ import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
+import static graphql.language.AstTransformer.changeNode
+
 class AstTransformerTest extends Specification {
 
     def "modify multiple nodes"() {
@@ -22,11 +24,7 @@ class AstTransformerTest extends Specification {
                 String newName = node.name + "-modified"
 
                 Field changedField = node.transform({ builder -> builder.name(newName) })
-                def zipperWithChangedNode = context.getVar(AstZipper.class).withNewNode(changedField)
-
-                AstMultiZipper multiZipper = context.getCurrentAccumulate();
-                context.setAccumulate(multiZipper.withNewZipper(zipperWithChangedNode))
-
+                changeNode(context, changedField)
                 return TraversalControl.CONTINUE
             }
         }

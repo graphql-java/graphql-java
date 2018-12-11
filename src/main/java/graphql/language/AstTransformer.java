@@ -53,5 +53,11 @@ public class AstTransformer {
         return multiZipperResult.toRootNode();
     }
 
+    public static void changeNode(TraverserContext<Node> context, Node changedNode) {
+        AstZipper zipperWithChangedNode = context.getVar(AstZipper.class).withNewNode(changedNode);
+        AstMultiZipper multiZipper = context.getCurrentAccumulate();
+        context.setAccumulate(multiZipper.withNewZipper(zipperWithChangedNode));
+    }
+
 
 }
