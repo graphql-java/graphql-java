@@ -33,7 +33,7 @@ public class Document extends AbstractNode<Document> {
     }
 
     public List<Definition> getDefinitions() {
-        return definitions;
+        return new ArrayList<>(definitions);
     }
 
     @Override

@@ -33,7 +33,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     }
 
     public List<Selection> getSelections() {
-        return selections;
+        return new ArrayList<>(selections);
     }
 
     @Override

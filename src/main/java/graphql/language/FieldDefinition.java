@@ -58,7 +58,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return inputValueDefinitions;
+        return new ArrayList<>(inputValueDefinitions);
     }
 
     @Override

@@ -58,7 +58,7 @@ public class ObjectTypeDefinition extends AbstractNode<ObjectTypeDefinition> imp
     }
 
     public List<FieldDefinition> getFieldDefinitions() {
-        return fieldDefinitions;
+        return new ArrayList<>(fieldDefinitions);
     }
 
     @Override

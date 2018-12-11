@@ -47,7 +47,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
-        return operationTypeDefinitions;
+        return new ArrayList<>(operationTypeDefinitions);
     }
 
     @Override
