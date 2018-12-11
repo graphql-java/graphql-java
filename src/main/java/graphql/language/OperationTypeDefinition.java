@@ -16,7 +16,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     private final String name;
     private final Type type;
 
-    private static final String CHILD_TYPE = "type";
+    public static final String CHILD_TYPE = "type";
 
     @Internal
     protected OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {

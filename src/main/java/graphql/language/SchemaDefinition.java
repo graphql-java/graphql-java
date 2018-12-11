@@ -19,8 +19,8 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
     private final List<Directive> directives;
     private final List<OperationTypeDefinition> operationTypeDefinitions;
 
-    private static final String CHILD_DIRECTIVES = "directives";
-    private static final String CHILD_OPERATION_TYPE_DEFINITIONS = "operationTypeDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_OPERATION_TYPE_DEFINITIONS = "operationTypeDefinitions";
 
     @Internal
     protected SchemaDefinition(List<Directive> directives,

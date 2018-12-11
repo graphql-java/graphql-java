@@ -17,8 +17,8 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     private final Type type;
     private final Value defaultValue;
 
-    private static final String CHILD_TYPE = "type";
-    private static final String CHILD_DEFAULT_VALUE = "defaultValue";
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_DEFAULT_VALUE = "defaultValue";
 
     @Internal
     protected VariableDefinition(String name,

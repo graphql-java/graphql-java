@@ -16,7 +16,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     private final String name;
     private final List<Directive> directives;
 
-    private static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {

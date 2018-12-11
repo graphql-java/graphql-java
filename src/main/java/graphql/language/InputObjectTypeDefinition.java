@@ -18,8 +18,8 @@ public class InputObjectTypeDefinition extends AbstractNode<InputObjectTypeDefin
     private final List<Directive> directives;
     private final List<InputValueDefinition> inputValueDefinitions;
 
-    private static final String CHILD_DIRECTIVES = "directives";
-    private static final String CHILD_INPUT_VALUES_DEFINITIONS = "inputValueDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_INPUT_VALUES_DEFINITIONS = "inputValueDefinitions";
 
     @Internal
     protected InputObjectTypeDefinition(String name,

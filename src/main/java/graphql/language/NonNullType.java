@@ -15,7 +15,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
 
     private final Type type;
 
-    private static final String CHILD_TYPE = "type";
+    public static final String CHILD_TYPE = "type";
 
     @Internal
     protected NonNullType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {

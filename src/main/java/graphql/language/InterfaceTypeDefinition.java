@@ -18,8 +18,8 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
     private final List<FieldDefinition> definitions;
     private final List<Directive> directives;
 
-    private static final String CHILD_DEFINITIONS = "definitions";
-    private static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_DEFINITIONS = "definitions";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected InterfaceTypeDefinition(String name,

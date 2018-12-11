@@ -16,7 +16,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
     private final String name;
     private final Value value;
 
-    private static final String CHILD_VALUE = "value";
+    public static final String CHILD_VALUE = "value";
 
     @Internal
     protected ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {

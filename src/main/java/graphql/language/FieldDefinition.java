@@ -18,9 +18,9 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<Directive> directives;
 
-    private static final String CHILD_TYPE = "type";
-    private static final String CHILD_INPUT_VALUE_DEFINITION = "inputValueDefinition";
-    private static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_INPUT_VALUE_DEFINITION = "inputValueDefinition";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected FieldDefinition(String name,

@@ -17,8 +17,8 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
     private final List<InputValueDefinition> inputValueDefinitions;
     private final List<DirectiveLocation> directiveLocations;
 
-    private static final String CHILD_INPUT_VALUE_DEFINITIONS = "inputValueDefinitions";
-    private static final String CHILD_DIRECTIVE_LOCATION = "directiveLocation";
+    public static final String CHILD_INPUT_VALUE_DEFINITIONS = "inputValueDefinitions";
+    public static final String CHILD_DIRECTIVE_LOCATION = "directiveLocation";
 
     @Internal
     protected DirectiveDefinition(String name,

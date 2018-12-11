@@ -16,8 +16,8 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
     private final List<EnumValueDefinition> enumValueDefinitions;
     private final List<Directive> directives;
 
-    private static final String CHILD_ENUM_VALUE_DEFINITIONS = "enumValueDefinitions";
-    private static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_ENUM_VALUE_DEFINITIONS = "enumValueDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected EnumTypeDefinition(String name,

@@ -15,7 +15,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     private final Type type;
 
-    private static final String CHILD_TYPE = "type";
+    public static final String CHILD_TYPE = "type";
 
     @Internal
     protected ListType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {

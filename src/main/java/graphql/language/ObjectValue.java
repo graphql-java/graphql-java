@@ -15,7 +15,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     private final List<ObjectField> objectFields = new ArrayList<>();
 
-    private static final String CHILD_OBJECT_FIELDS = "objectFields";
+    public static final String CHILD_OBJECT_FIELDS = "objectFields";
 
     @Internal
     protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {

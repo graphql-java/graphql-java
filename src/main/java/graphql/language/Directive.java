@@ -18,7 +18,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     private final String name;
     private final List<Argument> arguments = new ArrayList<>();
 
-    private static final String CHILD_ARGUMENTS = "arguments";
+    public static final String CHILD_ARGUMENTS = "arguments";
 
     @Internal
     protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {

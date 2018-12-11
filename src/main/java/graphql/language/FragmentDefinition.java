@@ -21,9 +21,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     private final List<Directive> directives;
     private final SelectionSet selectionSet;
 
-    private static final String CHILD_TYPE_CONDITION = "typeCondition";
-    private static final String CHILD_DIRECTIVES = "directives";
-    private static final String CHILD_SELECTION_SET = "selectionSet";
+    public static final String CHILD_TYPE_CONDITION = "typeCondition";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
     protected FragmentDefinition(String name,

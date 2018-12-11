@@ -18,8 +18,8 @@ public class UnionTypeDefinition extends AbstractNode<UnionTypeDefinition> imple
     private final List<Directive> directives;
     private final List<Type> memberTypes;
 
-    private static final String CHILD_DIRECTIVES = "directives";
-    private static final String CHILD_MEMBER_TYPES = "memberTypes";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_MEMBER_TYPES = "memberTypes";
 
     @Internal
     protected UnionTypeDefinition(String name,

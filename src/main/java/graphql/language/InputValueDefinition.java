@@ -18,9 +18,9 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     private final Description description;
     private final List<Directive> directives;
 
-    private static final String CHILD_TYPE = "type";
-    private static final String CHILD_DEFAULT_VALUE = "defaultValue";
-    private static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_DEFAULT_VALUE = "defaultValue";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected InputValueDefinition(String name,

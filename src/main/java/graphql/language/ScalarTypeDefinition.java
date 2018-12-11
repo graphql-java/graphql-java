@@ -17,7 +17,7 @@ public class ScalarTypeDefinition extends AbstractNode<ScalarTypeDefinition> imp
     private final Description description;
     private final List<Directive> directives;
 
-    private static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected ScalarTypeDefinition(String name,

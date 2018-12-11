@@ -16,7 +16,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     private final String name;
     private final Value value;
 
-    private static final String CHILD_VALUE = "value";
+    public static final String CHILD_VALUE = "value";
 
     @Internal
     protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
