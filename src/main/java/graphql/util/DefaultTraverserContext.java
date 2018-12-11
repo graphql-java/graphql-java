@@ -98,7 +98,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         return sharedContextData;
     }
 
-    /**
+    /*
      * PRIVATE: Used by {@link Traverser}
      */
     void setCurAccValue(Object curAccValue) {
