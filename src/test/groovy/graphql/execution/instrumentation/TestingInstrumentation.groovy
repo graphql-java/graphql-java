@@ -26,6 +26,7 @@ class TestingInstrumentation implements Instrumentation {
     List<Throwable> throwableList = []
     List<DataFetchingEnvironment> dfInvocations = []
     List<Class> dfClasses = []
+    def capturedData = [:]
 
     @Override
     InstrumentationState createState() {
