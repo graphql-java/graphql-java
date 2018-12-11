@@ -5,7 +5,7 @@ import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
-import static graphql.language.AstTransformer.changeNode
+import static graphql.language.AstTransformerUtil.changeNode
 
 class AstTransformerTest extends Specification {
 
