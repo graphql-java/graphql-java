@@ -167,6 +167,18 @@ public interface Instrumentation {
     }
 
     /**
+     * This is called to instrument a {@link graphql.language.Document} before it is used allowing you to adjust the query AST if you so desire
+     *
+     * @param document   the document to be used
+     * @param parameters the parameters describing the execution
+     *
+     * @return a non null instrumented Document, the default is to return to the same object
+     */
+    default Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
+        return document;
+    }
+
+    /**
      * This is called to instrument a {@link graphql.schema.GraphQLSchema} before it is used to parse, validate
      * and execute a query, allowing you to adjust what types are used.
      *
