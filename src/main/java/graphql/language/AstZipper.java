@@ -38,31 +38,12 @@ public class AstZipper {
         return new AstZipper(rootNode, new ArrayList<>());
     }
 
-
     public AstZipper modifyNode(Function<Node, Node> transform) {
         return new AstZipper(transform.apply(curNode), breadcrumbs);
     }
 
     public AstZipper withNewNode(Node newNode) {
         return new AstZipper(newNode, breadcrumbs);
-    }
-
-
-    public AstZipper changeLocation(NodeLocation newLocationInParent) {
-        // validate position
-        List<AstBreadcrumb> newBreadcrumbs = new ArrayList<>(breadcrumbs);
-        AstBreadcrumb lastBreadcrumb = newBreadcrumbs.get(newBreadcrumbs.size() - 1);
-        newBreadcrumbs.set(newBreadcrumbs.size() - 1, new AstBreadcrumb(lastBreadcrumb.getNode(), newLocationInParent));
-        return new AstZipper(curNode, newBreadcrumbs);
-    }
-
-    public AstZipper changeLocation(NodeLocation newLocationInParent, List<AstBreadcrumb> newBreadcrumbs) {
-        // validate position
-        return new AstZipper(curNode, newBreadcrumbs);
-    }
-
-    public AstZipper moveUp() {
-        return null;
     }
 
     public Node toRoot() {
