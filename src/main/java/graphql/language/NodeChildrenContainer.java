@@ -10,6 +10,9 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * Container of children of a {@link Node}.
+ */
 @PublicApi
 public class NodeChildrenContainer {
 

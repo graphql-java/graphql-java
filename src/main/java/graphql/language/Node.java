@@ -15,6 +15,8 @@ import java.util.List;
  * are not aiming to provide long term compatibility and do not intend for you to place this serialised data into permanent storage,
  * with times frames that cross graphql-java versions.  While we don't change things unnecessarily,  we may inadvertently break
  * the serialised compatibility across versions.
+ *
+ * Every Node is immutable
  */
 @PublicApi
 public interface Node<T extends Node> extends Serializable {
@@ -24,8 +26,21 @@ public interface Node<T extends Node> extends Serializable {
      */
     List<Node> getChildren();
 
+    /**
+     * Alternative to {@link #getChildren()} where the children are not all in one list regardless of type
+     * but grouped by name/type of the child.
+     *
+     * @return
+     */
     NodeChildrenContainer getNamedChildren();
 
+    /**
+     * Replaces the specified children and returns a new Node.
+     *
+     * @param newChildren must be empty for Nodes without children
+     *
+     * @return a new node
+     */
     T withNewChildren(NodeChildrenContainer newChildren);
 
     /**
@@ -40,6 +55,11 @@ public interface Node<T extends Node> extends Serializable {
      */
     List<Comment> getComments();
 
+    /**
+     * The chars which are ignored by the parser. (Before and after the current node)
+     *
+     * @return the ignored chars
+     */
     IgnoredChars getIgnoredChars();
 
     /**
