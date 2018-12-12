@@ -15,6 +15,10 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * A collection of {@link AstZipper} sharing all the same root node.
+ * It is used to track multiple changes at once, while {@link AstZipper} focus on one Node.
+ */
 @PublicApi
 public class AstMultiZipper {
     private final Node commonRoot;

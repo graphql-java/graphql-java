@@ -4,6 +4,9 @@ import graphql.PublicApi;
 
 import java.util.Objects;
 
+/**
+ * Used in {@link AstBreadcrumb} to identify a specific child of a Node.
+ */
 @PublicApi
 public class NodeLocation {
 

@@ -4,6 +4,10 @@ import graphql.PublicApi;
 
 import java.util.Objects;
 
+/**
+ * Used by {@link AstZipper} to identify the position of the current node inside the tree:
+ * the breadcrumbs lead you to the root node.
+ */
 @PublicApi
 public class AstBreadcrumb {
 

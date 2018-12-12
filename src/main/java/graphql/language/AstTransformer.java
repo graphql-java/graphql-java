@@ -15,6 +15,10 @@ import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * Allows for an easy way to "manipulate" the immutable Ast by changing specific nodes and getting back a new Ast
+ * containing the changed nodes while everything else is the same.
+ */
 @PublicApi
 public class AstTransformer {
 

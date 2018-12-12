@@ -9,6 +9,12 @@ import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * A zipper is a specific node inside a tree together with a list of breadcrumbs to pinpoint
+ * the exact location of this node inside the tree from the root.<p/>
+ * It is used by {@link AstMultiZipper} and {@link AstTransformer} to allow for an easy way to "manipulate" the
+ * immutable Ast.
+ */
 @PublicApi
 public class AstZipper {
 
