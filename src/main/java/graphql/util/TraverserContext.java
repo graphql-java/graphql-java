@@ -2,6 +2,7 @@ package graphql.util;
 
 import graphql.PublicApi;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -9,7 +10,7 @@ import java.util.Set;
  *
  * It is used as providing context for traversing, but also for returning an accumulate value. ({@link #setAccumulate(Object)}
  *
- * Parts of the context are mutable.
+ * There is always a "fake" root context with null node, null parent, null position. See {@link #isRootContext()}
  *
  * @param <T> type of tree node
  */
@@ -18,7 +19,7 @@ public interface TraverserContext<T> {
     /**
      * Returns current node being visited
      *
-     * @return current node traverser is visiting
+     * @return current node traverser is visiting. Is null for the root context
      */
     T thisNode();
 
@@ -34,8 +35,16 @@ public interface TraverserContext<T> {
     TraverserContext<T> getParentContext();
 
     /**
+     * The list of parent nodes starting from the current parent.
+     *
+     * @return list of parent nodes
+     */
+    List<T> getParentNodes();
+
+    /**
      * The position of the current node regarding to the parent node.
-     * @return the position or null if this is a root node
+     *
+     * @return the position or null if this node is a root node
      */
     NodePosition getPosition();
 
@@ -106,5 +115,12 @@ public interface TraverserContext<T> {
      * @return contextData
      */
     <U> U getSharedContextData();
+
+    /**
+     * Returns true for the root context, which doesn't have a node or a position.
+     *
+     * @return true for the root context, otherwise false
+     */
+    boolean isRootContext();
 
 }

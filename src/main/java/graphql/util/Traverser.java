@@ -96,7 +96,7 @@ public class Traverser<T> {
 
 
         // "artificial" parent context for all roots with rootVars
-        DefaultTraverserContext<T> rootContext = traverserState.newContextWithVars(null, null, rootVars, null);
+        DefaultTraverserContext<T> rootContext = traverserState.newRootContext(rootVars);
         traverserState.addNewContexts(roots, rootContext);
 
         DefaultTraverserContext currentContext;

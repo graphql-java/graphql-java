@@ -446,6 +446,27 @@ class TraverserTest extends Specification {
         ]
     }
 
+    def "test parent nodes"() {
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    context.getSharedContextData() << context.getParentNodes().collect { it.number }
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        def list = []
+        when:
+        Traverser.depthFirst({ n -> n.children }, list).traverse(root, visitor)
+
+
+        then:
+        list == [[], [0], [1, 0], [0], [2, 0], [2, 0]]
+
+    }
+
 
 }
 

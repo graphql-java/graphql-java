@@ -2,6 +2,8 @@ package graphql.util;
 
 import graphql.Internal;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,27 +20,30 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private boolean hasNewAccValue;
     private Object curAccValue;
     private final NodePosition position;
+    private final boolean isRootContext;
 
     public DefaultTraverserContext(T curNode,
                                    TraverserContext<T> parent,
                                    Set<T> visited,
                                    Map<Class<?>, Object> vars,
                                    Object sharedContextData,
-                                   NodePosition position) {
+                                   NodePosition position,
+                                   boolean isRootContext) {
         this.curNode = curNode;
         this.parent = parent;
         this.visited = visited;
         this.vars = vars;
         this.sharedContextData = sharedContextData;
         this.position = position;
+        this.isRootContext = isRootContext;
     }
 
     public static <T> DefaultTraverserContext<T> dummy() {
-        return new DefaultTraverserContext<>(null, null, null, null, null, null);
+        return new DefaultTraverserContext<>(null, null, null, null, null, null, true);
     }
 
     public static <T> DefaultTraverserContext<T> simple(T node) {
-        return new DefaultTraverserContext<>(node, null, null, null, null, null);
+        return new DefaultTraverserContext<>(node, null, null, null, null, null, true);
     }
 
     @Override
@@ -49,6 +54,17 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     @Override
     public TraverserContext<T> getParentContext() {
         return parent;
+    }
+
+    @Override
+    public List<T> getParentNodes() {
+        List<T> result = new ArrayList<>();
+        TraverserContext<T> curContext = parent;
+        while (!curContext.isRootContext()) {
+            result.add(curContext.thisNode());
+            curContext = curContext.getParentContext();
+        }
+        return result;
     }
 
     @Override
@@ -109,5 +125,10 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     @Override
     public NodePosition getPosition() {
         return position;
+    }
+
+    @Override
+    public boolean isRootContext() {
+        return isRootContext;
     }
 }

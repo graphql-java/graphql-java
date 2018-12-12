@@ -104,12 +104,21 @@ public abstract class TraverserState<T> {
         this.visited.add(visited);
     }
 
-    private DefaultTraverserContext<T> newContext(T o, TraverserContext<T> parent, NodePosition position) {
-        return newContextWithVars(o, parent, new LinkedHashMap<>(), position);
+
+    public DefaultTraverserContext<T> newRootContext(Map<Class<?>, Object> vars) {
+        return newContextImpl(null, null, vars, null, true);
     }
 
-    public DefaultTraverserContext<T> newContextWithVars(T curNode, TraverserContext<T> parent, Map<Class<?>, Object> vars, NodePosition nodePosition) {
+    private DefaultTraverserContext<T> newContext(T o, TraverserContext<T> parent, NodePosition position) {
+        return newContextImpl(o, parent, new LinkedHashMap<>(), position, false);
+    }
+
+    private DefaultTraverserContext<T> newContextImpl(T curNode,
+                                                      TraverserContext<T> parent,
+                                                      Map<Class<?>, Object> vars,
+                                                      NodePosition nodePosition,
+                                                      boolean isRootContext) {
         assertNotNull(vars);
-        return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodePosition);
+        return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodePosition, isRootContext);
     }
 }
