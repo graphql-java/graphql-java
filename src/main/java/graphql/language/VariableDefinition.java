@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
 
@@ -82,7 +84,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .child(CHILD_DEFAULT_VALUE, defaultValue)
                 .build();

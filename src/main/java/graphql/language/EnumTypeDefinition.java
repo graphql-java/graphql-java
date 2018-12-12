@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition> {
     private final String name;
@@ -71,7 +73,7 @@ public class EnumTypeDefinition extends AbstractNode<EnumTypeDefinition> impleme
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .children(CHILD_ENUM_VALUE_DEFINITIONS, enumValueDefinitions)
                 .children(CHILD_DIRECTIVES, directives)
                 .build();

@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition> {
 
@@ -65,7 +67,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .children(CHILD_VARIABLE_DEFINITIONS, variableDefinitions)
                 .children(CHILD_DIRECTIVES, directives)
                 .child(CHILD_SELECTION_SET, selectionSet)

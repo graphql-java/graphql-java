@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class FieldDefinition extends AbstractNode<FieldDefinition> implements DirectivesContainer<FieldDefinition> {
     private final String name;
@@ -77,7 +79,7 @@ public class FieldDefinition extends AbstractNode<FieldDefinition> implements Di
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .children(CHILD_INPUT_VALUE_DEFINITION, inputValueDefinitions)
                 .children(CHILD_DIRECTIVES, directives)

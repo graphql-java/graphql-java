@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> implements SDLDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
@@ -72,7 +74,7 @@ public class DirectiveDefinition extends AbstractNode<DirectiveDefinition> imple
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .children(CHILD_INPUT_VALUE_DEFINITIONS, inputValueDefinitions)
                 .children(CHILD_DIRECTIVE_LOCATION, directiveLocations)
                 .build();

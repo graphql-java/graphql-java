@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 /**
  * Provided to the DataFetcher, therefore public API
  */
@@ -72,7 +74,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .child(CHILD_TYPE_CONDITION, typeCondition)
                 .children(CHILD_DIRECTIVES, directives)
                 .child(CHILD_SELECTION_SET, selectionSet)

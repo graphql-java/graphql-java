@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNullType> {
 
@@ -45,7 +47,7 @@ public class NonNullType extends AbstractNode<NonNullType> implements Type<NonNu
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .build();
     }

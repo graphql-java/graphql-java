@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
 // This should probably be an enum... but the grammar
@@ -51,7 +52,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer().build();
+        return newNodeChildrenContainer().build();
     }
 
     @Override

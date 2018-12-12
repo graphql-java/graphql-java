@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
@@ -89,7 +90,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .child(CHILD_TYPE_CONDITION, typeCondition)
                 .children(CHILD_DIRECTIVES, directives)
                 .child(CHILD_SELECTION_SET, selectionSet)

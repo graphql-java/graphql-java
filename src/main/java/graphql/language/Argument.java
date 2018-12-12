@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class Argument extends AbstractNode<Argument> implements NamedNode<Argument> {
 
@@ -53,7 +55,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .child(CHILD_VALUE, value)
                 .build();
     }

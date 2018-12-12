@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.directivesByName;
 
 @PublicApi
@@ -60,7 +61,7 @@ public class SchemaDefinition extends AbstractNode<SchemaDefinition> implements 
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
-        return NodeChildrenContainer.newNodeChildrenContainer()
+        return newNodeChildrenContainer()
                 .children(CHILD_DIRECTIVES, directives)
                 .children(CHILD_OPERATION_TYPE_DEFINITIONS, operationTypeDefinitions)
                 .build();
