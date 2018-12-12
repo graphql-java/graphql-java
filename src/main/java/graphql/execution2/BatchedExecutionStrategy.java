@@ -177,8 +177,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     // only used for the root sub selection atm
     private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, List<Field> field, ExecutionStepInfo executionInfo) {
-        FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue.getFetchedValue(), name, field, executionInfo);
-        fetchedValueAnalysis.setFetchedValue(fetchedValue);
+        FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionInfo);
         return fetchedValueAnalysis;
     }
 
@@ -188,8 +187,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         for (int i = 0; i < fetchedValues.size(); i++) {
             FetchedValue fetchedValue = fetchedValues.get(i);
             ExecutionStepInfo executionStepInfo = executionInfos.get(i);
-            FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue.getFetchedValue(), name, field, executionStepInfo);
-            fetchedValueAnalysis.setFetchedValue(fetchedValue);
+            FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionStepInfo);
             result.add(fetchedValueAnalysis);
         }
         return result;

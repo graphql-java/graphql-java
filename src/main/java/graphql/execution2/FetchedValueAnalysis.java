@@ -7,6 +7,8 @@ import graphql.execution.ExecutionStepInfo;
 import java.util.ArrayList;
 import java.util.List;
 
+import static graphql.Assert.assertNotNull;
+
 @Internal
 public class FetchedValueAnalysis {
 
@@ -20,93 +22,61 @@ public class FetchedValueAnalysis {
     }
 
 
-    private FetchedValueType valueType;
-    private List<GraphQLError> errors;
+    private final FetchedValueType valueType;
+    private final List<GraphQLError> errors;
 
     // not applicable for LIST
-    private Object completedValue;
+    private final Object completedValue;
 
-    private boolean nullValue;
+    private final boolean nullValue;
 
     // only available for LIST
-    private List<FetchedValueAnalysis> children;
+    private final List<FetchedValueAnalysis> children;
 
     // only for object
-    private FieldSubSelection fieldSubSelection;
+    private final FieldSubSelection fieldSubSelection;
 
 
     // for children of list name is the same as for the list itself
-    private String name;
+    private final String name;
 
-    private ExecutionStepInfo executionStepInfo;
-    private FetchedValue fetchedValue;
+    private final ExecutionStepInfo executionStepInfo;
+    // for LIST this is the whole list
+    private final FetchedValue fetchedValue;
 
 
     private FetchedValueAnalysis(Builder builder) {
-        setValueType(builder.valueType);
-        setErrors(builder.errors);
-        setCompletedValue(builder.completedValue);
-        setFetchedValue(builder.fetchedValue);
-        setChildren(builder.children);
-        setNullValue(builder.nullValue);
-        setName(builder.name);
-        setFieldSubSelection(builder.fieldSubSelection);
-        setExecutionStepInfo(builder.executionInfo);
+        this.valueType = assertNotNull(builder.valueType);
+        this.errors = new ArrayList<>(builder.errors);
+        this.completedValue = builder.completedValue;
+        this.nullValue = builder.nullValue;
+        this.children = builder.children;
+        this.fieldSubSelection = builder.fieldSubSelection;
+        this.name = builder.name;
+        this.executionStepInfo = assertNotNull(builder.executionInfo);
+        this.fetchedValue = assertNotNull(builder.fetchedValue);
     }
 
-
-    public static Builder newBuilder(FetchedValueAnalysis copy) {
-        Builder builder = new Builder();
-        builder.valueType = copy.getValueType();
-        builder.errors = copy.getErrors();
-        builder.completedValue = copy.getCompletedValue();
-        builder.fetchedValue = copy.getFetchedValue();
-        builder.children = copy.getChildren();
-        builder.nullValue = copy.isNullValue();
-        builder.name = copy.getName();
-        builder.fieldSubSelection = copy.fieldSubSelection;
-        builder.executionInfo = copy.getExecutionStepInfo();
-        return builder;
-    }
 
     public FetchedValueType getValueType() {
         return valueType;
     }
 
-    public void setValueType(FetchedValueType valueType) {
-        this.valueType = valueType;
-    }
 
     public List<GraphQLError> getErrors() {
         return errors;
-    }
-
-    public void setErrors(List<GraphQLError> errors) {
-        this.errors = errors;
     }
 
     public Object getCompletedValue() {
         return completedValue;
     }
 
-    public void setCompletedValue(Object completedValue) {
-        this.completedValue = completedValue;
-    }
-
     public List<FetchedValueAnalysis> getChildren() {
         return children;
     }
 
-    public void setChildren(List<FetchedValueAnalysis> children) {
-        this.children = children;
-    }
-
     public boolean isNullValue() {
         return nullValue;
-    }
-
-    public void setNullValue(boolean nullValue) {
-        this.nullValue = nullValue;
     }
 
 
@@ -114,17 +84,8 @@ public class FetchedValueAnalysis {
         return fetchedValue;
     }
 
-    public void setFetchedValue(FetchedValue fetchedValue) {
-        this.fetchedValue = fetchedValue;
-    }
-
-
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public static Builder newFetchedValueAnalysis() {
@@ -135,21 +96,19 @@ public class FetchedValueAnalysis {
         return new Builder().valueType(valueType);
     }
 
+    public static Builder newBuilder(FetchedValueAnalysis existing) {
+        return new Builder(existing);
+    }
+
     public ExecutionStepInfo getExecutionStepInfo() {
         return executionStepInfo;
     }
 
-    public void setExecutionStepInfo(ExecutionStepInfo executionInfo) {
-        this.executionStepInfo = executionInfo;
-    }
 
     public FieldSubSelection getFieldSubSelection() {
         return fieldSubSelection;
     }
 
-    public void setFieldSubSelection(FieldSubSelection fieldSubSelection) {
-        this.fieldSubSelection = fieldSubSelection;
-    }
 
     @Override
     public String toString() {
@@ -178,6 +137,18 @@ public class FetchedValueAnalysis {
         private ExecutionStepInfo executionInfo;
 
         private Builder() {
+        }
+
+        private Builder(FetchedValueAnalysis existing) {
+            valueType = existing.getValueType();
+            errors = existing.getErrors();
+            completedValue = existing.getCompletedValue();
+            fetchedValue = existing.getFetchedValue();
+            children = existing.getChildren();
+            fieldSubSelection = existing.fieldSubSelection;
+            nullValue = existing.isNullValue();
+            name = existing.getName();
+            executionInfo = existing.getExecutionStepInfo();
         }
 
 
@@ -225,6 +196,11 @@ public class FetchedValueAnalysis {
 
         public Builder executionStepInfo(ExecutionStepInfo executionInfo) {
             this.executionInfo = executionInfo;
+            return this;
+        }
+
+        public Builder fetchedValue(FetchedValue fetchedValue) {
+            this.fetchedValue = fetchedValue;
             return this;
         }
 
