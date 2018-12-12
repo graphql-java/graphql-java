@@ -84,8 +84,4 @@ public class DataFetcherResult<T> {
             return new DataFetcherResult<>(data, errors);
         }
     }
-
-    public static void main(String[] args) {
-        DataFetcherResult<String> r = DataFetcherResult.<String>newResult().data("s").build();
-    }
 }
