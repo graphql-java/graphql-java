@@ -11,7 +11,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertTrue;
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -92,15 +94,22 @@ public class AstMultiZipper {
     }
 
     private AstZipper moveUp(Node parent, List<AstZipper> sameParent) {
-        NodeChildrenContainer.Builder newChildren = NodeChildrenContainer.newNodeChildrenContainer();
-        List<AstBreadcrumb> restBreadcrumbs = Collections.emptyList();
+        assertNotEmpty(sameParent, "expected at least one zipper");
+        Map<String, List<Node>> childrenMap = parent.getNamedChildren().getChildren();
+
         for (AstZipper zipper : sameParent) {
-            // it is always the same actually
-            restBreadcrumbs = zipper.getBreadcrumbs().subList(1, zipper.getBreadcrumbs().size());
-            newChildren.child(zipper.getBreadcrumbs().get(0).getLocation().getName(), zipper.getCurNode());
+            NodeLocation location = zipper.getBreadcrumbs().get(0).getLocation();
+            childrenMap.computeIfAbsent(location.getName(), (key) -> new ArrayList<>());
+            List<Node> childrenList = childrenMap.get(location.getName());
+            if (childrenList.size() > location.getIndex()) {
+                childrenList.set(location.getIndex(), zipper.getCurNode());
+            } else {
+                childrenList.add(zipper.getCurNode());
+            }
         }
-        Node newNode = parent.withNewChildren(newChildren.build());
-        return new AstZipper(newNode, restBreadcrumbs);
+        Node newNode = parent.withNewChildren(newNodeChildrenContainer(childrenMap).build());
+        List<AstBreadcrumb> newBreadcrumbs = sameParent.get(0).getBreadcrumbs().subList(1, sameParent.get(0).getBreadcrumbs().size());
+        return new AstZipper(newNode, newBreadcrumbs);
     }
 
     private Map<Node, List<AstZipper>> zipperWithSameParent(List<AstZipper> zippers) {

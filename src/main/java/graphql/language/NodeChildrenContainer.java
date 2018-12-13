@@ -42,6 +42,14 @@ public class NodeChildrenContainer {
         return new Builder();
     }
 
+    public static Builder newNodeChildrenContainer(Map<String, ? extends List<? extends Node>> childrenMap) {
+        return new Builder().children(childrenMap);
+    }
+
+    public static Builder newNodeChildrenContainer(NodeChildrenContainer existing) {
+        return new Builder(existing);
+    }
+
     public NodeChildrenContainer transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);

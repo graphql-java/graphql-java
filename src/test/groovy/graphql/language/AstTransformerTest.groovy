@@ -101,7 +101,7 @@ class AstTransformerTest extends Specification {
 
 
     def "reorder children and sub children"() {
-        def document = TestUtil.parseQuery("{root { b { y x } a { w v } } }")
+        def document = TestUtil.parseQuery("{root { b(b_arg: 1) { y x } a(a_arg:2) { w v } } }")
 
         AstTransformer astTransformer = new AstTransformer()
 
@@ -121,7 +121,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        AstPrinter.printAstCompact(newDocument) == "query { root { a { v w } b { x y } } }"
+        AstPrinter.printAstCompact(newDocument) == "query { root { a(a_arg: 2) { v w } b(b_arg: 1) { x y } } }"
 
     }
 
