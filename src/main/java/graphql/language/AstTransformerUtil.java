@@ -1,6 +1,7 @@
 package graphql.language;
 
 import graphql.PublicApi;
+import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 @PublicApi
@@ -14,10 +15,12 @@ public class AstTransformerUtil {
      * @param context
      * @param changedNode
      */
-    public static void changeNode(TraverserContext<Node> context, Node changedNode) {
+    public static TraversalControl changeNode(TraverserContext<Node> context, Node changedNode) {
         AstZipper zipperWithChangedNode = context.getVar(AstZipper.class).withNewNode(changedNode);
         AstMultiZipper multiZipper = context.getCurrentAccumulate();
         context.setAccumulate(multiZipper.withNewZipper(zipperWithChangedNode));
+        context.changeNode(changedNode);
+        return TraversalControl.CONTINUE;
     }
 
 

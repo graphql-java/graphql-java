@@ -16,12 +16,24 @@ import java.util.Set;
  */
 @PublicApi
 public interface TraverserContext<T> {
+
     /**
      * Returns current node being visited
      *
      * @return current node traverser is visiting. Is null for the root context
      */
     T thisNode();
+
+    /**
+     * Change the current node to the provided node. Only applicable in enter.
+     *
+     * Useful when the tree should be changed while traversing.
+     *
+     * Also: changing a node makes only a difference when it has different children than the current one.
+     *
+     * @param newNode the new Node
+     */
+    void changeNode(T newNode);
 
     /**
      * Returns parent context.

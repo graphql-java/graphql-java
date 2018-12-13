@@ -23,6 +23,7 @@ public abstract class TraverserState<T> {
     private final Set<T> visited = new LinkedHashSet<>();
 
 
+    // used for depth first traversal
     private static class StackTraverserState<U> extends TraverserState<U> {
 
         private StackTraverserState(Object sharedContextData) {
@@ -45,6 +46,7 @@ public abstract class TraverserState<T> {
         }
     }
 
+    // used for breadth first traversal
     private static class QueueTraverserState<U> extends TraverserState<U> {
 
         private QueueTraverserState(Object sharedContextData) {

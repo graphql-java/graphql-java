@@ -468,6 +468,44 @@ class TraverserTest extends Specification {
     }
 
 
+    def "changing the node while traversing"() {
+        given:
+        def visitedNodes = []
+        def visitedNodesLeave = []
+        def root = [
+                number: 0
+        ]
+        def visitor = [
+                enter: { TraverserContext context ->
+                    visitedNodes << context.thisNode().number
+                    if (context.thisNode().number > 0) return TraversalControl.CONTINUE
+                    def newRoot = [
+                            number  : 0,
+                            children: [
+                                    [number: 1, children: []],
+                                    [number: 2, children: []]
+                            ]
+                    ]
+                    context.changeNode(newRoot)
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    visitedNodesLeave << context.thisNode().number
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        Traverser.depthFirst({ n -> n.children }).traverse(root, visitor)
+
+
+        then:
+        visitedNodes == [0, 1, 2]
+        visitedNodesLeave == [1, 2, 0]
+
+
+    }
+
+
 }
 
 

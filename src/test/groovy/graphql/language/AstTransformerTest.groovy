@@ -24,8 +24,7 @@ class AstTransformerTest extends Specification {
                 String newName = node.name + "-modified"
 
                 Field changedField = node.transform({ builder -> builder.name(newName) })
-                changeNode(context, changedField)
-                return TraversalControl.CONTINUE
+                return changeNode(context, changedField)
             }
         }
 
@@ -61,8 +60,7 @@ class AstTransformerTest extends Specification {
             @Override
             TraversalControl visitField(Field node, TraverserContext<Node> context) {
                 Field changedField = node.transform({ builder -> builder.name("foo2") })
-                changeNode(context, changedField)
-                return TraversalControl.CONTINUE
+                return changeNode(context, changedField)
             }
         }
 
@@ -72,6 +70,58 @@ class AstTransformerTest extends Specification {
 
         then:
         AstPrinter.printAstCompact(newDocument) == "query { foo2 }"
+
+    }
+
+    def "add new children"() {
+        def document = TestUtil.parseQuery("{foo}")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+
+            @Override
+            TraversalControl visitField(Field node, TraverserContext<Node> context) {
+                if (node.name != "foo") return TraversalControl.CONTINUE;
+                def newSelectionSet = SelectionSet.newSelectionSet([new Field("a"), new Field("b")]).build()
+                Field changedField = node.transform({ builder -> builder.name("foo2").selectionSet(newSelectionSet) })
+                return changeNode(context, changedField)
+            }
+        }
+
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        AstPrinter.printAstCompact(newDocument) == "query { foo2 { a b } }"
+
+    }
+
+
+    def "reorder children and sub children"() {
+        def document = TestUtil.parseQuery("{root { b { y x } a { w v } } }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
+                if (node.getChildren().isEmpty()) return TraversalControl.CONTINUE;
+                def selections = node.getSelections()
+                Collections.sort(selections, { o1, o2 -> (o1.name <=> o2.name) })
+                Node changed = node.transform({ builder -> builder.selections(selections) })
+                return changeNode(context, changed)
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        AstPrinter.printAstCompact(newDocument) == "query { root { a { v w } b { x y } } }"
 
     }
 

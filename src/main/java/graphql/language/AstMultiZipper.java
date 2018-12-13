@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -43,6 +44,8 @@ public class AstMultiZipper {
             List<AstZipper> newZippers = new ArrayList<>();
             for (Map.Entry<Node, List<AstZipper>> entry : sameParent.entrySet()) {
                 AstZipper newZipper = moveUp(entry.getKey(), entry.getValue());
+                Optional<AstZipper> zipperToBeReplaced = curZippers.stream().filter(zipper -> zipper.getCurNode() == entry.getKey()).findFirst();
+                zipperToBeReplaced.ifPresent(curZippers::remove);
                 newZippers.add(newZipper);
             }
             curZippers.removeAll(deepestZippers);

@@ -139,7 +139,6 @@ public class Traverser<T> {
                 currentContext.setCurAccValue(currentAccValue);
                 TraversalControl traversalControl = visitor.enter(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
-                assertNotNull(traversalControl, "result of leave must not be null");
                 assertNotNull(traversalControl, "result of enter must not be null");
                 this.traverserState.addVisited((T) currentContext.thisNode());
                 switch (traversalControl) {

@@ -7,10 +7,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
+
 @Internal
 public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     private final T curNode;
+    private T newNode;
     private final TraverserContext<T> parent;
     private final Set<T> visited;
     private final Map<Class<?>, Object> vars;
@@ -48,8 +52,20 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public T thisNode() {
+        if (newNode != null) {
+            return newNode;
+        }
         return curNode;
     }
+
+
+    @Override
+    public void changeNode(T newNode) {
+        assertNotNull(newNode);
+        assertTrue(this.newNode == null, "node can only be changed once");
+        this.newNode = newNode;
+    }
+
 
     @Override
     public TraverserContext<T> getParentContext() {
@@ -131,4 +147,5 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     public boolean isRootContext() {
         return isRootContext;
     }
+
 }
