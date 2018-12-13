@@ -5,33 +5,32 @@ import spock.lang.Specification
 
 class AstSorterTest extends Specification {
 
-    def "basic sorting works as expected"() {
+    def "basic sorting of a query works"() {
         def query = '''
-            query QZ {
-                fieldZ(z: "valz", x : "valx", y:"valy") {
-                    subfieldz
-                    subfieldx
-                    subfieldy
-                }
-                fieldX(z: "valz", x : "valx", y:"valy") {
-                    subfieldz
-                    subfieldx
-                    subfieldy
-                }
-            }
+    query QZ {
+        fieldZ(z: "valz", x : "valx", y:"valy") {
+            subfieldz
+            subfieldx
+            subfieldy
+        }
+        fieldX(z: "valz", x : "valx", y:"valy") {
+            subfieldz
+            subfieldx
+            subfieldy
+        }
+    }
 
-            query QX {
-                field(z: "valz", x : "valx", y:"valy") {
-                    subfieldz
-                    subfieldx
-                    subfieldy
-                }
-            }
-                    
-        '''
+    query QX {
+        field(z: "valz", x : "valx", y:"valy") {
+            subfieldz
+            subfieldx(b : "valb", a : "vala", c : "valc")
+            subfieldy
+        }
+    }
+'''
         def expectedQuery = '''query QX {
   field(x: "valx", y: "valy", z: "valz") {
-    subfieldx
+    subfieldx(a: "vala", b: "valb", c: "valc")
     subfieldy
     subfieldz
   }
@@ -54,7 +53,7 @@ query QZ {
         def doc = TestUtil.parseQuery(query)
 
         when:
-        def newDoc = new AstSorter().sortQuery(doc)
+        def newDoc = new AstSorter().sort(doc)
         then:
         AstPrinter.printAst(newDoc) == expectedQuery
     }
