@@ -6,6 +6,7 @@ import graphql.execution.ExecutionStepInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 
@@ -88,6 +89,13 @@ public class FetchedValueAnalysis {
         return name;
     }
 
+    public FetchedValueAnalysis transfrom(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+
     public static Builder newFetchedValueAnalysis() {
         return new Builder();
     }
@@ -96,7 +104,7 @@ public class FetchedValueAnalysis {
         return new Builder().valueType(valueType);
     }
 
-    public static Builder newBuilder(FetchedValueAnalysis existing) {
+    public static Builder newFetchedValueAnalysis(FetchedValueAnalysis existing) {
         return new Builder(existing);
     }
 
