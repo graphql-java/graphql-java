@@ -126,6 +126,9 @@ public class AstSorter {
     }
 
     private SelectionSet sortSelectionSet(SelectionSet selectionSet) {
+        if (selectionSet == null) {
+            return null;
+        }
         List<Selection> selections = sort(selectionSet.getSelections(), comparingSelections());
         return selectionSet.transform(builder -> builder.selections(selections));
     }

@@ -24,33 +24,32 @@ class AstSorterTest extends Specification {
                 field(z: "valz", x : "valx", y:"valy") {
                     subfieldz
                     subfieldx
-                    subfieldY
+                    subfieldy
                 }
             }
                     
         '''
-        def expectedQuery = '''
-            query QX {
-                field(x: "valx", y : "valy", z : "valz") {
-                    subfieldx
-                    subfieldy
-                    subfieldz
-                }
-            }
+        def expectedQuery = '''query QX {
+  field(x: "valx", y: "valy", z: "valz") {
+    subfieldx
+    subfieldy
+    subfieldz
+  }
+}
 
-            query QZ {
-                fieldZ(x: "valx", y : "valy", z : "valz") {
-                    subfieldx
-                    subfieldy
-                    subfieldz
-                }
-                fieldX(x: "valx", y : "valy", z : "valz") {
-                    subfieldx
-                    subfieldy
-                    subfieldz
-                }
-            }
-        '''
+query QZ {
+  fieldZ(x: "valx", y: "valy", z: "valz") {
+    subfieldx
+    subfieldy
+    subfieldz
+  }
+  fieldX(x: "valx", y: "valy", z: "valz") {
+    subfieldx
+    subfieldy
+    subfieldz
+  }
+}
+'''
 
         def doc = TestUtil.parseQuery(query)
 
