@@ -1,5 +1,6 @@
 package graphql.language;
 
+import graphql.PublicApi;
 import graphql.schema.idl.TypeInfo;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -13,8 +14,39 @@ import static graphql.language.AstTransformerUtil.changeNode;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsLast;
 
+/**
+ * A class that helps you sort AST nodes
+ */
+@PublicApi
 public class AstSorter {
 
+    /**
+     * This will sort nodes in specific orders and then alphabetically.
+     *
+     * The order is :
+     * <ul>
+     * <li>Query operation definitions</li>
+     * <li>Mutation operation definitions</li>
+     * <li>Subscriptions operation definitions</li>
+     * <li>Fragment definitions</li>
+     * <li>Directive definitions</li>
+     * <li>Schema definitions</li>
+     * <li>Object Type definitions</li>
+     * <li>Interface Type definitions</li>
+     * <li>Union Type definitions</li>
+     * <li>Enum Type definitions</li>
+     * <li>Scalar Type definitions</li>
+     * <li>Input Object Type definitions</li>
+     * </ul>
+     *
+     * After those groupings they will be sorted alphabetic.  All arguments and directives on elements
+     * will be sorted alphabetically by name.
+     *
+     * @param nodeToBeSorted the node to be sorted
+     * @param <T>            of type {@link graphql.language.Node}
+     *
+     * @return a new sorted node (because {@link graphql.language.Node}s are immutable)
+     */
     public <T extends Node> T sort(T nodeToBeSorted) {
 
         NodeVisitorStub visitor = new NodeVisitorStub() {
@@ -182,8 +214,6 @@ public class AstSorter {
                 });
                 return newNode(context, changedNode);
             }
-
-
         };
 
         AstTransformer astTransformer = new AstTransformer();
