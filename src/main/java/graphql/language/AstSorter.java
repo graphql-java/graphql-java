@@ -57,7 +57,7 @@ public class AstSorter {
                     List<Definition> definitions = sort(node.getDefinitions(), comparingDefinitions());
                     builder.definitions(definitions);
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -66,7 +66,7 @@ public class AstSorter {
                     builder.variableDefinitions(sort(node.getVariableDefinitions(), comparing(VariableDefinition::getName)));
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
 
@@ -77,7 +77,7 @@ public class AstSorter {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.selectionSet(sortSelectionSet(node.getSelectionSet()));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -86,7 +86,7 @@ public class AstSorter {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.selectionSet(sortSelectionSet(node.getSelectionSet()));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -95,31 +95,34 @@ public class AstSorter {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.selectionSet(sortSelectionSet(node.getSelectionSet()));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
             public TraversalControl visitFragmentSpread(FragmentSpread node, TraverserContext<Node> context) {
                 FragmentSpread changedNode = node.transform(builder -> {
-                    builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
+                    List<Directive> directives = sort(node.getDirectives(), comparing(Directive::getName));
+                    builder.directives(directives);
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
             public TraversalControl visitDirective(Directive node, TraverserContext<Node> context) {
                 Directive changedNode = node.transform(builder -> {
-                    builder.arguments(sort(node.getArguments(), comparing(Argument::getName)));
+                    List<Argument> arguments = sort(node.getArguments(), comparing(Argument::getName));
+                    builder.arguments(arguments);
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
             public TraversalControl visitObjectValue(ObjectValue node, TraverserContext<Node> context) {
                 ObjectValue changedNode = node.transform(builder -> {
-                    builder.objectFields(sort(node.getObjectFields(), comparing(ObjectField::getName)));
+                    List<ObjectField> objectFields = sort(node.getObjectFields(), comparing(ObjectField::getName));
+                    builder.objectFields(objectFields);
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             // SDL classes here
@@ -130,7 +133,7 @@ public class AstSorter {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.operationTypeDefinitions(sort(node.getOperationTypeDefinitions(), comparing(OperationTypeDefinition::getName)));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -139,7 +142,7 @@ public class AstSorter {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.enumValueDefinitions(sort(node.getEnumValueDefinitions(), comparing(EnumValueDefinition::getName)));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -148,7 +151,7 @@ public class AstSorter {
                     List<Directive> directives = sort(node.getDirectives(), comparing(Directive::getName));
                     builder.directives(directives);
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -157,7 +160,7 @@ public class AstSorter {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.inputValueDefinitions(sort(node.getInputValueDefinitions(), comparing(InputValueDefinition::getName)));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -167,7 +170,7 @@ public class AstSorter {
                     builder.implementz(sort(node.getImplements(), comparingTypes()));
                     builder.fieldDefinitions(sort(node.getFieldDefinitions(), comparing(FieldDefinition::getName)));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -176,7 +179,7 @@ public class AstSorter {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.definitions(sort(node.getFieldDefinitions(), comparing(FieldDefinition::getName)));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -185,7 +188,7 @@ public class AstSorter {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.memberTypes(sort(node.getMemberTypes(), comparingTypes()));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -194,7 +197,7 @@ public class AstSorter {
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.inputValueDefinitions(sort(node.getInputValueDefinitions(), comparing(InputValueDefinition::getName)));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -203,7 +206,7 @@ public class AstSorter {
                     List<Directive> directives = sort(node.getDirectives(), comparing(Directive::getName));
                     builder.directives(directives);
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
 
             @Override
@@ -212,7 +215,7 @@ public class AstSorter {
                     builder.inputValueDefinitions(sort(node.getInputValueDefinitions(), comparing(InputValueDefinition::getName)));
                     builder.directiveLocations(sort(node.getDirectiveLocations(), comparing(DirectiveLocation::getName)));
                 });
-                return newNode(context, changedNode);
+                return changeNode(context, changedNode);
             }
         };
 
@@ -222,10 +225,6 @@ public class AstSorter {
         return (T) newDoc;
     }
 
-    private TraversalControl newNode(TraverserContext<Node> context, Node changedNode) {
-        changeNode(context, changedNode);
-        return TraversalControl.CONTINUE;
-    }
 
     private Comparator<Type> comparingTypes() {
         return comparing(type -> TypeInfo.typeInfo(type).getName());
