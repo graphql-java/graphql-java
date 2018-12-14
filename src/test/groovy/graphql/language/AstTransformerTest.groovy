@@ -125,4 +125,30 @@ class AstTransformerTest extends Specification {
 
     }
 
+
+    def "remove a subtree "() {
+        def document = TestUtil.parseQuery("{root { a(arg: 1) { x y } toDelete { x y } } }")
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
+                if (context.getParentContext().thisNode().name == "root") {
+                    def newNode = node.transform({ builder -> builder.selections([node.selections[0]]) })
+                    return changeNode(context, newNode)
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor)
+
+        then:
+        AstPrinter.printAstCompact(newDocument) == "query { root { a(arg: 1) { x y } } }"
+
+    }
+
 }
