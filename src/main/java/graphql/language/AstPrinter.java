@@ -23,9 +23,9 @@ import static java.util.stream.Collectors.joining;
 @PublicApi
 public class AstPrinter {
 
-    private static final Map<Class<? extends Node>, NodePrinter<? extends Node>> printers = new LinkedHashMap<>();
+    private final Map<Class<? extends Node>, NodePrinter<? extends Node>> printers = new LinkedHashMap<>();
 
-    static {
+    private AstPrinter() {
         printers.put(Argument.class, argument());
         printers.put(ArrayValue.class, value());
         printers.put(BooleanValue.class, value());
@@ -70,22 +70,22 @@ public class AstPrinter {
         printers.put(VariableReference.class, variableReference());
     }
 
-    private static NodePrinter<Argument> argument() {
+    private NodePrinter<Argument> argument() {
         return (out, node) -> out.printf("%s: %s", node.getName(), value(node.getValue()));
     }
 
-    private static NodePrinter<Document> document() {
+    private NodePrinter<Document> document() {
         return (out, node) -> out.printf("%s\n", join(node.getDefinitions(), "\n\n"));
     }
 
-    private static NodePrinter<Directive> directive() {
+    private NodePrinter<Directive> directive() {
         return (out, node) -> {
             String arguments = wrap("(", join(node.getArguments(), ", "), ")");
             out.printf("@%s%s", node.getName(), arguments);
         };
     }
 
-    private static NodePrinter<DirectiveDefinition> directiveDefinition() {
+    private NodePrinter<DirectiveDefinition> directiveDefinition() {
         return (out, node) -> {
             String arguments = wrap("(", join(node.getInputValueDefinitions(), ", "), ")");
             String locations = join(node.getDirectiveLocations(), " | ");
@@ -93,11 +93,11 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<DirectiveLocation> directiveLocation() {
+    private NodePrinter<DirectiveLocation> directiveLocation() {
         return (out, node) -> out.print(node.getName());
     }
 
-    private static NodePrinter<EnumTypeDefinition> enumTypeDefinition() {
+    private NodePrinter<EnumTypeDefinition> enumTypeDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s",
@@ -110,11 +110,11 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<EnumValue> enumValue() {
+    private NodePrinter<EnumValue> enumValue() {
         return (out, node) -> out.printf("%s", node.getName());
     }
 
-    private static NodePrinter<EnumValueDefinition> enumValueDefinition() {
+    private NodePrinter<EnumValueDefinition> enumValueDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s",
@@ -125,7 +125,7 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<Field> field() {
+    private NodePrinter<Field> field() {
         return (out, node) -> {
             String alias = wrap("", node.getAlias(), ": ");
             String name = node.getName();
@@ -142,7 +142,7 @@ public class AstPrinter {
     }
 
 
-    private static NodePrinter<FieldDefinition> fieldDefinition() {
+    private NodePrinter<FieldDefinition> fieldDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             String args;
@@ -170,11 +170,11 @@ public class AstPrinter {
         };
     }
 
-    private static boolean hasComments(List<? extends Node> nodes) {
+    private boolean hasComments(List<? extends Node> nodes) {
         return nodes.stream().anyMatch(it -> it.getComments().size() > 0);
     }
 
-    private static NodePrinter<FragmentDefinition> fragmentDefinition() {
+    private NodePrinter<FragmentDefinition> fragmentDefinition() {
         return (out, node) -> {
             String name = node.getName();
             String typeCondition = type(node.getTypeCondition());
@@ -186,7 +186,7 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<FragmentSpread> fragmentSpread() {
+    private NodePrinter<FragmentSpread> fragmentSpread() {
         return (out, node) -> {
             String name = node.getName();
             String directives = directives(node.getDirectives());
@@ -195,7 +195,7 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<InlineFragment> inlineFragment() {
+    private NodePrinter<InlineFragment> inlineFragment() {
         return (out, node) -> {
             String typeCondition = wrap("on ", type(node.getTypeCondition()), "");
             String directives = directives(node.getDirectives());
@@ -211,7 +211,7 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<InputObjectTypeDefinition> inputObjectTypeDefinition() {
+    private NodePrinter<InputObjectTypeDefinition> inputObjectTypeDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s", spaced(
@@ -224,7 +224,7 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<InputValueDefinition> inputValueDefinition() {
+    private NodePrinter<InputValueDefinition> inputValueDefinition() {
         return (out, node) -> {
             Value defaultValue = node.getDefaultValue();
             out.printf("%s", comments(node));
@@ -237,7 +237,7 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<InterfaceTypeDefinition> interfaceTypeDefinition() {
+    private NodePrinter<InterfaceTypeDefinition> interfaceTypeDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s", spaced(
@@ -250,12 +250,12 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<ObjectField> objectField() {
+    private NodePrinter<ObjectField> objectField() {
         return (out, node) -> out.printf("%s : %s", node.getName(), value(node.getValue()));
     }
 
 
-    private static NodePrinter<OperationDefinition> operationDefinition() {
+    private NodePrinter<OperationDefinition> operationDefinition() {
         return (out, node) -> {
             String op = node.getOperation().toString().toLowerCase();
             String name = node.getName();
@@ -273,11 +273,11 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<OperationTypeDefinition> operationTypeDefinition() {
+    private NodePrinter<OperationTypeDefinition> operationTypeDefinition() {
         return (out, node) -> out.printf("%s: %s", node.getName(), type(node.getType()));
     }
 
-    private static NodePrinter<ObjectTypeDefinition> objectTypeDefinition() {
+    private NodePrinter<ObjectTypeDefinition> objectTypeDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s", spaced(
@@ -290,14 +290,14 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<SelectionSet> selectionSet() {
+    private NodePrinter<SelectionSet> selectionSet() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s", block(node.getSelections()));
         };
     }
 
-    private static NodePrinter<ScalarTypeDefinition> scalarTypeDefinition() {
+    private NodePrinter<ScalarTypeDefinition> scalarTypeDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s", spaced(
@@ -308,7 +308,7 @@ public class AstPrinter {
     }
 
 
-    private static NodePrinter<SchemaDefinition> schemaDefinition() {
+    private NodePrinter<SchemaDefinition> schemaDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s", spaced(
@@ -321,11 +321,11 @@ public class AstPrinter {
     }
 
 
-    private static NodePrinter<Type> type() {
+    private NodePrinter<Type> type() {
         return (out, node) -> out.print(type(node));
     }
 
-    static private String type(Type type) {
+    private String type(Type type) {
         if (type instanceof NonNullType) {
             NonNullType inner = (NonNullType) type;
             return wrap("", type(inner.getType()), "!");
@@ -338,31 +338,31 @@ public class AstPrinter {
         }
     }
 
-    private static NodePrinter<ObjectTypeExtensionDefinition> objectTypeExtensionDefinition() {
+    private NodePrinter<ObjectTypeExtensionDefinition> objectTypeExtensionDefinition() {
         return (out, node) -> out.printf("extend %s", node(node, ObjectTypeDefinition.class));
     }
 
-    private static NodePrinter<EnumTypeExtensionDefinition> enumTypeExtensionDefinition() {
+    private NodePrinter<EnumTypeExtensionDefinition> enumTypeExtensionDefinition() {
         return (out, node) -> out.printf("extend %s", node(node, EnumTypeDefinition.class));
     }
 
-    private static NodePrinter<InterfaceTypeDefinition> interfaceTypeExtensionDefinition() {
+    private NodePrinter<InterfaceTypeDefinition> interfaceTypeExtensionDefinition() {
         return (out, node) -> out.printf("extend %s", node(node, InterfaceTypeDefinition.class));
     }
 
-    private static NodePrinter<UnionTypeExtensionDefinition> unionTypeExtensionDefinition() {
+    private NodePrinter<UnionTypeExtensionDefinition> unionTypeExtensionDefinition() {
         return (out, node) -> out.printf("extend %s", node(node, UnionTypeDefinition.class));
     }
 
-    private static NodePrinter<ScalarTypeExtensionDefinition> scalarTypeExtensionDefinition() {
+    private NodePrinter<ScalarTypeExtensionDefinition> scalarTypeExtensionDefinition() {
         return (out, node) -> out.printf("extend %s", node(node, ScalarTypeDefinition.class));
     }
 
-    private static NodePrinter<InputObjectTypeExtensionDefinition> inputObjectTypeExtensionDefinition() {
+    private NodePrinter<InputObjectTypeExtensionDefinition> inputObjectTypeExtensionDefinition() {
         return (out, node) -> out.printf("extend %s", node(node, InputObjectTypeDefinition.class));
     }
 
-    private static NodePrinter<UnionTypeDefinition> unionTypeDefinition() {
+    private NodePrinter<UnionTypeDefinition> unionTypeDefinition() {
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s", spaced(
@@ -374,7 +374,7 @@ public class AstPrinter {
         };
     }
 
-    private static NodePrinter<VariableDefinition> variableDefinition() {
+    private NodePrinter<VariableDefinition> variableDefinition() {
         return (out, node) -> out.printf("$%s: %s%s",
                 node.getName(),
                 type(node.getType()),
@@ -382,15 +382,15 @@ public class AstPrinter {
         );
     }
 
-    private static NodePrinter<VariableReference> variableReference() {
+    private NodePrinter<VariableReference> variableReference() {
         return (out, node) -> out.printf("$%s", node.getName());
     }
 
-    static private String node(Node node) {
+    private String node(Node node) {
         return node(node, null);
     }
 
-    static private String node(Node node, Class startClass) {
+    private String node(Node node, Class startClass) {
         if (startClass != null) {
             assertTrue(startClass.isInstance(node), "The starting class must be in the inherit tree");
         }
@@ -402,11 +402,11 @@ public class AstPrinter {
     }
 
     @SuppressWarnings("unchecked")
-    static private <T extends Node> NodePrinter<T> _findPrinter(Node node) {
+    private <T extends Node> NodePrinter<T> _findPrinter(Node node) {
         return _findPrinter(node, null);
     }
 
-    static private <T extends Node> NodePrinter<T> _findPrinter(Node node, Class startClass) {
+    private <T extends Node> NodePrinter<T> _findPrinter(Node node, Class startClass) {
         if (node == null) {
             return (out, type) -> {
             };
@@ -415,6 +415,7 @@ public class AstPrinter {
         while (clazz != Object.class) {
             NodePrinter nodePrinter = printers.get(clazz);
             if (nodePrinter != null) {
+                //noinspection unchecked
                 return nodePrinter;
             }
             clazz = clazz.getSuperclass();
@@ -422,23 +423,23 @@ public class AstPrinter {
         throw new AssertException(String.format("We have a missing printer implementation for %s : report a bug!", clazz));
     }
 
-    static private <T> boolean isEmpty(List<T> list) {
+    private <T> boolean isEmpty(List<T> list) {
         return list == null || list.isEmpty();
     }
 
-    static private boolean isEmpty(String s) {
+    private boolean isEmpty(String s) {
         return s == null || s.trim().length() == 0;
     }
 
-    static private <T> List<T> nvl(List<T> list) {
+    private <T> List<T> nvl(List<T> list) {
         return list != null ? list : Collections.emptyList();
     }
 
-    private static NodePrinter<Value> value() {
+    private NodePrinter<Value> value() {
         return (out, node) -> out.print(value(node));
     }
 
-    static private String value(Value value) {
+    private String value(Value value) {
         if (value instanceof IntValue) {
             return valueOf(((IntValue) value).getValue());
         } else if (value instanceof FloatValue) {
@@ -461,7 +462,7 @@ public class AstPrinter {
         return "";
     }
 
-    static private String comments(Node<?> node) {
+    private String comments(Node<?> node) {
         List<Comment> comments = nvl(node.getComments());
         if (isEmpty(comments)) {
             return "";
@@ -471,34 +472,34 @@ public class AstPrinter {
     }
 
 
-    private static String directives(List<Directive> directives) {
+    private String directives(List<Directive> directives) {
         return join(nvl(directives), " ");
     }
 
-    static private <T extends Node> String join(List<T> nodes, String delim) {
+    private <T extends Node> String join(List<T> nodes, String delim) {
         return join(nodes, delim, "", "");
     }
 
     @SuppressWarnings("SameParameterValue")
-    static private <T extends Node> String join(List<T> nodes, String delim, String prefix, String suffix) {
-        String s = nvl(nodes).stream().map(AstPrinter::node).collect(joining(delim, prefix, suffix));
+    private <T extends Node> String join(List<T> nodes, String delim, String prefix, String suffix) {
+        String s = nvl(nodes).stream().map(this::node).collect(joining(delim, prefix, suffix));
         return s;
     }
 
-    static private String spaced(String... args) {
+    private String spaced(String... args) {
         return join(" ", args);
     }
 
-    static private String smooshed(String... args) {
+    private String smooshed(String... args) {
         return join("", args);
     }
 
-    static private String join(String delim, String... args) {
+    private String join(String delim, String... args) {
         String s = Arrays.stream(args).filter(arg -> !isEmpty(arg)).collect(joining(delim));
         return s;
     }
 
-    static String wrap(String start, String maybeString, String end) {
+    String wrap(String start, String maybeString, String end) {
         if (isEmpty(maybeString)) {
             if (start.equals("\"") && end.equals("\"")) {
                 return "\"\"";
@@ -508,7 +509,7 @@ public class AstPrinter {
         return start + maybeString + (!isEmpty(end) ? end : "");
     }
 
-    private static <T extends Node> String block(List<T> nodes) {
+    private <T extends Node> String block(List<T> nodes) {
         if (isEmpty(nodes)) {
             return "{}";
         }
@@ -517,7 +518,7 @@ public class AstPrinter {
                 + "\n}";
     }
 
-    private static String indent(String maybeString) {
+    private String indent(String maybeString) {
         if (isEmpty(maybeString)) {
             return "";
         }
@@ -526,7 +527,7 @@ public class AstPrinter {
     }
 
     @SuppressWarnings("SameParameterValue")
-    static String wrap(String start, Node maybeNode, String end) {
+    String wrap(String start, Node maybeNode, String end) {
         if (maybeNode == null) {
             return "";
         }
@@ -568,7 +569,8 @@ public class AstPrinter {
      * @param node   the AST node to print
      */
     public static void printAst(Writer writer, Node node) {
-        NodePrinter<Node> printer = _findPrinter(node);
+        AstPrinter astPrinter = new AstPrinter();
+        NodePrinter<Node> printer = astPrinter._findPrinter(node);
         printer.print(new PrintWriter(writer), node);
     }
 
