@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Internal;
+import graphql.execution.EncounterDirectives;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
@@ -33,6 +34,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final DataFetchingFieldSelectionSet selectionSet;
     private final ExecutionStepInfo executionStepInfo;
     private final ExecutionContext executionContext;
+    private final EncounterDirectives encounterDirectives;
 
     public DataFetchingEnvironmentImpl(Object source,
                                        Map<String, Object> arguments,
@@ -47,7 +49,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                                        ExecutionId executionId,
                                        DataFetchingFieldSelectionSet selectionSet,
                                        ExecutionStepInfo executionStepInfo,
-                                       ExecutionContext executionContext) {
+                                       ExecutionContext executionContext,
+                                       EncounterDirectives encounterDirectives) {
         this.source = source;
         this.arguments = arguments == null ? Collections.emptyMap() : arguments;
         this.fragmentsByName = fragmentsByName == null ? Collections.emptyMap() : fragmentsByName;
@@ -62,6 +65,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.selectionSet = selectionSet;
         this.executionStepInfo = executionStepInfo;
         this.executionContext = assertNotNull(executionContext);
+        this.encounterDirectives = encounterDirectives;
     }
 
     @Override
@@ -152,6 +156,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return executionContext.getDataLoaderRegistry().getDataLoader(dataLoaderName);
+    }
+
+    @Override
+    public EncounterDirectives getEncounterDirectives() {
+        return encounterDirectives;
     }
 
     @Override

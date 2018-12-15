@@ -39,9 +39,10 @@ public class ExecutionContext {
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final DeferSupport deferSupport = new DeferSupport();
+    private final FieldDirectives fieldDirectives;
 
     @Internal
-    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, List<GraphQLError> startingErrors) {
+    ExecutionContext(Instrumentation instrumentation, ExecutionId executionId, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Map<String, FragmentDefinition> fragmentsByName, Document document, OperationDefinition operationDefinition, Map<String, Object> variables, Object context, Object root, DataLoaderRegistry dataLoaderRegistry, List<GraphQLError> startingErrors, FieldDirectives fieldDirectives) {
         this.graphQLSchema = graphQLSchema;
         this.executionId = executionId;
         this.instrumentationState = instrumentationState;
@@ -56,6 +57,7 @@ public class ExecutionContext {
         this.root = root;
         this.instrumentation = instrumentation;
         this.dataLoaderRegistry = dataLoaderRegistry;
+        this.fieldDirectives = fieldDirectives;
         this.errors.addAll(startingErrors);
     }
 
@@ -166,6 +168,10 @@ public class ExecutionContext {
 
     public DeferSupport getDeferSupport() {
         return deferSupport;
+    }
+
+    public FieldDirectives getFieldDirectives() {
+        return fieldDirectives;
     }
 
     /**

@@ -6,12 +6,14 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.Async;
+import graphql.execution.DirectivesResolver;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
+import graphql.execution.FieldDirectives;
 import graphql.execution.ValuesResolver;
 import graphql.execution2.result.ResultNodesUtil;
 import graphql.language.Document;
@@ -68,6 +70,7 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
+                .fieldDirectives(new FieldDirectives(document, graphQLSchema, fragmentsByName, coercedVariables, operationDefinition, new DirectivesResolver(valuesResolver)))
                 .build();
 
         return executeOperation(executionStrategy, executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());

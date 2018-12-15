@@ -1,13 +1,16 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import graphql.execution.EncounterDirectives;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.FieldDirectives;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -142,9 +145,17 @@ public class DataFetchingEnvironmentBuilder {
     }
 
     public DataFetchingEnvironment build() {
+        FieldDirectives dirs = executionContext.getFieldDirectives();
+        EncounterDirectives encounterDirectives = new EncounterDirectives(
+                dirs.getFieldDirectives(fields),
+                dirs.getFragmentDirectives(fields),
+                dirs.getFragmentDefDirectives(fields),
+                dirs.getInlineFragmentDirectives(fields),
+                dirs.getOperationDirectives()
+        );
+
         return new DataFetchingEnvironmentImpl(source, arguments, context, root,
                 fieldDefinition, fields, fieldType, parentType, graphQLSchema, fragmentsByName, executionId, selectionSet,
-                executionStepInfo,
-                executionContext);
+                executionStepInfo, executionContext, encounterDirectives);
     }
 }

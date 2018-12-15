@@ -91,6 +91,7 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
+                .fieldDirectives(new FieldDirectives(document, graphQLSchema, fragmentsByName, coercedVariables, operationDefinition, new DirectivesResolver(valuesResolver)))
                 .build();
 
 

@@ -37,6 +37,7 @@ public class ExecutionContextBuilder {
     private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
     private DataLoaderRegistry dataLoaderRegistry;
     private List<GraphQLError> errors = new ArrayList<>();
+    private FieldDirectives fieldDirectives;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -77,6 +78,8 @@ public class ExecutionContextBuilder {
         fragmentsByName = new HashMap<>(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
         errors = new ArrayList<>(other.getErrors());
+        fieldDirectives = other.getFieldDirectives();
+
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -150,6 +153,11 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    public ExecutionContextBuilder fieldDirectives(FieldDirectives fieldDirectives) {
+        this.fieldDirectives = fieldDirectives;
+        return this;
+    }
+
     public ExecutionContext build() {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
@@ -168,7 +176,8 @@ public class ExecutionContextBuilder {
                 variables,
                 context,
                 root,
-                dataLoaderRegistry, errors
-        );
+                dataLoaderRegistry,
+                errors,
+                fieldDirectives);
     }
 }

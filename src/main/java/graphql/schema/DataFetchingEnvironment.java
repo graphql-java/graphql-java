@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import graphql.execution.EncounterDirectives;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
@@ -170,4 +171,6 @@ public interface DataFetchingEnvironment {
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+
+    EncounterDirectives getEncounterDirectives();
 }
