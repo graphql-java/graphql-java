@@ -8,7 +8,6 @@ import graphql.language.Document;
 import graphql.language.SDLDefinition;
 import graphql.parser.Parser;
 import graphql.schema.idl.errors.SchemaProblem;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,13 +76,12 @@ public class SchemaParser {
             Document document = parser.parseDocument(schemaInput);
 
             return buildRegistry(document);
-        } catch (ParseCancellationException e) {
+        } catch (InvalidSyntaxError e) {
             throw handleParseException(e);
         }
     }
 
-    private SchemaProblem handleParseException(ParseCancellationException e) throws RuntimeException {
-        InvalidSyntaxError invalidSyntaxError = InvalidSyntaxError.toInvalidSyntaxError(e);
+    private SchemaProblem handleParseException(InvalidSyntaxError invalidSyntaxError) throws RuntimeException {
         return new SchemaProblem(Collections.singletonList(invalidSyntaxError));
     }
 

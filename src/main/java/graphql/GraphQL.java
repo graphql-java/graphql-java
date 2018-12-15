@@ -25,7 +25,6 @@ import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +38,6 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.InvalidSyntaxError.toInvalidSyntaxError;
 
 /**
  * This class is where all graphql-java query execution begins.  It combines the objects that are needed
@@ -524,7 +522,7 @@ public class GraphQL {
         ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
             log.warn("Query failed to parse : '{}'", executionInput.getQuery());
-            return new PreparsedDocumentEntry(toInvalidSyntaxError(parseResult.getException()));
+            return new PreparsedDocumentEntry(parseResult.getException());
         } else {
             final Document document = parseResult.getDocument();
 
@@ -548,7 +546,7 @@ public class GraphQL {
         try {
             document = parser.parseDocument(executionInput.getQuery());
             document = instrumentation.instrumentDocument(document, parameters);
-        } catch (ParseCancellationException e) {
+        } catch (InvalidSyntaxError e) {
             parseInstrumentation.onCompleted(null, e);
             return ParseResult.ofError(e);
         }
@@ -594,9 +592,9 @@ public class GraphQL {
 
     private static class ParseResult {
         private final Document document;
-        private final Exception exception;
+        private final InvalidSyntaxError exception;
 
-        private ParseResult(Document document, Exception exception) {
+        private ParseResult(Document document, InvalidSyntaxError exception) {
             this.document = document;
             this.exception = exception;
         }
@@ -609,7 +607,7 @@ public class GraphQL {
             return document;
         }
 
-        private Exception getException() {
+        private InvalidSyntaxError getException() {
             return exception;
         }
 
@@ -617,7 +615,7 @@ public class GraphQL {
             return new ParseResult(document, null);
         }
 
-        private static ParseResult ofError(Exception e) {
+        private static ParseResult ofError(InvalidSyntaxError e) {
             return new ParseResult(null, e);
         }
     }

@@ -1,5 +1,10 @@
 package graphql.parser
 
+import graphql.ExecutionResult
+import graphql.GraphQL
+import graphql.InvalidSyntaxError
+import graphql.StarWarsSchema
+import graphql.TestUtil
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.AstComparator
@@ -35,7 +40,6 @@ import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
-import org.antlr.v4.runtime.misc.ParseCancellationException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -398,10 +402,10 @@ class ParserTest extends Specification {
             { hello(arg: 4.) }
             """
         when:
-        def document = new Parser().parseDocument(input)
+        new Parser().parseDocument(input)
 
         then:
-        thrown(ParseCancellationException)
+        thrown(InvalidSyntaxError)
     }
 
     def "extraneous input is an exception"() {
@@ -412,7 +416,7 @@ class ParserTest extends Specification {
         when:
         new Parser().parseDocument(input)
         then:
-        thrown(ParseCancellationException)
+        thrown(InvalidSyntaxError)
     }
 
     def "invalid syntax is an error"() {
@@ -423,7 +427,7 @@ class ParserTest extends Specification {
         when:
         new Parser().parseDocument(input)
         then:
-        thrown(ParseCancellationException)
+        thrown(InvalidSyntaxError)
     }
 
     def "mutation without a name"() {
@@ -488,7 +492,7 @@ class ParserTest extends Specification {
         new Parser().parseDocument(input)
 
         then:
-        def exception = thrown(ParseCancellationException)
+        def exception = thrown(InvalidSyntaxError)
         exception != null
     }
 
@@ -500,7 +504,7 @@ class ParserTest extends Specification {
         new Parser().parseDocument(input)
 
         then:
-        def exception = thrown(ParseCancellationException)
+        def exception = thrown(InvalidSyntaxError)
         exception != null
     }
 

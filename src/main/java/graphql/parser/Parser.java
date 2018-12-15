@@ -1,32 +1,32 @@
 package graphql.parser;
 
 import graphql.Internal;
+import graphql.InvalidSyntaxError;
 import graphql.language.Document;
+import graphql.language.SourceLocation;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
-import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
-import org.antlr.v4.runtime.misc.ParseCancellationException;
 
 import java.util.List;
 
 @Internal
 public class Parser {
 
-    public Document parseDocument(String input) {
+    public Document parseDocument(String input) throws InvalidSyntaxError {
         return parseDocument(input, null);
     }
 
-    public Document parseDocument(String input, String sourceName) {
+    public Document parseDocument(String input, String sourceName) throws InvalidSyntaxError {
 
         CharStream charStream;
-        if(sourceName == null) {
+        if (sourceName == null) {
             charStream = CharStreams.fromString(input);
-        } else{
+        } else {
             charStream = CharStreams.fromString(input, sourceName);
         }
 
@@ -37,7 +37,7 @@ public class Parser {
         GraphqlParser parser = new GraphqlParser(tokens);
         parser.removeErrorListeners();
         parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
-        parser.setErrorHandler(new BailErrorStrategy());
+        parser.setErrorHandler(new ExtendedBailStrategy(input, sourceName));
         GraphqlParser.DocumentContext documentContext = parser.document();
 
 
@@ -55,7 +55,8 @@ public class Parser {
             boolean lastGreaterThanDocument = last.getTokenIndex() > stop.getTokenIndex();
             boolean sameChannel = last.getChannel() == stop.getChannel();
             if (notEOF && lastGreaterThanDocument && sameChannel) {
-                throw new ParseCancellationException("There are more tokens in the query that have not been consumed");
+                SourceLocation sourceLocation = new SourceLocation(last.getLine(), last.getCharPositionInLine());
+                throw new InvalidSyntaxError(sourceLocation, "There are more tokens in the query that have not been consumed");
             }
         }
         return doc;
