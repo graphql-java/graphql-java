@@ -32,7 +32,7 @@ public class InvalidSyntaxError extends GraphQLException implements GraphQLError
     }
 
     private String mkMessage(String msg) {
-        return "Invalid Syntax" + (msg == null ? "" : " : " + msg + "");
+        return "Invalid Syntax" + (msg == null ? "" : " : " + msg);
     }
 
 
