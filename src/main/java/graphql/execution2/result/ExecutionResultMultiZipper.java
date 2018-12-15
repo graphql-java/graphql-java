@@ -8,10 +8,15 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 
 @Internal
 public class ExecutionResultMultiZipper {
+
 
     private final ExecutionResultNode commonRoot;
     private final List<ExecutionResultZipper> zippers;
@@ -68,7 +73,7 @@ public class ExecutionResultMultiZipper {
 
     private List<ExecutionResultZipper> getDeepestZippers(List<ExecutionResultZipper> zippers) {
         Map<Integer, List<ExecutionResultZipper>> grouped =
-                zippers.stream().collect(Collectors.groupingBy(executionResultZipper -> executionResultZipper.getBreadcrumbList().size()));
+                zippers.stream().collect(Collectors.groupingBy(executionResultZipper -> executionResultZipper.getBreadcrumbList().size(), LinkedHashMap::new, mapping(Function.identity(), toList())));
         Integer maxLevel = Collections.max(grouped.keySet());
         return grouped.get(maxLevel);
     }
@@ -85,7 +90,7 @@ public class ExecutionResultMultiZipper {
     }
 
     private Map<ExecutionResultNode, List<ExecutionResultZipper>> zipperWithSameParent(List<ExecutionResultZipper> zippers) {
-        return zippers.stream().collect(Collectors.groupingBy(ExecutionResultZipper::getParent));
+        return zippers.stream().collect(Collectors.groupingBy(ExecutionResultZipper::getParent, LinkedHashMap::new, mapping(Function.identity(), toList())));
     }
 
 }

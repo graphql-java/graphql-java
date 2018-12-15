@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinition> implements TypeDefinition<InterfaceTypeDefinition>, DirectivesContainer<InterfaceTypeDefinition> {
 
@@ -17,6 +19,9 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
     private final Description description;
     private final List<FieldDefinition> definitions;
     private final List<Directive> directives;
+
+    public static final String CHILD_DEFINITIONS = "definitions";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected InterfaceTypeDefinition(String name,
@@ -60,13 +65,28 @@ public class InterfaceTypeDefinition extends AbstractNode<InterfaceTypeDefinitio
         return description;
     }
 
-
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(definitions);
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DEFINITIONS, definitions)
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public InterfaceTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .definitions(newChildren.getChildren(CHILD_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
     }
 
     @Override

@@ -10,11 +10,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<ObjectField> {
 
     private final String name;
     private final Value value;
+
+    public static final String CHILD_VALUE = "value";
 
     @Internal
     protected ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -47,6 +51,20 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
         List<Node> result = new ArrayList<>();
         result.add(value);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_VALUE, value)
+                .build();
+    }
+
+    @Override
+    public ObjectField withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .value(newChildren.getChildOrNull(CHILD_VALUE))
+        );
     }
 
     @Override

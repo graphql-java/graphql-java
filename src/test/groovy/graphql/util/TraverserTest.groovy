@@ -21,6 +21,7 @@ class TraverserTest extends Specification {
             ]
     ]
 
+
     def "test depth-first traversal"() {
         given:
         def preOrderNodes = []
@@ -34,7 +35,7 @@ class TraverserTest extends Specification {
                 leave: { TraverserContext context ->
                     postOrderNodes << context.thisNode().number
                     println "leave:$postOrderNodes"
-                    context.setResult(context.thisNode())
+                    context.setAccumulate(context.thisNode())
                     TraversalControl.CONTINUE
                 }
         ] as TraverserVisitor
@@ -43,7 +44,7 @@ class TraverserTest extends Specification {
 
 
         then:
-        result.result.number == 0
+        result.accumulatedResult.number == 0
         preOrderNodes == [0, 1, 3, 2, 4, 5]
         postOrderNodes == [3, 1, 4, 5, 2, 0]
     }
@@ -56,7 +57,7 @@ class TraverserTest extends Specification {
         def visitor = [
                 enter: { TraverserContext context ->
                     enterData << context.thisNode().number
-                    context.setResult(context.thisNode())
+                    context.setAccumulate(context.thisNode())
                     println "enter:$enterData"
                     TraversalControl.CONTINUE
                 },
@@ -70,7 +71,7 @@ class TraverserTest extends Specification {
         def result = Traverser.breadthFirst({ n -> n.children }).traverse(root, visitor)
 
         then:
-        result.result.number == 5
+        result.accumulatedResult.number == 5
         enterData == [0, 1, 2, 3, 4, 5]
         leaveData == [0, 1, 2, 3, 4, 5]
     }
@@ -109,11 +110,11 @@ class TraverserTest extends Specification {
         def leaveCount = 0
         def visitor = [
                 enter: { TraverserContext context ->
-                    context.getInitialData().add(context.thisNode().number)
+                    context.getSharedContextData().add(context.thisNode().number)
                     TraversalControl.CONTINUE
                 },
                 leave: { TraverserContext context ->
-                    context.setResult(leaveResult)
+                    context.setAccumulate(leaveResult)
                     leaveCount++
                     TraversalControl.QUIT
                 },
@@ -124,7 +125,7 @@ class TraverserTest extends Specification {
         def result = Traverser.depthFirst({ n -> n.children }, initialData).traverse(root, visitor)
 
         then:
-        result.result == leaveResult
+        result.accumulatedResult == leaveResult
         initialData == [0, 1, 3]
         leaveCount == 1
     }
@@ -135,7 +136,7 @@ class TraverserTest extends Specification {
 
         def visitor = [
                 enter: { TraverserContext context ->
-                    context.getInitialData().add(context.thisNode().number)
+                    context.getSharedContextData().add(context.thisNode().number)
                     if ([1, 2].contains(context.thisNode().number)) return TraversalControl.ABORT
                     TraversalControl.CONTINUE
                 },
@@ -159,7 +160,7 @@ class TraverserTest extends Specification {
 
         def visitor = [
                 enter: { TraverserContext context ->
-                    context.getInitialData().add(context.thisNode().number)
+                    context.getSharedContextData().add(context.thisNode().number)
                     if ([2].contains(context.thisNode().number)) return TraversalControl.ABORT
                     TraversalControl.CONTINUE
                 },
@@ -264,7 +265,7 @@ class TraverserTest extends Specification {
                 }
         ] as TraverserVisitor
         when:
-        def result = Traverser.breadthFirst({ n -> n.children },)
+        def result = Traverser.breadthFirst({ n -> n.children })
                 .rootVars([(Object.class): "var1", (String.class): "var2"])
                 .traverse(root, visitor)
 
@@ -273,15 +274,14 @@ class TraverserTest extends Specification {
         true
     }
 
-    def "test parent result chain"() {
+    def "test accumulator"() {
         given:
         def visitor = [
                 enter: { TraverserContext context ->
-                    List visited = context.getParentResult()
-                    visited = visited == null ? new ArrayList<>() : visited
+                    List visited = context.getCurrentAccumulate()
+                    visited = visited == null ? new ArrayList<>() : new ArrayList<>(visited)
                     visited.add(context.thisNode().number)
-                    context.setVar(List.class, visited)
-                    context.setResult(visited)
+                    context.setAccumulate(visited)
                     TraversalControl.CONTINUE
                 },
                 leave: { TraverserContext context ->
@@ -289,22 +289,42 @@ class TraverserTest extends Specification {
                 }
         ] as TraverserVisitor
         when:
-        def result = Traverser.breadthFirst({ n -> n.children },)
+        def result = Traverser.breadthFirst({ n -> n.children })
                 .traverse(root, visitor)
 
 
         then:
-        result.result == [0, 1, 2, 3, 4, 5]
+        result.accumulatedResult == [0, 1, 2, 3, 4, 5]
     }
 
-    def "test initial data"() {
+    def "test accumulate with initial value unchanged"() {
+        given:
         def visitor = [
                 enter: { TraverserContext context ->
-                    assert context.getInitialData() == "foo"
                     TraversalControl.CONTINUE
                 },
                 leave: { TraverserContext context ->
-                    assert context.getInitialData() == "foo"
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.breadthFirst({ n -> n.children }, null, "acc-result")
+                .traverse(root, visitor)
+
+
+        then:
+        result.accumulatedResult == "acc-result"
+
+    }
+
+    def "test shared data"() {
+        def visitor = [
+                enter: { TraverserContext context ->
+                    assert context.getSharedContextData() == "foo"
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    assert context.getSharedContextData() == "foo"
                     TraversalControl.QUIT
                 },
 
@@ -327,9 +347,164 @@ class TraverserTest extends Specification {
         TraverserResult result = Traverser.depthFirst({ n -> n.children }).traverse(roots, visitor)
 
         then:
-        result.getResult() == null
+        result.getAccumulatedResult() == null
 
     }
+
+    def "test node position"() {
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    def curAcc = context.getCurrentAccumulate()
+                    if (context.getPosition() != null) {
+                        curAcc.add(context.getPosition().index)
+                    }
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.depthFirst({ n -> n.children }, null, [])
+                .traverse(root, visitor)
+
+
+        then:
+        result.accumulatedResult == [0, 0, 1, 0, 1]
+    }
+
+    def treeWithNamedChildren() {
+        def leaf1 = [number: 3, children: [:]]
+        def leaf2 = [number: 4, children: [:]]
+        def leaf3 = [number: 5, children: [:]]
+        def leaf4 = [number: 6, children: [:]]
+
+        def node1 = [number: 1, children: [a: [leaf1], b: [leaf2]]]
+        def node2 = [number: 2, children: [c: [leaf3], d: [leaf4]]]
+
+        [number: 0, children: [x: [node1], y: [node2]]]
+    }
+
+    def "breadth first with named children"() {
+        def root = treeWithNamedChildren()
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    def curAcc = context.getCurrentAccumulate()
+                    if (context.getPosition() != null) {
+                        curAcc.add(context.getPosition())
+                    }
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.breadthFirstWithNamedChildren({ n -> n.children }, null, [])
+                .traverse(root, visitor)
+
+
+        then:
+        result.accumulatedResult == [new NodePosition("x", 0),
+                                     new NodePosition("y", 0),
+                                     new NodePosition("a", 0),
+                                     new NodePosition("b", 0),
+                                     new NodePosition("c", 0),
+                                     new NodePosition("d", 0),
+        ]
+    }
+
+    def "depth first with named children"() {
+        def root = treeWithNamedChildren()
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    def curAcc = context.getCurrentAccumulate()
+                    if (context.getPosition() != null) {
+                        curAcc.add(context.getPosition())
+                    }
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        def result = Traverser.depthFirstWithNamedChildren({ n -> n.children }, null, [])
+                .traverse(root, visitor)
+
+
+        then:
+        result.accumulatedResult == [new NodePosition("y", 0),
+                                     new NodePosition("d", 0),
+                                     new NodePosition("c", 0),
+                                     new NodePosition("x", 0),
+                                     new NodePosition("b", 0),
+                                     new NodePosition("a", 0),
+        ]
+    }
+
+    def "test parent nodes"() {
+        given:
+        def visitor = [
+                enter: { TraverserContext context ->
+                    context.getSharedContextData() << context.getParentNodes().collect { it.number }
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        def list = []
+        when:
+        Traverser.depthFirst({ n -> n.children }, list).traverse(root, visitor)
+
+
+        then:
+        list == [[], [0], [1, 0], [0], [2, 0], [2, 0]]
+
+    }
+
+
+    def "changing the node while traversing"() {
+        given:
+        def visitedNodes = []
+        def visitedNodesLeave = []
+        def root = [
+                number: 0
+        ]
+        def visitor = [
+                enter: { TraverserContext context ->
+                    visitedNodes << context.thisNode().number
+                    if (context.thisNode().number > 0) return TraversalControl.CONTINUE
+                    def newRoot = [
+                            number  : 0,
+                            children: [
+                                    [number: 1, children: []],
+                                    [number: 2, children: []]
+                            ]
+                    ]
+                    context.changeNode(newRoot)
+                    TraversalControl.CONTINUE
+                },
+                leave: { TraverserContext context ->
+                    visitedNodesLeave << context.thisNode().number
+                    TraversalControl.CONTINUE
+                }
+        ] as TraverserVisitor
+        when:
+        Traverser.depthFirst({ n -> n.children }).traverse(root, visitor)
+
+
+        then:
+        visitedNodes == [0, 1, 2]
+        visitedNodesLeave == [1, 2, 0]
+
+
+    }
+
 
 }
 

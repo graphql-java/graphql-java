@@ -21,6 +21,7 @@ import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.TypeRuntimeWiring
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
+import org.antlr.v4.runtime.misc.ParseCancellationException
 
 import java.util.function.Supplier
 import java.util.stream.Collectors

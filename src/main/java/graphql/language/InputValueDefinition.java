@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class InputValueDefinition extends AbstractNode<InputValueDefinition> implements DirectivesContainer<InputValueDefinition> {
     private final String name;
@@ -18,6 +20,9 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
     private final Description description;
     private final List<Directive> directives;
 
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_DEFAULT_VALUE = "defaultValue";
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected InputValueDefinition(String name,
@@ -94,6 +99,25 @@ public class InputValueDefinition extends AbstractNode<InputValueDefinition> imp
         }
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .child(CHILD_DEFAULT_VALUE, defaultValue)
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public InputValueDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .defaultValue(newChildren.getChildOrNull(CHILD_DEFAULT_VALUE))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+
+        );
     }
 
     @Override

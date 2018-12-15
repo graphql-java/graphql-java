@@ -10,11 +10,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinition> implements NamedNode<OperationTypeDefinition> {
 
     private final String name;
     private final Type type;
+
+    public static final String CHILD_TYPE = "type";
 
     @Internal
     protected OperationTypeDefinition(String name, Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -47,6 +51,20 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         List<Node> result = new ArrayList<>();
         result.add(type);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .build();
+    }
+
+    @Override
+    public OperationTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+        );
     }
 
     @Override

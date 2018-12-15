@@ -10,11 +10,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread> {
 
     private final String name;
     private final List<Directive> directives;
+
+    public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
     protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -62,6 +66,20 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         List<Node> result = new ArrayList<>();
         result.addAll(directives);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DIRECTIVES, directives)
+                .build();
+    }
+
+    @Override
+    public FragmentSpread withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
     }
 
     @Override
