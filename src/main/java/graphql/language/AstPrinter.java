@@ -25,7 +25,10 @@ public class AstPrinter {
 
     private final Map<Class<? extends Node>, NodePrinter<? extends Node>> printers = new LinkedHashMap<>();
 
-    private AstPrinter() {
+    private final boolean compactMode;
+
+    private AstPrinter(boolean compactMode) {
+        this.compactMode = compactMode;
         printers.put(Argument.class, argument());
         printers.put(ArrayValue.class, value());
         printers.put(BooleanValue.class, value());
@@ -71,23 +74,31 @@ public class AstPrinter {
     }
 
     private NodePrinter<Argument> argument() {
+        if (compactMode) {
+            return (out, node) -> out.printf("%s:%s", node.getName(), value(node.getValue()));
+        }
         return (out, node) -> out.printf("%s: %s", node.getName(), value(node.getValue()));
     }
 
     private NodePrinter<Document> document() {
+        if (compactMode) {
+            return (out, node) -> out.printf("%s", join(node.getDefinitions(), " "));
+        }
         return (out, node) -> out.printf("%s\n", join(node.getDefinitions(), "\n\n"));
     }
 
     private NodePrinter<Directive> directive() {
+        final String argSep = compactMode ? "," : ", ";
         return (out, node) -> {
-            String arguments = wrap("(", join(node.getArguments(), ", "), ")");
+            String arguments = wrap("(", join(node.getArguments(), argSep), ")");
             out.printf("@%s%s", node.getName(), arguments);
         };
     }
 
     private NodePrinter<DirectiveDefinition> directiveDefinition() {
+        final String argSep = compactMode ? "," : ", ";
         return (out, node) -> {
-            String arguments = wrap("(", join(node.getInputValueDefinitions(), ", "), ")");
+            String arguments = wrap("(", join(node.getInputValueDefinitions(), argSep), ")");
             String locations = join(node.getDirectiveLocations(), " | ");
             out.printf("directive @%s%s on %s", node.getName(), arguments, locations);
         };
@@ -126,10 +137,12 @@ public class AstPrinter {
     }
 
     private NodePrinter<Field> field() {
+        final String argSep = compactMode ? "," : ", ";
+        final String aliasSuffix = compactMode ? ":" : ": ";
         return (out, node) -> {
-            String alias = wrap("", node.getAlias(), ": ");
+            String alias = wrap("", node.getAlias(), aliasSuffix);
             String name = node.getName();
-            String arguments = wrap("(", join(node.getArguments(), ", "), ")");
+            String arguments = wrap("(", join(node.getArguments(), argSep), ")");
             String directives = directives(node.getDirectives());
             String selectionSet = node(node.getSelectionSet());
 
@@ -143,10 +156,11 @@ public class AstPrinter {
 
 
     private NodePrinter<FieldDefinition> fieldDefinition() {
+        final String argSep = compactMode ? "," : ", ";
         return (out, node) -> {
             out.printf("%s", comments(node));
             String args;
-            if (hasComments(node.getInputValueDefinitions())) {
+            if (hasComments(node.getInputValueDefinitions()) && !compactMode) {
                 args = join(node.getInputValueDefinitions(), "\n");
                 out.printf("%s", node.getName() +
                         wrap("(\n", args, "\n)") +
@@ -157,7 +171,7 @@ public class AstPrinter {
                         )
                 );
             } else {
-                args = join(node.getInputValueDefinitions(), ", ");
+                args = join(node.getInputValueDefinitions(), argSep);
                 out.printf("%s", node.getName() +
                         wrap("(", args, ")") +
                         ": " +
@@ -225,12 +239,14 @@ public class AstPrinter {
     }
 
     private NodePrinter<InputValueDefinition> inputValueDefinition() {
+        String nameTypeSep = compactMode ? ":" : ": ";
+        String defaultValueEquals = compactMode ? "=" : "= ";
         return (out, node) -> {
             Value defaultValue = node.getDefaultValue();
             out.printf("%s", comments(node));
             out.printf("%s", spaced(
-                    node.getName() + ": " + type(node.getType()),
-                    wrap("= ", defaultValue, ""),
+                    node.getName() + nameTypeSep + type(node.getType()),
+                    wrap(defaultValueEquals, defaultValue, ""),
                     directives(node.getDirectives())
                     )
             );
@@ -251,15 +267,17 @@ public class AstPrinter {
     }
 
     private NodePrinter<ObjectField> objectField() {
-        return (out, node) -> out.printf("%s : %s", node.getName(), value(node.getValue()));
+        String nameValueSep = compactMode ? ":" : " : ";
+        return (out, node) -> out.printf("%s%s%s", node.getName(), nameValueSep, value(node.getValue()));
     }
 
 
     private NodePrinter<OperationDefinition> operationDefinition() {
+        final String argSep = compactMode ? "," : ", ";
         return (out, node) -> {
             String op = node.getOperation().toString().toLowerCase();
             String name = node.getName();
-            String varDefinitions = wrap("(", join(nvl(node.getVariableDefinitions()), ", "), ")");
+            String varDefinitions = wrap("(", join(nvl(node.getVariableDefinitions()), argSep), ")");
             String directives = directives(node.getDirectives());
             String selectionSet = node(node.getSelectionSet());
 
@@ -274,7 +292,8 @@ public class AstPrinter {
     }
 
     private NodePrinter<OperationTypeDefinition> operationTypeDefinition() {
-        return (out, node) -> out.printf("%s: %s", node.getName(), type(node.getType()));
+        String nameTypeSep = compactMode ? ":" : ": ";
+        return (out, node) -> out.printf("%s%s%s", node.getName(), nameTypeSep, type(node.getType()));
     }
 
     private NodePrinter<ObjectTypeDefinition> objectTypeDefinition() {
@@ -363,22 +382,27 @@ public class AstPrinter {
     }
 
     private NodePrinter<UnionTypeDefinition> unionTypeDefinition() {
+        String barSep = compactMode ? "|" : " | ";
+        String equals = compactMode ? "=" : "= ";
         return (out, node) -> {
             out.printf("%s", comments(node));
             out.printf("%s", spaced(
                     "union",
                     node.getName(),
                     directives(node.getDirectives()),
-                    "= " + join(node.getMemberTypes(), " | ")
+                    equals + join(node.getMemberTypes(), barSep)
             ));
         };
     }
 
     private NodePrinter<VariableDefinition> variableDefinition() {
-        return (out, node) -> out.printf("$%s: %s%s",
+        String nameTypeSep = compactMode ? ":" : ": ";
+        String defaultValueEquals = compactMode ? "=" : " = ";
+        return (out, node) -> out.printf("$%s%s%s%s",
                 node.getName(),
+                nameTypeSep,
                 type(node.getType()),
-                wrap(" = ", node.getDefaultValue(), "")
+                wrap(defaultValueEquals, node.getDefaultValue(), "")
         );
     }
 
@@ -440,6 +464,7 @@ public class AstPrinter {
     }
 
     private String value(Value value) {
+        String argSep = compactMode ? "," : ", ";
         if (value instanceof IntValue) {
             return valueOf(((IntValue) value).getValue());
         } else if (value instanceof FloatValue) {
@@ -453,9 +478,9 @@ public class AstPrinter {
         } else if (value instanceof NullValue) {
             return "null";
         } else if (value instanceof ArrayValue) {
-            return "[" + join(((ArrayValue) value).getValues(), ", ") + "]";
+            return "[" + join(((ArrayValue) value).getValues(), argSep) + "]";
         } else if (value instanceof ObjectValue) {
-            return "{" + join(((ObjectValue) value).getObjectFields(), ", ") + "}";
+            return "{" + join(((ObjectValue) value).getObjectFields(), argSep) + "}";
         } else if (value instanceof VariableReference) {
             return "$" + ((VariableReference) value).getName();
         }
@@ -464,7 +489,7 @@ public class AstPrinter {
 
     private String comments(Node<?> node) {
         List<Comment> comments = nvl(node.getComments());
-        if (isEmpty(comments)) {
+        if (isEmpty(comments) || compactMode) {
             return "";
         }
         String s = comments.stream().map(c -> "#" + c.getContent()).collect(joining("\n", "", "\n"));
@@ -513,6 +538,11 @@ public class AstPrinter {
         if (isEmpty(nodes)) {
             return "{}";
         }
+        if (compactMode) {
+            return "{"
+                    + join(nodes, " ")
+                    + "}";
+        }
         return indent("{\n"
                 + join(nodes, "\n"))
                 + "\n}";
@@ -548,6 +578,16 @@ public class AstPrinter {
     }
 
     /**
+     * This will pretty print the AST node in graphql language format
+     *
+     * @param writer the place to put the output
+     * @param node   the AST node to print
+     */
+    public static void printAst(Writer writer, Node node) {
+        printImpl(writer, node, false);
+    }
+
+    /**
      * This will print the Ast node in graphql language format.
      * The format is derived from the pretty print version by replacing
      * all newlines and indentations through single space.
@@ -558,18 +598,12 @@ public class AstPrinter {
      */
     public static String printAstCompact(Node node) {
         StringWriter sw = new StringWriter();
-        printAst(sw, node);
-        return sw.toString().replaceAll("\\s+", " ").trim();
+        printImpl(sw, node, true);
+        return sw.toString();
     }
 
-    /**
-     * This will pretty print the AST node in graphql language format
-     *
-     * @param writer the place to put the output
-     * @param node   the AST node to print
-     */
-    public static void printAst(Writer writer, Node node) {
-        AstPrinter astPrinter = new AstPrinter();
+    private static void printImpl(Writer writer, Node node, boolean compactMode) {
+        AstPrinter astPrinter = new AstPrinter(compactMode);
         NodePrinter<Node> printer = astPrinter._findPrinter(node);
         printer.print(new PrintWriter(writer), node);
     }
