@@ -1,18 +1,18 @@
-package graphql.execution2.result;
+package graphql.execution.nextgen.result;
 
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullException;
-import graphql.execution2.FetchedValueAnalysis;
+import graphql.execution.nextgen.FetchedValueAnalysis;
 
 import java.util.List;
 import java.util.Map;
 
 @Internal
-public class LeafExecutionResultNode extends ExecutionResultNode {
+public class DeferExecutionResultNode extends ExecutionResultNode {
 
-    public LeafExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
-                                   NonNullableFieldWasNullException nonNullableFieldWasNullException) {
+    public DeferExecutionResultNode(FetchedValueAnalysis fetchedValueAnalysis,
+                                    NonNullableFieldWasNullException nonNullableFieldWasNullException) {
         super(fetchedValueAnalysis, nonNullableFieldWasNullException);
     }
 

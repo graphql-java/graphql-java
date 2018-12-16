@@ -1,4 +1,4 @@
-package graphql.execution2.result;
+package graphql.execution.nextgen.result;
 
 import graphql.Assert;
 import graphql.ExecutionResult;
@@ -7,8 +7,8 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
-import graphql.execution2.FetchedValueAnalysis;
-import graphql.execution2.result.ObjectExecutionResultNode.UnresolvedObjectResultNode;
+import graphql.execution.nextgen.FetchedValueAnalysis;
+import graphql.execution.nextgen.result.ObjectExecutionResultNode.UnresolvedObjectResultNode;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -21,8 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static graphql.execution2.result.ExecutionResultNodePosition.index;
-import static graphql.execution2.result.ExecutionResultNodePosition.key;
+import static graphql.execution.nextgen.result.ExecutionResultNodePosition.index;
+import static graphql.execution.nextgen.result.ExecutionResultNodePosition.key;
 
 @Internal
 public class ResultNodesUtil {

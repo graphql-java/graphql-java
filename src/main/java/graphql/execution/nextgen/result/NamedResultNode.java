@@ -1,4 +1,4 @@
-package graphql.execution2.result;
+package graphql.execution.nextgen.result;
 
 import graphql.Internal;
 

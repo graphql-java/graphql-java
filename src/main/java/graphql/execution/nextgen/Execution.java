@@ -1,4 +1,4 @@
-package graphql.execution2;
+package graphql.execution.nextgen;
 
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
@@ -13,7 +13,7 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.ValuesResolver;
-import graphql.execution2.result.ResultNodesUtil;
+import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;

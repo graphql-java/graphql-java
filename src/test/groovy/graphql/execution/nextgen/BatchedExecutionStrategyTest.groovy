@@ -1,4 +1,4 @@
-package graphql.execution2
+package graphql.execution.nextgen
 
 import graphql.ExecutionInput
 import graphql.TestUtil
@@ -6,7 +6,7 @@ import graphql.execution.ExecutionId
 import graphql.schema.DataFetcher
 import spock.lang.Specification
 
-class DefaultExecutionStrategyTest extends Specification {
+class BatchedExecutionStrategyTest extends Specification {
 
 
     def "test simple execution"() {
@@ -45,7 +45,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution()
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 
@@ -93,7 +93,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution();
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 
@@ -140,7 +140,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution()
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 
@@ -187,7 +187,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution()
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 
@@ -237,7 +237,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution()
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 
@@ -287,7 +287,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution()
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 
@@ -335,7 +335,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution()
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 
@@ -372,7 +372,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution();
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 
@@ -415,7 +415,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution();
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 
@@ -453,7 +453,7 @@ class DefaultExecutionStrategyTest extends Specification {
         Execution execution = new Execution();
 
         when:
-        def monoResult = execution.execute(DefaultExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
+        def monoResult = execution.execute(BatchedExecutionStrategy, document, schema, ExecutionId.generate(), executionInput)
         def result = monoResult.get()
 
 

@@ -1,4 +1,4 @@
-package graphql.execution2;
+package graphql.execution.nextgen;
 
 import graphql.Internal;
 import graphql.schema.DataFetcher;

@@ -1,7 +1,7 @@
-package graphql.execution2;
+package graphql.execution.nextgen;
 
 import graphql.Internal;
-import graphql.execution2.result.ObjectExecutionResultNode.RootExecutionResultNode;
+import graphql.execution.nextgen.result.ObjectExecutionResultNode.RootExecutionResultNode;
 
 import java.util.concurrent.CompletableFuture;
 
