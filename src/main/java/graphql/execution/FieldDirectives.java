@@ -17,7 +17,7 @@ import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -69,7 +69,7 @@ public class FieldDirectives {
 
     private Map<String, List<GraphQLDirective>> getFieldDirectives(Map<Field, Map<String, GraphQLDirective>> directivesMap, List<Field> fields) {
         return fields.stream()
-                .flatMap(field -> directivesMap.get(field).values().stream())
+                .flatMap(field -> directivesMap.getOrDefault(field, Collections.emptyMap()).values().stream())
                 .collect(Collectors.groupingBy(GraphQLDirective::getName));
     }
 
@@ -98,7 +98,6 @@ public class FieldDirectives {
         static DirectiveCollector collect(Document document, GraphQLSchema schema, Map<String, FragmentDefinition> fragmentsByName, Map<String, Object> variables, String operationName, DirectivesResolver directivesResolver) {
             DirectiveCollector fragmentDirectiveCollector = new DirectiveCollector(document, schema, fragmentsByName, variables, operationName, directivesResolver);
             QueryTraversal traversal = QueryTraversal.newQueryTraversal()
-                    .fragmentsByName(fragmentsByName)
                     .schema(schema)
                     .variables(variables)
                     .document(document)
