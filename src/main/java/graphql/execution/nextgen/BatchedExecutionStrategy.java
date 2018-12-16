@@ -1,4 +1,4 @@
-package graphql.execution2;
+package graphql.execution.nextgen;
 
 import graphql.Assert;
 import graphql.Internal;
@@ -6,13 +6,13 @@ import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
-import graphql.execution2.result.ExecutionResultMultiZipper;
-import graphql.execution2.result.ExecutionResultNode;
-import graphql.execution2.result.ExecutionResultZipper;
-import graphql.execution2.result.NamedResultNode;
-import graphql.execution2.result.ObjectExecutionResultNode;
-import graphql.execution2.result.ObjectExecutionResultNode.RootExecutionResultNode;
-import graphql.execution2.result.ResultNodesUtil;
+import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
+import graphql.execution.nextgen.result.ExecutionResultNode;
+import graphql.execution.nextgen.result.ExecutionResultZipper;
+import graphql.execution.nextgen.result.NamedResultNode;
+import graphql.execution.nextgen.result.ObjectExecutionResultNode;
+import graphql.execution.nextgen.result.ObjectExecutionResultNode.RootExecutionResultNode;
+import graphql.execution.nextgen.result.ResultNodesUtil;
 import graphql.language.Field;
 
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package graphql.execution2;
+package graphql.execution.nextgen;
 
 import graphql.Internal;
 import graphql.SerializationError;
@@ -29,11 +29,11 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
-import static graphql.execution2.FetchedValueAnalysis.FetchedValueType.ENUM;
-import static graphql.execution2.FetchedValueAnalysis.FetchedValueType.LIST;
-import static graphql.execution2.FetchedValueAnalysis.FetchedValueType.OBJECT;
-import static graphql.execution2.FetchedValueAnalysis.FetchedValueType.SCALAR;
-import static graphql.execution2.FetchedValueAnalysis.newFetchedValueAnalysis;
+import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.ENUM;
+import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.LIST;
+import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.OBJECT;
+import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.SCALAR;
+import static graphql.execution.nextgen.FetchedValueAnalysis.newFetchedValueAnalysis;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static java.util.Collections.singletonList;
 

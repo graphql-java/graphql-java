@@ -1,11 +1,11 @@
-package graphql.execution2;
+package graphql.execution.nextgen;
 
 import graphql.Internal;
 import graphql.execution.NonNullableFieldWasNullException;
-import graphql.execution2.result.ExecutionResultNode;
-import graphql.execution2.result.LeafExecutionResultNode;
-import graphql.execution2.result.ListExecutionResultNode;
-import graphql.execution2.result.ObjectExecutionResultNode;
+import graphql.execution.nextgen.result.ExecutionResultNode;
+import graphql.execution.nextgen.result.LeafExecutionResultNode;
+import graphql.execution.nextgen.result.ListExecutionResultNode;
+import graphql.execution.nextgen.result.ObjectExecutionResultNode;
 
 import java.util.Collection;
 import java.util.List;
