@@ -104,8 +104,7 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
     }
 
     private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, List<Field> field, ExecutionStepInfo executionInfo) {
-        FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue.getFetchedValue(), name, field, executionInfo);
-        fetchedValueAnalysis.setFetchedValue(fetchedValue);
+        FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionInfo);
         return fetchedValueAnalysis;
     }
 

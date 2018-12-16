@@ -18,6 +18,9 @@ public class FetchedValue {
         this.errors = errors;
     }
 
+    /*
+     * the unboxed value meaning not Optional, not DataFetcherResult etc
+     */
     public Object getFetchedValue() {
         return fetchedValue;
     }
