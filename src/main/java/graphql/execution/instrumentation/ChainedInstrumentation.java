@@ -176,6 +176,15 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
+    public ExecutionInput instrumentExecutionInputAfterParse(ExecutionInput executionInput, Document document, InstrumentationExecutionParameters parameters) {
+        for (Instrumentation instrumentation : instrumentations) {
+            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+            executionInput = instrumentation.instrumentExecutionInputAfterParse(executionInput, document, parameters.withNewState(state));
+        }
+        return executionInput;
+    }
+
+    @Override
     public Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
         for (Instrumentation instrumentation : instrumentations) {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());

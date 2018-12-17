@@ -167,6 +167,20 @@ public interface Instrumentation {
     }
 
     /**
+     * This is called to instrument a {@link graphql.ExecutionInput} once the parsed query is available,
+     * allowing you to adjust what query input parameters are used
+     *
+     * @param executionInput the execution input to be used
+     * @param document   the document to be used
+     * @param parameters     the parameters describing the field to be fetched
+     *
+     * @return a non null instrumented ExecutionInput, the default is to return to the same object
+     */
+    default ExecutionInput instrumentExecutionInputAfterParse(ExecutionInput executionInput, Document document, InstrumentationExecutionParameters parameters) {
+        return executionInput;
+    }
+
+    /**
      * This is called to instrument a {@link graphql.language.Document} before it is used allowing you to adjust the query AST if you so desire
      *
      * @param document   the document to be used

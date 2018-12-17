@@ -503,7 +503,6 @@ public class GraphQL {
         }
     }
 
-
     private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
         PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.get(executionInput.getQuery(),
@@ -516,7 +515,10 @@ public class GraphQL {
             return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
         }
 
-        return execute(executionInputRef.get(), preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
+        Document document = preparsedDoc.getDocument();
+        InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(executionInputRef.get(), graphQLSchema, instrumentationState);
+        ExecutionInput finalExecutionInput = instrumentation.instrumentExecutionInputAfterParse(executionInputRef.get(), document, parameters);
+        return execute(finalExecutionInput, document, graphQLSchema, instrumentationState);
     }
 
     private PreparsedDocumentEntry parseAndValidate(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {

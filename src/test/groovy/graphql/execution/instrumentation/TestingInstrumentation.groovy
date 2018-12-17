@@ -106,6 +106,18 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
+    ExecutionInput instrumentExecutionInputAfterParse(ExecutionInput executionInput, Document document, InstrumentationExecutionParameters parameters) {
+        assert parameters.getInstrumentationState() == instrumentationState
+        return executionInput
+    }
+
+    @Override
+    Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
+        assert parameters.getInstrumentationState() == instrumentationState
+        return document
+    }
+
+    @Override
     ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
         return executionContext

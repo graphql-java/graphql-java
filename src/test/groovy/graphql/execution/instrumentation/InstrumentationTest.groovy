@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
@@ -21,6 +22,7 @@ import spock.lang.Specification
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.function.Consumer
 
 class InstrumentationTest extends Specification {
 
@@ -308,7 +310,7 @@ class InstrumentationTest extends Specification {
             @Override
             Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
                 this.capturedData["originalDoc"] = AstPrinter.printAst(document)
-                new Parser().parseDocument(newQuery);
+                new Parser().parseDocument(newQuery)
             }
 
         }
@@ -329,5 +331,60 @@ class InstrumentationTest extends Specification {
   }
 }
 '''
+    }
+
+        def "execution input can be intercepted by instrumentation and changed using document"() {
+
+        given:
+
+        def query = """
+        {
+            human (id: "1000") { #Luke
+                name
+            }
+        }
+        """
+        def newQuery = """
+        query myQuery(\$id: String!) {
+            human (id: \$id) {
+                name
+            }
+        }
+        """
+
+        def instrumentation = new TestingInstrumentation() {
+
+            @Override
+            InstrumentationState createState() {
+                return super.createState()
+            }
+
+            @Override
+            ExecutionInput instrumentExecutionInputAfterParse(ExecutionInput executionInput, Document document, InstrumentationExecutionParameters parameters) {
+                executionInput.transform(new Consumer<ExecutionInput.Builder>() {
+                    @Override
+                    void accept(ExecutionInput.Builder builder) {
+                        builder.variables(Collections.singletonMap("id", "1001")) // Use different value to show it works
+                    }
+                })
+            }
+
+            @Override
+            Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
+                new Parser().parseDocument(newQuery)
+            }
+
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .build()
+
+        when:
+        def er = graphQL.execute(query)
+
+        then:
+        er.data == [human: [name: 'Darth Vader']]
     }
 }
