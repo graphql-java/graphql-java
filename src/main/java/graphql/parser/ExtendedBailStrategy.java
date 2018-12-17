@@ -44,18 +44,18 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
     }
 
     private InvalidSyntaxError mkException(Parser recognizer, RecognitionException cause) {
-        String msg = null;
         String sourcePreview = null;
+        String offendingToken = null;
         SourceLocation sourceLocation = null;
         Token currentToken = recognizer.getCurrentToken();
         if (currentToken != null) {
             int line = currentToken.getLine();
             int column = currentToken.getCharPositionInLine();
+            offendingToken = currentToken.getText();
             sourcePreview = mkPreview(line);
-            msg = "Offending token is '" + currentToken.getText() + "'";
             sourceLocation = new SourceLocation(line, column, sourceName);
         }
-        return new InvalidSyntaxError(singletonList(sourceLocation), msg, sourcePreview, cause);
+        return new InvalidSyntaxError(singletonList(sourceLocation), null, sourcePreview, offendingToken, cause);
     }
 
     /* grabs 3 lines before and after the syntax error */
