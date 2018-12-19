@@ -87,8 +87,8 @@ class ArgumentConversionsTest extends Specification {
                 .argumentConverters(ArgumentConversions.newConversions().converter("PersonInput",
                 { env ->
                     new Person(
-                            env.sourceObject["name"].toString().reverse(),
-                            env.sourceObject["age"] * 10
+                            env.valueToBeConverted["name"].toString().reverse(),
+                            env.valueToBeConverted["age"] * 10
                     )
                 }))
                 .dataFetcher(coordinates("Query", "person"), df))

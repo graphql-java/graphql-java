@@ -31,7 +31,7 @@ public class ArgumentConversions implements ArgumentConverter {
         String inputTypeName = GraphQLTypeUtil.unwrapAll(environment.getArgumentType()).getName();
         ArgumentConverter argumentConverter = typeToConverterMap.get(inputTypeName);
         if (argumentConverter == null) {
-            return environment.getSourceObject();
+            return environment.getValueToBeConverted();
         }
         return argumentConverter.convertArgument(environment);
     }

@@ -1,5 +1,6 @@
 package graphql.execution
 
+
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.conversion.ArgumentConverter
@@ -7,6 +8,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.GraphQLArgument
 import spock.lang.Specification
 
+import static graphql.ExecutionInput.newExecutionInput
 import static graphql.Scalars.GraphQLInt
 import static graphql.schema.FieldCoordinates.coordinates
 import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
@@ -38,7 +40,7 @@ class ValuesConverterTest extends Specification {
 
     def "converter gets called"() {
         given:
-        ArgumentConverter converter = { env -> new ConvertedValue(env.getSourceObject(), env.getArgument()) }
+        ArgumentConverter converter = { env -> new ConvertedValue(env.getValueToBeConverted(), env.getArgument()) }
         def codeRegistry = newCodeRegistry().argumentConverter(converter).build()
 
         when:
@@ -55,7 +57,7 @@ class ValuesConverterTest extends Specification {
 
     def "first converter wins"() {
         given:
-        ArgumentConverter converter1 = { env -> new ConvertedValue(env.getSourceObject(), env.getArgument()) }
+        ArgumentConverter converter1 = { env -> new ConvertedValue(env.getValueToBeConverted(), env.getArgument()) }
         ArgumentConverter converter2 = { env -> throw new RuntimeException("Bang") }
         def codeRegistry = newCodeRegistry().argumentConverters(converter1, converter2).build()
 
@@ -68,7 +70,7 @@ class ValuesConverterTest extends Specification {
 
     def "all converters called until ones changes it"() {
         given:
-        ArgumentConverter converter1 = { env -> env.sourceObject }
+        ArgumentConverter converter1 = { env -> env.valueToBeConverted }
         ArgumentConverter converter2 = { env -> new ConvertedValue("secondCalled", env.getArgument()) }
         ArgumentConverter converter3 = { env -> new ConvertedValue("thirdCalled", env.getArgument()) }
         def codeRegistry = newCodeRegistry().argumentConverters(converter1, converter2, converter3).build()
@@ -91,10 +93,14 @@ class ValuesConverterTest extends Specification {
             this.age = age
         }
     }
+    ArgumentConverter personArgumentConverter = { env ->
+        new Person(
+                env.valueToBeConverted["name"].toString().reverse(),
+                env.valueToBeConverted["age"] * 10
+        )
+    }
 
-    def "integration test of values conversion"() {
-
-        def spec = '''
+    def spec = '''
             type Query {
                 person(arg: PersonInput)  : Person
             }
@@ -110,24 +116,19 @@ class ValuesConverterTest extends Specification {
             }
         '''
 
-        ArgumentConverter argumentConverter = { env ->
-            new Person(
-                    env.sourceObject["name"].toString().reverse(),
-                    env.sourceObject["age"] * 10
-            )
-        }
 
-        DataFetcher df = { env -> env.getArgument("arg") }
+    DataFetcher df = { env -> env.getArgument("arg") }
 
-        def runtimeWiring = newRuntimeWiring()
-                .codeRegistry(newCodeRegistry()
-                .argumentConverter(argumentConverter)
-                .dataFetcher(coordinates("Query", "person"), df))
-                .build()
-        def schema = TestUtil.schema(spec, runtimeWiring)
+    def runtimeWiring = newRuntimeWiring()
+            .codeRegistry(newCodeRegistry()
+            .argumentConverter(personArgumentConverter)
+            .dataFetcher(coordinates("Query", "person"), df))
+            .build()
+    def schema = TestUtil.schema(spec, runtimeWiring)
 
-        def graphql = GraphQL.newGraphQL(schema).build()
+    def graphql = GraphQL.newGraphQL(schema).build()
 
+    def "integration test of values conversion"() {
         when:
         def executionResult = graphql.execute('''
         query { 
@@ -137,6 +138,21 @@ class ValuesConverterTest extends Specification {
             }
         }
         ''')
+        then:
+        executionResult.errors.isEmpty()
+        executionResult.data == [person: [name: "darB", age: 490]]
+    }
+
+    def "integration tests that variables will be converted"() {
+        when:
+        def executionResult = graphql.execute(newExecutionInput().query('''
+        query($var : PersonInput ) { 
+            person(arg : $var) {
+                name
+                age
+            }
+        }
+        ''').variables(var: [name: "Brad", age: 49]))
         then:
         executionResult.errors.isEmpty()
         executionResult.data == [person: [name: "darB", age: 490]]

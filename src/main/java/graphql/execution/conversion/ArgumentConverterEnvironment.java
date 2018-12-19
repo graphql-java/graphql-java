@@ -21,7 +21,7 @@ public interface ArgumentConverterEnvironment {
     GraphQLInputType getArgumentType();
 
     /**
-     * @return the source object to be converted
+     * @return the argument value to be converted
      */
-    Object getSourceObject();
+    Object getValueToBeConverted();
 }

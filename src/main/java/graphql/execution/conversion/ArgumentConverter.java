@@ -13,7 +13,7 @@ import graphql.PublicApi;
  * Uou might use your favourite object mapping framework for conversion such as Jackson or GSON, graphql-java doesnt care, it only cares that you
  * take a basic object and give back the converted one for use further down the execution
  *
- * The inputs you will receive as as follows
+ * The inputs you will receive as as follows :
  *
  * <ul>
  * <li> input object type - a java.util.Map of values</li>
@@ -30,12 +30,12 @@ public interface ArgumentConverter {
 
     /**
      * This is called with the object to convert and extra type information about tbe argument being converted.  If the converter
-     * cannot or does not want to convert this object then it MUST return {@link graphql.execution.conversion.ArgumentConverterEnvironment#getSourceObject()}
+     * cannot or does not want to convert this object then it MUST return {@link graphql.execution.conversion.ArgumentConverterEnvironment#getValueToBeConverted()}
      * so another converter in the chain may have a go.
      *
      * @param environment the conversion environment
      *
-     * @return a new object or {@link graphql.execution.conversion.ArgumentConverterEnvironment#getSourceObject()} if you don't want to convert it
+     * @return a new object or {@link graphql.execution.conversion.ArgumentConverterEnvironment#getValueToBeConverted()} if you don't want to convert it
      */
     Object convertArgument(ArgumentConverterEnvironment environment);
 }

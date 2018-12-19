@@ -27,7 +27,7 @@ public class ArgumentConverterEnvironmentImpl implements ArgumentConverterEnviro
     }
 
     @Override
-    public Object getSourceObject() {
+    public Object getValueToBeConverted() {
         return sourceObject;
     }
 
