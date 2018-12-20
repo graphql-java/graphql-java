@@ -124,8 +124,8 @@ class ExecutionResultImplTest extends Specification {
 
         specMap.size() == 1
         specMap["errors"] == [
-                ['message': 'Invalid Syntax : Yikes at line 666 column 664', 'locations': [[line: 666, column: 664]]],
-                ['message': 'Invalid Syntax : Yowza at line 966 column 964', 'locations': [[line: 966, column: 964]]]
+                ['message': 'Yikes', 'locations': [[line: 666, column: 664]]],
+                ['message': 'Yowza', 'locations': [[line: 966, column: 964]]]
         ]
     }
 
