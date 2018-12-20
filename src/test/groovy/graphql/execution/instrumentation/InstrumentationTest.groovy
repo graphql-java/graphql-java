@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
@@ -9,7 +10,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.language.AstPrinter
-import graphql.language.Document
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -284,31 +284,33 @@ class InstrumentationTest extends Specification {
         er.data == [artoo: [id: '2001'], r2d2: [name: 'R2-D2']]
     }
 
-    def "document can be intercepted by instrumentation and changed"() {
+    def "document and variables can be intercepted by instrumentation and changed"() {
 
         given:
 
-        def query = """
-        {
-            hero {
-                id
-            }
-        }
-        """
-        def newQuery = """
-        {
-            hero {
-                name
-            }
-        }
-        """
+        def query = '''query Q($var: String!) {
+  human(id: $var) {
+    id
+  }
+}
+'''
+        def newQuery = '''query Q($var: String!) {
+  human(id: $var) {
+    id
+    name
+  }
+}
+'''
 
         def instrumentation = new TestingInstrumentation() {
 
             @Override
-            Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
-                this.capturedData["originalDoc"] = AstPrinter.printAst(document)
-                new Parser().parseDocument(newQuery);
+            DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
+                this.capturedData["originalDoc"] = AstPrinter.printAst(documentAndVariables.getDocument())
+                this.capturedData["originalVariables"] = documentAndVariables.getVariables()
+                def newDoc = new Parser().parseDocument(newQuery)
+                def newVars = [var: "1001"]
+                documentAndVariables.transform({ builder -> builder.document(newDoc).variables(newVars) })
             }
 
         }
@@ -319,15 +321,12 @@ class InstrumentationTest extends Specification {
                 .build()
 
         when:
-        def er = graphQL.execute(query)
+        def variables = [var: "1000"]
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
 
         then:
-        er.data == [hero: [name: 'R2-D2']]
-        instrumentation.capturedData["originalDoc"] == '''query {
-  hero {
-    id
-  }
-}
-'''
+        er.data == [human: [id : "1001", name: 'Darth Vader']]
+        instrumentation.capturedData["originalDoc"] == query
+        instrumentation.capturedData["originalVariables"] == variables
     }
 }

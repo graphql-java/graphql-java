@@ -176,12 +176,12 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
+    public DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
         for (Instrumentation instrumentation : instrumentations) {
             InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-            document = instrumentation.instrumentDocument(document, parameters.withNewState(state));
+            documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters.withNewState(state));
         }
-        return document;
+        return documentAndVariables;
     }
 
     @Override
