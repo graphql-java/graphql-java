@@ -21,6 +21,7 @@ import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
+import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -522,7 +523,7 @@ public class GraphQL {
         ParseResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
             log.warn("Query failed to parse : '{}'", executionInput.getQuery());
-            return new PreparsedDocumentEntry(parseResult.getException());
+            return new PreparsedDocumentEntry(parseResult.getException().toInvalidSyntaxError());
         } else {
             final Document document = parseResult.getDocument();
 
@@ -546,7 +547,7 @@ public class GraphQL {
         try {
             document = parser.parseDocument(executionInput.getQuery());
             document = instrumentation.instrumentDocument(document, parameters);
-        } catch (InvalidSyntaxError e) {
+        } catch (InvalidSyntaxException e) {
             parseInstrumentation.onCompleted(null, e);
             return ParseResult.ofError(e);
         }
@@ -592,9 +593,9 @@ public class GraphQL {
 
     private static class ParseResult {
         private final Document document;
-        private final InvalidSyntaxError exception;
+        private final InvalidSyntaxException exception;
 
-        private ParseResult(Document document, InvalidSyntaxError exception) {
+        private ParseResult(Document document, InvalidSyntaxException exception) {
             this.document = document;
             this.exception = exception;
         }
@@ -607,7 +608,7 @@ public class GraphQL {
             return document;
         }
 
-        private InvalidSyntaxError getException() {
+        private InvalidSyntaxException getException() {
             return exception;
         }
 
@@ -615,7 +616,7 @@ public class GraphQL {
             return new ParseResult(document, null);
         }
 
-        private static ParseResult ofError(InvalidSyntaxError e) {
+        private static ParseResult ofError(InvalidSyntaxException e) {
             return new ParseResult(null, e);
         }
     }

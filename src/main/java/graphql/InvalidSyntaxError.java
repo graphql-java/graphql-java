@@ -8,7 +8,7 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 
-public class InvalidSyntaxError extends GraphQLException implements GraphQLError {
+public class InvalidSyntaxError implements GraphQLError {
 
     private final String message;
     private final String sourcePreview;
@@ -20,35 +20,17 @@ public class InvalidSyntaxError extends GraphQLException implements GraphQLError
     }
 
     public InvalidSyntaxError(List<SourceLocation> sourceLocations, String msg) {
-        this(sourceLocations, msg, null, null, null);
+        this(sourceLocations, msg, null, null);
     }
 
-    public InvalidSyntaxError(List<SourceLocation> sourceLocations, String msg, String sourcePreview, String offendingToken, Exception cause) {
-        super(cause);
-        this.message = mkMessage(msg, offendingToken, sourceLocations);
+    public InvalidSyntaxError(List<SourceLocation> sourceLocations, String msg, String sourcePreview, String offendingToken) {
+        this.message = msg;
         this.sourcePreview = sourcePreview;
         this.offendingToken = offendingToken;
         if (sourceLocations != null) {
             this.locations.addAll(sourceLocations);
         }
     }
-
-    private String mkMessage(String msg, String offendingToken, List<SourceLocation> sourceLocations) {
-        SourceLocation srcLoc = (sourceLocations == null || sourceLocations.isEmpty()) ? null : sourceLocations.get(0);
-        StringBuilder sb = new StringBuilder();
-        sb.append("Invalid Syntax :");
-        if (msg != null) {
-            sb.append(" ").append(msg);
-        }
-        if (offendingToken != null) {
-            sb.append(String.format(" offending token '%s'", offendingToken));
-        }
-        if (srcLoc != null) {
-            sb.append(String.format(" at line %d column %d", srcLoc.getLine(), srcLoc.getColumn()));
-        }
-        return sb.toString();
-    }
-
 
     @Override
     public String getMessage() {
@@ -77,6 +59,7 @@ public class InvalidSyntaxError extends GraphQLException implements GraphQLError
     public String toString() {
         return "InvalidSyntaxError{" +
                 " message=" + message +
+                " ,offendingToken=" + offendingToken +
                 " ,locations=" + locations +
                 " ,sourcePreview=" + sourcePreview +
                 '}';

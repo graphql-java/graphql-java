@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.SDLDefinition;
+import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
 import graphql.schema.idl.errors.SchemaProblem;
 
@@ -76,8 +77,8 @@ public class SchemaParser {
             Document document = parser.parseDocument(schemaInput);
 
             return buildRegistry(document);
-        } catch (InvalidSyntaxError e) {
-            throw handleParseException(e);
+        } catch (InvalidSyntaxException e) {
+            throw handleParseException(e.toInvalidSyntaxError());
         }
     }
 

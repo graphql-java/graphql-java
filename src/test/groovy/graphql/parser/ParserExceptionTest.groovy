@@ -28,10 +28,10 @@ fragment X on SomeType {
         when:
         new Parser().parseDocument(badQuery)
         then:
-        def e = thrown(InvalidSyntaxError)
+        def e = thrown(InvalidSyntaxException)
 
-        e.locations[0].line == 13
-        e.locations[0].column == 4
+        e.location.line == 13
+        e.location.column == 4
         e.sourcePreview == '''    fragField1
     fragField2(syntaxErrorHere
     fragField3
@@ -53,11 +53,11 @@ fragment X on SomeType {
         when:
         new Parser().parseDocument(sdl)
         then:
-        def e = thrown(InvalidSyntaxError)
+        def e = thrown(InvalidSyntaxException)
         print e
 
-        e.locations[0].line == 2
-        e.locations[0].column == 12
+        e.location.line == 2
+        e.location.column == 12
     }
 
     def "short query failure is ok"() {
@@ -65,10 +65,10 @@ fragment X on SomeType {
         when:
         new Parser().parseDocument(query)
         then:
-        def e = thrown(InvalidSyntaxError)
+        def e = thrown(InvalidSyntaxException)
 
-        e.locations[0].line == 1
-        e.locations[0].column == 39
+        e.location.line == 1
+        e.location.column == 39
     }
 
     def "integration test of parse exception handling "() {

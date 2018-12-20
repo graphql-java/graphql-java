@@ -1,6 +1,5 @@
 package graphql.parser;
 
-import graphql.InvalidSyntaxError;
 import graphql.language.SourceLocation;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.Parser;
@@ -13,8 +12,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.Collections.singletonList;
 
 public class ExtendedBailStrategy extends BailErrorStrategy {
     private final String input;
@@ -43,7 +40,16 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
         }
     }
 
-    private InvalidSyntaxError mkException(Parser recognizer, RecognitionException cause) {
+    InvalidSyntaxException mkMoreTokensException(Token token) {
+        SourceLocation sourceLocation = new SourceLocation(token.getLine(), token.getCharPositionInLine());
+        String sourcePreview = mkPreview(token.getLine());
+        return new InvalidSyntaxException(sourceLocation,
+                "There are more tokens in the query that have not been consumed",
+                sourcePreview, token.getText(), null);
+    }
+
+
+    private InvalidSyntaxException mkException(Parser recognizer, RecognitionException cause) {
         String sourcePreview = null;
         String offendingToken = null;
         SourceLocation sourceLocation = null;
@@ -55,7 +61,7 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
             sourcePreview = mkPreview(line);
             sourceLocation = new SourceLocation(line, column, sourceName);
         }
-        return new InvalidSyntaxError(singletonList(sourceLocation), null, sourcePreview, offendingToken, cause);
+        return new InvalidSyntaxException(sourceLocation, null, sourcePreview, offendingToken, cause);
     }
 
     /* grabs 3 lines before and after the syntax error */

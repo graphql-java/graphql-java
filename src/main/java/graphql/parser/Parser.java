@@ -1,9 +1,7 @@
 package graphql.parser;
 
 import graphql.Internal;
-import graphql.InvalidSyntaxError;
 import graphql.language.Document;
-import graphql.language.SourceLocation;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
 import org.antlr.v4.runtime.CharStream;
@@ -17,11 +15,11 @@ import java.util.List;
 @Internal
 public class Parser {
 
-    public Document parseDocument(String input) throws InvalidSyntaxError {
+    public Document parseDocument(String input) throws InvalidSyntaxException {
         return parseDocument(input, null);
     }
 
-    public Document parseDocument(String input, String sourceName) throws InvalidSyntaxError {
+    public Document parseDocument(String input, String sourceName) throws InvalidSyntaxException {
 
         CharStream charStream;
         if (sourceName == null) {
@@ -37,12 +35,14 @@ public class Parser {
         GraphqlParser parser = new GraphqlParser(tokens);
         parser.removeErrorListeners();
         parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
-        parser.setErrorHandler(new ExtendedBailStrategy(input, sourceName));
+
+        ExtendedBailStrategy bailStrategy = new ExtendedBailStrategy(input, sourceName);
+        parser.setErrorHandler(bailStrategy);
+
+        GraphqlAntlrToLanguage toLanguage = new GraphqlAntlrToLanguage(tokens);
         GraphqlParser.DocumentContext documentContext = parser.document();
 
-
-        GraphqlAntlrToLanguage antlrToLanguage = new GraphqlAntlrToLanguage(tokens);
-        Document doc = antlrToLanguage.createDocument(documentContext);
+        Document doc = toLanguage.createDocument(documentContext);
 
         Token stop = documentContext.getStop();
         List<Token> allTokens = tokens.getTokens();
@@ -55,10 +55,10 @@ public class Parser {
             boolean lastGreaterThanDocument = last.getTokenIndex() > stop.getTokenIndex();
             boolean sameChannel = last.getChannel() == stop.getChannel();
             if (notEOF && lastGreaterThanDocument && sameChannel) {
-                SourceLocation sourceLocation = new SourceLocation(last.getLine(), last.getCharPositionInLine());
-                throw new InvalidSyntaxError(sourceLocation, "There are more tokens in the query that have not been consumed");
+                throw bailStrategy.mkMoreTokensException(last);
             }
         }
         return doc;
     }
+
 }

@@ -405,7 +405,7 @@ class ParserTest extends Specification {
         new Parser().parseDocument(input)
 
         then:
-        thrown(InvalidSyntaxError)
+        thrown(InvalidSyntaxException)
     }
 
     def "extraneous input is an exception"() {
@@ -416,7 +416,7 @@ class ParserTest extends Specification {
         when:
         new Parser().parseDocument(input)
         then:
-        thrown(InvalidSyntaxError)
+        thrown(InvalidSyntaxException)
     }
 
     def "invalid syntax is an error"() {
@@ -427,7 +427,7 @@ class ParserTest extends Specification {
         when:
         new Parser().parseDocument(input)
         then:
-        thrown(InvalidSyntaxError)
+        thrown(InvalidSyntaxException)
     }
 
     def "mutation without a name"() {
@@ -492,7 +492,7 @@ class ParserTest extends Specification {
         new Parser().parseDocument(input)
 
         then:
-        def exception = thrown(InvalidSyntaxError)
+        def exception = thrown(InvalidSyntaxException)
         exception != null
     }
 
@@ -504,7 +504,7 @@ class ParserTest extends Specification {
         new Parser().parseDocument(input)
 
         then:
-        def exception = thrown(InvalidSyntaxError)
+        def exception = thrown(InvalidSyntaxException)
         exception != null
     }
 
