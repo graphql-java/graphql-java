@@ -5,6 +5,7 @@ import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
 
+import static graphql.language.AstPrinter.printAstCompact
 import static graphql.language.AstTransformerUtil.changeNode
 
 class AstTransformerTest extends Specification {
@@ -32,8 +33,8 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        AstPrinter.printAstCompact(newDocument) ==
-                "query { root { foo { midA-modified { leafA } midB-modified { leafB } } bar { midC-modified { leafC } midD-modified { leafD } } } }"
+        printAstCompact(newDocument) ==
+                "query {root {foo {midA-modified {leafA} midB-modified {leafB}} bar {midC-modified {leafC} midD-modified {leafD}}}}"
     }
 
     def "no change at all"() {
@@ -69,7 +70,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        AstPrinter.printAstCompact(newDocument) == "query { foo2 }"
+        printAstCompact(newDocument) == "query {foo2}"
 
     }
 
@@ -95,7 +96,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        AstPrinter.printAstCompact(newDocument) == "query { foo2 { a b } }"
+        printAstCompact(newDocument) == "query {foo2 {a b}}"
 
     }
 
@@ -121,7 +122,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        AstPrinter.printAstCompact(newDocument) == "query { root { a(a_arg: 2) { v w } b(b_arg: 1) { x y } } }"
+        printAstCompact(newDocument) == "query {root {a(a_arg:2) {v w} b(b_arg:1) {x y}}}"
 
     }
 
@@ -147,7 +148,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        AstPrinter.printAstCompact(newDocument) == "query { root { a(arg: 1) { x y } } }"
+        printAstCompact(newDocument) == "query {root {a(arg:1) {x y}}}"
 
     }
 

@@ -3,6 +3,8 @@ package graphql.language
 import graphql.TestUtil
 import spock.lang.Specification
 
+import static graphql.language.AstPrinter.printAst
+
 class AstSignatureTest extends Specification {
 
     def "can make a signature for a query"() {
@@ -51,13 +53,26 @@ class AstSignatureTest extends Specification {
                 field : String
             }
 '''
-        def expectedQuery = '''query Ouch($var1: String, $var2: Int) { fieldZ fieldX(accountBalance: 0, anotherArg: $var2, argToAVariable: $var1, avatar: {}, favouriteThings: [], likesIceCream: false, password: "") fieldY { innerFieldA innerFieldB innerFieldC } ...X } fragment X on SomeType { fieldX(accountBalance: 0, avatar: {}, favouriteThings: [], likesIceCream: false, password: "") }'''
+        def expectedQuery = '''query Ouch($var1: String, $var2: Int) {
+  fieldX(accountBalance: 0, anotherArg: $var2, argToAVariable: $var1, avatar: {}, favouriteThings: [], likesIceCream: false, password: "")
+  fieldY {
+    innerFieldA
+    innerFieldB
+    innerFieldC
+  }
+  fieldZ
+  ...X
+}
+
+fragment X on SomeType {
+  fieldX(accountBalance: 0, avatar: {}, favouriteThings: [], likesIceCream: false, password: "")
+}
+'''
         def doc = TestUtil.parseQuery(query)
         when:
         def newDoc = new AstSignature().signatureQuery(doc, "Ouch")
         then:
         newDoc != null
-        def compact = AstPrinter.printAstCompact(newDoc)
-        compact == expectedQuery
+        printAst(newDoc) == expectedQuery
     }
 }

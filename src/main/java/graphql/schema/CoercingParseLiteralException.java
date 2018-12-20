@@ -10,7 +10,7 @@ import graphql.PublicApi;
 import graphql.language.SourceLocation;
 
 @PublicApi
-public class CoercingParseLiteralException extends GraphQLException implements GraphQLError {
+public class    CoercingParseLiteralException extends GraphQLException implements GraphQLError {
     private List<SourceLocation> sourceLocations;
 
     public CoercingParseLiteralException() {
