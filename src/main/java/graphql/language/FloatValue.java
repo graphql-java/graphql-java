@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
 public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<FloatValue> {
 
@@ -38,6 +41,17 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
     @Override
     public List<Node> getChildren() {
         return new ArrayList<>();
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public FloatValue withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
     }
 
     @Override

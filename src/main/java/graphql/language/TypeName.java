@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
 public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, NamedNode<TypeName> {
 
@@ -38,6 +41,17 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
     @Override
     public List<Node> getChildren() {
         return new ArrayList<>();
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public TypeName withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
     }
 
     @Override

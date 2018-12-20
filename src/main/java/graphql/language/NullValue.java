@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
 public class NullValue extends AbstractNode<NullValue> implements Value<NullValue> {
 
@@ -23,6 +26,17 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
     @Override
     public List<Node> getChildren() {
         return Collections.emptyList();
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public NullValue withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
     }
 
     @Override

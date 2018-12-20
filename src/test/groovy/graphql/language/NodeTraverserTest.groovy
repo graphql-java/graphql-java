@@ -115,7 +115,7 @@ class NodeTraverserTest extends Specification {
         def visitor = new NodeVisitorStub() {
             @Override
             TraversalControl visitField(Field node, TraverserContext<Node> context) {
-                context.setResult(node)
+                context.setAccumulate(node)
             }
         }
         def field = Field.newField().build()

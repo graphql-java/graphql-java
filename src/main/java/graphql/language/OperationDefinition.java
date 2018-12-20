@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition> {
 
@@ -19,10 +21,14 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     private final String name;
 
-    private Operation operation;
+    private final Operation operation;
     private final List<VariableDefinition> variableDefinitions;
     private final List<Directive> directives;
-    private SelectionSet selectionSet;
+    private final SelectionSet selectionSet;
+
+    public static final String CHILD_VARIABLE_DEFINITIONS = "variableDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
     protected OperationDefinition(String name,
@@ -59,6 +65,24 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         return result;
     }
 
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_VARIABLE_DEFINITIONS, variableDefinitions)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_SELECTION_SET, selectionSet)
+                .build();
+    }
+
+    @Override
+    public OperationDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .variableDefinitions(newChildren.getChildren(CHILD_VARIABLE_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
+        );
+    }
+
     public String getName() {
         return name;
     }
@@ -68,19 +92,11 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     }
 
     public List<VariableDefinition> getVariableDefinitions() {
-        return variableDefinitions;
+        return new ArrayList<>(variableDefinitions);
     }
 
     public List<Directive> getDirectives() {
         return new ArrayList<>(directives);
-    }
-
-    public void setOperation(Operation operation) {
-        this.operation = operation;
-    }
-
-    public void setSelectionSet(SelectionSet selectionSet) {
-        this.selectionSet = selectionSet;
     }
 
     @Override

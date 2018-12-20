@@ -10,10 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class SelectionSet extends AbstractNode<SelectionSet> {
 
     private final List<Selection> selections = new ArrayList<>();
+
+    public static final String CHILD_SELECTIONS = "selections";
 
     @Internal
     protected SelectionSet(List<Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -31,15 +35,28 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     }
 
     public List<Selection> getSelections() {
-        return selections;
+        return new ArrayList<>(selections);
     }
-
 
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(selections);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_SELECTIONS, selections)
+                .build();
+    }
+
+    @Override
+    public SelectionSet withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .selections(newChildren.getChildren(CHILD_SELECTIONS))
+        );
     }
 
     @Override

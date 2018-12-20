@@ -10,12 +10,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class VariableDefinition extends AbstractNode<VariableDefinition> implements NamedNode<VariableDefinition> {
 
     private final String name;
     private final Type type;
     private final Value defaultValue;
+
+    public static final String CHILD_TYPE = "type";
+    public static final String CHILD_DEFAULT_VALUE = "defaultValue";
 
     @Internal
     protected VariableDefinition(String name,
@@ -75,6 +80,22 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             result.add(defaultValue);
         }
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .child(CHILD_DEFAULT_VALUE, defaultValue)
+                .build();
+    }
+
+    @Override
+    public VariableDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .defaultValue(newChildren.getChildOrNull(CHILD_DEFAULT_VALUE))
+        );
     }
 
     @Override

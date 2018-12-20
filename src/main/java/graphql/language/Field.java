@@ -17,11 +17,15 @@ import java.util.function.Consumer;
 @PublicApi
 public class Field extends AbstractNode<Field> implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field> {
 
-    private String name;
-    private String alias;
-    private List<Argument> arguments;
-    private List<Directive> directives;
-    private SelectionSet selectionSet;
+    private final String name;
+    private final String alias;
+    private final List<Argument> arguments;
+    private final List<Directive> directives;
+    private final SelectionSet selectionSet;
+
+    public static final String CHILD_ARGUMENTS = "arguments";
+    public static final String CHILD_DIRECTIVES = "directives";
+    public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
     protected Field(String name,
@@ -92,6 +96,23 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return result;
     }
 
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return NodeChildrenContainer.newNodeChildrenContainer()
+                .children(CHILD_ARGUMENTS, arguments)
+                .children(CHILD_DIRECTIVES, directives)
+                .child(CHILD_SELECTION_SET, selectionSet)
+                .build();
+    }
+
+    @Override
+    public Field withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder ->
+                builder.arguments(newChildren.getChildren(CHILD_ARGUMENTS))
+                        .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
+        );
+    }
 
     @Override
     public String getName() {
@@ -103,15 +124,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
     public List<Argument> getArguments() {
-        return arguments;
-    }
-
-    public void setArguments(List<Argument> arguments) {
-        this.arguments = arguments;
-    }
-
-    public void setDirectives(List<Directive> directives) {
-        this.directives = directives;
+        return new ArrayList<>(arguments);
     }
 
     @Override
@@ -122,18 +135,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     @Override
     public SelectionSet getSelectionSet() {
         return selectionSet;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setAlias(String alias) {
-        this.alias = alias;
-    }
-
-    public void setSelectionSet(SelectionSet selectionSet) {
-        this.selectionSet = selectionSet;
     }
 
     @Override

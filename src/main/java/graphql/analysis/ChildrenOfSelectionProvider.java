@@ -51,15 +51,15 @@ public class ChildrenOfSelectionProvider extends NodeVisitorStub {
 
     @Override
     public TraversalControl visitSelectionSet(SelectionSet node, TraverserContext<Node> context) {
-        context.setResult(node.getSelections());
+        context.setAccumulate(node.getSelections());
         return TraversalControl.CONTINUE;
     }
 
     private void getSelectionSetChildren(SelectionSet node, TraverserContext<Node> context) {
         if (node == null) {
-            context.setResult(Collections.emptyList());
+            context.setAccumulate(Collections.emptyList());
         } else {
-            context.setResult(node.getSelections());
+            context.setAccumulate(node.getSelections());
         }
     }
 

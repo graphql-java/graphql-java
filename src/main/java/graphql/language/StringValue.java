@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
+
 @PublicApi
 public class StringValue extends AbstractNode<StringValue> implements ScalarValue<StringValue> {
 
@@ -38,6 +41,17 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer().build();
+    }
+
+    @Override
+    public StringValue withNewChildren(NodeChildrenContainer newChildren) {
+        assertNewChildrenAreEmpty(newChildren);
+        return this;
     }
 
     @Override

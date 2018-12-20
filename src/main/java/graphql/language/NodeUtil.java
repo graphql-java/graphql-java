@@ -88,4 +88,10 @@ public class NodeUtil {
         result.operationDefinition = operation;
         return result;
     }
+
+    public static void assertNewChildrenAreEmpty(NodeChildrenContainer newChildren) {
+        if (!newChildren.isEmpty()) {
+            throw new IllegalArgumentException("Cannot pass non-empty newChildren to Node that doesn't hold children");
+        }
+    }
 }
