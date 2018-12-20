@@ -4,6 +4,7 @@ import graphql.Internal;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
@@ -26,8 +27,8 @@ public class ExecutionStepInfoFactory {
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getName());
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<Argument> fieldArgs = field.getArguments();
-        GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
+        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
         ExecutionPath newPath = parentInfo.getPath().segment(mkNameForPath(sameFields));
 

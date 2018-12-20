@@ -24,7 +24,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
-import graphql.schema.visibility.GraphqlFieldVisibility;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,10 +103,9 @@ public class ValueFetcher {
         GraphQLFieldDefinition fieldDef = executionInfo.getFieldDefinition();
 
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        GraphqlFieldVisibility fieldVisibility = codeRegistry.getFieldVisibility();
         GraphQLFieldsContainer parentType = getFieldsContainer(executionInfo);
 
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldVisibility, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext, fieldType, sameFields);
