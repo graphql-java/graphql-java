@@ -65,6 +65,7 @@ public class AstSorter {
                 OperationDefinition changedNode = node.transform(builder -> {
                     builder.variableDefinitions(sort(node.getVariableDefinitions(), comparing(VariableDefinition::getName)));
                     builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
+                    builder.selectionSet(sortSelectionSet(node.getSelectionSet()));
                 });
                 return changeNode(context, changedNode);
             }
@@ -244,7 +245,19 @@ public class AstSorter {
             }
             return "";
         };
-        return comparing(byName);
+        Function<Selection, Integer> byType = s -> {
+            if (s instanceof Field) {
+                return 1;
+            }
+            if (s instanceof FragmentSpread) {
+                return 2;
+            }
+            if (s instanceof InlineFragment) {
+                return 3;
+            }
+            return 4;
+        };
+        return comparing(byType).thenComparing(comparing(byName));
     }
 
     private Comparator<Definition> comparingDefinitions() {

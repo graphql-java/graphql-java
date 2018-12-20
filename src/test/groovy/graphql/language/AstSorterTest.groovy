@@ -30,13 +30,23 @@ class AstSorterTest extends Specification {
     }
 
     query QX {
+        ... inlineFragmentB
         field(z: "valz", x : "valx", y:"valy") {
             subfieldz
             subfieldx(b : "valb", a : "vala", c : "valc")
             subfieldy
         }
-        ... inlineFragmentB
+        ... on Z {
+            subfieldC
+            subfieldA
+            subfieldB
+        }
         ... inlineFragmentA
+        ... on X {
+            subfieldC
+            subfieldA
+            subfieldB
+        }
         ... inlineFragmentC
     }
 
@@ -88,9 +98,9 @@ class AstSorterTest extends Specification {
 '''
 
         def expectedQuery = '''query {
+  unamedQueryX
   unamedQueryY
   unamedQueryZ
-  unamedQueryX
 }
 
 query QX {
@@ -99,18 +109,28 @@ query QX {
     subfieldy
     subfieldz
   }
-  ...inlineFragmentB
   ...inlineFragmentA
+  ...inlineFragmentB
   ...inlineFragmentC
+  ... on X {
+    subfieldA
+    subfieldB
+    subfieldC
+  }
+  ... on Z {
+    subfieldA
+    subfieldB
+    subfieldC
+  }
 }
 
 query QY($varX: Int = 1, $varY: Int = 2, $varZ: Int = 3) @directiveA @directiveB @directiveC {
-  ... on SomeTypeB {
+  ... on SomeTypeA {
     fieldA @directiveSWithArgs(argX: "valX", argY: "valY", argZ: "valZ")
     fieldB
     fieldC
   }
-  ... on SomeTypeA {
+  ... on SomeTypeB {
     fieldA @directiveSWithArgs(argX: "valX", argY: "valY", argZ: "valZ")
     fieldB
     fieldC
@@ -118,12 +138,12 @@ query QY($varX: Int = 1, $varY: Int = 2, $varZ: Int = 3) @directiveA @directiveB
 }
 
 query QZ {
-  fieldZ(x: "valx", y: "valy", z: "valz") {
+  fieldX(x: "valx", y: "valy", z: "valz") {
     subfieldx
     subfieldy
     subfieldz
   }
-  fieldX(x: "valx", y: "valy", z: "valz") {
+  fieldZ(x: "valx", y: "valy", z: "valz") {
     subfieldx
     subfieldy
     subfieldz
