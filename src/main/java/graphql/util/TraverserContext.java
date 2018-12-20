@@ -2,21 +2,38 @@ package graphql.util;
 
 import graphql.PublicApi;
 
+import java.util.List;
 import java.util.Set;
 
 /**
- * Traversal context
+ * Traversal context.
+ *
+ * It is used as providing context for traversing, but also for returning an accumulate value. ({@link #setAccumulate(Object)}
+ *
+ * There is always a "fake" root context with null node, null parent, null position. See {@link #isRootContext()}
  *
  * @param <T> type of tree node
  */
 @PublicApi
 public interface TraverserContext<T> {
+
     /**
      * Returns current node being visited
      *
-     * @return current node traverser is visiting
+     * @return current node traverser is visiting. Is null for the root context
      */
     T thisNode();
+
+    /**
+     * Change the current node to the provided node. Only applicable in enter.
+     *
+     * Useful when the tree should be changed while traversing.
+     *
+     * Also: changing a node makes only a difference when it has different children than the current one.
+     *
+     * @param newNode the new Node
+     */
+    void changeNode(T newNode);
 
     /**
      * Returns parent context.
@@ -30,11 +47,18 @@ public interface TraverserContext<T> {
     TraverserContext<T> getParentContext();
 
     /**
-     * The result of the {@link #getParentContext()}.
+     * The list of parent nodes starting from the current parent.
      *
-     * @return the parent result
+     * @return list of parent nodes
      */
-    Object getParentResult();
+    List<T> getParentNodes();
+
+    /**
+     * The position of the current node regarding to the parent node.
+     *
+     * @return the position or null if this node is a root node
+     */
+    NodePosition getPosition();
 
     /**
      * Informs that the current node has been already "visited"
@@ -74,24 +98,41 @@ public interface TraverserContext<T> {
 
 
     /**
-     * Set the result for this TraverserContext.
+     * Sets the new accumulate value.
      *
-     * @param result to set
+     * Can be retrieved by getA
+     *
+     * @param accumulate to set
      */
-    void setResult(Object result);
+    void setAccumulate(Object accumulate);
 
     /**
-     * The result of this TraverserContext..
+     * The new accumulate value, previously set by {@link #setAccumulate(Object)}
+     * or {@link #getCurrentAccumulate()} if {@link #setAccumulate(Object)} not invoked.
      *
-     * @return the result
+     * @return new acc
      */
-    Object getResult();
+    <U> U getNewAccumulate();
+
+    /**
+     * The current accumulate value used as "input" for the current step.
+     *
+     * @return current acc
+     */
+    <U> U getCurrentAccumulate();
 
     /**
      * Used to share something across all TraverserContext.
      *
-     * @return the initial data
+     * @return contextData
      */
-    Object getInitialData();
+    <U> U getSharedContextData();
+
+    /**
+     * Returns true for the root context, which doesn't have a node or a position.
+     *
+     * @return true for the root context, otherwise false
+     */
+    boolean isRootContext();
 
 }

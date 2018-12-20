@@ -11,12 +11,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.argumentsByName;
 
 @PublicApi
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {
     private final String name;
     private final List<Argument> arguments = new ArrayList<>();
+
+    public static final String CHILD_ARGUMENTS = "arguments";
 
     @Internal
     protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -67,6 +70,20 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     @Override
     public List<Node> getChildren() {
         return new ArrayList<>(arguments);
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_ARGUMENTS, arguments)
+                .build();
+    }
+
+    @Override
+    public Directive withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .arguments(newChildren.getChildren(CHILD_ARGUMENTS))
+        );
     }
 
     @Override

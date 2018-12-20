@@ -10,10 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     private final Type type;
+
+    public static final String CHILD_TYPE = "type";
 
     @Internal
     protected ListType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -39,6 +43,20 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
         List<Node> result = new ArrayList<>();
         result.add(type);
         return result;
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .child(CHILD_TYPE, type)
+                .build();
+    }
+
+    @Override
+    public ListType withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
+        );
     }
 
     @Override

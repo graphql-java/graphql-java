@@ -21,7 +21,6 @@ import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -174,6 +173,15 @@ public class ChainedInstrumentation implements Instrumentation {
             executionInput = instrumentation.instrumentExecutionInput(executionInput, parameters.withNewState(state));
         }
         return executionInput;
+    }
+
+    @Override
+    public Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
+        for (Instrumentation instrumentation : instrumentations) {
+            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
+            document = instrumentation.instrumentDocument(document, parameters.withNewState(state));
+        }
+        return document;
     }
 
     @Override

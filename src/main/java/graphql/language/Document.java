@@ -10,10 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class Document extends AbstractNode<Document> {
 
     private final List<Definition> definitions;
+
+    public static final String CHILD_DEFINITIONS = "definitions";
 
     @Internal
     protected Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -31,15 +35,27 @@ public class Document extends AbstractNode<Document> {
     }
 
     public List<Definition> getDefinitions() {
-        return definitions;
+        return new ArrayList<>(definitions);
     }
-
 
     @Override
     public List<Node> getChildren() {
         return new ArrayList<>(definitions);
     }
 
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_DEFINITIONS, definitions)
+                .build();
+    }
+
+    @Override
+    public Document withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .definitions(newChildren.getChildren(CHILD_DEFINITIONS))
+        );
+    }
 
     @Override
     public boolean isEqualTo(Node o) {

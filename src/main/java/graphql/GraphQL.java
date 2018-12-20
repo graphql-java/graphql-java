@@ -540,12 +540,14 @@ public class GraphQL {
     }
 
     private ParseResult parse(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
-        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(new InstrumentationExecutionParameters(executionInput, graphQLSchema, instrumentationState));
+        InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(executionInput, graphQLSchema, instrumentationState);
+        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(parameters);
 
         Parser parser = new Parser();
         Document document;
         try {
             document = parser.parseDocument(executionInput.getQuery());
+            document = instrumentation.instrumentDocument(document, parameters);
         } catch (ParseCancellationException e) {
             parseInstrumentation.onCompleted(null, e);
             return ParseResult.ofError(e);

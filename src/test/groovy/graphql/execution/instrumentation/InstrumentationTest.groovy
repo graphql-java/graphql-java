@@ -5,8 +5,12 @@ import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.batched.BatchedExecutionStrategy
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.language.AstPrinter
+import graphql.language.Document
+import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
@@ -278,5 +282,52 @@ class InstrumentationTest extends Specification {
         then:
 
         er.data == [artoo: [id: '2001'], r2d2: [name: 'R2-D2']]
+    }
+
+    def "document can be intercepted by instrumentation and changed"() {
+
+        given:
+
+        def query = """
+        {
+            hero {
+                id
+            }
+        }
+        """
+        def newQuery = """
+        {
+            hero {
+                name
+            }
+        }
+        """
+
+        def instrumentation = new TestingInstrumentation() {
+
+            @Override
+            Document instrumentDocument(Document document, InstrumentationExecutionParameters parameters) {
+                this.capturedData["originalDoc"] = AstPrinter.printAst(document)
+                new Parser().parseDocument(newQuery);
+            }
+
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .build()
+
+        when:
+        def er = graphQL.execute(query)
+
+        then:
+        er.data == [hero: [name: 'R2-D2']]
+        instrumentation.capturedData["originalDoc"] == '''query {
+  hero {
+    id
+  }
+}
+'''
     }
 }

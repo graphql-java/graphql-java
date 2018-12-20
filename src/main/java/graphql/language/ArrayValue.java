@@ -10,10 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
+
 @PublicApi
 public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayValue> {
 
     private final List<Value> values = new ArrayList<>();
+
+    public static final String CHILD_VALUES = "values";
 
     @Internal
     protected ArrayValue(List<Value> values, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
@@ -37,6 +41,20 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
     @Override
     public List<Node> getChildren() {
         return new ArrayList<>(values);
+    }
+
+    @Override
+    public NodeChildrenContainer getNamedChildren() {
+        return newNodeChildrenContainer()
+                .children(CHILD_VALUES, values)
+                .build();
+    }
+
+    @Override
+    public ArrayValue withNewChildren(NodeChildrenContainer newChildren) {
+        return transform(builder -> builder
+                .values(newChildren.getChildren(CHILD_VALUES))
+        );
     }
 
     @Override
