@@ -30,6 +30,7 @@ import java.util.concurrent.CompletionException
 
 import static ExecutionStrategyParameters.newParameters
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.mergedFields
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -97,7 +98,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(result)
                 .fields(["fld": [Field.newField().build()]])
-                .field([Field.newField().build()])
+                .field(mergedFields(Field.newField().build()))
                 .build()
 
         when:
@@ -126,7 +127,7 @@ class ExecutionStrategyTest extends Specification {
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": []])
-                .field([field])
+                .field(mergedFields(field))
                 .build()
 
         when:
@@ -341,7 +342,7 @@ class ExecutionStrategyTest extends Specification {
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .fields(["fld": []])
-                .field([new Field("someField")])
+                .field(mergedFields(new Field("someField")))
                 .build()
 
         when:
@@ -487,7 +488,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .source("source")
                 .fields(["someField": [field]])
-                .field([field])
+                .field(mergedFields(field))
                 .nonNullFieldValidator(nullableFieldValidator)
                 .path(executionPath)
                 .build()
@@ -536,7 +537,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .source("source")
                 .fields(["someField": [field]])
-                .field([field])
+                .field(mergedFields(field))
                 .path(expectedPath)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .build()
@@ -639,8 +640,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .source(null)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .field([field])
-                .fields(["someField": [field]])
+                .field(mergedFields(field))
+                .fields(["someField": [mergedFields(field)]])
                 .path(ExecutionPath.rootPath().segment("abc"))
                 .build()
 
@@ -666,8 +667,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(executionStepInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(["fld": [Field.newField().build()]])
-                .field([Field.newField().build()])
+                .fields(["fld": [mergedFields(Field.newField().build())]])
+                .field(mergedFields(Field.newField().build()))
                 .build()
 
         when:
@@ -687,8 +688,8 @@ class ExecutionStrategyTest extends Specification {
         def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
         def parameters = newParameters()
                 .path(ExecutionPath.fromList(["parent"]))
-                .field([field])
-                .fields(["parent": [field]])
+                .field(mergedFields(field))
+                .fields(["parent": [mergedFields(field)]])
                 .executionStepInfo(executionStepInfo)
                 .build()
 
@@ -714,8 +715,8 @@ class ExecutionStrategyTest extends Specification {
         def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
         def parameters = newParameters()
                 .path(ExecutionPath.fromList(["parent"]))
-                .field([field])
-                .fields(["parent": [field]])
+                .field(mergedFields(field))
+                .fields(["parent": [mergedFields(field)]])
                 .executionStepInfo(executionStepInfo)
                 .build()
 
@@ -744,8 +745,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(executionStepInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(["fld": [Field.newField().build()]])
-                .field([Field.newField().build()])
+                .fields(["fld": [mergedFields(Field.newField().build())]])
+                .field(mergedFields(Field.newField().build()))
                 .build()
 
         when:
@@ -768,8 +769,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(["fld": [Field.newField().build()]])
-                .field([Field.newField().build()])
+                .fields(["fld": [mergedFields(Field.newField().build())]])
+                .field(mergedFields(Field.newField().build()))
                 .build()
 
         when:
