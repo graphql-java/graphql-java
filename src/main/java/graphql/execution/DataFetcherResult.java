@@ -4,6 +4,7 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
@@ -40,5 +41,47 @@ public class DataFetcherResult<T> {
      */
     public List<GraphQLError> getErrors() {
         return errors;
+    }
+
+    /**
+     * Creates a new data fetcher result builder
+     *
+     * @param <T> the type of the result
+     *
+     * @return a new builder
+     */
+    public static <T> Builder<T> newResult() {
+        return new Builder<>();
+    }
+
+    public static class Builder<T> {
+        private T data;
+        private final List<GraphQLError> errors = new ArrayList<>();
+
+        public Builder(T data) {
+            this.data = data;
+        }
+
+        public Builder() {
+        }
+
+        public Builder<T> data(T data) {
+            this.data = data;
+            return this;
+        }
+
+        public Builder<T> errors(List<GraphQLError> errors) {
+            this.errors.addAll(errors);
+            return this;
+        }
+
+        public Builder<T> error(GraphQLError error) {
+            this.errors.add(error);
+            return this;
+        }
+
+        public DataFetcherResult<T> build() {
+            return new DataFetcherResult<>(data, errors);
+        }
     }
 }

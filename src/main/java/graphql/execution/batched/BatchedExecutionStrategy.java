@@ -27,6 +27,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
@@ -37,7 +38,6 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
-import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.lang.reflect.Array;
 import java.util.ArrayDeque;
@@ -219,9 +219,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         CompletableFuture<List<ExecutionNode>> result = fetchedData.thenApply((fetchedValues) -> {
 
-            GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
+            GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
             Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
-                    fieldVisibility,
+                    codeRegistry,
                     fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
 
             return completeValues(executionContext, fetchedValues, executionStepInfo, fieldName, fields, argumentValues);
@@ -241,9 +241,9 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         List<Field> fields = node.getFields().get(fieldName);
         List<MapOrList> parentResults = node.getParentResults();
 
-        GraphqlFieldVisibility fieldVisibility = executionContext.getGraphQLSchema().getFieldVisibility();
+        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(
-                fieldVisibility,
+                codeRegistry,
                 fieldDef.getArguments(), fields.get(0).getArguments(), executionContext.getVariables());
 
         GraphQLOutputType fieldType = fieldDef.getType();
@@ -260,7 +260,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                 .selectionSet(fieldCollector)
                 .build();
 
-        DataFetcher supplied = executionContext.getGraphQLSchema().getCodeRegistry().getDataFetcher(parentType,fieldDef);
+        DataFetcher supplied = codeRegistry.getDataFetcher(parentType, fieldDef);
         boolean trivialDataFetcher = supplied instanceof TrivialDataFetcher;
         BatchedDataFetcher batchedDataFetcher = batchingFactory.create(supplied);
 
