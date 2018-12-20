@@ -28,6 +28,31 @@ import static graphql.Assert.assertNotEmpty;
  *      }
  * }
  * </pre>
+ *
+ * Another example:
+ * <pre>
+ * {@code
+ *     {
+ *          me{fistName}
+ *          me{lastName}
+ *     }
+ * }
+ * </pre>
+ *
+ * Here the me field is merged together including the sub selections.
+ *
+ * A third example with different directives:
+ * <pre>
+ * {@code
+ *     {
+ *          foo @someDirective
+ *          foo @anotherDirective
+ *     }
+ * }
+ * </pre>
+ * These examples make clear that you need to consider all merged fields together to have the full picture.
+ *
+ * The actual logic when fields can successfully merged together is implemented in {#graphql.validation.rules.OverlappingFieldsCanBeMerged}
  */
 @PublicApi
 public class MergedFields {
