@@ -15,7 +15,7 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
     @Override
     public void accept(DataFetcherExceptionHandlerParameters handlerParameters) {
         Throwable exception = handlerParameters.getException();
-        SourceLocation sourceLocation = handlerParameters.getField().getSourceLocation();
+        SourceLocation sourceLocation = handlerParameters.getField().getSingleField().getSourceLocation();
         ExecutionPath path = handlerParameters.getPath();
 
         ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, exception, sourceLocation);

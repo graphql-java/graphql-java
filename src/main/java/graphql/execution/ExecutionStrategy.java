@@ -220,9 +220,9 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        Field field = parameters.getField().getSingleField();
+        MergedFields field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getSingleField());
 
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables());
@@ -296,7 +296,7 @@ public abstract class ExecutionStrategy {
 
     private void handleFetchingException(ExecutionContext executionContext,
                                          ExecutionStrategyParameters parameters,
-                                         Field field,
+                                         MergedFields field,
                                          GraphQLFieldDefinition fieldDef,
                                          Map<String, Object> argumentValues,
                                          DataFetchingEnvironment environment,

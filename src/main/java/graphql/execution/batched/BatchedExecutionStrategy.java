@@ -295,7 +295,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
                         .executionContext(executionContext)
                         .dataFetchingEnvironment(environment)
                         .argumentValues(argumentValues)
-                        .field(fields.getSingleField())
+                        .field(fields)
                         .fieldDefinition(fieldDef)
                         .path(parameters.getPath())
                         .exception(exception)
