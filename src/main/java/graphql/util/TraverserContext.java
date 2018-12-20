@@ -110,19 +110,25 @@ public interface TraverserContext<T> {
      * The new accumulate value, previously set by {@link #setAccumulate(Object)}
      * or {@link #getCurrentAccumulate()} if {@link #setAccumulate(Object)} not invoked.
      *
-     * @return new acc
+     * @param <U> and me
+     *
+     * @return the new accumulate value
      */
     <U> U getNewAccumulate();
 
     /**
      * The current accumulate value used as "input" for the current step.
      *
-     * @return current acc
+     * @param <U> and me
+     *
+     * @return the current accumulate value
      */
     <U> U getCurrentAccumulate();
 
     /**
      * Used to share something across all TraverserContext.
+     *
+     * @param <U> and me
      *
      * @return contextData
      */
