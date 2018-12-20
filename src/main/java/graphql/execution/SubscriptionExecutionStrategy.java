@@ -111,17 +111,17 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     }
 
     private String getRootFieldName(ExecutionStrategyParameters parameters) {
-        Field rootField = parameters.getField().get(0);
+        Field rootField = parameters.getField().getSingleField();
         return rootField.getAlias() != null ? rootField.getAlias() : rootField.getName();
     }
 
     private ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionStrategyParameters parameters) {
-        Map<String, List<Field>> fields = parameters.getFields();
+        Map<String, MergedFields> fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
 
-        List<Field> firstField = fields.get(fieldNames.get(0));
+        MergedFields firstField = fields.get(fieldNames.get(0));
 
-        ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField));
+        ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField.getSingleField()));
         return parameters.transform(builder -> builder.field(firstField).path(fieldPath));
     }
 

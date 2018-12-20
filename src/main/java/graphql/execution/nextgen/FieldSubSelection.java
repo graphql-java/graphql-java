@@ -2,10 +2,9 @@ package graphql.execution.nextgen;
 
 import graphql.Internal;
 import graphql.execution.ExecutionStepInfo;
-import graphql.language.Field;
+import graphql.execution.MergedFields;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -19,7 +18,7 @@ public class FieldSubSelection {
     private Object source;
     // the type of this must be objectType
     private ExecutionStepInfo executionInfo;
-    private Map<String, List<Field>> fields = new LinkedHashMap<>();
+    private Map<String, MergedFields> fields = new LinkedHashMap<>();
 
     public Object getSource() {
         return source;
@@ -29,11 +28,11 @@ public class FieldSubSelection {
         this.source = source;
     }
 
-    public Map<String, List<Field>> getFields() {
+    public Map<String, MergedFields> getFields() {
         return fields;
     }
 
-    public void setFields(Map<String, List<Field>> fields) {
+    public void setFields(Map<String, MergedFields> fields) {
         this.fields = fields;
     }
 

@@ -3,9 +3,7 @@ package graphql.execution;
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.execution.defer.DeferredErrorSupport;
-import graphql.language.Field;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -19,10 +17,10 @@ public class ExecutionStrategyParameters {
     private final ExecutionStepInfo executionStepInfo;
     private final Object source;
     private final Map<String, Object> arguments;
-    private final Map<String, List<Field>> fields;
+    private final Map<String, MergedFields> fields;
     private final NonNullableFieldValidator nonNullableFieldValidator;
     private final ExecutionPath path;
-    private final List<Field> currentField;
+    private final MergedFields currentField;
     private final int listSize;
     private final int currentListIndex;
     private final ExecutionStrategyParameters parent;
@@ -30,11 +28,11 @@ public class ExecutionStrategyParameters {
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
                                         Object source,
-                                        Map<String, List<Field>> fields,
+                                        Map<String, MergedFields> fields,
                                         Map<String, Object> arguments,
                                         NonNullableFieldValidator nonNullableFieldValidator,
                                         ExecutionPath path,
-                                        List<Field> currentField,
+                                        MergedFields currentField,
                                         int listSize,
                                         int currentListIndex,
                                         ExecutionStrategyParameters parent,
@@ -61,7 +59,7 @@ public class ExecutionStrategyParameters {
         return source;
     }
 
-    public Map<String, List<Field>> getFields() {
+    public Map<String, MergedFields> getFields() {
         return fields;
     }
 
@@ -94,13 +92,10 @@ public class ExecutionStrategyParameters {
     }
 
     /**
-     * This returns the current field in its query representations.  Global fragments mean that
-     * a single named field can have multiple representations and different field subselections
-     * hence the use of a list of Field
-     *
-     * @return the current field in list form  or null if this has not be computed yet
+     * This returns the current field in its query representations.
+     * @return the current merged fields
      */
-    public List<Field> getField() {
+    public MergedFields getField() {
         return currentField;
     }
 
@@ -127,11 +122,11 @@ public class ExecutionStrategyParameters {
     public static class Builder {
         ExecutionStepInfo executionStepInfo;
         Object source;
-        Map<String, List<Field>> fields;
+        Map<String, MergedFields> fields;
         Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
         ExecutionPath path = ExecutionPath.rootPath();
-        List<Field> currentField;
+        MergedFields currentField;
         int listSize;
         int currentListIndex;
         ExecutionStrategyParameters parent;
@@ -170,12 +165,12 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder fields(Map<String, List<Field>> fields) {
+        public Builder fields(Map<String, MergedFields> fields) {
             this.fields = fields;
             return this;
         }
 
-        public Builder field(List<Field> currentField) {
+        public Builder field(MergedFields currentField) {
             this.currentField = currentField;
             return this;
         }

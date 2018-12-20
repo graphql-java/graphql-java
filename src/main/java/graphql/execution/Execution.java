@@ -14,7 +14,6 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.language.Document;
-import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
@@ -131,7 +130,7 @@ public class Execution {
                 .variables(executionContext.getVariables())
                 .build();
 
-        Map<String, List<Field>> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+        Map<String, MergedFields> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
         ExecutionPath path = ExecutionPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();

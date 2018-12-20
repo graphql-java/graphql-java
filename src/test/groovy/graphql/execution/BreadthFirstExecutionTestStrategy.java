@@ -3,10 +3,8 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.Internal;
-import graphql.language.Field;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -22,7 +20,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        Map<String, List<Field>> fields = parameters.getFields();
+        Map<String, MergedFields> fields = parameters.getFields();
 
         Map<String, Object> fetchedValues = new LinkedHashMap<>();
 
@@ -35,7 +33,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         // then for every fetched value, complete it
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fetchedValues.keySet()) {
-            List<Field> currentField = fields.get(fieldName);
+            MergedFields currentField = fields.get(fieldName);
             Object fetchedValue = fetchedValues.get(fieldName);
 
             ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
@@ -53,8 +51,8 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 
-    private Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, List<Field>> fields, String fieldName) {
-        List<Field> currentField = fields.get(fieldName);
+    private Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, MergedFields> fields, String fieldName) {
+        MergedFields currentField = fields.get(fieldName);
 
         ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
         ExecutionStrategyParameters newParameters = parameters

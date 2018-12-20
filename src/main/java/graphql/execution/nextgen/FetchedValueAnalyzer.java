@@ -9,10 +9,10 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
+import graphql.execution.MergedFields;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResolveType;
 import graphql.execution.UnresolvedTypeException;
-import graphql.language.Field;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLObjectType;
@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -60,11 +59,11 @@ public class FetchedValueAnalyzer {
      * enum: same as scalar
      * list: list of X: X can be list again, list of scalars or enum or objects
      */
-    public FetchedValueAnalysis analyzeFetchedValue(FetchedValue fetchedValue, String name, List<Field> field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
+    public FetchedValueAnalysis analyzeFetchedValue(FetchedValue fetchedValue, String name, MergedFields field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
         return analyzeFetchedValueImpl(fetchedValue, fetchedValue.getFetchedValue(), name, field, executionInfo);
     }
 
-    private FetchedValueAnalysis analyzeFetchedValueImpl(FetchedValue fetchedValue, Object toAnalyze, String name, List<Field> field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
+    private FetchedValueAnalysis analyzeFetchedValueImpl(FetchedValue fetchedValue, Object toAnalyze, String name, MergedFields field, ExecutionStepInfo executionInfo) throws NonNullableFieldWasNullException {
         GraphQLType fieldType = executionInfo.getUnwrappedNonNullType();
 
         if (isList(fieldType)) {
@@ -88,7 +87,7 @@ public class FetchedValueAnalyzer {
                         .nullValue()
                         .build();
             }
-            resolvedObjectType = resolveType.resolveType(executionContext, field.get(0), toAnalyze, executionInfo.getArguments(), fieldType);
+            resolvedObjectType = resolveType.resolveType(executionContext, field.getSingleField(), toAnalyze, executionInfo.getArguments(), fieldType);
             return analyzeObject(fetchedValue, toAnalyze, name, resolvedObjectType, executionInfo);
         } catch (UnresolvedTypeException ex) {
             return handleUnresolvedTypeProblem(fetchedValue, name, executionInfo, ex);
@@ -141,7 +140,8 @@ public class FetchedValueAnalyzer {
         int index = 0;
         for (Object item : values) {
             ExecutionStepInfo executionInfoForListElement = executionInfoFactory.newExecutionStepInfoForListElement(executionInfo, index);
-            children.add(analyzeFetchedValueImpl(fetchedValue, item, name, Arrays.asList(executionInfo.getField()), executionInfoForListElement));
+            MergedFields mergedField = MergedFields.newMergedFields().fields(singletonList(executionInfo.getField())).build();
+            children.add(analyzeFetchedValueImpl(fetchedValue, item, name, mergedField, executionInfoForListElement));
             index++;
         }
         return newFetchedValueAnalysis(LIST)
@@ -237,7 +237,8 @@ public class FetchedValueAnalyzer {
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
-        Map<String, List<Field>> subFields = fieldCollector.collectFields(collectorParameters, singletonList(executionInfo.getField()));
+        Map<String, MergedFields> subFields = fieldCollector.collectFields(collectorParameters,
+                MergedFields.newMergedFields().fields(singletonList(executionInfo.getField())).build());
 
         // it is not really a new step but rather a refinement
         ExecutionStepInfo newExecutionStepInfoWithResolvedType = executionInfo.changeTypeWithPreservedNonNull(resolvedObjectType);

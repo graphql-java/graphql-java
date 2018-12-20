@@ -187,7 +187,7 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValue()} future if a non null field resolves to a null value
      */
     protected CompletableFuture<FieldValueInfo> resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().get(0));
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
@@ -220,7 +220,7 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
     protected CompletableFuture<Object> fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        Field field = parameters.getField().get(0);
+        Field field = parameters.getField().getSingleField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
 
@@ -235,7 +235,7 @@ public abstract class ExecutionStrategy {
                 .source(parameters.getSource())
                 .arguments(argumentValues)
                 .fieldDefinition(fieldDef)
-                .fields(parameters.getField())
+                .mergedFields(parameters.getField())
                 .fieldType(fieldType)
                 .executionStepInfo(executionStepInfo)
                 .parentType(parentType)
@@ -334,7 +334,7 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValue()} future if a non null field resolves to a null value
      */
     protected FieldValueInfo completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
-        Field field = parameters.getField().get(0);
+        Field field = parameters.getField().getSingleField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef);
@@ -607,7 +607,7 @@ public abstract class ExecutionStrategy {
                 .variables(executionContext.getVariables())
                 .build();
 
-        Map<String, List<Field>> subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
+        Map<String, MergedFields> subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);
@@ -651,7 +651,7 @@ public abstract class ExecutionStrategy {
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {
-        return resolvedType.resolveType(executionContext, parameters.getField().get(0), parameters.getSource(), parameters.getArguments(), fieldType);
+        return resolvedType.resolveType(executionContext, parameters.getField().getSingleField(), parameters.getSource(), parameters.getArguments(), fieldType);
     }
 
 
@@ -763,7 +763,7 @@ public abstract class ExecutionStrategy {
      */
     protected ExecutionStepInfo createExecutionStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
-        Field field = parameters.getField().get(0);
+        Field field = parameters.getField().getSingleField();
         List<Argument> fieldArgs = field.getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
@@ -784,6 +784,12 @@ public abstract class ExecutionStrategy {
     public static String mkNameForPath(Field currentField) {
         return mkNameForPath(Collections.singletonList(currentField));
     }
+
+    @Internal
+    public static String mkNameForPath(MergedFields mergedFields) {
+        return mkNameForPath(mergedFields.getFields());
+    }
+
 
     @Internal
     public static String mkNameForPath(List<Field> currentField) {

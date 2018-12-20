@@ -5,13 +5,13 @@ import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStepInfoFactory;
+import graphql.execution.MergedFields;
 import graphql.execution.nextgen.result.ExecutionResultMultiZipper;
 import graphql.execution.nextgen.result.ExecutionResultNode;
 import graphql.execution.nextgen.result.ExecutionResultZipper;
 import graphql.execution.nextgen.result.NamedResultNode;
 import graphql.execution.nextgen.result.ObjectExecutionResultNode;
 import graphql.execution.nextgen.result.ResultNodesUtil;
-import graphql.language.Field;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -92,7 +92,7 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
     private CompletableFuture<List<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
         List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getFields().entrySet().stream()
                 .map(entry -> {
-                    List<Field> sameFields = entry.getValue();
+                    MergedFields sameFields = entry.getValue();
                     String name = entry.getKey();
                     ExecutionStepInfo newExecutionStepInfo = executionInfoFactory.newExecutionStepInfoForSubField(executionContext, sameFields, fieldSubSelection.getExecutionStepInfo());
                     return valueFetcher
@@ -103,7 +103,7 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
         return Async.each(fetchedValues);
     }
 
-    private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, List<Field> field, ExecutionStepInfo executionInfo) {
+    private FetchedValueAnalysis analyseValue(FetchedValue fetchedValue, String name, MergedFields field, ExecutionStepInfo executionInfo) {
         FetchedValueAnalysis fetchedValueAnalysis = fetchedValueAnalyzer.analyzeFetchedValue(fetchedValue, name, field, executionInfo);
         return fetchedValueAnalysis;
     }
