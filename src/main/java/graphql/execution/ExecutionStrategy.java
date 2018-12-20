@@ -651,7 +651,7 @@ public abstract class ExecutionStrategy {
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {
-        return resolvedType.resolveType(executionContext, parameters.getField().getSingleField(), parameters.getSource(), parameters.getArguments(), fieldType);
+        return resolvedType.resolveType(executionContext, parameters.getField(), parameters.getSource(), parameters.getArguments(), fieldType);
     }
 
 

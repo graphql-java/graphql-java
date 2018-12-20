@@ -86,7 +86,7 @@ public class FetchedValueAnalyzer {
                         .nullValue()
                         .build();
             }
-            resolvedObjectType = resolveType.resolveType(executionContext, field.getSingleField(), toAnalyze, executionInfo.getArguments(), fieldType);
+            resolvedObjectType = resolveType.resolveType(executionContext, field, toAnalyze, executionInfo.getArguments(), fieldType);
             return analyzeObject(fetchedValue, toAnalyze, name, resolvedObjectType, executionInfo);
         } catch (UnresolvedTypeException ex) {
             return handleUnresolvedTypeProblem(fetchedValue, name, executionInfo, ex);

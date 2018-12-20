@@ -23,7 +23,6 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.language.Field;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
@@ -401,7 +400,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
             }
             MapOrList childResult = mapOrList.createAndPutMap(fieldName);
 
-            GraphQLObjectType resolvedType = getGraphQLObjectType(executionContext, fields.getSingleField(), executionStepInfo.getUnwrappedNonNullType(), value.getValue(), argumentValues);
+            GraphQLObjectType resolvedType = getGraphQLObjectType(executionContext, fields, executionStepInfo.getUnwrappedNonNullType(), value.getValue(), argumentValues);
             resultsByType.putIfAbsent(resolvedType, new ArrayList<>());
             resultsByType.get(resolvedType).add(childResult);
 
@@ -446,7 +445,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         return fieldCollector.collectFields(collectorParameters, fields);
     }
 
-    private GraphQLObjectType getGraphQLObjectType(ExecutionContext executionContext, Field field, GraphQLType fieldType, Object value, Map<String, Object> argumentValues) {
+    private GraphQLObjectType getGraphQLObjectType(ExecutionContext executionContext, MergedFields field, GraphQLType fieldType, Object value, Map<String, Object> argumentValues) {
         return resolveType.resolveType(executionContext, field, value, argumentValues, fieldType);
     }
 
