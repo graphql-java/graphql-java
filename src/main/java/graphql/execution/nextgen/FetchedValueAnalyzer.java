@@ -34,7 +34,6 @@ import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.OB
 import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.SCALAR;
 import static graphql.execution.nextgen.FetchedValueAnalysis.newFetchedValueAnalysis;
 import static graphql.schema.GraphQLTypeUtil.isList;
-import static java.util.Collections.singletonList;
 
 @Internal
 public class FetchedValueAnalyzer {
@@ -140,8 +139,7 @@ public class FetchedValueAnalyzer {
         int index = 0;
         for (Object item : values) {
             ExecutionStepInfo executionInfoForListElement = executionInfoFactory.newExecutionStepInfoForListElement(executionInfo, index);
-            MergedFields mergedField = MergedFields.newMergedFields().fields(singletonList(executionInfo.getField())).build();
-            children.add(analyzeFetchedValueImpl(fetchedValue, item, name, mergedField, executionInfoForListElement));
+            children.add(analyzeFetchedValueImpl(fetchedValue, item, name, executionInfo.getField(), executionInfoForListElement));
             index++;
         }
         return newFetchedValueAnalysis(LIST)
@@ -238,7 +236,7 @@ public class FetchedValueAnalyzer {
                 .variables(executionContext.getVariables())
                 .build();
         Map<String, MergedFields> subFields = fieldCollector.collectFields(collectorParameters,
-                MergedFields.newMergedFields().fields(singletonList(executionInfo.getField())).build());
+                executionInfo.getField());
 
         // it is not really a new step but rather a refinement
         ExecutionStepInfo newExecutionStepInfoWithResolvedType = executionInfo.changeTypeWithPreservedNonNull(resolvedObjectType);

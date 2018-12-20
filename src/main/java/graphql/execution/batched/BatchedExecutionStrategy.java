@@ -174,7 +174,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo()
                 .type(fieldDefinition.getType())
                 .fieldDefinition(fieldDefinition)
-                .field(currentField.getSingleField())
+                .field(currentField)
                 .path(fieldPath)
                 .parentInfo(newParentExecutionStepInfo)
                 .build();

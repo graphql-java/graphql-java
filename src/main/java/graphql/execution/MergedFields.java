@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.PublicApi;
+import graphql.language.Argument;
 import graphql.language.Field;
 
 import java.util.ArrayList;
@@ -84,6 +85,16 @@ public class MergedFields {
     public Field getSingleField() {
         return fields.get(0);
     }
+
+    /**
+     * All merged fields share the same arguments.
+     *
+     * @return
+     */
+    public List<Argument> getArguments() {
+        return getSingleField().getArguments();
+    }
+
 
     /**
      * All merged fields

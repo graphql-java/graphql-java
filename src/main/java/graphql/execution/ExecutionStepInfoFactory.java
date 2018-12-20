@@ -20,22 +20,21 @@ public class ExecutionStepInfoFactory {
     ValuesResolver valuesResolver = new ValuesResolver();
 
 
-    public ExecutionStepInfo newExecutionStepInfoForSubField(ExecutionContext executionContext, MergedFields sameFields, ExecutionStepInfo parentInfo) {
-        Field field = sameFields.getSingleField();
+    public ExecutionStepInfo newExecutionStepInfoForSubField(ExecutionContext executionContext, MergedFields mergedFields, ExecutionStepInfo parentInfo) {
         GraphQLObjectType parentType = (GraphQLObjectType) parentInfo.getUnwrappedNonNullType();
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getName());
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionContext.getGraphQLSchema(), parentType, mergedFields.getName());
         GraphQLOutputType fieldType = fieldDefinition.getType();
-        List<Argument> fieldArgs = field.getArguments();
+        List<Argument> fieldArgs = mergedFields.getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
-        ExecutionPath newPath = parentInfo.getPath().segment(mkNameForPath(sameFields));
+        ExecutionPath newPath = parentInfo.getPath().segment(mkNameForPath(mergedFields));
 
         return parentInfo.transform(builder -> builder
                 .parentInfo(parentInfo)
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
-                .field(field)
+                .field(mergedFields)
                 .path(newPath)
                 .arguments(argumentValues));
     }

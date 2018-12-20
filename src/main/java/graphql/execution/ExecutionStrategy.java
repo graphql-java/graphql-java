@@ -763,15 +763,14 @@ public abstract class ExecutionStrategy {
      */
     protected ExecutionStepInfo createExecutionStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDefinition) {
         GraphQLOutputType fieldType = fieldDefinition.getType();
-        Field field = parameters.getField().getSingleField();
-        List<Argument> fieldArgs = field.getArguments();
+        List<Argument> fieldArgs = parameters.getField().getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
 
         return newExecutionStepInfo()
                 .type(fieldType)
                 .fieldDefinition(fieldDefinition)
-                .field(field)
+                .field(parameters.getField())
                 .path(parameters.getPath())
                 .parentInfo(parameters.getExecutionStepInfo())
                 .arguments(argumentValues)

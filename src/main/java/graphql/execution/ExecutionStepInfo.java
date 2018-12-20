@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import graphql.PublicApi;
-import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNonNull;
@@ -32,11 +31,11 @@ public class ExecutionStepInfo {
     private final ExecutionStepInfo parent;
 
     // field, fieldDefinition and arguments stay the same for steps inside a list field
-    private final Field field;
+    private final MergedFields field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final Map<String, Object> arguments;
 
-    private ExecutionStepInfo(GraphQLOutputType type, GraphQLFieldDefinition fieldDefinition, Field field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments) {
+    private ExecutionStepInfo(GraphQLOutputType type, GraphQLFieldDefinition fieldDefinition, MergedFields field, ExecutionPath path, ExecutionStepInfo parent, Map<String, Object> arguments) {
         this.fieldDefinition = fieldDefinition;
         this.field = field;
         this.path = path;
@@ -75,11 +74,11 @@ public class ExecutionStepInfo {
     }
 
     /**
-     * This returns the AST field that matches the {@link #getFieldDefinition()} during execution
+     * This returns the AST fields that matches the {@link #getFieldDefinition()} during execution
      *
-     * @return the field
+     * @return the  merged fields
      */
-    public Field getField() {
+    public MergedFields getField() {
         return field;
     }
 
@@ -196,7 +195,7 @@ public class ExecutionStepInfo {
         GraphQLOutputType type;
         ExecutionStepInfo parentInfo;
         GraphQLFieldDefinition fieldDefinition;
-        Field field;
+        MergedFields field;
         ExecutionPath path;
         Map<String, Object> arguments = new LinkedHashMap<>();
 
@@ -230,7 +229,7 @@ public class ExecutionStepInfo {
             return this;
         }
 
-        public Builder field(Field field) {
+        public Builder field(MergedFields field) {
             this.field = field;
             return this;
         }
