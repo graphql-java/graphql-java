@@ -20,6 +20,7 @@ import java.util.concurrent.locks.ReentrantLock
 
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mergedFields
+import static graphql.TestUtil.mergedSelectionSet
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
@@ -84,7 +85,7 @@ class AsyncExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
-                .fields(['hello': mergedFields([Field.newField('hello').build()]), 'hello2': mergedFields([Field.newField('hello2').build()])])
+                .fields(mergedSelectionSet(['hello': mergedFields([Field.newField('hello').build()]), 'hello2': mergedFields([Field.newField('hello2').build()])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -122,7 +123,7 @@ class AsyncExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
-                .fields(['hello': mergedFields([Field.newField('hello').build()]), 'hello2': mergedFields([Field.newField('hello2').build()])])
+                .fields(mergedSelectionSet(['hello': mergedFields([Field.newField('hello').build()]), 'hello2': mergedFields([Field.newField('hello2').build()])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -162,7 +163,7 @@ class AsyncExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
-                .fields(['hello': mergedFields([Field.newField('hello').build()]), 'hello2': mergedFields([Field.newField('hello2').build()])])
+                .fields(mergedSelectionSet(['hello': mergedFields([Field.newField('hello').build()]), 'hello2': mergedFields([Field.newField('hello2').build()])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -201,7 +202,7 @@ class AsyncExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
-                .fields(['hello': mergedFields([Field.newField('hello').build()]), 'hello2': mergedFields([Field.newField('hello2').build()])])
+                .fields(mergedSelectionSet(['hello': mergedFields([Field.newField('hello').build()]), 'hello2': mergedFields([Field.newField('hello2').build()])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -260,7 +261,7 @@ class AsyncExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
-                .fields(['hello': mergedFields([new Field('hello')]), 'hello2': mergedFields([new Field('hello2')])])
+                .fields(mergedSelectionSet(['hello': mergedFields([new Field('hello')]), 'hello2': mergedFields([new Field('hello2')])]))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()

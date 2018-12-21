@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ public class MergedSelectionSet {
     private final Map<String, MergedFields> subFields;
 
     private MergedSelectionSet(Map<String, MergedFields> subFields) {
-        this.subFields = subFields;
+        this.subFields = Assert.assertNotNull(subFields);
     }
 
     public Map<String, MergedFields> getSubFields() {
@@ -36,6 +37,10 @@ public class MergedSelectionSet {
 
     public List<String> getKeys() {
         return new ArrayList<>(keySet());
+    }
+
+    public boolean isEmpty() {
+        return subFields.isEmpty();
     }
 
     public static Builder newMergedSelectionSet() {
