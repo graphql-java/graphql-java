@@ -68,6 +68,8 @@ public class MergedFields {
     /**
      * All merged fields have the same name.
      *
+     * WARNING: This is not always the key in the execution result, because of possible aliases.
+     *
      * @return the name of of the merged fields.
      */
     public String getName() {
