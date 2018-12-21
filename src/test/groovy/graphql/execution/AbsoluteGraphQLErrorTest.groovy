@@ -7,6 +7,7 @@ import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mergedFields
+import static graphql.TestUtil.mergedSelectionSet
 import static graphql.execution.ExecutionStrategyParameters.newParameters
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
@@ -30,7 +31,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": mergedFields([Field.newField().build()])])
+                .fields(mergedSelectionSet(["fld": mergedFields([Field.newField().build()])]))
                 .field(mergedFields(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -65,7 +66,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": mergedFields(Field.newField().build())])
+                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
                 .field(mergedFields(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -89,7 +90,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": mergedFields(Field.newField().build())])
+                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
                 .field(mergedFields(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -114,7 +115,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": mergedFields(Field.newField().build())])
+                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
                 .field(mergedFields(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -139,7 +140,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": mergedFields(Field.newField().build())])
+                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
                 .field(mergedFields(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()
@@ -163,7 +164,7 @@ class AbsoluteGraphQLErrorTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(new Object())
-                .fields(["fld": mergedFields(Field.newField().build())])
+                .fields(mergedSelectionSet(["fld": mergedFields(Field.newField().build())]))
                 .field(mergedFields(field))
                 .path(ExecutionPath.fromList(["foo", "bar"]))
                 .build()

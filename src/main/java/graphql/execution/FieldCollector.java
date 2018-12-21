@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
 import static graphql.execution.TypeFromAST.getTypeFromAST;
 
 /**
@@ -29,7 +30,7 @@ public class FieldCollector {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    public Map<String, MergedFields> collectFields(FieldCollectorParameters parameters, MergedFields mergedFields) {
+    public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedFields mergedFields) {
         Map<String, MergedFields> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         for (Field field : mergedFields.getFields()) {
@@ -38,7 +39,7 @@ public class FieldCollector {
             }
             this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields);
         }
-        return subFields;
+        return newMergedSelectionSet().subFields(subFields).build();
     }
 
     /**
@@ -49,11 +50,11 @@ public class FieldCollector {
      *
      * @return a map of the sub field selections
      */
-    public Map<String, MergedFields> collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet) {
+    public MergedSelectionSet collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet) {
         Map<String, MergedFields> subFields = new LinkedHashMap<>();
         List<String> visitedFragments = new ArrayList<>();
         this.collectFields(parameters, selectionSet, visitedFragments, subFields);
-        return subFields;
+        return newMergedSelectionSet().subFields(subFields).build();
     }
 
 

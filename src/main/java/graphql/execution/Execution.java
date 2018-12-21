@@ -130,7 +130,7 @@ public class Execution {
                 .variables(executionContext.getVariables())
                 .build();
 
-        Map<String, MergedFields> fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+        MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
         ExecutionPath path = ExecutionPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();

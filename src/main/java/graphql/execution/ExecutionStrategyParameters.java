@@ -17,7 +17,7 @@ public class ExecutionStrategyParameters {
     private final ExecutionStepInfo executionStepInfo;
     private final Object source;
     private final Map<String, Object> arguments;
-    private final Map<String, MergedFields> fields;
+    private final MergedSelectionSet fields;
     private final NonNullableFieldValidator nonNullableFieldValidator;
     private final ExecutionPath path;
     private final MergedFields currentField;
@@ -28,7 +28,7 @@ public class ExecutionStrategyParameters {
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
                                         Object source,
-                                        Map<String, MergedFields> fields,
+                                        MergedSelectionSet fields,
                                         Map<String, Object> arguments,
                                         NonNullableFieldValidator nonNullableFieldValidator,
                                         ExecutionPath path,
@@ -59,7 +59,7 @@ public class ExecutionStrategyParameters {
         return source;
     }
 
-    public Map<String, MergedFields> getFields() {
+    public MergedSelectionSet getFields() {
         return fields;
     }
 
@@ -122,7 +122,7 @@ public class ExecutionStrategyParameters {
     public static class Builder {
         ExecutionStepInfo executionStepInfo;
         Object source;
-        Map<String, MergedFields> fields;
+        MergedSelectionSet fields;
         Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
         ExecutionPath path = ExecutionPath.rootPath();
@@ -165,7 +165,7 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder fields(Map<String, MergedFields> fields) {
+        public Builder fields(MergedSelectionSet fields) {
             this.fields = fields;
             return this;
         }

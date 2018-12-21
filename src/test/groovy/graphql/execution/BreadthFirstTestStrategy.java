@@ -33,7 +33,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     }
 
     private Map<String, Object> fetchFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        Map<String, MergedFields> fields = parameters.getFields();
+        MergedSelectionSet fields = parameters.getFields();
 
         Map<String, CompletableFuture<Object>> fetchFutures = new LinkedHashMap<>();
 
@@ -54,12 +54,12 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     }
 
     private CompletableFuture<ExecutionResult> completeFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, Object> fetchedValues) {
-        Map<String, MergedFields> fields = parameters.getFields();
+        MergedSelectionSet fields = parameters.getFields();
 
         // then for every fetched value, complete it, breath first
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fetchedValues.keySet()) {
-            MergedFields fieldList = fields.get(fieldName);
+            MergedFields fieldList = fields.getSubField(fieldName);
 
             ExecutionStrategyParameters newParameters = newParameters(parameters, fields, fieldName);
 
@@ -76,8 +76,8 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
         return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 
-    private ExecutionStrategyParameters newParameters(ExecutionStrategyParameters parameters, Map<String, MergedFields> fields, String fieldName) {
-        MergedFields currentField = fields.get(fieldName);
+    private ExecutionStrategyParameters newParameters(ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {
+        MergedFields currentField = fields.getSubField(fieldName);
         ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
         return parameters
                 .transform(builder -> builder.field(currentField).path(fieldPath));

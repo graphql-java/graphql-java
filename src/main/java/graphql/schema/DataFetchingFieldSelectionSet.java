@@ -1,6 +1,6 @@
 package graphql.schema;
 
-import graphql.execution.MergedFields;
+import graphql.execution.MergedSelectionSet;
 
 import java.util.List;
 import java.util.Map;
@@ -34,13 +34,13 @@ import java.util.function.Supplier;
  * from the underlying data system.  Imagine a SQL system where this might represent the SQL 'projection'
  * of columns say.
  */
-public interface DataFetchingFieldSelectionSet extends Supplier<Map<String, MergedFields>> {
+public interface DataFetchingFieldSelectionSet extends Supplier<MergedSelectionSet> {
 
     /**
      * @return a map of the fields that represent the selection set
      */
     @Override
-    Map<String, MergedFields> get();
+    MergedSelectionSet get();
 
     /**
      * @return a map of the arguments for each field in the selection set

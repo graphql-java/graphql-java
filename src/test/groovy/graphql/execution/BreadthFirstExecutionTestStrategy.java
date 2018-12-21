@@ -20,7 +20,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        Map<String, MergedFields> fields = parameters.getFields();
+        MergedSelectionSet fields = parameters.getFields();
 
         Map<String, Object> fetchedValues = new LinkedHashMap<>();
 
@@ -33,7 +33,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         // then for every fetched value, complete it
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fetchedValues.keySet()) {
-            MergedFields currentField = fields.get(fieldName);
+            MergedFields currentField = fields.getSubField(fieldName);
             Object fetchedValue = fetchedValues.get(fieldName);
 
             ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
@@ -51,8 +51,8 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 
-    private Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Map<String, MergedFields> fields, String fieldName) {
-        MergedFields currentField = fields.get(fieldName);
+    private Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {
+        MergedFields currentField = fields.getSubField(fieldName);
 
         ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
         ExecutionStrategyParameters newParameters = parameters

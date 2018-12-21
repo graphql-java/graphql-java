@@ -5,6 +5,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedFields;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.Field;
@@ -30,8 +31,8 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
     private final static DataFetchingFieldSelectionSet NOOP = new DataFetchingFieldSelectionSet() {
         @Override
-        public Map<String, MergedFields> get() {
-            return emptyMap();
+        public MergedSelectionSet get() {
+            return MergedSelectionSet.newMergedSelectionSet().build();
         }
 
         @Override
@@ -106,10 +107,10 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     }
 
     @Override
-    public Map<String, MergedFields> get() {
+    public MergedSelectionSet get() {
         // by having a .get() method we get lazy evaluation.
         computeValuesLazily();
-        return selectionSetFields;
+        return MergedSelectionSet.newMergedSelectionSet().subFields(selectionSetFields).build();
     }
 
     @Override
@@ -260,8 +261,8 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
                 .variables(variables)
                 .build();
 
-        Map<String, MergedFields> collectedFields = fieldCollector.collectFields(parameters, fieldList);
-        for (Map.Entry<String, MergedFields> entry : collectedFields.entrySet()) {
+        MergedSelectionSet collectedFields = fieldCollector.collectFields(parameters, fieldList);
+        for (Map.Entry<String, MergedFields> entry : collectedFields.getSubFields().entrySet()) {
             String fieldName = mkFieldName(fieldPrefix, entry.getKey());
             MergedFields collectedFieldList = entry.getValue();
             selectionSetFields.put(fieldName, collectedFieldList);

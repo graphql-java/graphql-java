@@ -10,6 +10,7 @@ import graphql.execution.ExecutionStepInfoFactory;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedFields;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResolveType;
 import graphql.execution.UnresolvedTypeException;
@@ -25,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.ENUM;
@@ -235,7 +235,7 @@ public class FetchedValueAnalyzer {
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getVariables())
                 .build();
-        Map<String, MergedFields> subFields = fieldCollector.collectFields(collectorParameters,
+        MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters,
                 executionInfo.getField());
 
         // it is not really a new step but rather a refinement
@@ -244,7 +244,7 @@ public class FetchedValueAnalyzer {
         FieldSubSelection fieldSubSelection = new FieldSubSelection();
         fieldSubSelection.setSource(toAnalyze);
         fieldSubSelection.setExecutionStepInfo(newExecutionStepInfoWithResolvedType);
-        fieldSubSelection.setFields(subFields);
+        fieldSubSelection.setMergedSelectionSet(subFields);
 
 
         FetchedValueAnalysis result = newFetchedValueAnalysis(OBJECT)

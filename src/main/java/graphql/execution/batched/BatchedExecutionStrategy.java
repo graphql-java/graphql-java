@@ -15,6 +15,7 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedFields;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.NonNullableFieldValidator;
 import graphql.execution.ResolveType;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
@@ -111,7 +112,7 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
 
         ExecutionNode root = new ExecutionNode(type,
                 parameters.getExecutionStepInfo(),
-                parameters.getFields(),
+                parameters.getFields().getSubFields(),
                 singletonList(MapOrList.createMap(new LinkedHashMap<>())),
                 Collections.singletonList(parameters.getSource())
         );
@@ -412,11 +413,11 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         for (GraphQLObjectType resolvedType : resultsByType.keySet()) {
             List<MapOrList> results = resultsByType.get(resolvedType);
             List<Object> sources = sourceByType.get(resolvedType);
-            Map<String, MergedFields> childFields = getChildFields(executionContext, resolvedType, fields);
+            MergedSelectionSet childFields = getChildFields(executionContext, resolvedType, fields);
 
             ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedType);
 
-            childNodes.add(new ExecutionNode(resolvedType, newExecutionStepInfo, childFields, results, sources));
+            childNodes.add(new ExecutionNode(resolvedType, newExecutionStepInfo, childFields.getSubFields(), results, sources));
         }
         return childNodes;
     }
@@ -432,8 +433,8 @@ public class BatchedExecutionStrategy extends ExecutionStrategy {
         }
     }
 
-    private Map<String, MergedFields> getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
-                                                     MergedFields fields) {
+    private MergedSelectionSet getChildFields(ExecutionContext executionContext, GraphQLObjectType resolvedType,
+                                              MergedFields fields) {
 
         FieldCollectorParameters collectorParameters = newParameters()
                 .schema(executionContext.getGraphQLSchema())

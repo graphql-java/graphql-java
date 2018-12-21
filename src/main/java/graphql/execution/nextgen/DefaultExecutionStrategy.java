@@ -90,7 +90,7 @@ public class DefaultExecutionStrategy implements ExecutionStrategy {
     }
 
     private CompletableFuture<List<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getFields().entrySet().stream()
+        List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getSubFields().entrySet().stream()
                 .map(entry -> {
                     MergedFields sameFields = entry.getValue();
                     String name = entry.getKey();

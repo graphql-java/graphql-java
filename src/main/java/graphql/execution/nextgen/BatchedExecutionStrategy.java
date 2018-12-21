@@ -89,7 +89,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     private List<ExecutionResultMultiZipper> groupNodesIntoBatches(ExecutionResultMultiZipper unresolvedZipper) {
         Map<Map<String, MergedFields>, List<ExecutionResultZipper>> zipperBySubSelection = unresolvedZipper.getZippers().stream()
-                .collect(groupingBy(executionResultZipper -> executionResultZipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection().getFields()));
+                .collect(groupingBy(executionResultZipper -> executionResultZipper.getCurNode().getFetchedValueAnalysis().getFieldSubSelection().getSubFields()));
 
         return zipperBySubSelection
                 .entrySet()
@@ -110,7 +110,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
         // each field in the subSelection has n sources as input
         List<CompletableFuture<List<FetchedValueAnalysis>>> fetchedValues = fieldSubSelections
                 .get(0)
-                .getFields()
+                .getSubFields()
                 .entrySet()
                 .stream()
                 .map(entry -> {
@@ -161,7 +161,7 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
 
     // only used for the root sub selection atm
     private CompletableFuture<List<FetchedValueAnalysis>> fetchAndAnalyze(FieldSubSelection fieldSubSelection) {
-        List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getFields().entrySet().stream()
+        List<CompletableFuture<FetchedValueAnalysis>> fetchedValues = fieldSubSelection.getSubFields().entrySet().stream()
                 .map(entry -> {
                     MergedFields sameFields = entry.getValue();
                     String name = entry.getKey();

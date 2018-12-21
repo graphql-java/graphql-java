@@ -7,7 +7,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -31,11 +30,11 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
         InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
-        Map<String, MergedFields> fields = parameters.getFields();
+        MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
 
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, index, prevResults) -> {
-            MergedFields currentField = fields.get(fieldName);
+            MergedFields currentField = fields.getSubField(fieldName);
             ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));

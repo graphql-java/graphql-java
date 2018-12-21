@@ -1,6 +1,7 @@
 package graphql
 
 import graphql.execution.MergedFields
+import graphql.execution.MergedSelectionSet
 import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
 import graphql.language.Field
@@ -211,6 +212,10 @@ class TestUtil {
 
     static MergedFields mergedFields(Field field) {
         return MergedFields.newMergedFields(field).build()
+    }
+
+    static MergedSelectionSet mergedSelectionSet(Map<String, MergedFields> subFields) {
+        return MergedSelectionSet.newMergedSelectionSet().subFields(subFields).build()
     }
 
 }

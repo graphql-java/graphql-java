@@ -20,6 +20,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
+
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
  */
@@ -50,12 +52,12 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         ExecutionStrategyInstrumentationContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
 
-        Map<String, MergedFields> fields = parameters.getFields();
+        MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = new ArrayList<>(fields.keySet());
         List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
         List<String> resolvedFields = new ArrayList<>();
         for (String fieldName : fieldNames) {
-            MergedFields currentField = fields.get(fieldName);
+            MergedFields currentField = fields.getSubField(fieldName);
 
             ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
@@ -103,12 +105,15 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             fields.put(currentField.getName(), currentField);
 
             ExecutionStrategyParameters callParameters = parameters.transform(builder ->
-                    builder.deferredErrorSupport(errorSupport)
-                            .field(currentField)
-                            .fields(fields)
-                            .parent(null) // this is a break in the parent -> child chain - its a new start effectively
-                            .listSize(0)
-                            .currentListIndex(0)
+                    {
+                        MergedSelectionSet mergedSelectionSet = newMergedSelectionSet().subFields(fields).build();
+                        builder.deferredErrorSupport(errorSupport)
+                                .field(currentField)
+                                .fields(mergedSelectionSet)
+                                .parent(null) // this is a break in the parent -> child chain - its a new start effectively
+                                .listSize(0)
+                                .currentListIndex(0);
+                    }
             );
 
             DeferredCall call = new DeferredCall(deferredExecutionResult(executionContext, callParameters), errorSupport);
