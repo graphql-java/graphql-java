@@ -1,9 +1,11 @@
 package graphql.execution
 
+
 import spock.lang.Specification
 
 import static ExecutionStepInfo.newExecutionStepInfo
 import static graphql.Scalars.GraphQLString
+import static graphql.TestUtil.mergedSelectionSet
 import static graphql.execution.ExecutionStrategyParameters.newParameters
 
 class ExecutionStrategyParametersTest extends Specification {
@@ -13,7 +15,7 @@ class ExecutionStrategyParametersTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(newExecutionStepInfo().type(GraphQLString))
                 .source(new Object())
-                .fields("a": [])
+                .fields(mergedSelectionSet("a": []))
                 .build()
 
         when:

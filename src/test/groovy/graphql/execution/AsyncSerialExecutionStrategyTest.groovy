@@ -16,6 +16,7 @@ import java.util.concurrent.locks.ReentrantLock
 
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mergedFields
+import static graphql.TestUtil.mergedSelectionSet
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
@@ -88,7 +89,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
-                .fields(['hello': mergedFields(new Field('hello')), 'hello2': mergedFields(new Field('hello2')), 'hello3': mergedFields(new Field('hello3'))])
+                .fields(mergedSelectionSet(['hello': mergedFields(new Field('hello')), 'hello2': mergedFields(new Field('hello2')), 'hello3': mergedFields(new Field('hello3'))]))
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()
@@ -131,7 +132,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
-                .fields(['hello': mergedFields(new Field('hello')), 'hello2': mergedFields(new Field('hello2')), 'hello3': mergedFields(new Field('hello3'))])
+                .fields(mergedSelectionSet(['hello': mergedFields(new Field('hello')), 'hello2': mergedFields(new Field('hello2')), 'hello3': mergedFields(new Field('hello3'))]))
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()

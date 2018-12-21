@@ -39,8 +39,8 @@ class FieldCollectorTest extends Specification {
         def result = fieldCollector.collectFields(fieldCollectorParameters, mergedFields(field))
 
         then:
-        result['bar1'].getFields() == [bar1]
-        result['bar2'].getFields() == [bar2]
+        result.getSubField('bar1').getFields() == [bar1]
+        result.getSubField('bar2').getFields() == [bar2]
     }
 
     def "collect fields on inline fragments"() {
@@ -72,7 +72,7 @@ class FieldCollectorTest extends Specification {
         def result = fieldCollector.collectFields(fieldCollectorParameters, mergedFields(bar1Field))
 
         then:
-        result['fieldOnInterface'].getFields() == [interfaceField]
+        result.getSubField('fieldOnInterface').getFields() == [interfaceField]
 
     }
 }
