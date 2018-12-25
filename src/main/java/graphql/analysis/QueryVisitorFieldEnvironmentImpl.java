@@ -2,10 +2,12 @@ package graphql.analysis;
 
 import graphql.Internal;
 import graphql.language.Field;
+import graphql.language.Node;
 import graphql.language.SelectionSetContainer;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
+import graphql.util.TraverserContext;
 
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +23,7 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
     private final Map<String, Object> arguments;
     private final QueryVisitorFieldEnvironment parentEnvironment;
     private final SelectionSetContainer selectionSetContainer;
+    private final TraverserContext<Node> traverserContext;
 
     public QueryVisitorFieldEnvironmentImpl(boolean typeNameIntrospectionField,
                                             Field field,
@@ -29,7 +32,8 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
                                             GraphQLFieldsContainer unmodifiedParentType,
                                             QueryVisitorFieldEnvironment parentEnvironment,
                                             Map<String, Object> arguments,
-                                            SelectionSetContainer selectionSetContainer) {
+                                            SelectionSetContainer selectionSetContainer,
+                                            TraverserContext<Node> traverserContext) {
         this.typeNameIntrospectionField = typeNameIntrospectionField;
         this.field = field;
         this.fieldDefinition = fieldDefinition;
@@ -38,6 +42,7 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
         this.parentEnvironment = parentEnvironment;
         this.arguments = arguments;
         this.selectionSetContainer = selectionSetContainer;
+        this.traverserContext = traverserContext;
     }
 
     @Override
@@ -81,6 +86,11 @@ public class QueryVisitorFieldEnvironmentImpl implements QueryVisitorFieldEnviro
     @Override
     public boolean isTypeNameIntrospectionField() {
         return typeNameIntrospectionField;
+    }
+
+    @Override
+    public TraverserContext<Node> getTraverserContext() {
+        return traverserContext;
     }
 
     @Override

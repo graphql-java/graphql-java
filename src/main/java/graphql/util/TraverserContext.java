@@ -81,9 +81,20 @@ public interface TraverserContext<T> {
      * @param <S> type of the variable
      * @param key key to lookup the variable value
      *
-     * @return a variable value of {@code null}
+     * @return a variable value or {@code null}
      */
     <S> S getVar(Class<? super S> key);
+
+    /**
+     * Searches for a context variable starting from the parent
+     * up the hierarchy of contexts until the first variable is found.
+     *
+     * @param <S> type of the variable
+     * @param key key to lookup the variable value
+     *
+     * @return a variable value or {@code null}
+     */
+    <S> S getVarFromParents(Class<? super S> key);
 
     /**
      * Stores a variable in the context

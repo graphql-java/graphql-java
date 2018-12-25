@@ -2,10 +2,12 @@ package graphql.analysis;
 
 import graphql.PublicApi;
 import graphql.language.Field;
+import graphql.language.Node;
 import graphql.language.SelectionSetContainer;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
+import graphql.util.TraverserContext;
 
 import java.util.Map;
 
@@ -41,4 +43,6 @@ public interface QueryVisitorFieldEnvironment {
     Map<String, Object> getArguments();
 
     SelectionSetContainer getSelectionSetContainer();
+
+    TraverserContext<Node> getTraverserContext();
 }

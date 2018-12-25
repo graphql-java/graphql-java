@@ -1244,5 +1244,41 @@ class QueryTraversalTest extends Specification {
 
     }
 
+    def "traverserContext is passed along"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            {foo { subFoo} bar }
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "foo" && it.traverserContext.getParentNodes().size() == 2
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "subFoo" && it.traverserContext.getParentNodes().size() == 4
+
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "bar" && it.traverserContext.getParentNodes().size() == 2
+        })
+
+
+    }
+
 
 }

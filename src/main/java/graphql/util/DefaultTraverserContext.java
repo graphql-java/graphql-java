@@ -148,4 +148,16 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         return isRootContext;
     }
 
+    @Override
+    public <S> S getVarFromParents(Class<? super S> key) {
+        TraverserContext<T> curContext = parent;
+        while (curContext != null) {
+            S var = curContext.getVar(key);
+            if (var != null) {
+                return var;
+            }
+            curContext = curContext.getParentContext();
+        }
+        return null;
+    }
 }
