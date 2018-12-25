@@ -45,6 +45,9 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * <p>
  * Further are the built in Directives skip/include automatically evaluated: if parts of the Document should be ignored they will not
  * be visited. But this is not a full evaluation of a Query: every fragment will be visited/followed regardless of the type condition.
+ *
+ * It also doesn't consider field merging, which means for example {@code { user{firstName} user{firstName}} } will result in four
+ * visitField calls.
  */
 @PublicApi
 public class QueryTraversal {
