@@ -1280,5 +1280,30 @@ class QueryTraversalTest extends Specification {
 
     }
 
+    def "traverserContext parent nodes for fragment definitions"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                bar: String
+            }
+        """)
+        def visitor = Mock(QueryVisitor)
+        def query = createQuery("""
+            { ...F } fragment F on Query @myDirective {bar}
+            """)
+        QueryTraversal queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "bar" && it.traverserContext.getParentNodes().size() == 5 &&
+                    it.traverserContext.getParentContext().getParentContext().thisNode() instanceof FragmentDefinition &&
+                    ((FragmentDefinition) it.traverserContext.getParentContext().getParentContext().thisNode()).getDirective("myDirective") != null
+        })
+
+
+    }
+
 
 }
