@@ -9,13 +9,13 @@ import java.util.Map;
 import static graphql.language.NodeUtil.directivesByName;
 
 /**
- * Represents a language node that has a name
+ * Represents a language node that can contain Directives.
  */
 @PublicApi
 public interface DirectivesContainer<T extends DirectivesContainer> extends NamedNode<T> {
 
     /**
-     * @return a list of directives associated with the type or field
+     * @return a list of directives associated with this Node
      */
     List<Directive> getDirectives();
 
@@ -27,7 +27,7 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Name
     }
 
     /**
-     * Returns a named directive
+     * Returns a directive with the provided name
      *
      * @param directiveName the name of the directive to retrieve
      *
