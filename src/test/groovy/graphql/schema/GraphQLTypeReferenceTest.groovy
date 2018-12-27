@@ -32,6 +32,7 @@ class GraphQLTypeReferenceTest extends Specification {
 
         then:
         // issue 1216 - reuse of type reference caused problems
-        schema != null
+        GraphQLInputObjectType objInput = ((GraphQLInputObjectType)schema.getType("ObjInput"));
+        objInput.getField("value2").getType() != ref
     }
 }
